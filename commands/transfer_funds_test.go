@@ -1102,6 +1102,35 @@ func TestTransferFunds(t *testing.T) {
 			},
 			errString: "transfer.from_account_type (account type is not valid for one recurring transfer",
 		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_TEAMS,
+							TeamScope:            []string{"team1"},
+							StakingRequirement:   "1",
+							NotionalTimeWeightedAveragePositionRequirement: "2",
+							WindowLength:   1,
+							NTopPerformers: "0.5",
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.team_scope (is not supported)",
+		},
 	}
 
 	invalidAccountTypesForOneOff := []vega.AccountType{

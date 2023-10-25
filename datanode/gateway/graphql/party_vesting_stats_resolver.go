@@ -13,18 +13,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package api contains code for running the gRPC server.
-//
-// In order to add a new gRPC endpoint, add proto content (rpc call, request
-// and response messages), then add the endpoint function implementation in
-// `api/somefile.go`. Example:
-//
-//	func (s *tradingService) SomeNewEndpoint(
-//	    ctx context.Context, req *protoapi.SomeNewEndpointRequest,
-//	) (*protoapi.SomeNewEndpointResponse, error) {
-//	    /* Implementation goes here */
-//	    return &protoapi.SomeNewEndpointResponse{/* ... */}, nil
-//	}
-//
-// Add a test for the newly created endpoint in `api/trading_test.go`.
-package api
+package gql
+
+import (
+	"context"
+
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+)
+
+type partyVestingStatsResolver VegaResolverRoot
+
+func (r *partyVestingStatsResolver) EpochSeq(ctx context.Context, obj *v2.GetPartyVestingStatsResponse) (int, error) {
+	return int(obj.EpochSeq), nil
+}

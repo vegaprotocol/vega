@@ -29,7 +29,7 @@ import (
 
 var volumeDiscountStatsOrdering = TableOrdering{
 	ColumnOrdering{Name: "at_epoch", Sorting: DESC},
-	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC, Ref: "stats->>'party_id'"},
 }
 
 type (

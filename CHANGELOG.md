@@ -170,6 +170,11 @@
 - [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
 - [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
 - [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
+- [9876](https://github.com/vegaprotocol/vega/issues/9876) - Disable teams support in transfers and referral sets.
+- [8056](https://github.com/vegaprotocol/vega/issues/8056) - Add transfer fees event.
+- [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
+- [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
 
 ### 🐛 Fixes
 
@@ -339,12 +344,17 @@
 - [9841](https://github.com/vegaprotocol/vega/issues/9841) - Release `postgres` connections after ledger export is complete
 - [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
 - [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
+- [9874](https://github.com/vegaprotocol/vega/issues/9874) - Use correct field reference when paging with `JSONB` fields.
 - [9818](https://github.com/vegaprotocol/vega/issues/9818) - Correctly register generated rewards in fees statistics.
 - [9850](https://github.com/vegaprotocol/vega/issues/9850) - Do not use default cursor when Before or After is defined.
 - [9855](https://github.com/vegaprotocol/vega/issues/9855) - Use max governance transfer amount as a quantum multiplier
 - [9853](https://github.com/vegaprotocol/vega/issues/9853) - Data node crashing due to duplicate key violation in paid liquidity fees table.
 - [9843](https://github.com/vegaprotocol/vega/issues/9843) - Migration script `0039` down migration drops incorrect column.
 - [9858](https://github.com/vegaprotocol/vega/issues/9858) - Fix missing where statement in list referral set referees.
+- [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
+- [9871](https://github.com/vegaprotocol/vega/issues/9871) - Fix panic on snapshot after market termination following protocol upgrade.
+- [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
+- [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
 
 ## 0.72.1
 

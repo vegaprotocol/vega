@@ -80,12 +80,12 @@ func (t *Tree) WorkingHash() []byte {
 	return hash
 }
 
-func (t *Tree) RemoveKey(key []byte) bool {
+func (t *Tree) RemoveKey(key []byte) (bool, error) {
 	if ok, _ := t.innerTree.Has(key); ok {
-		_, removed, _ := t.innerTree.Remove(key)
-		return removed
+		_, removed, err := t.innerTree.Remove(key)
+		return removed, err
 	}
-	return false
+	return false, nil
 }
 
 func (t *Tree) AddState(key []byte, state []byte) {

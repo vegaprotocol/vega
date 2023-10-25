@@ -178,23 +178,23 @@ func defaultNetParams() map[string]value {
 		GovernanceTransferMaxFraction:                   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
 
 		// Update referral program.
-		GovernanceProposalReferralProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalReferralProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
 		GovernanceProposalReferralProgramMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalReferralProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalReferralProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
 		GovernanceProposalReferralProgramMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalReferralProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalReferralProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.01"),
 		GovernanceProposalReferralProgramRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalReferralProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
-		GovernanceProposalReferralProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalReferralProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
+		GovernanceProposalReferralProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
 
-		GovernanceProposalVolumeDiscountProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalVolumeDiscountProgramMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
 		GovernanceProposalVolumeDiscountProgramMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalVolumeDiscountProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalVolumeDiscountProgramMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("120h0m0s"),
 		GovernanceProposalVolumeDiscountProgramMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
-		GovernanceProposalVolumeDiscountProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalVolumeDiscountProgramRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.01"),
 		GovernanceProposalVolumeDiscountProgramRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalVolumeDiscountProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
-		GovernanceProposalVolumeDiscountProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalVolumeDiscountProgramMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("10000000000000000000000"),
+		GovernanceProposalVolumeDiscountProgramMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1000000000000000000"),
 
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
@@ -227,7 +227,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMaxUpdateReferralSet:             NewInt(gteI0).Mutable(true).MustUpdate("3"),
 		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),
 		SpamProtectionBalanceSnapshotFrequency:         NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
-		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1"),
+		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
@@ -284,25 +284,25 @@ func defaultNetParams() map[string]value {
 		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
 
-		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.01"),
-		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("0.01"),
-		RewardsVestingBenefitTiers:    NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_quantum_balance": "1000", "reward_multiplier": "1.05"}]}`),
+		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.25"),
+		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("10"),
+		RewardsVestingBenefitTiers:    NewJSON(&proto.VestingBenefitTiers{}, types.CheckUntypedVestingBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),
 
 		// Referral program
-		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
-		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
-		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000"),
-		ReferralProgramMinStakedVegaTokens:                     NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("1000000000000000000"),
+		ReferralProgramMaxReferralTiers:                        NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("10"),
+		ReferralProgramMaxReferralRewardFactor:                 NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		ReferralProgramMaxReferralDiscountFactor:               NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch: NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("250000"),
+		ReferralProgramMinStakedVegaTokens:                     NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
 		ReferralProgramMaxReferralRewardProportion:             NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
 
-		VolumeDiscountProgramMaxVolumeDiscountFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1"),
+		VolumeDiscountProgramMaxVolumeDiscountFactor: NewDecimal(gteD0, DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.9"),
 		VolumeDiscountProgramMaxBenefitTiers:         NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10))).Mutable(true).MustUpdate("10"),
 
-		RewardsActivityStreakInactivityLimit:       NewUint(UintGTE(num.UintOne()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("7"),
-		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": [{"minimum_activity_streak": 1, "reward_multiplier": "1.05", "vesting_multiplier": "1.05"}, {"minimum_activity_streak": 7, "reward_multiplier": "1.10", "vesting_multiplier": "1.10"}, {"minimum_activity_streak": 31, "reward_multiplier": "1.10", "vesting_multiplier": "1.15"}, {"minimum_activity_streak": 365, "reward_multiplier": "1.20", "vesting_multiplier": "1.20"}]}`),
-		RewardsActivityStreakMinQuantumOpenVolume:  NewUint().Mutable(true).MustUpdate("100000000000000000000"),
-		RewardsActivityStreakMinQuantumTradeVolume: NewUint().Mutable(true).MustUpdate("100000000000000000000"),
+		RewardsActivityStreakInactivityLimit:       NewUint(UintGTE(num.UintOne()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("3"),
+		RewardsActivityStreakBenefitTiers:          NewJSON(&proto.ActivityStreakBenefitTiers{}, types.CheckUntypedActivityStreakBenefitTier).Mutable(true).MustUpdate(`{"tiers": []}`),
+		RewardsActivityStreakMinQuantumOpenVolume:  NewUint().Mutable(true).MustUpdate("500"),
+		RewardsActivityStreakMinQuantumTradeVolume: NewUint().Mutable(true).MustUpdate("2500"),
 	}
 
 	// add additional cross net param rules

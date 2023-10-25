@@ -60,7 +60,14 @@ func (c *Config) Validate() error {
 	}
 
 	if c.StartHeight < 0 {
-		return ErrStartHeightCannotBeNegative
+		// TODO Enable this validation error once the migration to 0.73 is done
+		// 		on mainnet. In the meantime, we set it to 0 as this will save the
+		//		validators to update their configuration from -1 to 0, which would
+		//		trigger the removal of the snapshots in case of a rollback.
+		//		In previous version, setting it to 0 is interpreted as starting
+		//		from scratch.
+		// return ErrStartHeightCannotBeNegative
+		c.StartHeight = 0
 	}
 
 	switch c.Storage {

@@ -194,6 +194,9 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 			"prices.GRT.value":      "550350",
 			"prices.GRT.timestamp":  "1611924180",
 		},
+		MetaData: map[string]string{
+			"open-oracle-timestamp": "1611924180",
+		},
 		Signers: []*common.Signer{
 			common.CreateSignerFromString("0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC", common.SignerTypeEthAddress),
 		},

@@ -577,6 +577,14 @@ func (r *VegaResolverRoot) PartyVestingBalancesSummary() PartyVestingBalancesSum
 	return (*partyVestingBalancesSummary)(r)
 }
 
+func (r *VegaResolverRoot) TransferNode() TransferNodeResolver {
+	return (*transferNodeResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
+	return (*partyVestingStatsResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -765,9 +773,9 @@ func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFil
 }
 
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
-	pagination *v2.Pagination,
+	pagination *v2.Pagination, isReward *bool,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
@@ -1832,6 +1840,20 @@ func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.N
 
 type myPartyResolver VegaResolverRoot
 
+func (r *myPartyResolver) VestingStats(
+	ctx context.Context,
+	obj *vega.Party,
+) (*v2.GetPartyVestingStatsResponse, error) {
+	res, err := r.r.clt2.GetPartyVestingStats(ctx, &v2.GetPartyVestingStatsRequest{
+		PartyId: obj.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (r *myPartyResolver) VestingBalancesSummary(
 	ctx context.Context,
 	obj *vega.Party,
@@ -1876,8 +1898,9 @@ func (r *myPartyResolver) TransfersConnection(
 	party *vegapb.Party,
 	direction *TransferDirection,
 	pagination *v2.Pagination,
+	isReward *bool,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
@@ -2518,6 +2541,14 @@ func (r *myTradeResolver) BuyerAuctionBatch(_ context.Context, obj *vegapb.Trade
 	return &i, nil
 }
 
+func setIfExists(v string) *string {
+	if len(v) <= 0 {
+		return nil
+	}
+
+	return ptr.From(v)
+}
+
 func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
@@ -2526,8 +2557,14 @@ func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*Trade
 	}
 	if obj.BuyerFee != nil {
 		fee.MakerFee = obj.BuyerFee.MakerFee
+		fee.MakerFeeReferralDiscount = setIfExists(obj.BuyerFee.MakerFeeReferrerDiscount)
+		fee.MakerFeeVolumeDiscount = setIfExists(obj.BuyerFee.MakerFeeVolumeDiscount)
 		fee.InfrastructureFee = obj.BuyerFee.InfrastructureFee
+		fee.InfrastructureFeeReferralDiscount = setIfExists(obj.BuyerFee.InfrastructureFeeReferrerDiscount)
+		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.BuyerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeReferrerDiscount)
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
 	}
 	return &fee, nil
 }
@@ -2545,8 +2582,14 @@ func (r *myTradeResolver) SellerFee(_ context.Context, obj *vegapb.Trade) (*Trad
 	}
 	if obj.SellerFee != nil {
 		fee.MakerFee = obj.SellerFee.MakerFee
+		fee.MakerFeeReferralDiscount = setIfExists(obj.SellerFee.MakerFeeReferrerDiscount)
+		fee.MakerFeeVolumeDiscount = setIfExists(obj.SellerFee.MakerFeeVolumeDiscount)
 		fee.InfrastructureFee = obj.SellerFee.InfrastructureFee
+		fee.InfrastructureFeeReferralDiscount = setIfExists(obj.SellerFee.InfrastructureFeeReferrerDiscount)
+		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.SellerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.SellerFee.LiquidityFee
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeReferrerDiscount)
+		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
 	}
 	return &fee, nil
 }

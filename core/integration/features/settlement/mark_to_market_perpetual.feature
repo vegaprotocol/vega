@@ -138,9 +138,9 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -2     | -1200000       | 0            |
-      | party2 | 1      | 1100000        | 0            |
-      | party3 | 1      | 100000         | 0            |
+      | party1 | -2     | -1000000       | -200000      |
+      | party2 | 1      | 1000000        | 100000       |
+      | party3 | 1      | 0              | 100000       |
 
     # move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks

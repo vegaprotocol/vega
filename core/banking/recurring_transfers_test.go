@@ -316,7 +316,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	})
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	// now let's move epochs to see the others transfers
@@ -432,7 +432,7 @@ func testValidRecurringTransfer(t *testing.T) {
 
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(3)
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	// now let's move epochs to see the others transfers

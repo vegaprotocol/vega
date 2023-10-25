@@ -54,5 +54,8 @@ func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*common.
 	return &common.Data{
 		Signers: pubKeysSigners,
 		Data:    kvs,
+		MetaData: map[string]string{
+			"open-oracle-timestamp": response.Timestamp,
+		},
 	}, nil
 }

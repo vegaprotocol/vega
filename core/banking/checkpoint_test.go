@@ -148,7 +148,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	checkp, err := e.Checkpoint()

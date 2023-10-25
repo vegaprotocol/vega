@@ -13,17 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package api
 
 import (
@@ -137,6 +126,27 @@ type TradingDataServiceV2 struct {
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
+	vestingStats                  *service.VestingStats
+}
+
+func (t *TradingDataServiceV2) GetPartyVestingStats(
+	ctx context.Context,
+	req *v2.GetPartyVestingStatsRequest,
+) (*v2.GetPartyVestingStatsResponse, error) {
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	stats, err := t.vestingStats.GetByPartyID(ctx, req.PartyId)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.GetPartyVestingStatsResponse{
+		PartyId:               stats.PartyID.String(),
+		EpochSeq:              stats.AtEpoch,
+		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
+	}, nil
 }
 
 func (t *TradingDataServiceV2) GetVestingBalancesSummary(
@@ -2362,8 +2372,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 	if err != nil {
 		return nil, formatE(err)
 	}
+	fees := make([]*eventspb.TransferFees, 0, len(transfer.Fees))
+	for _, f := range transfer.Fees {
+		fees = append(fees, f.ToProto())
+	}
 	return &v2.GetTransferResponse{
 		Transfer: tp,
+		Fees:     fees,
 	}, nil
 }
 
@@ -2377,15 +2392,31 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	}
 
 	var (
-		transfers []entities.Transfer
+		transfers []entities.TransferDetails
 		pageInfo  entities.PageInfo
+		isReward  bool
 	)
+	if req.IsReward != nil {
+		isReward = *req.IsReward
+	}
 	if req.Pubkey == nil {
-		transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+		if !isReward {
+			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+		} else {
+			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination)
+		}
 	} else {
+		if isReward && req.Direction != v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM {
+			err = errors.Errorf("invalid transfer direction for reward transfers: %v", req.Direction)
+			return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
+		}
 		switch req.Direction {
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			if isReward {
+				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			} else {
+				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			}
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
 			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
@@ -2395,11 +2426,13 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		}
 	}
 	if err != nil {
+		t.log.Error("Something went wrong listing transfers", logging.Error(err))
 		return nil, formatE(ErrTransferServiceGet, errors.Wrapf(err, "pubkey: %s", ptr.UnBox(req.Pubkey)))
 	}
 
 	edges, err := makeEdges[*v2.TransferEdge](transfers, ctx, t.accountService)
 	if err != nil {
+		t.log.Error("Something went wrong making transfer edges", logging.Error(err))
 		return nil, formatE(err)
 	}
 

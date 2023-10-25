@@ -46,6 +46,9 @@ func checkCreateReferralSet(cmd *commandspb.CreateReferralSet) Errors {
 		if cmd.Team.TeamUrl != nil && len(*cmd.Team.TeamUrl) > 200 {
 			errs.AddForProperty("create_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
+
+		// temporarily disable teams
+		errs.AddForProperty("create_referral_set.team", ErrIsNotSupported)
 	}
 
 	return errs

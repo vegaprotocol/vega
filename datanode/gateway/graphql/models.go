@@ -830,6 +830,16 @@ type TransferBalance struct {
 	Balance string `json:"balance"`
 }
 
+// A transfer fee record
+type TransferFee struct {
+	// Transfer ID of the transfer for which the fee was paid
+	TransferID string `json:"transferId"`
+	// The fee amount
+	Amount string `json:"amount"`
+	// The epoch when this fee was paid
+	Epoch int `json:"epoch"`
+}
+
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
 	Transfers []*vega.LedgerEntry `json:"transfers"`

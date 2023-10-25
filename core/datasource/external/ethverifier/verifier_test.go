@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"testing"
 	"time"
 
@@ -164,6 +165,12 @@ func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
 				MatchedSpecIds: []string{"testspec"},
 				BroadcastAt:    tickTime.UnixNano(),
 				Error:          &testError,
+				MetaData: []*datapb.Property{
+					{
+						Name:  "vega-time",
+						Value: strconv.FormatInt(tickTime.Unix(), 10),
+					},
+				},
 			},
 		},
 	}
@@ -275,16 +282,21 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	// result verified
 	onQueryResultVerified(resourceToCheck, true)
 
+	tick := time.Unix(10, 0)
 	oracleData := common.Data{
-		EthKey:   "testspec",
-		Signers:  nil,
-		Data:     okResult().Normalised,
-		MetaData: map[string]string{"eth-block-height": "1", "eth-block-time": "100"},
+		EthKey:  "testspec",
+		Signers: nil,
+		Data:    okResult().Normalised,
+		MetaData: map[string]string{
+			"eth-block-height": "1",
+			"eth-block-time":   "100",
+			"vega-time":        strconv.FormatInt(tick.Unix(), 10),
+		},
 	}
 
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
 
-	eov.onTick(context.Background(), time.Unix(10, 0))
+	eov.onTick(context.Background(), tick)
 }
 
 func testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime(t *testing.T) {

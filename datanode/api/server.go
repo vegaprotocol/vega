@@ -519,6 +519,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		paidLiquidityFeesStatsService: g.paidLiquidityFeesStatsService,
 		partyLockedBalances:           g.partyLockedBalances,
 		partyVestingBalances:          g.partyVestingBalances,
+		vestingStats:                  g.vestingStatsService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

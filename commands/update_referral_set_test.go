@@ -103,7 +103,11 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			require.Empty(tt, checkUpdateReferralSet(tt, tc.cmd))
+			if !tc.cmd.IsTeam {
+				require.Empty(tt, checkUpdateReferralSet(tt, tc.cmd))
+			} else {
+				require.Contains(tt, checkUpdateReferralSet(tt, tc.cmd).Get("update_referral_set.team"), commands.ErrIsNotSupported, tc.name)
+			}
 		})
 	}
 }

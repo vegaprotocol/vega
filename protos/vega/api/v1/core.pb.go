@@ -25,19 +25,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Blockchain transaction type
+// Blockchain transaction type.
 type SubmitTransactionRequest_Type int32
 
 const (
 	SubmitTransactionRequest_TYPE_UNSPECIFIED SubmitTransactionRequest_Type = 0
-	// Transaction will be submitted without waiting for response
+	// Transaction will be submitted without waiting for a response.
 	SubmitTransactionRequest_TYPE_ASYNC SubmitTransactionRequest_Type = 1
-	// Transaction will be submitted, and blocking until the
-	// tendermint mempool returns a response
+	// Transaction will be submitted, and blocking until the mempool returns a response.
 	SubmitTransactionRequest_TYPE_SYNC SubmitTransactionRequest_Type = 2
-	// Transaction will be submitted, and blocking until the tendermint
-	// network has committed it into a block. Used only for debugging,
-	// not for submitting transactions
+	// Transaction will be submitted, and blocking until the network has committed it into a block.
+	// Used only for debugging local network, not for submitting transactions.
 	SubmitTransactionRequest_TYPE_COMMIT SubmitTransactionRequest_Type = 3
 )
 
@@ -266,9 +264,9 @@ type SubmitTransactionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain
+	// Transaction containing a command to execute on the network, and a signature to provide authentication.
 	Tx *v1.Transaction `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
-	// Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
+	// Method of submission.
 	Type SubmitTransactionRequest_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vega.api.v1.SubmitTransactionRequest_Type" json:"type,omitempty"`
 }
 
@@ -318,23 +316,23 @@ func (x *SubmitTransactionRequest) GetType() SubmitTransactionRequest_Type {
 	return SubmitTransactionRequest_TYPE_UNSPECIFIED
 }
 
-// Response for submitting a transaction v2 on Vega
+// Response for submitting a transaction on the network.
 type SubmitTransactionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Success will be true if the transaction was accepted by the node,
-	// **Important** - success does not mean that the event is confirmed by consensus
+	// Whether or not the transaction was validated and submitted to the chain's mempool.
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	// Hash of the transaction, if accepted
+	// Hash of the transaction, which can be used to identify the transaction in a node's event stream.
 	TxHash string `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	// Result code for success if unsuccessful
+	// Error code to indicate the category of failure if the transaction was not successfully submitted.
 	Code uint32 `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
-	// Data for details
+	// Further details for why the transaction was not successfully submitted.
 	Data string `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
-	Log  string `protobuf:"bytes,5,opt,name=log,proto3" json:"log,omitempty"`
-	// Height for commit
+	// Further details for the underlying consensus layer of the result of the transaction.
+	Log string `protobuf:"bytes,5,opt,name=log,proto3" json:"log,omitempty"`
+	// Unused.
 	Height int64 `protobuf:"varint,6,opt,name=height,proto3" json:"height,omitempty"`
 }
 
@@ -418,7 +416,7 @@ type CheckTransactionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Bundle of signed payload and signature, to form a transaction that would be submitted to the Vega blockchain
+	// Transaction containing a command to be checked on the network, and not added to the chain's mempool.
 	Tx *v1.Transaction `protobuf:"bytes,1,opt,name=tx,proto3" json:"tx,omitempty"`
 }
 
@@ -466,19 +464,19 @@ type CheckTransactionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Success will be true if the transaction was checked by the node
+	// Whether or not the transaction passed the submission checks.
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	// Check code result
+	// Error code to indicate the category of failure if the transaction was not successfully checked.
 	Code uint32 `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
-	// Gas wanted for transaction
+	// Amount of space in a block that the transaction will fill. This does not relate to any monetary cost for submitting the transaction.
 	GasWanted int64 `protobuf:"varint,3,opt,name=gas_wanted,json=gasWanted,proto3" json:"gas_wanted,omitempty"`
-	// Gas used for transaction
+	// Unused.
 	GasUsed int64 `protobuf:"varint,4,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
-	// Data for details
+	// Further details for why the transaction was not successfully submitted.
 	Data string `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
-	// Transaction log
+	// Further details for the underlying consensus layer of the result of the transaction.
 	Log string `protobuf:"bytes,6,opt,name=log,proto3" json:"log,omitempty"`
-	// Information about the transaction
+	// Unused.
 	Info string `protobuf:"bytes,7,opt,name=info,proto3" json:"info,omitempty"`
 }
 
@@ -627,15 +625,18 @@ type SubmitRawTransactionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Success will be true if the transaction was accepted by the node,
-	// **Important** - success does not mean that the event is confirmed by consensus
+	// Whether or not the transaction was validated and submitted to the chain's mempool.
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	// Hash of the transaction, if accepted
+	// Hash of the transaction, which can be used to identify the transaction in a node's event stream.
 	TxHash string `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	Code   uint32 `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
-	Data   string `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
-	Log    string `protobuf:"bytes,5,opt,name=log,proto3" json:"log,omitempty"`
-	Height int64  `protobuf:"varint,6,opt,name=height,proto3" json:"height,omitempty"`
+	// Error code to indicate the category of failure if the transaction was not successfully submitted.
+	Code uint32 `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
+	// Further details for why the transaction was not successfully submitted.
+	Data string `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
+	// Further details for the underlying consensus layer of the result of the transaction.
+	Log string `protobuf:"bytes,5,opt,name=log,proto3" json:"log,omitempty"`
+	// Unused.
+	Height int64 `protobuf:"varint,6,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *SubmitRawTransactionResponse) Reset() {
@@ -767,19 +768,19 @@ type CheckRawTransactionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Success will be true if the transaction was checked by the node
+	// Whether or not the transaction passed the submission checks.
 	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	// Check code result
+	// Error code to indicate the category of failure if the transaction was not successfully submitted.
 	Code uint32 `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
-	// Gas wanted for transaction
+	// Amount of space in a block that the transaction will fill. This does not relate to any monetary cost for submitting the transaction.
 	GasWanted int64 `protobuf:"varint,3,opt,name=gas_wanted,json=gasWanted,proto3" json:"gas_wanted,omitempty"`
-	// Gas used for transaction
+	// Unused.
 	GasUsed int64 `protobuf:"varint,4,opt,name=gas_used,json=gasUsed,proto3" json:"gas_used,omitempty"`
-	// Data for details
+	// Further details for why the transaction was not successfully checked.
 	Data string `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
-	// Transaction log
+	// Further details for the underlying consensus layer of the result of the transaction.
 	Log string `protobuf:"bytes,6,opt,name=log,proto3" json:"log,omitempty"`
-	// Information about the transaction
+	// Unused
 	Info string `protobuf:"bytes,7,opt,name=info,proto3" json:"info,omitempty"`
 }
 
