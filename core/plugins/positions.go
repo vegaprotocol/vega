@@ -150,8 +150,8 @@ func (p *Positions) handleFundingPayments(e FP) {
 		if !ok {
 			continue
 		}
-		pos.UnrealisedPnl = pos.UnrealisedPnl.Add(amt)
-		pos.UnrealisedPnlFP = pos.UnrealisedPnlFP.Add(amt)
+		pos.RealisedPnl = pos.RealisedPnl.Add(amt)
+		pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amt)
 		partyPos[pay.PartyId] = pos
 	}
 	p.data[marketID] = partyPos
