@@ -352,6 +352,7 @@
 - [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
 - [9871](https://github.com/vegaprotocol/vega/issues/9871) - Fix panic on snapshot after market termination following protocol upgrade.
 - [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
+- [9894](https://github.com/vegaprotocol/vega/issues/9894) - Reset distress party position in market activity tracker.
 
 ## 0.72.1
 

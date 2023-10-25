@@ -2619,7 +2619,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(ctx, trade, confirmation.PassiveOrdersAffected[idx])
 			// record the updated passive side's position
-			m.marketActivityTracker.RecordPosition(m.settlementAsset, confirmation.PassiveOrdersAffected[idx].Party, m.mkt.ID, int64(trade.Size), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
+			partyPos, _ := m.position.GetPositionByPartyID(confirmation.PassiveOrdersAffected[idx].Party)
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, confirmation.PassiveOrdersAffected[idx].Party, m.mkt.ID, partyPos.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
 
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), now); err != nil {
 				m.log.Debug("unable record open interest",
@@ -2654,6 +2655,11 @@ func (m *Market) finalizePartiesCloseOut(
 	m.settlement.RemoveDistressed(ctx, closed)
 	// then from positions
 	closedMPs = m.position.RemoveDistressed(closedMPs)
+	for _, mp := range closedMPs {
+		// record the updated closed out party's position
+		m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, 0, mp.Price(), m.positionFactor, m.timeService.GetTimeNow())
+	}
+
 	// finally remove from collateral (moving funds where needed)
 	movements, err := m.collateral.RemoveDistressed(
 		ctx, closedMPs, m.GetID(), m.settlementAsset)
