@@ -509,6 +509,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get information about a party's vesting and locked balances
 	GetVestingBalancesSummary(ctx context.Context, in *GetVestingBalancesSummaryRequest, opts ...grpc.CallOption) (*GetVestingBalancesSummaryResponse, error)
+	// Get vesting balance statistics
+	//
+	// Get information about a party's vesting rewards
+	GetPartyVestingStats(ctx context.Context, in *GetPartyVestingStatsRequest, opts ...grpc.CallOption) (*GetPartyVestingStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1912,6 +1916,15 @@ func (c *tradingDataServiceClient) GetVestingBalancesSummary(ctx context.Context
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetPartyVestingStats(ctx context.Context, in *GetPartyVestingStatsRequest, opts ...grpc.CallOption) (*GetPartyVestingStatsResponse, error) {
+	out := new(GetPartyVestingStatsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetPartyVestingStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2443,6 +2456,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get information about a party's vesting and locked balances
 	GetVestingBalancesSummary(context.Context, *GetVestingBalancesSummaryRequest) (*GetVestingBalancesSummaryResponse, error)
+	// Get vesting balance statistics
+	//
+	// Get information about a party's vesting rewards
+	GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2842,6 +2859,9 @@ func (UnimplementedTradingDataServiceServer) GetVolumeDiscountStats(context.Cont
 }
 func (UnimplementedTradingDataServiceServer) GetVestingBalancesSummary(context.Context, *GetVestingBalancesSummaryRequest) (*GetVestingBalancesSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVestingBalancesSummary not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPartyVestingStats not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4874,6 +4894,24 @@ func _TradingDataService_GetVestingBalancesSummary_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetPartyVestingStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPartyVestingStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetPartyVestingStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetPartyVestingStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetPartyVestingStats(ctx, req.(*GetPartyVestingStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5295,6 +5333,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVestingBalancesSummary",
 			Handler:    _TradingDataService_GetVestingBalancesSummary_Handler,
+		},
+		{
+			MethodName: "GetPartyVestingStats",
+			Handler:    _TradingDataService_GetPartyVestingStats_Handler,
 		},
 		{
 			MethodName: "Ping",

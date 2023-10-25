@@ -581,6 +581,10 @@ func (r *VegaResolverRoot) TransferNode() TransferNodeResolver {
 	return (*transferNodeResolver)(r)
 }
 
+func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
+	return (*partyVestingStatsResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
@@ -1835,6 +1839,20 @@ func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.N
 // BEGIN: Party Resolver
 
 type myPartyResolver VegaResolverRoot
+
+func (r *myPartyResolver) VestingStats(
+	ctx context.Context,
+	obj *vega.Party,
+) (*v2.GetPartyVestingStatsResponse, error) {
+	res, err := r.r.clt2.GetPartyVestingStats(ctx, &v2.GetPartyVestingStatsRequest{
+		PartyId: obj.Id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
 
 func (r *myPartyResolver) VestingBalancesSummary(
 	ctx context.Context,

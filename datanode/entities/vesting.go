@@ -30,15 +30,11 @@ type (
 		VegaTime          time.Time
 	}
 
-	VestingStatsCursor struct {
-		VegaTime time.Time
-		AtEpoch  uint64
-	}
-
 	PartyVestingStats struct {
 		RewardBonusMultiplier num.Decimal
-		PartyID               string
+		PartyID               PartyID
 		VegaTime              time.Time
+		AtEpoch               uint64
 	}
 )
 
@@ -52,8 +48,9 @@ func NewVestingStatsFromProto(vestingStatsProto *eventspb.VestingStatsUpdated, v
 
 		partyStats = append(partyStats, &PartyVestingStats{
 			RewardBonusMultiplier: multiplier,
-			PartyID:               stat.PartyId,
+			PartyID:               PartyID(stat.PartyId),
 			VegaTime:              vegaTime,
+			AtEpoch:               vestingStatsProto.AtEpoch,
 		})
 	}
 
