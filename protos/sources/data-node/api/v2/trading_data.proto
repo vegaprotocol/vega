@@ -1687,9 +1687,12 @@ message ListTransfersRequest {
   // Restrict transfer to those where the given public key is a sender or receiver.
   optional string pubkey = 1;
   // Restrict transfers to those in the given direction from the supplied public key.
+  // When is_reward is true, and pubkey is set, then direction MUST be TRANSFER_DIRECTION_DIRECTION_FROM.
   TransferDirection direction = 2;
   // Optional pagination control
   optional Pagination pagination = 3;
+  // Optional filter to return only reward transfers.
+  optional bool is_reward = 4;
 }
 
 // Response that is received when listing  transfers

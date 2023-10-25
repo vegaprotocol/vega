@@ -112,6 +112,7 @@ func (r *allResolver) transfersConnection(
 	partyID *string,
 	direction *TransferDirection,
 	pagination *v2.Pagination,
+	isReward *bool,
 ) (*v2.TransferConnection, error) {
 	// if direction is nil just default to ToOrFrom
 	if direction == nil {
@@ -133,6 +134,7 @@ func (r *allResolver) transfersConnection(
 		Pubkey:     partyID,
 		Direction:  transferDirection,
 		Pagination: pagination,
+		IsReward:   isReward,
 	})
 	if err != nil {
 		return nil, err

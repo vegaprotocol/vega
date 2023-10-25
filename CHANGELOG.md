@@ -171,6 +171,7 @@
 - [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
 - [9876](https://github.com/vegaprotocol/vega/issues/9876) - Disable teams support in transfers and referral sets. 
 - [8056](https://github.com/vegaprotocol/vega/issues/8056) - Add transfer fees event.
+- [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
 
 ### 🐛 Fixes
 

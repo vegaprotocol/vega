@@ -295,3 +295,37 @@ func (t *Transfers) getTransfers(ctx context.Context, pagination entities.Cursor
 
 	return transfers, pageInfo, nil
 }
+
+func (t *Transfers) GetAllRewards(ctx context.Context, pagination entities.CursorPagination) ([]entities.Transfer, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetAllRewards")()
+	var (
+		pageInfo  entities.PageInfo
+		err       error
+		transfers []entities.Transfer
+	)
+	query := `SELECT * FROM transfers_current WHERE transfer_type = $1 AND dispatch_strategy->>metric > 0`
+	params := []any{entities.Recurring}
+	query, params, err = PaginateQuery[entities.TransferCursor](query, params, transfersOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+	if err = pgxscan.Select(ctx, t.Connection, &transfers, query, params...); err != nil {
+		return nil, pageInfo, fmt.Errorf("getting transfers: %w", err)
+	}
+	transfers, pageInfo = entities.PageEntities[*v2.TransferEdge](transfers, pagination)
+
+	return transfers, pageInfo, nil
+}
+
+func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) ([]entities.Transfer,
+	entities.PageInfo, error,
+) {
+	defer metrics.StartSQLQuery("Transfers", "GetRewardTransfersFromParty")()
+	transfers, pageInfo, err := t.getTransfers(ctx, pagination,
+		"where transfer_type = $1 AND dispatch_strategy->>metric > 0 AND transfers_current.from_account_id  in (select id from accounts where accounts.party_id=$2)", entities.Recurring, partyID)
+	if err != nil {
+		return nil, entities.PageInfo{}, fmt.Errorf("getting transfers from party:%w", err)
+	}
+
+	return transfers, pageInfo, nil
+}
