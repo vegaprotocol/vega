@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -452,7 +451,7 @@ func (p *Store) addHistorySegment(ctx context.Context, zipFilePath string, metad
 
 func (p *Store) zipSegmentDataWithMetadata(segmentDataDir string, metadata segment.MetaData) (string, error) {
 	// Create a temporary zip file for including the metadata JSON file
-	tmpfile, err := ioutil.TempFile("", metadata.ZipFileName())
+	tmpfile, err := os.CreateTemp("", metadata.ZipFileName())
 	if err != nil {
 		return "", fmt.Errorf("failed add history segment; unable to create temp file:%w", err)
 	}
