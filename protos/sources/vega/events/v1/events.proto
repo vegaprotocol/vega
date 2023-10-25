@@ -928,6 +928,8 @@ message ReferralSetStatsUpdated {
   string rewards_multiplier = 6;
   // Rewards factor multiplier for the trades.
   string rewards_factor_multiplier = 7;
+  // Indicates if the referral set was eligible to be part of the referral program.
+  bool was_eligible = 8;
 }
 
 message RefereeStats {

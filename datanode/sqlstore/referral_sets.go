@@ -140,11 +140,20 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 
 	_, err := rs.Connection.Exec(
 		ctx,
-		`INSERT INTO referral_set_stats(set_id, at_epoch, referral_set_running_notional_taker_volume, referees_stats, vega_time, reward_factor,
-                               										rewards_multiplier, rewards_factor_multiplier)
-			values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		`INSERT INTO referral_set_stats(
+			   set_id,
+			   at_epoch,
+			   was_eligible,
+			   referral_set_running_notional_taker_volume,
+			   referees_stats,
+			   vega_time,
+			   reward_factor,
+				rewards_multiplier,
+			   rewards_factor_multiplier)
+			values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		stats.SetID,
 		stats.AtEpoch,
+		stats.WasEligible,
 		stats.ReferralSetRunningNotionalTakerVolume,
 		refereesStats,
 		stats.VegaTime,
@@ -166,6 +175,7 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
 
 	query = `SELECT set_id,
 					at_epoch,
+					was_eligible,
        				vega_time,
        				referral_set_running_notional_taker_volume,
        				reward_factor,

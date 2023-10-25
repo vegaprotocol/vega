@@ -174,6 +174,7 @@
 - [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
 - [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
+- [9827](https://github.com/vegaprotocol/vega/issues/9827) - Expose `was_eligible` in the referral set statistics.
 
 ### 🐛 Fixes
 
