@@ -5088,7 +5088,7 @@ type ListTransfersRequest struct {
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Restict transfers to those related to reward transfers.
+	// Restrict transfers to those related to reward transfers.
 	IsReward *bool `protobuf:"varint,4,opt,name=is_reward,json=isReward,proto3,oneof" json:"is_reward,omitempty"`
 }
 
