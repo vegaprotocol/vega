@@ -72,8 +72,7 @@ var (
 
 	fromEventsIntervalToHistoryTableDelta []map[string]tableDataSummary
 
-	snapshotsBackupDir string
-	eventsDir          string
+	eventsDir string
 
 	goldenSourceHistorySegment map[int64]segment.Full
 
@@ -113,12 +112,6 @@ func TestMain(m *testing.M) {
 	sqlFs = clonedMigrationsFs
 
 	highestOriginalMigrationVersion = testMigrationVersion - 1
-
-	snapshotsBackupDir, err = os.MkdirTemp("", "snapshotbackup")
-	if err != nil {
-		exitErr(log, fmt.Errorf("could not create temporary directory for snapshot backup: %w", err))
-	}
-	defer os.RemoveAll(snapshotsBackupDir)
 
 	eventsDir, err = os.MkdirTemp("", "eventsdir")
 	if err != nil {
@@ -191,12 +184,15 @@ func TestMain(m *testing.M) {
 
 			snapshots = append(snapshots, ss)
 
+			log.Infof("PUH - ZIP FILE PATH: %s", ss.ZipFilePath())
+
 			md5Hash, err := fsutil.Md5Hash(ss.ZipFilePath())
 			if err != nil {
 				return fmt.Errorf("failed to get snapshot hash: %w", err)
 			}
 
 			fromEventHashes = append(fromEventHashes, md5Hash)
+			log.Infof("PUH - HASHES LEN %d", len(fromEventHashes))
 
 			if err := updateAllContinuousAggregateData(ctx); err != nil {
 				return fmt.Errorf("could not update all continuous aggregate data: %w", err)
@@ -218,12 +214,16 @@ func TestMain(m *testing.M) {
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
+
+					log.Infof("PRE - ZIP FILE PATH: %s", lastSnapshot.ZipFilePath())
+
 					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash: %w", err))
 					}
 
 					fromEventHashes = append(fromEventHashes, md5Hash)
+					log.Infof("PRE - HASHES LEN %d", len(fromEventHashes))
 
 					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -277,7 +277,10 @@ func TestMain(m *testing.M) {
 						panic(fmt.Errorf("failed to get snapshot hash: %w", err))
 					}
 
+					log.Infof("POST - ZIP FILE PATH: %s", lastSnapshot.ZipFilePath())
+
 					fromEventHashes = append(fromEventHashes, md5Hash)
+					log.Infof("POST - HASHES LEN %d", len(fromEventHashes))
 
 					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -399,8 +402,9 @@ func updateAllContinuousAggregateData(ctx context.Context) error {
 
 	err = snapshot.UpdateContinuousAggregateDataFromHighWaterMark(ctx, networkHistoryConnPool, blockSpan.ToHeight)
 	if err != nil {
-		return fmt.Errorf("could not update continuous aggregate to height %d : %w", blockSpan.ToHeight, err)
+		return fmt.Errorf("could not update continuous aggregate to height %d: %w", blockSpan.ToHeight, err)
 	}
+
 	return nil
 }
 
@@ -922,14 +926,15 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 }
 
 func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	require.NoError(t, networkHistoryStore.ResetIndex())
-
 	var err error
+
 	log := logging.NewTestLogger()
 
-	emptyDatabaseAndSetSchemaVersion(log, 0)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	require.NoError(t, networkHistoryStore.ResetIndex())
+	require.NoError(t, emptyDatabaseAndSetSchemaVersion(log, 0))
 
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 2000)
 	require.NoError(t, err)
@@ -939,14 +944,14 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	inputSnapshotService := setupSnapshotService(log, snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
-	segments, err := networkhistoryService.ListAllHistorySegments()
+	networkHistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
+	segments, err := networkHistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
 	chunk, err := segments.MostRecentContiguousHistory()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
@@ -964,7 +969,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	puh := networkhistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 		func(ctx context.Context, chainID string, toHeight int64) error {
-			return networkhistoryService.CreateAndPublishSegment(ctx, chainID, toHeight)
+			return networkHistoryService.CreateAndPublishSegment(ctx, chainID, toHeight)
 		})
 
 	var lastCommittedBlockHeight int64
@@ -983,23 +988,25 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	assert.Equal(t, int64(2500), lastCommittedBlockHeight)
 
-	err = migrateUpToDatabaseVersion(testMigrationVersionNum)
-	require.NoError(t, err)
+	require.NoError(t, migrateUpToDatabaseVersion(testMigrationVersionNum))
 
 	// After protocol upgrade restart the broker
 	sqlBroker, err = setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
-			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				if lastCommittedBlockHeight == 3000 {
-					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
-					require.NoError(t, err)
-					waitForSnapshotToComplete(ss)
-
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
-					require.NoError(t, err)
-					cancelFn()
-				}
+			if lastCommittedBlockHeight != 3000 {
+				return
 			}
+
+			ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+			require.NoError(t, err)
+
+			waitForSnapshotToComplete(ss)
+
+			log.Infof("SQL BROKER - ZIP FILE PATH: %s", ss.ZipFilePath())
+
+			snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
+			require.NoError(t, err)
+			cancelFn()
 		},
 		evtSource, networkhistory.NewProtocolUpgradeHandler(log, service.NewProtocolUpgrade(nil, log), evtSource,
 			func(ctx context.Context, chainID string, toHeight int64) error {
@@ -1015,7 +1022,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	require.Equal(t, fromEventHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
-	updateAllContinuousAggregateData(ctx)
+	require.NoError(t, updateAllContinuousAggregateData(ctx))
 
 	databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
@@ -1321,24 +1328,22 @@ func setupSQLBroker(
 		return nil, err
 	}
 	go func() {
-		for range ctx.Done() {
-			transactionalConnectionSource.Close()
-		}
+		<-ctx.Done()
+		transactionalConnectionSource.Close()
 	}()
 
 	candlesV2Config := candlesv2.NewDefaultConfig()
 	subscribers := start.SQLSubscribers{}
 	subscribers.CreateAllStores(ctx, logging.NewTestLogger(), transactionalConnectionSource, candlesV2Config.CandleStore)
-	err = subscribers.SetupServices(ctx, logging.NewTestLogger(), candlesV2Config)
-	if err != nil {
-		return nil, err
+	if err := subscribers.SetupServices(ctx, logging.NewTestLogger(), candlesV2Config); err != nil {
+		return nil, fmt.Errorf("could not setup services on SQL subscribers: %w", err)
 	}
 
 	subscribers.SetupSQLSubscribers()
 
 	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create block store: %w", err)
+		return nil, fmt.Errorf("could not create blocks store: %w", err)
 	}
 
 	config := broker.NewDefaultConfig()

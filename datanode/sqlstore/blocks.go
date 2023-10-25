@@ -32,17 +32,12 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
-)
-
-var (
-	ErrBlockWaitTimedout = errors.New("Timed out waiting for TimeUpdate event")
-	BlockWaitTimeout     = 5 * time.Second
 )
 
 type Blocks struct {
