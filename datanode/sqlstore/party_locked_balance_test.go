@@ -25,6 +25,8 @@ func setupPartyLockedBalanceTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Part
 func TestPruneLockedBalance(t *testing.T) {
 	_, plbs := setupPartyLockedBalanceTest(t)
 
+	ctx := tempTransaction(t)
+
 	const (
 		party1 = "bd90685fffad262d60edafbf073c52769b1cf55c3d467a078cda117c3b05b677"
 		asset1 = "493eb5ee83ea22e45dfd29ef495b9292089dcf85ca9979069ede7d486d412d8f"
@@ -62,26 +64,25 @@ func TestPruneLockedBalance(t *testing.T) {
 		}
 
 		for _, v := range balances {
-			require.NoError(t, plbs.Add(context.Background(), v))
+			require.NoError(t, plbs.Add(ctx, v))
 		}
 
 		// ensure we can still get them
 
 		entitis, err := plbs.Get(
-			context.Background(), ptr.From(entities.PartyID(party1)), nil)
+			ctx, ptr.From(entities.PartyID(party1)), nil)
 		require.NoError(t, err)
 		require.Len(t, entitis, 3)
 
 		// try prunce, should be no-op
-		err = plbs.Prune(context.Background(), 10)
+		err = plbs.Prune(ctx, 10)
 		assert.NoError(t, err)
 
 		// still same stuff in the DB
 		entitis, err = plbs.Get(
-			context.Background(), ptr.From(entities.PartyID(party1)), nil)
+			ctx, ptr.From(entities.PartyID(party1)), nil)
 		require.NoError(t, err)
 		require.Len(t, entitis, 3)
-
 	})
 
 	now = now.Add(24 * time.Hour).Truncate(time.Millisecond)
@@ -115,13 +116,13 @@ func TestPruneLockedBalance(t *testing.T) {
 		}
 
 		for _, v := range balances {
-			require.NoError(t, plbs.Add(context.Background(), v))
+			require.NoError(t, plbs.Add(ctx, v))
 		}
 
 		// ensure we can still get them
 
 		entitis, err := plbs.Get(
-			context.Background(), ptr.From(entities.PartyID(party1)), nil)
+			ctx, ptr.From(entities.PartyID(party1)), nil)
 		require.NoError(t, err)
 		require.Len(t, entitis, 3)
 
@@ -135,14 +136,12 @@ func TestPruneLockedBalance(t *testing.T) {
 		// assume we are moving a couple of epoch later, we should have only
 		// 2 locked balances left
 
-		require.NoError(t, plbs.Prune(context.Background(), 16))
+		require.NoError(t, plbs.Prune(ctx, 16))
 		entitis, err := plbs.Get(
-			context.Background(), ptr.From(entities.PartyID(party1)), nil)
+			ctx, ptr.From(entities.PartyID(party1)), nil)
 		require.NoError(t, err)
 		require.Len(t, entitis, 2)
-
 	})
-
 }
 
 func TestPartyLockedBalance_Add(t *testing.T) {
