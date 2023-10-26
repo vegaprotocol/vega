@@ -599,19 +599,17 @@ func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referra
 	referralInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(referralDiscountFactor).Floor())
 	referralLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(referralDiscountFactor).Floor())
 
-	// apply referral discounts
-	mf = mf.Sub(mf, referralMakerDiscount)
-	inf = inf.Sub(inf, referralInfDiscount)
-	lf = lf.Sub(lf, referralLfDiscount)
-
 	// calculate volume discounts
 	volumeMakerDiscount, _ := num.UintFromDecimal(mf.ToDecimal().Mul(volumeDiscountFactor).Floor())
 	volumeInfDiscount, _ := num.UintFromDecimal(inf.ToDecimal().Mul(volumeDiscountFactor).Floor())
 	volumeLfDiscount, _ := num.UintFromDecimal(lf.ToDecimal().Mul(volumeDiscountFactor).Floor())
 
-	// apply volume discounts
+	// apply discounts
+	mf = mf.Sub(mf, referralMakerDiscount)
 	mf = mf.Sub(mf, volumeMakerDiscount)
+	inf = inf.Sub(inf, referralInfDiscount)
 	inf = inf.Sub(inf, volumeInfDiscount)
+	lf = lf.Sub(lf, referralLfDiscount)
 	lf = lf.Sub(lf, volumeLfDiscount)
 
 	f := &types.Fee{

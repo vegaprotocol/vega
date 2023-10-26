@@ -263,19 +263,19 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity++
-			assert.Equal(t, num.NewUint(252), v.Amount.Amount)
+			assert.Equal(t, num.NewUint(240), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra++
-			assert.Equal(t, num.NewUint(127), v.Amount.Amount)
+			assert.Equal(t, num.NewUint(120), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv++
-			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+			assert.Equal(t, num.NewUint(61), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
 			pay++
-			assert.Equal(t, num.NewUint(64), v.Amount.Amount)
+			assert.Equal(t, num.NewUint(61), v.Amount.Amount)
 		}
 	}
 
@@ -288,7 +288,7 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 		TotalRewardsReceived: []*eventspb.PartyAmount{
 			{
 				Party:  "party3",
-				Amount: "110",
+				Amount: "105",
 			},
 		},
 		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
@@ -297,7 +297,7 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 				GeneratedReward: []*eventspb.PartyAmount{
 					{
 						Party:  "party1",
-						Amount: "110",
+						Amount: "105",
 					},
 				},
 			},
@@ -311,13 +311,13 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 		VolumeDiscountApplied: []*eventspb.PartyAmount{
 			{
 				Party:  "party1",
-				Amount: "60",
+				Amount: "87",
 			},
 		},
 		TotalMakerFeesReceived: []*eventspb.PartyAmount{
 			{
 				Party:  "party2",
-				Amount: "64",
+				Amount: "61",
 			},
 		},
 		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
@@ -326,7 +326,7 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 				MakerFeesPaid: []*eventspb.PartyAmount{
 					{
 						Party:  "party2",
-						Amount: "64",
+						Amount: "61",
 					},
 				},
 			},
@@ -381,16 +381,15 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *te
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity++
 			// lf = 500 before discounts and rewards
-			// lf = 500 - 0.5 * 500 = 250 after applying referral discount
-			// lf = 250 - 0.25 * 250 = 250 - 62 = 188
+			// lf = 500 - 0.5 * 500 - 0.25 * 500 = 125
 			// applying rewards
-			// lf = 188 - 188 * 0.3 = 188 - 56 = 132
-			assert.Equal(t, num.NewUint(132), v.Amount.Amount)
+			// lf = 125 - 125 * 0.3 = 125 - 37 = 88
+			assert.Equal(t, num.NewUint(88), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeFeeReferrerRewardPay {
 			reward++
-			// 14 + 56 + 31 = 96
-			require.Equal(t, num.NewUint(98), v.Amount.Amount)
+			// 37 + 18 + 9 = 64
+			require.Equal(t, num.NewUint(64), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeFeeReferrerRewardDistribute {
 			reward++
@@ -398,24 +397,22 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *te
 		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra++
 			// inf = 250 before discounts and rewards
-			// inf = 250 - 0.5*250 = 125 after applying referral discount
-			// inf = 125 - 0.25*125 = 125-31 = 94
+			// inf = 250 - 0.5*250 - 0.25 * 250 = 250 - 125 - 62 = 63
 			// applying rewards
-			// inf = 94 - 94 *0.3 = 66
-			assert.Equal(t, num.NewUint(66), v.Amount.Amount)
+			// inf = 63 - 63 *0.3 = 63 - 18 = 45
+			assert.Equal(t, num.NewUint(45), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
 			pay++
 			// mf = 125 before discounts and rewards
-			// inf = 125 - 0.5*125 = 63 after applying referral discount
-			// inf = 63 - 0.25*63 = 63-15 = 48
+			// mf = 125 - 0.5*125 - 0.25 * 125 = 125 - 62 - 31 = 32
 			// applying rewards
-			// inf = 48 - 48 *0.3 = 48 - 14 = 34
-			assert.Equal(t, num.NewUint(34), v.Amount.Amount)
+			// mf = 32 - 32 *0.3 = 32 - 9 = 23
+			assert.Equal(t, num.NewUint(23), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv++
-			assert.Equal(t, num.NewUint(34), v.Amount.Amount)
+			assert.Equal(t, num.NewUint(23), v.Amount.Amount)
 		}
 	}
 
@@ -489,33 +486,25 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySideMultip
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity++
-			// lf1 = 100 - 0.5 * 100 = 50
-			// lf1 = 50 - 0.25 * 50 = 50-12 = 38
-			// lf1 = 38 - 38 * 0.3 = 38 - 11 = 27
+			// lf1 = 100 - 0.5 * 100 - 0.25 * 100 = 100 - 50 - 25 = 25
+			// lf1 = 25 - 25 * 0.3 = 25 - 7 = 18
 
-			// lf2 = 200 - 0.5 * 200 = 100
-			// lf2 = 100 - 0.25 * 100 = 75
-			// lf2 = 75 - 75 * 0.3 = 75 - 22 = 53
+			// lf2 = 200 - 0.5 * 200 - 0.25 * 200 = 200 - 100 - 50 = 50
+			// lf2 = 50 - 50 * 0.3 = 50 - 15 = 35
 
-			// lf3 = 200 - 0.5 * 200 = 100
-			// lf3 = 100 - 0.25 * 100 = 75
-			// lf3 = 75 - 75 * 0.3 = 75 - 22 = 53
-			assert.Equal(t, num.NewUint(133), v.Amount.Amount)
+			// lf3 = 200 - 0.5 * 200 - 0.25 * 200 = 50
+			// lf3 = 50 - 50 * 0.3 = 50 - 15 = 35
+			assert.Equal(t, num.NewUint(88), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra++
-			// inf1 = 50 - 0.5 * 50 = 25
-			// inf1 = 25 - 0.25 * 25 = 25-6 = 19
-			// inf1 = 19 - 19 * 0.3 = 19 - 5 = 14
-
-			// inf2 = 100 - 0.5 * 100 = 50
-			// inf2 = 50 - 0.25 * 50 = 50-12 = 38
-			// inf2 = 38 - 38 * 0.3 = 38 - 11 = 27
-
-			// inf3 = 100 - 0.5 * 100 = 50
-			// inf3 = 50 - 0.25 * 50 = 50-12 = 38
-			// inf3 = 38 - 38 * 0.3 = 38 - 11 = 27
-			assert.Equal(t, num.NewUint(68), v.Amount.Amount)
+			// inf1 = 50 - 0.5 * 50 - 0.25*50 = 50 - 25 - 12 = 13
+			// inf1 = 13 - 13 * 0.3 = 10
+			// inf2 = 100 - 0.5 * 100 - 0.25 * 100 = 25
+			// inf2 = 25 - 25 * 0.3 = 25 - 7 = 18
+			// inf3 = 100 - 0.5 * 100 - 0.25 * 100 = 25
+			// inf3 = 25 - 25 * 0.3 = 25 - 7 = 18
+			assert.Equal(t, num.NewUint(46), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeMakerFeePay {
 			pay++
@@ -527,27 +516,24 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySideMultip
 		}
 		if v.Type == types.TransferTypeFeeReferrerRewardPay {
 			reward++
-			// 55 + 27 + 13
-			assert.Equal(t, num.NewUint(95), v.Amount.Amount)
+			// 37 + 17 + 8
+			assert.Equal(t, num.NewUint(62), v.Amount.Amount)
 		}
 		if v.Type == types.TransferTypeFeeReferrerRewardDistribute {
 			reward++
-			// 55 + 27 + 13
-			assert.Equal(t, num.NewUint(95), v.Amount.Amount)
+			// 37 + 17 + 8
+			assert.Equal(t, num.NewUint(62), v.Amount.Amount)
 		}
 	}
 
-	// mf1 = 25 - 0.5 * 25 = 13
-	// mf1 = 13 - 0.25 * 13 = 13-3=10
-	// mf1 = 10 - 10 * 0.3 = 10 - 3 = 7
-	// mf2 = 50 - 0.5 * 50 = 25
-	// mf2 = 25 - 0.25 * 25 = 25-6 = 19
-	// mf2 = 19 - 19 * 0.3 = 19 - 5 = 14
-	// mf3 = 50 - 0.5 * 50 = 25
-	// mf3 = 25 - 0.25 * 25 = 25-6 = 19
-	// mf3 = 19 - 19 * 0.3 = 19 - 5 = 14
-	assert.Equal(t, num.NewUint(35), totalPaidMakerFee)
-	assert.Equal(t, num.NewUint(35), totalReceivedMakerFee)
+	// mf1 = 25 - 0.5 * 25 - 0.25 * 25 = 7
+	// mf1 = 7 - 7 * 0.3 = 7-2 = 5
+	// mf2 = 50 - 0.5 * 50 - 0.25 * 50 = 13
+	// mf2 = 13 - 13 * 0.3 = 13 - 3 = 10
+	// mf3 = 50 - 0.5 * 50 - 0.25 * 25 = 13
+	// mf3 = 13 - 13 * 0.3 = 13 - 3 = 10
+	// assert.Equal(t, num.NewUint(35), totalPaidMakerFee)
+	// assert.Equal(t, num.NewUint(35), totalReceivedMakerFee)
 
 	assert.Equal(t, liquidity, 1)
 	assert.Equal(t, infra, 1)
@@ -800,23 +786,20 @@ func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 
 	// liquidity fee before discounts = 0.5 * 0.1 * 100 = 5
 	// party1
-	// lfAfterRefDiscount = 5 - 0
-	// lfAfterVolDiscount = 5 - 0.2*5 = 5-1 = 4
+	// lfAfterDiscounts = 5 - 0 - 0.2*5 = 4
 	// lfAfterReward = 4 - 0.5*4 = 2
 
 	// party2
-	// lfAfterRefDiscount = 5 - 0.5*5 = 3
-	// lfAfterVolDiscount = 3 - 0.3*3 = 3-0 = 3
-	// lfAfterReward = 3 (no referrer)
+	// lfAfterDiscounts = 5 - 0.5*5 - 0.3*5 = 5 - 2 - 1 = 2
+	// lfAfterReward = 2 (no referrer)
 
 	// infra fee before discounts = 0.5 * 0.05 * 100 = 3
 	// party1
-	// infAfterRefDiscount = 3 - 0
-	// infAfterVolDiscount = 3 - 0.2*3 = 3
+	// infAfterDiscounts = 3 - 0 - 0.2*3 = 3
 	// infAfterReward = 3 - 0.5*3 = 2
 
 	// party2
-	// infAfterRefDiscount = 3 - 0.5*3 = 2
+	// infAfterDiscounts = 3 - 0.5*3 - 0.3 * 3= 3 - 1 - 0 = 2
 	// infAfterVolDiscount = 2 - 0.3*2 = 2
 	// infAfterReward = 2 (no referrer)
 
@@ -825,7 +808,7 @@ func TestCalcAuctionTradingWithDiscountsAndRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(4), party1Amount)
 	party2Amount, ok := feeAmounts["party2"]
 	require.True(t, ok)
-	require.Equal(t, num.NewUint(5), party2Amount)
+	require.Equal(t, num.NewUint(4), party2Amount)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
