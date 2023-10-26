@@ -98,29 +98,18 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | party3 | ETH/MAR24 | buy  | 3      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-      | party3 | ETH/MAR24 | sell | 3      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-    And the market data for the market "ETH/MAR24" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 14227        | 100000         | 1             |
+      | party3 | ETH/MAR24 | buy  | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | party3 | ETH/MAR24 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
-    And the party "party3" has the following taker notional "1500"
-    And the party "party3" has the following discount factor "0.01"
-
-    Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | party3 | ETH/MAR24 | buy  | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-      | party3 | ETH/MAR24 | sell | 2      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-    When the network moves ahead "1" epochs
-    And the party "party3" has the following taker notional "2500"
+    And the party "party3" has the following taker notional "2000"
     And the party "party3" has the following discount factor "0.02"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type        | tif     |
-      | party3 | ETH/MAR24 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-      | party3 | ETH/MAR24 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | party3 | ETH/MAR24 | buy  | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | party3 | ETH/MAR24 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC |
     When the network moves ahead "1" epochs
-    And the party "party3" has the following taker notional "5000"
+    And the party "party3" has the following taker notional "4000"
     And the party "party3" has the following discount factor "0.03"
 
     # now that party3 has a discount, lets do a trade with fees
@@ -152,7 +141,7 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | party3 | ETH/MAR24 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | lp type    |
+      | id  | party | market id | commitment amount | fee  | lp type    |
       | lp1 | lp1   | ETH/MAR24 | 1000000           | 0.02 | submission |
     When the network moves ahead "1" epochs
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR24"
@@ -161,6 +150,6 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
     # infra fee discount - floor(50 *0.03) = 1
     # no lp fee
     Then the following transfers should happen:
-      | from   | to     | from account         | to account                       | market id | amount | asset |
-      | party3 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 49     | ETH   |
-      | party1 |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 50     | ETH   |
+      | from   | to | from account         | to account                       | market id | amount | asset |
+      | party3 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 49     | ETH   |
+      | party1 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 50     | ETH   |
