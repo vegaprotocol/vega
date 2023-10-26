@@ -155,7 +155,6 @@ func (e *Engine) notifyVolumeDiscountProgramEnded(ctx context.Context, epochTime
 }
 
 func (e *Engine) calculatePartiesVolumeForWindow(windowSize int) {
-	windowSizeAsDecimal := num.DecimalFromInt64(int64(windowSize))
 	for pi := range e.parties {
 		total := num.UintZero()
 		for i := 0; i < windowSize; i++ {
@@ -165,7 +164,7 @@ func (e *Engine) calculatePartiesVolumeForWindow(windowSize int) {
 			}
 			total.AddSum(valueForEpoch)
 		}
-		e.avgVolumePerParty[pi] = total.ToDecimal().Div(windowSizeAsDecimal)
+		e.avgVolumePerParty[pi] = total.ToDecimal()
 	}
 }
 
