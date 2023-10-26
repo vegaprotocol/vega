@@ -505,8 +505,8 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
 	tiersLen := len(e.currentProgram.BenefitTiers)
 
-	for setID := range e.sets {
-		set := &types.ReferralSetStats{
+	for setID, set := range e.sets {
+		setStats := &types.ReferralSetStats{
 			AtEpoch:                  epoch,
 			SetID:                    setID,
 			RefereesStats:            map[types.PartyID]*types.RefereeStats{},
@@ -516,21 +516,26 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 
 		for i := tiersLen - 1; i >= 0; i-- {
 			tier := e.currentProgram.BenefitTiers[i]
-			if set.RewardFactor.IsZero() && set.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
-				set.RewardFactor = tier.ReferralRewardFactor
+			if setStats.RewardFactor.IsZero() && setStats.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
+				setStats.RewardFactor = tier.ReferralRewardFactor
 				break
 			}
 		}
 
-		rewardsMultiplier := e.calculateMultiplierForParty(setID)
-		set.RewardsMultiplier = rewardsMultiplier
-		set.RewardsFactorMultiplier = e.calculateRewardsFactorMultiplierForParty(rewardsMultiplier, set.RewardFactor)
+		balance, _ := e.staking.GetAvailableBalance(set.Referrer.PartyID.String())
 
-		e.sets[setID].CurrentRewardFactor = set.RewardFactor
-		e.sets[setID].CurrentRewardsMultiplier = rewardsMultiplier
-		e.sets[setID].CurrentRewardsFactorMultiplier = set.RewardsFactorMultiplier
+		if balance.GTE(e.referralProgramMinStakedVegaTokens) {
+			setStats.WasEligible = true
+		}
 
-		allStats[setID] = set
+		setStats.RewardsMultiplier = e.calculateMultiplierForParty(setID)
+		setStats.RewardsFactorMultiplier = e.calculateRewardsFactorMultiplierForParty(setStats.RewardsMultiplier, setStats.RewardFactor)
+
+		e.sets[setID].CurrentRewardFactor = setStats.RewardFactor
+		e.sets[setID].CurrentRewardsMultiplier = setStats.RewardsMultiplier
+		e.sets[setID].CurrentRewardsFactorMultiplier = setStats.RewardsFactorMultiplier
+
+		allStats[setID] = setStats
 	}
 
 	for party, setID := range e.referees {
@@ -558,7 +563,7 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 		e.factorsByReferee[party] = refereeStats
 		setStats.RefereesStats[party] = refereeStats
 
-		if e.isSetEligible(setID) != nil {
+		if !setStats.WasEligible {
 			continue
 		}
 

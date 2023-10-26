@@ -276,7 +276,7 @@ func testValidOneOffTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
@@ -358,7 +358,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
 
@@ -442,7 +442,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	// Run OnTick with time.Unix(11, 0) and expect nothing.

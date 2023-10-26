@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -60,6 +61,10 @@ func TestTransfersPagination(t *testing.T) {
 	t.Run("should return the last page of results if last is provided", testTransferPaginationLast)
 	t.Run("should return the specified page of results if first and after are provided", testTransferPaginationFirstAfter)
 	t.Run("should return the specified page of results if last and before are provided", testTransferPaginationLastBefore)
+}
+
+func TestRewardTransfers(t *testing.T) {
+	t.Run("Retrieve all reward transfers", testGetAllRewardTransfers)
 }
 
 func TestTrasferByID(t *testing.T) {
@@ -126,7 +131,7 @@ func TestTrasferByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("f%s", err)
 	}
-	retrievedTransferProto, _ := retrieved.ToProto(ctx, accounts)
+	retrievedTransferProto, _ := retrieved.Transfer.ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
 
 	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
@@ -788,14 +793,31 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
-func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.Transfer {
+func testGetAllRewardTransfers(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	transfers := sqlstore.NewTransfers(connectionSource)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
+	rewardTransfers := addRewardTransfers(ctx, t, bs, transfers)
+	// all, including reward transfers
+	got, _, err := transfers.GetAll(ctx, entities.DefaultCursorPagination(true))
+	require.NoError(t, err)
+	require.Equal(t, len(testTransfers)+len(rewardTransfers), len(got))
+	// now only get reward transfers
+	got, _, err = transfers.GetAllRewards(ctx, entities.DefaultCursorPagination(true))
+	require.NoError(t, err)
+	require.Equal(t, len(rewardTransfers), len(got))
+}
+
+func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
 	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	block := addTestBlockForTime(t, ctx, bs, vegaTime)
 	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
-	transfers := make([]entities.Transfer, 0, 10)
+	transfers := make([]entities.TransferDetails, 0, 10)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
 		addTestBlockForTime(t, ctx, bs, vegaTime)
@@ -820,7 +842,51 @@ func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transf
 
 		err := transferStore.Upsert(ctx, &transfer)
 		require.NoError(t, err)
-		transfers = append(transfers, transfer)
+		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
+	}
+
+	return transfers
+}
+
+func addRewardTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
+	t.Helper()
+	vegaTime := time.Now().Truncate(time.Microsecond)
+	block := addTestBlockForTime(t, ctx, bs, vegaTime)
+	accounts := sqlstore.NewAccounts(connectionSource)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+
+	transfers := make([]entities.TransferDetails, 0, 10)
+	for i := 0; i < 10; i++ {
+		vegaTime = vegaTime.Add(time.Second)
+		addTestBlockForTime(t, ctx, bs, vegaTime)
+
+		amount, _ := decimal.NewFromString("10")
+		transfer := entities.Transfer{
+			ID:            entities.TransferID(fmt.Sprintf("abadcafe%02d", i+1)),
+			VegaTime:      vegaTime,
+			FromAccountID: accountFrom.ID,
+			ToAccountID:   accountTo.ID,
+			AssetID:       entities.AssetID(""),
+			Amount:        amount,
+			Reference:     "",
+			Status:        entities.TransferStatusPending,
+			TransferType:  entities.Recurring,
+			DeliverOn:     nil,
+			StartEpoch:    ptr.From(uint64(i + 1)),
+			EndEpoch:      nil,
+			Factor:        nil,
+			DispatchStrategy: &vega.DispatchStrategy{
+				Metric:     vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+				LockPeriod: uint64((i % 7) + 1),
+			},
+		}
+		if (i % 2) == 0 {
+			transfer.TransferType = entities.GovernanceRecurring
+		}
+
+		err := transferStore.Upsert(ctx, &transfer)
+		require.NoError(t, err)
+		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
 	}
 
 	return transfers

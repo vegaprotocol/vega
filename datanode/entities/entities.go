@@ -38,7 +38,7 @@ type Entities interface {
 		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary | SuccessorMarket | StopOrder |
 		LiquidityProvider | FundingPeriod | FundingPeriodDataPoint | ReferralSet | ReferralSetRefereeStats |
 		FlattenReferralSetStats | Team | TeamMember | TeamMemberHistory | FundingPayment | FlattenVolumeDiscountStats |
-		PaidLiquidityFeesStats | CurrentAndPreviousLiquidityProvisions
+		PaidLiquidityFeesStats | CurrentAndPreviousLiquidityProvisions | TransferDetails
 }
 
 type PagedEntity[T proto.Message] interface {

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )

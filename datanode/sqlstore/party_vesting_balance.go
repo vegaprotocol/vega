@@ -35,9 +35,11 @@ func (plb *PartyVestingBalance) Add(ctx context.Context, balance entities.PartyV
 	return err
 }
 
-func (plb *PartyVestingBalance) Get(ctx context.Context, partyID *entities.PartyID, assetID *entities.AssetID) (
-	[]entities.PartyVestingBalance, error,
-) {
+func (plb *PartyVestingBalance) Get(
+	ctx context.Context,
+	partyID *entities.PartyID,
+	assetID *entities.AssetID,
+) ([]entities.PartyVestingBalance, error) {
 	defer metrics.StartSQLQuery("PartyVestingBalance", "Get")()
 	var args []interface{}
 

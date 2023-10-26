@@ -31,7 +31,7 @@ import "testing"
 
 func TestTransfers(t *testing.T) {
 	queries := map[string]string{
-		"Transfers": "{ transfersConnection(direction : To){ edges{ node{ id from fromAccountType to toAccountType amount reference status asset{ id } } } } }",
+		"Transfers": "{ transfersConnection(direction : To){ edges{ node{ transfer { id from fromAccountType to toAccountType amount reference status asset{ id } } } } } }",
 	}
 
 	for name, query := range queries {

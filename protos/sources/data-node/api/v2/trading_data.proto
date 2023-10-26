@@ -856,6 +856,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vesting"};
   }
 
+  // Get vesting balance statistics
+  //
+  // Get information about a party's vesting rewards
+  rpc GetPartyVestingStats(GetPartyVestingStatsRequest) returns (GetPartyVestingStatsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vesting"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -979,6 +986,22 @@ message PageInfo {
   string start_cursor = 3;
   // End cursor.
   string end_cursor = 4;
+}
+
+// Request sent to get statistics about the vesting rewards for a party
+message GetPartyVestingStatsRequest {
+  // Party ID to query the vesting stats for.
+  string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Vesting reward statistics for a given party
+message GetPartyVestingStatsResponse {
+  // Party ID.
+  string party_id = 1;
+  // Reward bonus multiplier.
+  string reward_bonus_multiplier = 2;
+  // Epoch for which this information is valid.
+  uint64 epoch_seq = 3;
 }
 
 // Request sent to list the vesting and locked balances for a party
@@ -1687,9 +1710,12 @@ message ListTransfersRequest {
   // Restrict transfer to those where the given public key is a sender or receiver.
   optional string pubkey = 1;
   // Restrict transfers to those in the given direction from the supplied public key.
+  // When is_reward is true, and pubkey is set, then direction MUST be TRANSFER_DIRECTION_DIRECTION_FROM.
   TransferDirection direction = 2;
-  // Optional pagination control
+  // Pagination controls.
   optional Pagination pagination = 3;
+  // Restrict transfers to those related to reward transfers.
+  optional bool is_reward = 4;
 }
 
 // Response that is received when listing  transfers
@@ -1698,10 +1724,17 @@ message ListTransfersResponse {
   TransferConnection transfers = 1;
 }
 
+message TransferNode {
+  // Data relating to a transfer that has been made.
+  vega.events.v1.Transfer transfer = 1;
+  // Fees paid for this transfer.
+  repeated vega.events.v1.TransferFees fees = 2;
+}
+
 // Transfers data with the corresponding cursor.
 message TransferEdge {
   // Data relating to a transfer that has been made.
-  vega.events.v1.Transfer node = 1;
+  TransferNode node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
 }
@@ -1724,6 +1757,8 @@ message GetTransferRequest {
 message GetTransferResponse {
   // Transfer requested by ID.
   vega.events.v1.Transfer transfer = 1;
+  // Fees paid for this transfer.
+  repeated vega.events.v1.TransferFees fees = 2;
 }
 
 // -- Network Limits --
@@ -3970,6 +4005,8 @@ message ReferralSetStats {
   string rewards_multiplier = 7;
   // Proportion of the referee's taker fees to be rewarded to the referrer.
   string rewards_factor_multiplier = 8;
+  // Indicates if the referral set was eligible to be part of the referral program.
+  bool was_eligible = 9;
 }
 
 // Team record containing the team information.
