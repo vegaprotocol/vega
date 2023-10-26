@@ -285,20 +285,20 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 
 	// party does not exist
 	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p8"))
-	// party is not eligible
+	// volume 900
 	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p1"))
-	// over a window of 2 party2 has 500
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p2"))
-	// over a window of 2 party2 has 500.5
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p3"))
-	// average volume 1000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p4").String())
-	// average volume 1500
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p5").String())
-	// average volume 2000
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p6").String())
-	// average volume 2500
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p7").String())
+	// volume 1000
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").String())
+	// volume 1001
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").String())
+	// volume 2000
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").String())
+	// volume 3000
+	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").String())
+	// volume 4000
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").String())
+	// volume 5000
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
 
 	// running for another epoch
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{
@@ -319,30 +319,30 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 	require.NoError(t, err)
 	loadedEngine := assertSnapshotMatches(t, key, hashAfter2Epochs)
 
-	// now p8 exists and the average notional is 1000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p8").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p8").String())
-	// party1 now has a total of 2000 with average of 1000 they're not eligible
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p1").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p1").String())
-	// over a window of 2 party2 has 500 so not eligible
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p2"))
-	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p2"))
-	// over a window of 2 party2 has 500.5 so not eligible
-	require.Equal(t, num.DecimalZero(), engine.VolumeDiscountFactorForParty("p3"))
-	require.Equal(t, num.DecimalZero(), loadedEngine.VolumeDiscountFactorForParty("p3"))
-	// average volume 1000
-	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p4").String())
-	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p4").String())
-	// average volume 3500
-	require.Equal(t, "0.5", engine.VolumeDiscountFactorForParty("p5").String())
-	require.Equal(t, "0.5", loadedEngine.VolumeDiscountFactorForParty("p5").String())
-	// average volume 4000
+	// now p8 exists and the volume is 2000
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p8").String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p8").String())
+	// volume 2400
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p1").String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p1").String())
+	// volume 1000
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p2").String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p2").String())
+	// volume 1001
+	require.Equal(t, "0.1", engine.VolumeDiscountFactorForParty("p3").String())
+	require.Equal(t, "0.1", loadedEngine.VolumeDiscountFactorForParty("p3").String())
+	// volume 2000
+	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p4").String())
+	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p4").String())
+	// volume 7000
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p5").String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p5").String())
+	// volume 8000
 	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p6").String())
 	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p6").String())
-	// average volume 2500
-	require.Equal(t, "0.2", engine.VolumeDiscountFactorForParty("p7").String())
-	require.Equal(t, "0.2", loadedEngine.VolumeDiscountFactorForParty("p7").String())
+	// volume 5000
+	require.Equal(t, "1", engine.VolumeDiscountFactorForParty("p7").String())
+	require.Equal(t, "1", loadedEngine.VolumeDiscountFactorForParty("p7").String())
 
 	marketActivityTracker.EXPECT().NotionalTakerVolumeForAllParties().Return(map[types.PartyID]*num.Uint{}).Times(1)
 
