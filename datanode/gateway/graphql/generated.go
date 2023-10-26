@@ -2020,6 +2020,7 @@ type ComplexityRoot struct {
 		RewardFactor                          func(childComplexity int) int
 		RewardsFactorMultiplier               func(childComplexity int) int
 		RewardsMultiplier                     func(childComplexity int) int
+		WasEligible                           func(childComplexity int) int
 	}
 
 	ReferralSetStatsConnection struct {
@@ -11774,6 +11775,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralSetStats.RewardsMultiplier(childComplexity), true
+
+	case "ReferralSetStats.wasEligible":
+		if e.complexity.ReferralSetStats.WasEligible == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.WasEligible(childComplexity), true
 
 	case "ReferralSetStatsConnection.edges":
 		if e.complexity.ReferralSetStatsConnection.Edges == nil {
@@ -72280,6 +72288,50 @@ func (ec *executionContext) fieldContext_ReferralSetStats_partyId(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _ReferralSetStats_wasEligible(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_wasEligible(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WasEligible, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_wasEligible(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ReferralSetStats_discountFactor(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetStats_discountFactor(ctx, field)
 	if err != nil {
@@ -72691,6 +72743,8 @@ func (ec *executionContext) fieldContext_ReferralSetStatsEdge_node(ctx context.C
 				return ec.fieldContext_ReferralSetStats_atEpoch(ctx, field)
 			case "partyId":
 				return ec.fieldContext_ReferralSetStats_partyId(ctx, field)
+			case "wasEligible":
+				return ec.fieldContext_ReferralSetStats_wasEligible(ctx, field)
 			case "discountFactor":
 				return ec.fieldContext_ReferralSetStats_discountFactor(ctx, field)
 			case "rewardFactor":
@@ -109602,6 +109656,13 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 		case "partyId":
 
 			out.Values[i] = ec._ReferralSetStats_partyId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "wasEligible":
+
+			out.Values[i] = ec._ReferralSetStats_wasEligible(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

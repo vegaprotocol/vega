@@ -20,12 +20,26 @@ func NewPartyLockedBalances(connectionSource *ConnectionSource) *PartyLockedBala
 	}
 }
 
+func (plb *PartyLockedBalance) Prune(
+	ctx context.Context,
+	currentEpoch uint64,
+) error {
+	defer metrics.StartSQLQuery("PartyLockedBalance", "Prune")()
+	_, err := plb.Connection.Exec(
+		ctx,
+		"DELETE FROM party_locked_balances_current WHERE until_epoch < $1",
+		currentEpoch,
+	)
+
+	return err
+}
+
 func (plb *PartyLockedBalance) Add(ctx context.Context, balance entities.PartyLockedBalance) error {
 	defer metrics.StartSQLQuery("PartyLockedBalance", "Add")()
 	_, err := plb.Connection.Exec(ctx,
 		`INSERT INTO party_locked_balances(party_id, asset_id, at_epoch, until_epoch, balance, vega_time)
          VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (vega_time, party_id, asset_id) DO NOTHING`,
+         ON CONFLICT (vega_time, party_id, asset_id, until_epoch) DO NOTHING`,
 		balance.PartyID,
 		balance.AssetID,
 		balance.AtEpoch,

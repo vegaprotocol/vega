@@ -40,6 +40,7 @@ type ReferralSet struct {
 type ReferralSetStats struct {
 	AtEpoch                  uint64
 	SetID                    ReferralSetID
+	WasEligible              bool
 	ReferralSetRunningVolume *num.Uint
 	RefereesStats            map[PartyID]*RefereeStats
 	RewardFactor             num.Decimal

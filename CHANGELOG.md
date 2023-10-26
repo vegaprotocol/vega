@@ -175,6 +175,7 @@
 - [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
 - [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
+- [9827](https://github.com/vegaprotocol/vega/issues/9827) - Expose `was_eligible` in the referral set statistics.
 
 ### 🐛 Fixes
 
@@ -356,6 +357,7 @@
 - [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
 - [9894](https://github.com/vegaprotocol/vega/issues/9894) - Reset distress party position in market activity tracker.
 - [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
+- [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
 
 ## 0.72.1
 

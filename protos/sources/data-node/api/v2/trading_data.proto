@@ -4005,6 +4005,8 @@ message ReferralSetStats {
   string rewards_multiplier = 7;
   // Proportion of the referee's taker fees to be rewarded to the referrer.
   string rewards_factor_multiplier = 8;
+  // Indicates if the referral set was eligible to be part of the referral program.
+  bool was_eligible = 9;
 }
 
 // Team record containing the team information.

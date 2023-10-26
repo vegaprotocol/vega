@@ -6263,6 +6263,8 @@ type ReferralSetStats {
   atEpoch: Int!
   "Unique ID of the party."
   partyId: ID!
+  "Indicates if the referral set was eligible to be part of the referral program."
+  wasEligible: Boolean!
   "Discount factor applied to the party."
   discountFactor: String!
   "Reward factor applied to the party."
