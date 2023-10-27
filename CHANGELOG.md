@@ -357,6 +357,8 @@
 - [9894](https://github.com/vegaprotocol/vega/issues/9894) - Reset distress party position in market activity tracker.
 - [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
 - [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9911](https://github.com/vegaprotocol/vega/issues/9911) - Bind correct property in `GraphQL` resolver.
 
 ## 0.72.1
 
