@@ -3944,8 +3944,8 @@ message ListReferralSetRefereesRequest {
   optional string referrer = 3;
   // Referee to filter by. If referrer set ID or referrer is provided, this field is ignored.
   optional string referee = 4;
-  // Days to aggregate party volume and rewards over. If omitted, 30 days will be used.
-  optional uint32 aggregation_days = 5;
+  // Epochs to aggregate party volume and rewards over. If omitted, 30 epochs will be used.
+  optional uint32 aggregation_epochs = 5;
 }
 
 // Response containing information about a referral set's referees

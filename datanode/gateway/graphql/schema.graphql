@@ -895,8 +895,8 @@ type Query {
     referee: ID
     "Optional pagination information"
     pagination: Pagination
-    "Optional number of days to aggregate referee volume and reward statistics for. If omitted, the default is 30 days."
-    aggregationDays: Int
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 30 epochs."
+    aggregationEpochs: Int
   ): ReferralSetRefereeConnection!
 
   "Get referral set statistics"
