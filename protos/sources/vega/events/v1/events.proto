@@ -81,6 +81,8 @@ message PartyVestingStats {
   string party_id = 1;
   // The bonus multiplier applied on the reward.
   string reward_bonus_multiplier = 2;
+  // The balance of the party, in quantum.
+  string quantum_balance = 3;
 }
 
 // Fees rewards and discounts paid / received per parties during an epoch

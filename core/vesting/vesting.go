@@ -166,7 +166,7 @@ func (e *Engine) AddReward(
 	)
 }
 
-func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
+func (e *Engine) GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal) {
 	quantumBalance := e.c.GetAllVestingQuantumBalance(party)
 
 	multiplier := num.DecimalOne()
@@ -179,7 +179,7 @@ func (e *Engine) GetRewardBonusMultiplier(party string) num.Decimal {
 		multiplier = b.RewardMultiplier
 	}
 
-	return multiplier
+	return quantumBalance, multiplier
 }
 
 func (e *Engine) getPartyRewards(party string) *PartyRewards {
@@ -402,9 +402,11 @@ func (e *Engine) broadcastRewardBonusMultipliers(ctx context.Context, seq uint64
 	slices.Sort(parties)
 
 	for _, party := range parties {
+		quantumBalance, multiplier := e.GetRewardBonusMultiplier(party)
 		evt.Stats = append(evt.Stats, &eventspb.PartyVestingStats{
 			PartyId:               party,
-			RewardBonusMultiplier: e.GetRewardBonusMultiplier(party).String(),
+			RewardBonusMultiplier: multiplier.String(),
+			QuantumBalance:        quantumBalance.String(),
 		})
 	}
 

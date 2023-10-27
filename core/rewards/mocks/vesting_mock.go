@@ -48,11 +48,12 @@ func (mr *MockVestingMockRecorder) AddReward(arg0, arg1, arg2, arg3 interface{})
 }
 
 // GetRewardBonusMultiplier mocks base method.
-func (m *MockVesting) GetRewardBonusMultiplier(arg0 string) decimal.Decimal {
+func (m *MockVesting) GetRewardBonusMultiplier(arg0 string) (*num.Uint, decimal.Decimal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRewardBonusMultiplier", arg0)
-	ret0, _ := ret[0].(decimal.Decimal)
-	return ret0
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(decimal.Decimal)
+	return ret0, ret1
 }
 
 // GetRewardBonusMultiplier indicates an expected call of GetRewardBonusMultiplier.

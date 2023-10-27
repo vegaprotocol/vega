@@ -146,6 +146,7 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		PartyId:               stats.PartyID.String(),
 		EpochSeq:              stats.AtEpoch,
 		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
+		QuantumBalance:        stats.QuantumBalance.String(),
 	}, nil
 }
 

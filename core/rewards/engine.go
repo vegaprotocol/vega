@@ -95,7 +95,7 @@ type Teams interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vesting_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Vesting
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
-	GetRewardBonusMultiplier(party string) num.Decimal
+	GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/activity_streak_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards ActivityStreak
@@ -343,7 +343,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 
 func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	asMultiplier := e.activityStreak.GetRewardsDistributionMultiplier(party)
-	vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
+	_, vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
 	return asMultiplier.Mul(vsMultiplier)
 }
 

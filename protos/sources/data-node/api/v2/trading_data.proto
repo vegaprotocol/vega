@@ -1002,6 +1002,8 @@ message GetPartyVestingStatsResponse {
   string reward_bonus_multiplier = 2;
   // Epoch for which this information is valid.
   uint64 epoch_seq = 3;
+  // The balance of the party, in quantum.
+  string quantum_balance = 4;
 }
 
 // Request sent to list the vesting and locked balances for a party

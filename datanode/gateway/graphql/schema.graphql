@@ -2629,6 +2629,8 @@ type PartyVestingStats {
   epochSeq: Int!
   "The reward bonus multiplier"
   rewardBonusMultiplier: String!
+  "The balance of the party, in quantum."
+  quantumBalance: String!
 }
 
 """

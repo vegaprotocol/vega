@@ -5,6 +5,7 @@ create table if not exists party_vesting_stats (
        party_id bytea not null,
        at_epoch bigint not null,
        reward_bonus_multiplier NUMERIC(1000, 16) not null,
+       quantum_balance NUMERIC(1000, 16) not null,
        vega_time timestamp with time zone not null,
        primary key (vega_time, party_id)
 );
@@ -15,6 +16,7 @@ create table if not exists party_vesting_stats_current (
        party_id bytea not null,
        at_epoch bigint not null,
        reward_bonus_multiplier NUMERIC(1000, 16) not null,
+       quantum_balance NUMERIC(1000, 16) not null,
        vega_time timestamp with time zone not null,
        primary key (party_id)
 );
@@ -26,13 +28,14 @@ create or replace function update_party_vesting_stats()
        language plpgsql
 as $$
    begin
-        insert into party_vesting_stats_current(party_id, at_epoch, reward_bonus_multiplier, vega_time)
-        values (new.party_id, new.at_epoch, new.reward_bonus_multiplier, new.vega_time)
+        insert into party_vesting_stats_current(party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time)
+        values (new.party_id, new.at_epoch, new.reward_bonus_multiplier, new.quantum_balance, new.vega_time)
         on conflict(party_id)
         do update set
            at_epoch = excluded.at_epoch,
            reward_bonus_multiplier = excluded.reward_bonus_multiplier,
-           vega_time = excluded.vega_time;
+	   quantum_balance = excluded.quantum_balance,
+	   vega_time = excluded.vega_time;
         return null;
    end;
 $$;
