@@ -360,6 +360,7 @@
 - [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
 - [9911](https://github.com/vegaprotocol/vega/issues/9911) - Bind correct property in `GraphQL` resolver.
 - [9913](https://github.com/vegaprotocol/vega/issues/9913) - Add missing properties in schema.
+- [9916](https://github.com/vegaprotocol/vega/issues/9916) - Fix activity streak locked account until epoch.
 
 ## 0.72.1
 
@@ -373,7 +374,7 @@
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 - [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
 - [9651](https://github.com/vegaprotocol/vega/issues/9651) - Park pegged orders if they lose their peg
-- [9666]()(https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
+- [9666](https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
 
 ## 0.72.0
 
