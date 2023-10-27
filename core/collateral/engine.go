@@ -1811,11 +1811,9 @@ func (e *Engine) TransferFunds(
 		switch allTransfers[i].Type {
 		case types.TransferTypeInfrastructureFeePay:
 			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
-
 		case types.TransferTypeTransferFundsDistribute,
 			types.TransferTypeTransferFundsSend:
 			req, err = e.getTransferFundsTransferRequest(ctx, transfer, accType)
-
 		default:
 			e.log.Panic("unsupported transfer type",
 				logging.String("types", accType.String()))
@@ -2580,6 +2578,7 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
@@ -2628,6 +2627,7 @@ func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *typ
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
@@ -2859,6 +2859,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Timestamp:          now,
 					FromAccountBalance: acc.Balance.Clone(),
 					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
+					TransferID:         req.TransferID,
 				}
 				ret.Entries = append(ret.Entries, lm)
 				to.Balance.AddSum(parts)

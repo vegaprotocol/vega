@@ -17,6 +17,7 @@
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
 - [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
 - [9825](https://github.com/vegaprotocol/vega/issues/9825) - Remove quadratic slippage.
+- [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 
 ### 🐛 Fixes
 

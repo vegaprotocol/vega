@@ -1400,6 +1400,8 @@ message LedgerEntryFilter {
   AccountFilter to_account_filter = 3;
   // List of transfer types that is used for filtering sender and receiver accounts.
   repeated vega.TransferType transfer_types = 5;
+  // List ledger entries that are associated with a specific transfer ID. If provided, all other filters are ignored
+  optional string transfer_id = 6;
 }
 
 // List of fields for a ledger entry
