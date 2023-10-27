@@ -359,6 +359,7 @@
 - [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
 - [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
 - [9911](https://github.com/vegaprotocol/vega/issues/9911) - Bind correct property in `GraphQL` resolver.
+- [9913](https://github.com/vegaprotocol/vega/issues/9913) - Add missing properties in schema.
 
 ## 0.72.1
 

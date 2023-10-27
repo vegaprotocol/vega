@@ -1207,7 +1207,7 @@ type DispatchStrategy {
   distributionStrategy: DistributionStrategy!
 
   "Ascending order list of start rank and corresponding share ratio"
-  rankTable: RankTable
+  rankTable: [RankTable]
 }
 
 type RankTable {

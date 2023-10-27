@@ -33,6 +33,66 @@ import (
 
 var ErrUnimplemented = errors.New("unmarshaller not implemented as this API is query only")
 
+func MarshalIndividualScope(t vega.IndividualScope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalIndividualScope(v interface{}) (vega.IndividualScope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED, fmt.Errorf("expected individual scope to be a string")
+	}
+
+	t, ok := vega.IndividualScope_value[s]
+	if !ok {
+		return vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert IndividualScope from GraphQL to Proto: %v", s)
+	}
+
+	return vega.IndividualScope(t), nil
+}
+
+func MarshalDistributionStrategy(t vega.DistributionStrategy) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalDistributionStrategy(v interface{}) (vega.DistributionStrategy, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.DistributionStrategy_DISTRIBUTION_STRATEGY_UNSPECIFIED, fmt.Errorf("expected distribution strategy to be a string")
+	}
+
+	t, ok := vega.DistributionStrategy_value[s]
+	if !ok {
+		return vega.DistributionStrategy_DISTRIBUTION_STRATEGY_UNSPECIFIED, fmt.Errorf("failed to convert DistributionStrategy from GraphQL to Proto: %v", s)
+	}
+
+	return vega.DistributionStrategy(t), nil
+}
+
+func MarshalEntityScope(t vega.EntityScope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalEntityScope(v interface{}) (vega.EntityScope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED, fmt.Errorf("expected entity scope to be a string")
+	}
+
+	t, ok := vega.EntityScope_value[s]
+	if !ok {
+		return vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert EntityScope from GraphQL to Proto: %v", s)
+	}
+
+	return vega.EntityScope(t), nil
+}
+
 func MarshalAccountType(t vega.AccountType) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(t.String())))
