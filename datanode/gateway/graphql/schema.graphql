@@ -6279,6 +6279,8 @@ type ReferralSetStats {
   rewardsMultiplier: String!
   "The proportion of the referees taker fees to be rewarded to the referrer."
   rewardsFactorMultiplier: String!
+  "The referrer's taker volume"
+  referrerTakerVolume: String!
 }
 
 "Team record containing the team information."

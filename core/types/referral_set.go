@@ -42,6 +42,7 @@ type ReferralSetStats struct {
 	SetID                    ReferralSetID
 	WasEligible              bool
 	ReferralSetRunningVolume *num.Uint
+	ReferrerTakerVolume      *num.Uint
 	RefereesStats            map[PartyID]*RefereeStats
 	RewardFactor             num.Decimal
 	RewardsMultiplier        num.Decimal
