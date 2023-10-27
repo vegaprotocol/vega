@@ -1634,6 +1634,7 @@ type ComplexityRoot struct {
 
 	PartyVestingStats struct {
 		EpochSeq              func(childComplexity int) int
+		QuantumBalance        func(childComplexity int) int
 		RewardBonusMultiplier func(childComplexity int) int
 	}
 
@@ -9718,6 +9719,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PartyVestingStats.EpochSeq(childComplexity), true
+
+	case "PartyVestingStats.quantumBalance":
+		if e.complexity.PartyVestingStats.QuantumBalance == nil {
+			break
+		}
+
+		return e.complexity.PartyVestingStats.QuantumBalance(childComplexity), true
 
 	case "PartyVestingStats.rewardBonusMultiplier":
 		if e.complexity.PartyVestingStats.RewardBonusMultiplier == nil {
@@ -58167,6 +58175,8 @@ func (ec *executionContext) fieldContext_Party_vestingStats(ctx context.Context,
 				return ec.fieldContext_PartyVestingStats_epochSeq(ctx, field)
 			case "rewardBonusMultiplier":
 				return ec.fieldContext_PartyVestingStats_rewardBonusMultiplier(ctx, field)
+			case "quantumBalance":
+				return ec.fieldContext_PartyVestingStats_quantumBalance(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PartyVestingStats", field.Name)
 		},
@@ -59450,6 +59460,50 @@ func (ec *executionContext) _PartyVestingStats_rewardBonusMultiplier(ctx context
 }
 
 func (ec *executionContext) fieldContext_PartyVestingStats_rewardBonusMultiplier(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PartyVestingStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PartyVestingStats_quantumBalance(ctx context.Context, field graphql.CollectedField, obj *v2.GetPartyVestingStatsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PartyVestingStats_quantumBalance(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuantumBalance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PartyVestingStats_quantumBalance(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PartyVestingStats",
 		Field:      field,
@@ -105502,6 +105556,13 @@ func (ec *executionContext) _PartyVestingStats(ctx context.Context, sel ast.Sele
 		case "rewardBonusMultiplier":
 
 			out.Values[i] = ec._PartyVestingStats_rewardBonusMultiplier(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "quantumBalance":
+
+			out.Values[i] = ec._PartyVestingStats_quantumBalance(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
