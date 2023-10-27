@@ -932,6 +932,8 @@ message ReferralSetStatsUpdated {
   string rewards_factor_multiplier = 7;
   // Indicates if the referral set was eligible to be part of the referral program.
   bool was_eligible = 8;
+  // Taker volume of the referrer
+  string referrer_taker_volume = 9;
 }
 
 message RefereeStats {

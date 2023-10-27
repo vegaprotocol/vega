@@ -8,6 +8,9 @@ alter table referral_set_stats
 alter table referral_set_stats
     add column was_eligible bool not null default true;
 
+alter table referral_set_stats
+    add column referrer_taker_volume text not null default '0';
+
 -- +goose Down
 
 alter table referral_set_stats
@@ -18,3 +21,6 @@ alter table referral_set_stats
 
 alter table referral_set_stats
     drop column was_eligible;
+
+alter table referral_set_stats
+    drop column referrer_taker_volume;

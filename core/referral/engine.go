@@ -479,9 +479,12 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 	}
 	e.referralSetsNotionalVolumes.RemovePriorEpoch(priorEpoch)
 
+	referrersTakerVolume := map[types.PartyID]*num.Uint{}
+
 	for partyID, setID := range e.referrers {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		referrersTakerVolume[partyID] = volumeForEpoch
 	}
 
 	partiesTakerVolume := map[types.PartyID]*num.Uint{}
@@ -496,20 +499,29 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 		return
 	}
 
-	e.computeFactorsByReferee(ctx, epoch.Seq, partiesTakerVolume)
+	e.computeFactorsByReferee(ctx, epoch.Seq, partiesTakerVolume, referrersTakerVolume)
 }
 
-func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerParty map[types.PartyID]*num.Uint) {
+func (e *Engine) computeFactorsByReferee(
+	ctx context.Context,
+	epoch uint64,
+	takerVolumePerParty, referrersTakesVolume map[types.PartyID]*num.Uint,
+) {
 	e.factorsByReferee = map[types.PartyID]*types.RefereeStats{}
 
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
 	tiersLen := len(e.currentProgram.BenefitTiers)
 
 	for setID, set := range e.sets {
+		referrerTakerVolume := num.UintZero()
+		if takerVolume := referrersTakesVolume[set.Referrer.PartyID]; takerVolume != nil {
+			referrerTakerVolume = takerVolume
+		}
 		setStats := &types.ReferralSetStats{
 			AtEpoch:                  epoch,
 			SetID:                    setID,
 			RefereesStats:            map[types.PartyID]*types.RefereeStats{},
+			ReferrerTakerVolume:      referrerTakerVolume,
 			ReferralSetRunningVolume: e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength),
 			RewardFactor:             num.DecimalZero(),
 		}

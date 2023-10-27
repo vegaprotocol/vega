@@ -2019,6 +2019,7 @@ type ComplexityRoot struct {
 		EpochNotionalTakerVolume              func(childComplexity int) int
 		PartyId                               func(childComplexity int) int
 		ReferralSetRunningNotionalTakerVolume func(childComplexity int) int
+		ReferrerTakerVolume                   func(childComplexity int) int
 		RewardFactor                          func(childComplexity int) int
 		RewardsFactorMultiplier               func(childComplexity int) int
 		RewardsMultiplier                     func(childComplexity int) int
@@ -11768,6 +11769,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ReferralSetStats.ReferralSetRunningNotionalTakerVolume(childComplexity), true
+
+	case "ReferralSetStats.referrerTakerVolume":
+		if e.complexity.ReferralSetStats.ReferrerTakerVolume == nil {
+			break
+		}
+
+		return e.complexity.ReferralSetStats.ReferrerTakerVolume(childComplexity), true
 
 	case "ReferralSetStats.rewardFactor":
 		if e.complexity.ReferralSetStats.RewardFactor == nil {
@@ -72656,6 +72664,50 @@ func (ec *executionContext) fieldContext_ReferralSetStats_rewardsFactorMultiplie
 	return fc, nil
 }
 
+func (ec *executionContext) _ReferralSetStats_referrerTakerVolume(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReferralSetStats_referrerTakerVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReferrerTakerVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReferralSetStats_referrerTakerVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReferralSetStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ReferralSetStatsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.ReferralSetStatsConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ReferralSetStatsConnection_edges(ctx, field)
 	if err != nil {
@@ -72817,6 +72869,8 @@ func (ec *executionContext) fieldContext_ReferralSetStatsEdge_node(ctx context.C
 				return ec.fieldContext_ReferralSetStats_rewardsMultiplier(ctx, field)
 			case "rewardsFactorMultiplier":
 				return ec.fieldContext_ReferralSetStats_rewardsFactorMultiplier(ctx, field)
+			case "referrerTakerVolume":
+				return ec.fieldContext_ReferralSetStats_referrerTakerVolume(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ReferralSetStats", field.Name)
 		},
@@ -109811,6 +109865,13 @@ func (ec *executionContext) _ReferralSetStats(ctx context.Context, sel ast.Selec
 		case "rewardsFactorMultiplier":
 
 			out.Values[i] = ec._ReferralSetStats_rewardsFactorMultiplier(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "referrerTakerVolume":
+
+			out.Values[i] = ec._ReferralSetStats_referrerTakerVolume(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
