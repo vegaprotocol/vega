@@ -148,7 +148,7 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 			   referees_stats,
 			   vega_time,
 			   reward_factor,
-				rewards_multiplier,
+			   rewards_multiplier,
 			   rewards_factor_multiplier)
 			values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		stats.SetID,

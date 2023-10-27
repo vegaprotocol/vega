@@ -372,7 +372,7 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 					&eventspb.PartyLockedBalance{
 						Asset:      asset,
 						Balance:    balance.String(),
-						UntilEpoch: seq + remainingEpochs,
+						UntilEpoch: seq + remainingEpochs + 1, // we add one here because the remainingEpochs can be 0, meaning the funds are released next epoch
 					},
 				)
 			}
