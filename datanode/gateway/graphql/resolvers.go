@@ -585,6 +585,10 @@ func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
 	return (*partyVestingStatsResolver)(r)
 }
 
+func (r *VegaResolverRoot) DispatchStrategy() DispatchStrategyResolver {
+	return (*dispatchStrategyResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
