@@ -1923,7 +1923,7 @@ type ComplexityRoot struct {
 		ProposalsConnection                func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
-		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationDays *int) int
+		ReferralSetReferees                func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationEpochs *int) int
 		ReferralSetStats                   func(childComplexity int, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) int
 		ReferralSets                       func(childComplexity int, id *string, referrer *string, referee *string, pagination *v2.Pagination) int
 		Statistics                         func(childComplexity int) int
@@ -3206,7 +3206,7 @@ type QueryResolver interface {
 	ReferralSets(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination) (*v2.ReferralSetConnection, error)
 	FeesStats(ctx context.Context, marketID *string, assetID *string, epoch *int, partyID *string) (*v1.FeesStats, error)
 	FeesStatsForParty(ctx context.Context, partyID string, assetID *string, fromEpoch *int, toEpoch *int) ([]*v2.FeesStatsForParty, error)
-	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationDays *int) (*v2.ReferralSetRefereeConnection, error)
+	ReferralSetReferees(ctx context.Context, id *string, referrer *string, referee *string, pagination *v2.Pagination, aggregationEpochs *int) (*v2.ReferralSetRefereeConnection, error)
 	ReferralSetStats(ctx context.Context, setID *string, epoch *int, partyID *string, pagination *v2.Pagination) (*v2.ReferralSetStatsConnection, error)
 	Statistics(ctx context.Context) (*v12.Statistics, error)
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
@@ -11284,7 +11284,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination), args["aggregationDays"].(*int)), true
+		return e.complexity.Query.ReferralSetReferees(childComplexity, args["id"].(*string), args["referrer"].(*string), args["referee"].(*string), args["pagination"].(*v2.Pagination), args["aggregationEpochs"].(*int)), true
 
 	case "Query.referralSetStats":
 		if e.complexity.Query.ReferralSetStats == nil {
@@ -16552,14 +16552,14 @@ func (ec *executionContext) field_Query_referralSetReferees_args(ctx context.Con
 	}
 	args["pagination"] = arg3
 	var arg4 *int
-	if tmp, ok := rawArgs["aggregationDays"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregationDays"))
+	if tmp, ok := rawArgs["aggregationEpochs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregationEpochs"))
 		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["aggregationDays"] = arg4
+	args["aggregationEpochs"] = arg4
 	return args, nil
 }
 
@@ -69274,7 +69274,7 @@ func (ec *executionContext) _Query_referralSetReferees(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["aggregationDays"].(*int))
+		return ec.resolvers.Query().ReferralSetReferees(rctx, fc.Args["id"].(*string), fc.Args["referrer"].(*string), fc.Args["referee"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["aggregationEpochs"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
