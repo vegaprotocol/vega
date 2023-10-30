@@ -31,7 +31,7 @@ Feature: Consider a market in liquidity auction, when a LP increases their commi
       | 0.0004    | 0.001              |
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
-      | 3600    | 0.99        | 3                 |
+      | 3600    | 0.99        | 40                |
 
     And the liquidity sla params named "SLA-22":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -42,7 +42,7 @@ Feature: Consider a market in liquidity auction, when a LP increases their commi
 
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator   | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD | USD | lqm-params | log-normal-risk-model | margin-calculator-1 | 2 | fees-config-1 | price-monitoring | default-eth-for-future | 1e0 | 0 | SLA-22 |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | log-normal-risk-model | margin-calculator-1 | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         | SLA-22     |
 
     And the following network parameters are set:
       | name                                                | value |
@@ -66,6 +66,8 @@ Feature: Consider a market in liquidity auction, when a LP increases their commi
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
+      | ptbuy  | USD   | 100000 |
+      | ptsell | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -102,10 +104,14 @@ Feature: Consider a market in liquidity auction, when a LP increases their commi
       | party2 | ETH/MAR22 | sell | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "1" blocks
-    And the current epoch is "0"
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptbuy  | ETH/MAR22 | buy  | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the current epoch is "0"
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 10000          | 3             |
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 17250        | 10000          | 3             | 40          |
 
     Then the network moves ahead "1" epochs
     #SLA bond penalty happened in this epoch for lp1/2 not supplying liquidiy
@@ -130,7 +136,7 @@ Feature: Consider a market in liquidity auction, when a LP increases their commi
     And the supplied stake should be "9000" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 9000           | 3             |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 17250        | 9000           | 3             |
 
 
 

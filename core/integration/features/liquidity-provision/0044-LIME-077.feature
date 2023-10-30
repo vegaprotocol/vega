@@ -9,17 +9,17 @@ Feature: Test LP mechanics when there are multiple liquidity providers, test sto
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
     And the following network parameters are set:
-      | name                                          | value |
-      | market.value.windowLength                     | 60s   |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 6     |
-      | market.auction.minimumDuration                | 1     |
-      | market.fee.factors.infrastructureFee          | 0.001 |
-      | market.fee.factors.makerFee                   | 0.004 |
-      | spam.protection.max.stopOrdersPerMarket | 5 |
+      | name                                    | value |
+      | market.value.windowLength               | 60s   |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 6     |
+      | market.auction.minimumDuration          | 1     |
+      | market.fee.factors.infrastructureFee    | 0.001 |
+      | market.fee.factors.makerFee             | 0.004 |
+      | spam.protection.max.stopOrdersPerMarket | 5     |
     And the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 20s         | 1              |  
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 1.0              | 20s         | 1              |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
@@ -28,9 +28,10 @@ Feature: Test LP mechanics when there are multiple liquidity providers, test sto
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |
+    ## Set auction duration to 3 epochs
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
-      | 3600    | 0.99        | 3                 |
+      | 3600    | 0.99        | 30                |
 
     And the liquidity sla params named "SLA-22":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -66,6 +67,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers, test sto
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
+      | ptbuy  | USD   | 100000 |
+      | ptsell | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -144,16 +147,25 @@ Feature: Test LP mechanics when there are multiple liquidity providers, test sto
 
     When the network moves ahead "1" epochs
 
-    And the supplied stake should be "9400" for the market "ETH/MAR22"
+    Then the supplied stake should be "9400" for the market "ETH/MAR22"
     And the current epoch is "3"
     And the insurance pool balance should be "600" for the market "ETH/MAR22"
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 9400           | 3             |
-
-    Then the following transfers should happen:
+    And the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |
       | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 600    | USD   |
+
+    ## Trigger price monitoring auction by trading outside of price bound (973-1027)
+    ## Ensure volume on the book after leaving auction at 900-990
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptbuy  | ETH/MAR22 | buy  | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptbuy  | ETH/MAR22 | sell | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 17250        | 9400           | 3             | 30          |
 
     And the parties place the following pegged iceberg orders:
       | party | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference |
@@ -168,8 +180,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers, test sto
 
     When the network moves ahead "1" epochs
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 10670        | 8860           | 3             |
+      | mark price | trading mode                    | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | 17250        | 8860           | 3             | 30          |
 
     #lp1 got bond penalty for placing parked order
     Then the following transfers should happen:

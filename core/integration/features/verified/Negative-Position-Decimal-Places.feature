@@ -47,7 +47,7 @@ Feature: test negative PDP (position decimal places)
     @Now
     Scenario: 001, test negative PDP when trading mode is auction (0019-MCAL-010)
 
-        Given  the parties submit the following liquidity provision:
+        When  the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | lp type    |
             | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | submission |
             | lp7 | party0 | USD/DEC22 | 1000              | 0.001 | amendment  |
@@ -70,22 +70,28 @@ Feature: test negative PDP (position decimal places)
         Then the market data for the market "USD/DEC22" should be:
             | target stake | supplied stake |
             | 35569        | 5000           |
-        # target stake= vol * mark price * rf = 1*10*1000*3.5569036*10 = 35569
-        And the opening auction period ends for market "USD/DEC22"
-        And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "USD/DEC22"
-        And the mark price should be "0" for the market "USD/DEC22"
-
-        Then the parties should have the following account balances:
+        And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
             | party0 | ETH   | USD/DEC22 | 46951  | 4952049  | 1000 |
             | party1 | ETH   | USD/DEC22 | 9609   | 99990391 |      |
             | party2 | ETH   | USD/DEC22 | 42684  | 99957316 |      |
 
+        # target stake= vol * mark price * rf = 1*10*1000*3.5569036*10 = 35569
+        When the opening auction period ends for market "USD/DEC22"
+        And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC22"
+        And the mark price should be "1000" for the market "USD/DEC22"
+
+        Then the parties should have the following account balances:
+            | party  | asset | market id | margin | general  | bond |
+            | party0 | ETH   | USD/DEC22 | 512194 | 4486806  | 1000 |
+            | party1 | ETH   | USD/DEC22 | 10809  | 99989191 |      |
+            | party2 | ETH   | USD/DEC22 | 42684  | 99957316 |      |
+
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 39126       | 43038  | 46951   | 54776   |
-            | party1 | USD/DEC22 | 8008        | 8808   | 9609    | 11211   |
-            | party2 | USD/DEC22 | 35570       | 39127  | 42684   | 49798   |
+            | party0 | USD/DEC22 | 426829      | 469511 | 512194  | 597560  |
+            | party1 | USD/DEC22 | 9008        | 9908   | 10809   | 12611   |
+            | party2 | USD/DEC22 | 36570       | 40227  | 43884   | 51198   |
 
     @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0003-MTMK-015, 0019-MCAL-010, 0029-FEES-014)

@@ -162,19 +162,6 @@ func (a *AuctionState) ExtendAuctionSuspension(delta types.AuctionDuration) {
 	a.ExtendAuction(delta)
 }
 
-func (a *AuctionState) ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration) {
-	a.extendAuctionLiquidity(delta, types.AuctionTriggerLiquidityTargetNotMet)
-}
-
-// extendAuctionLiquidity - call from liquidity monitoring to extend the auction
-// sets the extension trigger field accordingly.
-func (a *AuctionState) extendAuctionLiquidity(delta types.AuctionDuration, trigger types.AuctionTrigger) {
-	t := trigger
-	a.extension = &t
-	a.extensionEventSent = false
-	a.ExtendAuction(delta)
-}
-
 // ExtendAuction extends the current auction.
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
@@ -252,24 +239,8 @@ func (a AuctionState) IsOpeningAuction() bool {
 	return a.trigger == types.AuctionTriggerOpening
 }
 
-func (a AuctionState) IsLiquidityAuction() bool {
-	// FIXME(jeremy): the second part of the condition is to support
-	// the compatibility on 72 > 73 snapshots.
-
-	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet ||
-		a.trigger == types.AuctionTriggerUnableToDeployLPOrders
-}
-
 func (a AuctionState) IsPriceAuction() bool {
 	return a.trigger == types.AuctionTriggerPrice
-}
-
-func (a AuctionState) IsLiquidityExtension() bool {
-	// FIXME(jeremy): the second part of the condition is to support
-	// the compatibility on 72 > 73 snapshots.
-
-	return a.extension != nil && (*a.extension == types.AuctionTriggerLiquidityTargetNotMet ||
-		*a.extension == types.AuctionTriggerUnableToDeployLPOrders)
 }
 
 func (a AuctionState) IsPriceExtension() bool {

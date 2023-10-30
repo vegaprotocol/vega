@@ -180,7 +180,6 @@ func TestRestorePriceBoundRepresentation(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 

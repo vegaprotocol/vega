@@ -99,9 +99,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 1000              | STATUS_CANCELLED |
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
-      | 1055       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1793         | 0              | 17            |
     And the insurance pool balance should be "1152" for the market "ETH/DEC21"
 
   Scenario: 002, LP gets distressed after auction (0044-LIME-073)

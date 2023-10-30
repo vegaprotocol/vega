@@ -443,8 +443,8 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
 
     And the market data for the market "USD/DEC19" should be:
-      | mark price | last traded price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001000    | 1001000           | TRADING_MODE_MONITORING_AUCTION | 100000  | 863654    | 1154208   | 3562237128   | 1000000010     | 10005         |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 1000000010     | 10005         |
 
 
   Scenario: 003, no decimal, 0042-LIQF-001

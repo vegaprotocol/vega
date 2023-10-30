@@ -141,7 +141,7 @@ Feature: Test LP bond account when market is terminated
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 155878 | 145     | 2430 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 99000   | 810  |
+      | lp2   | USD   | ETH/MAR22 | 2691   | 96309   | 810  |
 
     When the oracles broadcast data signed with "0xCAFECAFE19":
       | name               | value |

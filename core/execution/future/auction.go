@@ -26,11 +26,8 @@ import (
 
 func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.IDGenerator) {
 	if !m.as.InAuction() {
-		// new block, check liquidity, start auction if needed
-		m.checkLiquidity(ctx, nil, true)
-		if m.as.AuctionStart() {
-			m.enterAuction(ctx)
-		}
+		// new block, check bond balance, top up if needed
+		m.checkBondBalance(ctx)
 		return
 	}
 
@@ -86,17 +83,15 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 
 		// first check liquidity - before we mark auction as ready to leave
-		m.checkLiquidity(ctx, trades, true)
-		if !m.as.CanLeave() {
-			if checkExceeded && m.as.ExceededMaxOpening(now) {
-				// cancel the market, exceeded opening auction
-				m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
-				m.terminateMarket(ctx, types.MarketStateCancelled, nil)
-				return
-			}
-			if e := m.as.AuctionExtended(ctx, now); e != nil {
-				m.broker.Send(e)
-			}
+		m.checkBondBalance(ctx)
+		if checkExceeded && m.as.ExceededMaxOpening(now) {
+			// cancel the market, exceeded opening auction
+			m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+			m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+			return
+		}
+		if e := m.as.AuctionExtended(ctx, now); e != nil {
+			m.broker.Send(e)
 			return
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
@@ -132,17 +127,27 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		)
 		return
 	}
+	// NOTE: This is a fix for the snapshot restores in case we're restoring a liquidity auction
+	// from a snapshot (or protocol upgrade) with state form before the liquidity monitoring was still
+	// in place. This can be removed once we've deployed the version without liquidity monitoring.
+	// Liquidity auctions are no longer a thing, we know we're not in opening auction here
+	// if we're not in price auction, we should just let the liquidity auction expire
+	if m.as.Trigger() == types.AuctionTriggerLiquidityTargetNotMet || m.as.Trigger() == types.AuctionTriggerUnableToDeployLPOrders {
+		if end := m.as.ExpiresAt(); end == nil || !end.Before(now) {
+			m.as.SetReadyToLeave()
+		}
+	}
 	// price and liquidity auctions
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if !isPrice {
-		m.checkLiquidity(ctx, trades, true)
+		m.checkBondBalance(ctx)
 	}
 	if isPrice || m.as.CanLeave() {
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {
-		m.checkLiquidity(ctx, trades, true)
+		m.checkBondBalance(ctx)
 	}
 	if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
 		m.broker.Send(evt)
