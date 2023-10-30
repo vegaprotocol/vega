@@ -365,7 +365,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow(), epoch)
 		}
-		feesStats := m.fee.GetFeesStatsOnEpochEnd()
+		assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
+		feesStats := m.fee.GetFeesStatsOnEpochEnd(assetQuantum)
 		feesStats.Market = m.GetID()
 		feesStats.EpochSeq = epoch.Seq
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))

@@ -64,6 +64,7 @@ func TestMarketSuccession(t *testing.T) {
 		}
 	})
 	exec.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	exec.collateral.EXPECT().GetAssetQuantum("Ethereum/Ether").AnyTimes().Return(num.DecimalFromInt64(1), nil)
 	exec.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	exec.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	exec.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(0), func(_ context.Context, _ spec.SubscriptionID) {}, nil)

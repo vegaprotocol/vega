@@ -60,7 +60,13 @@ type factors struct {
 	liquidityFee      num.Decimal
 }
 
-func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string, positionFactor num.Decimal) (*Engine, error) {
+func New(
+	log *logging.Logger,
+	cfg Config,
+	feeCfg types.Fees,
+	asset string,
+	positionFactor num.Decimal,
+) (*Engine, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -93,12 +99,12 @@ func NewFromState(
 	return e, nil
 }
 
-func (e *Engine) GetState() *eventspb.FeesStats {
-	return e.feesStats.ToProto(e.asset)
+func (e *Engine) GetState(assetQuantum num.Decimal) *eventspb.FeesStats {
+	return e.feesStats.ToProto(e.asset, assetQuantum)
 }
 
-func (e *Engine) GetFeesStatsOnEpochEnd() (FeesStats *eventspb.FeesStats) {
-	FeesStats, e.feesStats = e.feesStats.ToProto(e.asset), NewFeesStats()
+func (e *Engine) GetFeesStatsOnEpochEnd(assetQuantum num.Decimal) (FeesStats *eventspb.FeesStats) {
+	FeesStats, e.feesStats = e.feesStats.ToProto(e.asset, assetQuantum), NewFeesStats()
 	return
 }
 

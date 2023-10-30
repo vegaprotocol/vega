@@ -119,7 +119,7 @@ func enableSpotMarketAssets(markets []types.Market, collateralEngine *collateral
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Quantum: num.DecimalZero(),
+				Quantum: num.DecimalOne(),
 				Symbol:  assetToEnable,
 			},
 		})

@@ -274,6 +274,7 @@ func (m *Market) GetState() *types.ExecMarket {
 
 	parties := maps.Keys(m.parties)
 	sort.Strings(parties)
+	assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
 
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -301,7 +302,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
-		FeesStats:                  m.fee.GetState(),
+		FeesStats:                  m.fee.GetState(assetQuantum),
 	}
 
 	return em
