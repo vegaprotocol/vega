@@ -327,11 +327,25 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	} else if changes.WindowLength > 100 {
 		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
 	}
+
+	tiers := map[string]struct{}{}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkBenefitTier(i, tier))
+		k := tier.MinimumEpochs + "_" + tier.MinimumRunningNotionalTakerVolume
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", i), fmt.Errorf("duplicate benefit tier"))
+		}
+		tiers[k] = struct{}{}
 	}
+
+	tiers = map[string]struct{}{}
 	for i, tier := range changes.StakingTiers {
 		errs.Merge(checkStakingTier(i, tier))
+		k := tier.MinimumStakedTokens
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
+		}
+		tiers[k] = struct{}{}
 	}
 	return errs
 }
