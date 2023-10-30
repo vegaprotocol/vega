@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -40,8 +55,7 @@ func setupERC20MultiSigEventStoreTests(t *testing.T) (*sqlstore.ERC20MultiSigSig
 }
 
 func testAddSigner(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
@@ -69,8 +83,7 @@ func testAddSigner(t *testing.T) {
 }
 
 func testGetWithFilters(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
@@ -109,8 +122,7 @@ func testGetWithFilters(t *testing.T) {
 }
 
 func testGetWithAddAndRemoveEvents(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
@@ -151,8 +163,7 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 }
 
 func testGetByTxHashWithAddAndRemoveEvents(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ms, conn := setupERC20MultiSigEventStoreTests(t)
 
@@ -257,8 +268,7 @@ func TestERC20MultiSigEventPagination(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -278,8 +288,7 @@ func testERC20MultiSigAddedEventPaginationNoPagination(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -300,8 +309,7 @@ func testERC20MultiSigAddedEventPaginationFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -322,8 +330,7 @@ func testERC20MultiSigAddedEventPaginationLast(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -345,8 +352,7 @@ func testERC20MultiSigAddedEventPaginationFirstAfter(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -368,8 +374,7 @@ func testERC20MultiSigAddedEventPaginationLastBefore(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -389,8 +394,7 @@ func testERC20MultiSigAddedEventPaginationNoPaginationNewestFirst(t *testing.T) 
 }
 
 func testERC20MultiSigAddedEventPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -411,8 +415,7 @@ func testERC20MultiSigAddedEventPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -433,8 +436,7 @@ func testERC20MultiSigAddedEventPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -456,8 +458,7 @@ func testERC20MultiSigAddedEventPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigAddedEventPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, _ := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -479,8 +480,7 @@ func testERC20MultiSigAddedEventPaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -500,8 +500,7 @@ func testERC20MultiSigRemovedEventPaginationNoPagination(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -522,8 +521,7 @@ func testERC20MultiSigRemovedEventPaginationFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -544,8 +542,7 @@ func testERC20MultiSigRemovedEventPaginationLast(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -567,8 +564,7 @@ func testERC20MultiSigRemovedEventPaginationFirstAfter(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -590,8 +586,7 @@ func testERC20MultiSigRemovedEventPaginationLastBefore(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -611,8 +606,7 @@ func testERC20MultiSigRemovedEventPaginationNoPaginationNewestFirst(t *testing.T
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -633,8 +627,7 @@ func testERC20MultiSigRemovedEventPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)
@@ -655,8 +648,7 @@ func testERC20MultiSigRemovedEventPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testERC20MultiSigRemovedEventPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	first := int32(3)
@@ -678,8 +670,7 @@ func testERC20MultiSigRemovedEventPaginationFirstAfterNewestFirst(t *testing.T) 
 }
 
 func testERC20MultiSigRemovedEventPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	es, events, submitter := setupERC20MultiSigEventStorePaginationTests(t, ctx)
 	last := int32(3)

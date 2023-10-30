@@ -1,6 +1,22 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -17,7 +33,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 	}{
 		{
 			submission: commandspb.StopOrdersSubmission{},
-			errStr:     "must have at least one of rises above or falls bellow",
+			errStr:     "must have at least one of rises above or falls below",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{
@@ -238,7 +254,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 					},
 				},
 			},
-			errStr: "* (falls below and rises above market id must be the same)",
+			errStr: "* (market ID for falls below and rises above must be the same)",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{
@@ -275,8 +291,8 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) commands.Errors {
 	err := commands.CheckStopOrdersSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

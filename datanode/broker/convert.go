@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -135,6 +150,52 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.DistressedPositionsEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:
 		return events.StopOrderEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD:
+		return events.FundingPeriodEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:
+		return events.FundingPeriodDataPointEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED:
+		return events.TeamCreatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED:
+		return events.TeamUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM:
+		return events.RefereeSwitchedTeamEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:
+		return events.RefereeJoinedTeamEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED:
+		return events.ReferralProgramStartedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED:
+		return events.ReferralProgramEndedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED:
+		return events.ReferralProgramUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED:
+		return events.ReferralSetCreatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET:
+		return events.RefereeJoinedReferralSetEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK:
+		return events.PartyActivityStreakEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED:
+		return events.VolumeDiscountProgramStartedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED:
+		return events.VolumeDiscountProgramEndedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:
+		return events.VolumeDiscountProgramUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:
+		return events.ReferralSetStatsUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED:
+		return events.VestingStatsUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED:
+		return events.VolumeDiscountStatsUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED:
+		return events.FeesStatsEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS:
+		return events.FundingPaymentEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED:
+		return events.PaidLiquidityFeesStatsEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY:
+		return events.VestingBalancesSummaryEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID:
+		return events.TransferFeesEventFromStream(ctx, be)
 	}
 
 	return nil

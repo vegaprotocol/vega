@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -19,7 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func TheFollowingTransfersShouldHappen(
@@ -66,10 +69,13 @@ func errMissingTransfer(row transferRow) error {
 	)
 }
 
-func matchTransfers(ledgerEntries []*types.LedgerEntry, row transferRow) (bool, []uint64) {
+func matchTransfers(ledgerEntries []*vegapb.LedgerEntry, row transferRow) (bool, []uint64) {
 	divergingAmounts := []uint64{}
 	for _, transfer := range ledgerEntries {
 		if transfer.FromAccount.ID() == row.FromAccountID() && transfer.ToAccount.ID() == row.ToAccountID() {
+			if row.Type() != "" && transfer.Type != vegapb.TransferType(vegapb.TransferType_value[row.Type()]) {
+				continue
+			}
 			if stringToU64(transfer.Amount) == row.Amount() {
 				return true, nil
 			}
@@ -88,7 +94,9 @@ func parseTransferTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"amount",
 		"asset",
-	}, []string{})
+	}, []string{
+		"type",
+	})
 }
 
 type transferRow struct {
@@ -99,7 +107,7 @@ func (r transferRow) From() string {
 	return r.row.MustStr("from")
 }
 
-func (r transferRow) FromAccount() types.AccountType {
+func (r transferRow) FromAccount() vegapb.AccountType {
 	return r.row.MustAccount("from account")
 }
 
@@ -111,7 +119,11 @@ func (r transferRow) To() string {
 	return r.row.MustStr("to")
 }
 
-func (r transferRow) ToAccount() types.AccountType {
+func (r transferRow) Type() string {
+	return r.row.Str("type")
+}
+
+func (r transferRow) ToAccount() vegapb.AccountType {
 	return r.row.MustAccount("to account")
 }
 

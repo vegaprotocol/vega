@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -77,8 +92,7 @@ func setupDepositStoreTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.Deposits,
 }
 
 func testAddDepositForNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, conn := setupDepositStoreTests(t)
 
@@ -103,8 +117,7 @@ func testAddDepositForNewBlock(t *testing.T) {
 }
 
 func testUpdateDepositForBlockIfExists(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, conn := setupDepositStoreTests(t)
 
@@ -141,8 +154,7 @@ func testUpdateDepositForBlockIfExists(t *testing.T) {
 }
 
 func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, conn := setupDepositStoreTests(t)
 
@@ -183,8 +195,8 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 }
 
 func testDepositsGetByID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, conn := setupDepositStoreTests(t)
 	var rowCount int
 
@@ -224,8 +236,8 @@ func testDepositsGetByID(t *testing.T) {
 }
 
 func testDepositsGetByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
@@ -289,8 +301,8 @@ func testDepositsGetByParty(t *testing.T) {
 }
 
 func testDepositsGetTxhash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, conn := setupDepositStoreTests(t)
 
 	var rowCount int
@@ -351,8 +363,8 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 }
 
 func testDepositsPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -372,8 +384,8 @@ func testDepositsPaginationNoPagination(t *testing.T) {
 }
 
 func testDepositsPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -395,8 +407,8 @@ func testDepositsPaginationFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -418,8 +430,8 @@ func testDepositsPaginationLast(t *testing.T) {
 }
 
 func testDepositsPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -442,8 +454,8 @@ func testDepositsPaginationFirstAfter(t *testing.T) {
 }
 
 func testDepositsPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -466,8 +478,8 @@ func testDepositsPaginationLastBefore(t *testing.T) {
 }
 
 func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
@@ -487,8 +499,8 @@ func testDepositsPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
@@ -510,8 +522,8 @@ func testDepositsPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
@@ -533,8 +545,8 @@ func testDepositsPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
@@ -557,8 +569,8 @@ func testDepositsPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := entities.ReverseSlice(addDeposits(ctx, t, bs, ds))
@@ -581,8 +593,8 @@ func testDepositsPaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -647,8 +659,8 @@ func testDepositsPaginationBetweenDatesNoPagination(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -677,8 +689,8 @@ func testDepositsPaginationBetweenDatesFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -707,8 +719,8 @@ func testDepositsPaginationBetweenDatesLast(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -738,8 +750,8 @@ func testDepositsPaginationBetweenDatesFirstAfter(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -769,8 +781,8 @@ func testDepositsPaginationBetweenDatesLastBefore(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -796,8 +808,8 @@ func testDepositsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -825,8 +837,8 @@ func testDepositsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -856,8 +868,8 @@ func testDepositsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)
@@ -888,8 +900,8 @@ func testDepositsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testDepositsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ds, _ := setupDepositStoreTests(t)
 
 	testDeposits := addDeposits(ctx, t, bs, ds)

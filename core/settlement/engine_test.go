@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package settlement_test
 
@@ -16,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -61,6 +63,7 @@ type marginVal struct {
 func TestMarketExpiry(t *testing.T) {
 	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
 	t.Run("Settle at market expiry - error", testSettleExpiryFail)
+	t.Run("Settle at market expiry - rounding", testSettleRoundingSuccess)
 }
 
 func TestMarkToMarket(t *testing.T) {
@@ -70,11 +73,248 @@ func TestMarkToMarket(t *testing.T) {
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
+	t.Run("Test settling a funding period", testSettlingAFundingPeriod)
+	t.Run("Test settling a funding period with rounding error", testSettlingAFundingPeriodRoundingError)
+	t.Run("Test settling a funding period with small win amounts (zero transfers)", testSettlingAFundingPeriodExcessSmallLoss)
+	t.Run("Test settling a funding period with rounding error (single party rounding)", testSettlingAFundingPeriodExcessLoss)
+	t.Run("Test settling a funding period with zero win amounts (loss exceeds 1)", testSettlingAFundingPeriodExcessLostExceedsOneLoss)
 }
 
 func TestMTMWinDistribution(t *testing.T) {
 	t.Run("A MTM loss party with a loss of value 1, with several parties needing a win", testMTMWinOneExcess)
 	t.Run("Distribute win excess in a scenario where no transfer amount is < 1", testMTMWinNoZero)
+	t.Run("Distribute loss excess in a scenario where no transfer amount is < 1", testMTMWinWithZero)
+}
+
+func testSettlingAFundingPeriod(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  10,
+		},
+		{
+			party: "party2",
+			size:  -10,
+		},
+		{
+			party: "party3",
+			size:  0,
+		},
+	}
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	// 0 funding paymenet produces 0 transfers
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, num.IntZero())
+	assert.Len(t, transfers, 0)
+	assert.Nil(t, round)
+
+	// no positions produces no transfers
+
+	// positive funding payement, shorts pay long
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 2)
+	require.True(t, round.IsZero())
+	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+
+	// negative funding payement, long pays short, also expect loss to come before win
+	fundingPayment, _ = num.IntFromString("-10", 10)
+	transfers, round = engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.True(t, round.IsZero())
+	require.Len(t, transfers, 2)
+	assert.Equal(t, "100", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+
+	// no positions produces no transfers
+	transfers, round = engine.SettleFundingPeriod(ctx, []events.MarketPosition{}, fundingPayment)
+	require.Nil(t, round)
+	assert.Len(t, transfers, 0)
+}
+
+func testSettlingAFundingPeriodRoundingError(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  1000010,
+		},
+		{
+			party: "party3",
+			size:  -1000005,
+		},
+		{
+			party: "party4",
+			size:  -1000005,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 3)
+	assert.Equal(t, "100001", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100000", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "100000", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+
+	// here 100001 will be sent to the settlement account, but only 200000 we be paid out due to rounding,
+	// so we expect a remainder of 1
+	require.Equal(t, "1", round.String())
+}
+
+func testSettlingAFundingPeriodExcessLostExceedsOneLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  23,
+		},
+		{
+			party: "party3",
+			size:  -3,
+		},
+		{
+			party: "party4",
+			size:  -5,
+		},
+		{
+			party: "party5",
+			size:  -5,
+		},
+		{
+			party: "party6",
+			size:  -5,
+		},
+		{
+			party: "party7",
+			size:  -5,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 6)
+	assert.Equal(t, "2", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "0", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "0", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+	assert.Equal(t, "0", transfers[3].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[3].Transfer().Type)
+	assert.Equal(t, "0", transfers[4].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[4].Transfer().Type)
+	assert.Equal(t, "0", transfers[5].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[5].Transfer().Type)
+
+	require.Equal(t, "2", round.String())
+}
+
+func testSettlingAFundingPeriodExcessSmallLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  11,
+		},
+		{
+			party: "party3",
+			size:  -3,
+		},
+		{
+			party: "party4",
+			size:  -3,
+		},
+		{
+			party: "party5",
+			size:  -5,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 4)
+	assert.Equal(t, "1", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "0", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+	assert.Equal(t, "0", transfers[2].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[2].Transfer().Type)
+	assert.Equal(t, "0", transfers[3].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[3].Transfer().Type)
+
+	require.Equal(t, "1", round.String())
+}
+
+func testSettlingAFundingPeriodExcessLoss(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 100)
+	defer engine.Finish()
+	ctx := context.Background()
+
+	testPositions := []testPos{
+		{
+			party: "party1",
+			size:  1000010,
+		},
+		{
+			party: "party3",
+			size:  -1000005,
+		},
+	}
+
+	positions := make([]events.MarketPosition, 0, len(testPositions))
+	for _, p := range testPositions {
+		positions = append(positions, p)
+	}
+
+	fundingPayment, _ := num.IntFromString("10", 10)
+	transfers, round := engine.SettleFundingPeriod(ctx, positions, fundingPayment)
+	require.Len(t, transfers, 2)
+	assert.Equal(t, "100001", transfers[0].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingLoss, transfers[0].Transfer().Type)
+	assert.Equal(t, "100000", transfers[1].Transfer().Amount.Amount.String())
+	assert.Equal(t, types.TransferTypePerpFundingWin, transfers[1].Transfer().Type)
+
+	// here 100001 will be sent to the settlement account, but only 200000 we be paid out due to rounding,
+	// so we expect a remainder of 1
+	require.Equal(t, "1", round.String())
 }
 
 func testMTMWinNoZero(t *testing.T) {
@@ -172,18 +412,6 @@ func testMTMWinNoZero(t *testing.T) {
 	}
 	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
 	require.NotEmpty(t, transfers)
-	for _, tr := range transfers {
-		if tr == nil {
-			fmt.Println("NIL")
-			continue
-		}
-		t := tr.Transfer()
-		if t == nil {
-			fmt.Println("NIL TRANSFER")
-			continue
-		}
-		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
-	}
 }
 
 func testMTMWinOneExcess(t *testing.T) {
@@ -279,17 +507,93 @@ func testMTMWinOneExcess(t *testing.T) {
 	}
 	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
 	require.NotEmpty(t, transfers)
-	for _, tr := range transfers {
-		if tr == nil {
-			fmt.Println("NIL")
-			continue
+}
+
+func testSettleRoundingSuccess(t *testing.T) {
+	engine := getTestEngineWithFactor(t, 10)
+	defer engine.Finish()
+	// these are mark prices, product will provide the actual value
+	// total wins = 554, total losses = 555
+	pr := num.NewUint(1000)
+	data := []posValue{
+		{
+			party: "party1",
+			price: pr,   // winning
+			size:  1101, // 5 * 110.1 = 550.5 -> 550
+		},
+		{
+			party: "party2",
+			price: pr,   // losing
+			size:  -550, // 5 * 55 = 275
+		},
+		{
+			party: "party3",
+			price: pr,   // losing
+			size:  -560, // 5 * 56 = 280
+		},
+		{
+			party: "party4",
+			price: pr, // winning
+			size:  9,  // 5 * .9 = 4.5-> 4
+		},
+	}
+	expect := []*types.Transfer{
+		{
+			Owner: data[1].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(275),
+			},
+			Type: types.TransferTypeLoss,
+		},
+		{
+			Owner: data[2].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(280),
+			},
+			Type: types.TransferTypeLoss,
+		},
+		{
+			Owner: data[0].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(550),
+			},
+			Type: types.TransferTypeWin,
+		},
+		{
+			Owner: data[3].party,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(4),
+			},
+			Type: types.TransferTypeWin,
+		},
+	}
+	oraclePrice := num.NewUint(1005)
+	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
+		amt, neg := num.UintZero().Delta(oraclePrice, price)
+		if size.IsNegative() {
+			size = size.Neg()
+			neg = !neg
 		}
-		t := tr.Transfer()
-		if t == nil {
-			fmt.Println("NIL TRANSFER")
-			continue
-		}
-		fmt.Printf("Transfer for party %s: %s\n%s -%#v", tr.Party(), t.Amount.Amount.String(), t.String(), t)
+
+		amount, rem := num.UintFromDecimalWithFraction(amt.ToDecimal().Mul(size))
+		return &types.FinancialAmount{
+			Amount: amount,
+		}, neg, rem, nil
+	}
+	positions := engine.getExpiryPositions(data...)
+	// we expect settle calls for each position
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(settleF).AnyTimes()
+	// ensure positions are set
+	engine.Update(positions)
+	// now settle:
+	got, round, err := engine.Settle(time.Now(), oraclePrice)
+	assert.NoError(t, err)
+	assert.Equal(t, len(expect), len(got))
+	assert.True(t, round.EQ(num.NewUint(1)))
+	for i, p := range got {
+		e := expect[i]
+		assert.Equal(t, e.Type, p.Type)
+		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
 	}
 }
 
@@ -340,17 +644,17 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
+	settleF := func(price *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
 		amt, neg := num.UintZero().Delta(oraclePrice, price)
 		if size.IsNegative() {
 			size = size.Neg()
 			neg = !neg
 		}
 
-		amt, _ = num.UintFromDecimal(amt.ToDecimal().Mul(size))
+		amount, rem := num.UintFromDecimalWithFraction(amt.ToDecimal().Mul(size))
 		return &types.FinancialAmount{
-			Amount: amt,
-		}, neg, nil
+			Amount: amount,
+		}, neg, rem, nil
 	}
 	positions := engine.getExpiryPositions(data...)
 	// we expect settle calls for each position
@@ -358,7 +662,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), 0)
+	got, _, err := engine.Settle(time.Now(), oraclePrice)
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -381,9 +685,9 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errExp)
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, false, num.DecimalZero(), errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), 0)
+	empty, _, err := engine.Settle(time.Now(), num.UintZero())
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -702,6 +1006,103 @@ func testMTMNetworkZero(t *testing.T) {
 	require.True(t, hasNetwork)
 }
 
+func testMTMWinWithZero(t *testing.T) {
+	// cheat by setting the factor to some specific value, makes it easier to create a scenario where win/loss amounts don't match
+	engine := getTestEngineWithFactor(t, 5)
+	defer engine.Finish()
+
+	price := num.NewUint(100000)
+	one := num.NewUint(1)
+	ctx := context.Background()
+
+	initPos := []testPos{
+		{
+			price: price.Clone(),
+			party: "party1",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party2",
+			size:  2,
+		},
+		{
+			price: price.Clone(),
+			party: "party3",
+			size:  -3,
+		},
+		{
+			price: price.Clone(),
+			party: "party4",
+			size:  1,
+		},
+		{
+			price: price.Clone(),
+			party: "party5",
+			size:  -3,
+		},
+		{
+			price: price.Clone(),
+			party: "party6",
+			size:  2,
+		},
+	}
+
+	init := make([]events.MarketPosition, 0, len(initPos))
+	for _, p := range initPos {
+		init = append(init, p)
+	}
+
+	newPrice := num.Sum(price, one, one, one)
+	somePrice := num.Sum(price, one)
+	newParty := testPos{
+		size:  3,
+		price: newPrice.Clone(),
+		party: "party4",
+	}
+
+	trades := []*types.Trade{
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[0].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[1].party,
+			Price:  somePrice.Clone(),
+		},
+		{
+			Size:   1,
+			Buyer:  newParty.party,
+			Seller: initPos[2].party,
+			Price:  newPrice.Clone(),
+		},
+	}
+	updates := make([]events.MarketPosition, 0, len(initPos)+2)
+	for _, trade := range trades {
+		for i, p := range initPos {
+			if p.party == trade.Seller {
+				p.size -= int64(trade.Size)
+			}
+			p.price = trade.Price.Clone()
+			initPos[i] = p
+		}
+	}
+	for _, p := range initPos {
+		updates = append(updates, p)
+	}
+	updates = append(updates, newParty)
+	engine.Update(init)
+	for _, trade := range trades {
+		engine.AddTrade(trade)
+	}
+	transfers := engine.SettleMTM(ctx, newPrice.Clone(), updates)
+	require.NotEmpty(t, transfers)
+}
+
 // {{{.
 func (te *testEngine) getExpiryPositions(positions ...posValue) []events.MarketPosition {
 	te.positions = make([]*mocks.MockMarketPosition, 0, len(positions))
@@ -736,8 +1137,8 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, assetDecimals uint32, size num.Decimal) (*types.FinancialAmount, bool, error) {
-		return &types.FinancialAmount{Amount: num.UintZero()}, false, nil
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(markPrice *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
+		return &types.FinancialAmount{Amount: num.UintZero()}, false, num.DecimalZero(), nil
 	})
 
 	cfg := engine.Config
@@ -785,7 +1186,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, 0)
+			_, _, err := engine.Settle(now, num.UintZero())
 			assert.NoError(t, err)
 		}()
 	}

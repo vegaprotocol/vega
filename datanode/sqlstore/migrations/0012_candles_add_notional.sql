@@ -1,5 +1,8 @@
 -- +goose Up
 
+
+SELECT _timescaledb_internal.stop_background_workers();
+
 SELECT remove_continuous_aggregate_policy('trades_candle_1_minute');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_1_minute;
 
@@ -138,6 +141,8 @@ SELECT market_id,  vega_time as period_start,
 
 FROM trades
 GROUP BY market_id, vega_time;
+
+SELECT _timescaledb_internal.start_background_workers();
 
 -- +goose Down
 

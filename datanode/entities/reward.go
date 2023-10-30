@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -25,17 +40,18 @@ import (
 )
 
 type Reward struct {
-	PartyID        PartyID
-	AssetID        AssetID
-	MarketID       MarketID
-	EpochID        int64
-	Amount         decimal.Decimal
-	PercentOfTotal float64
-	RewardType     string
-	Timestamp      time.Time
-	TxHash         TxHash
-	VegaTime       time.Time
-	SeqNum         uint64
+	PartyID            PartyID
+	AssetID            AssetID
+	MarketID           MarketID
+	EpochID            int64
+	Amount             decimal.Decimal
+	PercentOfTotal     float64
+	RewardType         string
+	Timestamp          time.Time
+	TxHash             TxHash
+	VegaTime           time.Time
+	SeqNum             uint64
+	LockedUntilEpochID int64
 }
 
 func (r Reward) String() string {
@@ -53,6 +69,7 @@ func (r Reward) ToProto() *vega.Reward {
 		ReceivedAt:        r.Timestamp.UnixNano(),
 		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
+		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
 	}
 	return &protoReward
 }
@@ -96,18 +113,27 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		marketID = ""
 	}
 
+	lockedUntilEpochID := epochID
+	if len(pr.LockedUntilEpoch) > 0 {
+		lockedUntilEpochID, err = strconv.ParseInt(pr.LockedUntilEpoch, 10, 64)
+		if err != nil {
+			return Reward{}, fmt.Errorf("parsing locked until epoch  '%v': %w", pr.LockedUntilEpoch, err)
+		}
+	}
+
 	reward := Reward{
-		PartyID:        PartyID(pr.Party),
-		AssetID:        AssetID(pr.Asset),
-		EpochID:        epochID,
-		Amount:         amount,
-		PercentOfTotal: percentOfTotal,
-		Timestamp:      NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:       MarketID(marketID),
-		RewardType:     pr.RewardType,
-		TxHash:         txHash,
-		VegaTime:       vegaTime,
-		SeqNum:         seqNum,
+		PartyID:            PartyID(pr.Party),
+		AssetID:            AssetID(pr.Asset),
+		EpochID:            epochID,
+		Amount:             amount,
+		PercentOfTotal:     percentOfTotal,
+		Timestamp:          NanosToPostgresTimestamp(pr.Timestamp),
+		MarketID:           MarketID(marketID),
+		RewardType:         pr.RewardType,
+		TxHash:             txHash,
+		VegaTime:           vegaTime,
+		SeqNum:             seqNum,
+		LockedUntilEpochID: lockedUntilEpochID,
 	}
 
 	return reward, nil

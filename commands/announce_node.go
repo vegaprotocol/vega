@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
@@ -20,14 +35,14 @@ func checkAnnounceNode(cmd *commandspb.AnnounceNode) Errors {
 
 	if len(cmd.VegaPubKey) == 0 {
 		errs.AddForProperty("announce_node.vega_pub_key", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.VegaPubKey) {
-		errs.AddForProperty("announce_node.vega_pub_key", ErrShouldBeAValidVegaPubkey)
+	} else if !IsVegaPublicKey(cmd.VegaPubKey) {
+		errs.AddForProperty("announce_node.vega_pub_key", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	if len(cmd.Id) == 0 {
 		errs.AddForProperty("announce_node.id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.Id) {
-		errs.AddForProperty("announce_node.id", ErrShouldBeAValidVegaPubkey)
+	} else if !IsVegaPublicKey(cmd.Id) {
+		errs.AddForProperty("announce_node.id", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	if len(cmd.EthereumAddress) == 0 {

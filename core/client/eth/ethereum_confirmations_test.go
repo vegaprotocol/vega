@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package eth_test
 
@@ -91,4 +94,33 @@ func TestEthereumConfirmations(t *testing.T) {
 
 	// block 10, request 50, we are in the past, return err
 	assert.NoError(t, ethCfns.Check(50))
+}
+
+func TestCheckRequiredConfirmations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
+	tim := localMocks.NewMockTime(ctrl)
+	cfg := eth.NewDefaultConfig()
+	cfg.RetryDelay.Duration = 15 * time.Second
+	ethCfns := eth.NewEthereumConfirmations(cfg, ethClient, tim)
+	defer ctrl.Finish()
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(10, 0))
+	// start a block 10
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(10)}, nil)
+
+	// block 10, request 50, we are in the past, return err
+	assert.ErrorIs(t, ethCfns.CheckRequiredConfirmations(50, 30), eth.ErrMissingConfirmations)
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(58, 0))
+	// do block 80 > requested block == confirmations
+	ethClient.EXPECT().HeaderByNumber(gomock.Any(), gomock.Any()).Times(1).
+		Return(&ethtypes.Header{Number: big.NewInt(80)}, nil)
+
+	// block 10, request 50, we are in the past, return err
+	assert.NoError(t, ethCfns.CheckRequiredConfirmations(50, 30))
+
+	tim.EXPECT().Now().Times(1).Return(time.Unix(59, 0))
+	assert.ErrorIs(t, ethCfns.CheckRequiredConfirmations(50, 40), eth.ErrMissingConfirmations)
 }

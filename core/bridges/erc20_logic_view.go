@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package bridges
 
 import (
@@ -18,6 +33,7 @@ import (
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -36,6 +52,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/bridges ETHClient
 type ETHClient interface {
 	bind.ContractBackend
+	ethereum.ChainReader
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
@@ -183,7 +200,7 @@ func (e *ERC20LogicView) FindBridgeStopped(
 
 	resp := "ok"
 	defer func() {
-		metrics.EthCallInc("find_bridge_stopped", resp)
+		metrics.EthCallInc("find_bridge_stopped", "", resp)
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -241,7 +258,7 @@ func (e *ERC20LogicView) FindBridgeResumed(
 
 	resp := "ok"
 	defer func() {
-		metrics.EthCallInc("find_bridge_stopped", resp)
+		metrics.EthCallInc("find_bridge_stopped", "", resp)
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023  Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package pipe
 
@@ -22,7 +25,6 @@ import (
 
 type Pipe struct {
 	ch   chan net.Conn
-	done chan any
 	addr Addr
 }
 
@@ -43,7 +45,6 @@ func (p *Pipe) Accept() (net.Conn, error) {
 
 func (p *Pipe) Close() error {
 	close(p.ch)
-	<-p.done
 	return nil
 }
 
@@ -51,7 +52,7 @@ func (p *Pipe) Addr() net.Addr {
 	return &p.addr
 }
 
-func (p *Pipe) Dial(ctx context.Context, something string) (net.Conn, error) {
+func (p *Pipe) Dial(ctx context.Context, _ string) (net.Conn, error) {
 	conn1, conn2 := net.Pipe()
 	select {
 	case p.ch <- conn1:
@@ -63,14 +64,10 @@ func (p *Pipe) Dial(ctx context.Context, something string) (net.Conn, error) {
 	}
 }
 
-func (p *Pipe) DialGRPC(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (p *Pipe) DialGRPC(ctx context.Context, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	newOpts := make([]grpc.DialOption, 0, len(opts)+1)
 	newOpts = append(newOpts, grpc.WithContextDialer(p.Dial))
 	newOpts = append(newOpts, opts...)
 
-	return grpc.DialContext(
-		context.Background(),
-		p.Addr().String(),
-		newOpts...,
-	)
+	return grpc.DialContext(ctx, p.Addr().String(), newOpts...)
 }

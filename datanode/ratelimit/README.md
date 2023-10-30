@@ -54,12 +54,13 @@ For example in datanode's `config.toml` the GRPC API rate limiting is configured
 ```
 [API]
   [API.RateLimit]
-    Enabled = true   # Set to false to disable rate limiting
-    Rate = 10.0      # Refill rate of token bucket per second i.e. limit of average request rate
-    Burst = 50       # Size of token bucket; maximum number of requests in short time window
-    TTL = "1h0m0s"   # Time after which inactive token buckets are reset
-    BanFor = "10m0s" # If IP continues to make requests after passing rate limit threshold,
-                     # ban for this duration. Setting to 0 seconds prevents banning.
+    Enabled = true                 # Set to false to disable rate limiting
+    TrustedProxies = ["127.0.0.1"] # List of trusted proxies used when handling X-Forwarded-For headers
+    Rate = 10.0                    # Refill rate of token bucket per second i.e. limit of average request rate
+    Burst = 50                     # Size of token bucket; maximum number of requests in short time window
+    TTL = "1h0m0s"                 # Time after which inactive token buckets are reset
+    BanFor = "10m0s"               # If IP continues to make requests after passing rate limit threshold,
+                                   # ban for this duration. Setting to 0 seconds prevents banning.
 ```
 
 That configuration will apply to gRPC and REST. GraphQL is configured separately in
@@ -67,6 +68,7 @@ That configuration will apply to gRPC and REST. GraphQL is configured separately
 [Gateway]
   [Gateway.RateLimits]
     Enabled = true
+    TrustedProxies = ["127.0.0.1"]
     Rate = 10.0
     Burst = 50
     TTL = "1h0m0s"
@@ -84,3 +86,7 @@ WebSocket connections use a different rate limiting mechanism. They are rate lim
   MaxSubscriptionPerClient = 250
 
 ```
+
+## Trusted Proxies
+
+When rate limiting is enabled, it's recommended to use trusted proxies. This ensures the IP used by the rate limiter has been verified by the trusted proxy. If no proxies (trusted or otherwise) are found in the `XFF` header, the peer IP is used for rate-limiting.

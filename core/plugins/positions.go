@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package plugins
 
@@ -21,11 +24,20 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )
 
 var ErrMarketNotFound = errors.New("could not find market")
+
+// FP FundingPaymentsEvent.
+type FP interface {
+	events.Event
+	MarketID() string
+	IsParty(id string) bool
+	FundingPayments() *eventspb.FundingPayments
+}
 
 // SE SettleEvent - common denominator between SPE & SDE.
 type SE interface {
@@ -75,6 +87,14 @@ type DPE interface {
 	SafeParties() []string
 }
 
+// SME SettleMarketEvent.
+type SME interface {
+	MarketID() string
+	SettledPrice() *num.Uint
+	PositionFactor() num.Decimal
+	TxHash() string
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
@@ -108,9 +128,33 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.applyDistressedOrders(te)
 		case DPE:
 			p.applyDistressedPositions(te)
+		case SME:
+			p.handleSettleMarket(te)
+		case FP:
+			p.handleFundingPayments(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+func (p *Positions) handleFundingPayments(e FP) {
+	marketID := e.MarketID()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		return
+	}
+	payments := e.FundingPayments().Payments
+	for _, pay := range payments {
+		pos, ok := partyPos[pay.PartyId]
+		amt, _ := num.DecimalFromString(pay.Amount)
+		if !ok {
+			continue
+		}
+		pos.RealisedPnl = pos.RealisedPnl.Add(amt)
+		pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amt)
+		partyPos[pay.PartyId] = pos
+	}
+	p.data[marketID] = partyPos
 }
 
 func (p *Positions) applyDistressedPositions(e DPE) {
@@ -207,6 +251,24 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.Position.UpdatedAt = e.Timestamp()
 	calc.state = vega.PositionStatus_POSITION_STATUS_CLOSED_OUT
 	p.data[mID][tID] = calc
+}
+
+func (p *Positions) handleSettleMarket(e SME) {
+	market := e.MarketID()
+	posFactor := e.PositionFactor()
+	markPriceDec := num.DecimalFromUint(e.SettledPrice())
+	mp, ok := p.data[market]
+	if !ok {
+		panic(ErrMarketNotFound)
+	}
+	for pid, pos := range mp {
+		openVolumeDec := num.DecimalFromInt64(pos.OpenVolume)
+
+		unrealisedPnl := openVolumeDec.Mul(markPriceDec.Sub(pos.AverageEntryPriceFP)).Div(posFactor).Round(0)
+		pos.RealisedPnl = pos.RealisedPnl.Add(unrealisedPnl)
+		pos.UnrealisedPnl = num.DecimalZero()
+		p.data[market][pid] = pos
+	}
 }
 
 // GetPositionsByMarketAndParty get the position of a single party in a given market.
@@ -411,5 +473,7 @@ func (p *Positions) Types() []events.Type {
 		events.LossSocializationEvent,
 		events.DistressedOrdersClosedEvent,
 		events.DistressedPositionsEvent,
+		events.SettleMarketEvent,
+		events.FundingPaymentsEvent,
 	}
 }

@@ -1,9 +1,25 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package banking_test
 
 import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
@@ -12,9 +28,9 @@ import (
 
 func TestCalculateGovernanceTransferAmount(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 
-	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(1000000))
+	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))
 	e.OnMaxFractionChanged(context.Background(), num.MustDecimalFromString("0.5"))
 
 	e.col.EXPECT().GetSystemAccountBalance(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.NewUint(1000000), nil).AnyTimes()
@@ -37,7 +53,7 @@ func TestCalculateGovernanceTransferAmount(t *testing.T) {
 	// => amount to be transferred = min(500k, 1000k, 400k, 200k) = 200k which is fine for all or nothing
 	require.Equal(t, num.NewUint(200000), balance)
 
-	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))
+	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(10000))
 	balance, err = e.CalculateGovernanceTransferAmount("asset", "", vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, num.DecimalFromFloat(0.2), num.NewUint(400000), vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING)
 
 	// max amount allowed by max fraction = 500k
@@ -53,7 +69,7 @@ func TestCalculateGovernanceTransferAmount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(100000), balance)
 
-	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(1000000))
+	e.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))
 	e.OnMaxFractionChanged(context.Background(), num.MustDecimalFromString("0.05"))
 
 	balance, err = e.CalculateGovernanceTransferAmount("asset", "", vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, num.DecimalFromFloat(0.2), num.NewUint(400000), vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING)

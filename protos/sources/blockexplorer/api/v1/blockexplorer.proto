@@ -11,7 +11,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega block explorer APIs";
-    version: "v0.72.1";
+    version: "v0.73.0";
   }
   schemes: [
     HTTP,
@@ -109,4 +109,10 @@ message Transaction {
   // Optional error happening when processing / checking the transaction
   // This should be set if error code is not 0
   optional string error = 10;
+  // Timestamp when the transaction happened, using RFC3399 format.
+  string created_at = 11;
+  // Version format of the transaction
+  vega.commands.v1.TxVersion version = 12;
+  // Proof of Work parameters of the transaction
+  vega.commands.v1.ProofOfWork pow = 13;
 }

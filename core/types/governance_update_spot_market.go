@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -16,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +30,7 @@ type ProposalTermsUpdateSpotMarket struct {
 func (a ProposalTermsUpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"updateSpotMarket(%s)",
-		reflectPointerToString(a.UpdateSpotMarket),
+		stringer.ReflectPointerToString(a.UpdateSpotMarket),
 	)
 }
 
@@ -82,7 +86,7 @@ func (n UpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -113,22 +117,25 @@ type UpdateSpotMarketConfiguration struct {
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            updateRiskParams
+	SLAParams                 *LiquiditySLAParams
 }
 
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s)",
-		reflectPointerToString(n.Instrument),
+		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
+		stringer.ReflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.TargetStakeParameters),
-		reflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.TargetStakeParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.SLAParams),
 	)
 }
 
 func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguration {
 	cpy := &UpdateSpotMarketConfiguration{
-		Metadata: make([]string, len(n.Metadata)),
+		Metadata:  make([]string, len(n.Metadata)),
+		SLAParams: n.SLAParams.DeepClone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -161,6 +168,7 @@ func (n UpdateSpotMarketConfiguration) IntoProto() *vegapb.UpdateSpotMarketConfi
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SlaParams:                 n.SLAParams.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateSpotMarketConfiguration_Simple:
@@ -180,10 +188,16 @@ func UpdateSpotMarketConfigurationFromProto(p *vegapb.UpdateSpotMarketConfigurat
 	}
 	targetStakeParameters := TargetStakeParametersFromProto(p.TargetStakeParameters)
 
+	var slaParams *LiquiditySLAParams
+	if p.SlaParams != nil {
+		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
+	}
+
 	r := &UpdateSpotMarketConfiguration{
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SLAParams:                 slaParams,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -203,7 +217,7 @@ type UpdateSpotMarketConfigurationSimple struct {
 func (n UpdateSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -239,7 +253,7 @@ type UpdateSpotMarketConfigurationLogNormal struct {
 func (n UpdateSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package events_test
 
@@ -25,24 +28,6 @@ import (
 func TestLiquidityProvisionDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	buyOrder := &types.LiquidityOrderReference{
-		OrderID: "OrderId1",
-		LiquidityOrder: &types.LiquidityOrder{
-			Reference:  types.PeggedReferenceMid,
-			Proportion: 10,
-			Offset:     num.NewUint(5),
-		},
-	}
-
-	sellOrder := &types.LiquidityOrderReference{
-		OrderID: "OrderId1",
-		LiquidityOrder: &types.LiquidityOrder{
-			Reference:  types.PeggedReferenceMid,
-			Proportion: 20,
-			Offset:     num.NewUint(5),
-		},
-	}
-
 	lp := &types.LiquidityProvision{
 		ID:               "Id",
 		Party:            "PartyId",
@@ -54,8 +39,6 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 		Version:          1,
 		Status:           types.LiquidityProvisionStatusUndeployed,
 		Reference:        "Reference",
-		Sells:            []*types.LiquidityOrderReference{sellOrder},
-		Buys:             []*types.LiquidityOrderReference{buyOrder},
 	}
 
 	// Create the event
@@ -73,14 +56,6 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	lp.Version = 999
 	lp.Status = types.LiquidityProvisionUnspecified
 	lp.Reference = "Changed"
-	sellOrder.OrderID = "Changed"
-	sellOrder.LiquidityOrder.Offset = num.NewUint(999)
-	sellOrder.LiquidityOrder.Proportion = 999
-	sellOrder.LiquidityOrder.Reference = types.PeggedReferenceBestAsk
-	buyOrder.OrderID = "Changed"
-	buyOrder.LiquidityOrder.Offset = num.NewUint(999)
-	buyOrder.LiquidityOrder.Proportion = 999
-	buyOrder.LiquidityOrder.Reference = types.PeggedReferenceBestBid
 
 	// Check that values are different
 	assert.NotEqual(t, lp.ID, lp2.Id)
@@ -93,12 +68,4 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	assert.NotEqual(t, lp.Version, lp2.Version)
 	assert.NotEqual(t, lp.Status, lp2.Status)
 	assert.NotEqual(t, lp.Reference, lp2.Reference)
-	assert.NotEqual(t, sellOrder.OrderID, lp2.Sells[0].OrderId)
-	assert.NotEqual(t, sellOrder.LiquidityOrder.Offset, lp2.Sells[0].LiquidityOrder.Offset)
-	assert.NotEqual(t, sellOrder.LiquidityOrder.Proportion, lp2.Sells[0].LiquidityOrder.Proportion)
-	assert.NotEqual(t, sellOrder.LiquidityOrder.Reference, lp2.Sells[0].LiquidityOrder.Reference)
-	assert.NotEqual(t, buyOrder.OrderID, lp2.Buys[0].OrderId)
-	assert.NotEqual(t, buyOrder.LiquidityOrder.Offset, lp2.Buys[0].LiquidityOrder.Offset)
-	assert.NotEqual(t, buyOrder.LiquidityOrder.Proportion, lp2.Buys[0].LiquidityOrder.Proportion)
-	assert.NotEqual(t, buyOrder.LiquidityOrder.Reference, lp2.Buys[0].LiquidityOrder.Reference)
 }

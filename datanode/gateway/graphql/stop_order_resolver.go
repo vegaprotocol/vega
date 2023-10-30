@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package gql
 
 import (
@@ -72,14 +87,14 @@ func (s stopOrderResolver) PartyID(_ context.Context, obj *eventspb.StopOrderEve
 	if obj == nil || obj.StopOrder == nil {
 		return "", ErrInvalidStopOrder
 	}
-	return obj.StopOrder.Id, nil
+	return obj.StopOrder.PartyId, nil
 }
 
 func (s stopOrderResolver) MarketID(_ context.Context, obj *eventspb.StopOrderEvent) (string, error) {
 	if obj == nil || obj.StopOrder == nil {
 		return "", ErrInvalidStopOrder
 	}
-	return obj.StopOrder.Id, nil
+	return obj.StopOrder.MarketId, nil
 }
 
 func (s stopOrderResolver) Trigger(_ context.Context, obj *eventspb.StopOrderEvent) (StopOrderTrigger, error) {
@@ -98,6 +113,19 @@ func (s stopOrderResolver) Trigger(_ context.Context, obj *eventspb.StopOrderEve
 	default:
 		return nil, fmt.Errorf("unknown trigger type: %T", t)
 	}
+}
+
+func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.Order, error) {
+	// no order triggeerd yet
+	if len(obj.StopOrder.OrderId) <= 0 {
+		return nil, nil
+	}
+
+	return s.r.getOrderByID(ctx, obj.StopOrder.OrderId, nil)
+}
+
+func (s stopOrderResolver) RejectionReason(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.StopOrder_RejectionReason, error) {
+	return obj.StopOrder.RejectionReason, nil
 }
 
 type stopOrderFilterResolver VegaResolverRoot

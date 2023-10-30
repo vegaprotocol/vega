@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package spam
 
 import (
@@ -128,6 +143,15 @@ func (s *Handler) CheckSubmission(req *walletpb.SubmitTransactionRequest, newSta
 	case *walletpb.SubmitTransactionRequest_IssueSignatures:
 		s.merge(stats.IssuesSignatures, newStats.IssuesSignatures)
 		return s.checkTxn(stats.IssuesSignatures)
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		s.merge(stats.CreateReferralSet, newStats.CreateReferralSet)
+		return s.checkTxn(stats.CreateReferralSet)
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		s.merge(stats.UpdateReferralSet, newStats.UpdateReferralSet)
+		return s.checkTxn(stats.UpdateReferralSet)
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		s.merge(stats.ApplyReferralCode, newStats.ApplyReferralCode)
+		return s.checkTxn(stats.ApplyReferralCode)
 	case *walletpb.SubmitTransactionRequest_VoteSubmission:
 		s.mergeVotes(stats.Votes, newStats.Votes)
 		return s.checkVote(cmd.VoteSubmission.ProposalId, stats.Votes)

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package node
 
@@ -115,13 +118,30 @@ func (n *Command) Run(
 	// to run, most likely via configuration, so we can use legacy or current
 	var err error
 	n.protocol, err = protocol.New(
-		n.ctx, n.confWatcher, n.Log, n.cancel, n.stopBlockchain, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, vegaPaths, n.stats)
+		n.ctx,
+		n.confWatcher,
+		n.Log,
+		n.cancel,
+		n.stopBlockchain,
+		n.nodeWallets,
+		n.ethClient,
+		n.ethConfirmations,
+		n.blockchainClient,
+		vegaPaths,
+		n.stats)
 	if err != nil {
 		return err
 	}
 
 	if err := n.startAPIs(); err != nil {
-		return err
+		return fmt.Errorf("could not start the core APIs: %w", err)
+	}
+
+	// The protocol must be started after the API, otherwise nobody is listening
+	// to the internal events emitted during that phase (like during the state
+	// restoration), which will cause issues to APIs consumer like system tests.
+	if err := n.protocol.Start(n.ctx); err != nil {
+		return fmt.Errorf("could not start the core: %w", err)
 	}
 
 	// if a chain is being replayed tendermint does this during the initial handshake with the
@@ -154,15 +174,12 @@ func (n *Command) Run(
 	n.Log.Info("Vega startup complete",
 		logging.String("node-mode", string(n.conf.NodeMode)))
 
-	// wait for possible protocol upgrade, or user exist
+	// wait for possible protocol upgrade, or user exit
 	if err := n.wait(errCh); err != nil {
 		return err
 	}
 
-	// cleanup
-	n.Stop()
-
-	return nil
+	return n.Stop()
 }
 
 func (n *Command) wait(errCh <-chan error) error {
@@ -428,14 +445,19 @@ func (n *Command) startBlockchainClients() error {
 		return nil
 	}
 
-	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
-		var err error
-		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
-		if err != nil {
-			return fmt.Errorf("could not instantiate ethereum client: %w", err)
-		}
-		n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
+	// We may not need ethereum client initialized when we have not
+	// provided the ethereum endpoint. We skip creating client here
+	// when RPCEnpoint is empty and the nullchain present.
+	if len(n.conf.Ethereum.RPCEndpoint) < 1 {
+		return nil
 	}
+
+	var err error
+	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
+	if err != nil {
+		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+	}
+	n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
 
 	return nil
 }

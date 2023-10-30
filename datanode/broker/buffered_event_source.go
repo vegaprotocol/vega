@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package broker
 
 import (
@@ -209,7 +224,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				}
 			}
 
-			event, bufferSeqNum, read, err := readRawEvent(bufferFile, offset)
+			event, bufferSeqNum, read, err := ReadRawEvent(bufferFile, offset)
 			if err != nil {
 				sinkErrorCh <- fmt.Errorf("error when reading event from buffer file:%w", err)
 				return
@@ -299,7 +314,7 @@ func (m *FileBufferedEventSource) moveBufferFileToArchive(bufferFilePath string)
 	return nil
 }
 
-func readRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
+func ReadRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
 	totalBytesRead uint32, err error,
 ) {
 	sizeBytes := make([]byte, broker.NumberOfSizeBytes)
@@ -405,10 +420,11 @@ func removeOldArchiveFilesIfDirectoryFull(dir string, maximumDirSizeBytes int64)
 	var dirSizeBytes int64
 	var archiveFiles []fs.FileInfo
 	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			dirSizeBytes += info.Size()
-			archiveFiles = append(archiveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		dirSizeBytes += info.Size()
+		archiveFiles = append(archiveFiles, info)
 		return nil
 	})
 	if err != nil {

@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands_test
 
 import (
@@ -5,6 +20,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"code.vegaprotocol.io/vega/libs/test"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +80,7 @@ func testProposalSubmissionWithNonPositiveClosingTimestampFails(t *testing.T) {
 			value: 0,
 		}, {
 			msg:   "with negative closing timestamp",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -82,7 +99,7 @@ func testProposalSubmissionWithNonPositiveClosingTimestampFails(t *testing.T) {
 func testProposalSubmissionWithPositiveClosingTimestampSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp: RandomPositiveI64(),
+			ClosingTimestamp: test.RandomPositiveI64(),
 		},
 	})
 
@@ -99,7 +116,7 @@ func testProposalSubmissionWithNonPositiveEnactmentTimestampFails(t *testing.T) 
 			value: 0,
 		}, {
 			msg:   "with negative closing timestamp",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -118,7 +135,7 @@ func testProposalSubmissionWithNonPositiveEnactmentTimestampFails(t *testing.T) 
 func testProposalSubmissionWithPositiveEnactmentTimestampSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
-			EnactmentTimestamp: RandomPositiveI64(),
+			EnactmentTimestamp: test.RandomPositiveI64(),
 		},
 	})
 
@@ -128,7 +145,7 @@ func testProposalSubmissionWithPositiveEnactmentTimestampSucceeds(t *testing.T) 
 func testProposalSubmissionWithNegativeValidationTimestampFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
-			ValidationTimestamp: RandomNegativeI64(),
+			ValidationTimestamp: test.RandomNegativeI64(),
 		},
 	})
 
@@ -138,7 +155,7 @@ func testProposalSubmissionWithNegativeValidationTimestampFails(t *testing.T) {
 func testProposalSubmissionWithPositiveValidationTimestampSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
-			ValidationTimestamp: RandomPositiveI64(),
+			ValidationTimestamp: test.RandomPositiveI64(),
 		},
 	})
 
@@ -146,8 +163,8 @@ func testProposalSubmissionWithPositiveValidationTimestampSucceeds(t *testing.T)
 }
 
 func testProposalSubmissionWithClosingTimestampAfterEnactmentTimestampFails(t *testing.T) {
-	closingTime := RandomPositiveI64()
-	enactmentTime := RandomPositiveI64Before(closingTime)
+	closingTime := test.RandomPositiveI64()
+	enactmentTime := test.RandomPositiveI64Before(closingTime)
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:   closingTime,
@@ -161,8 +178,8 @@ func testProposalSubmissionWithClosingTimestampAfterEnactmentTimestampFails(t *t
 }
 
 func testProposalSubmissionWithClosingTimestampBeforeEnactmentTimestampSucceeds(t *testing.T) {
-	enactmentTime := RandomPositiveI64()
-	closingTime := RandomPositiveI64Before(enactmentTime)
+	enactmentTime := test.RandomPositiveI64()
+	closingTime := test.RandomPositiveI64Before(enactmentTime)
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -177,7 +194,7 @@ func testProposalSubmissionWithClosingTimestampBeforeEnactmentTimestampSucceeds(
 }
 
 func testProposalSubmissionWithClosingTimestampAtEnactmentTimestampSucceeds(t *testing.T) {
-	enactmentTime := RandomPositiveI64()
+	enactmentTime := test.RandomPositiveI64()
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -192,8 +209,8 @@ func testProposalSubmissionWithClosingTimestampAtEnactmentTimestampSucceeds(t *t
 }
 
 func testProposalSubmissionWithValidationTimestampAfterClosingTimestampFails(t *testing.T) {
-	validationTime := RandomPositiveI64()
-	closingTime := RandomPositiveI64Before(validationTime)
+	validationTime := test.RandomPositiveI64()
+	closingTime := test.RandomPositiveI64Before(validationTime)
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    closingTime,
@@ -207,7 +224,7 @@ func testProposalSubmissionWithValidationTimestampAfterClosingTimestampFails(t *
 }
 
 func testProposalSubmissionWithValidationTimestampAtClosingTimestampFails(t *testing.T) {
-	validationTime := RandomPositiveI64()
+	validationTime := test.RandomPositiveI64()
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -222,8 +239,8 @@ func testProposalSubmissionWithValidationTimestampAtClosingTimestampFails(t *tes
 }
 
 func testProposalSubmissionWithValidationTimestampBeforeClosingTimestampSucceeds(t *testing.T) {
-	closingTime := RandomPositiveI64()
-	validationTime := RandomPositiveI64Before(closingTime)
+	closingTime := test.RandomPositiveI64()
+	validationTime := test.RandomPositiveI64Before(closingTime)
 
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
@@ -258,10 +275,10 @@ func testProposalSubmissionWithRationalDescriptionSucceeds(t *testing.T) {
 	}{
 		{
 			name:        "with description of 10 characters",
-			description: RandomStr(10),
+			description: vgrand.RandomStr(10),
 		}, {
 			name:        "with description of 1024 characters",
-			description: RandomStr(1024),
+			description: vgrand.RandomStr(1024),
 		},
 	}
 
@@ -294,7 +311,7 @@ func testProposalSubmissionWithIncorrectRationalDescriptionFails(t *testing.T) {
 			expectedErr: commands.ErrIsRequired,
 		}, {
 			name:        "with description > 1024",
-			description: RandomStr(20420),
+			description: vgrand.RandomStr(20420),
 			expectedErr: commands.ErrMustNotExceed20000Chars,
 		},
 	}
@@ -325,8 +342,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 					Change: &types.ProposalTerms_NewMarket{},
 				},
 				Rationale: &types.ProposalRationale{
-					Title:       RandomStr(10),
-					Description: RandomStr(10),
+					Title:       vgrand.RandomStr(10),
+					Description: vgrand.RandomStr(10),
 				},
 			},
 		}, {
@@ -345,8 +362,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 					Change: &types.ProposalTerms_UpdateMarket{},
 				},
 				Rationale: &types.ProposalRationale{
-					Title:       RandomStr(10),
-					Description: RandomStr(10),
+					Title:       vgrand.RandomStr(10),
+					Description: vgrand.RandomStr(10),
 				},
 			},
 		}, {
@@ -365,8 +382,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 					Change: &types.ProposalTerms_NewAsset{},
 				},
 				Rationale: &types.ProposalRationale{
-					Title:       RandomStr(10),
-					Description: RandomStr(10),
+					Title:       vgrand.RandomStr(10),
+					Description: vgrand.RandomStr(10),
 				},
 			},
 		}, {
@@ -385,8 +402,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 					Change: &types.ProposalTerms_UpdateNetworkParameter{},
 				},
 				Rationale: &types.ProposalRationale{
-					Title:       RandomStr(10),
-					Description: RandomStr(10),
+					Title:       vgrand.RandomStr(10),
+					Description: vgrand.RandomStr(10),
 				},
 			},
 		}, {
@@ -405,8 +422,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 					Change: &types.ProposalTerms_NewFreeform{},
 				},
 				Rationale: &types.ProposalRationale{
-					Title:       RandomStr(10),
-					Description: RandomStr(10),
+					Title:       vgrand.RandomStr(10),
+					Description: vgrand.RandomStr(10),
 				},
 			},
 		},
@@ -429,8 +446,8 @@ func testProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testing.T)
 func checkProposalSubmission(cmd *commandspb.ProposalSubmission) commands.Errors {
 	err := commands.CheckProposalSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

@@ -1,93 +1,29 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 )
-
-func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
-	ctx context.Context, pos *positions.MarketPosition,
-) error {
-	market := m.GetID()
-
-	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
-	if err != nil {
-		return err
-	}
-
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice())
-	if err != nil {
-		return err
-	}
-
-	// if evt is different to nil,
-	// this means a margin shortfall would happen
-	// we need to return an error
-	if evt != nil {
-		return fmt.Errorf(
-			"margin would be below maintenance with amend during continuous: %w",
-			common.ErrMarginCheckInsufficient,
-		)
-	}
-
-	// any other case is fine
-	return nil
-}
-
-func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, pos *positions.MarketPosition, price *num.Uint,
-) (events.Risk, error) {
-	market := m.GetID()
-
-	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
-	if err != nil {
-		return nil, err
-	}
-
-	// then we calculated margins for this party
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
-	if len(closed) > 0 {
-		// this order would take party below maintenance -> stop here
-		return nil, fmt.Errorf(
-			"margin would be below maintenance: %w", common.ErrMarginCheckInsufficient)
-	}
-
-	// in this case, if no risk event is emitted, this means
-	// that the margins is covered, nothing needsto happen
-	if len(risk) <= 0 {
-		return nil, nil
-	}
-
-	// then we check if the required top-up is greated that the amound in
-	// the GeneralBalance, if yes it means we would have to use the bond
-	// account which is not acceptable at this point, we return an error as well
-	if risk[0].Amount().GT(num.UintZero().Sub(risk[0].GeneralBalance(), risk[0].BondBalance())) {
-		return nil, fmt.Errorf("margin would require bond: %w", common.ErrMarginCheckInsufficient)
-	}
-
-	return risk[0], nil
-}
 
 func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	if m.as.InAuction() {
@@ -113,7 +49,8 @@ func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) 
 		margins = append(margins, e)
 	}
 	// we should get any and all risk events we need here
-	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price)
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	return m.risk.UpdateMarginsOnSettlement(ctx, margins, price, increment)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
@@ -126,7 +63,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price.Clone()))
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price.Clone()), increment)
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, nil, common.ErrMarginCheckInsufficient
@@ -141,7 +79,8 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone())
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone(), increment)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -149,9 +88,6 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
-		if m.liquidity.IsPending(order.Party) {
-			return nil, nil, ErrBondSlashing
-		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
 	return []events.Risk{risk}, nil, nil

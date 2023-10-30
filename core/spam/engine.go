@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package spam
 
@@ -38,7 +41,6 @@ var (
 )
 
 const (
-	numberOfEpochsBan              uint64 = 4
 	numberOfBlocksForIncreaseCheck uint64 = 10
 	minBanDuration                        = time.Second * 30 // minimum ban duration
 )
@@ -62,6 +64,8 @@ type Engine struct {
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
 	banDuration             time.Duration
+
+	noSpamProtection bool // flag that disables chesk for the spam policies, that is useful for the nullchain
 }
 
 type Policy interface {
@@ -111,17 +115,24 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
 	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, "", log, accounting)
 
+	createReferralSetPolicy := NewSimpleSpamPolicy("createReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxCreateReferralSet, log, accounting)
+	updateReferralSetPolicy := NewSimpleSpamPolicy("updateReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxUpdateReferralSet, log, accounting)
+	applyReferralCodePolicy := NewSimpleSpamPolicy("applyReferralCode", "", netparams.SpamProtectionMaxApplyReferralCode, log, accounting)
+
 	// complex policies
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]Policy{
-		proposalPolicy.policyName:         proposalPolicy,
-		valJoinPolicy.policyName:          valJoinPolicy,
-		delegationPolicy.policyName:       delegationPolicy,
-		transferPolicy.policyName:         transferPolicy,
-		issuesSignaturesPolicy.policyName: issuesSignaturesPolicy,
-		voteKey:                           votePolicy,
+		proposalPolicy.policyName:          proposalPolicy,
+		valJoinPolicy.policyName:           valJoinPolicy,
+		delegationPolicy.policyName:        delegationPolicy,
+		transferPolicy.policyName:          transferPolicy,
+		issuesSignaturesPolicy.policyName:  issuesSignaturesPolicy,
+		createReferralSetPolicy.policyName: createReferralSetPolicy,
+		updateReferralSetPolicy.policyName: updateReferralSetPolicy,
+		applyReferralCodePolicy.policyName: applyReferralCodePolicy,
+		voteKey:                            votePolicy,
 	}
 	e.hashKeys = []string{
 		proposalPolicy.policyName,
@@ -129,6 +140,9 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		delegationPolicy.policyName,
 		transferPolicy.policyName,
 		issuesSignaturesPolicy.policyName,
+		createReferralSetPolicy.policyName,
+		updateReferralSetPolicy.policyName,
+		applyReferralCodePolicy.policyName,
 		voteKey,
 	}
 
@@ -140,12 +154,20 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.CancelTransferFundsCommand] = transferPolicy
 	e.transactionTypeToPolicy[txn.IssueSignatures] = issuesSignaturesPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
+	e.transactionTypeToPolicy[txn.CreateReferralSetCommand] = createReferralSetPolicy
+	e.transactionTypeToPolicy[txn.UpdateReferralSetCommand] = updateReferralSetPolicy
+	e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand] = applyReferralCodePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
 	e.log.Info("Spam protection started")
 
 	return e
+}
+
+func (e *Engine) DisableSpamProtection() {
+	e.log.Infof("Disabling spam protection for the Spam Engine")
+	e.noSpamProtection = true
 }
 
 // OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
@@ -158,6 +180,30 @@ func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duratio
 		e.banDuration = epochImpliedDurationDuration
 	}
 	return nil
+}
+
+// OnCreateReferralSet is called when the net param for max create referral set per epoch has changed.
+func (e *Engine) OnMaxCreateReferralSet(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxCreateReferralSet, max)
+}
+
+// OnMaxUpdateReferralSet is called when the net param for max update referral set per epoch has changed.
+func (e *Engine) OnMaxUpdateReferralSet(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.UpdateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxUpdateReferralSet, max)
+}
+
+// OnMaxApplyReferralCode is called when the net param for max update referral set per epoch has changed.
+func (e *Engine) OnMaxApplyReferralCode(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand].UpdateIntParam(netparams.SpamProtectionMaxApplyReferralCode, max)
+}
+
+// OnMinTokensForReferral is called when the net param for min staked tokens requirement for referral set create/update has changed.
+func (e *Engine) OnMinTokensForReferral(ctx context.Context, minTokens *num.Uint) error {
+	err := e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateUintParam(netparams.ReferralProgramMinStakedVegaTokens, minTokens)
+	if err != nil {
+		return err
+	}
+	return e.transactionTypeToPolicy[txn.UpdateReferralSetCommand].UpdateUintParam(netparams.ReferralProgramMinStakedVegaTokens, minTokens)
 }
 
 // OnMaxDelegationsChanged is called when the net param for max delegations per epoch has changed.
@@ -214,6 +260,11 @@ func (e *Engine) OnMinTokensForMultisigUpdatesChanged(ctx context.Context, minTo
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Info("Spam protection OnEpochEvent called", logging.Uint64("epoch", epoch.Seq))
 
+	if e.noSpamProtection {
+		e.log.Info("Spam protection OnEpochEvent disabled", logging.Uint64("epoch", epoch.Seq))
+		return
+	}
+
 	if e.currentEpoch == nil || e.currentEpoch.Seq != epoch.Seq {
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))
@@ -231,6 +282,12 @@ func (e *Engine) EndOfBlock(blockHeight uint64, now time.Time) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
 	}
+
+	if e.noSpamProtection {
+		e.log.Info("Spam protection EndOfBlock disabled", logging.Uint64("blockHeight", blockHeight))
+		return
+	}
+
 	for _, policy := range e.transactionTypeToPolicy {
 		policy.EndOfBlock(blockHeight, now, e.banDuration)
 	}
@@ -246,6 +303,12 @@ func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
+
+	if e.noSpamProtection {
+		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+		return true, nil
+	}
+
 	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
 }
 
@@ -259,6 +322,12 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
+
+	if e.noSpamProtection {
+		e.log.Debug("Spam protection PostBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+		return true, nil
+	}
+
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
 }
 
@@ -287,6 +356,12 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 			stats.IssueSignatures = policy.GetSpamStats(partyID)
 		case txn.VoteCommand:
 			stats.Votes = policy.GetVoteSpamStats(partyID)
+		case txn.CreateReferralSetCommand:
+			stats.CreateReferralSet = policy.GetSpamStats(partyID)
+		case txn.UpdateReferralSetCommand:
+			stats.UpdateReferralSet = policy.GetSpamStats(partyID)
+		case txn.ApplyReferralCodeCommand:
+			stats.ApplyReferralCode = policy.GetSpamStats(partyID)
 		default:
 			continue
 		}

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
@@ -72,6 +87,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckStopOrdersSubmission(cmd.StopOrdersSubmission)
 	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
 		cmdErr = commands.CheckStopOrdersCancellation(cmd.StopOrdersCancellation)
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		cmdErr = commands.CheckCreateReferralSet(cmd.CreateReferralSet)
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		cmdErr = commands.CheckUpdateReferralSet(cmd.UpdateReferralSet)
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		cmdErr = commands.CheckApplyReferralCode(cmd.ApplyReferralCode)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -195,8 +216,20 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_StopOrdersCancellation{
 			StopOrdersCancellation: req.GetStopOrdersCancellation(),
 		}
+	case *walletpb.SubmitTransactionRequest_CreateReferralSet:
+		data.Command = &commandspb.InputData_CreateReferralSet{
+			CreateReferralSet: req.GetCreateReferralSet(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdateReferralSet:
+		data.Command = &commandspb.InputData_UpdateReferralSet{
+			UpdateReferralSet: req.GetUpdateReferralSet(),
+		}
+	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
+		data.Command = &commandspb.InputData_ApplyReferralCode{
+			ApplyReferralCode: req.GetApplyReferralCode(),
+		}
 	default:
-		panic(fmt.Sprintf("command %v is not supported", cmd))
+		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
 }
 

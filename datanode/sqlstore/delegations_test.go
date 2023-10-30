@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -67,8 +82,7 @@ func assertDelegationsMatch(t *testing.T, expected, actual []entities.Delegation
 }
 
 func TestDelegations(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewParties(connectionSource)
 	ds := sqlstore.NewDelegations(connectionSource)
@@ -178,8 +192,8 @@ func TestDelegationPagination(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -198,8 +212,8 @@ func testDelegationPaginationNoFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -219,8 +233,8 @@ func testDelegationPaginationNoFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstAfterPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[2].Cursor().Encode()
@@ -241,8 +255,8 @@ func testDelegationPaginationNoFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -262,8 +276,8 @@ func testDelegationPaginationNoFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastBeforePage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[17].Cursor().Encode()
@@ -284,8 +298,8 @@ func testDelegationPaginationNoFilterLastBeforePage(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -305,8 +319,8 @@ func testDelegationPaginationNoFilterNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	first := int32(3)
@@ -327,8 +341,8 @@ func testDelegationPaginationNoFilterFirstPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterFirstAfterPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	first := int32(3)
@@ -350,8 +364,8 @@ func testDelegationPaginationNoFilterFirstAfterPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	last := int32(3)
@@ -372,8 +386,8 @@ func testDelegationPaginationNoFilterLastPageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationNoFilterLastBeforePageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, _, _ := setupPaginatedDelegationsTests(t, ctx)
 	delegations = entities.ReverseSlice(delegations)
 	last := int32(3)
@@ -395,8 +409,8 @@ func testDelegationPaginationNoFilterLastBeforePageNewestFirst(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -415,8 +429,8 @@ func testDelegationPaginationPartyFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterFirstPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -436,8 +450,8 @@ func testDelegationPaginationPartyFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterFirstAfterPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[2].Cursor().Encode()
@@ -458,8 +472,8 @@ func testDelegationPaginationPartyFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterLastPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -479,8 +493,8 @@ func testDelegationPaginationPartyFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyFilterLastBeforePage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, _ := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[7].Cursor().Encode()
@@ -501,8 +515,8 @@ func testDelegationPaginationPartyFilterLastBeforePage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -522,8 +536,8 @@ func testDelegationPaginationPartyNodeFilterNoPagination(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterFirstPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -544,8 +558,8 @@ func testDelegationPaginationPartyNodeFilterFirstPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterFirstAfterPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	first := int32(3)
 	after := delegations[12].Cursor().Encode()
@@ -567,8 +581,8 @@ func testDelegationPaginationPartyNodeFilterFirstAfterPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterLastPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -589,8 +603,8 @@ func testDelegationPaginationPartyNodeFilterLastPage(t *testing.T) {
 }
 
 func testDelegationPaginationPartyNodeFilterLastBeforePage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ds, delegations, parties, nodes := setupPaginatedDelegationsTests(t, ctx)
 	last := int32(3)
 	before := delegations[17].Cursor().Encode()

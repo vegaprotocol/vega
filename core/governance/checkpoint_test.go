@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -40,18 +43,17 @@ func TestCheckpoint(t *testing.T) {
 }
 
 func testCheckpointSuccess(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := eng.newValidParty("proposer", 1)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
 	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(48 * time.Hour)
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, now, filter, binding, true)
 	ctx := context.Background()
 
 	// setup
@@ -119,7 +121,7 @@ func testCheckpointSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	eng2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -149,10 +151,10 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	t.Helper()
 	proposer := eng.newValidPartyTimes("proposer", 1, 0)
 	voter1 := eng.newValidPartyTimes("voter-1", 7, 0)
-	now := eng.tsvc.GetTimeNow()
-	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
+	proposalTime := eng.tsvc.GetTimeNow().Add(48 * time.Hour)
+	termTimeAfterEnact := proposalTime.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, proposalTime, filter, binding, true)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -178,8 +180,7 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 }
 
 func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// enact a proposal for market 1,2,3
 	proposals := make([]types.Proposal, 0, 3)
@@ -188,10 +189,10 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 		proposals = append(proposals, enactNewProposal(t, eng))
 	}
 
-	// market 1 has already been dropped of the execution engine
+	// market 1 has already been dropped of the execution engine, so it is removed from active and not added to enacted
 	// market 2 has trading terminated
 	// market 3 is there and should be saved to the checkpoint
-	eng.markets.EXPECT().GetMarketState(proposals[0].ID).Times(2).Return(types.MarketStateUnspecified, types.ErrInvalidMarketID)
+	eng.markets.EXPECT().GetMarketState(proposals[0].ID).Times(1).Return(types.MarketStateUnspecified, types.ErrInvalidMarketID)
 	eng.markets.EXPECT().GetMarketState(proposals[1].ID).Times(2).Return(types.MarketStateTradingTerminated, nil)
 	eng.markets.EXPECT().GetMarketState(proposals[2].ID).Times(2).Return(types.MarketStateActive, nil)
 
@@ -213,8 +214,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 	data, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
-
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	var counter int
@@ -235,8 +235,7 @@ func TestCheckpointSavingAndLoadingWithDroppedMarkets(t *testing.T) {
 }
 
 func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	now := eng.tsvc.GetTimeNow()
 	// given
@@ -327,8 +326,7 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 }
 
 func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// enact a proposal for market 1,2,3
 	proposal := enactNewProposal(t, eng)
@@ -346,6 +344,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 	proposalID := proposal.ID
 
 	eng.markets.EXPECT().MarketExists(proposalID).AnyTimes().Return(true)
+	eng.ensureGetMarketFuture(t, proposalID)
 
 	expectedMarket := types.Market{
 		ID: proposalID,
@@ -375,7 +374,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	eng2 := getTestEngine(t)
+	eng2 := getTestEngine(t, time.Now())
 	defer eng2.ctrl.Finish()
 
 	var counter int

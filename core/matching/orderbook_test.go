@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package matching_test
 
@@ -1138,9 +1141,8 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 	assert.Equal(t, 0, len(trades))
 	book.ob.SubmitOrder(newOrder)
 
-	if _, err := book.ob.DeleteOrder(newOrder); err != nil {
-		fmt.Println(err, "ORDER_NOT_FOUND")
-	}
+	_, err = book.ob.DeleteOrder(newOrder)
+	require.NoError(t, err)
 
 	book.ob.PrintState("AFTER REMOVE ORDER")
 }
@@ -1202,22 +1204,15 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 	assert.Error(t, getErr)
 	assert.Equal(t, 0, len(trades))
 	_, err := book.ob.SubmitOrder(newOrder)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	assert.Equal(t, types.OrderErrorInvalidMarketID, err)
-	assert.Equal(t, getErr, err)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, types.OrderErrorInvalidMarketID)
+	assert.ErrorIs(t, err, getErr)
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
 	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
-	logger := logging.NewTestLogger()
-	defer logger.Sync()
-
-	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
 	id := vgcrypto.RandomHash()
@@ -1245,12 +1240,9 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 
 	// Act
 	res, err := book.ob.CancelOrder(orderAdded)
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	// Assert
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, id, res.Order.ID)
 	assert.Equal(t, types.OrderStatusCancelled, res.Order.Status)
 
@@ -1292,12 +1284,9 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 
 	// Act
 	res, err := book.ob.CancelOrder(orderAdded)
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	// Assert
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, id, res.Order.ID)
 	assert.Equal(t, types.OrderStatusCancelled, res.Order.Status)
 
@@ -1561,9 +1550,6 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 
 	trades, getErr := book.ob.GetTrades(newOrder)
 	confirmation, err := book.ob.SubmitOrder(newOrder)
-	if err != nil {
-		fmt.Println(err)
-	}
 	assert.Equal(t, err, getErr)
 	assert.Equal(t, 0, len(trades))
 
@@ -1584,10 +1570,6 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 	}
 
 	err = book.ob.AmendOrder(newOrder, editedOrder)
-	if err != types.OrderErrorNotFound {
-		fmt.Println(err)
-	}
-
 	assert.Equal(t, types.OrderErrorNotFound, err)
 }
 
@@ -2147,26 +2129,16 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		fmt.Println("-> PassiveOrdersAffected:", confirmationtypes.PassiveOrdersAffected)
 		fmt.Printf("Scenario: %d / %d \n", i+1, len(scenario))
 
-		// assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 		// trades should match expected trades
 		for i, exp := range s.expectedTrades {
 			expectTrade(t, &exp, confirmationtypes.Trades[i])
 			expectTrade(t, &exp, trades[i])
 		}
-		// for i, trade := range confirmationtypes.Trades {
-		// expectTrade(t, &s.expectedTrades[i], trade)
-		// }
 
 		// orders affected should match expected values
 		for i, exp := range s.expectedPassiveOrdersAffected {
 			expectOrder(t, &exp, confirmationtypes.PassiveOrdersAffected[i])
 		}
-		// for i, orderAffected := range confirmationtypes.PassiveOrdersAffected {
-		// 	expectOrder(t, &s.expectedPassiveOrdersAffected[i], orderAffected)
-		// }
-
-		// call remove expired orders every scenario
-		// book.ob.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
 	}
 }
 

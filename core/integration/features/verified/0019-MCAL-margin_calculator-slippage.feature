@@ -5,21 +5,21 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         # Set liquidity parameters to allow "zero" target-stake which is needed to construct the order-book defined in the ACs
         Given the following network parameters are set:
             | name                                          | value |
-            | market.stake.target.scalingFactor             | 1e-9  |
-            | market.liquidity.targetstake.triggering.ratio | 0     |
             | network.markPriceUpdateMaximumFrequency       | 0s    |
-
-       
+        And the liquidity monitoring parameters:
+            | name               | triggering ratio | time window | scaling factor |
+            | lqm-params         | 0.00             | 24h         | 1e-9           |       
         And the simple risk model named "simple-risk-model":
             | long | short | max move up | min move down | probability of trading |
             | 0.1  | 0.1   | 100         | -100          | 0.2                    |
 
         And the markets:
-            | id        | quote name | asset | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor |
-            | ETH/FEB23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      |
-            | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       |
+            | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor | sla params      |
+            | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      | default-futures |
+            | ETH/MAR23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
 
 
+    @SLABug
     Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-011)(0019-MCAL-012)
 
         # Create position, order book, and mark price conditions matching the spec
@@ -47,7 +47,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
 
         # Checks for 0019-MCAL-012
-        When the opening auction period ends for market "ETH/FEB23"
+        When the network moves ahead "2" blocks
         # Check mark-price matches the specification
         Then the mark price should be "15900" for the market "ETH/FEB23"
         # Check order book matches the specification
@@ -64,7 +64,8 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
 
         # Checks for 0019-MCAL-013
-        When the opening auction period ends for market "ETH/MAR23"
+        # Network has moved ahead to leave ETH/FEB23 opening auction, ends this opening auction, too
+        # When the opening auction period ends for market "ETH/MAR23"
         # Check mark-price matches the specification
         Then the mark price should be "15900" for the market "ETH/MAR23"
         # Check order book matches the specification

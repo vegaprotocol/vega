@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package liquidity_test
 
@@ -31,6 +34,62 @@ import (
 func TestSubmissions(t *testing.T) {
 	t.Run("Create and cancel", testSubmissionCreateAndCancel)
 	t.Run("Cancel non existing", testCancelNonExistingSubmission)
+	t.Run("Can to submit when current or pending LP exists", testFailsWhenLPExists)
+}
+
+func testFailsWhenLPExists(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		te    = newTestEngine(t)
+	)
+	defer te.ctrl.Finish()
+
+	require.Nil(t, te.engine.LiquidityProvisionByPartyID("some-party"))
+
+	lps1 := &commandspb.LiquidityProvisionSubmission{
+		MarketId: te.marketID, CommitmentAmount: "100", Fee: "0.5",
+	}
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
+	require.NoError(t, err)
+
+	deterministicID := crypto.RandomHash()
+	idGen := idgeneration.New(deterministicID)
+
+	lpID := idGen.NextID()
+	now := te.tsvc.GetTimeNow()
+	nowNano := now.UnixNano()
+
+	expected := &types.LiquidityProvision{
+		ID:               lpID,
+		MarketID:         te.marketID,
+		Party:            party,
+		Fee:              num.DecimalFromFloat(0.5),
+		CommitmentAmount: lps.CommitmentAmount.Clone(),
+		CreatedAt:        nowNano,
+		UpdatedAt:        nowNano,
+		Status:           types.LiquidityProvisionStatusActive,
+		Version:          1,
+	}
+
+	// Creating a submission should fire an event
+	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+
+	idgen := idgeneration.New(deterministicID)
+	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	require.NoError(t, err)
+
+	// first validate that the amendment is pending
+	pendingLp := te.engine.PendingProvisionByPartyID(party)
+	assert.Equal(t, expected.CommitmentAmount.String(), pendingLp.CommitmentAmount.String())
+	assert.Equal(t, expected.Fee.String(), pendingLp.Fee.String())
+
+	idgen = idgeneration.New(deterministicID)
+
+	lps.CommitmentAmount = num.NewUint(1000)
+	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	require.Error(t, err, "liquidity provision already exists")
 }
 
 func testSubmissionCreateAndCancel(t *testing.T) {
@@ -70,6 +129,7 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 
 	// Creating a submission should fire an event
 	te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	te.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 	idgen := idgeneration.New(deterministicID)
 	_, err = te.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
@@ -85,7 +145,7 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 
 	zero := num.UintZero()
 
-	te.engine.ResetSLAEpoch(ctx, now, zero, zero, num.DecimalZero())
+	te.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
 	te.engine.ApplyPendingProvisions(ctx, now)
 
 	got = te.engine.LiquidityProvisionByPartyID(party)
@@ -129,6 +189,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
 
 	zero := num.UintZero()
 	tng.orderbook.EXPECT().GetBestStaticBidPrice().Return(zero, nil).AnyTimes()
@@ -150,7 +211,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	now := tng.tsvc.GetTimeNow()
 
 	tng.engine.ApplyPendingProvisions(ctx, now)
-	tng.engine.ResetSLAEpoch(ctx, time.Now(), zero, zero, num.DecimalOne())
+	tng.engine.ResetSLAEpoch(time.Now(), zero, zero, num.DecimalOne())
 
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
@@ -165,7 +226,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	_, err = tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen)
 	require.NoError(t, err)
 
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, num.DecimalZero())
+	tng.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
 	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	suppliedStake = tng.engine.CalculateSuppliedStake()

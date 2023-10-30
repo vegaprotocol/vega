@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
@@ -8,9 +23,12 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -18,6 +36,52 @@ import (
 )
 
 const ReferenceMaxLen int = 100
+
+var validTransfers = map[protoTypes.AccountType]map[protoTypes.AccountType]struct{}{
+	protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY: {
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+	},
+	protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE: {
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+	},
+	protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE: {
+		protoTypes.AccountType_ACCOUNT_TYPE_GENERAL:                    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE:                  {},
+		protoTypes.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY:           {},
+		protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:              {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES: {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION:    {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN:     {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY:   {},
+		protoTypes.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING:   {},
+	},
+}
 
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 	return checkProposalSubmission(cmd).ErrorOrNil()
@@ -134,9 +198,15 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	case *protoTypes.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
 	case *protoTypes.ProposalTerms_NewTransfer:
-		errs.Merge((checkNewTransferChanges(c)))
+		errs.Merge(checkNewTransferChanges(c))
 	case *protoTypes.ProposalTerms_CancelTransfer:
-		errs.Merge((checkCancelTransferChanges(c)))
+		errs.Merge(checkCancelTransferChanges(c))
+	case *protoTypes.ProposalTerms_UpdateMarketState:
+		errs.Merge(checkMarketUpdateState(c))
+	case *protoTypes.ProposalTerms_UpdateReferralProgram:
+		errs.Merge(checkReferralProgram(terms, c))
+	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
+		errs.Merge(checkVolumeDiscountProgram(terms, c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -236,6 +306,216 @@ func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer)
 	return errs
 }
 
+func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateReferralProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateReferralProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program", ErrIsRequired)
+	}
+	if change.UpdateReferralProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program.changes", ErrIsRequired)
+	}
+	changes := change.UpdateReferralProgram.Changes
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
+	}
+
+	tiers := map[string]struct{}{}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkBenefitTier(i, tier))
+		k := tier.MinimumEpochs + "_" + tier.MinimumRunningNotionalTakerVolume
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", i), fmt.Errorf("duplicate benefit tier"))
+		}
+		tiers[k] = struct{}{}
+	}
+
+	tiers = map[string]struct{}{}
+	for i, tier := range changes.StakingTiers {
+		errs.Merge(checkStakingTier(i, tier))
+		k := tier.MinimumStakedTokens
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
+		}
+		tiers[k] = struct{}{}
+	}
+	return errs
+}
+
+func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateVolumeDiscountProgram) Errors {
+	errs := NewErrors()
+	if change.UpdateVolumeDiscountProgram == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_discount_program", ErrIsRequired)
+	}
+	if change.UpdateVolumeDiscountProgram.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes", ErrIsRequired)
+	}
+	changes := change.UpdateVolumeDiscountProgram.Changes
+	if changes.EndOfProgramTimestamp == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrIsRequired)
+	} else if changes.EndOfProgramTimestamp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+	}
+	if changes.WindowLength == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrIsRequired)
+	} else if changes.WindowLength > 100 {
+		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
+	}
+	for i, tier := range changes.BenefitTiers {
+		errs.Merge(checkVolumeBenefitTier(i, tier))
+	}
+
+	return errs
+}
+
+func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
+	errs := NewErrors()
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.%d", index)
+	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
+	} else {
+		mrtv, overflow := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
+		}
+	}
+	if len(tier.VolumeDiscountFactor) == 0 {
+		errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.VolumeDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".volume_discount_factor", ErrMustBePositiveOrZero)
+		}
+	}
+	return errs
+}
+
+func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
+	errs := NewErrors()
+
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", index)
+
+	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
+	} else {
+		mrtv, overflow := num.UintFromString(tier.MinimumRunningNotionalTakerVolume, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsNotValidNumber)
+		} else if mrtv.IsNegative() || mrtv.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.MinimumEpochs) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_epochs", ErrIsRequired)
+	} else {
+		me, overflow := num.UintFromString(tier.MinimumEpochs, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_epochs", ErrIsNotValidNumber)
+		} else if me.IsNegative() || me.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_epochs", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.ReferralRewardFactor) == 0 {
+		errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsRequired)
+	} else {
+		rrf, err := num.DecimalFromString(tier.ReferralRewardFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrIsNotValidNumber)
+		} else if rrf.IsNegative() {
+			errs.AddForProperty(propertyPath+".referral_reward_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
+	if len(tier.ReferralDiscountFactor) == 0 {
+		errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsRequired)
+	} else {
+		rdf, err := num.DecimalFromString(tier.ReferralDiscountFactor)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrIsNotValidNumber)
+		} else if rdf.IsNegative() {
+			errs.AddForProperty(propertyPath+".referral_discount_factor", ErrMustBePositiveOrZero)
+		}
+	}
+
+	return errs
+}
+
+func checkStakingTier(index int, tier *vegapb.StakingTier) Errors {
+	errs := NewErrors()
+
+	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", index)
+
+	if len(tier.MinimumStakedTokens) == 0 {
+		errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsRequired)
+	} else {
+		stakedTokens, overflow := num.UintFromString(tier.MinimumStakedTokens, 10)
+		if overflow {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsNotValidNumber)
+		} else if stakedTokens.IsNegative() || stakedTokens.IsZero() {
+			errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrMustBePositive)
+		}
+	}
+
+	if len(tier.ReferralRewardMultiplier) == 0 {
+		errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsRequired)
+	} else {
+		rrm, err := num.DecimalFromString(tier.ReferralRewardMultiplier)
+		if err != nil {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrIsNotValidNumber)
+		} else if !rrm.GreaterThanOrEqual(num.DecimalOne()) {
+			errs.AddForProperty(propertyPath+".referral_reward_multiplier", ErrMustBeGTE1)
+		}
+	}
+
+	return errs
+}
+
+func checkMarketUpdateState(change *protoTypes.ProposalTerms_UpdateMarketState) Errors {
+	errs := NewErrors()
+	if change.UpdateMarketState == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state", ErrIsRequired)
+	}
+	if change.UpdateMarketState.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes", ErrIsRequired)
+	}
+	changes := change.UpdateMarketState.Changes
+	if len(changes.MarketId) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.marketId", ErrIsRequired)
+	}
+	if changes.UpdateType == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.updateType", ErrIsRequired)
+	}
+	// if the update type is not terminate, price must be empty
+	if changes.UpdateType != vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrMustBeEmpty)
+	}
+
+	// if termination and price is provided it must be a valid uint
+	if changes.UpdateType == vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil && len(*changes.Price) > 0 {
+		n, overflow := num.UintFromString(*changes.Price, 10)
+		if overflow || n.IsNegative() {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrIsNotValid)
+		}
+	}
+	return errs
+}
+
 func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Errors {
 	errs := NewErrors()
 	if change.NewTransfer == nil {
@@ -250,37 +530,42 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsRequired)
 	}
-
+	validDest, ok := validTransfers[changes.SourceType]
 	// source account type may be one of the following:
-	if changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE &&
-		changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+	if !ok {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsNotValid)
 	}
-
 	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsRequired)
 	}
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+	if _, ok := validDest[changes.DestinationType]; !ok {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
 	}
+	dest := changes.DestinationType
 
-	// destination account type may be one of the following:
-	if changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GENERAL &&
-		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD &&
-		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+	// party accounts: check pubkey
+	if dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
+		errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
 	}
 
-	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Source) > 0 {
+	// insurance account type requires a source, other sources are global
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
+		if len(changes.Source) == 0 {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
+		}
+		// destination == source
+		if dest == changes.SourceType && changes.Source == changes.Destination {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+		}
+	} else if len(changes.Source) > 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
 	}
 
-	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Destination) > 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
-	}
-
-	if changes.SourceType == changes.DestinationType && changes.Source == changes.Destination {
+	// global destination accounts == no source
+	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
+		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE) &&
+		len(changes.Destination) == 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
 
@@ -317,9 +602,33 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
 	}
 
+	if oneoff := changes.GetOneOff(); oneoff != nil {
+		if changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
+			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+			errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+		}
+		if oneoff.DeliverOn < 0 {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron", ErrMustBePositiveOrZero)
+		}
+	}
+
 	if recurring := changes.GetRecurring(); recurring != nil {
 		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
 			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
+		}
+
+		if recurring.DispatchStrategy != nil {
+			if len(changes.Destination) > 0 {
+				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+			}
+
+			validateDispatchStrategy(changes.DestinationType, recurring.DispatchStrategy, errs, "proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy", "proposal_submission.terms.change.new_transfer.changes.destination_type")
 		}
 	}
 
@@ -399,7 +708,7 @@ func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Error
 
 	if len(change.UpdateAsset.AssetId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateAsset.AssetId) {
+	} else if !IsVegaID(change.UpdateAsset.AssetId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -508,6 +817,7 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.new_spot_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.new_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -530,15 +840,6 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 
 	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.position_decimal_places", ErrMustBeWithinRange7)
-	}
-
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
 	}
 
 	if len(changes.LinearSlippageFactor) > 0 {
@@ -578,6 +879,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
 
 	return errs
 }
@@ -591,7 +893,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 
 	if len(change.UpdateMarket.MarketId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateMarket.MarketId) {
+	} else if !IsVegaID(change.UpdateMarket.MarketId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -600,14 +902,6 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	}
 
 	changes := change.UpdateMarket.Changes
-	lppr, err := num.DecimalFromString(changes.LpPriceRange)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrIsNotValidNumber)
-	} else if lppr.IsNegative() || lppr.IsZero() {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
-	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
-	}
 
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
@@ -635,6 +929,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.update_market.changes.sla_params"))
 
 	return errs
 }
@@ -648,7 +943,7 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 
 	if len(change.UpdateSpotMarket.MarketId) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(change.UpdateSpotMarket.MarketId) {
+	} else if !IsVegaID(change.UpdateSpotMarket.MarketId) {
 		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -660,7 +955,7 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
-
+	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.update_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -704,7 +999,7 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	errs := NewErrors()
 
 	if parameters == nil {
-		return errs
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters", parentProperty), ErrIsRequired)
 	}
 
 	if len(parameters.TriggeringRatio) == 0 {
@@ -735,7 +1030,6 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	if parameters.TargetStakeParameters.ScalingFactor <= 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters.target_stake_parameters.scaling_factor", parentProperty), ErrMustBePositive)
 	}
-
 	return errs
 }
 
@@ -775,6 +1069,8 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
+	case *protoTypes.InstrumentConfiguration_Perpetual:
+		errs.Merge(checkNewPerps(product.Perpetual))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -802,6 +1098,8 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
+	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
+		errs.Merge(checkUpdatePerps(product.Perpetual))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -830,6 +1128,85 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
+func checkNewPerps(perps *protoTypes.PerpetualProduct) Errors {
+	errs := NewErrors()
+
+	if perps == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps", ErrIsRequired)
+	}
+
+	if len(perps.SettlementAsset) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset", ErrIsRequired)
+	}
+	if len(perps.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name", ErrIsRequired)
+	}
+
+	if len(perps.MarginFundingFactor) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.MarginFundingFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsNotValidNumber)
+		} else if mff.IsNegative() || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrMustBeWithinRange01)
+		}
+	}
+
+	if len(perps.InterestRate) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.InterestRate)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsNotValidNumber)
+		} else if mff.LessThan(num.MustDecimalFromString("-1")) || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrMustBeWithinRange11)
+		}
+	}
+
+	var (
+		okClampLowerBound, okClampUpperBound bool
+		clampLowerBound, clampUpperBound     num.Decimal
+		err                                  error
+	)
+
+	if len(perps.ClampLowerBound) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsRequired)
+	} else {
+		clampLowerBound, err = num.DecimalFromString(perps.ClampLowerBound)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsNotValidNumber)
+		} else if clampLowerBound.LessThan(num.MustDecimalFromString("-1")) || clampLowerBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrMustBeWithinRange11)
+		} else {
+			okClampLowerBound = true
+		}
+	}
+
+	if len(perps.ClampUpperBound) <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsRequired)
+	} else {
+		clampUpperBound, err = num.DecimalFromString(perps.ClampUpperBound)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsNotValidNumber)
+		} else if clampUpperBound.LessThan(num.MustDecimalFromString("-1")) || clampUpperBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeWithinRange11)
+		} else {
+			okClampUpperBound = true
+		}
+	}
+
+	if okClampLowerBound && okClampUpperBound && clampUpperBound.LessThan(clampLowerBound) {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeGTEClampLowerBound)
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkNewPerpsOracleBinding(perps))
+
+	return errs
+}
+
 func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	errs := NewErrors()
 
@@ -842,6 +1219,9 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	}
 	if len(spot.QuoteAsset) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsRequired)
+	}
+	if spot.BaseAsset == spot.QuoteAsset {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsNotValid)
 	}
 	if len(spot.Name) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
@@ -867,7 +1247,26 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool) Errors {
+func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct) Errors {
+	errs := NewErrors()
+
+	if perps == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
+	}
+
+	if len(perps.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkUpdatePerpsOracleBinding(perps))
+
+	return errs
+}
+
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool,
+) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -879,58 +1278,142 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
-		if tryToSettle {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
-		}
+		switch tp.Internal.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionInternal_Time:
+			if tryToSettle {
+				return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
+			}
 
-		t := tp.Internal.GetTime()
-		if t == nil {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
-		}
-
-		if len(t.Conditions) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
-		}
-
-		if len(t.Conditions) != 0 {
-			for j, condition := range t.Conditions {
-				if len(condition.Value) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
-				}
-				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+			t := tp.Internal.GetTime()
+			if t != nil {
+				if len(t.Conditions) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
 				}
 
-				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+				if len(t.Conditions) != 0 {
+					for j, condition := range t.Conditions {
+						if len(condition.Value) == 0 {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
+						}
+						if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+						}
+
+						if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+							errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+						}
+					}
+				}
+			} else {
+				return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
+			}
+
+		case *vegapb.DataSourceDefinitionInternal_TimeTrigger:
+			spl := strings.Split(parentProperty, ".")
+			if spl[len(spl)-1] == "future" {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrIsNotValid)
+			}
+
+			t := tp.Internal.GetTimeTrigger()
+			if len(t.Triggers) != 1 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger", parentProperty, name), ErrOneTimeTriggerAllowedMax)
+			} else {
+				for i, v := range t.Triggers {
+					if v.Initial != nil && *v.Initial <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.initial", parentProperty, name, i), ErrIsNotValid)
+					}
+					if v.Every <= 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.timetrigger.triggers.%d.every", parentProperty, name, i), ErrIsNotValid)
+					}
 				}
 			}
 		}
-
 	case *vegapb.DataSourceDefinition_External:
-		// If data source type is external - check if the signers are present first.
-		o := tp.External.GetOracle()
 
-		signers := o.Signers
-		if len(signers) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
-		}
+		switch tp.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			// If data source type is external - check if the signers are present first.
+			o := tp.External.GetOracle()
+			if o != nil {
+				signers := o.Signers
+				if len(signers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
+				}
 
-		for i, key := range signers {
-			signer := types.SignerFromProto(key)
-			if signer.IsEmpty() {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
-			} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
-			} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+				for i, key := range signers {
+					signer := dstypes.SignerFromProto(key)
+					if signer.IsEmpty() {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+					} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+					} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+					}
+				}
+
+				filters := o.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
+			}
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := tp.External.GetEthOracle()
+
+			if ethOracle != nil {
+				if !crypto.EthereumIsValidAddress(ethOracle.Address) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
+				}
+
+				spec, err := ethcallcommon.SpecFromProto(ethOracle)
+				if err != nil {
+					switch {
+					case errors.Is(err, ethcallcommon.ErrCallSpecIsNil):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrEmptyEthereumCallSpec)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallTrigger):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrInvalidEthereumCallTrigger)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallArgs):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.args", parentProperty, name), ErrInvalidEthereumCallArgs)
+					default:
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrInvalidEthereumCallSpec)
+					}
+				}
+
+				if _, err := ethcall.NewCall(spec); err != nil {
+					switch {
+					case errors.Is(err, ethcallcommon.ErrInvalidEthereumAbi):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrInvalidEthereumAbi)
+					case errors.Is(err, ethcallcommon.ErrInvalidCallArgs):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.callargs", parentProperty, name), ErrInvalidEthereumCallArgs)
+					case errors.Is(err, ethcallcommon.ErrInvalidFilters):
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.filters", parentProperty, name), ErrInvalidEthereumFilters)
+					default:
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle", parentProperty, name), ErrInvalidEthereumCallSpec)
+					}
+				}
+
+				filters := ethOracle.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.ethoracle", name), parentProperty))
+
+				if len(ethOracle.Abi) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsRequired)
+				}
+
+				if len(strings.TrimSpace(ethOracle.Method)) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsRequired)
+				}
+
+				if len(ethOracle.Normalisers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrIsRequired)
+				}
+
+				if ethOracle.Trigger == nil {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
+				}
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
 		}
-
-		filters := o.Filters
-		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 	}
-
 	return errs
 }
 
@@ -975,6 +1458,41 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 }
 
 func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
+	if spec == nil {
+		return false
+	}
+
+	switch specType := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_External:
+		switch specType.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			return isBindingMatchingSpecFilters(spec, bindingProperty)
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := specType.External.GetEthOracle()
+
+			isNormaliser := false
+
+			for _, v := range ethOracle.Normalisers {
+				if v.Name == bindingProperty {
+					isNormaliser = true
+					break
+				}
+			}
+
+			return isNormaliser || isBindingMatchingSpecFilters(spec, bindingProperty)
+		}
+
+	case *vegapb.DataSourceDefinition_Internal:
+		return isBindingMatchingSpecFilters(spec, bindingProperty)
+	}
+
+	return isBindingMatchingSpecFilters(spec, bindingProperty)
+}
+
+// This is the legacy oracles way of checking that the spec has a property matching the binding property by iterating
+// over the filters, but is it not possible to not have filters, or a filter that does not match the oracle property so
+// this would break?
+func isBindingMatchingSpecFilters(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
 	bindingPropertyFound := false
 	filters := []*datapb.Filter{}
 	if spec != nil {
@@ -1015,6 +1533,24 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
+func checkNewPerpsOracleBinding(perps *protoTypes.PerpetualProduct) Errors {
+	errs := NewErrors()
+
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
 func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
@@ -1040,6 +1576,23 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
+func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpetualProduct) Errors {
+	errs := NewErrors()
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
 func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	errs := NewErrors()
 
@@ -1054,6 +1607,40 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsNotValid)
+	}
+
+	return errs
+}
+
+func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Errors {
+	errs := NewErrors()
+	if config == nil {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.sla_params", parent), ErrIsRequired)
+	}
+
+	lppr, err := num.DecimalFromString(config.PriceRange)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrIsNotValidNumber)
+	} else if lppr.IsZero() || lppr.LessThan(num.DecimalZero()) || lppr.GreaterThan(num.DecimalFromFloat(20)) {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBeWithinRangeGT0LT20)
+	}
+
+	commitmentMinTimeFraction, err := num.DecimalFromString(config.CommitmentMinTimeFraction)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrIsNotValidNumber)
+	} else if commitmentMinTimeFraction.LessThan(num.DecimalZero()) || commitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrMustBeWithinRange01)
+	}
+
+	slaCompetitionFactor, err := num.DecimalFromString(config.SlaCompetitionFactor)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrIsNotValidNumber)
+	} else if slaCompetitionFactor.LessThan(num.DecimalZero()) || slaCompetitionFactor.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
+	}
+
+	if config.PerformanceHysteresisEpochs > 366 {
+		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBeLessThen366)
 	}
 
 	return errs

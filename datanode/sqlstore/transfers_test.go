@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -21,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/shopspring/decimal"
@@ -47,9 +63,88 @@ func TestTransfersPagination(t *testing.T) {
 	t.Run("should return the specified page of results if last and before are provided", testTransferPaginationLastBefore)
 }
 
+func TestRewardTransfers(t *testing.T) {
+	t.Run("Retrieve all reward transfers", testGetAllRewardTransfers)
+}
+
+func TestTrasferByID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	now := time.Now()
+	block := getTestBlock(t, ctx, now)
+	accounts := sqlstore.NewAccounts(connectionSource)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+
+	transfers := sqlstore.NewTransfers(connectionSource)
+	id := "deadd0d0"
+
+	reason := "test by id"
+	sourceTransferProto := &eventspb.Transfer{
+		Id:              id,
+		From:            accountFrom.PartyID.String(),
+		FromAccountType: accountFrom.Type,
+		To:              accountTo.PartyID.String(),
+		ToAccountType:   accountTo.Type,
+		Asset:           accountFrom.AssetID.String(),
+		Amount:          "30",
+		Reference:       "Ref1",
+		Status:          eventspb.Transfer_STATUS_PENDING,
+		Timestamp:       block.VegaTime.UnixNano(),
+		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric: "deadd0d0",
+				Markets:        []string{"beefdead", "feebaad"},
+				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+			},
+		}},
+		Reason: &reason,
+	}
+
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
+
+	sourceTransferProto2 := &eventspb.Transfer{
+		Id:              id,
+		From:            accountFrom.PartyID.String(),
+		FromAccountType: accountFrom.Type,
+		To:              accountTo.PartyID.String(),
+		ToAccountType:   accountTo.Type,
+		Asset:           accountFrom.AssetID.String(),
+		Amount:          "30",
+		Reference:       "Ref1",
+		Status:          eventspb.Transfer_STATUS_DONE,
+		Timestamp:       block.VegaTime.UnixNano(),
+		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+		}},
+	}
+
+	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
+
+	retrieved, err := transfers.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("f%s", err)
+	}
+	retrievedTransferProto, _ := retrieved.Transfer.ToProto(ctx, accounts)
+	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+
+	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
+	if err != nil {
+		t.Fatalf("f%s", err)
+	}
+	assert.Equal(t, 1, len(retrievedByParty))
+	retrievedTransferProto, _ = retrievedByParty[0].ToProto(ctx, accounts)
+	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+}
+
 func testTransfersGetTransferToOrFromParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -122,8 +217,7 @@ func testTransfersGetTransferToOrFromParty(t *testing.T) {
 }
 
 func testTransfersGetTransfersByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -199,8 +293,7 @@ func testTransfersGetTransfersByParty(t *testing.T) {
 }
 
 func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -276,8 +369,7 @@ func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
 }
 
 func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -330,8 +422,7 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 }
 
 func testTransfersUpdateInSameBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -383,8 +474,7 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 }
 
 func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -418,8 +508,7 @@ func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
 }
 
 func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -443,6 +532,18 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:     "asset",
+				Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:            []string{"m1", "m2"},
+				EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+				StakingRequirement: "1000",
+				NotionalTimeWeightedAveragePositionRequirement: "2000",
+				WindowLength:         2,
+				LockPeriod:           3,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+			},
 		}},
 	}
 
@@ -456,8 +557,7 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 }
 
 func testGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	now := time.Now()
 	block := getTestBlock(t, ctx, now)
@@ -554,8 +654,7 @@ func getTestAccounts(t *testing.T, ctx context.Context, accounts *sqlstore.Accou
 }
 
 func testTransferPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -581,8 +680,8 @@ func testTransferPaginationNoPagination(t *testing.T) {
 }
 
 func testTransferPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
 
@@ -609,8 +708,7 @@ func testTransferPaginationFirst(t *testing.T) {
 }
 
 func testTransferPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -637,8 +735,7 @@ func testTransferPaginationLast(t *testing.T) {
 }
 
 func testTransferPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -666,8 +763,7 @@ func testTransferPaginationFirstAfter(t *testing.T) {
 }
 
 func testTransferPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	transfers := sqlstore.NewTransfers(connectionSource)
@@ -697,41 +793,100 @@ func testTransferPaginationLastBefore(t *testing.T) {
 	}.String()).Encode(), pageInfo.EndCursor)
 }
 
-func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.Transfer {
+func testGetAllRewardTransfers(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	transfers := sqlstore.NewTransfers(connectionSource)
+	testTransfers := addTransfers(ctx, t, bs, transfers)
+	rewardTransfers := addRewardTransfers(ctx, t, bs, transfers)
+	// all, including reward transfers
+	got, _, err := transfers.GetAll(ctx, entities.DefaultCursorPagination(true))
+	require.NoError(t, err)
+	require.Equal(t, len(testTransfers)+len(rewardTransfers), len(got))
+	// now only get reward transfers
+	got, _, err = transfers.GetAllRewards(ctx, entities.DefaultCursorPagination(true))
+	require.NoError(t, err)
+	require.Equal(t, len(rewardTransfers), len(got))
+}
+
+func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
 	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	block := addTestBlockForTime(t, ctx, bs, vegaTime)
 	accounts := sqlstore.NewAccounts(connectionSource)
 	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
-	transfers := make([]entities.Transfer, 0, 10)
+	transfers := make([]entities.TransferDetails, 0, 10)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
 		addTestBlockForTime(t, ctx, bs, vegaTime)
 
 		amount, _ := decimal.NewFromString("10")
 		transfer := entities.Transfer{
-			ID:                  entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
-			VegaTime:            vegaTime,
-			FromAccountID:       accountFrom.ID,
-			ToAccountID:         accountTo.ID,
-			AssetID:             entities.AssetID(""),
-			Amount:              amount,
-			Reference:           "",
-			Status:              0,
-			TransferType:        0,
-			DeliverOn:           nil,
-			StartEpoch:          nil,
-			EndEpoch:            nil,
-			Factor:              nil,
-			DispatchMetric:      nil,
-			DispatchMetricAsset: nil,
-			DispatchMarkets:     nil,
+			ID:               entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
+			VegaTime:         vegaTime,
+			FromAccountID:    accountFrom.ID,
+			ToAccountID:      accountTo.ID,
+			AssetID:          entities.AssetID(""),
+			Amount:           amount,
+			Reference:        "",
+			Status:           0,
+			TransferType:     0,
+			DeliverOn:        nil,
+			StartEpoch:       nil,
+			EndEpoch:         nil,
+			Factor:           nil,
+			DispatchStrategy: nil,
 		}
 
 		err := transferStore.Upsert(ctx, &transfer)
 		require.NoError(t, err)
-		transfers = append(transfers, transfer)
+		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
+	}
+
+	return transfers
+}
+
+func addRewardTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
+	t.Helper()
+	vegaTime := time.Now().Truncate(time.Microsecond)
+	block := addTestBlockForTime(t, ctx, bs, vegaTime)
+	accounts := sqlstore.NewAccounts(connectionSource)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+
+	transfers := make([]entities.TransferDetails, 0, 10)
+	for i := 0; i < 10; i++ {
+		vegaTime = vegaTime.Add(time.Second)
+		addTestBlockForTime(t, ctx, bs, vegaTime)
+
+		amount, _ := decimal.NewFromString("10")
+		transfer := entities.Transfer{
+			ID:            entities.TransferID(fmt.Sprintf("abadcafe%02d", i+1)),
+			VegaTime:      vegaTime,
+			FromAccountID: accountFrom.ID,
+			ToAccountID:   accountTo.ID,
+			AssetID:       entities.AssetID(""),
+			Amount:        amount,
+			Reference:     "",
+			Status:        entities.TransferStatusPending,
+			TransferType:  entities.Recurring,
+			DeliverOn:     nil,
+			StartEpoch:    ptr.From(uint64(i + 1)),
+			EndEpoch:      nil,
+			Factor:        nil,
+			DispatchStrategy: &vega.DispatchStrategy{
+				Metric:     vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+				LockPeriod: uint64((i % 7) + 1),
+			},
+		}
+		if (i % 2) == 0 {
+			transfer.TransferType = entities.GovernanceRecurring
+		}
+
+		err := transferStore.Upsert(ctx, &transfer)
+		require.NoError(t, err)
+		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
 	}
 
 	return transfers

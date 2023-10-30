@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package processor
 
@@ -19,10 +22,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -77,21 +81,28 @@ type ExecutionEngine interface {
 	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
 	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
-	// market stuff
+	// Future stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 	SucceedMarket(ctx context.Context, successor, parent string) error
 
+	// Spot stuff
+	SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
+	UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error
+
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
+	VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error
+	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	Hash() []byte
 
 	// End of block
 	BlockEnd(ctx context.Context)
+	BeginBlock(ctx context.Context)
 }
 
 type GovernanceEngine interface {
@@ -217,26 +228,34 @@ type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
+	GetInt(key string) (int64, error)
 }
 
 type Oracle struct {
-	Engine   OraclesEngine
-	Adaptors OracleAdaptors
+	Engine                  OraclesEngine
+	Adaptors                OracleAdaptors
+	EthereumOraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {
-	BroadcastData(context.Context, oracles.OracleData) error
-	ListensToSigners(oracles.OracleData) bool
-	HasMatch(data oracles.OracleData) (bool, error)
+	BroadcastData(context.Context, dscommon.Data) error
+	ListensToSigners(dscommon.Data) bool
+	HasMatch(data dscommon.Data) (bool, error)
 }
 
 type OracleAdaptors interface {
-	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*dscommon.Data, error)
+}
+
+type EthereumOracleVerifier interface {
+	ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error
 }
 
 type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
+	CanProposeSpotMarket() bool
+	CanProposePerpsMarket() bool
 	CanTrade() bool
 }
 

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -100,18 +115,22 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	}
 	marketPrice, _ := num.DecimalFromString(trade.Price) // this is market price
 	// Scale the trade to the correct size
-	positionPrice := marketPrice.Mul(pf)
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
-	realisedPnlDelta := positionPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
+	realisedPnlDelta := marketPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
 	p.PendingOpenVolume -= closed
 
-	positionPriceUint, _ := num.UintFromDecimal(positionPrice)
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
-	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, positionPriceUint)
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(positionPrice, pf)
+	p.pendingMTM(marketPrice, pf)
+}
+
+func (p *Position) ApplyFundingPayment(amount *num.Int) {
+	da := num.DecimalFromInt(amount)
+	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(da)
+	p.RealisedPnl = p.RealisedPnl.Add(da)
 }
 
 func (p *Position) UpdateOrdersClosed() {

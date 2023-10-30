@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 
 //
@@ -76,6 +91,22 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "withdrawals", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "blocks", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "rewards", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "stop_orders", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "funding_period_data_points", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_activity_streaks", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "referral_programs", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "referral_set_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "oracle_data", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "oracle_data_oracle_specs", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "vesting_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "volume_discount_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "referral_set_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "fees_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "funding_payment", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "volume_discount_programs", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_locked_balances", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_vesting_balances", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "party_vesting_stats", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package networkhistory_test
 
 import (
@@ -17,37 +32,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestSegment struct {
-	HeightFrom               int64
-	HeightTo                 int64
-	PreviousHistorySegmentId string
-	HistorySegmentId         string
-}
-
-func (m TestSegment) GetPreviousHistorySegmentId() string {
-	return m.PreviousHistorySegmentId
-}
-
-func (m TestSegment) GetHistorySegmentId() string {
-	return m.HistorySegmentId
-}
-
-func (m TestSegment) GetFromHeight() int64 {
-	return m.HeightFrom
-}
-
-func (m TestSegment) GetToHeight() int64 {
-	return m.HeightTo
-}
-
-func (m TestSegment) GetDatabaseVersion() int64 {
-	return 1
-}
-
-func (m TestSegment) GetChainId() string {
-	return "test-chain-id"
-}
-
 func makeFullSegment(from, to int64, previous, id string) segment.Full {
 	return segment.Full{
 		MetaData: segment.MetaData{
@@ -61,11 +45,91 @@ func makeFullSegment(from, to int64, previous, id string) segment.Full {
 	}
 }
 
-func TestInitialiseEmptyDataNode(t *testing.T) {
+func TestInitialiseEmptyDataNodeWithFullHistoryWhenLoadIsLongerThanSegmentCreationInterval(t *testing.T) {
+	// Tests the scenario where fetching and loading the history takes longer than the segment creation interval
+	// requiring multiple loads to occur before the datanode is at the most recent segment height.
 	log := logging.NewTestLogger()
 	cfg := networkhistory.NewDefaultInitializationConfig()
 
-	cfg.MinimumBlockCount = 2000
+	ctrl := gomock.NewController(t)
+	service := mocks.NewMockNetworkHistory(ctrl)
+	ctx := context.Background()
+
+	peerResponse1 := &networkhistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentNetworkHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               1001,
+				ToHeight:                 2000,
+				PreviousHistorySegmentId: "segment1",
+				HistorySegmentId:         "segment2",
+			},
+			SwarmKeySeed: "",
+		},
+	}
+
+	peerResponse2 := &networkhistory.PeerResponse{
+		PeerAddr: "",
+		Response: &v2.GetMostRecentNetworkHistorySegmentResponse{
+			Segment: &v2.HistorySegment{
+				FromHeight:               2001,
+				ToHeight:                 3000,
+				PreviousHistorySegmentId: "segment2",
+				HistorySegmentId:         "segment3",
+			},
+			SwarmKeySeed: "",
+		},
+	}
+
+	segment1 := makeFullSegment(0, 1000, "", "segment1")
+	segment2 := makeFullSegment(1001, 2000, "segment1", "segment2")
+	segments1 := []segment.Full{segment1, segment2}
+	chunk1 := segment.ContiguousHistory[segment.Full]{
+		HeightFrom: 0,
+		HeightTo:   2000,
+		Segments:   segments1,
+	}
+
+	segment3 := makeFullSegment(2001, 3000, "segment2", "segment3")
+
+	segments2 := []segment.Full{segment3}
+	chunk2 := segment.ContiguousHistory[segment.Full]{
+		HeightFrom: 2001,
+		HeightTo:   3000,
+		Segments:   segments2,
+	}
+
+	cfg.MinimumBlockCount = -1
+	mostRecentSegment1 := service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(1).
+		Return(peerResponse1, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse1.Response}, nil)
+	mostRecentSegment2 := service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(2).
+		Return(peerResponse2, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse2.Response}, nil)
+	gomock.InOrder(mostRecentSegment1, mostRecentSegment2)
+
+	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment2").Times(1).Return(segment2, nil)
+	second := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment1").Times(1).Return(segment1, nil)
+	third := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment3").Times(1).Return(segment3, nil)
+	gomock.InOrder(first, second, third)
+
+	firstBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	secondBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{FromHeight: 0, ToHeight: 2000, HasData: true}, nil)
+	thirdBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{FromHeight: 0, ToHeight: 3000, HasData: true}, nil)
+	gomock.InOrder(firstBlockSpan, secondBlockSpan, thirdBlockSpan)
+
+	listAll1 := service.EXPECT().ListAllHistorySegments().Times(1).Return(segments1, nil)
+	load1 := service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk1, gomock.Any(), false, false).Times(1)
+
+	listAll2 := service.EXPECT().ListAllHistorySegments().Times(1).Return(segments2, nil)
+	load2 := service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk2, gomock.Any(), true, false).Times(1)
+	gomock.InOrder(listAll1, listAll2)
+	gomock.InOrder(load1, load2)
+
+	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false)
+}
+
+func TestInitialiseEmptyDataNodeWithFullHistory(t *testing.T) {
+	log := logging.NewTestLogger()
+	cfg := networkhistory.NewDefaultInitializationConfig()
 
 	ctrl := gomock.NewController(t)
 	service := mocks.NewMockNetworkHistory(ctrl)
@@ -93,8 +157,8 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 		Segments:   segments,
 	}
 
-	cfg.MinimumBlockCount = 1500
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	cfg.MinimumBlockCount = -1
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(2).
 		Return(peerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment2").Times(1).Return(segment2, nil)
@@ -102,7 +166,10 @@ func TestInitialiseEmptyDataNode(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	firstBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	secondBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{FromHeight: 0, ToHeight: 2000, HasData: true}, nil)
+	gomock.InOrder(firstBlockSpan, secondBlockSpan)
+
 	service.EXPECT().ListAllHistorySegments().Times(1).Return(segments, nil)
 	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk, gomock.Any(), false, false).Times(1)
 
@@ -142,7 +209,7 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 	}
 
 	cfg.MinimumBlockCount = 500
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(2).
 		Return(peerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment4").Times(1).Return(segment4, nil)
@@ -152,11 +219,19 @@ func TestInitialiseNonEmptyDataNode(t *testing.T) {
 	service.EXPECT().ListAllHistorySegments().Times(1).Return(segments, nil)
 	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk, gomock.Any(), true, false).Times(1)
 
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
+	firstBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
 		FromHeight: 0,
 		ToHeight:   2243,
 		HasData:    true,
 	}, nil)
+
+	secondBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
+		FromHeight: 0,
+		ToHeight:   4000,
+		HasData:    true,
+	}, nil)
+
+	gomock.InOrder(firstBlockSpan, secondBlockSpan)
 
 	networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig, service, []int{}, false)
 }
@@ -185,7 +260,7 @@ func TestLoadingHistoryWithinDatanodeCurrentSpanDoesNothing(t *testing.T) {
 	}
 
 	cfg.MinimumBlockCount = 500
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(1).
 		Return(peerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{
@@ -229,14 +304,17 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 		Segments:   segments,
 	}
 
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(2).
 		Return(peerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment2").Times(1).Return(segment2, nil)
 	second := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment1").Times(1).Return(segment1, nil)
 	gomock.InOrder(first, second)
 
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	firstBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	secondBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{FromHeight: 0, ToHeight: 2000, HasData: true}, nil)
+	gomock.InOrder(firstBlockSpan, secondBlockSpan)
+
 	service.EXPECT().ListAllHistorySegments().Times(1).Return(segments, nil)
 	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk, gomock.Any(), false, false).Times(1)
 
@@ -244,7 +322,7 @@ func TestWhenMinimumBlockCountExceedsAvailableHistory(t *testing.T) {
 		service, []int{}, false)
 }
 
-func TestInitialiseToASpecifiedSegment(t *testing.T) {
+func TestInitialiseWithASpecifiedSegment(t *testing.T) {
 	log := logging.NewTestLogger()
 	cfg := networkhistory.NewDefaultInitializationConfig()
 
@@ -283,9 +361,8 @@ func TestAutoInitialiseWhenNoActivePeers(t *testing.T) {
 	ctx := context.Background()
 
 	cfg.MinimumBlockCount = 1500
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(1).
 		Return(nil, nil, errors.New("no peers found"))
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
 		service, []int{}, false))
@@ -302,9 +379,8 @@ func TestAutoInitialiseWhenNoHistoryAvailableFromPeers(t *testing.T) {
 	ctx := context.Background()
 
 	cfg.MinimumBlockCount = 1500
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(1).
 		Return(nil, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{}, nil)
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
 
 	assert.NotNil(t, networkhistory.InitialiseDatanodeFromNetworkHistory(ctx, cfg, log, sqlstore.NewDefaultConfig().ConnectionConfig,
 		service, []int{}, false))
@@ -346,7 +422,7 @@ func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
 		Segments:   lastSegments,
 	}
 
-	service.EXPECT().GetMostRecentHistorySegmentFromPeers(gomock.Any(), []int{}).Times(1).
+	service.EXPECT().GetMostRecentHistorySegmentFromBootstrapPeers(gomock.Any(), []int{}).Times(2).
 		Return(peerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse{"peer1": peerResponse.Response}, nil)
 
 	first := service.EXPECT().FetchHistorySegment(gomock.Any(), "segment7").Times(1).Return(segment7, nil)
@@ -354,7 +430,10 @@ func TestInitialiseEmptyDataNodeWhenMultipleContiguousHistories(t *testing.T) {
 
 	gomock.InOrder(first, second)
 
-	service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	firstBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{}, nil)
+	secondBlockSpan := service.EXPECT().GetDatanodeBlockSpan(gomock.Any()).Times(1).Return(sqlstore.DatanodeBlockSpan{FromHeight: 5001, ToHeight: 7000, HasData: true}, nil)
+	gomock.InOrder(firstBlockSpan, secondBlockSpan)
+
 	service.EXPECT().ListAllHistorySegments().Times(1).Return(allSegments, nil)
 	service.EXPECT().LoadNetworkHistoryIntoDatanode(gomock.Any(), chunk, gomock.Any(), false, false).Times(1)
 

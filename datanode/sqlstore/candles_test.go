@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -45,8 +60,7 @@ const (
 )
 
 func TestGetExistingCandles(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
@@ -67,8 +81,7 @@ func TestGetExistingCandles(t *testing.T) {
 }
 
 func TestCandlesPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 
@@ -108,8 +121,7 @@ func TestCandlesPagination(t *testing.T) {
 }
 
 func TestNotional(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -145,8 +157,7 @@ func TestNotional(t *testing.T) {
 }
 
 func TestCandlesGetForEmptyInterval(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -187,8 +198,7 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 }
 
 func TestCandlesGetLatest(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -214,8 +224,7 @@ func TestCandlesGetLatest(t *testing.T) {
 }
 
 func TestCandlesGetForDifferentIntervalAndTimeBounds(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)
@@ -381,8 +390,7 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 }
 
 func TestCandlesCursorPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
 	tradeStore := sqlstore.NewTrades(connectionSource)

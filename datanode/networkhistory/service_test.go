@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package networkhistory_test
 
 import (
@@ -312,7 +327,7 @@ func TestMain(t *testing.M) {
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := networkhistory.NewDefaultConfig()
 
-		_, err = networkhistory.NewWithStore(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
+		_, err = networkhistory.New(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
 			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath)
 
 		if err != nil {
@@ -363,12 +378,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmR8mfrPKw8uEo8zGtCnczBmSs6tmWhJkTiHRxVXatG4v9", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmUoYV2rcRcirUjA59U8T64hrQTjF6ksxJRNw7Umi32Bwn", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmVzXZDN1RG4uRTGH3jfJBghV8vEZVzMpESLxsxPcrzQme", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmSdERLJpsXLpvKEVZ4NFjBLkSiNQ5B5K5x5LSiS1ZRjEx", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTxWiGNfH3oxcLY8HyxVba5n48GZgam1VzTVg621oYBKg", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmV3AwUNS6Qo8fqbfpLGtwNAEGt6YZSnGUutkxVZbc8cfW", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQGrPqM72evPWmpaCduiEzcndEwzsVM8PrWe7w9gqPtv4", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmQKVcMmo9D9Bx8MFHg7q2hkmDksi5zmYhanvzXmpNk7kx", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmVAP6NsCAC3qTN2VnVxyBY6A8s4tVLqppUhWL8ArkVePg", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmUXg7sLvDd53NmykEptcKUyzkb6RUvNXGR9StjjyUiE2K", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmUCbCaewhdYsEPHpC7f2uynSJjcnMXY5GEw4UKUWuJLCu", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmcGBEV4XiM98idDU9evmAArP7pZwmFe9DSP2aYsnfTg9w", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1207,7 +1222,7 @@ func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputS
 
 	datanodeConfig := config2.NewDefaultConfig()
 
-	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, chainID, cfg, networkHistoryConnPool,
+	networkHistoryService, err := networkhistory.New(ctx, log, chainID, cfg, networkHistoryConnPool,
 		inputSnapshotService, store, datanodeConfig.API.Port, snapshotCopyToPath)
 	if err != nil {
 		panic(err)
@@ -1251,7 +1266,7 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []segment.Unpublished) {
+func panicIfHistorySegmentIdsNotEqual(actual, expected string, snapshots []segment.Unpublished) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
@@ -1276,7 +1291,7 @@ func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]t
 func setupSnapshotService(snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		networkHistoryConnPool, snapshotCopyToPath, migrateUpToDatabaseVersion,
+		networkHistoryConnPool, networkHistoryStore, snapshotCopyToPath, migrateUpToDatabaseVersion,
 		migrateDownToDatabaseVersion)
 	if err != nil {
 		panic(err)
@@ -1597,31 +1612,32 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 
 	var highestMigrationNumber int64
 	err = filepath.Walk(sourceMigrationsDir, func(path string, info os.FileInfo, err error) error {
-		if info != nil && !info.IsDir() {
-			if strings.HasSuffix(info.Name(), ".sql") {
-				split := strings.Split(info.Name(), "_")
-				if len(split) < 2 {
-					return errors.New("expected sql filename of form <version>_<name>.sql")
-				}
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
+		}
+		if strings.HasSuffix(info.Name(), ".sql") {
+			split := strings.Split(info.Name(), "_")
+			if len(split) < 2 {
+				return errors.New("expected sql filename of form <version>_<name>.sql")
+			}
 
-				migrationNum, err := strconv.Atoi(split[0])
-				if err != nil {
-					return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
-				}
+			migrationNum, err := strconv.Atoi(split[0])
+			if err != nil {
+				return fmt.Errorf("expected first part of file name to be integer, is %s", split[0])
+			}
 
-				if int64(migrationNum) > highestMigrationNumber {
-					highestMigrationNumber = int64(migrationNum)
-				}
+			if int64(migrationNum) > highestMigrationNumber {
+				highestMigrationNumber = int64(migrationNum)
+			}
 
-				data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
-				if err != nil {
-					return fmt.Errorf("failed to read file:%w", err)
-				}
+			data, err := os.ReadFile(filepath.Join(sourceMigrationsDir, info.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to read file:%w", err)
+			}
 
-				err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
-				if err != nil {
-					return fmt.Errorf("failed to write file:%w", err)
-				}
+			err = os.WriteFile(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir, info.Name()), data, fs.ModePerm)
+			if err != nil {
+				return fmt.Errorf("failed to write file:%w", err)
 			}
 		}
 		return nil

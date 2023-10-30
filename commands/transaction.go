@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
@@ -78,8 +93,8 @@ func CheckTransaction(tx *commandspb.Transaction, chainID string) (*commandspb.I
 		errs.AddForProperty("tx.from", ErrIsRequired)
 	} else if len(tx.GetPubKey()) == 0 {
 		errs.AddForProperty("tx.from.pub_key", ErrIsRequired)
-	} else if !IsVegaPubkey(tx.GetPubKey()) {
-		errs.AddForProperty("tx.from.pub_key", ErrShouldBeAValidVegaPubkey)
+	} else if !IsVegaPublicKey(tx.GetPubKey()) {
+		errs.AddForProperty("tx.from.pub_key", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	// We need the above check to pass, so we verify it's all good.
@@ -136,7 +151,7 @@ func checkSignature(signature *commandspb.Signature, pubKey string, rawInputData
 	}
 
 	decodedPubKey := []byte(pubKey)
-	if IsVegaPubkey(pubKey) {
+	if IsVegaPublicKey(pubKey) {
 		// We can ignore the error has it should have been checked earlier.
 		decodedPubKey, _ = hex.DecodeString(pubKey)
 	}
@@ -229,6 +244,12 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkStopOrdersSubmission(cmd.StopOrdersSubmission))
 		case *commandspb.InputData_StopOrdersCancellation:
 			errs.Merge(checkStopOrdersCancellation(cmd.StopOrdersCancellation))
+		case *commandspb.InputData_CreateReferralSet:
+			errs.Merge(checkCreateReferralSet(cmd.CreateReferralSet))
+		case *commandspb.InputData_UpdateReferralSet:
+			errs.Merge(checkUpdateReferralSet(cmd.UpdateReferralSet))
+		case *commandspb.InputData_ApplyReferralCode:
+			errs.Merge(checkApplyReferralCode(cmd.ApplyReferralCode))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

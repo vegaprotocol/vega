@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package service_test
 
 import (
@@ -95,6 +110,7 @@ func testServiceV2_PostRequests(t *testing.T) {
 	t.Run("`client.get_chain_id` getting internal error fails", testServiceV2_PostRequests_GetChainIDGettingInternalErrorFails)
 	t.Run("`client.connect_wallet` succeeds", testServiceV2_PostRequests_ConnectWalletSucceeds)
 	t.Run("`client.connect_wallet` without origin fails", testServiceV2_PostRequests_ConnectWalletWithoutOriginFails)
+	t.Run("`client.connect_wallet` with invalid origin fails", testServiceV2_PostRequests_ConnectWalletWithInvalidOriginFails)
 	t.Run("`client.connect_wallet` as notification returns nothing", testServiceV2_PostRequests_ConnectWalletAsNotificationReturnsNothing)
 	t.Run("`client.connect_wallet` getting error fails", testServiceV2_PostRequests_ConnectWalletGettingErrorFails)
 	t.Run("`client.connect_wallet` getting internal error fails", testServiceV2_PostRequests_ConnectWalletGettingInternalErrorFails)
@@ -339,6 +355,27 @@ func testServiceV2_PostRequests_ConnectWalletWithoutOriginFails(t *testing.T) {
 	assert.Equal(t, "Server error", rpcErr.Message)
 	assert.Equal(t, api.ErrorCodeHostnameResolutionFailure, rpcErr.Code)
 	assert.Equal(t, v2.ErrOriginHeaderIsRequired.Error(), rpcErr.Data)
+}
+
+func testServiceV2_PostRequests_ConnectWalletWithInvalidOriginFails(t *testing.T) {
+	// given
+	reqBody := `{"jsonrpc": "2.0", "method": "client.connect_wallet", "id": "123456789"}`
+
+	// setup
+	s := getTestServiceV2(t)
+
+	// when
+	statusCode, responseHeaders, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBody, map[string]string{
+		"Origin": "Contains 世界",
+	}))
+
+	// then
+	require.Equal(t, http.StatusBadRequest, statusCode)
+	vwt := responseHeaders.Get("Authorization")
+	assert.Empty(t, vwt)
+	rpcErr := intoJSONRPCError(t, rawResponse, "123456789")
+	assert.Equal(t, "Header Origin contains invalid characters", rpcErr.Message)
+	assert.Equal(t, jsonrpc.ErrorCodeInvalidRequest, rpcErr.Code)
 }
 
 func testServiceV2_PostRequests_ConnectWalletAsNotificationReturnsNothing(t *testing.T) {

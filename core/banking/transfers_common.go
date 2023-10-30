@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package banking
 
@@ -17,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -92,10 +96,12 @@ func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) 
 
 func (e *Engine) processTransfer(
 	ctx context.Context,
-	from, to, asset, fromMarket, toMarket string,
+	from, to, asset, toMarket string,
 	fromAcc, toAcc types.AccountType,
 	amount *num.Uint,
 	reference string,
+	transferID string,
+	epoch uint64,
 	// optional oneoff transfer
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
@@ -108,7 +114,7 @@ func (e *Engine) processTransfer(
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, fromMarket, toMarket, amount)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, "", toMarket, amount)
 	transfers := []*types.Transfer{fromTransfer}
 	accountTypes := []types.AccountType{fromAcc}
 	references := []string{reference}
@@ -139,6 +145,7 @@ func (e *Engine) processTransfer(
 	if err != nil {
 		return nil, err
 	}
+	e.broker.Send(events.NewTransferFeesEvent(ctx, transferID, feeTransfer.Amount.Amount, epoch))
 
 	return tresps, nil
 }
@@ -177,7 +184,7 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
 
 	switch fromAccountType {
-	case types.AccountTypeGeneral:
+	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
@@ -214,6 +221,11 @@ func (e *Engine) ensureFeeForTransferFunds(
 	switch fromAccountType {
 	case types.AccountTypeGeneral:
 		account, err = e.col.GetPartyGeneralAccount(from, asset)
+		if err != nil {
+			return nil, err
+		}
+	case types.AccountTypeVestedRewards:
+		account, err = e.col.GetPartyVestedRewardAccount(from, asset)
 		if err != nil {
 			return nil, err
 		}

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package settlement
 
@@ -46,7 +49,7 @@ type MarketPosition interface {
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/core/settlement Product
 type Product interface {
-	Settle(*num.Uint, uint32, num.Decimal) (*types.FinancialAmount, bool, error)
+	Settle(*num.Uint, *num.Uint, num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error)
 	GetAsset() string
 }
 
@@ -59,6 +62,7 @@ type TimeService interface {
 
 // Broker - the event bus broker, send events here.
 type Broker interface {
+	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
@@ -130,17 +134,17 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions.
-func (e *Engine) Settle(t time.Time, assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfer, *num.Uint, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll(assetDecimals)
+	positions, round, err := e.settleAll(settlementData)
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
 			logging.Error(err),
 		)
-		return nil, err
+		return nil, nil, err
 	}
-	return positions, nil
+	return positions, round, nil
 }
 
 // AddTrade - this call is required to get the correct MTM settlement values
@@ -189,6 +193,27 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 
 func (e *Engine) HasTraded() bool {
 	return len(e.trades) > 0
+}
+
+func (e *Engine) getFundingTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) (*mtmTransfer, bool) {
+	tf := e.getMtmTransfer(mtmShare, neg, mpos, owner)
+	if tf.transfer == nil {
+		tf.transfer = &types.Transfer{
+			Type:  types.TransferTypePerpFundingWin,
+			Owner: owner,
+			Amount: &types.FinancialAmount{
+				Amount: mtmShare,
+				Asset:  e.product.GetAsset(),
+			},
+		}
+		return tf, false
+	}
+	if tf.transfer.Type == types.TransferTypeMTMLoss {
+		tf.transfer.Type = types.TransferTypePerpFundingLoss
+	} else {
+		tf.transfer.Type = types.TransferTypePerpFundingWin
+	}
+	return tf, true
 }
 
 func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
@@ -296,13 +321,16 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size())
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
+		// empty position
+		skip := current == 0 && lastSettledPrice.IsZero() && evt.Buy() == 0 && evt.Sell() == 0
 		for _, t := range traded {
 			tradeset = append(tradeset, t)
 		}
 		// create (and add position to buffer)
 		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.timeService.GetTimeNow().UnixNano(), e.positionFactor))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
-		if !hasTraded && lastSettledPrice.EQ(markPrice) {
+		// or an empty position that isn't the result of the party closing itself out
+		if !hasTraded && (lastSettledPrice.EQ(markPrice) || skip) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
@@ -321,6 +349,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			e.rmPosition(party)
 		}
 
+		// there's still a subset of potential-only positions, their MTM will be zero
+		// but they don't hold an open position, and are excluded from win-socialisation.
+		skip = !hasTraded && evt.Size() == 0
 		posEvent := newPos(evt, markPrice)
 		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, posEvent, party)
 
@@ -328,7 +359,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			wins = append(wins, mtmTransfer)
 			winTotal.AddSum(mtmShare)
 			winTotalDec = winTotalDec.Add(mtmDShare)
-			if mtmShare.IsZero() {
+			if !skip && mtmShare.IsZero() {
 				zeroShares = append(zeroShares, mtmTransfer)
 				zeroAmts = true
 			}
@@ -351,9 +382,10 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
+			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
-			if winTotalDec.LessThan(lossTotalDec) {
+			if winTotalDec.LessThan(lossTotalDec) && winTotalDec.LessThan(lossTotalDec.Sub(zRound)) {
 				e.log.Panic("There's less MTM wins than losses, even accounting for decimals",
 					logging.Decimal("total loss", lossTotalDec),
 					logging.Decimal("total wins", winTotalDec),
@@ -403,7 +435,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 }
 
 // simplified settle call.
-func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
+func (e *Engine) settleAll(settlementData *num.Uint) ([]*types.Transfer, *num.Uint, error) {
 	e.mu.Lock()
 
 	// there should be as many positions as there are parties (obviously)
@@ -418,6 +450,7 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 		keys = append(keys, p)
 	}
 	sort.Strings(keys)
+	var delta num.Decimal
 	for _, party := range keys {
 		pos := e.settledPosition[party]
 		// this is possible now, with the Mark to Market stuff, it's possible we've settled any and all positions for a given party
@@ -426,7 +459,7 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 		}
 		e.log.Debug("Settling position for party", logging.String("party-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
-		amt, neg, err := e.product.Settle(e.lastMarkPrice, assetDecimals, num.DecimalFromInt64(pos).Div(e.positionFactor))
+		amt, neg, rem, err := e.product.Settle(e.lastMarkPrice, settlementData.Clone(), num.DecimalFromInt64(pos).Div(e.positionFactor))
 		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -436,7 +469,7 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 				logging.Error(err),
 			)
 			e.mu.Unlock()
-			return nil, err
+			return nil, nil, err
 		}
 		settlePos := &types.Transfer{
 			Owner:  party,
@@ -451,15 +484,27 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 		if neg { // this is a loss transfer
 			settlePos.Type = types.TransferTypeLoss
 			aggregated = append(aggregated, settlePos)
+			// truncated loss amount will not be transferred to the settlement balance
+			// so remove it from the total delta (aka rounding)
+			delta = delta.Sub(rem)
 		} else { // this is a win transfer
 			settlePos.Type = types.TransferTypeWin
 			owed = append(owed, settlePos)
+			// Truncated win transfer won't be withdrawn from the settlement balance
+			// so add it to the total delta (aka rounding)
+			delta = delta.Add(rem)
 		}
+	}
+	// we only care about the int part
+	round := num.UintZero()
+	// if delta > 0, the settlement account will have a non-zero balance at the end
+	if !delta.IsNegative() {
+		round, _ = num.UintFromDecimal(delta)
 	}
 	// append the parties in profit to the end
 	aggregated = append(aggregated, owed...)
 	e.mu.Unlock()
-	return aggregated, nil
+	return aggregated, round, nil
 }
 
 func (e *Engine) getOrCreateCurrentPosition(party string, size int64) (int64, *num.Uint) {
@@ -536,4 +581,75 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*settlementTrade, 
 	decShare := mtmShare.ToDecimal().Div(positionFactor)
 	res, _ := num.UintFromDecimal(decShare)
 	return res, decShare, sign
+}
+
+// SettleFundingPeriod takes positions and a funding-payement and returns a slice of transfers.
+// returns the slice of transfers to perform, and the max remainder on the settlement account due to rounding issues.
+func (e *Engine) SettleFundingPeriod(ctx context.Context, positions []events.MarketPosition, fundingPayment *num.Int) ([]events.Transfer, *num.Uint) {
+	if fundingPayment.IsZero() || len(positions) == 0 {
+		// nothing to do here
+		return nil, nil
+	}
+
+	// colletral engine expects all the losses before the wins
+	transfers := make([]events.Transfer, 0, len(positions))
+	wins := make([]events.Transfer, 0, len(positions))
+	zeroTransfers := make([]events.Transfer, 0, len(positions)/2)
+	totalW, totalL := num.UintZero(), num.UintZero()
+	var delta num.Decimal
+	for _, p := range positions {
+		// per-party cash flow is -openVolume * fundingPayment
+		flow, rem, neg := calcFundingFlow(fundingPayment, p, e.positionFactor)
+		if neg {
+			// amount of loss not collected, this never gets added to the settlement account
+			delta = delta.Sub(rem)
+		} else {
+			// amount of wins never collected, remains in the settlement account
+			delta = delta.Add(rem)
+		}
+
+		if tf, valid := e.getFundingTransfer(flow, neg, p, p.Party()); valid {
+			if tf.transfer.Type == types.TransferTypePerpFundingWin {
+				wins = append(wins, tf)
+				totalW.AddSum(flow)
+			} else {
+				transfers = append(transfers, tf)
+				totalL.AddSum(flow)
+			}
+		} else {
+			// we could use deltas to order these transfers to prioritise the right people
+			zeroTransfers = append(zeroTransfers, tf)
+		}
+		if e.log.IsDebug() {
+			e.log.Debug("cash flow", logging.String("mid", e.market), logging.String("pid", p.Party()), logging.String("flow", flow.String()))
+		}
+	}
+	// account for cases where the winning side never even accounts for an amount of 1
+	if len(wins) == 0 && len(zeroTransfers) > 0 {
+		wins = zeroTransfers
+	}
+	// profit and loss balances out perfectly, or profit > loss
+	if totalL.LTE(totalW) {
+		// this rounding shouldn't be needed, losses will be distributed in their entirety
+		round, _ := num.UintFromDecimal(delta.Abs())
+		return append(transfers, wins...), round
+	}
+	round := totalL.Sub(totalL, totalW) // loss - win is what will be left over
+	// we have a remainder, make sure it's an expected amount due to rounding
+	if dU, _ := num.UintFromDecimal(delta.Ceil().Abs()); dU.LT(round) {
+		e.log.Panic("Excess loss transfer amount found, cannot be explained by rounding",
+			logging.String("loss-win delta", round.String()),
+			logging.Decimal("rounding delta", delta.Abs()),
+		)
+	}
+	return append(transfers, wins...), round
+}
+
+func calcFundingFlow(fp *num.Int, p events.MarketPosition, posFac num.Decimal) (*num.Uint, num.Decimal, bool) {
+	// -openVolume * fundingPayment
+	// divide by position factor to account for position decimal places
+	flowD := num.DecimalFromInt64(-p.Size()).Mul(num.DecimalFromInt(fp)).Div(posFac)
+	neg := flowD.IsNegative()
+	flow, frac := num.UintFromDecimalWithFraction(flowD.Abs())
+	return flow, frac, neg
 }

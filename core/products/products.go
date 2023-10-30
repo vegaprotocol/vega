@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package products
 
@@ -16,10 +19,14 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -32,35 +39,54 @@ var (
 
 // OracleEngine ...
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/products OracleEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mock.go -package mocks code.vegaprotocol.io/vega/core/products OracleEngine,Broker
 type OracleEngine interface {
-	ListensToSigners(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
-	Unsubscribe(context.Context, oracles.SubscriptionID)
+	ListensToSigners(dscommon.Data) bool
+	Subscribe(context.Context, spec.Spec, spec.OnMatchedData) (spec.SubscriptionID, spec.Unsubscriber, error)
+	Unsubscribe(context.Context, spec.SubscriptionID)
+}
+
+type Broker interface {
+	Send(e events.Event)
+	SendBatch(es []events.Event)
 }
 
 // Product is the interface provided by all product in vega.
 type Product interface {
-	Settle(*num.Uint, uint32, num.Decimal) (amt *types.FinancialAmount, neg bool, err error)
+	Settle(*num.Uint, *num.Uint, num.Decimal) (amt *types.FinancialAmount, neg bool, rounding num.Decimal, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
 	ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
 	NotifyOnSettlementData(listener func(context.Context, *num.Numeric))
+	Update(ctx context.Context, pp interface{}, oe OracleEngine) error
 	UnsubscribeTradingTerminated(ctx context.Context)
 	UnsubscribeSettlementData(ctx context.Context)
 	RestoreSettlementData(*num.Numeric)
+	OnLeaveOpeningAuction(context.Context, int64)
+
+	// tell the product about an internal data-point such as a the current mark-price
+	SubmitDataPoint(context.Context, *num.Uint, int64) error
+
+	// snapshot specific
+	Serialize() *snapshotpb.Product
+	GetMarginIncrease(int64) num.Decimal
+	GetData(t int64) *types.ProductData
+	GetCurrentPeriod() uint64
 }
 
 // New instance a new product from a Market framework product configuration.
-func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine) (Product, error) {
+func New(ctx context.Context, log *logging.Logger, pp interface{}, marketID string, ts common.TimeService, oe OracleEngine, broker Broker, assetDP uint32) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
+
 	switch p := pp.(type) {
 	case *types.InstrumentFuture:
-		return NewFuture(ctx, log, p.Future, oe)
+		return NewFuture(ctx, log, p.Future, oe, assetDP)
+	case *types.InstrumentPerps:
+		return NewPerpetual(ctx, log, p.Perps, marketID, ts, oe, broker, assetDP)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

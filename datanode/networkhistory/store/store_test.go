@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package store_test
 
 import (
@@ -10,6 +25,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/logging"
@@ -136,6 +152,7 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 	log := logging.NewTestLogger()
 	cfg := store.NewDefaultConfig()
 	cfg.HistoryRetentionBlockSpan = historyRetentionBlockSpan
+	cfg.GarbageCollectionInterval = encoding.Duration{Duration: 0}
 	snapshotsDir := t.TempDir()
 
 	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, 33)
@@ -146,9 +163,11 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 func dirSize(path string) (int64, error) {
 	var size int64
 	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			size += info.Size()
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+
+		size += info.Size()
 		return nil
 	})
 	return size, err

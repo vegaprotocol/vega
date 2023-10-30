@@ -77,6 +77,7 @@ Feature: Staking & Delegation
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
+  @CurrentEpoch
   Scenario: No funds in reward account however validator scores get published (0061-REWP-additional-tests)
     Desciption: Parties have had their tokens delegated to nodes for a full epoch but the reward account balance is 0
 
@@ -90,6 +91,8 @@ Feature: Staking & Delegation
     |  node2  |      0.07810     |     0.07810      |
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
+    And the current epoch is "2"
+    Then the network moves ahead "1" epochs
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped (0061-REWP-additional-tests) 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
@@ -327,8 +330,8 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
 
-    Then "party1" should have general account balance of "49" for asset "VEGA"
-    Then "node1" should have general account balance of "3842" for asset "VEGA"
+    Then "party1" should have vesting account balance of "49" for asset "VEGA"
+    Then "node1" should have vesting account balance of "3842" for asset "VEGA"
   
   Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards (0061-REWP-additional-tests)
     Given the parties withdraw from staking account the following amount:  
@@ -737,8 +740,8 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  1914  | 
     | node13 | VEGA  |  1914  | 
 
-    Then "party1" should have general account balance of "99" for asset "VEGA"
-    Then "node1" should have general account balance of "1916" for asset "VEGA"
+    Then "party1" should have vesting account balance of "99" for asset "VEGA"
+    Then "node1" should have vesting account balance of "1916" for asset "VEGA"
   
     And the parties deposit on asset's general account the following amount:
       | party                                                            | asset | amount |
@@ -782,8 +785,8 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-    Then "party1" should have general account balance of "300" for asset "VEGA"
-    Then "node1" should have general account balance of "5748" for asset "VEGA"
+    Then "party1" should have vesting account balance of "300" for asset "VEGA"
+    Then "node1" should have vesting account balance of "5748" for asset "VEGA"
 
   Scenario: Parties get the smallest reward amount of 1 when the reward pot is smallest (0061-REWP-additional-tests)
     Description:  Validators get the smallest reward amount of 1 and delegator earns nothing
@@ -834,4 +837,4 @@ Feature: Staking & Delegation
     | node12 | VEGA  | 1 | 
     | node13 | VEGA  | 1 | 
 
-    Then "node1" should have general account balance of "1" for asset "VEGA"
+    Then "node1" should have vesting account balance of "1" for asset "VEGA"

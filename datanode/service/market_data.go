@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -28,9 +43,7 @@ type MarketDataStore interface {
 	Flush(ctx context.Context) ([]*entities.MarketData, error)
 	GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error)
 	GetMarketsData(ctx context.Context) ([]entities.MarketData, error)
-	GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
-	GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
-	GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
+	GetHistoricMarketData(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
 }
 
 type MarketData struct {
@@ -103,16 +116,8 @@ func (m *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData,
 	return data, nil
 }
 
-func (m *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, start, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
-	return m.store.GetBetweenDatesByID(ctx, marketID, start, end, pagination)
-}
-
-func (m *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
-	return m.store.GetFromDateByID(ctx, marketID, start, pagination)
-}
-
-func (m *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
-	return m.store.GetToDateByID(ctx, marketID, end, pagination)
+func (m *MarketData) GetHistoricMarketData(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
+	return m.store.GetHistoricMarketData(ctx, marketID, start, end, pagination)
 }
 
 func (m *MarketData) ObserveMarketData(

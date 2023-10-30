@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -51,6 +66,7 @@ type Market struct {
 	QuadraticSlippageFactor       *decimal.Decimal
 	ParentMarketID                MarketID
 	InsurancePoolFraction         *decimal.Decimal
+	LiquiditySLAParameters        LiquiditySLAParameters
 	// Not saved in the market table, but used when retrieving data from the database.
 	// This will be populated when a market has a successor
 	SuccessorMarketID MarketID
@@ -114,11 +130,6 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		return nil, fmt.Errorf("%d is not a valid number for position decimal places", market.PositionDecimalPlaces)
 	}
 
-	lppr, err := num.DecimalFromString(market.LpPriceRange)
-	if err != nil || lppr.IsNegative() || lppr.IsZero() || lppr.GreaterThan(num.DecimalFromInt64(100)) {
-		return nil, fmt.Errorf("%v is not a valid number for LP price range", market.LpPriceRange)
-	}
-
 	dps := int(market.DecimalPlaces)
 	positionDps := int(market.PositionDecimalPlaces)
 
@@ -155,6 +166,14 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		insurancePoolFraction = &insurance
 	}
 
+	var sla LiquiditySLAParameters
+	if market.LiquiditySlaParams != nil {
+		sla, err = LiquiditySLAParametersFromProto(market.LiquiditySlaParams)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Market{
 		ID:                            MarketID(market.Id),
 		TxHash:                        txHash,
@@ -175,6 +194,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parentMarketID,
 		InsurancePoolFraction:         insurancePoolFraction,
+		LiquiditySLAParameters:        sla,
 	}, nil
 }
 
@@ -225,6 +245,7 @@ func (m Market) ToProto() *vega.Market {
 		ParentMarketId:                parentMarketID,
 		InsurancePoolFraction:         insurancePoolFraction,
 		SuccessorMarketId:             successorMarketID,
+		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
 	}
 }
 
@@ -288,6 +309,47 @@ type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
 	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
 	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
+}
+
+type LiquiditySLAParameters struct {
+	PriceRange                  num.Decimal `json:"priceRange,omitempty"`
+	CommitmentMinTimeFraction   num.Decimal `json:"commitmentMinTimeFraction,omitempty"`
+	PerformanceHysteresisEpochs uint64      `json:"performanceHysteresisEpochs,omitempty"`
+	SlaCompetitionFactor        num.Decimal `json:"slaCompetitionFactor,omitempty"`
+}
+
+func (lsp LiquiditySLAParameters) IntoProto() *vega.LiquiditySLAParameters {
+	return &vega.LiquiditySLAParameters{
+		PriceRange:                  lsp.PriceRange.String(),
+		CommitmentMinTimeFraction:   lsp.CommitmentMinTimeFraction.String(),
+		SlaCompetitionFactor:        lsp.SlaCompetitionFactor.String(),
+		PerformanceHysteresisEpochs: lsp.PerformanceHysteresisEpochs,
+	}
+}
+
+func LiquiditySLAParametersFromProto(sla *vega.LiquiditySLAParameters) (LiquiditySLAParameters, error) {
+	// SLA can be nil for futures for NOW
+	if sla == nil {
+		return LiquiditySLAParameters{}, nil
+	}
+	priceRange, err := num.DecimalFromString(sla.PriceRange)
+	if err != nil {
+		return LiquiditySLAParameters{}, errors.New("invalid price range in liquidity sla parameters")
+	}
+	commitmentMinTimeFraction, err := num.DecimalFromString(sla.CommitmentMinTimeFraction)
+	if err != nil {
+		return LiquiditySLAParameters{}, errors.New("invalid commitment min time fraction in liquidity sla parameters")
+	}
+	slaCompetitionFactor, err := num.DecimalFromString(sla.SlaCompetitionFactor)
+	if err != nil {
+		return LiquiditySLAParameters{}, errors.New("invalid commitment sla competition factor in liquidity sla parameters")
+	}
+	return LiquiditySLAParameters{
+		PriceRange:                  priceRange,
+		CommitmentMinTimeFraction:   commitmentMinTimeFraction,
+		SlaCompetitionFactor:        slaCompetitionFactor,
+		PerformanceHysteresisEpochs: sla.PerformanceHysteresisEpochs,
+	}, nil
 }
 
 func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringParameters {

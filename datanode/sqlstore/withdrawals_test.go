@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -71,8 +86,8 @@ func setupWithdrawalStoreTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.Withdr
 }
 
 func testAddWithdrawalForNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -94,8 +109,8 @@ func testAddWithdrawalForNewBlock(t *testing.T) {
 }
 
 func testUpdateWithdrawalForBlockIfExists(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -129,8 +144,8 @@ func testUpdateWithdrawalForBlockIfExists(t *testing.T) {
 }
 
 func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -168,8 +183,8 @@ func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
 }
 
 func testWithdrawalsGetByID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -207,8 +222,8 @@ func testWithdrawalsGetByID(t *testing.T) {
 }
 
 func testWithdrawalsGetByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -272,8 +287,8 @@ func testWithdrawalsGetByParty(t *testing.T) {
 }
 
 func testWithdrawalsGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, ws, conn := setupWithdrawalStoreTests(t)
 
 	var rowCount int
@@ -342,8 +357,7 @@ func addWithdrawals(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ws *
 }
 
 func testWithdrawalsPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -370,8 +384,7 @@ func testWithdrawalsPaginationNoPagination(t *testing.T) {
 }
 
 func testWithdrawalsPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -400,8 +413,7 @@ func testWithdrawalsPaginationFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -430,8 +442,7 @@ func testWithdrawalsPaginationLast(t *testing.T) {
 }
 
 func testWithdrawalsPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -461,8 +472,7 @@ func testWithdrawalsPaginationFirstAfter(t *testing.T) {
 }
 
 func testWithdrawalsPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -495,8 +505,7 @@ func testWithdrawalsPaginationLastBefore(t *testing.T) {
 }
 
 func testWithdrawalsPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -523,8 +532,7 @@ func testWithdrawalsPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -553,8 +561,7 @@ func testWithdrawalsPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -583,8 +590,7 @@ func testWithdrawalsPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -614,8 +620,7 @@ func testWithdrawalsPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -648,8 +653,7 @@ func testWithdrawalsPaginationLastBeforeNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -682,8 +686,7 @@ func testWithdrawalsPaginationBetweenDatesNoPagination(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -718,8 +721,7 @@ func testWithdrawalsPaginationBetweenDatesFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -754,8 +756,7 @@ func testWithdrawalsPaginationBetweenDatesLast(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -791,8 +792,7 @@ func testWithdrawalsPaginationBetweenDatesFirstAfter(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -831,8 +831,7 @@ func testWithdrawalsPaginationBetweenDatesLastBefore(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -866,8 +865,7 @@ func testWithdrawalsPaginationBetweenDatesNoPaginationNewestFirst(t *testing.T) 
 }
 
 func testWithdrawalsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -902,8 +900,7 @@ func testWithdrawalsPaginationBetweenDatesFirstNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -938,8 +935,7 @@ func testWithdrawalsPaginationBetweenDatesLastNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 
@@ -975,8 +971,7 @@ func testWithdrawalsPaginationBetweenDatesFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testWithdrawalsPaginationBetweenDatesLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ws, _ := setupWithdrawalStoreTests(t)
 

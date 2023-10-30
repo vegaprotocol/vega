@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -33,13 +36,22 @@ func PartiesPlaceTheFollowingPeggedIcebergOrders(
 	for _, r := range parseSubmitPeggedIcebergOrderTable(table) {
 		row := submitPeggedIcebergOrderRow{row: r}
 
+		typ := types.OrderTypeLimit
+		if row.HasOrderType() {
+			typ = row.OrderType()
+		}
+		tif := types.OrderTimeInForceGTC
+		if row.HasTimeInForce() {
+			tif = row.TimeInForce()
+		}
+
 		orderSubmission := types.OrderSubmission{
 			MarketID:    row.MarketID(),
 			Side:        row.Side(),
 			Size:        row.Volume(),
 			ExpiresAt:   row.ExpirationDate(now),
-			Type:        row.OrderType(),
-			TimeInForce: row.TimeInForce(),
+			Type:        typ,
+			TimeInForce: tif,
 			Reference:   row.Reference(),
 			IcebergOrder: &types.IcebergOrder{
 				PeakSize:           row.InitialPeak(),
@@ -88,13 +100,13 @@ func parseSubmitPeggedIcebergOrderTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"side",
 		"volume",
-		"type",
-		"tif",
 		"peak size",
 		"minimum visible size",
 		"pegged reference",
 		"offset",
 	}, []string{
+		"type",
+		"tif",
 		"reference",
 		"error",
 		"resulting trades",
@@ -123,6 +135,14 @@ func (r submitPeggedIcebergOrderRow) Volume() uint64 {
 	return r.row.MustU64("volume")
 }
 
+func (r submitPeggedIcebergOrderRow) HasOrderType() bool {
+	return r.row.HasColumn("type")
+}
+
+func (r submitPeggedIcebergOrderRow) HasTimeInForce() bool {
+	return r.row.HasColumn("tif")
+}
+
 func (r submitPeggedIcebergOrderRow) OrderType() types.OrderType {
 	return r.row.MustOrderType("type")
 }
@@ -132,11 +152,11 @@ func (r submitPeggedIcebergOrderRow) TimeInForce() types.OrderTimeInForce {
 }
 
 func (r submitPeggedIcebergOrderRow) ExpirationDate(now time.Time) int64 {
-	if r.OrderType() == types.OrderTypeMarket {
+	if r.HasOrderType() && r.OrderType() == types.OrderTypeMarket {
 		return 0
 	}
 
-	if r.TimeInForce() == types.OrderTimeInForceGTT {
+	if r.HasTimeInForce() && r.TimeInForce() == types.OrderTimeInForceGTT {
 		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
 	}
 	// non GTT orders don't need an expiry time

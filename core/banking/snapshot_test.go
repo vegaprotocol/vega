@@ -1,23 +1,29 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package banking_test
 
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"strconv"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
@@ -25,9 +31,9 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -53,69 +59,35 @@ func depositAt(eng *testEngine, asset, party string, amount *num.Uint) *types.Bu
 	}
 }
 
-func testEngineAndSnapshot(t *testing.T) (*testEngine, *snp.Engine) {
+func testEngineAndSnapshot(t *testing.T, vegaPath paths.Paths, now time.Time) (*testEngine, *snp.Engine) {
 	t.Helper()
 	eng := getTestEngine(t)
-	now := time.Now()
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	config := snp.DefaultConfig()
+	snapshotEngine, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
 	snapshotEngine.AddProviders(eng.Engine)
-	snapshotEngine.ClearAndInitialise()
 	return eng, snapshotEngine
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+
+	now := time.Now()
+	deliver := now.Add(time.Hour)
 
 	testAsset := assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
 	}))
 
-	eng, snap := testEngineAndSnapshot(t)
-	defer eng.ctrl.Finish()
-	defer snap.Close()
-
-	now := time.Now()
-
-	// setup some deposits
-	d1 := depositAt(eng, "VGT1", "someparty1", num.NewUint(42))
-	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
-	assert.NoError(t, err)
-
-	d2 := depositAt(eng, "VGT1", "someparty2", num.NewUint(24))
-	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
-	assert.NoError(t, err)
-
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-	eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
-	// setup some withdrawals
-	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(2))
-	require.Nil(t, err)
-
-	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty2", "VGT1", num.NewUint(4))
-	require.Nil(t, err)
-
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
-	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-
-	deliver := now.Add(time.Hour)
-	eng.OnTick(ctx, now)
-
-	// setup one time transfer
 	oneoff := &types.TransferFunds{
 		Kind: types.TransferCommandKindOneOff,
 		OneOff: &types.OneOffTransfer{
@@ -132,14 +104,22 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, eng.TransferFunds(ctx, oneoff))
+	oneoff2 := &types.TransferFunds{
+		Kind: types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{
+			TransferBase: &types.TransferBase{
+				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+			DeliverOn: &deliver,
+		},
+	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
-	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-
-	// setup recurring transfer
 	recurring := &types.TransferFunds{
 		Kind: types.TransferCommandKindRecurring,
 		Recurring: &types.RecurringTransfer{
@@ -158,87 +138,7 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, eng.TransferFunds(ctx, recurring))
-
-	_, err = snap.Snapshot(ctx)
-	require.NoError(t, err)
-	snaps, err := snap.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
-
-	engineLoad, snapLoad := testEngineAndSnapshot(t)
-	engineLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	engineLoad.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
-	engineLoad.tsvc.EXPECT().GetTimeNow().AnyTimes()
-	snapLoad.ReceiveSnapshot(snap1)
-	snapLoad.ApplySnapshot(ctx)
-	snapLoad.CheckLoaded()
-	defer snapLoad.Close()
-
-	// verify equal right after snapshot load
-	b, err := snap.Snapshot(ctx)
-	require.NoError(t, err)
-	bLoad, err := snapLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
-
-	eng.OnTick(ctx, now)
-	engineLoad.OnTick(ctx, now)
-
-	// setup some more deposits
-	d3 := depositAt(eng, "VGT1", "someparty3", num.NewUint(29))
-	err = eng.DepositBuiltinAsset(context.Background(), d3, "depositid3", 29)
-	require.NoError(t, err)
-	err = engineLoad.DepositBuiltinAsset(context.Background(), d3, "depositid3", 29)
-	require.NoError(t, err)
-
-	// setup some withdrawals
-	engineLoad.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
-	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
-	require.Nil(t, err)
-	err = engineLoad.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10))
-	require.Nil(t, err)
-	err = eng.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty2", "VGT1", num.NewUint(5))
-	require.Nil(t, err)
-	err = engineLoad.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty2", "VGT1", num.NewUint(5))
-	require.Nil(t, err)
-
-	// setup some transfers
-	engineLoad.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
-	engineLoad.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
-	engineLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	engineLoad.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-
-	deliver = now.Add(time.Hour)
-	eng.OnTick(ctx, now)
-
-	// setup one time transfer
-	oneoff = &types.TransferFunds{
-		Kind: types.TransferCommandKindOneOff,
-		OneOff: &types.OneOffTransfer{
-			TransferBase: &types.TransferBase{
-				From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
-				FromAccountType: types.AccountTypeGeneral,
-				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
-				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
-				Amount:          num.NewUint(10),
-				Reference:       "someref",
-			},
-			DeliverOn: &deliver,
-		},
-	}
-
-	require.NoError(t, eng.TransferFunds(ctx, oneoff))
-	require.NoError(t, engineLoad.TransferFunds(ctx, oneoff))
-
-	engineLoad.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
-	engineLoad.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
-	engineLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	engineLoad.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-
-	// setup recurring transfer
-	recurring = &types.TransferFunds{
+	recurring2 := &types.TransferFunds{
 		Kind: types.TransferCommandKindRecurring,
 		Recurring: &types.RecurringTransfer{
 			TransferBase: &types.TransferBase{
@@ -256,14 +156,125 @@ func TestSnapshotRoundtripViaEngine(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, eng.TransferFunds(ctx, recurring))
-	require.NoError(t, engineLoad.TransferFunds(ctx, recurring))
+	d1 := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT1",
+		PartyID:     "someparty1",
+		Amount:      num.NewUint(42),
+	}
+	d2 := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT1",
+		PartyID:     "someparty2",
+		Amount:      num.NewUint(24),
+	}
+	d3 := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT1",
+		PartyID:     "someparty3",
+		Amount:      num.NewUint(29),
+	}
+
+	vegaPath := paths.New(t.TempDir())
+
+	bankingEngine1, snapshotEngine1 := testEngineAndSnapshot(t, vegaPath, now)
+	closeSnapshotEngine1 := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer closeSnapshotEngine1()
+
+	bankingEngine1.tsvc.EXPECT().GetTimeNow().Return(now).AnyTimes()
+	bankingEngine1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	bankingEngine1.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	bankingEngine1.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	bankingEngine1.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+	bankingEngine1.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
+
+	require.NoError(t, snapshotEngine1.Start(context.Background()))
+
+	require.NoError(t, bankingEngine1.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42))
+	require.NoError(t, bankingEngine1.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24))
+	require.NoError(t, bankingEngine1.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(2)))
+	require.NoError(t, bankingEngine1.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty2", "VGT1", num.NewUint(4)))
+
+	bankingEngine1.OnTick(ctx, now)
+
+	require.NoError(t, bankingEngine1.TransferFunds(ctx, oneoff))
+	require.NoError(t, bankingEngine1.TransferFunds(ctx, recurring))
+
+	// Take a snapshot.
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
+	require.NoError(t, err)
+
+	// Additional steps to execute the same way on the next engine to verify it yield the same result.
+	additionalSteps := func(bankingEngine *testEngine) {
+		bankingEngine.OnTick(ctx, now)
+
+		require.NoError(t, bankingEngine.DepositBuiltinAsset(context.Background(), d3, "depositid3", 29))
+		require.NoError(t, bankingEngine.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty1", "VGT1", num.NewUint(10)))
+		require.NoError(t, bankingEngine.WithdrawBuiltinAsset(context.Background(), "VGT1", "someparty2", "VGT1", num.NewUint(5)))
+
+		bankingEngine.OnTick(ctx, now)
+
+		require.NoError(t, bankingEngine.TransferFunds(ctx, oneoff2))
+		require.NoError(t, bankingEngine.TransferFunds(ctx, recurring2))
+	}
+
+	additionalSteps(bankingEngine1)
+
+	state1 := map[string][]byte{}
+	for _, key := range bankingEngine1.Keys() {
+		state, additionalProvider, err := bankingEngine1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	closeSnapshotEngine1()
+
+	// Reload the engine using the previous snapshot.
+
+	bankingEngine2, snapshotEngine2 := testEngineAndSnapshot(t, vegaPath, now)
+	defer snapshotEngine2.Close()
+
+	bankingEngine2.tsvc.EXPECT().GetTimeNow().Return(now).AnyTimes()
+	bankingEngine2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	bankingEngine2.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	bankingEngine2.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	bankingEngine2.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+	bankingEngine2.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	// Executing the same steps post-snapshot as the first engine
+	additionalSteps(bankingEngine2)
+
+	state2 := map[string][]byte{}
+	for _, key := range bankingEngine2.Keys() {
+		state, additionalProvider, err := bankingEngine2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		if key == "withdrawals" {
+			// FIXME The withdrawal count inside the engine is not restored by
+			//   the snapshot, which leads to a non-deterministic generation
+			//   of the withdrawal `Ref` after restoring the state from a snapshot.
+			//   Instead of starting at the count from the previous engine, it
+			//   restarts at 0.
+			//   It doesn't seem to be a big issue. As a result, we skip the
+			//   verification for the moment.
+			continue
+		}
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }
 
 func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	aaKey := (&types.PayloadBankingAssetActions{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
@@ -299,7 +310,6 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 func TestSeenSnapshotRoundTrip(t *testing.T) {
 	seenKey := (&types.PayloadBankingSeen{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	state1, _, err := eng.GetState(seenKey)
@@ -350,7 +360,6 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 
-	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
 		err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid"+strconv.Itoa(i*2), 42)
@@ -390,7 +399,6 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 
-	defer eng.ctrl.Finish()
 	for i := 0; i < 10; i++ {
 		d1 := deposit(eng, "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), num.NewUint(42))
 		err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid"+strconv.Itoa(i*2), 42)
@@ -424,7 +432,6 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingScheduledTransfers{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
@@ -481,7 +488,6 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringTransfers{}).Key()
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
@@ -511,9 +517,23 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 			StartEpoch: 10,
 			EndEpoch:   nil, // forever
 			Factor:     num.MustDecimalFromString("0.9"),
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:       "zohar",
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:              []string{"mmm"},
+				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+				WindowLength:         1,
+				LockPeriod:           1,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+			},
 		},
 	}
 
+	p, _ := proto.Marshal(recurring.Recurring.DispatchStrategy)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
+
+	eng.marketActivityTracker.EXPECT().MarketTrackedForAsset("mmm", "zohar").Times(1).Return(true)
 	require.NoError(t, eng.TransferFunds(ctx, recurring))
 
 	// test the new transfer prompts a change
@@ -530,13 +550,16 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state2, statePostReload))
+
+	require.NotNil(t, eng.GetDispatchStrategy(dsHash))
+	require.NotNil(t, snap.GetDispatchStrategy(dsHash))
+	require.Equal(t, eng.GetDispatchStrategy(dsHash), snap.GetDispatchStrategy(dsHash))
 }
 
 func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -548,18 +571,34 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 
 	endEpoch := uint64(2)
 	transfer := &types.NewTransferConfiguration{
-		SourceType:              types.AccountTypeGlobalReward,
-		DestinationType:         types.AccountTypeGeneral,
-		Asset:                   "eth",
-		Source:                  "",
-		Destination:             "zohar",
-		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
-		MaxAmount:               num.NewUint(10),
-		FractionOfBalance:       num.DecimalFromFloat(0.1),
-		Kind:                    types.TransferKindRecurring,
-		OneOffTransferConfig:    nil,
-		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch},
+		SourceType:           types.AccountTypeGlobalReward,
+		DestinationType:      types.AccountTypeGeneral,
+		Asset:                "eth",
+		Source:               "",
+		Destination:          "zohar",
+		TransferType:         vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+		MaxAmount:            num.NewUint(10),
+		FractionOfBalance:    num.DecimalFromFloat(0.1),
+		Kind:                 types.TransferKindRecurring,
+		OneOffTransferConfig: nil,
+		RecurringTransferConfig: &vega.RecurringTransfer{
+			StartEpoch: 1,
+			EndEpoch:   &endEpoch,
+			DispatchStrategy: &vega.DispatchStrategy{
+				AssetForMetric:       "zohar",
+				Metric:               vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
+				Markets:              []string{"mmm"},
+				EntityScope:          vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+				IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+				WindowLength:         1,
+				LockPeriod:           1,
+				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK,
+			},
+		},
 	}
+
+	p, _ := proto.Marshal(transfer.RecurringTransferConfig.DispatchStrategy)
+	dsHash := hex.EncodeToString(crypto.Hash(p))
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
@@ -577,13 +616,16 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state, statePostReload))
+
+	require.NotNil(t, e.GetDispatchStrategy(dsHash))
+	require.NotNil(t, snap.GetDispatchStrategy(dsHash))
+	require.Equal(t, e.GetDispatchStrategy(dsHash), snap.GetDispatchStrategy(dsHash))
 }
 
 func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package types
 
 import (
@@ -5,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -23,7 +39,7 @@ type ProposalTermsUpdateAsset struct {
 func (a ProposalTermsUpdateAsset) String() string {
 	return fmt.Sprintf(
 		"updateAsset(%v)",
-		reflectPointerToString(a.UpdateAsset),
+		stringer.ReflectPointerToString(a.UpdateAsset),
 	)
 }
 
@@ -104,7 +120,7 @@ func (a UpdateAsset) String() string {
 	return fmt.Sprintf(
 		"assetID(%s) changes(%s)",
 		a.AssetID,
-		reflectPointerToString(a.Changes),
+		stringer.ReflectPointerToString(a.Changes),
 	)
 }
 
@@ -142,7 +158,7 @@ func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
 		"quantum(%s) (%s)",
 		a.Quantum.String(),
-		reflectPointerToString(a.Source),
+		stringer.ReflectPointerToString(a.Source),
 	)
 }
 
@@ -228,7 +244,7 @@ type AssetDetailsUpdateERC20 struct {
 func (a AssetDetailsUpdateERC20) String() string {
 	return fmt.Sprintf(
 		"erc20Update(%s)",
-		reflectPointerToString(a.ERC20Update),
+		stringer.ReflectPointerToString(a.ERC20Update),
 	)
 }
 
@@ -334,7 +350,7 @@ func (e ERC20Update) DeepClone() *ERC20Update {
 func (e ERC20Update) String() string {
 	return fmt.Sprintf(
 		"lifetimeLimit(%s) withdrawThreshold(%s)",
-		uintPointerToString(e.LifetimeLimit),
-		uintPointerToString(e.WithdrawThreshold),
+		stringer.UintPointerToString(e.LifetimeLimit),
+		stringer.UintPointerToString(e.WithdrawThreshold),
 	)
 }

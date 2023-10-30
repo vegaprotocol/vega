@@ -9,17 +9,3 @@ func NewOracleSpec(d *DataSourceSpec) *OracleSpec {
 }
 
 func (*OracleSpec) IsEvent() {}
-
-func (o OracleSpec) DeepClone() *OracleSpec {
-	if o.ExternalDataSourceSpec != nil {
-		return &OracleSpec{
-			ExternalDataSourceSpec: o.ExternalDataSourceSpec.DeepClone(),
-		}
-	}
-
-	return &OracleSpec{
-		ExternalDataSourceSpec: &ExternalDataSourceSpec{
-			Spec: &DataSourceSpec{},
-		},
-	}
-}

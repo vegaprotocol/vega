@@ -1,22 +1,30 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	vtypes "code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	"github.com/cucumber/godog"
 )
 
 func TheMarketStateShouldBeForMarket(
@@ -55,6 +63,37 @@ func TheLastStateUpdateShouldBeForMarket(
 	return nil
 }
 
+func TheMarketStateIsUpdatedTo(exec Execution, data *godog.Table) error {
+	rows := parseStateUpdate(data)
+	ctx := vgcontext.WithTraceID(context.Background(), "deadbeef")
+	for _, r := range rows {
+		mu := marketUpdateGov{
+			row: r,
+		}
+		changes := &vtypes.MarketStateUpdateConfiguration{
+			MarketID:        mu.MarketID(),
+			SettlementPrice: mu.SettlementPrice(),
+			UpdateType:      mu.MarketStateUpdate(),
+		}
+		if err := exec.UpdateMarketState(ctx, changes); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type marketUpdateGov struct {
+	row RowWrapper
+}
+
+func parseStateUpdate(data *godog.Table) []RowWrapper {
+	return StrictParseTable(data, []string{
+		"market id",
+		"state",
+		"settlement price",
+	}, nil)
+}
+
 func errMismatchedMarketState(market string, expectedMarketState, marketState types.Market_State) error {
 	return formatDiff(
 		fmt.Sprintf("unexpected market state for market \"%s\"", market),
@@ -65,4 +104,16 @@ func errMismatchedMarketState(market string, expectedMarketState, marketState ty
 			"market state": marketState.String(),
 		},
 	)
+}
+
+func (m marketUpdateGov) MarketID() string {
+	return m.row.MustStr("market id")
+}
+
+func (m marketUpdateGov) MarketStateUpdate() vtypes.MarketStateUpdateType {
+	return m.row.MustMarketUpdateState("state")
+}
+
+func (m marketUpdateGov) SettlementPrice() *num.Uint {
+	return m.row.MustUint("settlement price")
 }

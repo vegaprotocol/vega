@@ -207,6 +207,7 @@ message MultisigControl {
 
 message MarketTracker {
   repeated MarketActivityTracker market_activity = 1;
+  repeated TakerNotionalVolume taker_notional_volume = 2;
 }
 
 message MarketActivityTracker {
@@ -219,11 +220,78 @@ message MarketActivityTracker {
   repeated string bonus_paid = 7;
   string value_traded = 8;
   bool ready_to_delete = 9;
+
+  repeated TWPositionData time_weighted_position = 10;
+  repeated TWNotionalData time_weighted_notional = 11;
+  repeated ReturnsData returns_data = 12;
+
+  repeated EpochPartyFees maker_fees_received_history = 13;
+  repeated EpochPartyFees maker_fees_paid_history = 14;
+  repeated EpochPartyFees lp_fees_history = 15;
+
+  repeated EpochTimeWeightPositionData time_weighted_position_data_history = 16;
+  repeated EpochTimeWeightedNotionalData time_weighted_notional_data_history = 17;
+  repeated EpochReturnsData returns_data_history = 18;
+}
+
+message EpochTimeWeightPositionData {
+  repeated PartyTimeWeightedPosition party_time_weighted_positions = 1;
+}
+
+message EpochTimeWeightedNotionalData {
+  repeated PartyTimeWeightedNotional party_time_weighted_notionals = 1;
+}
+
+message PartyTimeWeightedNotional {
+  string party = 1;
+  bytes tw_notional = 2;
+}
+
+message PartyTimeWeightedPosition {
+  string party = 1;
+  uint64 tw_position = 2;
+}
+
+message EpochPartyFees {
+  repeated PartyFeesHistory party_fees = 1;
+}
+
+message TakerNotionalVolume {
+  string party = 1;
+  bytes volume = 2;
+}
+
+message EpochReturnsData {
+  repeated ReturnsData returns = 1;
+}
+
+message ReturnsData {
+  string party = 1;
+  bytes return = 2;
+}
+
+message TWPositionData {
+  string party = 1;
+  uint64 position = 2;
+  int64 time = 3;
+  uint64 tw_position = 4;
+}
+
+message TWNotionalData {
+  string party = 1;
+  bytes notional = 2;
+  int64 time = 3;
+  bytes tw_notional = 4;
 }
 
 message PartyFees {
   string party = 1;
   string fee = 2;
+}
+
+message PartyFeesHistory {
+  string party = 1;
+  bytes fee = 2;
 }
 
 message AssetAction {

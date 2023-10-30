@@ -12,7 +12,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.72.1";
+    version: "v0.73.0";
   }
   schemes: [
     HTTP,
@@ -24,7 +24,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service CoreService {
   // Submit transaction
   //
-  // Submit a signed transaction
+  // Submit a signed transaction to the network containing a command to be executed such that if the submission is successful then it will be included in the chain's mempool.
+  // The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 
   // Chain event
@@ -54,22 +55,25 @@ service CoreService {
 
   // Submit raw transaction
   //
-  // Submit a version agnostic signed transaction
+  // Submit a pre-serialised signed transaction containing a command to the network to be executed, such that if the submission is successful then it will be included in the chain's mempool.
+  // The network will then attempt to execute the transaction in the next available block, where the results of its execution can be seen on the EventBus.
   rpc SubmitRawTransaction(SubmitRawTransactionRequest) returns (SubmitRawTransactionResponse);
 
   // Check transaction
   //
-  // Check a signed transaction
+  // Send a signed transaction containing a command to the network to be checked, but not added to the chain's mempool.
+  // This is useful for checking the validity of a potential transaction before submitting it.
   rpc CheckTransaction(CheckTransactionRequest) returns (CheckTransactionResponse);
 
   // Check raw transaction
   //
-  // Check a raw signed transaction
+  // Send a pre-serialised transaction containing a command to the network to be checked, but then not added to the chain's mempool.
+  // This is useful for checking the validity of a potential transaction before submitting it.
   rpc CheckRawTransaction(CheckRawTransactionRequest) returns (CheckRawTransactionResponse);
 
   // Get Spam statistics
   //
-  // Get the spam statistics for a given party
+  // Get the spam statistics for a given party.
   rpc GetSpamStatistics(GetSpamStatisticsRequest) returns (GetSpamStatisticsResponse);
 }
 
@@ -92,62 +96,59 @@ message PropagateChainEventResponse {
 
 // Request for submitting a transaction v2 on Vega
 message SubmitTransactionRequest {
-  // Blockchain transaction type
+  // Blockchain transaction type.
   enum Type {
     TYPE_UNSPECIFIED = 0;
-    // Transaction will be submitted without waiting for response
+    // Transaction will be submitted without waiting for a response.
     TYPE_ASYNC = 1;
-    // Transaction will be submitted, and blocking until the
-    // tendermint mempool returns a response
+    // Transaction will be submitted, and blocking until the mempool returns a response.
     TYPE_SYNC = 2;
-    // Transaction will be submitted, and blocking until the tendermint
-    // network has committed it into a block. Used only for debugging,
-    // not for submitting transactions
+    // Transaction will be submitted, and blocking until the network has committed it into a block.
+    // Used only for debugging local network, not for submitting transactions.
     TYPE_COMMIT = 3;
   }
-
-  // Bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain
+  // Transaction containing a command to execute on the network, and a signature to provide authentication.
   vega.commands.v1.Transaction tx = 1 [(google.api.field_behavior) = REQUIRED];
-  // Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
+  // Method of submission.
   Type type = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
-// Response for submitting a transaction v2 on Vega
+// Response for submitting a transaction on the network.
 message SubmitTransactionResponse {
-  // Success will be true if the transaction was accepted by the node,
-  // **Important** - success does not mean that the event is confirmed by consensus
+  // Whether or not the transaction was validated and submitted to the chain's mempool.
   bool success = 1;
-  // Hash of the transaction, if accepted
+  // Hash of the transaction, which can be used to identify the transaction in a node's event stream.
   string tx_hash = 2;
-  // Result code for success if unsuccessful
+  // Error code to indicate the category of failure if the transaction was not successfully submitted.
   uint32 code = 3;
-  // Data for details
+  // Further details for why the transaction was not successfully submitted.
   string data = 4;
+  // Further details for the underlying consensus layer of the result of the transaction.
   string log = 5;
-  // Height for commit
+  // Unused.
   int64 height = 6;
 }
 
 // Request for checking a transaction v2 on Vega
 message CheckTransactionRequest {
-  // Bundle of signed payload and signature, to form a transaction that would be submitted to the Vega blockchain
+  // Transaction containing a command to be checked on the network, and not added to the chain's mempool.
   vega.commands.v1.Transaction tx = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message CheckTransactionResponse {
-  // Success will be true if the transaction was checked by the node
+  // Whether or not the transaction passed the submission checks.
   bool success = 1;
-  // Check code result
+  // Error code to indicate the category of failure if the transaction was not successfully checked.
   uint32 code = 2;
-  // Gas wanted for transaction
+  // Amount of space in a block that the transaction will fill. This does not relate to any monetary cost for submitting the transaction.
   int64 gas_wanted = 3;
-  // Gas used for transaction
+  // Unused.
   int64 gas_used = 4;
-  // Data for details
+  // Further details for why the transaction was not successfully submitted.
   string data = 5;
-  // Transaction log
+  // Further details for the underlying consensus layer of the result of the transaction.
   string log = 6;
-  // Information about the transaction
+  // Unused.
   string info = 7;
 }
 
@@ -166,7 +167,6 @@ message SubmitRawTransactionRequest {
     // not for submitting transactions
     TYPE_COMMIT = 3;
   }
-
   // Bundle of signed payload and signature marshalled into a byte array, to form a transaction that will be submitted to the Vega blockchain
   bytes tx = 1 [(google.api.field_behavior) = REQUIRED];
   // Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
@@ -175,15 +175,17 @@ message SubmitRawTransactionRequest {
 
 // Response for submitting a version agnostic transaction on Vega
 message SubmitRawTransactionResponse {
-  // Success will be true if the transaction was accepted by the node,
-  // **Important** - success does not mean that the event is confirmed by consensus
+  // Whether or not the transaction was validated and submitted to the chain's mempool.
   bool success = 1;
-  // Hash of the transaction, if accepted
+  // Hash of the transaction, which can be used to identify the transaction in a node's event stream.
   string tx_hash = 2;
-
+  // Error code to indicate the category of failure if the transaction was not successfully submitted.
   uint32 code = 3;
+  // Further details for why the transaction was not successfully submitted.
   string data = 4;
+  // Further details for the underlying consensus layer of the result of the transaction.
   string log = 5;
+  // Unused.
   int64 height = 6;
 }
 
@@ -195,19 +197,19 @@ message CheckRawTransactionRequest {
 
 // Response for checking a version agnostic transaction on Vega
 message CheckRawTransactionResponse {
-  // Success will be true if the transaction was checked by the node
+  // Whether or not the transaction passed the submission checks.
   bool success = 1;
-  // Check code result
+  // Error code to indicate the category of failure if the transaction was not successfully submitted.
   uint32 code = 2;
-  // Gas wanted for transaction
+  // Amount of space in a block that the transaction will fill. This does not relate to any monetary cost for submitting the transaction.
   int64 gas_wanted = 3;
-  // Gas used for transaction
+  // Unused.
   int64 gas_used = 4;
-  // Data for details
+  // Further details for why the transaction was not successfully checked.
   string data = 5;
-  // Transaction log
+  // Further details for the underlying consensus layer of the result of the transaction.
   string log = 6;
-  // Information about the transaction
+  // Unused
   string info = 7;
 }
 
@@ -434,22 +436,28 @@ message PoWStatistic {
 
 // Complete spam statistics captured for a given party
 message SpamStatistics {
-  // Statistics for proposal transactions made by the party
+  // Statistics for proposal transactions made by the party.
   SpamStatistic proposals = 1;
-  // Statistics for delegation transactions made by the party
+  // Statistics for delegation transactions made by the party.
   SpamStatistic delegations = 2;
-  // Statistics for transfer transactions made by the party
+  // Statistics for transfer transactions made by the party.
   SpamStatistic transfers = 3;
-  // Statistics for node announcement transactions made by the party
+  // Statistics for node announcement transactions made by the party.
   SpamStatistic node_announcements = 4;
-  // Statistics for proposal votes made by the party
+  // Statistics for proposal votes made by the party.
   VoteSpamStatistics votes = 5;
-  // Statistics for proof of work difficulty observed per block for the party
+  // Statistics for proof of work difficulty observed per block for the party.
   PoWStatistic pow = 6;
-  // Statistics for multisig signatures issued for the party
+  // Statistics for multisig signatures issued for the party.
   SpamStatistic issue_signatures = 7;
-  // Epoch in which these statistics apply to
+  // Epoch in which these statistics apply to.
   uint64 epoch_seq = 8;
+  // Statistics for transactions made by the party to create referral sets.
+  SpamStatistic create_referral_set = 9;
+  // Statistics for transactions made by the party to update referral sets.
+  SpamStatistic update_referral_set = 10;
+  // Statistics for transactions made by the party to apply referral codes.
+  SpamStatistic apply_referral_code = 11;
 }
 
 // Response containing all the spam statistics of a party for the current epoch

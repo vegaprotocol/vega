@@ -1,7 +1,22 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package paths_test
 
 import (
-	"os"
+	path2 "path"
 	"testing"
 
 	vgtest "code.vegaprotocol.io/vega/libs/test"
@@ -24,8 +39,7 @@ func TestFileHelpers(t *testing.T) {
 }
 
 func testWritingStructuredFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := &DummyData{
 		Name: "Jane",
 		Age:  40,
@@ -42,8 +56,7 @@ func testWritingStructuredFileSucceeds(t *testing.T) {
 }
 
 func testRewritingStructuredFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := &DummyData{
 		Name: "Jane",
 		Age:  40,
@@ -74,8 +87,7 @@ func testRewritingStructuredFileSucceeds(t *testing.T) {
 }
 
 func testReadingStructuredFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := &DummyData{
 		Name: "Jane",
 		Age:  40,
@@ -92,7 +104,7 @@ func testReadingStructuredFileSucceeds(t *testing.T) {
 }
 
 func testReadingNonExistingStructuredFileFails(t *testing.T) {
-	path := vgtest.RandomPath()
+	path := path2.Join(t.TempDir(), "file.txt")
 
 	readData := &DummyData{}
 	err := paths.ReadStructuredFile(path, readData)
@@ -101,8 +113,7 @@ func testReadingNonExistingStructuredFileFails(t *testing.T) {
 }
 
 func testWritingEncryptedFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	passphrase := "pa$$w0rd"
 	data := &DummyData{
 		Name: "Jane",
@@ -120,8 +131,7 @@ func testWritingEncryptedFileSucceeds(t *testing.T) {
 }
 
 func testRewritingEncryptedFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	passphrase := "pa$$w0rd"
 	data := &DummyData{
 		Name: "Jane",
@@ -153,8 +163,7 @@ func testRewritingEncryptedFileSucceeds(t *testing.T) {
 }
 
 func testReadingEncryptedFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	passphrase := "pa$$w0rd"
 	data := &DummyData{
 		Name: "Jane",
@@ -172,7 +181,7 @@ func testReadingEncryptedFileSucceeds(t *testing.T) {
 }
 
 func testReadingNonExistingEncryptedFileFails(t *testing.T) {
-	path := vgtest.RandomPath()
+	path := t.TempDir()
 	passphrase := "pa$$w0rd"
 
 	readData := &DummyData{}
@@ -182,8 +191,7 @@ func testReadingNonExistingEncryptedFileFails(t *testing.T) {
 }
 
 func testReadingEncryptedFileWithWrongPassphraseFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	passphrase := "pa$$w0rd"
 	wrongPassphrase := "HaXx0r"
 	data := &DummyData{

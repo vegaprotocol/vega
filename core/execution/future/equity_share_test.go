@@ -1,8 +1,22 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -81,10 +95,10 @@ func (esm *equityShareMarket) WithSubmittedOrder(t *testing.T, id, party string,
 	return esm
 }
 
-func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string, buys, sells []*types.LiquidityOrder) *equityShareMarket {
+func (esm *equityShareMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string) *equityShareMarket {
 	t.Helper()
 	esm.createPartyIfMissing(t, party)
-	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee, buys, sells)
+	esm.tm.WithSubmittedLiquidityProvision(esm.t, party, amount, fee)
 	return esm
 }
 
@@ -99,6 +113,14 @@ func (esm *equityShareMarket) LiquidityFeeAccount() *types.Account {
 func (esm *equityShareMarket) PartyGeneralAccount(party string) *types.Account {
 	acc, err := esm.tm.collateralEngine.GetPartyGeneralAccount(
 		party, esm.tm.asset,
+	)
+	require.NoError(esm.t, err)
+	return acc
+}
+
+func (esm *equityShareMarket) PartyLiquidityFeeAccount(party string) *types.Account {
+	acc, err := esm.tm.collateralEngine.GetPartyLiquidityFeeAccount(
+		esm.tm.market.GetID(), party, esm.tm.asset,
 	)
 	require.NoError(esm.t, err)
 	return acc
@@ -129,17 +151,9 @@ func TestWithinMarket(t *testing.T) {
 		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
 		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice). // Need to generate a trade to leave opening auction
 		// party1 (commitment: 2000) should get 2/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5", []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 11, 1),
-		}, []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 1),
-		}).
+		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5").
 		// party2 (commitment: 1000) should get 1/3 of the fee
-		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5", []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 1),
-		}, []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 11, 1),
-		})
+		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5")
 
 	// tm is the testMarket instance
 	var (
@@ -154,7 +168,6 @@ func TestWithinMarket(t *testing.T) {
 
 	md := esm.tm.market.GetMarketData()
 	require.NotNil(t, md)
-	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	t.Run("WhenNoTrades", func(t *testing.T) {
@@ -185,11 +198,8 @@ func TestWithinMarket(t *testing.T) {
 
 	// Retrieve both MarketLiquidityFee account balance and Party Balance
 	// before the fee distribution.
-	var (
-		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
-		party1Balance   = esm.PartyGeneralAccount("party1").Balance.Clone()
-		party2Balance   = esm.PartyGeneralAccount("party2").Balance.Clone()
-	)
+
+	originalBalance := esm.LiquidityFeeAccount().Balance.Clone()
 
 	curTime = curTime.Add(1 * time.Second)
 	tm.now = curTime
@@ -197,7 +207,6 @@ func TestWithinMarket(t *testing.T) {
 
 	md = esm.tm.market.GetMarketData()
 	require.NotNil(t, md)
-	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	oneU := num.NewUint(1)
@@ -207,7 +216,7 @@ func TestWithinMarket(t *testing.T) {
 	// exp = originalBalance*(2/3)
 	exp := num.UintZero().Mul(num.Sum(oneU, oneU), originalBalance)
 	exp = exp.Div(exp, num.Sum(oneU, oneU, oneU))
-	actual := num.UintZero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
+	actual := esm.PartyLiquidityFeeAccount("party1").Balance
 	assert.True(t,
 		exp.EQ(actual),
 		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
@@ -217,7 +226,7 @@ func TestWithinMarket(t *testing.T) {
 	exp = num.UintZero().Div(originalBalance, num.Sum(oneU, oneU, oneU))
 	// minus the remainder
 	exp.Sub(exp, oneU)
-	actual = num.UintZero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
+	actual = esm.PartyLiquidityFeeAccount("party2").Balance
 	assert.True(t,
 		exp.EQ(actual),
 		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package events_test
 
@@ -16,8 +19,8 @@ import (
 	"context"
 	"testing"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -25,15 +28,15 @@ import (
 
 func TestOracleDataDeepClone(t *testing.T) {
 	ctx := context.Background()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("PK1", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("PK2", types.DataSignerTypePubKey),
-		types.CreateSignerFromString("PK3", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("PK1", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("PK2", dstypes.SignerTypePubKey),
+		dstypes.CreateSignerFromString("PK3", dstypes.SignerTypePubKey),
 	}
 
 	od := datapb.ExternalData{
 		Data: &datapb.Data{
-			Signers: types.SignersIntoProto(pubKeys),
+			Signers: dstypes.SignersIntoProto(pubKeys),
 			Data: []*datapb.Property{
 				{
 					Name:  "Name",
@@ -52,9 +55,9 @@ func TestOracleDataDeepClone(t *testing.T) {
 	od2 := odEvent.OracleData()
 
 	// Change the original values
-	pk1 := types.CreateSignerFromString("Changed1", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("Changed2", types.DataSignerTypePubKey)
-	pk3 := types.CreateSignerFromString("Changed3", types.DataSignerTypePubKey)
+	pk1 := dstypes.CreateSignerFromString("Changed1", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("Changed2", dstypes.SignerTypePubKey)
+	pk3 := dstypes.CreateSignerFromString("Changed3", dstypes.SignerTypePubKey)
 
 	od.Data.Signers[0] = pk1.IntoProto()
 	od.Data.Signers[1] = pk2.IntoProto()

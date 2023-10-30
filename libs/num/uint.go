@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023  Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package num
 
@@ -96,6 +99,17 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
+// UintFromBig construct a new Uint with a big.Int
+// panics if overflow happened.
+func MustUintFromBig(b *big.Int) *Uint {
+	u, ok := uint256.FromBig(b)
+	// ok means an overflow happened
+	if ok {
+		panic("uint underflow")
+	}
+	return &Uint{*u}
+}
+
 // UintFromBytes allows for the conversion from Uint.Bytes() back to a Uint.
 func UintFromBytes(b []byte) *Uint {
 	u := &Uint{
@@ -109,6 +123,23 @@ func UintFromBytes(b []byte) *Uint {
 func UintFromDecimal(d Decimal) (*Uint, bool) {
 	u, ok := d.Uint()
 	return &Uint{*u}, ok
+}
+
+func UintFromDecimalWithFraction(d Decimal) (*Uint, Decimal) {
+	u, ok := UintFromDecimal(d)
+	if ok {
+		return u, Decimal{}
+	}
+	return u, DecimalPart(d)
+}
+
+// UintFromUint64 allows for the conversion from uint64.
+func UintFromUint64(ui uint64) *Uint {
+	u := &Uint{
+		u: uint256.Int{},
+	}
+	u.u.SetUint64(ui)
+	return u
 }
 
 // ToDecimal returns the value of the Uint as a Decimal.
@@ -127,6 +158,19 @@ func UintFromString(str string, base int) (*Uint, bool) {
 		return NewUint(0), true
 	}
 	return UintFromBig(b)
+}
+
+// MustUintFromString creates a new Uint from a string
+// interpreted using the given base.
+// A big.Int is used to read the string, so
+// all errors related to big.Int parsing are applied here.
+// The core will panic if an error/overflow happens.
+func MustUintFromString(str string, base int) *Uint {
+	b, ok := big.NewInt(0).SetString(str, base)
+	if !ok {
+		panic("uint underflow")
+	}
+	return MustUintFromBig(b)
 }
 
 // Sum just removes the need to write num.NewUint(0).Sum(x, y, z)

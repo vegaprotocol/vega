@@ -1,21 +1,23 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package positions
 
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -26,12 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"golang.org/x/exp/maps"
-)
-
-// Errors.
-var (
-	// ErrPositionNotFound signal that a position was not found for a given party.
-	ErrPositionNotFound = errors.New("position not found")
 )
 
 // Broker (no longer need to mock this, use the broker/mocks wrapper).
@@ -66,6 +62,45 @@ type Engine struct {
 	// keep track of open, but distressed positions, this speeds things up when creating the event data
 	// and when generating snapshots
 	distressedPos map[string]struct{}
+
+	// keeps track of the lowest openInterest
+	// per party over a whole epoch
+	// should be reseted by the market on new epochs
+	partiesHighestVolume map[string]*openVolumeRecord
+
+	// keep track of the traded volume during the epoch
+	// will be reset
+	partiesTradedSize map[string]uint64
+}
+
+type openVolumeRecord struct {
+	Latest  uint64
+	Highest uint64
+}
+
+// RecordLatest will save the new openInterest for a party
+// but also register it as the lowest if it goes below
+// the existing lowest openInterest.
+func (o *openVolumeRecord) RecordLatest(size int64) {
+	new := size
+	if size < 0 {
+		new = -size
+	}
+
+	o.Latest = uint64(new)
+	if o.Highest < uint64(new) {
+		o.Highest = uint64(new)
+	}
+}
+
+// Reset will be used at the end of the epoch,
+// in order to set the lowest for the epoch to
+// be the latest of the previous epoch.
+func (o *openVolumeRecord) Reset() uint64 {
+	highest := o.Highest
+	o.Highest = o.Latest
+
+	return highest
 }
 
 // New instantiates a new positions engine.
@@ -75,14 +110,16 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 	log.SetLevel(config.Level.Get())
 
 	e := &Engine{
-		marketID:         marketID,
-		Config:           config,
-		log:              log,
-		positions:        map[string]*MarketPosition{},
-		positionsCpy:     []events.MarketPosition{},
-		broker:           broker,
-		updatedPositions: map[string]struct{}{},
-		distressedPos:    map[string]struct{}{},
+		marketID:             marketID,
+		Config:               config,
+		log:                  log,
+		positions:            map[string]*MarketPosition{},
+		positionsCpy:         []events.MarketPosition{},
+		broker:               broker,
+		updatedPositions:     map[string]struct{}{},
+		distressedPos:        map[string]struct{}{},
+		partiesHighestVolume: map[string]*openVolumeRecord{},
+		partiesTradedSize:    map[string]uint64{},
 	}
 	e.positionUpdated = e.bufferPosition
 	if config.StreamPositionVerbose {
@@ -100,7 +137,7 @@ func (e *Engine) FlushPositionEvents(ctx context.Context) {
 	e.sendBufferedPosition(ctx)
 }
 
-func (e *Engine) bufferPosition(ctx context.Context, pos *MarketPosition) {
+func (e *Engine) bufferPosition(_ context.Context, pos *MarketPosition) {
 	e.updatedPositions[pos.partyID] = struct{}{}
 }
 
@@ -182,6 +219,8 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		e.positions[order.Party] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
+		// create the entry in the open interest map
+		e.partiesHighestVolume[order.Party] = &openVolumeRecord{}
 	}
 
 	pos.RegisterOrder(e.log, order)
@@ -260,10 +299,17 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
+	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.size)
+	e.updatePartiesTradedSize(pos.partyID, trade.Size)
 
 	e.positionUpdated(ctx, pos)
+
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
+}
+
+func (e *Engine) updatePartiesTradedSize(party string, size uint64) {
+	e.partiesTradedSize[party] = e.partiesTradedSize[party] + size
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
@@ -320,6 +366,11 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	e.positionUpdated(ctx, buyer)
 	e.positionUpdated(ctx, seller)
 
+	e.partiesHighestVolume[buyer.partyID].RecordLatest(buyer.size)
+	e.updatePartiesTradedSize(buyer.partyID, trade.Size)
+	e.partiesHighestVolume[seller.partyID].RecordLatest(seller.size)
+	e.updatePartiesTradedSize(seller.partyID, trade.Size)
+
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",
 			logging.Trade(*trade),
@@ -343,6 +394,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		// remove from the map
 		delete(e.positions, party)
 		delete(e.distressedPos, party)
+		delete(e.partiesHighestVolume, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == party {
@@ -524,9 +576,31 @@ func (e *Engine) GetOpenPositionCount() uint64 {
 	return total
 }
 
+// GetPartiesLowestOpenInterestForEpoch will return a map of parties
+// and minimal open interest for the epoch, it is meant to be called
+// at the end of the epoch, and will reset the lowest open interest
+// of the party to the latest open interest recored for the epoch.
+func (e *Engine) GetPartiesLowestOpenInterestForEpoch() map[string]uint64 {
+	out := map[string]uint64{}
+
+	for party, oi := range e.partiesHighestVolume {
+		out[party] = oi.Reset()
+	}
+
+	return out
+}
+
+// GetPartiesTradedVolumeForEpoch will return a map of parties
+// and their traded volume recorded during this epoch.
+func (e *Engine) GetPartiesTradedVolumeForEpoch() (out map[string]uint64) {
+	out, e.partiesTradedSize = e.partiesTradedSize, map[string]uint64{}
+	return
+}
+
 func (e *Engine) remove(p *MarketPosition) {
 	// delete from the map first
 	delete(e.positions, p.partyID)
+	delete(e.partiesHighestVolume, p.partyID)
 	delete(e.distressedPos, p.partyID) // in case party was previously flagged as distressed
 
 	// remove from the slice
@@ -536,22 +610,4 @@ func (e *Engine) remove(p *MarketPosition) {
 			break
 		}
 	}
-}
-
-// I64MaxAbs - get max value based on absolute values of int64 vals
-// keep this function, perhaps we can reuse it in a numutil package
-// once we have to deal with decimals etc...
-func I64MaxAbs(vals ...int64) int64 {
-	var r, m int64
-	for _, v := range vals {
-		av := v
-		if av < 0 {
-			av *= -1
-		}
-		if av > m {
-			r = v
-			m = av // current max abs is av
-		}
-	}
-	return r
 }

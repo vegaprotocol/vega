@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -18,7 +33,6 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,6 +40,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -73,14 +90,14 @@ const (
 func Test_MarketData(t *testing.T) {
 	t.Run("Add should insert a valid market data record", shouldInsertAValidMarketDataRecord)
 	t.Run("Get should return the latest market data record for a given market", getLatestMarketData)
-	t.Run("GetBetweenDatesByID should return the all the market data between dates given for the specified market", getAllForMarketBetweenDates)
-	t.Run("GetFromDateByID should return all market data for a given market with date greater than or equal to the given date", getForMarketFromDate)
-	t.Run("GetToDateByID should return all market data for a given market with date less than or equal to the given date", getForMarketToDate)
+	t.Run("GetHistoricMarketData should return the all the market data between dates given for the specified market", getAllForMarketBetweenDates)
+	t.Run("GetHistoricMarketData should return all market data for a given market with date greater than or equal to the given date", getForMarketFromDate)
+	t.Run("GetHistoricMarketData should return all market data for a given market with date less than or equal to the given date", getForMarketToDate)
+	t.Run("GetHistoricMarketData should return all market data when no start or end is provided", TestGetAllMarketData)
 }
 
 func shouldInsertAValidMarketDataRecord(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	md := sqlstore.NewMarketData(connectionSource)
@@ -124,8 +141,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 }
 
 func getLatestMarketData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	if err != nil {
@@ -135,7 +151,6 @@ func getLatestMarketData(t *testing.T) {
 	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
-		LastTradedPrice:       mustParseDecimal(t, "999992588"),
 		MarkPrice:             mustParseDecimal(t, "999992587"),
 		BestBidPrice:          mustParseDecimal(t, "1000056152"),
 		BestBidVolume:         3,
@@ -153,8 +168,8 @@ func getLatestMarketData(t *testing.T) {
 		AuctionStart:          1644573911314794695,
 		IndicativePrice:       mustParseDecimal(t, "1000026624"),
 		IndicativeVolume:      3,
-		MarketState:           "STATE_ACTIVE",
 		MarketTradingMode:     "TRADING_MODE_MONITORING_AUCTION",
+		MarketState:           "STATE_ACTIVE",
 		AuctionTrigger:        "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
 		TargetStake:           mustParseDecimal(t, "67499499622"),
@@ -180,18 +195,18 @@ func getLatestMarketData(t *testing.T) {
 				AverageScore:          "123",
 			},
 		},
-		VegaTime: time.Date(2022, 2, 11, 10, 5, 41, 0, time.UTC),
+		MarketGrowth:    num.DecimalZero(),
+		LastTradedPrice: mustParseDecimal(t, "999992588"),
+		ProductData:     nil,
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
 
-	fmt.Printf("want: %#v\ngot: %#v\n", want, got)
-	assert.True(t, want.Equal(got))
+	assert.Truef(t, want.Equal(got), "want: %#v\ngot: %#v\n", want, got)
 }
 
 func getAllForMarketBetweenDates(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	if err != nil {
@@ -200,11 +215,11 @@ func getAllForMarketBetweenDates(t *testing.T) {
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
-	startDate := time.Date(2022, 2, 11, 10, 5, 30, 0, time.UTC)
-	endDate := time.Date(2022, 2, 11, 10, 6, 0, 0, time.UTC)
+	startDate := ptr.From(time.Date(2022, 2, 11, 10, 5, 30, 0, time.UTC))
+	endDate := ptr.From(time.Date(2022, 2, 11, 10, 6, 0, 0, time.UTC))
 
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, entities.CursorPagination{})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, entities.CursorPagination{})
 		assert.NoError(t, err)
 		assert.Equal(t, 9, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -222,7 +237,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	})
 
 	t.Run("should return all results if no cursor pagination is provided - newest first", func(t *testing.T) {
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, entities.CursorPagination{NewestFirst: true})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, entities.CursorPagination{NewestFirst: true})
 		assert.NoError(t, err)
 		assert.Equal(t, 9, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -243,7 +258,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		first := int32(5)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -264,7 +279,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		first := int32(5)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -288,7 +303,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -312,7 +327,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -333,7 +348,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		last := int32(5)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -354,7 +369,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 		last := int32(5)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -379,7 +394,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -404,7 +419,7 @@ func getAllForMarketBetweenDates(t *testing.T) {
 			}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, endDate, pagination)
 		require.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -423,18 +438,17 @@ func getAllForMarketBetweenDates(t *testing.T) {
 }
 
 func getForMarketFromDate(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	require.NoError(t, err)
 
-	startDate := time.Date(2022, 2, 11, 10, 5, 0, 0, time.UTC)
+	startDate := ptr.From(time.Date(2022, 2, 11, 10, 5, 0, 0, time.UTC))
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, entities.CursorPagination{})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, entities.CursorPagination{})
 		assert.NoError(t, err)
 		assert.Equal(t, 32, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -450,7 +464,7 @@ func getForMarketFromDate(t *testing.T) {
 	})
 
 	t.Run("should return all results if no cursor pagination is provided - newest first", func(t *testing.T) {
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, entities.CursorPagination{NewestFirst: true})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, entities.CursorPagination{NewestFirst: true})
 		assert.NoError(t, err)
 		assert.Equal(t, 32, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -469,7 +483,7 @@ func getForMarketFromDate(t *testing.T) {
 		first := int32(5)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -488,7 +502,7 @@ func getForMarketFromDate(t *testing.T) {
 		first := int32(5)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -510,7 +524,7 @@ func getForMarketFromDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -532,7 +546,7 @@ func getForMarketFromDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -551,7 +565,7 @@ func getForMarketFromDate(t *testing.T) {
 		last := int32(5)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -570,7 +584,7 @@ func getForMarketFromDate(t *testing.T) {
 		last := int32(5)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -592,7 +606,7 @@ func getForMarketFromDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -614,7 +628,7 @@ func getForMarketFromDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 5, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -631,18 +645,17 @@ func getForMarketFromDate(t *testing.T) {
 }
 
 func getForMarketToDate(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	store, err := setupMarketData(t, ctx)
 	require.NoError(t, err)
 
-	startDate := time.Date(2022, 2, 11, 10, 2, 0, 0, time.UTC)
+	endDate := ptr.From(time.Date(2022, 2, 11, 10, 2, 0, 0, time.UTC))
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, entities.CursorPagination{})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, entities.CursorPagination{})
 		assert.NoError(t, err)
 		assert.Equal(t, 18, len(got))
 		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
@@ -660,7 +673,7 @@ func getForMarketToDate(t *testing.T) {
 	})
 
 	t.Run("should return all results if no cursor pagination is provided - newest first", func(t *testing.T) {
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, entities.CursorPagination{NewestFirst: true})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, entities.CursorPagination{NewestFirst: true})
 		assert.NoError(t, err)
 		assert.Equal(t, 18, len(got))
 		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
@@ -681,7 +694,7 @@ func getForMarketToDate(t *testing.T) {
 		first := int32(10)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 10, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -700,7 +713,7 @@ func getForMarketToDate(t *testing.T) {
 		first := int32(10)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 10, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -722,7 +735,7 @@ func getForMarketToDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 8, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -744,7 +757,7 @@ func getForMarketToDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 8, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -763,7 +776,7 @@ func getForMarketToDate(t *testing.T) {
 		last := int32(10)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 10, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -782,7 +795,7 @@ func getForMarketToDate(t *testing.T) {
 		last := int32(10)
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 10, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -804,7 +817,7 @@ func getForMarketToDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 9, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -826,7 +839,7 @@ func getForMarketToDate(t *testing.T) {
 		}.String()).Encode()
 		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, endDate, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 9, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -834,6 +847,51 @@ func getForMarketToDate(t *testing.T) {
 			HasPreviousPage: false,
 			StartCursor: entities.NewCursor(entities.MarketDataCursor{
 				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o2, 0o0, 17000, time.UTC).Local(),
+			}.String()).Encode(),
+			EndCursor: entities.NewCursor(entities.MarketDataCursor{
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
+			}.String()).Encode(),
+		}, pageInfo)
+	})
+}
+
+func TestGetAllMarketData(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	store, err := setupMarketData(t, ctx)
+	require.NoError(t, err)
+	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+
+	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, nil, entities.CursorPagination{})
+		assert.NoError(t, err)
+		assert.Equal(t, 184, len(got))
+		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
+		}.String()).Encode()
+		wantEndCursor := entities.NewCursor(entities.MarketDataCursor{
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
+		}.String()).Encode()
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     wantStartCursor,
+			EndCursor:       wantEndCursor,
+		}, pageInfo)
+	})
+
+	t.Run("should return a page of results if cursor pagination is provided with first", func(t *testing.T) {
+		first := int32(10)
+		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+		require.NoError(t, err)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, nil, pagination)
+		assert.NoError(t, err)
+		assert.Equal(t, 10, len(got))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: false,
+			StartCursor: entities.NewCursor(entities.MarketDataCursor{
+				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 35, 0, time.UTC).Local(),
 			}.String()).Encode(),
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
 				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
@@ -1012,5 +1070,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
+		ProductData:                nil,
 	}
 }

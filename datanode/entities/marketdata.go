@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -13,6 +28,7 @@
 package entities
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -75,15 +91,17 @@ type MarketData struct {
 	// When a market auction is extended, this field indicates what caused the extension
 	ExtensionTrigger string
 	// Targeted stake for the given market
-	TargetStake decimal.Decimal
+	TargetStake num.Decimal
 	// Available stake for the given market
-	SuppliedStake decimal.Decimal
+	SuppliedStake num.Decimal
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*types.PriceMonitoringBounds
 	// the market value proxy
 	MarketValueProxy string
 	// the equity like share of liquidity fee for each liquidity provider
 	LiquidityProviderFeeShares []*types.LiquidityProviderFeeShare
+	// the SLA statistics for each liquidity provider
+	LiquidityProviderSLA []*types.LiquidityProviderSLA
 	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
 	SyntheticTime time.Time
 	// Transaction which caused this update
@@ -98,7 +116,9 @@ type MarketData struct {
 	MarketGrowth num.Decimal
 	// Last traded price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	LastTradedPrice decimal.Decimal
+	LastTradedPrice num.Decimal
+	// Data specific to the product type
+	ProductData *ProductData
 }
 
 type PriceMonitoringTrigger struct {
@@ -122,7 +142,7 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice num.Decimal
 	var err error
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
@@ -191,9 +211,14 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		PriceMonitoringBounds:      data.PriceMonitoringBounds,
 		MarketValueProxy:           data.MarketValueProxy,
 		LiquidityProviderFeeShares: data.LiquidityProviderFeeShare,
+		LiquidityProviderSLA:       data.LiquidityProviderSla,
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
+	}
+
+	if data.ProductData != nil {
+		marketData.ProductData = &ProductData{data.ProductData}
 	}
 
 	return marketData, nil
@@ -213,6 +238,14 @@ func parseDecimal(input string) (decimal.Decimal, error) {
 }
 
 func (md MarketData) Equal(other MarketData) bool {
+	productData1 := []byte{}
+	productData2 := []byte{}
+	if md.ProductData != nil {
+		productData1, _ = md.ProductData.MarshalJSON()
+	}
+	if other.ProductData != nil {
+		productData2, _ = other.ProductData.MarshalJSON()
+	}
 	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
 		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
@@ -239,10 +272,12 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketValueProxy == other.MarketValueProxy &&
 		priceMonitoringBoundsMatches(md.PriceMonitoringBounds, other.PriceMonitoringBounds) &&
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
+		liquidityProviderSLAMatches(md.LiquidityProviderSLA, other.LiquidityProviderSLA) &&
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
-		md.MarketGrowth.Equal(other.MarketGrowth)
+		md.MarketGrowth.Equal(other.MarketGrowth) &&
+		bytes.Equal(productData1, productData2)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -290,6 +325,23 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 	return true
 }
 
+func liquidityProviderSLAMatches(slas, other []*types.LiquidityProviderSLA) bool {
+	if len(slas) != len(other) {
+		return false
+	}
+
+	for i, sla := range slas {
+		if sla.CurrentEpochFractionOfTimeOnBook != other[i].CurrentEpochFractionOfTimeOnBook ||
+			sla.LastEpochBondPenalty != other[i].LastEpochBondPenalty ||
+			sla.LastEpochFeePenalty != other[i].LastEpochFeePenalty ||
+			sla.LastEpochFractionOfTimeOnBook != other[i].LastEpochFractionOfTimeOnBook {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
 		LastTradedPrice:           md.LastTradedPrice.String(),
@@ -320,8 +372,13 @@ func (md MarketData) ToProto() *types.MarketData {
 		PriceMonitoringBounds:     md.PriceMonitoringBounds,
 		MarketValueProxy:          md.MarketValueProxy,
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
+		LiquidityProviderSla:      md.LiquidityProviderSLA,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
+	}
+
+	if md.ProductData != nil {
+		result.ProductData = md.ProductData.ProductData
 	}
 
 	return &result

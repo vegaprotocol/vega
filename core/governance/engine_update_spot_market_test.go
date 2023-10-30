@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -43,8 +46,7 @@ func TestProposalForSpotMarketUpdate(t *testing.T) {
 }
 
 func testSubmittingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -55,6 +57,7 @@ func testSubmittingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -68,8 +71,7 @@ func testSubmittingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testSubmittingProposalForMarketUpdateForUnknownSpotMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -92,12 +94,11 @@ func testSubmittingProposalForMarketUpdateForUnknownSpotMarketFails(t *testing.T
 }
 
 func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	marketID := newMarketProposal.ID
 
 	// setup
@@ -114,7 +115,7 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 	assert.True(t, toSubmit.IsNewMarket())
 
 	// given
-	updateMarketProposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	updateMarketProposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 	updateMarketProposal.MarketUpdate().MarketID = marketID
 
 	// setup
@@ -128,13 +129,12 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
 
 	// then
-	require.ErrorIs(t, governance.ErrMarketNotEnactedYet, err)
+	require.ErrorIs(t, governance.ErrMarketProposalStillOpen, err)
 	require.Nil(t, toSubmit)
 }
 
 func testSubmittingProposalForSpotMarketUpdateWithInsufficientEquityLikeShareFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -159,8 +159,7 @@ func testSubmittingProposalForSpotMarketUpdateWithInsufficientEquityLikeShareFai
 }
 
 func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -171,6 +170,7 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -275,8 +275,7 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testRejectingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -286,6 +285,7 @@ func testRejectingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.7)
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1")
 	eng.ensureTokenBalanceForParty(t, party, 10000)
@@ -318,8 +318,7 @@ func testRejectingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 }
 
 func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesSpotMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -332,6 +331,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesSpotMarketUpdate
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipationLP, "0.5")
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -399,8 +399,7 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesSpotMarketUpdate
 }
 
 func testVotingWithMajorityOfYesFromTokenHoldersMakesSpotMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -411,6 +410,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesSpotMarketUpdateProposalPas
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -512,8 +512,7 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesSpotMarketUpdateProposalPas
 }
 
 func testVotingWithMajorityOfNoFromTokenHoldersMakesSpotMarketUpdateProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -524,6 +523,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesSpotMarketUpdateProposalDecl
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -625,8 +625,7 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesSpotMarketUpdateProposalDecl
 }
 
 func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesSpotMarketUpdateProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 
@@ -639,6 +638,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesSpotMa
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -725,8 +725,7 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesSpotMa
 }
 
 func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesSpotMarketUpdateProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// Submit proposal.
 	// given
@@ -740,6 +739,7 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesSpotMar
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 

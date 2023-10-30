@@ -1,20 +1,24 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -121,7 +125,7 @@ func PartiesSubmitRecurringTransfers(
 func parseRecurringTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id", "from", "from_account_type", "to", "to_account_type", "asset", "amount", "start_epoch", "end_epoch", "factor",
-	}, []string{"metric", "metric_asset", "markets", "error"})
+	}, []string{"metric", "metric_asset", "markets", "lock_period", "window_length", "entity_scope", "individual_scope", "teams", "ntop", "staking_requirement", "notional_requirement", "distribution_strategy", "ranks", "error"})
 }
 
 func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
@@ -150,10 +154,94 @@ func rowToRecurringTransfer(r RowWrapper) *types.RecurringTransfer {
 		if len(mkts) == 1 && mkts[0] == "" {
 			mkts = []string{}
 		}
+		lockPeriod := uint64(1)
+		if r.HasColumn("lock_period") {
+			lockPeriod = r.U64("lock_period")
+		}
+		windowLength := uint64(1)
+		if r.HasColumn("window_length") {
+			windowLength = r.U64("window_length")
+		}
+
+		distributionStrategy := proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
+		var ranks []*proto.Rank
+		if r.HasColumn("distribution_strategy") {
+			distStrat := r.Str("distribution_strategy")
+			if distStrat == "PRO_RATA" {
+				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
+			} else if distStrat == "RANK" {
+				distributionStrategy = proto.DistributionStrategy_DISTRIBUTION_STRATEGY_RANK
+				rankList := strings.Split(r.MustStr("ranks"), ",")
+				ranks = make([]*proto.Rank, 0, len(rankList))
+				for _, r := range rankList {
+					rr := strings.Split(r, ":")
+					startRank, _ := strconv.ParseUint(rr[0], 10, 32)
+					shareRatio, _ := strconv.ParseUint(rr[1], 10, 32)
+					ranks = append(ranks, &proto.Rank{StartRank: uint32(startRank), ShareRatio: uint32(shareRatio)})
+				}
+			}
+		}
+
+		entityScope := proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+		if r.HasColumn("entity_scope") {
+			scope := r.Str("entity_scope")
+			if scope == "INDIVIDUALS" {
+				entityScope = proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+			} else if scope == "TEAMS" {
+				entityScope = proto.EntityScope_ENTITY_SCOPE_TEAMS
+			}
+		}
+
+		indiScope := proto.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED
+		if entityScope == proto.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
+			indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_ALL
+			if r.HasColumn("individual_scope") {
+				indiScopeStr := r.Str("individual_scope")
+				if indiScopeStr == "ALL" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_ALL
+				} else if indiScopeStr == "IN_TEAM" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM
+				} else if indiScopeStr == "NOT_IN_TEAM" {
+					indiScope = proto.IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM
+				}
+			}
+		}
+
+		teams := []string{}
+		ntop := ""
+		if entityScope == proto.EntityScope_ENTITY_SCOPE_TEAMS {
+			if r.HasColumn("teams") {
+				teams = strings.Split(r.MustStr("teams"), ",")
+				if len(teams) == 1 && teams[0] == "" {
+					teams = []string{}
+				}
+			}
+			ntop = r.MustStr("ntop")
+		}
+
+		stakingRequirement := ""
+		notionalRequirement := ""
+		if r.HasColumn("staking_requirement") {
+			stakingRequirement = r.MustStr("staking_requirement")
+		}
+		if r.HasColumn("notional_requirement") {
+			notionalRequirement = r.mustColumn("notional_requirement")
+		}
+
 		dispatchStrategy = &proto.DispatchStrategy{
-			AssetForMetric: r.MustStr("metric_asset"),
-			Markets:        mkts,
-			Metric:         proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+			AssetForMetric:       r.MustStr("metric_asset"),
+			Markets:              mkts,
+			Metric:               proto.DispatchMetric(proto.DispatchMetric_value[r.MustStr("metric")]),
+			DistributionStrategy: distributionStrategy,
+			LockPeriod:           lockPeriod,
+			EntityScope:          entityScope,
+			IndividualScope:      indiScope,
+			WindowLength:         windowLength,
+			TeamScope:            teams,
+			NTopPerformers:       ntop,
+			StakingRequirement:   stakingRequirement,
+			NotionalTimeWeightedAveragePositionRequirement: notionalRequirement,
+			RankTable: ranks,
 		}
 	}
 

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package v1
 
 import (
@@ -11,7 +26,6 @@ import (
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgjob "code.vegaprotocol.io/vega/libs/job"
 	"code.vegaprotocol.io/vega/paths"
-	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"github.com/fsnotify/fsnotify"
 )
@@ -186,7 +200,7 @@ func (s *FileStore) readTokensFile() (tokens tokensFile, rerr error) {
 
 	if err := paths.ReadEncryptedFile(s.tokensFilePath, s.passphrase, &tokens); err != nil {
 		if err.Error() == "couldn't decrypt content: cipher: message authentication failed" {
-			return tokensFile{}, api.ErrWrongPassphrase
+			return tokensFile{}, ErrWrongPassphrase
 		}
 		return tokensFile{}, fmt.Errorf("couldn't read the file %s: %w", s.tokensFilePath, err)
 	}

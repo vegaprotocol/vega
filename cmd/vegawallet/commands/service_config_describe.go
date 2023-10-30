@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package cmd
 
 import (
@@ -83,5 +98,9 @@ func PrintDescribeServiceConfigResponse(w io.Writer, cfg *service.Config) {
 	str.Text("Service URL: ").WarningText(cfg.Server.String()).NextSection()
 	str.Text("Log level: ").WarningText(cfg.LogLevel.String()).NextSection()
 	str.Text("API V1").NextLine()
-	str.Pad().Text("Maximum token duration: ").WarningText(cfg.APIV1.MaximumTokenDuration.String()).NextLine()
+	str.Pad().Text("Maximum token duration: ").WarningText(cfg.APIV1.MaximumTokenDuration.String()).NextSection()
+	str.Text("API V2").NextLine()
+	str.Pad().Text("Nodes:").NextLine()
+	str.Pad().Pad().Text("Maximum retry per request: ").WarningText(fmt.Sprintf("%d", cfg.APIV2.Nodes.MaximumRetryPerRequest)).NextLine()
+	str.Pad().Pad().Text("Maximum request duration: ").WarningText(cfg.APIV2.Nodes.MaximumRequestDuration.String()).NextLine()
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package snapshot
 
 import (
@@ -25,6 +40,9 @@ type DatabaseMetadata struct {
 	CurrentStateTablesDropConstraintsSql   []string
 	HistoryStateTablesCreateConstraintsSql []string
 	HistoryStateTablesDropConstraintsSql   []string
+
+	AllTablesEnableAutoVacuumSql  []string
+	AllTablesDisableAutoVacuumSql []string
 }
 
 type TableMetadata struct {
@@ -52,6 +70,12 @@ type HypertablePartitionColumns struct {
 }
 
 func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseMetadata, error) {
+	// Ensure timescale extension is enabled before attempting to get metadata
+	_, err := connPool.Exec(ctx, "create extension if not exists timescaledb")
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to create timescale extension: %w", err)
+	}
+
 	dbVersion, err := getDBVersion(ctx, connPool)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get database version: %w", err)
@@ -96,13 +120,18 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		return DatabaseMetadata{}, fmt.Errorf("failed to get drop constrains sql:%w", err)
 	}
 
+	allTablesEnableAutoVacuumSql, allTablesDisableAutoVacuumSql := createAutovacuumSql(tableNames)
+
 	result := DatabaseMetadata{
-		TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion,
+		TableNameToMetaData:                    map[string]TableMetadata{},
+		DatabaseVersion:                        dbVersion,
 		ContinuousAggregatesMetaData:           caggsMeta,
 		CurrentStateTablesCreateConstraintsSql: currentStateCreateConstraintsSql,
 		CurrentStateTablesDropConstraintsSql:   currentStateDropConstraintsSql,
 		HistoryStateTablesCreateConstraintsSql: historyCreateConstraintsSql,
 		HistoryStateTablesDropConstraintsSql:   historyDropConstraintsSql,
+		AllTablesEnableAutoVacuumSql:           allTablesEnableAutoVacuumSql,
+		AllTablesDisableAutoVacuumSql:          allTablesDisableAutoVacuumSql,
 	}
 	for _, tableName := range tableNames {
 		partitionCol := ""
@@ -123,6 +152,19 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 	}
 
 	return result, nil
+}
+
+func createAutovacuumSql(tableNames []string) ([]string, []string) {
+	allTablesEnableAutoVacuumSql := make([]string, 0, len(tableNames))
+	for _, tableName := range tableNames {
+		allTablesEnableAutoVacuumSql = append(allTablesEnableAutoVacuumSql, fmt.Sprintf("ALTER TABLE %s SET (autovacuum_enabled = true)", tableName))
+	}
+
+	allTablesDisableAutoVacuumSql := make([]string, 0, len(tableNames))
+	for _, tableName := range tableNames {
+		allTablesDisableAutoVacuumSql = append(allTablesDisableAutoVacuumSql, fmt.Sprintf("ALTER TABLE %s SET (autovacuum_enabled = false)", tableName))
+	}
+	return allTablesEnableAutoVacuumSql, allTablesDisableAutoVacuumSql
 }
 
 func (d DatabaseMetadata) GetHistoryTableNames() []string {
@@ -247,8 +289,8 @@ func getCreateConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTable
 
 	err = pgxscan.Select(ctx, conn, &constraints,
 		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';' as sql
-		FROM pg_constraint 
-		INNER JOIN pg_class ON conrelid=pg_class.oid 
+		FROM pg_constraint
+		INNER JOIN pg_class ON conrelid=pg_class.oid
 		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'
 		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC`)
 
@@ -277,9 +319,9 @@ func getDropConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTableNa
 
 	err = pgxscan.Select(ctx, conn, &constraints,
 		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' DROP CONSTRAINT '||conname||';' as sql
-		FROM pg_constraint 
-		INNER JOIN pg_class ON conrelid=pg_class.oid 
-		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public' 
+		FROM pg_constraint
+		INNER JOIN pg_class ON conrelid=pg_class.oid
+		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'
 		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname`)
 
 	if err != nil {

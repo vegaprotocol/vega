@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -107,12 +122,9 @@ func TestMain(m *testing.M) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	stopper := make(chan struct{})
-
 	go func() {
 		defer wg.Done()
-		if err := runTestNode(ctx, cfg, vegaHome, stopper); err != nil {
-			close(stopper)
+		if err := runTestNode(ctx, cfg, vegaHome); err != nil {
 			cfunc()
 			log.Fatal("running test node: ", err)
 		}
@@ -120,13 +132,12 @@ func TestMain(m *testing.M) {
 
 	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/graphql", cfg.Gateway.Port))
 	if err = waitForEpoch(client, lastEpoch, playbackTimeout); err != nil {
-		close(stopper)
 		cfunc()
 		log.Fatal("problem piping event stream: ", err)
 	}
 	// normal run - services should be terminated properly
 	if blockWhenDone == nil || !*blockWhenDone {
-		go handleSignal(ctx, cfunc, stopper)
+		go handleSignal(ctx, cfunc)
 	}
 
 	// Cheesy sleep to give everything chance to percolate
@@ -151,25 +162,22 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	// this will close the stopper channel
 	cfunc()
 	wg.Wait()
 }
 
-func handleSignal(ctx context.Context, cfunc func(), sCh chan struct{}) {
+func handleSignal(ctx context.Context, cfunc func()) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		select {
 		case sig := <-c:
 			log.Printf("Received %+v signal", sig)
-			close(sCh) // close stopper channel
-			cfunc()    // cancel context
+			cfunc() // cancel context
 			return
 		case <-ctx.Done():
 			// context was cancelled for some reason, close stopper channel
 			log.Printf("Context cancelled")
-			close(sCh)
 			return
 		}
 	}
@@ -251,6 +259,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	}
 
 	cfg := config.NewDefaultConfig()
+	// cfg.API.RateLimit.TrustedProxies = []string{}
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.PanicOnError = true
 	cfg.Broker.FileEventSourceConfig.Directory = filepath.Join(cwd, eventsDir)
@@ -265,7 +274,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	return &cfg, nil
 }
 
-func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string, stopper chan struct{}) error {
+func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string) error {
 	vegaPaths := paths.New(vegaHome)
 
 	loader, err := config.InitialiseLoader(vegaPaths)
@@ -288,11 +297,6 @@ func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string, stopp
 		Version:     "test",
 		VersionHash: "",
 	}
-
-	go func() {
-		<-stopper
-		cmd.Stop()
-	}()
 
 	if err = cmd.Run(ctx, configWatcher, vegaPaths, []string{}); err != nil {
 		return fmt.Errorf("couldn't run node: %w", err)

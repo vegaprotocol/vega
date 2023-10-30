@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -28,13 +43,20 @@ import (
 type ProposalType v2.ListGovernanceDataRequest_Type
 
 var (
-	ProposalTypeAll                    = ProposalType(v2.ListGovernanceDataRequest_TYPE_ALL)
-	ProposalTypeNewMarket              = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
-	ProposalTypeNewAsset               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
-	ProposalTypeUpdateAsset            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
-	ProposalTypeUpdateMarket           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
-	ProposalTypeUpdateNetworkParameter = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
-	ProposalTypeNewFreeform            = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
+	ProposalTypeAll                         = ProposalType(v2.ListGovernanceDataRequest_TYPE_ALL)
+	ProposalTypeNewMarket                   = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
+	ProposalTypeNewAsset                    = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
+	ProposalTypeUpdateAsset                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
+	ProposalTypeUpdateMarket                = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
+	ProposalTypeUpdateNetworkParameter      = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
+	ProposalTypeNewFreeform                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
+	ProposalTypeNewSpotMarket               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_SPOT_MARKET)
+	ProposalTypeUpdateSpotMarket            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_SPOT_MARKET)
+	ProposalTypeNewTransfer                 = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_TRANSFER)
+	ProposalTypeCancelTransfer              = ProposalType(v2.ListGovernanceDataRequest_TYPE_CANCEL_TRANSFER)
+	ProposalTypeUpdateMarketState           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET_STATE)
+	ProposalTypeUpdateReferralProgram       = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_REFERRAL_PROGRAM)
+	ProposalTypeUpdateVolumeDiscountProgram = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_VOLUME_DISCOUNT_PROGRAM)
 )
 
 func (p *ProposalType) String() string {
@@ -56,6 +78,20 @@ func (p *ProposalType) String() string {
 		return "updateNetworkParameter"
 	case ProposalTypeNewFreeform:
 		return "newFreeform"
+	case ProposalTypeNewSpotMarket:
+		return "newSpotMarket"
+	case ProposalTypeUpdateSpotMarket:
+		return "updateSpotMarket"
+	case ProposalTypeNewTransfer:
+		return "newTransfer"
+	case ProposalTypeCancelTransfer:
+		return "cancelTransfer"
+	case ProposalTypeUpdateMarketState:
+		return "updateMarketState"
+	case ProposalTypeUpdateReferralProgram:
+		return "updateReferralProgram"
+	case ProposalTypeUpdateVolumeDiscountProgram:
+		return "updateVolumeDiscountProgram"
 	default:
 		return "unknown"
 	}

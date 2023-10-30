@@ -21,7 +21,8 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: isPRBuild() ? 50 : 120, unit: 'MINUTES')
+        timeout(time: isPRBuild() ? 60 : 120, unit: 'MINUTES')
+        disableConcurrentBuilds(abortPrevious: true)
     }
     parameters {
         string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',
@@ -34,17 +35,20 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'DEVOPSSCRIPTS_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
-        string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: '',
+        string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
-        string( name: 'NODE_LABEL', defaultValue: 's-4vcpu-8gb',
+        string( name: 'NODE_LABEL', defaultValue: 'core-build',
                 description: 'Label on which vega build should be run, if empty any any node is used')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        GOPATH = "/jenkins/GOPATH"
+        GOBIN = "${env.GOPATH}/bin"
+        PATH = "${env.GOBIN}:${env.PATH}"
     }
 
     stages {
@@ -211,11 +215,18 @@ pipeline {
                     }
                 }
                 stage('core/integration tests') {
-                    options { retry(3) }
                     steps {
                         dir('vega/core/integration') {
                             sh 'godog build -o core_integration.test && ./core_integration.test --format=junit:core-integration-report.xml'
                             junit checksName: 'Core Integration Tests', testResults: 'core-integration-report.xml'
+                        }
+                    }
+                }
+                stage('core/integration perps tests') {
+                    steps {
+                        dir('vega/core/integration') {
+                            sh 'go test . -timeout 30m -perps --godog.format=junit:core-integration-perps-report.xml'
+                            junit checksName: 'Core Integration Perps Tests', testResults: 'core-integration-perps-report.xml'
                         }
                     }
                 }
@@ -229,14 +240,6 @@ pipeline {
                     }
                 }
                 stage('Vega Market Sim') {
-                    when {
-                        anyOf {
-                            branch 'develop'
-                            expression {
-                                params.VEGA_MARKET_SIM_BRANCH
-                            }
-                        }
-                    }
                     steps {
                         script {
                             vegaMarketSim ignoreFailure: true,
@@ -244,7 +247,9 @@ pipeline {
                                 originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
-                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH,
+                                branchRun: isPRBuild(),
+                                parallelWorkers: "4"
                         }
                     }
                 }
@@ -271,7 +276,7 @@ pipeline {
                     steps {
                         script {
                             systemTestsCapsule ignoreFailure: !isPRBuild(),
-                                timeout: 30,
+                                timeout: 45,
                                 originRepo: originRepo,
                                 vegaVersion: commitHash,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -423,21 +428,12 @@ pipeline {
         //
     }
     post {
-        success {
-            retry(3) {
-                script {
-                    slack.slackSendCISuccess name: 'Vega Core CI', channel: '#tradingcore-notify'
-                }
-            }
-        }
-        unsuccessful {
-            retry(3) {
-                script {
-                    slack.slackSendCIFailure name: 'Vega Core CI', channel: '#tradingcore-notify'
-                }
-            }
-        }
         always {
+            retry(3) {
+                script {
+                    slack.slackSendCIStatus name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
+            }
             cleanWs()
         }
     }

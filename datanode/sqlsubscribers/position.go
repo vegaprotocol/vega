@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -23,7 +38,14 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
+
+type fundingPaymentsEvent interface {
+	MarketID() string
+	IsParty(id string) bool
+	FundingPayments() *eventspb.FundingPayments
+}
 
 type tradeEvent interface {
 	MarketID() string
@@ -108,6 +130,7 @@ func (p *Position) Types() []events.Type {
 		events.TradeEvent,
 		events.DistressedOrdersClosedEvent,
 		events.DistressedPositionsEvent,
+		events.FundingPaymentsEvent,
 	}
 }
 
@@ -132,9 +155,42 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 		return p.handleOrdersClosedEvent(ctx, event)
 	case distressedPositions:
 		return p.handleDistressedPositions(ctx, event)
+	case fundingPaymentsEvent:
+		return p.handleFundingPayments(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
+}
+
+func (p *Position) handleFundingPayments(ctx context.Context, event fundingPaymentsEvent) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	mkt := event.MarketID()
+	evt := event.FundingPayments()
+	parties := make([]string, 0, len(evt.Payments))
+	amounts := make(map[string]*num.Int, len(evt.Payments))
+	for _, pay := range evt.Payments {
+		// amount is integer, but can be negative
+		amt, _ := num.IntFromString(pay.Amount, 10)
+		parties = append(parties, pay.PartyId)
+		amounts[pay.PartyId] = amt
+	}
+	positions, err := p.store.GetByMarketAndParties(ctx, mkt, parties)
+	if err != nil {
+		return err
+	}
+	for _, pos := range positions {
+		amt, ok := amounts[pos.PartyID.String()]
+		if !ok {
+			// should not be possible, but we may want to return an error here
+			continue
+		}
+		pos.ApplyFundingPayment(amt)
+		if err := p.updatePosition(ctx, pos); err != nil {
+			return fmt.Errorf("failed to apply funding payment: %w", err)
+		}
+	}
+	return nil
 }
 
 func (p *Position) handleDistressedPositions(ctx context.Context, event distressedPositions) error {

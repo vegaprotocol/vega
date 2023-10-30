@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -20,39 +23,67 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/cucumber/godog"
 )
 
 func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engine) error {
-	rows := StrictParseTable(tbl, []string{
-		"id",
-		"decimal places",
-	}, nil)
-	toEnable := []string{}
+	rows := parseAssetsTable(tbl)
 	for _, row := range rows {
+		aRow := assetRow{row: row}
 		aid := row.MustStr("id")
 		asset.Register(
 			aid,
 			row.MustU64("decimal places"),
+			aRow.maybeQuantum(),
 		)
-		toEnable = append(toEnable, aid)
-	}
-	return enableAssets(toEnable, col)
-}
-
-func enableAssets(ids []string, collateralEngine *collateral.Engine) error {
-	for _, assetToEnable := range ids {
-		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
-			ID: assetToEnable,
+		err := col.EnableAsset(context.Background(), types.Asset{
+			ID: aid,
 			Details: &types.AssetDetails{
-				Quantum: num.DecimalZero(),
-				Symbol:  assetToEnable,
+				Quantum: aRow.quantum(),
+				Symbol:  aid,
 			},
 		})
-		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
-			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
+		if err != nil {
+			if err == collateral.ErrAssetAlreadyEnabled {
+				return fmt.Errorf("asset %s was already enabled, perhaps when defining markets, order of steps should be swapped", aid)
+			}
+			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
 		}
 	}
+	return nil
+}
+
+func parseAssetsTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+		"decimal places",
+	}, []string{
+		"quantum",
+	})
+}
+
+type assetRow struct {
+	row RowWrapper
+}
+
+func (r assetRow) quantum() num.Decimal {
+	if !r.row.HasColumn("quantum") {
+		return num.DecimalOne()
+	}
+	return r.row.MustDecimal("quantum")
+}
+
+func (r assetRow) maybeQuantum() *num.Decimal {
+	if !r.row.HasColumn("quantum") {
+		return nil
+	}
+
+	return ptr.From(r.row.MustDecimal("quantum"))
+}
+
+func CreateNetworkTreasuryAccount(col *collateral.Engine, asset string) error {
+	_ = col.GetOrCreateNetworkTreasuryAccount(context.Background(), asset)
 	return nil
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -70,8 +85,7 @@ func assertVotesMatch(t *testing.T, expected, actual []entities.Vote) {
 }
 
 func TestVotes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
@@ -218,8 +232,7 @@ func TestVotesCursorPagination(t *testing.T) {
 }
 
 func testVotesCursorPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -236,8 +249,7 @@ func testVotesCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testVotesCursorPaginationFirstNoAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	first := int32(3)
@@ -255,8 +267,7 @@ func testVotesCursorPaginationFirstNoAfter(t *testing.T) {
 }
 
 func testVotesCursorPaginationFirstWithAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	first := int32(3)
@@ -275,8 +286,7 @@ func testVotesCursorPaginationFirstWithAfter(t *testing.T) {
 }
 
 func testVotesCursorPaginationLastNoBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	last := int32(3)
@@ -294,8 +304,7 @@ func testVotesCursorPaginationLastNoBefore(t *testing.T) {
 }
 
 func testVotesCursorPaginationLastWithBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	last := int32(3)
@@ -314,8 +323,7 @@ func testVotesCursorPaginationLastWithBefore(t *testing.T) {
 }
 
 func testVotesCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	votes = entities.ReverseSlice(votes)
@@ -333,8 +341,7 @@ func testVotesCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testVotesCursorPaginationFirstNoAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	votes = entities.ReverseSlice(votes)
@@ -353,8 +360,7 @@ func testVotesCursorPaginationFirstNoAfterNewestFirst(t *testing.T) {
 }
 
 func testVotesCursorPaginationFirstWithAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	votes = entities.ReverseSlice(votes)
@@ -374,8 +380,7 @@ func testVotesCursorPaginationFirstWithAfterNewestFirst(t *testing.T) {
 }
 
 func testVotesCursorPaginationLastNoBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	votes = entities.ReverseSlice(votes)
@@ -394,8 +399,7 @@ func testVotesCursorPaginationLastNoBeforeNewestFirst(t *testing.T) {
 }
 
 func testVotesCursorPaginationLastWithBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	vs, party, votes := setupPaginationTestVotes(t, ctx)
 	votes = entities.ReverseSlice(votes)

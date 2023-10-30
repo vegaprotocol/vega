@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package liquidity
 
@@ -50,7 +53,28 @@ func (l Provisions) sortByFee() Provisions {
 	return l
 }
 
-// Provisions is a map of parties to *types.LiquidityProvision.
+func (pp Provisions) Get(key string) (*types.LiquidityProvision, int) {
+	for idx, pp := range pp {
+		if pp.Party == key {
+			return pp, idx
+		}
+	}
+
+	return nil, -1
+}
+
+func (pp *Provisions) Set(lp *types.LiquidityProvision) {
+	_, idx := pp.Get(lp.Party)
+	if idx > -1 {
+		p := *pp
+		p[idx] = lp
+		return
+	}
+
+	*pp = append(*pp, lp)
+}
+
+// ProvisionsPerParty maps parties to *types.LiquidityProvision.
 type ProvisionsPerParty map[string]*types.LiquidityProvision
 
 type SnapshotableProvisionsPerParty struct {
@@ -83,7 +107,7 @@ func (l ProvisionsPerParty) Slice() Provisions {
 		slice = append(slice, p)
 	}
 	// sorting by partyId to ensure any processing in a deterministic manner later on
-	sort.Slice(slice, func(i, j int) bool { return slice[i].Party < slice[j].Party })
+	sort.SliceStable(slice, func(i, j int) bool { return slice[i].Party < slice[j].Party })
 	return slice
 }
 
@@ -130,17 +154,40 @@ func (ords Orders) ByParty() []PartyOrders {
 	return partyOrders
 }
 
-type PendingProvision map[string]*types.LiquidityProvision
+type SnapshotablePendingProvisions struct {
+	PendingProvisions Provisions
+}
 
-func (p PendingProvision) sortedKeys() []string {
-	keys := make([]string, 0, len(p))
-	for key := range p {
-		keys = append(keys, key)
+func newSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
+	return &SnapshotablePendingProvisions{
+		PendingProvisions: Provisions{},
+	}
+}
+
+func (s SnapshotablePendingProvisions) Slice() Provisions {
+	return s.PendingProvisions
+}
+
+func (s *SnapshotablePendingProvisions) Delete(key string) {
+	_, id := s.PendingProvisions.Get(key)
+	if id == -1 {
+		return
 	}
 
-	sort.Strings(keys)
+	s.PendingProvisions = append(s.PendingProvisions[:id], s.PendingProvisions[id+1:]...)
+}
 
-	return keys
+func (s *SnapshotablePendingProvisions) Get(key string) (*types.LiquidityProvision, bool) {
+	lp, idx := s.PendingProvisions.Get(key)
+	return lp, idx > -1
+}
+
+func (s *SnapshotablePendingProvisions) Set(lp *types.LiquidityProvision) {
+	s.PendingProvisions.Set(lp)
+}
+
+func (s *SnapshotablePendingProvisions) Len() int {
+	return len(s.PendingProvisions)
 }
 
 type sliceRing[T any] struct {
@@ -148,7 +195,18 @@ type sliceRing[T any] struct {
 	pos int
 }
 
-func NewSliceRing[T any](size uint) *sliceRing[T] {
+func restoreSliceRing[T any](s []T, size uint64, position int) *sliceRing[T] {
+	sr := &sliceRing[T]{
+		s:   s,
+		pos: position,
+	}
+
+	sr.ModifySize(size)
+
+	return sr
+}
+
+func NewSliceRing[T any](size uint64) *sliceRing[T] {
 	return &sliceRing[T]{
 		s:   make([]T, size),
 		pos: 0,
@@ -169,9 +227,9 @@ func (r *sliceRing[T]) Add(val T) {
 	r.pos++
 }
 
-func (r *sliceRing[T]) ModifySize(newSize uint) {
+func (r *sliceRing[T]) ModifySize(newSize uint64) {
 	currentCap := cap(r.s)
-	currentCapUint := uint(currentCap)
+	currentCapUint := uint64(currentCap)
 	if currentCapUint == newSize {
 		return
 	}
@@ -197,4 +255,12 @@ func (r *sliceRing[T]) ModifySize(newSize uint) {
 
 func (r sliceRing[T]) Slice() []T {
 	return r.s
+}
+
+func (r sliceRing[T]) Len() int {
+	return len(r.s)
+}
+
+func (r sliceRing[T]) Position() int {
+	return r.pos
 }

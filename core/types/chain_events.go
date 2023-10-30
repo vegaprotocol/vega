@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //lint:file-ignore ST1003 Ignore underscores in names, this is straight copied from the proto package to ease introducing the domain types
 
@@ -20,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -31,7 +35,7 @@ type WithdrawExt struct {
 func (x *WithdrawExt) String() string {
 	return fmt.Sprintf(
 		"ext(%s)",
-		reflectPointerToString(x.Ext),
+		stringer.ReflectPointerToString(x.Ext),
 	)
 }
 
@@ -86,7 +90,7 @@ func (x *WithdrawExtErc20) isWithdrawExtExt() {}
 func (x *WithdrawExtErc20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		reflectPointerToString(x.Erc20),
+		stringer.ReflectPointerToString(x.Erc20),
 	)
 }
 
@@ -248,7 +252,7 @@ func (d *Deposit) String() string {
 		d.Status.String(),
 		d.PartyID,
 		d.Asset,
-		uintPointerToString(d.Amount),
+		stringer.UintPointerToString(d.Amount),
 		d.TxHash,
 		d.CreditDate,
 		d.CreationDate,
@@ -293,7 +297,7 @@ func (c ChainEventERC20) IntoProto() *commandspb.ChainEvent_Erc20 {
 func (c ChainEventERC20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		reflectPointerToString(c.ERC20),
+		stringer.ReflectPointerToString(c.ERC20),
 	)
 }
 
@@ -335,7 +339,7 @@ func (b BuiltinAssetDeposit) String() string {
 		"party(%s) vegaAssetID(%s) amount(%s)",
 		b.PartyID,
 		b.VegaAssetID,
-		uintPointerToString(b.Amount),
+		stringer.UintPointerToString(b.Amount),
 	)
 }
 
@@ -381,7 +385,7 @@ func (b BuiltinAssetWithdrawal) String() string {
 		"partyID(%s) vegaAssetID(%s) amount(%s)",
 		b.PartyID,
 		b.VegaAssetID,
-		uintPointerToString(b.Amount),
+		stringer.UintPointerToString(b.Amount),
 	)
 }
 
@@ -413,7 +417,7 @@ func (c ChainEventBuiltin) IntoProto() *commandspb.ChainEvent_Builtin {
 func (c ChainEventBuiltin) String() string {
 	return fmt.Sprintf(
 		"builtin(%s)",
-		reflectPointerToString(c.Builtin),
+		stringer.ReflectPointerToString(c.Builtin),
 	)
 }
 
@@ -462,7 +466,7 @@ func (c BuiltinAssetEvent) IntoProto() *vegapb.BuiltinAssetEvent {
 func (c BuiltinAssetEvent) String() string {
 	return fmt.Sprintf(
 		"action(%s)",
-		reflectPointerToString(c.Action),
+		stringer.ReflectPointerToString(c.Action),
 	)
 }
 
@@ -473,7 +477,7 @@ type BuiltinAssetEventDeposit struct {
 func (b BuiltinAssetEventDeposit) String() string {
 	return fmt.Sprintf(
 		"deposit(%s)",
-		reflectPointerToString(b.Deposit),
+		stringer.ReflectPointerToString(b.Deposit),
 	)
 }
 
@@ -507,7 +511,7 @@ type BuiltinAssetEventWithdrawal struct {
 func (b BuiltinAssetEventWithdrawal) String() string {
 	return fmt.Sprintf(
 		"withdrawal(%s)",
-		reflectPointerToString(b.Withdrawal),
+		stringer.ReflectPointerToString(b.Withdrawal),
 	)
 }
 
@@ -622,7 +626,7 @@ func (e ERC20Event) String() string {
 		"index(%v) block(%v) action(%s)",
 		e.Index,
 		e.Block,
-		reflectPointerToString(e.Action),
+		stringer.ReflectPointerToString(e.Action),
 	)
 }
 
@@ -633,7 +637,7 @@ type ERC20EventAssetDelist struct {
 func (e ERC20EventAssetDelist) String() string {
 	return fmt.Sprintf(
 		"assetDelist(%s)",
-		reflectPointerToString(e.AssetDelist),
+		stringer.ReflectPointerToString(e.AssetDelist),
 	)
 }
 
@@ -689,7 +693,7 @@ func (e ERC20EventAssetList) oneOfProto() interface{} {
 func (e ERC20EventAssetList) String() string {
 	return fmt.Sprintf(
 		"assetList(%s)",
-		reflectPointerToString(e.AssetList),
+		stringer.ReflectPointerToString(e.AssetList),
 	)
 }
 
@@ -749,7 +753,7 @@ func (e ERC20EventWithdrawal) oneOfProto() interface{} {
 func (e ERC20EventWithdrawal) String() string {
 	return fmt.Sprintf(
 		"withdrawal(%s)",
-		reflectPointerToString(e.Withdrawal),
+		stringer.ReflectPointerToString(e.Withdrawal),
 	)
 }
 
@@ -810,7 +814,7 @@ type ERC20EventDeposit struct {
 func (e ERC20EventDeposit) String() string {
 	return fmt.Sprintf(
 		"deposit(%s)",
-		reflectPointerToString(e.Deposit),
+		stringer.ReflectPointerToString(e.Deposit),
 	)
 }
 
@@ -878,7 +882,7 @@ func (e ERC20Deposit) String() string {
 		"vegaAssetID(%s) targetPartyID(%s) amount(%s) sourceEthereumAddress(%s)",
 		e.VegaAssetID,
 		e.TargetPartyID,
-		uintPointerToString(e.Amount),
+		stringer.UintPointerToString(e.Amount),
 		e.SourceEthereumAddress,
 	)
 }
@@ -900,7 +904,7 @@ func (e ERC20EventAssetLimitsUpdated) oneOfProto() interface{} {
 func (e ERC20EventAssetLimitsUpdated) String() string {
 	return fmt.Sprintf(
 		"assetLimitsUpdated(%s)",
-		reflectPointerToString(e.AssetLimitsUpdated),
+		stringer.ReflectPointerToString(e.AssetLimitsUpdated),
 	)
 }
 
@@ -948,8 +952,8 @@ func (e ERC20AssetLimitsUpdated) String() string {
 		"vegaAssetID(%s) sourceEthereumAddress(%s) lifetimeLimits(%s) withdrawThreshold(%s)",
 		e.VegaAssetID,
 		e.SourceEthereumAddress,
-		uintPointerToString(e.LifetimeLimits),
-		uintPointerToString(e.WithdrawThreshold),
+		stringer.UintPointerToString(e.LifetimeLimits),
+		stringer.UintPointerToString(e.WithdrawThreshold),
 	)
 }
 

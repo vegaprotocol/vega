@@ -1,10 +1,26 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package fs_test
 
 import (
-	"os"
+	path2 "path"
 	"testing"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 
 	"github.com/stretchr/testify/assert"
@@ -26,16 +42,14 @@ func TestFileSystemHelpers(t *testing.T) {
 }
 
 func testEnsuringPresenceOfNonExistingDirectoriesSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, path)
 }
 
 func testEnsuringPresenceOfExistingDirectoriesSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -47,15 +61,13 @@ func testEnsuringPresenceOfExistingDirectoriesSucceeds(t *testing.T) {
 }
 
 func testVerifyingPathExistenceOfNonExistingOneFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	exists, err := vgfs.PathExists(path)
+	exists, err := vgfs.PathExists("/" + vgrand.RandomStr(10))
 	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
 func testVerifyingPathExistenceOfExistingOneSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -67,15 +79,13 @@ func testVerifyingPathExistenceOfExistingOneSucceeds(t *testing.T) {
 }
 
 func testVerifyingFileExistenceOfNonExistingOneFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	exists, err := vgfs.FileExists(path)
+	exists, err := vgfs.FileExists("/" + vgrand.RandomStr(10))
 	require.NoError(t, err)
 	assert.False(t, exists)
 }
 
 func testVerifyingFileExistenceOfExistingOneSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 
 	err := vgfs.WriteFile(path, []byte("Hello, World!"))
 	require.NoError(t, err)
@@ -87,8 +97,7 @@ func testVerifyingFileExistenceOfExistingOneSucceeds(t *testing.T) {
 }
 
 func testVerifyingExistenceOnDirectoryFails(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	err := vgfs.EnsureDir(path)
 	require.NoError(t, err)
@@ -100,8 +109,7 @@ func testVerifyingExistenceOnDirectoryFails(t *testing.T) {
 }
 
 func testWritingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -114,8 +122,7 @@ func testWritingFileSucceeds(t *testing.T) {
 }
 
 func testRewritingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -138,8 +145,7 @@ func testRewritingFileSucceeds(t *testing.T) {
 }
 
 func testReadingExistingFileSucceeds(t *testing.T) {
-	path := vgtest.RandomPath()
-	defer os.RemoveAll(path)
+	path := path2.Join(t.TempDir(), "file.txt")
 	data := []byte("Hello, World!")
 
 	err := vgfs.WriteFile(path, data)
@@ -152,7 +158,7 @@ func testReadingExistingFileSucceeds(t *testing.T) {
 }
 
 func testReadingNonExistingFileFails(t *testing.T) {
-	path := vgtest.RandomPath()
+	path := t.TempDir()
 
 	readData, err := vgfs.ReadFile(path)
 	require.Error(t, err)

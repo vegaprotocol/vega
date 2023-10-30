@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -14,6 +29,7 @@ package gql
 
 import (
 	"context"
+	"errors"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -24,9 +40,15 @@ func (r *myInstrumentConfigurationResolver) FutureProduct(ctx context.Context, o
 	return obj.GetFuture(), nil
 }
 
-// func (r *myInstrumentConfigurationResolver) Metadata(ctx context.Context, obj *types.InstrumentConfiguration) (*InstrumentMetadata, error) {
-// 	return InstrumentMetadataFromProto(obj.Metadata)
-// }
-// func (r *myInstrumentResolver) Product(ctx context.Context, obj *proto.Instrument) (Product, error) {
-// 	return obj.GetFuture(), nil
-//}
+func (r *myInstrumentConfigurationResolver) Product(ctx context.Context, obj *types.InstrumentConfiguration) (ProductConfiguration, error) {
+	switch obj.GetProduct().(type) {
+	case *types.InstrumentConfiguration_Future:
+		return obj.GetFuture(), nil
+	case *types.InstrumentConfiguration_Spot:
+		return obj.GetSpot(), nil
+	case *types.InstrumentConfiguration_Perpetual:
+		return obj.GetPerpetual(), nil
+	default:
+		return nil, errors.New("unknown product type")
+	}
+}

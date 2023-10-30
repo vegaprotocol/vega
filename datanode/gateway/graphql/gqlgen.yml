@@ -50,6 +50,9 @@ models:
   OrderRejectionReason:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderRejectionReason
+  StopOrderRejectionReason:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderRejectionReason
   PeggedReference:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PeggedReference
@@ -150,6 +153,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.AccountDetails
   AccountUpdate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountBalance
+  PerpetualData:
+    model: code.vegaprotocol.io/vega/protos/vega.PerpetualData
   MarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:
@@ -176,12 +181,18 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityOrder
   LiquidityProvision:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityProvision
+  LiquidityProvisionWithPending:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvision
   LiquidityProvisionUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityProvision
   LiquidityOrderReference:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityOrderReference
   Future:
     model: code.vegaprotocol.io/vega/protos/vega.Future
+  Spot:
+    model: code.vegaprotocol.io/vega/protos/vega.Spot
+  Perpetual:
+    model: code.vegaprotocol.io/vega/protos/vega.Perpetual
   TradableInstrument:
     model: code.vegaprotocol.io/vega/protos/vega.TradableInstrument
   SimpleRiskModel:
@@ -229,6 +240,8 @@ models:
         resolver: true
       liquidityProvisions:
         resolver: true
+      fundingPeriods:
+        resolver: true
   Party:
     model: code.vegaprotocol.io/vega/protos/vega.Party
     fields:
@@ -261,26 +274,44 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
+  UpdateMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
+  UpdateNetworkParameter:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
   NewAsset:
     model: code.vegaprotocol.io/vega/protos/vega.NewAsset
   UpdateAsset:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateAsset
   NewFreeform:
     model: code.vegaprotocol.io/vega/protos/vega.NewFreeform
-  UpdateMarket:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
-  UpdateNetworkParameter:
-    model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
-  CancelTransfer:
-    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
   NewTransfer:
     model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
+  CancelTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
+  UpdateMarketState:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketState
+  NewSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.NewSpotMarket
+  UpdateSpotMarket:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarket
+  UpdateReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateReferralProgram
+  UpdateVolumeDiscountProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateVolumeDiscountProgram
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
   SuccessorConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.SuccessorConfiguration
   FutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.FutureProduct
+  SpotProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.SpotProduct
+  PerpetualProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.PerpetualProduct
+  UpdateSpotMarketConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
+  LiquiditySLAParameters:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
   Asset:
     model: code.vegaprotocol.io/vega/protos/vega.Asset
     fields:
@@ -307,16 +338,16 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  EthCallSpec:
+    model: code.vegaprotocol.io/vega/protos/vega.EthCallSpec
   DataSourceSpecConfigurationTime:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTimeTrigger:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTimeTrigger
+  InternalTimeTrigger:
+    model: code.vegaprotocol.io/vega/protos/vega/data/v1.InternalTimeTrigger
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
-  Filter:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Filter
-  PropertyKey:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.PropertyKey
-  Condition:
-    model: code.vegaprotocol.io/vega/protos/vega/data/v1.Condition
   OracleData:
     model: code.vegaprotocol.io/vega/protos/vega.OracleData
     fields:
@@ -372,6 +403,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.EthereumKeyRotation
   Transfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.Transfer
+  TransferFees:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.TransferFees
+  TransferNode:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferNode
   OneOffTransfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
   RecurringTransfer:
@@ -483,6 +518,16 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsEdge
   LiquidityProvisionsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsConnection
+  LiquidityProvisionWithPendingEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionWithPendingEdge
+  LiquidityProvisionsWithPendingConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvisionsWithPendingConnection
+  LiquidityProvider:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProvider
+  LiquidityProviderEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderEdge
+  LiquidityProviderConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidityProviderConnection
   TransferEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TransferEdge
   TransferConnection:
@@ -569,3 +614,115 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeBasic
   Entities:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListEntitiesResponse
+  FundingPeriod:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FundingPeriod
+  FundingPeriodDataPoint:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FundingPeriodDataPoint
+  FundingPeriodDataPointSource:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.FundingPeriodDataPointSource
+  FundingPeriodDataPointEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodDataPointEdge
+  FundingPeriodDataPointConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodDataPointConnection
+  FundingPeriodEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodEdge
+  FundingPeriodConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPeriodConnection
+  PartyActivityStreak:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyActivityStreak
+  BenefitTier:
+    model: code.vegaprotocol.io/vega/protos/vega.BenefitTier
+  ReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/vega.ReferralProgram
+  CurrentReferralProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralProgram
+  StakingTier:
+    model: code.vegaprotocol.io/vega/protos/vega.StakingTier
+  ReferralSet:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSet
+  ReferralSetEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetEdge
+  ReferralSetConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetConnection
+  ReferralSetReferee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetReferee
+  ReferralSetRefereeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeEdge
+  ReferralSetRefereeConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetRefereeConnection
+  ReferralSetStatsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStatsConnection
+  ReferralSetStatsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStatsEdge
+  ReferralSetStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ReferralSetStats
+  RefereeStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RefereeStats
+  FeesStats:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.FeesStats
+  FeesStatsForParty:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FeesStatsForParty
+  PartyAmount:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyAmount
+  ReferrerRewardsGenerated:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.ReferrerRewardsGenerated
+  MakerFeesGenerated:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.MakerFeesGenerated
+  Team:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Team
+  TeamEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamEdge
+  TeamConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamConnection
+  TeamReferee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamReferee
+  TeamRefereeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeEdge
+  TeamRefereeConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeConnection
+  TeamRefereeHistory:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistory
+  TeamRefereeHistoryEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryEdge
+  TeamRefereeHistoryConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamRefereeHistoryConnection
+  FundingPayment:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPayment
+  FundingPaymentEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentEdge
+  FundingPaymentConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.FundingPaymentConnection
+  VolumeBenefitTier:
+    model: code.vegaprotocol.io/vega/protos/vega.VolumeBenefitTier
+  VolumeDiscountProgram:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountProgram
+  VolumeDiscountStatsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountStatsConnection
+  VolumeDiscountStatsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountStatsEdge
+  VolumeDiscountStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.VolumeDiscountStats
+  PaidLiquidityFees:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PaidLiquidityFeesStats
+  PaidLiquidityFeesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesConnection
+  PaidLiquidityFeesEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PaidLiquidityFeesEdge
+  PartyVestingBalance:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyVestingBalance
+  PartyLockedBalance:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.PartyLockedBalance
+  PartyVestingBalancesSummary:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetVestingBalancesSummaryResponse
+  PartyVestingStats:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyVestingStatsResponse
+  DispatchStrategy:
+    model: code.vegaprotocol.io/vega/protos/vega.DispatchStrategy
+  RankTable:
+    model: code.vegaprotocol.io/vega/protos/vega.Rank
+  IndividualScope:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.IndividualScope
+  EntityScope:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EntityScope
+  DistributionStrategy:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DistributionStrategy

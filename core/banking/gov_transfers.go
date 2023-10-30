@@ -1,15 +1,57 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package banking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+)
+
+var (
+	validSources = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:       {},
+		types.AccountTypeGlobalInsurance: {},
+		types.AccountTypeGlobalReward:    {},
+		types.AccountTypeNetworkTreasury: {},
+	}
+	validDestinations = map[types.AccountType]struct{}{
+		types.AccountTypeInsurance:              {},
+		types.AccountTypeGlobalInsurance:        {},
+		types.AccountTypeGlobalReward:           {},
+		types.AccountTypeNetworkTreasury:        {},
+		types.AccountTypeGeneral:                {},
+		types.AccountTypeMakerPaidFeeReward:     {},
+		types.AccountTypeMakerReceivedFeeReward: {},
+		types.AccountTypeMarketProposerReward:   {},
+		types.AccountTypeLPFeeReward:            {},
+		types.AccountTypeAveragePositionReward:  {},
+		types.AccountTypeRelativeReturnReward:   {},
+		types.AccountTypeReturnVolatilityReward: {},
+		types.AccountTypeValidatorRankingReward: {},
+	}
 )
 
 func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
@@ -87,6 +129,7 @@ func (e *Engine) deleteGovTransfer(ID string) {
 	for i, rt := range e.recurringGovernanceTransfers {
 		if rt.ID == ID {
 			index = i
+			e.unregisterDispatchStrategy(rt.Config.RecurringTransferConfig.DispatchStrategy)
 			break
 		}
 	}
@@ -140,6 +183,7 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 	amount = num.UintZero()
 	e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, gTransfer)
 	e.recurringGovernanceTransfersMap[ID] = gTransfer
+	e.registerDispatchStrategy(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 	return nil
 }
 
@@ -164,6 +208,58 @@ func (e *Engine) processGovernanceTransfer(
 	} else if gTransfer.Config.DestinationType == types.AccountTypeInsurance {
 		toMarket = to
 		to = "*"
+	}
+
+	if gTransfer.Config.RecurringTransferConfig != nil && gTransfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
+		var resps []*types.LedgerMovement
+		ds := gTransfer.Config.RecurringTransferConfig.DispatchStrategy
+		// if the metric is market value we make the transfer to the market account (as opposed to the metric's hash account)
+		if ds.Metric == vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
+			marketProposersScore := e.marketActivityTracker.GetMarketsWithEligibleProposer(ds.AssetForMetric, ds.Markets, gTransfer.Config.Asset, gTransfer.Config.Source)
+			for _, fms := range marketProposersScore {
+				amt, _ := num.UintFromDecimal(transferAmount.ToDecimal().Mul(fms.Score))
+				if amt.IsZero() {
+					continue
+				}
+				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt)
+				transfers := []*types.Transfer{fromTransfer, toTransfer}
+				accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
+				references := []string{gTransfer.Reference, gTransfer.Reference}
+				tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
+				if err != nil {
+					e.log.Error("error transferring governance transfer funds", logging.Error(err))
+					return num.UintZero(), err
+				}
+
+				if fms.Score.IsPositive() {
+					e.marketActivityTracker.MarkPaidProposer(ds.AssetForMetric, fms.Market, gTransfer.Config.Asset, gTransfer.Config.RecurringTransferConfig.DispatchStrategy.Markets, from)
+				}
+				resps = append(resps, tresps...)
+			}
+		}
+		// here we transfer the governance transfer amount into the account: transfer_asset/dispatch_hash/reward_account_type
+		if e.dispatchRequired(gTransfer.Config.RecurringTransferConfig.DispatchStrategy) {
+			p, _ := proto.Marshal(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
+			hash := hex.EncodeToString(crypto.Hash(p))
+
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount)
+			transfers := []*types.Transfer{fromTransfer, toTransfer}
+			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
+			references := []string{gTransfer.Reference, gTransfer.Reference}
+			tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
+			if err != nil {
+				e.log.Error("error transferring governance transfer funds", logging.Error(err))
+				return num.UintZero(), err
+			}
+
+			resps = append(resps, tresps...)
+		}
+		if len(resps) > 0 {
+			e.broker.Send(events.NewLedgerMovements(ctx, resps))
+			return transferAmount, nil
+		}
+
+		return num.UintZero(), nil
 	}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
@@ -208,10 +304,18 @@ func (e *Engine) CalculateGovernanceTransferAmount(asset string, market string, 
 		return nil, err
 	}
 
+	a, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
+		return nil, fmt.Errorf("could not transfer funds, %w", err)
+	}
+
+	quantum := a.Type().Details.Quantum
+	globalMaxAmount, _ := num.UintFromDecimal(quantum.Mul(e.maxGovTransferQunatumMultiplier))
 	amountFromMaxFraction, _ := num.UintFromDecimal(e.maxGovTransferFraction.Mul(balance.ToDecimal()))
 	amountFromProposalFraction, _ := num.UintFromDecimal(fraction.Mul(balance.ToDecimal()))
 	min1 := num.Min(amountFromMaxFraction, amountFromProposalFraction)
-	min2 := num.Min(amount, e.maxGovTransferAmount)
+	min2 := num.Min(amount, globalMaxAmount)
 	amt := num.Min(min1, min2)
 
 	if transferType == vegapb.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING && amt.NEQ(num.Min(amountFromProposalFraction, amount)) {
@@ -228,15 +332,12 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 	}
 
 	// check source type is valid
-	if transfer.SourceType != types.AccountTypeInsurance &&
-		transfer.SourceType != types.AccountTypeGlobalReward {
+	if _, ok := validSources[transfer.SourceType]; !ok {
 		return errors.New("invalid source type for governance transfer")
 	}
 
 	// check destination type is valid
-	if transfer.DestinationType != types.AccountTypeGeneral &&
-		transfer.DestinationType != types.AccountTypeGlobalReward &&
-		transfer.DestinationType != types.AccountTypeInsurance {
+	if _, ok := validDestinations[transfer.DestinationType]; !ok {
 		return errors.New("invalid destination for governance transfer")
 	}
 
@@ -245,20 +346,35 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 		return errors.New("missing asset for governance transfer")
 	}
 
+	// check if destination market insurance account exist
+	if transfer.DestinationType == types.AccountTypeInsurance && len(transfer.Destination) > 0 {
+		_, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType)
+		if err != nil {
+			return err
+		}
+	}
+
+	// verify systemn destination account which ought to preexist actually exists
+	if (transfer.RecurringTransferConfig == nil || transfer.RecurringTransferConfig.DispatchStrategy == nil) &&
+		len(transfer.Destination) == 0 &&
+		transfer.DestinationType != types.AccountTypeGeneral {
+		_, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType)
+		if err != nil {
+			return err
+		}
+	}
+
+	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.DispatchStrategy != nil {
+		if len(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric) > 0 {
+			if _, err := e.assets.Get(transfer.RecurringTransferConfig.DispatchStrategy.AssetForMetric); err != nil {
+				return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+			}
+		}
+	}
+
 	// check source account exists
 	if _, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Source, transfer.SourceType); err != nil {
 		return err
-	}
-
-	// check destination account exists
-	if transfer.DestinationType == types.AccountTypeGeneral {
-		if _, err := e.col.GetPartyGeneralAccount(transfer.Destination, transfer.Asset); err != nil {
-			return err
-		}
-	} else {
-		if _, err := e.col.GetSystemAccountBalance(transfer.Asset, transfer.Destination, transfer.DestinationType); err != nil {
-			return err
-		}
 	}
 
 	// check transfer type is specified

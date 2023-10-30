@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package monitor
 
@@ -30,19 +33,17 @@ type AuctionState struct {
 	m                  *types.Market           // keep market definition handy, useful to end auctions when default is FBA
 	extension          *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
 	extensionEventSent bool
-
-	stateChanged bool
+	maxDuration        *time.Duration
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	s := AuctionState{
-		mode:         types.MarketTradingModeOpeningAuction,
-		defMode:      types.MarketTradingModeContinuous,
-		trigger:      types.AuctionTriggerOpening,
-		begin:        &now,
-		start:        true,
-		m:            mkt,
-		stateChanged: true,
+		mode:    types.MarketTradingModeOpeningAuction,
+		defMode: types.MarketTradingModeContinuous,
+		trigger: types.AuctionTriggerOpening,
+		begin:   &now,
+		start:   true,
+		m:       mkt,
 	}
 	// no opening auction
 	if mkt.OpeningAuction == nil {
@@ -78,10 +79,6 @@ func (a *AuctionState) GetAuctionEnd() *time.Time {
 	return &cpy
 }
 
-func (a *AuctionState) StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration) {
-	a.startLiquidityAuction(t, d, types.AuctionTriggerUnableToDeployLPOrders)
-}
-
 func (a *AuctionState) StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration) {
 	a.startLiquidityAuction(t, d, types.AuctionTriggerLiquidityTargetNotMet)
 }
@@ -95,7 +92,6 @@ func (a *AuctionState) startLiquidityAuction(t time.Time, d *types.AuctionDurati
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
 }
 
 // StartPriceAuction - set the state to start a price triggered auction
@@ -107,7 +103,38 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
+}
+
+func (a *AuctionState) StartGovernanceSuspensionAuction(t time.Time) {
+	a.mode = types.MarketTradingModeSuspendedViaGovernance
+	a.trigger = types.AuctionTriggerGovernanceSuspension
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = &types.AuctionDuration{Duration: 0}
+}
+
+func (a *AuctionState) EndGovernanceSuspensionAuction() {
+	if a.trigger == types.AuctionTriggerGovernanceSuspension {
+		// if there governance was the trigger and there is no extension, reset the state.
+		if a.extension == nil {
+			a.mode = types.MarketTradingModeContinuous
+			a.trigger = types.AuctionTriggerUnspecified
+			a.start = false
+			a.stop = true
+			a.begin = nil
+			a.end = nil
+		} else {
+			// if we're leaving the governance auction which was the trigger but there was an extension trigger -
+			// make the extension trigger the trigger and set the mode to monitoring auction.
+			a.mode = types.MarketTradingModeMonitoringAuction
+			a.trigger = *a.extension
+			a.extension = nil
+		}
+	} else if a.ExtensionTrigger() == types.AuctionTriggerGovernanceSuspension {
+		// if governance suspension was the extension trigger - just reset it.
+		a.extension = nil
+	}
 }
 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
@@ -119,7 +146,6 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 	a.stop = false
 	a.begin = &t
 	a.end = d
-	a.stateChanged = true
 }
 
 // ExtendAuctionPrice - call from price monitoring to extend the auction
@@ -130,8 +156,10 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	a.ExtendAuction(delta)
 }
 
-func (a *AuctionState) ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration) {
-	a.extendAuctionLiquidity(delta, types.AuctionTriggerUnableToDeployLPOrders)
+func (a *AuctionState) ExtendAuctionSuspension(delta types.AuctionDuration) {
+	t := types.AuctionTriggerGovernanceSuspension
+	a.extension = &t
+	a.ExtendAuction(delta)
 }
 
 func (a *AuctionState) ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration) {
@@ -152,13 +180,18 @@ func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
-	a.stateChanged = true
 }
 
 // SetReadyToLeave is called by monitoring engines to mark if an auction period has expired.
 func (a *AuctionState) SetReadyToLeave() {
+	// we can't leave the auction if it was triggered by governance suspension
+	if a.trigger == types.AuctionTriggerGovernanceSuspension {
+		return
+	}
+	if a.maxDuration != nil {
+		a.maxDuration = nil
+	}
 	a.stop = true
-	a.stateChanged = true
 }
 
 // Duration returns a copy of the current auction duration object.
@@ -220,7 +253,11 @@ func (a AuctionState) IsOpeningAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
+	// FIXME(jeremy): the second part of the condition is to support
+	// the compatibility on 72 > 73 snapshots.
+
+	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet ||
+		a.trigger == types.AuctionTriggerUnableToDeployLPOrders
 }
 
 func (a AuctionState) IsPriceAuction() bool {
@@ -228,7 +265,11 @@ func (a AuctionState) IsPriceAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityExtension() bool {
-	return a.extension != nil && (*a.extension == types.AuctionTriggerLiquidityTargetNotMet || *a.extension == types.AuctionTriggerUnableToDeployLPOrders)
+	// FIXME(jeremy): the second part of the condition is to support
+	// the compatibility on 72 > 73 snapshots.
+
+	return a.extension != nil && (*a.extension == types.AuctionTriggerLiquidityTargetNotMet ||
+		*a.extension == types.AuctionTriggerUnableToDeployLPOrders)
 }
 
 func (a AuctionState) IsPriceExtension() bool {
@@ -241,6 +282,9 @@ func (a AuctionState) IsFBA() bool {
 
 // IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine.
 func (a AuctionState) IsMonitorAuction() bool {
+	// FIXME(jeremy): the second part of the condition is to support
+	// the compatibility on 72 > 73 snapshots.
+
 	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
 }
 
@@ -273,7 +317,6 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 	ext := *a.extension
 	// set extension flag to nil
 	a.extensionEventSent = true
-	a.stateChanged = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
 }
 
@@ -281,13 +324,13 @@ func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *even
 func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *events.Auction {
 	a.start = false
 	end := int64(0)
-	if a.begin == nil {
+	// Either an auction was just started, or a market in opening auction passed the vote, the real opening auction starts now.
+	if a.begin == nil || (a.trigger == types.AuctionTriggerOpening && a.begin.Before(now)) {
 		a.begin = &now
 	}
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
 	}
-	a.stateChanged = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger)
 }
 
@@ -308,7 +351,6 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	if a.mode == types.MarketTradingModeBatchAuction {
 		a.trigger = types.AuctionTriggerBatch
 	}
-	a.stateChanged = true
 	return evt
 }
 
@@ -321,12 +363,31 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		newMin := a.begin.Add(d)
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
-			a.stateChanged = true
 			a.end.Duration = int64(d / time.Second)
-			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duraiton.
+			// this would increase the duration by delta new - old, effectively setting duration == new min. Instead, we can just assign new min duration.
 			// a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using seconds in AuctionDuration type
 			return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
 		}
 	}
 	return nil
+}
+
+func (a *AuctionState) UpdateMaxDuration(_ context.Context, d time.Duration) {
+	if a.trigger == types.AuctionTriggerOpening {
+		a.maxDuration = &d
+	}
+}
+
+func (a *AuctionState) ExceededMaxOpening(now time.Time) bool {
+	if a.trigger != types.AuctionTriggerOpening || a.begin == nil || a.maxDuration == nil {
+		return false
+	}
+	minTo := now
+	if a.end != nil && a.end.Duration > 0 {
+		minTo = a.begin.Add(time.Duration(a.end.Duration) * time.Second)
+	}
+	validTo := a.begin.Add(*a.maxDuration)
+	// the market is invalid if it hasn't left auction before max duration
+	// or if it cannot leave before max duration allows it
+	return validTo.Before(now) || minTo.After(validTo)
 }

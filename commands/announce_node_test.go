@@ -1,8 +1,23 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands_test
 
 import (
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -46,7 +61,7 @@ func testAnnounceNodeWithInvalidEncodingOfVegaPubKeyFails(t *testing.T) {
 	err := checkAnnounceNode(&commandspb.AnnounceNode{
 		VegaPubKey: "invalid-hex-encoding",
 	})
-	assert.Contains(t, err.Get("announce_node.vega_pub_key"), commands.ErrShouldBeAValidVegaPubkey)
+	assert.Contains(t, err.Get("announce_node.vega_pub_key"), commands.ErrShouldBeAValidVegaPublicKey)
 }
 
 func testAnnounceNodeWithoutEthereumAddressFails(t *testing.T) {
@@ -88,7 +103,6 @@ func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
 			Value: "helloagain",
 		},
 	})
-	fmt.Println(err)
 	assert.Contains(t, err.Get("announce_node.ethereum_signature.value"), commands.ErrShouldBeHexEncoded)
 	assert.Contains(t, err.Get("announce_node.vega_signature.value"), commands.ErrShouldBeHexEncoded)
 }
@@ -96,8 +110,8 @@ func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
 func checkAnnounceNode(cmd *commandspb.AnnounceNode) commands.Errors {
 	err := commands.CheckAnnounceNode(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

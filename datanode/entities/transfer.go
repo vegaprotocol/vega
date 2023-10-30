@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -33,25 +48,35 @@ type _Transfer struct{}
 
 type TransferID = ID[_Transfer]
 
+type TransferDetails struct {
+	Transfer
+	Fees []*TransferFees
+}
+
 type Transfer struct {
-	ID                  TransferID
-	TxHash              TxHash
-	VegaTime            time.Time
-	FromAccountID       AccountID
-	ToAccountID         AccountID
-	AssetID             AssetID
-	Amount              decimal.Decimal
-	Reference           string
-	Status              TransferStatus
-	TransferType        TransferType
-	DeliverOn           *time.Time
-	StartEpoch          *uint64
-	EndEpoch            *uint64
-	Factor              *decimal.Decimal
-	DispatchMetric      *vega.DispatchMetric
-	DispatchMetricAsset *string
-	DispatchMarkets     []string
-	Reason              *string
+	ID               TransferID
+	TxHash           TxHash
+	VegaTime         time.Time
+	FromAccountID    AccountID
+	ToAccountID      AccountID
+	AssetID          AssetID
+	Amount           decimal.Decimal
+	Reference        string
+	Status           TransferStatus
+	TransferType     TransferType
+	DeliverOn        *time.Time
+	StartEpoch       *uint64
+	EndEpoch         *uint64
+	Factor           *decimal.Decimal
+	DispatchStrategy *vega.DispatchStrategy
+	Reason           *string
+}
+
+type TransferFees struct {
+	TransferID TransferID
+	EpochSeq   uint64
+	Amount     decimal.Decimal
+	VegaTime   time.Time
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -88,14 +113,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
 		}
-		if t.DispatchMetricAsset != nil {
-			recurringTransfer.DispatchStrategy = &vega.DispatchStrategy{
-				AssetForMetric: *t.DispatchMetricAsset,
-				Metric:         *t.DispatchMetric,
-				Markets:        t.DispatchMarkets,
-			}
-		}
-
+		recurringTransfer.DispatchStrategy = t.DispatchStrategy
 		if t.EndEpoch != nil {
 			endEpoch := *t.EndEpoch
 			recurringTransfer.EndEpoch = &endEpoch
@@ -121,6 +139,24 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	return &proto, nil
 }
 
+func (f *TransferFees) ToProto() *eventspb.TransferFees {
+	return &eventspb.TransferFees{
+		TransferId: f.TransferID.String(),
+		Amount:     f.Amount.String(),
+		Epoch:      f.EpochSeq,
+	}
+}
+
+func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
+	amt, _ := decimal.NewFromString(f.Amount)
+	return &TransferFees{
+		TransferID: TransferID(f.TransferId),
+		EpochSeq:   f.Epoch,
+		Amount:     amt,
+		VegaTime:   vegaTime,
+	}
+}
+
 func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash, vegaTime time.Time, accountSource AccountSource) (*Transfer, error) {
 	fromAcc := Account{
 		ID:       "",
@@ -129,6 +165,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		Type:     t.FromAccountType,
 		TxHash:   txHash,
 		VegaTime: time.Unix(0, t.Timestamp),
+	}
+
+	if t.From == "0000000000000000000000000000000000000000000000000000000000000000" {
+		fromAcc.PartyID = PartyID("network")
 	}
 
 	err := accountSource.Obtain(ctx, &fromAcc)
@@ -143,6 +183,10 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		Type:     t.ToAccountType,
 		TxHash:   txHash,
 		VegaTime: vegaTime,
+	}
+
+	if t.To == "0000000000000000000000000000000000000000000000000000000000000000" {
+		toAcc.PartyID = PartyID("network")
 	}
 
 	err = accountSource.Obtain(ctx, &toAcc)
@@ -198,9 +242,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
 		if v.Recurring.DispatchStrategy != nil {
-			transfer.DispatchMetric = &v.Recurring.DispatchStrategy.Metric
-			transfer.DispatchMetricAsset = &v.Recurring.DispatchStrategy.AssetForMetric
-			transfer.DispatchMarkets = v.Recurring.DispatchStrategy.Markets
+			transfer.DispatchStrategy = v.Recurring.DispatchStrategy
 		}
 
 		if v.Recurring.EndEpoch != nil {
@@ -228,6 +270,21 @@ func (t Transfer) Cursor() *Cursor {
 	return NewCursor(wc.String())
 }
 
+func (d TransferDetails) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
+	te, err := d.Transfer.ToProtoEdge(input...)
+	if err != nil {
+		return nil, err
+	}
+	if len(d.Fees) == 0 {
+		return te, nil
+	}
+	te.Node.Fees = make([]*eventspb.TransferFees, 0, len(d.Fees))
+	for _, f := range d.Fees {
+		te.Node.Fees = append(te.Node.Fees, f.ToProto())
+	}
+	return te, nil
+}
+
 func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 	if len(input) != 2 {
 		return nil, fmt.Errorf("expected account source and context argument")
@@ -248,7 +305,9 @@ func (t Transfer) ToProtoEdge(input ...any) (*v2.TransferEdge, error) {
 		return nil, err
 	}
 	return &v2.TransferEdge{
-		Node:   transferProto,
+		Node: &v2.TransferNode{
+			Transfer: transferProto,
+		},
 		Cursor: t.Cursor().Encode(),
 	}, nil
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -165,7 +180,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp := position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "400", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
 	// now MTM settlement event, contains the same trades, mark price is 1k
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
@@ -196,7 +211,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "5744", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now assume this last trade was the only trade that occurred before MTM
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1150), []events.TradeSettlement{
@@ -221,8 +236,8 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "1249", pp.RealisedPnl)
-	assert.Equal(t, "6244", pp.UnrealisedPnl)
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.UnrealisedPnl)
 	assert.EqualValues(t, 5, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
 		tradeStub{
@@ -246,7 +261,7 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "6495", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.RealisedPnl)
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 0, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
@@ -303,7 +318,47 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
-	assert.Equal(t, "3883", pp.UnrealisedPnl)
+	assert.Equal(t, "50", pp.UnrealisedPnl)
+}
+
+func TestUpdateWithTradesAndFundingPayment(t *testing.T) {
+	ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	dp := num.DecimalFromFloat(3)
+	trades := []tradeStub{
+		{
+			size:  2,
+			price: num.NewUint(1200),
+		},
+		{
+			size:  3,
+			price: num.NewUint(1000),
+		},
+	}
+	// this is the order in which the events will be sent/received
+	position.UpdateWithTrade(trades[0].ToVega(dp), false, dp)
+	pp := position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
+	position.ApplyFundingPayment(num.NewInt(100))
+	pp = position.ToProto()
+	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "0", pp.UnrealisedPnl, pp.AverageEntryPrice)
+	position.UpdateWithTrade(trades[1].ToVega(dp), false, dp)
+	pp = position.ToProto()
+	assert.Equal(t, "100", pp.RealisedPnl)
+	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
+	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{trades[0], trades[1]}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	psp := position.ToProto()
+	assert.Equal(t, "100", psp.RealisedPnl)
+	assert.Equal(t, "-133", psp.UnrealisedPnl)
+	position.ApplyFundingPayment(num.NewInt(-50))
+	pp = position.ToProto()
+	assert.Equal(t, "50", pp.RealisedPnl)
+	assert.Equal(t, "-133", pp.UnrealisedPnl, pp.AverageEntryPrice)
 }
 
 type tradeStub struct {
@@ -321,6 +376,19 @@ func (t tradeStub) Price() *num.Uint {
 
 func (t tradeStub) MarketPrice() *num.Uint {
 	return t.price.Clone()
+}
+
+func (t tradeStub) ToVega(dp num.Decimal) vega.Trade {
+	// dp = num.DecimalFromFloat(10).Pow(dp)
+	// size, _ := num.DecimalFromInt64(t.size).Abs().Mul(dp).Float64()
+	size := uint64(t.size)
+	if t.size < 0 {
+		size = uint64(-t.size)
+	}
+	return vega.Trade{
+		Size:  size,
+		Price: t.price.String(),
+	}
 }
 
 func TestCalculateOpenClosedVolume(t *testing.T) {

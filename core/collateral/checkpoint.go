@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package collateral
 
@@ -25,7 +28,10 @@ import (
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 )
 
-const separator = "___"
+const (
+	separator            = "___"
+	vestingAccountPrefix = "vesting"
+)
 
 func (e *Engine) Name() types.CheckpointName {
 	return types.CollateralCheckpoint
@@ -43,14 +49,20 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 }
 
 var partyOverrideAlias = map[string]string{
-	systemOwner + types.AccountTypeGlobalReward.String(): systemOwner,
+	systemOwner + types.AccountTypeNetworkTreasury.String(): systemOwner,
 }
 
 var partyOverrides = map[string]types.AccountType{
-	systemOwner: types.AccountTypeGlobalReward,
+	systemOwner: types.AccountTypeNetworkTreasury,
+	systemOwner + types.AccountTypeGlobalInsurance.String():        types.AccountTypeGlobalInsurance,
+	systemOwner + types.AccountTypeGlobalReward.String():           types.AccountTypeGlobalReward,
 	systemOwner + types.AccountTypeMakerReceivedFeeReward.String(): types.AccountTypeMakerReceivedFeeReward,
 	systemOwner + types.AccountTypeMakerPaidFeeReward.String():     types.AccountTypeMakerPaidFeeReward,
 	systemOwner + types.AccountTypeLPFeeReward.String():            types.AccountTypeLPFeeReward,
+	systemOwner + types.AccountTypeAveragePositionReward.String():  types.AccountTypeAveragePositionReward,
+	systemOwner + types.AccountTypeRelativeReturnReward.String():   types.AccountTypeRelativeReturnReward,
+	systemOwner + types.AccountTypeReturnVolatilityReward.String(): types.AccountTypeReturnVolatilityReward,
+	systemOwner + types.AccountTypeValidatorRankingReward.String(): types.AccountTypeValidatorRankingReward,
 	systemOwner + types.AccountTypeMarketProposerReward.String():   types.AccountTypeMarketProposerReward,
 	systemOwner + types.AccountTypeFeesInfrastructure.String():     types.AccountTypeFeesInfrastructure,
 	systemOwner + types.AccountTypePendingTransfers.String():       types.AccountTypePendingTransfers,
@@ -61,6 +73,10 @@ var tradingRewardAccountTypes = map[types.AccountType]struct{}{
 	types.AccountTypeMakerPaidFeeReward:     {},
 	types.AccountTypeLPFeeReward:            {},
 	types.AccountTypeMarketProposerReward:   {},
+	types.AccountTypeAveragePositionReward:  {},
+	types.AccountTypeRelativeReturnReward:   {},
+	types.AccountTypeReturnVolatilityReward: {},
+	types.AccountTypeValidatorRankingReward: {},
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
@@ -70,9 +86,14 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	}
 
 	ledgerMovements := []*types.LedgerMovement{}
+	assets := map[string]struct{}{}
 
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
+		isVesting := strings.HasPrefix(balance.Party, vestingAccountPrefix)
+		if isVesting {
+			balance.Party = strings.TrimPrefix(balance.Party, vestingAccountPrefix)
+		}
 		partyComponents := strings.Split(balance.Party, separator)
 		owner := partyComponents[0]
 		market := noMarket
@@ -99,17 +120,37 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if err != nil {
 				return err
 			}
+			assets[balance.Asset] = struct{}{}
 			ledgerMovements = append(ledgerMovements, lm)
 			continue
 		}
-		accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
-		if _, err := e.GetAccountByID(accID); err != nil {
-			_, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
-		}
-		lm, err := e.RestoreCheckpointBalance(
-			ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral, ub.Clone())
-		if err != nil {
-			return err
+		var (
+			lm  *types.LedgerMovement
+			err error
+		)
+
+		if isVesting {
+			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeVestingRewards)
+			if _, err := e.GetAccountByID(accID); err != nil {
+				_ = e.GetOrCreatePartyVestingRewardAccount(ctx, balance.Party, balance.Asset)
+			}
+			lm, err = e.RestoreCheckpointBalance(
+				ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeVestingRewards, ub.Clone())
+			if err != nil {
+				return err
+			}
+
+			e.addToVesting(balance.Party, balance.Asset, ub.Clone())
+		} else {
+			accID := e.accountID(market, balance.Party, balance.Asset, types.AccountTypeGeneral)
+			if _, err := e.GetAccountByID(accID); err != nil {
+				_, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
+			}
+			lm, err = e.RestoreCheckpointBalance(
+				ctx, noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral, ub.Clone())
+			if err != nil {
+				return err
+			}
 		}
 		ledgerMovements = append(ledgerMovements, lm)
 	}
@@ -129,21 +170,53 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			continue
 		}
 		switch acc.Type {
-		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond, types.AccountTypeFeesLiquidity,
-			types.AccountTypeInsurance, types.AccountTypeGlobalReward,
+		// vesting rewards needs to be stored separately
+		// so that vesting can be started again
+		case types.AccountTypeVestingRewards:
+			owner := vestingAccountPrefix + acc.Owner
+
+			assets, ok := balances[owner]
+			if !ok {
+				assets = map[string]*num.Uint{}
+				balances[owner] = assets
+			}
+			balance, ok := assets[acc.Asset]
+			if !ok {
+				balance = num.UintZero()
+				assets[acc.Asset] = balance
+			}
+			balance.AddSum(acc.Balance)
+
+		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeHolding, types.AccountTypeBond, types.AccountTypeFeesLiquidity,
+			types.AccountTypeInsurance, types.AccountTypeGlobalReward, types.AccountTypeLiquidityFeesBonusDistribution, types.AccountTypeLPLiquidityFees,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward,
-			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
+			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers,
+			types.AccountTypeNetworkTreasury, types.AccountTypeGlobalInsurance, types.AccountTypeVestedRewards,
+			types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward:
 			owner := acc.Owner
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
+			// similarly LP Fee bonus distribution bonus account would fall over into the network treasury of the asset.
 			if owner == systemOwner {
 				for k, v := range partyOverrides {
 					if acc.Type == v {
 						owner = k
 					}
 				}
+				if acc.Type == types.AccountTypeInsurance {
+					// let the market insurnace fall into the global insurance account
+					owner = systemOwner + types.AccountTypeGlobalInsurance.String()
+				}
 			}
+
 			// NB: for market based reward accounts we don't want to move the funds to the network treasury but rather keep them
-			if acc.Type == types.AccountTypeLPFeeReward || acc.Type == types.AccountTypeMakerReceivedFeeReward || acc.Type == types.AccountTypeMakerPaidFeeReward || acc.Type == types.AccountTypeMarketProposerReward {
+			if acc.Type == types.AccountTypeLPFeeReward ||
+				acc.Type == types.AccountTypeMakerReceivedFeeReward ||
+				acc.Type == types.AccountTypeMakerPaidFeeReward ||
+				acc.Type == types.AccountTypeMarketProposerReward ||
+				acc.Type == types.AccountTypeAveragePositionReward ||
+				acc.Type == types.AccountTypeRelativeReturnReward ||
+				acc.Type == types.AccountTypeReturnVolatilityReward ||
+				acc.Type == types.AccountTypeValidatorRankingReward {
 				owner += separator + acc.MarketID
 			}
 

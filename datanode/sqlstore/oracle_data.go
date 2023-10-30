@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -27,7 +42,17 @@ type OracleData struct {
 }
 
 const (
-	sqlOracleDataColumns = `signers, data, matched_spec_ids, broadcast_at, tx_hash, vega_time, seq_num`
+	sqlOracleDataColumns = `signers, data, meta_data, broadcast_at, error, tx_hash, vega_time, seq_num`
+	oracleDataQuery      = `SELECT od.*, aggregated.spec_ids as matched_spec_ids
+	FROM
+		oracle_data od
+	LEFT JOIN LATERAL (
+		SELECT ARRAY_AGG(spec_id) AS spec_ids
+		FROM oracle_data_oracle_specs ods
+		WHERE od.vega_time = ods.vega_time
+		AND od.seq_num = ods.seq_num
+	) aggregated ON true
+	`
 )
 
 var oracleDataOrdering = TableOrdering{
@@ -43,13 +68,28 @@ func NewOracleData(connectionSource *ConnectionSource) *OracleData {
 
 func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) error {
 	defer metrics.StartSQLQuery("OracleData", "Add")()
-	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7)", sqlOracleDataColumns)
+	query := fmt.Sprintf("insert into oracle_data(%s) values ($1, $2, $3, $4, $5, $6, $7, $8)", sqlOracleDataColumns)
 
-	if _, err := od.Connection.Exec(ctx, query, oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MatchedSpecIds,
-		oracleData.ExternalData.Data.BroadcastAt, oracleData.ExternalData.Data.TxHash, oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum); err != nil {
+	if _, err := od.Connection.Exec(
+		ctx, query,
+		oracleData.ExternalData.Data.Signers, oracleData.ExternalData.Data.Data, oracleData.ExternalData.Data.MetaData,
+		oracleData.ExternalData.Data.BroadcastAt,
+		oracleData.ExternalData.Data.Error, oracleData.ExternalData.Data.TxHash,
+		oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum,
+	); err != nil {
 		err = fmt.Errorf("could not insert oracle data into database: %w", err)
 		return err
 	}
+
+	query2 := "insert into oracle_data_oracle_specs(vega_time, seq_num, spec_id) values ($1, $2, unnest($3::bytea[]))"
+	if _, err := od.Connection.Exec(
+		ctx, query2,
+		oracleData.ExternalData.Data.VegaTime, oracleData.ExternalData.Data.SeqNum, oracleData.ExternalData.Data.MatchedSpecIds,
+	); err != nil {
+		err = fmt.Errorf("could not insert oracle data join into database: %w", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -66,7 +106,7 @@ func (od *OracleData) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 	defer metrics.StartSQLQuery("OracleData", "GetByTxHash")()
 
 	var data []entities.Data
-	query := fmt.Sprintf(`SELECT %s FROM oracle_data WHERE tx_hash = $1`, sqlOracleDataColumns)
+	query := fmt.Sprintf(`%s WHERE tx_hash = $1`, oracleDataQuery)
 	err := pgxscan.Select(ctx, od.Connection, &data, query, txHash)
 	if err != nil {
 		return nil, err
@@ -84,8 +124,10 @@ func scannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
 					Data: &entities.Data{
 						Signers:        s.Signers,
 						Data:           s.Data,
+						MetaData:       s.MetaData,
 						MatchedSpecIds: s.MatchedSpecIds,
 						BroadcastAt:    s.BroadcastAt,
+						Error:          s.Error,
 						TxHash:         s.TxHash,
 						VegaTime:       s.VegaTime,
 						SeqNum:         s.SeqNum,
@@ -110,14 +152,16 @@ func listOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection
 		err      error
 	)
 
-	query := ""
+	query := oracleDataQuery
+
 	if len(id) > 0 {
 		specID := entities.SpecID(id)
-		query = fmt.Sprintf(`select %s
-	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
-	} else {
-		query = fmt.Sprintf(`select %s
-	from oracle_data`, sqlOracleDataColumns)
+
+		query = fmt.Sprintf(`%s 
+		WHERE EXISTS (SELECT 1 from  oracle_data_oracle_specs ods
+		  WHERE  od.vega_time = ods.vega_time
+		  AND    od.seq_num = ods.seq_num
+		  AND    ods.spec_id=%s)`, query, nextBindVar(&bindVars, specID))
 	}
 
 	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)

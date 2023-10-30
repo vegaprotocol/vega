@@ -1,7 +1,9 @@
 Feature: check pegged GTT and GTC in auction
 
   Background:
-
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 1.0              | 20s         | 1.0            |  
     Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
@@ -16,11 +18,11 @@ Feature: check pegged GTT and GTC in auction
     And the following network parameters are set:
       | name                              | value |
       | market.auction.minimumDuration    | 1     |
-      | market.stake.target.scalingFactor | 1     |
       | limits.markets.maxPeggedOrders    | 1500  |
+      | limits.markets.maxPeggedOrders    | 4     |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
 
   Scenario: 001, Pegged GTC (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-017
     Given the parties deposit on asset's general account the following amount:
@@ -33,9 +35,13 @@ Feature: check pegged GTT and GTC in auction
 
     # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC19 | 43 | 1 | buy  | BID | 43 | 10 |
+      | party1 | ETH/DEC19 | 24 | 1 | sell | ASK | 24 | 10 |
 
     # get out of auction
     When the parties place the following orders:
@@ -76,12 +82,12 @@ Feature: check pegged GTT and GTC in auction
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
+
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 122   | 0      |
-      | sell | 120   | 20     |
-      | buy  | 80    | 20     |
-      | buy  | 76    | 0      |
+      | sell | 120 | 20 |
+      | buy  | 120 | 20 |
+      | buy  | 80  | 20 |
 
 
   Scenario: 002, Pegged GTT (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-016
@@ -95,10 +101,14 @@ Feature: check pegged GTT and GTC in auction
 
     # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | sell | ASK              | 50         | 10     | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party1 | ETH/DEC19 | 43 | 1 | buy  | BID | 43 | 10 |
+      | party1 | ETH/DEC19 | 24 | 1 | sell | ASK | 24 | 10 |
+ 
     # get out of auction
     When the parties place the following orders:
       | party     | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |

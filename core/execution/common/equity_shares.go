@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
@@ -88,9 +91,21 @@ func (es *EquityShares) RollbackParentELS() {
 	es.lps = make(map[string]*lp, len(current))
 	es.totalPStake, es.totalVStake = num.DecimalZero(), num.DecimalZero()
 	// now add the commitments one by one as if they were just made
-	for pid, els := range current {
+
+	// make the iteration over parties deterministic
+	pids := make([]string, 0, len(current))
+	for k := range current {
+		pids = append(pids, k)
+	}
+	sort.Strings(pids)
+
+	for _, pid := range pids {
+		els := current[pid]
 		update, _ := num.UintFromDecimal(els.stake)
 		es.SetPartyStake(pid, update)
+	}
+	if len(pids) > 0 {
+		es.ResetAvgToLP(pids[len(pids)-1])
 	}
 }
 
@@ -102,7 +117,7 @@ func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
 			AverageScore:          ls[k].String(),
-			VirtualStake:          v.vStake.String(),
+			VirtualStake:          v.vStake.StringFixed(16),
 		})
 	}
 
@@ -127,12 +142,11 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	}
 	es.openingAuctionEnded = true
 	es.r = num.DecimalZero()
+	// force recalc of vStake, ensuring ELS will be set properly
+	es.UpdateVStake()
 }
 
 func (es *EquityShares) UpdateVStake() {
-	if es.r.IsZero() {
-		return
-	}
 	total := num.DecimalZero()
 	factor := num.DecimalFromFloat(1.0).Add(es.r)
 	recalc := false
@@ -140,12 +154,15 @@ func (es *EquityShares) UpdateVStake() {
 		vStake := num.MaxD(v.stake, v.vStake.Mul(factor))
 		v.vStake = vStake
 		total = total.Add(vStake)
+		if !recalc && v.share.IsZero() {
+			recalc = true
+		}
 	}
-	// some vStake changed, force recalc of ELS values.
-	if !es.totalVStake.Equals(total) {
+	if !total.Equal(es.totalVStake) {
+		// some vStake changed, force recalc of ELS values.
+		es.totalVStake = total
 		recalc = true
 	}
-	es.totalVStake = total
 	if recalc {
 		es.updateAllELS()
 	}
@@ -177,6 +194,13 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 	es.UpdateVStake()
 	es.mvp = avg
 	return es
+}
+
+func (es *EquityShares) ResetAvgToLP(id string) {
+	avg := es.lps[id].avg
+	for _, lp := range es.lps {
+		lp.avg = avg
+	}
 }
 
 // SetPartyStake sets LP values for a given party.
@@ -215,6 +239,8 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 		v.stake = newStake
 		es.totalVStake = es.totalVStake.Add(v.vStake)
 		es.totalPStake = es.totalPStake.Add(v.stake)
+		// recalculate ELS for this party
+		v.share, _ = es.equity(id)
 		return
 	}
 

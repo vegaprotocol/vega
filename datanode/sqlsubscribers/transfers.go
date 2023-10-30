@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -27,8 +42,14 @@ type TransferEvent interface {
 	TransferFunds() eventspb.Transfer
 }
 
+type TransferFeesEvent interface {
+	events.Event
+	TransferFees() eventspb.TransferFees
+}
+
 type TransferStore interface {
 	Upsert(ctx context.Context, transfer *entities.Transfer) error
+	UpsertFees(ctx context.Context, tf *entities.TransferFees) error
 }
 
 type AccountSource interface {
@@ -50,11 +71,20 @@ func NewTransfer(store TransferStore, accountSource AccountSource) *Transfer {
 }
 
 func (rf *Transfer) Types() []events.Type {
-	return []events.Type{events.TransferEvent}
+	return []events.Type{
+		events.TransferEvent,
+		events.TransferFeesEvent,
+	}
 }
 
 func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
-	return rf.consume(ctx, evt.(TransferEvent))
+	switch te := evt.(type) {
+	case TransferEvent:
+		return rf.consume(ctx, te)
+	case TransferFeesEvent:
+		return rf.handleFees(ctx, te)
+	}
+	return errors.New("unsupported event")
 }
 
 func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
@@ -65,4 +95,10 @@ func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 	}
 
 	return errors.Wrap(rf.store.Upsert(ctx, record), "inserting transfer into to SQL store failed")
+}
+
+func (rf *Transfer) handleFees(ctx context.Context, e TransferFeesEvent) error {
+	tf := e.TransferFees()
+	rec := entities.TransferFeesFromProto(&tf, rf.vegaTime)
+	return errors.Wrap(rf.store.UpsertFees(ctx, rec), "inserting transfer fee into SQL store failed")
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package broker
 
 import (
@@ -32,9 +47,10 @@ func NewBufferFilesEventSource(bufferFilesDir string, timeBetweenBlocks time.Dur
 ) {
 	var archiveFiles []fs.FileInfo
 	err := filepath.Walk(bufferFilesDir, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			archiveFiles = append(archiveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		archiveFiles = append(archiveFiles, info)
 		return nil
 	})
 	if err != nil {
@@ -99,7 +115,7 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 		case <-ctx.Done():
 			return nil
 		default:
-			rawEvent, _, read, err := readRawEvent(eventFile, offset)
+			rawEvent, _, read, err := ReadRawEvent(eventFile, offset)
 			if err != nil {
 				return fmt.Errorf("failed to read buffered event:%w", err)
 			}

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -76,8 +91,7 @@ func assetsEqual(t *testing.T, expected, actual entities.Asset) {
 // it had been updated but before the transaction was committed led to a poisoned cache that
 // returned stale values.
 func TestAssetCache(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
@@ -119,8 +133,7 @@ func TestAssetCache(t *testing.T) {
 }
 
 func TestAsset(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
@@ -188,8 +201,7 @@ func TestAssets_GetAllWithCursorPagination(t *testing.T) {
 }
 
 func testAssetsPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 
@@ -208,8 +220,7 @@ func testAssetsPaginationNoPagination(t *testing.T) {
 }
 
 func testAssetPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 
@@ -229,8 +240,7 @@ func testAssetPaginationFirst(t *testing.T) {
 }
 
 func testAssetPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 
@@ -250,8 +260,7 @@ func testAssetPaginationLast(t *testing.T) {
 }
 
 func testAssetPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 
@@ -273,8 +282,7 @@ func testAssetPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testAssetPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 
@@ -296,8 +304,7 @@ func testAssetPaginationLastAndBefore(t *testing.T) {
 }
 
 func testAssetsPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
@@ -317,8 +324,7 @@ func testAssetsPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
@@ -339,8 +345,7 @@ func testAssetPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
@@ -361,8 +366,7 @@ func testAssetPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)
@@ -385,8 +389,7 @@ func testAssetPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testAssetPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	as, assets := setupAssetPaginationTest(t, ctx)
 	assets = entities.ReverseSlice(assets)

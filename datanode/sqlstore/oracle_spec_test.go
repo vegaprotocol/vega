@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -18,15 +33,17 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestOracleSpec(t *testing.T) {
@@ -46,8 +63,8 @@ func setupOracleSpecTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleSpec, 
 }
 
 func testInsertIntoNewBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -63,11 +80,18 @@ func testInsertIntoNewBlock(t *testing.T) {
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
+
+	proto = specProtos[4]
+	data = entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 2, rowCount)
 }
 
 func testUpdateExistingInBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -86,11 +110,21 @@ func testUpdateExistingInBlock(t *testing.T) {
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 1, rowCount)
+
+	proto = specProtos[4]
+	data = entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	data.ExternalDataSourceSpec.Spec.Status = entities.OracleSpecDeactivated
+	assert.NoError(t, os.Upsert(ctx, data))
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 2, rowCount)
 }
 
 func testGetSpecByID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -106,7 +140,7 @@ func testGetSpecByID(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 3, rowCount)
+	assert.Equal(t, 6, rowCount)
 
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
@@ -118,11 +152,29 @@ func testGetSpecByID(t *testing.T) {
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
 	s := got.ExternalDataSourceSpec.Spec
 	assert.Equal(t, want, s)
+
+	got, err = os.GetSpecByID(ctx, "beef000d")
+	require.NoError(t, err)
+
+	want = entities.DataSourceSpecFromProto(specProtos[4].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
+	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
+	s = got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
+
+	got, err = os.GetSpecByID(ctx, "beef000e")
+	require.NoError(t, err)
+
+	want = entities.DataSourceSpecFromProto(specProtos[5].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
+	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
+	s = got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
 }
 
 func testGetSpecByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, conn := setupOracleSpecTest(t)
 
 	var rowCount int
@@ -141,7 +193,7 @@ func testGetSpecByTxHash(t *testing.T) {
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 3, rowCount)
+	assert.Equal(t, 6, rowCount)
 
 	foundSpecs, err := os.GetByTxHash(ctx, specs[0].ExternalDataSourceSpec.Spec.TxHash)
 	require.NoError(t, err)
@@ -157,9 +209,10 @@ func testGetSpecByTxHash(t *testing.T) {
 }
 
 func getTestSpecs() []*vegapb.OracleSpec {
-	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", types.DataSignerTypeEthAddress)
+	pk1 := dstypes.CreateSignerFromString("b105f00d", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", dstypes.SignerTypeEthAddress)
 
+	timeNow := uint64(time.Now().UnixNano())
 	return []*vegapb.OracleSpec{
 		{
 			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
@@ -168,20 +221,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDETH",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDETH",
+											},
 										},
 									},
 								},
@@ -199,20 +254,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDBTC",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDBTC",
+											},
 										},
 									},
 								},
@@ -230,20 +287,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDSOL",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDSOL",
+											},
 										},
 									},
 								},
@@ -257,16 +316,98 @@ func getTestSpecs() []*vegapb.OracleSpec {
 		{
 			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
 				Spec: &vegapb.DataSourceSpec{
-					Id:        "deadbaad",
+					Id:        "beefbeef",
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeInt,
+						vegapb.DataSourceContentTypeInternalTimeTermination,
 					).SetTimeTriggerConditionConfig(
 						[]*datapb.Condition{
 							{
 								Operator: datapb.Condition_OPERATOR_EQUALS,
 								Value:    fmt.Sprintf("%v", time.Now().UnixNano()),
+							},
+						},
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+				},
+			},
+		},
+		{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
+					Id:        "beef000d",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceContentTypeEthOracle,
+					).SetOracleConfig(
+						&vega.DataSourceDefinitionExternal_EthOracle{
+							EthOracle: &vegapb.EthCallSpec{
+								Address: "some-eth-address",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
+								Args: []*structpb.Value{
+									{
+										Kind: &structpb.Value_StringValue{
+											StringValue: "string-arg",
+										},
+									},
+								},
+								Trigger: &vegapb.EthCallTrigger{
+									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+										TimeTrigger: &vegapb.EthTimeTrigger{
+											Initial: &timeNow,
+										},
+									},
+								},
+								RequiredConfirmations: 256,
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "test-key-name-0",
+											Type: dstypes.SpecPropertyKeyType(2),
+										},
+									},
+								},
+							},
+						},
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+				},
+			},
+		},
+		{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
+					Id:        "beef000e",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceContentTypeEthOracle,
+					).SetOracleConfig(
+						&vega.DataSourceDefinitionExternal_EthOracle{
+							EthOracle: &vegapb.EthCallSpec{
+								Address: "some-eth-address",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
+								// Args: []*structpb.Value{},
+								Trigger: &vegapb.EthCallTrigger{
+									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+										TimeTrigger: &vegapb.EthTimeTrigger{
+											Initial: &timeNow,
+										},
+									},
+								},
+								RequiredConfirmations: 256,
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "test-key-name-0",
+											Type: dstypes.SpecPropertyKeyType(2),
+										},
+									},
+								},
 							},
 						},
 					),
@@ -299,7 +440,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, ctx, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey := types.CreateSignerFromString(helpers.GenerateID(), types.DataSignerTypePubKey)
+		pubKey := dstypes.CreateSignerFromString(helpers.GenerateID(), dstypes.SignerTypePubKey)
 
 		spec := entities.OracleSpec{
 			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
@@ -307,7 +448,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 					ID:        entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 					CreatedAt: time.Now().Truncate(time.Microsecond),
 					UpdatedAt: time.Now().Truncate(time.Microsecond),
-					Data: entities.DataSourceDefinition{
+					Data: &entities.DataSourceDefinition{
 						DataSourceDefinition: &vegapb.DataSourceDefinition{
 							SourceType: &vegapb.DataSourceDefinition_External{
 								External: &vegapb.DataSourceDefinitionExternal{
@@ -342,8 +483,8 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 }
 
 func testOracleSpecPaginationGetSpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
 
@@ -360,8 +501,7 @@ func testOracleSpecPaginationGetSpecID(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -378,8 +518,7 @@ func testOracleSpecPaginationNoPagination(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -400,8 +539,7 @@ func testOracleSpecPaginationFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -422,8 +560,7 @@ func testOracleSpecPaginationLast(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -445,8 +582,7 @@ func testOracleSpecPaginationFirstAfter(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := createOracleSpecPaginationTestData(t, ctx, bs, os)
@@ -468,8 +604,7 @@ func testOracleSpecPaginationLastBefore(t *testing.T) {
 }
 
 func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -486,8 +621,7 @@ func testOracleSpecPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -508,8 +642,7 @@ func testOracleSpecPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -530,8 +663,7 @@ func testOracleSpecPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))
@@ -553,8 +685,7 @@ func testOracleSpecPaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testOracleSpecPaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, os, _ := setupOracleSpecTest(t)
 	specs := entities.ReverseSlice(createOracleSpecPaginationTestData(t, ctx, bs, os))

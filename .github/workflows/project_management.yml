@@ -1,21 +1,22 @@
+# yamllint disable rule:line-length
+
 ---
 
 
 name: "Project Board Automation"
 
 "on":
-  pull_request_target:
+  pull_request:
     branches: [develop, master]
     types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request_review:
     types: [submitted]
 
-# Configure the project specific variables
 env:
   ORGANIZATION: vegaprotocol
   PROJECT_NUMBER: 106
   PR_URL: ${{ github.event.pull_request.html_url }}
-  GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+  GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
   EXCLUDE_LABEL: 'no-issue'
   IN_PROGRESS_COLUMN_NAME: '"In Progress"'
   REVIEW_REQUIRED_COLUMN_NAME: '"Waiting Review"'
@@ -23,7 +24,7 @@ env:
   APPROVED_COLUMN_NAME: '"Approved"'
   MERGED_COLUMN_NAME: '"Merged"'
   DONE_COLUMN_NAME: '"Done"'
-  ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
+  ITERATION_FIELD_NAME: 'Sprint'
   USER: ${{ github.actor }}
 
 concurrency:
@@ -36,14 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-      #######
-      ## Gather data, reopen closed issues and ensure work item is on the board
-      #######
-      # yamllint disable rule:line-length
+
       - name: "Get linked issue id and state"
         id: linked-issue
         env:
-          GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+          GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -72,7 +70,7 @@ jobs:
         if: |
           env.LINKED_ISSUE_ID != '' &&
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) != true
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@v6.4.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -82,7 +80,7 @@ jobs:
         if: |
           steps.bot-pr.outcome == 'success' || env.LINKED_ISSUE_ID == '' &&
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@v6.4.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -90,7 +88,7 @@ jobs:
       - name: "Fail if no linked issue or exclusion label"
         id: exclude-linked-error
         if: steps.linked.outcome == 'skipped' && steps.exclude-linked.outcome == 'skipped'
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@v6.4.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -99,7 +97,7 @@ jobs:
       - name: "Fail if linked issue AND exclusion label"
         id: linked-and-nochangelog
         if: steps.linked.outcome == 'success' && steps.exclude-linked.outcome == 'success'
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@v6.4.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -152,6 +150,7 @@ jobs:
           echo 'DONE_COLUMN='$(jq --arg done ${{ env.DONE_COLUMN_NAME }} '.data.organization.projectV2.fields.nodes[] | select(.name== "Status") | .options[] | select(.name==$done) | .id' data.json) >> $GITHUB_ENV
           echo 'ITERATION_FIELD_ID='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .id' data.json) >> $GITHUB_ENV
           echo 'CURRENT_ITERATION='$(jq --arg iteration_field_name $ITERATION_FIELD_NAME '.data.organization.projectV2.fields.nodes[] | select(.name==$iteration_field_name) | .configuration.iterations[0] | .id' data.json) >> $GITHUB_ENV
+
       - name: "Get PR state, review decision and author"
         id: pr-status
         run: |
@@ -260,12 +259,9 @@ jobs:
                 }
               }
             }' -f clientMutationId=$AUTHOR_ID -f issueId=$LINKED_ISSUE_ID
-      # check the env vars before the update to help debugging
+
       - run: env
 
-      #######
-      ## Set the variables ready to update work item on project board
-      #######
       - name: "Set draft work item for progress column"
         id: draft-pr
         if: github.event.pull_request.draft == 'true' || env.IS_PR_DRAFT == 'true'
@@ -328,9 +324,7 @@ jobs:
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.IN_PROGRESS_COLUMN }} >> $GITHUB_ENV
-      #######
-      ## Take the set item fields, update and move the item on the board
-      #######
+
       - name: Move project board item
         run: |
           gh api graphql -f query='
@@ -382,14 +376,14 @@ jobs:
     steps:
       - name: "Checkout"
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
       - name: "Check changelog entry"
         id: check-changelog
-        uses: Zomzog/changelog-checker@v1.2.0
+        uses: Zomzog/changelog-checker@v1.3.0
         with:
           fileName: CHANGELOG.md
           noChangelogLabel: "no-changelog"
           checkNotification: Simple
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # yamllint enable rule:line-length
+# yamllint enable rule:line-length

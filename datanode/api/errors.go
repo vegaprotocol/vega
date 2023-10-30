@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package api
 
@@ -23,6 +26,8 @@ import (
 
 // API Errors and descriptions.
 var (
+	// ErrNoTrustedProxy indactes a forwarded request that did not pass through a trusted proxy.
+	ErrNoTrustedProxy = errors.New("forwarded requests need to pass through a trusted proxy")
 	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
 	// ErrNotAValidVegaID signals an invalid id.
@@ -99,6 +104,8 @@ var (
 	// ErrNegativeOrderVersion is returned when a request is made for an
 	// order with a negative version.
 	ErrNegativeOrderVersion = newInvalidArgumentError("negative order version")
+	// ErrLastPaginationNotSupported is returned when last pagination is not supported.
+	ErrLastPaginationNotSupported = newInvalidArgumentError("'last' pagination is not supported")
 
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
@@ -186,6 +193,7 @@ var (
 	ErrDepositServiceGet = errors.New("failed to get deposit")
 	// TransferService...
 	ErrTransferServiceGet = errors.New("failed to get transfer")
+	ErrMissingTransferID  = errors.New("missing transfer id")
 	// NetworkLimits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// ErrGetNetworkParameters is returned when the network parameters cannot be retrieved.
@@ -211,7 +219,7 @@ var (
 	ErrCopyHistorySegmentToFile            = errors.New("failed to copy history segment to file")
 	ErrGetIpfsAddress                      = errors.New("failed to get node's ipfs address")
 	ErrNetworkHistoryNoTableName           = errors.New("no table name for network history supplied")
-	ErrNetworkHistoryGetContiguousSegments = errors.New("failed to get contiguous history segments")
+	ErrNetworkHistoryGetContiguousSegments = newInvalidArgumentError("could not to get contiguous history segments")
 	ErrNetworkHistoryOpeningSegment        = errors.New("failed to open network history segment file")
 	ErrNetworkHistoryExtractingSegment     = errors.New("failed to extract data from network history segment file")
 	ErrNetworkHistoryCreatingZipFile       = errors.New("failed to create zip file writer for network history segment")
@@ -227,7 +235,8 @@ var (
 	ErrMultiSigServiceGetAdded   = errors.New("failed to get added multisig events")
 	ErrMultiSigServiceGetRemoved = errors.New("failed to get removed multisig events")
 	// LiquidityProvisionService...
-	ErrLiquidityProvisionServiceGet = errors.New("failed to get liquidity provision")
+	ErrLiquidityProvisionServiceGet          = errors.New("failed to get liquidity provision")
+	ErrLiquidityProvisionServiceGetProviders = errors.New("failed to get liquidity providers")
 	// CheckpointService...
 	ErrCheckpointServiceGet = errors.New("failed to get checkpoint")
 	// StakeLinkingService...
@@ -289,6 +298,32 @@ var (
 	// TxHashes...
 	ErrMissingEmptyTxHash = newInvalidArgumentError("missing or empty transaction hash")
 	ErrInvalidTxHash      = newInvalidArgumentError("not a valid transaction hash")
+
+	// Funding Periods.
+	ErrListFundingPeriod           = errors.New("failed to get funding periods")
+	ErrListFundingPeriodDataPoints = errors.New("failed to get funding period data points")
+
+	// Referral Programs.
+	ErrGetCurrentReferralProgram = errors.New("failed to get current referral program")
+	ErrGetReferralSetStats       = errors.New("failed to get referral set stats")
+
+	// Fees stats.
+	ErrGetFeesStats             = errors.New("failed to get current fees stats")
+	ErrFeesStatsRequest         = errors.New("marketID or assetID must be provided")
+	ErrGetFeesStatsForParty     = errors.New("failed to get current fees stats for party")
+	ErrFeesStatsForPartyRequest = errors.New("fromEpoch must be set when toEpoch is set")
+
+	// Teams.
+	ErrListTeams              = errors.New("failed to list teams")
+	ErrListTeamReferees       = errors.New("failed to list team referees")
+	ErrListTeamRefereeHistory = errors.New("failed to list team referee history")
+
+	// Volume discount Programs.
+	ErrGetCurrentVolumeDiscountProgram = errors.New("failed to get current volume discount program")
+	ErrGetVolumeDiscountStats          = errors.New("failed to get volume discount stats")
+
+	// Paid liquidity fees.
+	ErrListPaidLiquidityFees = errors.New("failed to list paid liquidity fees")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

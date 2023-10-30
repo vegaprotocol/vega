@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,6 +32,9 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -60,7 +78,7 @@ func addTestProposal(
 		RequiredLPParticipation: nil,
 		TxHash:                  generateTxHash(),
 	}
-	ps.Add(ctx, p)
+	assert.NoError(t, ps.Add(ctx, p))
 	return p
 }
 
@@ -89,8 +107,8 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 }
 
 func TestProposals(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -161,6 +179,14 @@ func TestProposals(t *testing.T) {
 		require.NoError(t, err)
 		assertProposalsMatch(t, expected, actual)
 	})
+
+	t.Run("Add with proposal error", func(t *testing.T) {
+		propError := entities.ProposalInvalidPerpetualProduct
+		expected := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
+		actual, err := propStore.GetByID(ctx, string(expected.ID))
+		require.NoError(t, err)
+		assert.Equal(t, expected.Reason, actual.Reason)
+	})
 }
 
 func TestProposalCursorPagination(t *testing.T) {
@@ -193,8 +219,7 @@ func TestProposalCursorPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -236,8 +261,7 @@ func testProposalCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -263,8 +287,7 @@ func testProposalCursorPaginationWithFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -296,8 +319,7 @@ func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -323,8 +345,7 @@ func testProposalCursorPaginationWithLast(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -356,8 +377,7 @@ func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -399,8 +419,7 @@ func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -426,8 +445,7 @@ func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -459,8 +477,7 @@ func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -486,8 +503,7 @@ func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -519,8 +535,7 @@ func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -553,8 +568,7 @@ func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -581,8 +595,7 @@ func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -610,8 +623,7 @@ func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -638,8 +650,7 @@ func testProposalCursorPaginationWithLastByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -669,8 +680,7 @@ func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -704,8 +714,7 @@ func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -733,8 +742,7 @@ func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -763,8 +771,7 @@ func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -792,8 +799,7 @@ func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, parties := createPaginationTestProposals(t, ctx, ps)
@@ -824,8 +830,7 @@ func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.
 }
 
 func testProposalCursorPaginationOpenOnly(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -856,8 +861,7 @@ func testProposalCursorPaginationOpenOnly(t *testing.T) {
 }
 
 func testProposalCursorPaginationGivenState(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewProposals(connectionSource)
 	proposals, _ := createPaginationTestProposals(t, ctx, ps)
@@ -959,8 +963,7 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 }
 
 func TestProposeSuccessorMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	partyStore := sqlstore.NewParties(connectionSource)
 	propStore := sqlstore.NewProposals(connectionSource)
@@ -979,7 +982,6 @@ func TestProposeSuccessorMarket(t *testing.T) {
 			LiquidityMonitoringParameters: nil,
 			RiskParameters:                nil,
 			PositionDecimalPlaces:         0,
-			LpPriceRange:                  "",
 			LinearSlippageFactor:          "",
 			QuadraticSlippageFactor:       "",
 			Successor:                     nil,
@@ -994,7 +996,6 @@ func TestProposeSuccessorMarket(t *testing.T) {
 			LiquidityMonitoringParameters: nil,
 			RiskParameters:                nil,
 			PositionDecimalPlaces:         0,
-			LpPriceRange:                  "",
 			LinearSlippageFactor:          "",
 			QuadraticSlippageFactor:       "",
 			Successor: &vega.SuccessorConfiguration{
@@ -1021,5 +1022,364 @@ func TestProposeSuccessorMarket(t *testing.T) {
 		got, err = propStore.GetByID(ctx, prop2.ID.String())
 		require.NoError(t, err)
 		assertProposalMatch(t, want, got)
+	})
+}
+
+func getNewProposal(partyID string) *vega.Proposal {
+	return &vega.Proposal{
+		Id:        helpers.GenerateID(),
+		Reference: helpers.GenerateID(),
+		PartyId:   partyID,
+		State:     vega.Proposal_STATE_OPEN,
+		Timestamp: time.Now().UnixNano(),
+		Rationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"},
+		Terms: &vega.ProposalTerms{
+			Change: &vega.ProposalTerms_NewMarket{
+				NewMarket: &vega.NewMarket{
+					Changes: &vega.NewMarketConfiguration{
+						Instrument: &vega.InstrumentConfiguration{},
+					},
+				},
+			},
+		},
+	}
+}
+
+func getNewSpotMarketProposal(partyID string) *vega.Proposal {
+	proposal := getNewProposal(partyID)
+
+	proposal.Terms.Change = &vega.ProposalTerms_NewSpotMarket{
+		NewSpotMarket: &vega.NewSpotMarket{
+			Changes: &vega.NewSpotMarketConfiguration{
+				Instrument: &vega.InstrumentConfiguration{
+					Product: &vega.InstrumentConfiguration_Spot{
+						Spot: &vega.SpotProduct{
+							BaseAsset:  "USD",
+							QuoteAsset: "ETH",
+							Name:       "ETH/USD",
+						},
+					},
+				},
+			},
+		},
+	}
+	return proposal
+}
+
+func getSpotMarketUpdateProposal(partyID string) *vega.Proposal {
+	proposal := getNewProposal(partyID)
+	proposal.Terms.Change = &vega.ProposalTerms_UpdateSpotMarket{
+		UpdateSpotMarket: &vega.UpdateSpotMarket{
+			MarketId: "USD/ETH",
+			Changes: &vega.UpdateSpotMarketConfiguration{
+				Metadata: []string{"ETH", "USD"},
+				PriceMonitoringParameters: &vega.PriceMonitoringParameters{
+					Triggers: []*vega.PriceMonitoringTrigger{
+						{
+							Horizon:          1,
+							Probability:      "0.5",
+							AuctionExtension: 0,
+						},
+					},
+				},
+				TargetStakeParameters: &vega.TargetStakeParameters{
+					TimeWindow:    1,
+					ScalingFactor: 1,
+				},
+				RiskParameters: &vega.UpdateSpotMarketConfiguration_Simple{
+					Simple: &vega.SimpleModelParams{
+						FactorLong:           1,
+						FactorShort:          1,
+						MaxMoveUp:            1,
+						MinMoveDown:          1,
+						ProbabilityOfTrading: 1,
+					},
+				},
+				SlaParams: &vega.LiquiditySLAParameters{
+					PriceRange:                  "",
+					CommitmentMinTimeFraction:   "0.5",
+					PerformanceHysteresisEpochs: 2,
+					SlaCompetitionFactor:        "0.75",
+				},
+			},
+		},
+	}
+	return proposal
+}
+
+func getNewPerpetualMarketProposal(partyID string) *vega.Proposal {
+	pk := dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)
+	proposal := getNewProposal(partyID)
+
+	proposal.Terms.Change = &vega.ProposalTerms_NewMarket{
+		NewMarket: &vega.NewMarket{
+			Changes: &vega.NewMarketConfiguration{
+				Instrument: &vega.InstrumentConfiguration{
+					Product: &vega.InstrumentConfiguration_Perpetual{
+						Perpetual: &vega.PerpetualProduct{
+							SettlementAsset:     "Ethereum/Ether",
+							QuoteName:           "ETH-230929",
+							MarginFundingFactor: "0.5",
+							InterestRate:        "0.0125",
+							ClampLowerBound:     "0.2",
+							ClampUpperBound:     "0.8",
+							DataSourceSpecForSettlementSchedule: &vega.DataSourceDefinition{
+								SourceType: &vega.DataSourceDefinition_External{
+									External: &vega.DataSourceDefinitionExternal{
+										SourceType: &vega.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vega.DataSourceSpecConfiguration{
+												Signers: []*datav1.Signer{pk.IntoProto()},
+												Filters: []*datav1.Filter{
+													{
+														Key: &datav1.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datav1.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datav1.Condition{},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							DataSourceSpecForSettlementData: &vega.DataSourceDefinition{
+								SourceType: &vega.DataSourceDefinition_Internal{
+									Internal: &vega.DataSourceDefinitionInternal{
+										SourceType: &vega.DataSourceDefinitionInternal_Time{
+											Time: &vega.DataSourceSpecConfigurationTime{
+												Conditions: []*datav1.Condition{
+													{
+														Operator: datav1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														Value:    "2023-09-29T00:00:00.000000000Z",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							DataSourceSpecBinding: &vega.DataSourceSpecToPerpetualBinding{
+								SettlementDataProperty:     "prices.ETH.value",
+								SettlementScheduleProperty: "2023-09-29T00:00:00.000000000Z",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return proposal
+}
+
+func getPerpetualMarketUpdateProposal(partyID string) *vega.Proposal {
+	pk := dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)
+	proposal := getNewProposal(partyID)
+
+	proposal.Terms.Change = &vega.ProposalTerms_UpdateMarket{
+		UpdateMarket: &vega.UpdateMarket{
+			Changes: &vega.UpdateMarketConfiguration{
+				Instrument: &vega.UpdateInstrumentConfiguration{
+					Product: &vega.UpdateInstrumentConfiguration_Perpetual{
+						Perpetual: &vega.UpdatePerpetualProduct{
+							QuoteName:           "ETH-230929",
+							MarginFundingFactor: "0.6",
+							InterestRate:        "0.015",
+							ClampLowerBound:     "0.1",
+							ClampUpperBound:     "0.9",
+							DataSourceSpecForSettlementSchedule: &vega.DataSourceDefinition{
+								SourceType: &vega.DataSourceDefinition_External{
+									External: &vega.DataSourceDefinitionExternal{
+										SourceType: &vega.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vega.DataSourceSpecConfiguration{
+												Signers: []*datav1.Signer{pk.IntoProto()},
+												Filters: []*datav1.Filter{
+													{
+														Key: &datav1.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datav1.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datav1.Condition{},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							DataSourceSpecForSettlementData: &vega.DataSourceDefinition{
+								SourceType: &vega.DataSourceDefinition_Internal{
+									Internal: &vega.DataSourceDefinitionInternal{
+										SourceType: &vega.DataSourceDefinitionInternal_Time{
+											Time: &vega.DataSourceSpecConfigurationTime{
+												Conditions: []*datav1.Condition{
+													{
+														Operator: datav1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														Value:    "2023-09-29T00:00:00.000000000Z",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							DataSourceSpecBinding: &vega.DataSourceSpecToPerpetualBinding{
+								SettlementDataProperty:     "prices.ETH.value",
+								SettlementScheduleProperty: "2023-09-29T00:00:00.000000000Z",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return proposal
+}
+
+func setupProposalTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, *sqlstore.Proposals) {
+	t.Helper()
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+
+	return blockStore, partyStore, propStore
+}
+
+func TestSpotMarketProposal(t *testing.T) {
+	t.Run("Should save and retrieve new spot market proposals to the store", testShouldSaveNewSpotMarketProposalsToStore)
+	t.Run("Should save amd retrieve update spot market proposals to the store", testShouldSaveUpdateSpotMarketProposalsToStore)
+}
+
+func testShouldSaveNewSpotMarketProposalsToStore(t *testing.T) {
+	bs, pts, ps := setupProposalTest(t)
+
+	ctx := tempTransaction(t)
+
+	block1 := addTestBlock(t, ctx, bs)
+	party1 := addTestParty(t, ctx, pts, block1)
+
+	proposalProto := getNewSpotMarketProposal(party1.ID.String())
+	proposal, err := entities.ProposalFromProto(proposalProto, generateTxHash())
+	require.NoError(t, err)
+	t.Run("Add should save the spot market proposal to the database", func(t *testing.T) {
+		err = ps.Add(ctx, proposal)
+		require.NoError(t, err)
+	})
+
+	var savedProp []entities.Proposal
+	t.Run("Get should return the saved spot market proposal", func(t *testing.T) {
+		savedProp, _, err = ps.Get(ctx, nil, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.Len(t, savedProp, 1)
+	})
+
+	t.Run("Proposal terms should be for a new spot market", func(t *testing.T) {
+		savedToProto := savedProp[0].ToProto()
+		assert.Nil(t, savedToProto.Terms.GetUpdateSpotMarket())
+		assert.NotNil(t, savedToProto.Terms.GetNewSpotMarket())
+	})
+}
+
+func testShouldSaveUpdateSpotMarketProposalsToStore(t *testing.T) {
+	bs, pts, ps := setupProposalTest(t)
+
+	ctx := tempTransaction(t)
+
+	block1 := addTestBlock(t, ctx, bs)
+	party1 := addTestParty(t, ctx, pts, block1)
+
+	proposalProto := getSpotMarketUpdateProposal(party1.ID.String())
+	proposal, err := entities.ProposalFromProto(proposalProto, generateTxHash())
+	require.NoError(t, err)
+	t.Run("Add should save the spot market proposal to the database", func(t *testing.T) {
+		err = ps.Add(ctx, proposal)
+		require.NoError(t, err)
+	})
+
+	var savedProp []entities.Proposal
+	t.Run("Get should return the saved spot market proposal", func(t *testing.T) {
+		savedProp, _, err = ps.Get(ctx, nil, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.Len(t, savedProp, 1)
+	})
+
+	t.Run("Proposal terms should be for a new spot market", func(t *testing.T) {
+		savedToProto := savedProp[0].ToProto()
+		assert.Nil(t, savedToProto.Terms.GetUpdateMarket())
+		assert.NotNil(t, savedToProto.Terms.GetUpdateSpotMarket())
+	})
+}
+
+func TestPerpetualMarketProposal(t *testing.T) {
+	t.Run("Should save and retrieve new perpetual market proposals to the store", testShouldSaveNewPerpetualMarketProposalsToStore)
+	t.Run("Should save and retrieve update perpetual market proposals to the store", testShouldUpdateSavePerpetualMarketProposalsToStore)
+}
+
+func testShouldSaveNewPerpetualMarketProposalsToStore(t *testing.T) {
+	bs, pts, ps := setupProposalTest(t)
+
+	ctx := tempTransaction(t)
+
+	block1 := addTestBlock(t, ctx, bs)
+	party1 := addTestParty(t, ctx, pts, block1)
+
+	proposalProto := getNewPerpetualMarketProposal(party1.ID.String())
+	proposal, err := entities.ProposalFromProto(proposalProto, generateTxHash())
+	require.NoError(t, err)
+	t.Run("Add should create a new perps market proposal  in the database", func(t *testing.T) {
+		err = ps.Add(ctx, proposal)
+		require.NoError(t, err)
+	})
+
+	var savedProp []entities.Proposal
+	t.Run("Get should return the perps market proposal from the database", func(t *testing.T) {
+		savedProp, _, err = ps.Get(ctx, nil, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.Len(t, savedProp, 1)
+	})
+
+	t.Run("The saved proposal's instrument should be a perp and not a future or spot", func(t *testing.T) {
+		savedToProto := savedProp[0].ToProto()
+		assert.Nil(t, savedToProto.Terms.GetNewSpotMarket())
+		assert.NotNil(t, savedToProto.Terms.GetNewMarket())
+		future := savedToProto.Terms.GetNewMarket().GetChanges().GetInstrument().GetFuture()
+		assert.Nil(t, future)
+		perps := savedToProto.Terms.GetNewMarket().GetChanges().GetInstrument().GetPerpetual()
+		assert.NotNil(t, perps)
+	})
+}
+
+func testShouldUpdateSavePerpetualMarketProposalsToStore(t *testing.T) {
+	bs, pts, ps := setupProposalTest(t)
+
+	ctx := tempTransaction(t)
+
+	block1 := addTestBlock(t, ctx, bs)
+	party1 := addTestParty(t, ctx, pts, block1)
+
+	proposalProto := getPerpetualMarketUpdateProposal(party1.ID.String())
+	proposal, err := entities.ProposalFromProto(proposalProto, generateTxHash())
+	require.NoError(t, err)
+	t.Run("Add should create a update perps market proposal  in the database", func(t *testing.T) {
+		err = ps.Add(ctx, proposal)
+		require.NoError(t, err)
+	})
+
+	var savedProp []entities.Proposal
+	t.Run("Get should return the perps market proposal from the database", func(t *testing.T) {
+		savedProp, _, err = ps.Get(ctx, nil, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		require.Len(t, savedProp, 1)
+	})
+
+	t.Run("The saved proposal's instrument should be a perp and not a future or spot", func(t *testing.T) {
+		savedToProto := savedProp[0].ToProto()
+		assert.Nil(t, savedToProto.Terms.GetNewSpotMarket())
+		assert.NotNil(t, savedToProto.Terms.GetUpdateMarket())
+		future := savedToProto.Terms.GetUpdateMarket().GetChanges().GetInstrument().GetFuture()
+		assert.Nil(t, future)
+		perps := savedToProto.Terms.GetUpdateMarket().GetChanges().GetInstrument().GetPerpetual()
+		assert.NotNil(t, perps)
 	})
 }

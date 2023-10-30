@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2023 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -16,6 +31,8 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -25,7 +42,7 @@ type DataSourceSpec struct {
 	ID        SpecID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Data      DataSourceDefinition
+	Data      *DataSourceDefinition
 	Status    DataSourceSpecStatus
 	TxHash    TxHash
 	VegaTime  time.Time
@@ -38,15 +55,13 @@ func DataSourceSpecFromProto(protoSpec *vegapb.DataSourceSpec, txHash TxHash, ve
 		spec.ID = SpecID(protoSpec.Id)
 		spec.CreatedAt = time.Unix(0, protoSpec.CreatedAt)
 		spec.UpdatedAt = time.Unix(0, protoSpec.UpdatedAt)
-		spec.Data = DataSourceDefinition{}
+		spec.Data = ptr.From(DataSourceDefinition{})
 		spec.Status = DataSourceSpecStatus(protoSpec.Status)
 		spec.TxHash = txHash
 		spec.VegaTime = vegaTime
 
-		if protoSpec.Data != nil {
-			if protoSpec.Data.SourceType != nil {
-				spec.Data = DataSourceDefinition{protoSpec.Data}
-			}
+		if protoSpec.Data != nil && protoSpec.Data.SourceType != nil {
+			spec.Data = &DataSourceDefinition{protoSpec.Data}
 		}
 	}
 
@@ -57,7 +72,7 @@ func (ds *DataSourceSpec) ToProto() *vegapb.DataSourceSpec {
 	protoData := &vegapb.DataSourceSpec{}
 
 	if ds != nil {
-		if ds.Data != (DataSourceDefinition{}) {
+		if ds.Data != nil && *ds.Data != (DataSourceDefinition{}) {
 			protoData.Id = ds.ID.String()
 			protoData.CreatedAt = ds.CreatedAt.UnixNano()
 			protoData.UpdatedAt = ds.UpdatedAt.UnixNano()
@@ -111,7 +126,9 @@ func ExternalDataSourceSpecFromProto(spec *vegapb.ExternalDataSourceSpec, txHash
 	}
 
 	return &ExternalDataSourceSpec{
-		Spec: &DataSourceSpec{},
+		Spec: &DataSourceSpec{
+			Data: ptr.From(DataSourceDefinition{}),
+		},
 	}
 }
 

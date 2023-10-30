@@ -28,6 +28,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | market.auction.minimumDuration               | 1     |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
+      | limits.markets.maxPeggedOrders               | 4     |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -40,9 +41,9 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | 0.2  | 0.1   | 100         | -100          | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
 
   Scenario: Order cannot be placed once the market is expired (0002-STTL-001)
     Given the parties deposit on asset's general account the following amount:
@@ -53,9 +54,13 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | lpprov | ETH   | 100000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 10     | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 10     | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -80,6 +85,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
+  @SLABug
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken (0002-STTL-002, 0002-STTL-007, 0005-COLL-002, 0015-INSR-002)
     Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -94,11 +100,17 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp2 | party-lp | ETH/DEC21 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50         | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -115,18 +127,17 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
 
-    Then the opening auction period ends for market "ETH/DEC19"
-    Then the opening auction period ends for market "ETH/DEC21"
+    When the network moves ahead "2" blocks
 
-    And the mark price should be "1000" for the market "ETH/DEC19"
+    Then the mark price should be "1000" for the market "ETH/DEC19"
 
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC21"
 
-    Then the network moves ahead "2" blocks
+    When the network moves ahead "2" blocks
 
     # The market considered here ("ETH/DEC19") relies on "0xCAFECAFE" oracle, checking that broadcasting events from "0xCAFECAFE1" should have no effect on it apart from insurance pool transfer
     And the oracles broadcast data signed with "0xCAFECAFE1":
@@ -165,7 +176,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "100236000"
 
-    # Close positions by aux parties
+#Close positions by aux parties
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -215,7 +226,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     When the network moves ahead "2" blocks
     Then the cumulated balance for all accounts should be worth "100236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the network treasury balance should be "20000" for the asset "ETH"
+    And the global insurance pool balance should be "20000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool (0002-STTL-additional-tests, 0005-COLL-002, 0015-INSR-002)
@@ -234,11 +245,17 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the cumulated balance for all accounts should be worth "200236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | submission |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp2 | lpprov   | ETH/DEC21 | 30000000          | 0   | submission |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 10     |
+      | lpprov   | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | lpprov   | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50     | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -284,7 +301,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
 
     And the insurance pool balance should be "10000" for the market "ETH/DEC21"
     And the insurance pool balance should be "10000" for the market "ETH/DEC19"
-    And the network treasury balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "ETH"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
@@ -293,7 +310,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the network moves ahead "3" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "15000" for the market "ETH/DEC19"
-    And the network treasury balance should be "5000" for the asset "ETH"
+    And the global insurance pool balance should be "5000" for the asset "ETH"
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
@@ -338,7 +355,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     Then the cumulated balance for all accounts should be worth "200236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the network treasury balance should be "20000" for the asset "ETH"
+    And the global insurance pool balance should be "20000" for the asset "ETH"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses (0002-STTL-008)
     Given the initial insurance pool balance is "1000" for all the markets
@@ -348,11 +365,15 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party2   | ETH   | 1000      |
       | aux1     | ETH   | 100000    |
       | aux2     | ETH   | 100000    |
-      | party-lp | ETH   | 100000000 |
+      | party-lp | ETH | 100000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 10     |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -403,7 +424,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     Then the cumulated balance for all accounts should be worth "100213000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
-    And the network treasury balance should be "42" for the asset "ETH"
+    And the global insurance pool balance should be "42" for the asset "ETH"
     And the insurance pool balance should be "1042" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses (0002-STTL-009)
@@ -418,10 +439,13 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 10     |
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -464,7 +488,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the cumulated balance for all accounts should be worth "102012000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 500 were taken from the insurance pool to cover the losses of party 2, still not enough to cover losses of (1000-42)*2 for party2
-    And the network treasury balance should be "0" for the asset "ETH"
+    And the global insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "500" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed whilst being suspended (due to protective auction) - loss socialisation in action - insurance doesn't covers all losses (0002-STTL-004, 0002-STTL-009)
@@ -480,10 +504,13 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
-
+      | id  | party    | market id | commitment amount | fee | lp type    |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | submission |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party    | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party-lp | ETH/DEC21 | 2         | 1                    | buy  | BID              | 50     | 10     |
+      | party-lp | ETH/DEC21 | 2         | 1                    | sell | ASK              | 50     | 10     |
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | buy  | 1      | 890   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -550,8 +577,8 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -1     | 0              | 0            |
-      | party2 | 1      | 0              | 0            |
+      | party1 | -1     | 0              | 200          |
+      | party2 | 1      | 0              | -200         |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -560,5 +587,5 @@ Feature: Test settlement at expiry (0016-PFUT-012)
 
     And the cumulated balance for all accounts should be worth "102012000"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the network treasury balance should be "250" for the asset "ETH"
+    And the global insurance pool balance should be "250" for the asset "ETH"
     And the insurance pool balance should be "750" for the market "ETH/DEC19"

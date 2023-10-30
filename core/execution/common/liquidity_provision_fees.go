@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
@@ -17,7 +20,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
@@ -60,12 +62,8 @@ func (ft FeeTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 	return ft.totalFeesPerParty
 }
 
-func (m *MarketLiquidity) readyForFeesAllocation(now time.Time) bool {
-	return now.Sub(m.lastFeeDistribution) > m.feeDistributionTimeStep
-}
-
-// allocateFees distributes fee from a market fee account to LP fee accounts.
-func (m *MarketLiquidity) allocateFees(ctx context.Context) error {
+// AllocateFees distributes fee from a market fee account to LP fee accounts.
+func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.marketID, m.asset)
 	if err != nil {
 		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
@@ -91,11 +89,12 @@ func (m *MarketLiquidity) allocateFees(ctx context.Context) error {
 		return nil
 	}
 
-	m.marketActivityTracker.UpdateFeesFromTransfers(m.marketID, feeTransfer.Transfers())
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, feeTransfer)
+	ledgerMovements, err := m.transferFees(ctx, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
+
+	m.liquidityEngine.RegisterAllocatedFeesPerParty(feeTransfer.TotalFeesAmountPerParty())
 
 	if len(ledgerMovements) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
@@ -120,9 +119,13 @@ func (m *MarketLiquidity) processBondPenalties(
 		amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
 		amountUint, _ := num.UintFromDecimal(amount)
 
+		if amountUint.IsZero() {
+			continue
+		}
+
 		transfer := m.NewTransfer(partyID, types.TransferTypeSLAPenaltyBondApply, amountUint)
 
-		bondLedgerMovement, err := m.collateral.BondSpotUpdate(ctx, m.marketID, transfer)
+		bondLedgerMovement, err := m.bondUpdate(ctx, transfer)
 		if err != nil {
 			m.log.Panic("failed to apply SLA penalties to bond account", logging.Error(err))
 		}
@@ -171,7 +174,7 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		accruedFeeAmount := perPartAccruedFees[partyID]
 
 		// if all parties have a full penalty then transfer all accrued fees to insurance pool.
-		if slaPenalties.AllPartiesHaveFullFeePenalty {
+		if slaPenalties.AllPartiesHaveFullFeePenalty && !accruedFeeAmount.IsZero() {
 			transfer := m.NewTransfer(partyID, types.TransferTypeSLAPenaltyLpFeeApply, accruedFeeAmount)
 			allTransfers.transfers = append(allTransfers.transfers, transfer)
 			continue
@@ -184,8 +187,11 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		// (1-feePenalty) x accruedFeeAmount.
 		netDistributionAmount := oneMinusPenalty.Mul(accruedFeeAmount.ToDecimal())
 		netDistributionAmountUint, _ := num.UintFromDecimal(netDistributionAmount)
-		netFeeDistributeTransfer := m.NewTransfer(partyID, types.TransferTypeLiquidityFeeNetDistribute, netDistributionAmountUint)
-		allTransfers.transfers = append(allTransfers.transfers, netFeeDistributeTransfer)
+
+		if !netDistributionAmountUint.IsZero() {
+			netFeeDistributeTransfer := m.NewTransfer(partyID, types.TransferTypeLiquidityFeeNetDistribute, netDistributionAmountUint)
+			allTransfers.transfers = append(allTransfers.transfers, netFeeDistributeTransfer)
+		}
 
 		// transfer unpaid accrued fee to bonus account
 		// accruedFeeAmount - netDistributionAmountUint
@@ -207,8 +213,10 @@ func (m *MarketLiquidity) distributeFeesAndCalculateBonuses(
 		bonusPerParty[partyID] = bonus
 	}
 
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, allTransfers.transfers)
+
 	// transfer all the fees.
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, allTransfers)
+	ledgerMovements, err := m.transferFees(ctx, allTransfers)
 	if err != nil {
 		m.log.Panic("failed to transfer fees from LP's fees accounts", logging.Error(err))
 	}
@@ -254,8 +262,10 @@ func (m *MarketLiquidity) distributePerformanceBonuses(
 		amountD := bonus.Mul(bonusDistributionAcc.Balance.ToDecimal())
 		amount, _ := num.UintFromDecimal(amountD)
 
-		transfer := m.NewTransfer(partyID, types.TransferTypeSlaPerformanceBonusDistribute, amount)
-		bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
+		if !amount.IsZero() {
+			transfer := m.NewTransfer(partyID, types.TransferTypeSlaPerformanceBonusDistribute, amount)
+			bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
+		}
 
 		remainingBalance.Sub(remainingBalance, amount)
 	}
@@ -272,7 +282,8 @@ func (m *MarketLiquidity) distributePerformanceBonuses(
 		bonusTransfers.transfers = append(bonusTransfers.transfers, transfer)
 	}
 
-	ledgerMovements, err := m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, bonusTransfers)
+	m.marketActivityTracker.UpdateFeesFromTransfers(m.asset, m.marketID, bonusTransfers.transfers)
+	ledgerMovements, err := m.transferFees(ctx, bonusTransfers)
 	if err != nil {
 		m.log.Panic("failed to distribute SLA bonuses", logging.Error(err))
 	}
@@ -286,6 +297,12 @@ func (m *MarketLiquidity) distributeFeesBonusesAndApplyPenalties(
 	ctx context.Context,
 	slaPenalties liquidity.SlaPenalties,
 ) {
+	// No LP penalties available so no need to continue.
+	// This could happen during opening auction.
+	if len(slaPenalties.PenaltiesPerParty) < 1 {
+		return
+	}
+
 	partyIDs := sortedKeys(slaPenalties.PenaltiesPerParty)
 
 	// first process bond penalties.

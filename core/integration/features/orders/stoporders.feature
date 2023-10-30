@@ -2,9 +2,9 @@ Feature: stop orders
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3   | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC20 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 1e-3                   | 0                         |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3   | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 1e-3                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -23,9 +23,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -53,9 +57,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -84,10 +92,14 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -116,9 +128,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -155,10 +171,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -211,10 +230,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -267,10 +289,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -318,10 +343,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -374,9 +402,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -431,9 +463,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -489,10 +525,14 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -543,10 +583,14 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -603,9 +647,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -664,9 +712,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -685,7 +737,7 @@ Feature: stop orders
       | party1| ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2| ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-    Then debug trades
+
     Then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -737,10 +789,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -799,9 +854,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -820,7 +879,7 @@ Feature: stop orders
       | party1| ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2| ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-    Then debug trades
+
     Then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -879,9 +938,13 @@ Feature: stop orders
       | lpprov | BTC   | 9000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -968,9 +1031,13 @@ Feature: stop orders
       | lpprov | BTC   | 9000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1057,9 +1124,13 @@ Feature: stop orders
       | lpprov | BTC   | 9000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1176,9 +1247,13 @@ Feature: stop orders
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1239,9 +1314,13 @@ Feature: stop orders
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1264,7 +1343,7 @@ Feature: stop orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-   Then debug orders
+
 
     # check that the order got submitted
     Then the orders should have the following states:
@@ -1288,10 +1367,14 @@ Feature: stop orders
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1342,9 +1425,13 @@ Feature: stop orders
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1395,9 +1482,13 @@ Feature: stop orders
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1423,6 +1514,7 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
 
+@SLABug
 Scenario: All stop orders for a specific party can be cancelled by a single stop order cancellation. (0014-ORDT-072)
 
     # setup accounts
@@ -1435,11 +1527,17 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1453,11 +1551,9 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | aux2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC19"
+    When the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    When the opening auction period ends for market "ETH/DEC20"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
@@ -1477,6 +1573,7 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop3     |
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop4     |
 
+@SLABug
 Scenario: All stop orders for a specific party for a specific market can be cancelled by a single stop order cancellation. (0014-ORDT-073)
 
     # setup accounts
@@ -1489,11 +1586,17 @@ Scenario: All stop orders for a specific party for a specific market can be canc
       | lpprov | BTC   | 900000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -1507,11 +1610,9 @@ Scenario: All stop orders for a specific party for a specific market can be canc
       | aux2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
-    When the opening auction period ends for market "ETH/DEC19"
+    When the network moves ahead "2" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    When the opening auction period ends for market "ETH/DEC20"
-    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
@@ -1544,10 +1645,14 @@ Scenario: A stop order cannot be triggered by orders crossing during an auction.
       | lpprov | BTC   | 9000000000 |
 
     When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
-
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
+    
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1607,9 +1712,13 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
       | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
-      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -1667,3 +1776,127 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 1      | 10             | 0            |
 
+
+  Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 1000000  |
+      | party2 | BTC   | 1000000  |
+      | party3 | BTC   | 1000000  |
+      | aux    | BTC   | 1000000  |
+      | aux2   | BTC   | 1000000  |
+      | aux3   | BTC   | 1000000  |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Given time is updated to "2019-11-30T00:00:10Z"
+    # setup party1 position, open a 10 long position
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | buy  | 20     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | sell | 20     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    # volume for the stop trade
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | buy  | 20     | 20    | 0                | TYPE_LIMIT | TIF_GTC |
+    # create party1 stop order, no trade resulting, expires in 10 secs
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | ra price trigger| error | reference | so expires in | so expiry strategy     |
+      | party1| ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 25               | 100   |   | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
+
+    # trigger the stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2| ETH/DEC19 | buy  | 1      | 24    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3| ETH/DEC19 | sell | 1      | 24    | 1                | TYPE_LIMIT | TIF_GTC |
+    # check the stop order is filled
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference  |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1-1     |
+      | party1 | ETH/DEC19 | STATUS_STOPPED   | stop1-2     |
+
+    # add 20 secs, should expire
+    Given time is updated to "2019-11-30T00:00:30Z"
+    # check the stop order was not triggered a second at time T
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | -300           | -300         |
+
+
+  Scenario: A stop order expiring in the past is rejected
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3   | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    # setup party1 position, open a 10 long position
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+
+    When time is updated to "2019-11-30T00:00:10Z"
+    # create party1 stop order, no trade resulting, expires in 10 secs
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | ra price trigger | error | reference | so expires in | so expiry strategy |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce| 75               | stop order expiry in the past      | stop1     | -10 | EXPIRY_STRATEGY_SUBMIT |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_REJECTED | stop1     |

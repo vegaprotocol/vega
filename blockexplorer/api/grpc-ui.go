@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package api
 
@@ -18,9 +21,11 @@ import (
 	"net"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/fullstorydev/grpcui/standalone"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type GRPCUIHandler struct {
@@ -28,11 +33,12 @@ type GRPCUIHandler struct {
 	handler http.Handler
 	log     *logging.Logger
 	dialer  grpcDialer
+	conn    *grpc.ClientConn
 }
 
 type grpcDialer interface {
 	net.Listener
-	DialGRPC(opts ...grpc.DialOption) (*grpc.ClientConn, error)
+	DialGRPC(context.Context, ...grpc.DialOption) (*grpc.ClientConn, error)
 }
 
 func NewGRPCUIHandler(log *logging.Logger, dialer grpcDialer, config GRPCUIConfig) *GRPCUIHandler {
@@ -49,24 +55,25 @@ func (g *GRPCUIHandler) Name() string {
 	return "grpc-ui"
 }
 
-func (g *GRPCUIHandler) Start() error {
+func (g *GRPCUIHandler) Start(ctx context.Context) error {
 	defaultCallOptions := []grpc.CallOption{
 		grpc.MaxCallRecvMsgSize(int(g.MaxPayloadSize)),
 	}
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(defaultCallOptions...),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	}
-	cc, err := g.dialer.DialGRPC(dialOpts...)
+	conn, err := g.dialer.DialGRPC(ctx, dialOpts...)
 	if err != nil {
-		return fmt.Errorf("failed to create client to local grpc server:%w", err)
+		return fmt.Errorf("failed to create client to local grpc server: %w", err)
 	}
-	g.log.Info("connected to grpc server", logging.String("target", cc.Target()))
+	g.conn = conn
 
-	ctx := context.Background()
-	handler, err := standalone.HandlerViaReflection(ctx, cc, "vega data node")
+	g.log.Info("Starting gRPC UI", logging.String("target", conn.Target()))
+
+	handler, err := standalone.HandlerViaReflection(ctx, conn, "vega data node")
 	if err != nil {
 		return fmt.Errorf("failed to create grpc-ui server:%w", err)
 	}
@@ -76,4 +83,11 @@ func (g *GRPCUIHandler) Start() error {
 
 func (g *GRPCUIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.handler.ServeHTTP(w, r)
+}
+
+func (g *GRPCUIHandler) Stop() {
+	if g.conn != nil {
+		g.log.Info("Stopping gRPC UI", logging.String("target", g.conn.Target()))
+		_ = g.conn.Close()
+	}
 }

@@ -1,0 +1,71 @@
+{
+  "settlementAsset": "USD",
+  "quoteName": "USD",
+  "marginFundingFactor": "0",
+  "interestRate": "0",
+  "clampLowerBound": "0",
+  "clampUpperBound": "0",
+  "dataSourceSpecForSettlementData": {
+    "id": "1",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xBADCAFFE"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.USD.value",
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecForSettlementSchedule": {
+    "id": "2",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0xBADCAFFE"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "funding.USD.period",
+                "type": "TYPE_TIMESTAMP"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecBinding": {
+    "settlementDataProperty": "prices.USD.value",
+    "settlementScheduleProperty": "funding.USD.period"
+  }
+}

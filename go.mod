@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vega
 
-go 1.19
+go 1.20
 
 require (
 	code.vegaprotocol.io/quant v0.2.5
@@ -31,21 +31,23 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.2
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
-	github.com/tendermint/tm-db v0.6.7
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.7.0
-	google.golang.org/grpc v1.53.0
+	golang.org/x/crypto v0.14.0
+	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0
 )
 
 require (
 	github.com/99designs/gqlgen v0.17.20
 	github.com/BurntSushi/toml v1.2.1
+	github.com/PaesslerAG/gval v1.0.0
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
@@ -70,7 +72,7 @@ require (
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/klauspost/compress v1.16.4
-	github.com/libp2p/go-libp2p v0.27.3
+	github.com/libp2p/go-libp2p v0.27.8
 	github.com/machinebox/graphql v0.2.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/muesli/cancelreader v0.2.2
@@ -79,6 +81,7 @@ require (
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pressly/goose/v3 v3.6.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/soheilhy/cmux v0.1.4
 	github.com/tendermint/tendermint v0.35.9
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20220101234140-673ab2c3ae75
@@ -88,8 +91,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.1
 	github.com/wk8/go-ordered-map/v2 v2.0.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/sys v0.7.0
-	golang.org/x/term v0.6.0
+	golang.org/x/sys v0.13.0
+	golang.org/x/term v0.13.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
@@ -97,7 +100,7 @@ require (
 	bazil.org/fuse v0.0.0-20200117225306-7b5117fecadc // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2 // indirect
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d // indirect
+	github.com/ChainSafe/go-schnorrkel v1.0.0 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
@@ -110,11 +113,9 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811 // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
-	github.com/cometbft/cometbft-db v0.7.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
-	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
@@ -239,15 +240,14 @@ require (
 	github.com/polydawn/refmt v0.89.0 // indirect
 	github.com/prometheus/statsd_exporter v0.22.7 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/qtls-go1-19 v0.3.2 // indirect
-	github.com/quic-go/qtls-go1-20 v0.2.2 // indirect
+	github.com/quic-go/qtls-go1-19 v0.3.3 // indirect
+	github.com/quic-go/qtls-go1-20 v0.2.3 // indirect
 	github.com/quic-go/quic-go v0.33.0 // indirect
 	github.com/quic-go/webtransport-go v0.5.2 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.36.0 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/status-im/keycard-go v0.2.0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
@@ -276,7 +276,7 @@ require (
 	go.uber.org/dig v1.16.1 // indirect
 	go.uber.org/fx v1.19.2 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/oauth2 v0.5.0 // indirect
+	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc/examples v0.0.0-20220922155644-a238cebacde4 // indirect
@@ -364,11 +364,11 @@ require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
-	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v2 v2.4.0
@@ -379,7 +379,8 @@ require (
 replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.3
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
+	github.com/muesli/cancelreader => github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
-	github.com/tendermint/tendermint => github.com/vegaprotocol/cometbft v0.34.28-0.20230322133204-3d8588de736e
+	github.com/tendermint/tendermint => github.com/vegaprotocol/cometbft v0.34.29-patch.1
 	github.com/tendermint/tm-db => github.com/cometbft/cometbft-db v0.6.7
 )

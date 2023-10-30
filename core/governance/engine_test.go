@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -21,9 +24,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/common"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/governance/mocks"
@@ -32,11 +44,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var errNoBalanceForParty = errors.New("no balance for party")
@@ -70,7 +78,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
 	t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
 
-	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
+	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
 
 	t.Run("Voting on non-existing proposal fails", testVotingOnNonExistingProposalFails)
 	t.Run("Voting with non-existing account fails", testVotingWithNonExistingAccountFails)
@@ -87,12 +95,11 @@ func TestSubmitProposals(t *testing.T) {
 }
 
 func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -157,12 +164,11 @@ func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
 }
 
 func testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, false)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, false)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -227,12 +233,11 @@ func testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds(t *testing.
 }
 
 func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name     string
@@ -268,18 +273,18 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 }
 
 func testSubmitProposalMarketUpdate(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	marketID := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	tc := struct {
 		name     string
 		proposal types.Proposal
 	}{
 		name:     "For market update",
-		proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
+		proposal: eng.newProposalForMarketUpdate(marketID, party, now, nil, nil, true),
 	}
 
 	// test that with no account but equity like share, a market update proposal goes through
@@ -291,6 +296,7 @@ func testSubmitProposalMarketUpdate(t *testing.T) {
 
 		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
 		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalOne(), true)
+		eng.ensureGetMarketFuture(t, marketID)
 		// when
 		_, err := eng.submitProposal(tt, tc.proposal)
 
@@ -300,12 +306,11 @@ func testSubmitProposalMarketUpdate(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name     string
@@ -341,12 +346,11 @@ func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFail
 }
 
 func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name                    string
@@ -387,12 +391,11 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 }
 
 func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tc := struct {
 		name                    string
@@ -423,12 +426,11 @@ func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	tcs := []struct {
 		name                    string
@@ -469,10 +471,9 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 }
 
 func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -513,10 +514,9 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -557,10 +557,9 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFail
 }
 
 func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -601,10 +600,9 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -644,12 +642,11 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFail
 	}
 }
 
-func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+func testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
 
 	proposer := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 
 	// Make a proporsal with termination time before enactment time
 	// Enactment time for new market is now + 96 hours
@@ -682,10 +679,9 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 }
 
 func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -724,10 +720,9 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 }
 
 func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
 	cases := []struct {
@@ -768,8 +763,7 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 }
 
 func testVotingOnNonExistingProposalFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	voter := vgrand.RandomStr(5)
@@ -786,12 +780,11 @@ func testVotingOnNonExistingProposalFails(t *testing.T) {
 }
 
 func testVotingWithNonExistingAccountFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -821,12 +814,11 @@ func testVotingWithNonExistingAccountFails(t *testing.T) {
 }
 
 func testVotingWithoutTokenFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -853,11 +845,10 @@ func testVotingWithoutTokenFails(t *testing.T) {
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	partyA := vgrand.RandomStr(5)
 	partyB := vgrand.RandomStr(5)
 
@@ -947,12 +938,11 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 }
 
 func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -1026,8 +1016,7 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 }
 
 func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	require.Equal(t,
 		"a1292c11ccdb876535c6699e8217e1a1294190d83e4233ecc490d32df17a4116",
@@ -1037,7 +1026,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	now := eng.tsvc.GetTimeNow()
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	proposal := eng.newProposalForNewMarket(proposer, now, nil, nil, true)
 
 	// setup
@@ -1106,7 +1095,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 	)
 }
 
-func getTestEngine(t *testing.T) *tstEngine {
+func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 	t.Helper()
 
 	cfg := governance.NewDefaultConfig()
@@ -1126,10 +1115,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 
 	ctx := context.Background()
 
-	ts.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(1659006535, 0)
-		}).AnyTimes()
+	ts.EXPECT().GetTimeNow().Return(now).AnyTimes()
 
 	broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1")).Times(1)
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalMarketMinVoterBalance, "1"))
@@ -1192,34 +1178,34 @@ func newAssetTerms() *types.ProposalTermsNewAsset {
 	}
 }
 
-func produceNonTimeTriggeredDataSourceSpec() (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
-	return &types.DataSourceSpecFilter{
-			Key: &types.DataSourceSpecPropertyKey{
+func produceNonTimeTriggeredDataSourceSpec() (*dstypes.SpecFilter, *datasource.SpecBindingForFuture) {
+	return &dstypes.SpecFilter{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "trading.terminated",
 				Type: datapb.PropertyKey_TYPE_BOOLEAN,
 			},
-			Conditions: []*types.DataSourceSpecCondition{},
+			Conditions: []*dstypes.SpecCondition{},
 		},
-		&types.DataSourceSpecBindingForFuture{
+		&datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "trading.terminated",
 		}
 }
 
-func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*types.DataSourceSpecFilter, *types.DataSourceSpecBindingForFuture) {
-	return &types.DataSourceSpecFilter{
-			Key: &types.DataSourceSpecPropertyKey{
+func produceTimeTriggeredDataSourceSpec(termTimestamp time.Time) (*dstypes.SpecFilter, *datasource.SpecBindingForFuture) {
+	return &dstypes.SpecFilter{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "vegaprotocol.builtin.timestamp",
 				Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 			},
-			Conditions: []*types.DataSourceSpecCondition{
+			Conditions: []*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    strconv.FormatInt(termTimestamp.Unix(), 10),
 				},
 			},
 		},
-		&types.DataSourceSpecBindingForFuture{
+		&datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "prices.ETH.value",
 			TradingTerminationProperty: "vegaprotocol.builtin.timestamp",
 		}
@@ -1236,17 +1222,17 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
-	var dt *types.DataSourceDefinition
+func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
+	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
 			termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
+		dt = datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+				Filters: []*dstypes.SpecFilter{
 					termFilter,
 				},
 			},
@@ -1257,8 +1243,8 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
-			[]*types.DataSourceSpecCondition{
+		dt = datasource.NewDefinition(datasource.ContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
+			[]*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -1277,18 +1263,18 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 						Future: &types.FutureProduct{
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{
+											Conditions: []*dstypes.SpecCondition{
 												{
 													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 													Value:    "0",
@@ -1314,12 +1300,112 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 						},
 					},
 				},
-				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces:           0,
-				LpPriceRange:            num.DecimalFromFloat(0.95),
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 0,
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                  num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0.5),
+					PerformanceHysteresisEpochs: 4,
+					SlaCompetitionFactor:        num.NewDecimalFromFloat(0.5),
+				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 				Successor:               successor,
+			},
+		},
+	}
+}
+
+//nolint:unparam
+func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.SpecBindingForPerps) *types.ProposalTermsNewMarket {
+	if binding == nil {
+		binding = &datasource.SpecBindingForPerps{
+			SettlementDataProperty:     "price.ETH.value",
+			SettlementScheduleProperty: "vegaprotocol.builtin.timetrigger",
+		}
+	}
+
+	return &types.ProposalTermsNewMarket{
+		NewMarket: &types.NewMarket{
+			Changes: &types.NewMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "GBP/USDT PERPS",
+					Code: "CRYPTO:GBP/USD",
+					Product: &types.InstrumentConfigurationPerps{
+						Perps: &types.PerpsProduct{
+							SettlementAsset: "USDT",
+							QuoteName:       "USD",
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
+							).SetOracleConfig(
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
+										{
+											Key: &dstypes.SpecPropertyKey{
+												Name: "price.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*dstypes.SpecCondition{
+												{
+													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+													Value:    "0",
+												},
+											},
+										},
+									},
+								},
+							),
+							DataSourceSpecForSettlementSchedule: *datasource.NewDefinition(datasource.ContentTypeInternalTimeTriggerTermination).SetTimeTriggerTriggersConfig(
+								common.InternalTimeTriggers{
+									{
+										Initial: nil,
+										Every:   300,
+									},
+								},
+							).SetTimeTriggerConditionConfig([]*dstypes.SpecCondition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "0",
+								},
+							}),
+							DataSourceSpecBinding: binding,
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 0,
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                  num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0.5),
+					PerformanceHysteresisEpochs: 4,
+					SlaCompetitionFactor:        num.NewDecimalFromFloat(0.5),
+				},
+				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+			},
+		},
+	}
+}
+
+func newUpdateMarketState(tp types.MarketStateUpdateType, marketID string, price *num.Uint) *types.ProposalTermsUpdateMarketState {
+	return &types.ProposalTermsUpdateMarketState{
+		UpdateMarketState: &types.UpdateMarketState{
+			Changes: &types.MarketStateUpdateConfiguration{
+				MarketID:        marketID,
+				SettlementPrice: price,
+				UpdateType:      tp,
 			},
 		},
 	}
@@ -1340,7 +1426,7 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 						},
 					},
 				},
-				RiskParameters: &types.NewMarketConfigurationLogNormal{
+				RiskParameters: &types.NewSpotMarketConfigurationLogNormal{
 					LogNormal: &types.LogNormalRiskModel{
 						RiskAversionParameter: num.DecimalFromFloat(0.01),
 						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -1353,32 +1439,38 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 				},
 				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
 				DecimalPlaces: 0,
+				SLAParams: &types.LiquiditySLAParams{
+					PriceRange:                  num.DecimalOne(),
+					CommitmentMinTimeFraction:   num.DecimalFromFloat(0.5),
+					SlaCompetitionFactor:        num.DecimalOne(),
+					PerformanceHysteresisEpochs: 1,
+				},
 			},
 		},
 	}
 }
 
-func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
-	var dt *types.DataSourceDefinition
+func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
+	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
-			termFilter = &types.DataSourceSpecFilter{
-				Key: &types.DataSourceSpecPropertyKey{
+			termFilter = &dstypes.SpecFilter{
+				Key: &dstypes.SpecPropertyKey{
 					Name: "trading.terminated",
 					Type: datapb.PropertyKey_TYPE_BOOLEAN,
 				},
-				Conditions: []*types.DataSourceSpecCondition{},
+				Conditions: []*dstypes.SpecCondition{},
 			}
 
-			termBinding = &types.DataSourceSpecBindingForFuture{
+			termBinding = &datasource.SpecBindingForFuture{
 				SettlementDataProperty:     "prices.ETH.value",
 				TradingTerminationProperty: "trading.terminated",
 			}
 		}
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
+		dt = datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+			&signedoracle.SpecConfiguration{
+				Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+				Filters: []*dstypes.SpecFilter{
 					termFilter,
 				},
 			},
@@ -1389,8 +1481,8 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
-			[]*types.DataSourceSpecCondition{
+		dt = datasource.NewDefinition(datasource.ContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
+			[]*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
 					Value:    fmt.Sprintf("%d", tm.UnixNano()),
@@ -1408,18 +1500,18 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
-							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+							DataSourceSpecForSettlementData: *datasource.NewDefinition(
+								datasource.ContentTypeOracle,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
+								&signedoracle.SpecConfiguration{
+									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+									Filters: []*dstypes.SpecFilter{
 										{
-											Key: &types.DataSourceSpecPropertyKey{
+											Key: &dstypes.SpecPropertyKey{
 												Name: "prices.ETH.value",
 												Type: datapb.PropertyKey_TYPE_INTEGER,
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
+											Conditions: []*dstypes.SpecCondition{},
 										},
 									},
 								},
@@ -1440,8 +1532,13 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 						},
 					},
 				},
-				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
-				LpPriceRange:            num.DecimalFromFloat(0.95),
+				Metadata: []string{"asset_class:fx/crypto", "product:futures"},
+				LiquiditySLAParameters: &types.LiquiditySLAParams{
+					PriceRange:                  num.DecimalFromFloat(0.95),
+					CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0.5),
+					PerformanceHysteresisEpochs: 4,
+					SlaCompetitionFactor:        num.NewDecimalFromFloat(0.5),
+				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
@@ -1490,7 +1587,39 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
+//nolint:unparam
+func (e *tstEngine) newProposalForNewPerpsMarket(
+	partyID string,
+	now time.Time,
+	termFilter *dstypes.SpecFilter,
+	termBinding *datasource.SpecBindingForPerps,
+	termExt bool,
+) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newPerpsMarketTerms(termFilter, termBinding),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForNewMarket(
+	partyID string,
+	now time.Time,
+	termFilter *dstypes.SpecFilter,
+	termBinding *datasource.SpecBindingForFuture,
+	termExt bool,
+) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1509,7 +1638,7 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
-func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
+func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1521,6 +1650,25 @@ func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time,
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForUpdateMarketState(partyID string, now time.Time, updateType types.MarketStateUpdateType, price *num.Uint) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newUpdateMarketState(updateType, vgrand.RandomStr(5), price),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -1547,7 +1695,7 @@ func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) t
 	}
 }
 
-func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
+func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,
@@ -1567,6 +1715,54 @@ func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now tim
 	switch p := prop.Terms.Change.(type) {
 	case *types.ProposalTermsUpdateMarket:
 		p.UpdateMarket.MarketID = marketID
+	}
+	return prop
+}
+
+func (e *tstEngine) newProposalForReferralProgramUpdate(partyID string, now time.Time, configuration *types.ReferralProgramChanges) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: configuration,
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	return prop
+}
+
+func (e *tstEngine) newProposalForVolumeDiscountProgramUpdate(partyID string, now time.Time, configuration *types.VolumeDiscountProgramChanges) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
+			Change: &types.ProposalTermsUpdateVolumeDiscountProgram{
+				UpdateVolumeDiscountProgram: &types.UpdateVolumeDiscountProgram{
+					Changes: configuration,
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
 	}
 	return prop
 }
@@ -1761,6 +1957,34 @@ func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.
 		GetMarket(marketID, gomock.Any()).
 		Times(1).
 		Return(market, true)
+}
+
+func (e *tstEngine) ensureGetMarketFuture(t *testing.T, marketID string) {
+	t.Helper()
+	e.ensureGetMarket(t, marketID, types.Market{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Product: &types.InstrumentFuture{
+					Future: &types.Future{},
+				},
+			},
+		},
+	},
+	)
+}
+
+func (e *tstEngine) ensureGetMarketPerpetual(t *testing.T, marketID string) {
+	t.Helper()
+	e.ensureGetMarket(t, marketID, types.Market{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Product: &types.InstrumentPerps{
+					Perps: &types.Perps{},
+				},
+			},
+		},
+	},
+	)
 }
 
 func (e *tstEngine) expectGetMarketState(t *testing.T, marketID string) {

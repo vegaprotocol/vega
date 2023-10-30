@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -54,6 +69,40 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	}
 
 	res, err := r.tradingDataClientV2.ListLiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, err
+	}
+
+	return res.LiquidityProvisions, nil
+}
+
+func (r *myMarketResolver) LiquidityProvisions(ctx context.Context, market *vega.Market, party *string, live *bool, pagination *v2.Pagination) (
+	*v2.LiquidityProvisionsWithPendingConnection, error,
+) {
+	var pid string
+	if party != nil {
+		pid = *party
+	}
+
+	var marketID string
+	if market != nil {
+		marketID = market.Id
+	}
+
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
+	req := v2.ListAllLiquidityProvisionsRequest{
+		PartyId:    &pid,
+		MarketId:   &marketID,
+		Live:       &l,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAllLiquidityProvisions(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
 		return nil, err
@@ -239,4 +288,8 @@ func (r *myMarketResolver) CandlesConnection(ctx context.Context, market *types.
 	interval vega.Interval, pagination *v2.Pagination,
 ) (*v2.CandleDataConnection, error) {
 	return handleCandleConnectionRequest(ctx, r.tradingDataClientV2, market, sinceRaw, toRaw, interval, pagination)
+}
+
+func (r *myMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *types.Market) (*types.LiquiditySLAParameters, error) {
+	return obj.LiquiditySlaParams, nil
 }

@@ -9,37 +9,20 @@ import "vega/commands/v1/validator_commands.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
+// Input data for a transaction containing a network command for the Vega network to execute.
+// Once populated the protobuf message should be marshalled into a byte array and included in a transaction message.
 message InputData {
   // This was the old restore checkpoint command
   reserved 4001;
-  // Number to provide uniqueness to prevent accidental replays and,
-  // in combination with `block_height`, deliberate attacks.
-  // A nonce provides uniqueness for otherwise identical transactions,
-  // ensuring that the transaction hash uniquely identifies a specific transaction.
-  // Granted all other fields are equal, the nonce can either be a counter
-  // or generated at random to submit multiple transactions within the same
-  // block (see below), without being identified as replays.
-  // Please note that Protocol Buffers do not have a canonical, unique encoding
-  // and therefore different libraries or binaries may encode the same message
-  // slightly differently, causing a different hash.
+  // Arbitrary number used to provide uniqueness to the signature of two otherwise identical input data, preventing replay attacks.
+  // Must be set to a different value for all new transactions sent by a party. It is advised to generate this number randomly.
   uint64 nonce = 1;
-
-  // Block height at which the transaction was made.
-  // This should be the current block height. The transaction will be valid
-  // from the block and up to the `tolerance` block height.
-  // Example: If the network has a tolerance of 150 blocks and `block_height`
-  // is set to `200`, then the transaction will be valid until block `350`.
-  // Note that a `block_height` that is ahead of the real block height will be
-  // rejected. The tolerance can be queried from the chain's network parameters.
-  // `block_height` prevents replay attacks in conjunction with `nonce` (see above).
+  // Block height which has been used to calculate the transaction proof-of-work.
   uint64 block_height = 2;
 
   oneof command {
-    // Command for submitting an order.
+    // Command to submit an order.
     OrderSubmission order_submission = 1001;
-
-    // User commands
-
     // Command to cancel an order.
     OrderCancellation order_cancellation = 1002;
     // Command to amend an order.
@@ -56,95 +39,84 @@ message InputData {
     DelegateSubmission delegate_submission = 1008;
     // Command to remove tokens delegated to a validator.
     UndelegateSubmission undelegate_submission = 1009;
-    // Command to request cancelling a liquidity commitment.
+    // Command to cancel a liquidity commitment.
     LiquidityProvisionCancellation liquidity_provision_cancellation = 1010;
-    // Command to request amending a liquidity commitment.
+    // Command to amend a liquidity commitment.
     LiquidityProvisionAmendment liquidity_provision_amendment = 1011;
     // Command to submit a transfer.
     Transfer transfer = 1012;
-    // Command to request cancelling a recurring transfer.
+    // Command to cancel a recurring transfer.
     CancelTransfer cancel_transfer = 1013;
     // Command used by a node operator to announce its node as a pending validator.
     AnnounceNode announce_node = 1014;
-    // Command to submit a batch of order instructions to a market.
+    // Command to submit a batch of order instructions.
     BatchMarketInstructions batch_market_instructions = 1015;
     // Command to submit a pair of stop orders.
     StopOrdersSubmission stop_orders_submission = 1016;
     // Command to cancel stop orders.
     StopOrdersCancellation stop_orders_cancellation = 1017;
-
-    // Validator commands
-
-    // Command used by a validator when a node votes for validating that a given resource exists or is valid,
-    // for example, an ERC20 deposit is valid and exists on ethereum.
+    // Command to create a referral set.
+    CreateReferralSet create_referral_set = 1018;
+    // Command to update a referral set.
+    UpdateReferralSet update_referral_set = 1019;
+    // Command to apply a referral code.
+    ApplyReferralCode apply_referral_code = 1020;
+    // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
-    // Command used by a validator to submit a signature, to be used by a foreign chain to recognise a decision taken by the Vega network.
+    // Validator command sent automatically to provide signatures for the Ethereum bridge.
     NodeSignature node_signature = 2003;
-    // Command used by a validator to submit an event forwarded to the Vega network to provide information
-    // on events happening on other networks, to be used by a foreign chain
-    // to recognise a decision taken by the Vega network.
+    // Validator command sent automatically to notify the Vega chain of an off-chain event.
     ChainEvent chain_event = 2004;
-    // Command used by a validator to allow given validator to rotate their Vega keys.
+    // Validator command sent manually by a node operator to rotate their node's Vega keys.
     KeyRotateSubmission key_rotate_submission = 2005;
-    // Command used by a validator to submit a floating point value.
+    // Validator command sent automatically to reach consensus on floating point values.
     StateVariableProposal state_variable_proposal = 2006;
-    // Command used by a validator to signal they are still online and validating blocks
-    // or ready to validate blocks when they are still a pending validator.
+    // Validator command sent automatically to signal regular participation in the network.
     ValidatorHeartbeat validator_heartbeat = 2007;
-    // Command used by a validator to allow given validator to rotate their Ethereum keys.
+    // Validator command sent manually by a node operator to rotate their node's Ethereum keys.
     EthereumKeyRotateSubmission ethereum_key_rotate_submission = 2008;
-    // Command used by a validator to propose a protocol upgrade.
+    // Validator command sent manually to propose a protocol upgrade.
     ProtocolUpgradeProposal protocol_upgrade_proposal = 2009;
-    // Command used by a validator to submit signatures to a smart contract.
+    // Command to request signatures to amend the multisig-control contract.
     IssueSignatures issue_signatures = 2010;
-
-    // Oracles
-
-    // Command to submit new oracle data from third party providers.
+    // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
   }
 }
 
-// Current supported version of the transaction inside the network.
+// Transaction versions to maintain backwards compatibility of transaction formats.
 enum TxVersion {
   reserved 1;
-  // Represents an unspecified or missing value from the input
+  // Transaction version is unspecified.
   TX_VERSION_UNSPECIFIED = 0;
-  // This version requires the proof-of-work added to the transaction.
+  // Transaction requires the addition of a proof-of-work calculation.
   TX_VERSION_V2 = 2;
-  // This version requires the chain ID to be appended in front of the input data
-  // byte, with a `\0` delimiter.
+  // Transaction input data contains a prepended chain ID to prevent use of a single transaction across multiple networks.
   TX_VERSION_V3 = 3;
 }
 
-// Represents a transaction to be sent to Vega.
+// Transaction containing a command that can be sent to instruct the network to execute an action.
+// A transaction contains a byte string representation of the input data which must then be signed, with the signature added to the transaction.
 message Transaction {
-  // One of the set of Vega commands.
-  // These bytes are should be built as follows:
-  //   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command.
+  // Protobuf message of type `InputData` marshalled into bytes. If the transaction version is V3 or higher then this bytes
+  // string must be prepended with `chain_id_as_byes + \0`.
   bytes input_data = 1;
-
-  // Signature of the input data.
+  // Signature of the input data field, signed by the sender of this transaction.
   Signature signature = 2;
-
   // Sender of the transaction.
-  // Any of the following would be valid.
   oneof from {
     // Hex-encoded address of the sender. Not supported yet.
     string address = 1001;
     // Hex-encoded public key of the sender.
     string pub_key = 1002;
   }
-
-  // Version of the transaction, to be used in the future in case changes are implemented
-  // to the transaction format.
+  // Version of the transaction.
   TxVersion version = 2000;
-
-  // Proof of work contains the random transaction id used by the client and the nonce.
+  // Proof-of-work containing the random transaction ID used by the client and the nonce.
   ProofOfWork pow = 3000;
 }
 
-// Components needed for the network to verify proof-of-work
+// Components needed for the network to verify proof-of-work.
 message ProofOfWork {
   // Unique transaction identifier used to seed the proof-of-work hash.
   string tid = 1;

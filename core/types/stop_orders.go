@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package types
 
 import (
@@ -51,6 +66,19 @@ const (
 	StopOrderStatusExpired = vega.StopOrder_STATUS_EXPIRED
 	// Stop order was rejected at submission.
 	StopOrderStatusRejected = vega.StopOrder_STATUS_REJECTED
+)
+
+type StopOrderRejectionReason = vega.StopOrder_RejectionReason
+
+const (
+	// Never valid.
+	StopOrderRejectionUnspecified                  StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
+	StopOrderRejectionTradingNotAllowed            StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
+	StopOrderRejectionExpiryInThePast              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
+	StopOrderRejectionMustBeReduceOnly             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
+	StopOrderRejectionMaxStopOrdersPerPartyReached StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
+	StopOrderRejectionNotAllowedWithoutAPosition   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
+	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
 )
 
 type StopOrderExpiry struct {
@@ -273,11 +301,16 @@ type StopOrder struct {
 	Status          StopOrderStatus
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	RejectionReason *StopOrderRejectionReason
 }
 
 func (s *StopOrder) String() string {
+	rejectionReason := "nil"
+	if s.RejectionReason != nil {
+		rejectionReason = s.RejectionReason.String()
+	}
 	return fmt.Sprintf(
-		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v)",
+		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v) rejectionReason(%v)",
 		s.ID,
 		s.Party,
 		s.Market,
@@ -289,6 +322,7 @@ func (s *StopOrder) String() string {
 		s.Status,
 		s.CreatedAt,
 		s.UpdatedAt,
+		rejectionReason,
 	)
 }
 
@@ -335,6 +369,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		OrderSubmission: sub,
 		Trigger:         trigger,
 		Expiry:          expiry,
+		RejectionReason: p.StopOrder.RejectionReason,
 	}
 }
 
@@ -361,6 +396,7 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 			CreatedAt:        s.CreatedAt.UnixNano(),
 			UpdatedAt:        updatedAt,
 			TriggerDirection: s.Trigger.Direction,
+			RejectionReason:  s.RejectionReason,
 		},
 	}
 

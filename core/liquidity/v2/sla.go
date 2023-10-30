@@ -1,22 +1,46 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package liquidity
 
 import (
-	"context"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+var DefaultSLAParameters = types.LiquiditySLAParams{
+	PriceRange:                  num.MustDecimalFromString("0.05"),
+	CommitmentMinTimeFraction:   num.MustDecimalFromString("0.95"),
+	PerformanceHysteresisEpochs: 1,
+	SlaCompetitionFactor:        num.MustDecimalFromString("0.90"),
+}
+
 // ResetSLAEpoch should be called at the beginning of epoch to reset per epoch performance calculations.
 // Returns a newly added/amended liquidity provisions (pending provisions are automatically applied and the start of a new epoch).
 func (e *Engine) ResetSLAEpoch(
-	ctx context.Context,
 	now time.Time,
 	markPrice *num.Uint,
 	midPrice *num.Uint,
 	positionFactor num.Decimal,
 ) {
+	e.allocatedFeesStats = types.NewLiquidityFeeStats()
+	e.slaEpochStart = now
+
 	if e.auctionState.IsOpeningAuction() {
 		return
 	}
@@ -28,8 +52,6 @@ func (e *Engine) ResetSLAEpoch(
 
 		commitment.s = 0
 	}
-
-	e.slaEpochStart = now
 }
 
 func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal) {
@@ -39,16 +61,13 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 	}
 
 	for party, commitment := range e.slaPerformance {
-		meetsCommitment := e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor)
-
-		// if LP started meeting commitment
-		if meetsCommitment {
+		if meetsCommitment := e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor); meetsCommitment {
+			// if LP started meeting commitment
 			if commitment.start.IsZero() {
 				commitment.start = e.timeService.GetTimeNow()
 			}
 			continue
 		}
-
 		// else if LP stopped meeting commitment
 		if !commitment.start.IsZero() {
 			commitment.s += e.timeService.GetTimeNow().Sub(commitment.start)
@@ -57,28 +76,44 @@ func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFacto
 	}
 }
 
+func (e *Engine) calculateCurrentTimeBookFraction(now, start time.Time, s time.Duration) num.Decimal {
+	if !start.IsZero() {
+		s += now.Sub(start)
+	}
+
+	observedEpochLength := now.Sub(e.slaEpochStart)
+	lNano := observedEpochLength.Nanoseconds()
+	timeBookFraction := num.DecimalZero()
+	if lNano > 0 {
+		timeBookFraction = num.DecimalFromInt64(s.Nanoseconds()).Div(num.DecimalFromInt64(lNano))
+	}
+
+	return timeBookFraction
+}
+
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
 func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
-	observedEpochLength := now.Sub(e.slaEpochStart)
+	penaltiesPerParty := map[string]*SlaPenalty{}
+
+	// Do not apply any penalties during opening auction
+	if e.auctionState.IsOpeningAuction() {
+		return SlaPenalties{
+			AllPartiesHaveFullFeePenalty: false,
+			PenaltiesPerParty:            penaltiesPerParty,
+		}
+	}
 
 	one := num.DecimalOne()
 	partiesWithFullFeePenaltyCount := 0
 
-	penaltiesPerParty := map[string]*SlaPenalty{}
 	for party, commitment := range e.slaPerformance {
-		if !commitment.start.IsZero() {
-			commitment.s += now.Sub(commitment.start)
-		}
-
-		s := num.DecimalFromInt64(commitment.s.Nanoseconds())
-		observedEpochLengthD := num.DecimalFromInt64(observedEpochLength.Nanoseconds())
-		timeBookFraction := s.Div(observedEpochLengthD)
+		timeBookFraction := e.calculateCurrentTimeBookFraction(now, commitment.start, commitment.s)
 
 		var feePenalty, bondPenalty num.Decimal
 
 		// if LP meets commitment
 		// else LP does not meet commitment
-		if timeBookFraction.LessThan(e.commitmentMinTimeFraction) {
+		if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
 			feePenalty = one
 			bondPenalty = e.calculateBondPenalty(timeBookFraction)
 		} else {
@@ -96,6 +131,11 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 		if penaltiesPerParty[party].Fee.Equal(one) {
 			partiesWithFullFeePenaltyCount++
 		}
+
+		// safe for next epoch stats
+		e.slaPerformance[party].lastEpochBondPenalty = penaltiesPerParty[party].Bond.String()
+		e.slaPerformance[party].lastEpochFeePenalty = penaltiesPerParty[party].Fee.String()
+		e.slaPerformance[party].lastEpochTimeBookFraction = timeBookFraction.String()
 	}
 
 	return SlaPenalties{
@@ -156,6 +196,11 @@ func (e *Engine) doesLPMeetsCommitment(
 
 	requiredLiquidity := e.stakeToCcyVolume.Mul(lp.CommitmentAmount.ToDecimal())
 
+	// safe stats
+	e.slaPerformance[party].requiredLiquidity = requiredLiquidity.String()
+	e.slaPerformance[party].notionalVolumeBuys = notionalVolumeBuys.String()
+	e.slaPerformance[party].notionalVolumeSells = notionalVolumeSells.String()
+
 	return notionalVolumeBuys.GreaterThanOrEqual(requiredLiquidity) &&
 		notionalVolumeSells.GreaterThanOrEqual(requiredLiquidity)
 }
@@ -163,17 +208,25 @@ func (e *Engine) doesLPMeetsCommitment(
 func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.Decimal {
 	one := num.DecimalOne()
 
+	if timeBookFraction.LessThan(e.slaParams.CommitmentMinTimeFraction) {
+		return one
+	}
+
+	if timeBookFraction.Equal(e.slaParams.CommitmentMinTimeFraction) && timeBookFraction.Equal(one) {
+		return num.DecimalZero()
+	}
+
 	// p = (1-[timeBookFraction-commitmentMinTimeFraction/1-commitmentMinTimeFraction]) * slaCompetitionFactor
 	return one.Sub(
-		timeBookFraction.Sub(e.commitmentMinTimeFraction).Div(one.Sub(e.commitmentMinTimeFraction)),
-	).Mul(e.slaCompetitionFactor)
+		timeBookFraction.Sub(e.slaParams.CommitmentMinTimeFraction).Div(one.Sub(e.slaParams.CommitmentMinTimeFraction)),
+	).Mul(e.slaParams.SlaCompetitionFactor)
 }
 
 func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal {
 	// min(nonPerformanceBondPenaltyMax, nonPerformanceBondPenaltySlope * (1-timeBookFraction/commitmentMinTimeFraction))
 	min := num.MinD(
 		e.nonPerformanceBondPenaltyMax,
-		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.commitmentMinTimeFraction))),
+		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))),
 	)
 
 	// max(0, min)
@@ -201,4 +254,50 @@ func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previ
 	periodAveragePenalty = periodAveragePenalty.Div(previousPenaltiesCount)
 
 	return num.MaxD(currentPenalty, periodAveragePenalty)
+}
+
+func (e *Engine) LiquidityProviderSLAStats(now time.Time) []*types.LiquidityProviderSLA {
+	stats := make([]*types.LiquidityProviderSLA, 0, len(e.slaPerformance))
+
+	for partyID, commitment := range e.slaPerformance {
+		currentTimeBookFraction := e.calculateCurrentTimeBookFraction(now, commitment.start, commitment.s)
+
+		previousPenalties := commitment.previousPenalties.Slice()
+		hysteresisPeriodFeePenalties := make([]string, 0, len(previousPenalties))
+		for _, penalty := range previousPenalties {
+			if penalty == nil {
+				continue
+			}
+			hysteresisPeriodFeePenalties = append(hysteresisPeriodFeePenalties, penalty.String())
+		}
+
+		stats = append(stats, &types.LiquidityProviderSLA{
+			Party:                            partyID,
+			CurrentEpochFractionOfTimeOnBook: currentTimeBookFraction.String(),
+			LastEpochFractionOfTimeOnBook:    commitment.lastEpochTimeBookFraction,
+			LastEpochFeePenalty:              commitment.lastEpochFeePenalty,
+			LastEpochBondPenalty:             commitment.lastEpochBondPenalty,
+			HysteresisPeriodFeePenalties:     hysteresisPeriodFeePenalties,
+			RequiredLiquidity:                commitment.requiredLiquidity,
+			NotionalVolumeBuys:               commitment.notionalVolumeBuys,
+			NotionalVolumeSells:              commitment.notionalVolumeSells,
+		})
+	}
+
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Party == stats[j].Party {
+			return stats[i].CurrentEpochFractionOfTimeOnBook > stats[j].CurrentEpochFractionOfTimeOnBook
+		}
+		return stats[i].Party > stats[j].Party
+	})
+
+	return stats
+}
+
+func (e *Engine) RegisterAllocatedFeesPerParty(feesPerParty map[string]*num.Uint) {
+	e.allocatedFeesStats.RegisterTotalFeesAmountPerParty(feesPerParty)
+}
+
+func (e *Engine) PaidLiquidityFeesStats() *types.PaidLiquidityFeesStats {
+	return e.allocatedFeesStats
 }

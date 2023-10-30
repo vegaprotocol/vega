@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -38,8 +53,8 @@ func addTestParty(t *testing.T, ctx context.Context, ps *sqlstore.Parties, block
 }
 
 func TestParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps := sqlstore.NewParties(connectionSource)
 	ps.Initialise(ctx)
 	bs := sqlstore.NewBlocks(connectionSource)
@@ -149,8 +164,7 @@ func TestPartyPagination(t *testing.T) {
 
 func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -178,8 +192,7 @@ func testPartyPaginationReturnsTheSpecifiedParty(t *testing.T) {
 
 func testPartyPaginationReturnAllParties(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -213,8 +226,7 @@ func testPartyPaginationReturnAllParties(t *testing.T) {
 
 func testPartyPaginationReturnsFirstPage(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -250,8 +262,7 @@ func testPartyPaginationReturnsFirstPage(t *testing.T) {
 
 func testPartyPaginationReturnsLastPage(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -287,8 +298,7 @@ func testPartyPaginationReturnsLastPage(t *testing.T) {
 
 func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -330,8 +340,7 @@ func testPartyPaginationReturnsPageTraversingForward(t *testing.T) {
 
 func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -373,8 +382,7 @@ func testPartyPaginationReturnsPageTraversingBackward(t *testing.T) {
 
 func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -407,8 +415,7 @@ func testPartyPaginationReturnsTheSpecifiedPartyNewestFirst(t *testing.T) {
 
 func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -442,8 +449,7 @@ func testPartyPaginationReturnAllPartiesNewestFirst(t *testing.T) {
 
 func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -479,8 +485,7 @@ func testPartyPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 
 func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -516,8 +521,7 @@ func testPartyPaginationReturnsLastPageNewestFirst(t *testing.T) {
 
 func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)
@@ -559,8 +563,7 @@ func testPartyPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 
 func testPartyPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
 	bs, pt := setupPartyTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blockTimes := make(map[string]time.Time)
 	populateTestParties(ctx, t, bs, pt, blockTimes)

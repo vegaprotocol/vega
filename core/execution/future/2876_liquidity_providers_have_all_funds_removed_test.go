@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future_test
 
@@ -42,8 +45,6 @@ func TestIssue2876(t *testing.T) {
 	addAccountWithAmount(tm, "party-2", 100000000)
 	addAccountWithAmount(tm, "party-3", 100000000)
 	addAccountWithAmount(tm, "party-4", 100000000)
-
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(5))
 
 	orders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "opening1", types.SideBuy, "party-3", 10, 3000),
@@ -80,30 +81,6 @@ func TestIssue2876(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestBid,
-				Proportion: 10,
-				Offset:     num.NewUint(1000),
-			},
-			{
-				Reference:  types.PeggedReferenceMid,
-				Proportion: 13,
-				Offset:     num.NewUint(1500),
-			},
-		},
-		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 10,
-				Offset:     num.NewUint(2000),
-			},
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 13,
-				Offset:     num.NewUint(1000),
-			},
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", vgcrypto.RandomHash())
@@ -123,29 +100,4 @@ func TestIssue2876(t *testing.T) {
 	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)
 	assert.True(t, generalAccount.Balance.EQ(num.NewUint(98985000)))
-
-	// now let's move time and see
-	// this should end the opening auction
-	now = now.Add(31 * time.Second)
-
-	tm.now = now
-	tm.market.OnTick(ctx, now)
-
-	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)
-	assert.NoError(t, err)
-	// we expect the whole commitment to be there
-	assert.True(t, bondAccount.Balance.EQ(num.NewUint(1000000)))
-
-	// but also some margin to cover the orders
-	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
-	assert.NoError(t, err)
-
-	expMargin := num.NewUint(1507200)
-	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
-
-	expGeneral := num.NewUint(97492800)
-	// but also some funds left in the genearal
-	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
-	assert.NoError(t, err)
-	assert.True(t, generalAccount.Balance.EQ(expGeneral), "Expected: "+expGeneral.String()+" got "+generalAccount.Balance.String())
 }

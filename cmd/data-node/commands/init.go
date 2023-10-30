@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package commands
 
@@ -17,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
@@ -25,14 +29,15 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
+
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 )
 
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force   bool `description:"Erase exiting vega configuration at the specified path"                           long:"force"   short:"f"`
-	Archive bool `description:"Disable database retention policies. Keeps data and network history indefinitely" long:"archive" short:"a"`
-	Lite    bool `description:"Set all database retention policies to one day only"                              long:"lite"    short:"l"`
+	Force            bool   `description:"Erase exiting vega configuration at the specified path" long:"force"     short:"f"`
+	RetentionProfile string `choice:"archive"                                                     choice:"minimal" choice:"conservative" default:"archive" description:"Set which mode to initialise the data node with, will affect retention policies" long:"retention-profile" short:"r"`
 }
 
 var initCmd InitCmd
@@ -73,19 +78,18 @@ func (opts *InitCmd) Execute(args []string) error {
 
 	cfg := config.NewDefaultConfig()
 
-	if opts.Archive && opts.Lite {
-		return fmt.Errorf("specify either archive mode, lite mode - not both")
-	}
-
-	if opts.Archive {
+	if opts.RetentionProfile == "archive" {
 		cfg.NetworkHistory.Store.HistoryRetentionBlockSpan = math.MaxInt64
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
+		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 96 * time.Hour}
+		cfg.NetworkHistory.Initialise.MinimumBlockCount = -1
 	}
 
-	if opts.Lite {
+	if opts.RetentionProfile == "minimal" {
 		cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodLite
+		cfg.NetworkHistory.Initialise.TimeOut = encoding.Duration{Duration: 1 * time.Minute}
+		cfg.NetworkHistory.Initialise.MinimumBlockCount = 1
 	}
-
 	cfg.ChainID = chainID
 
 	if err := cfgLoader.Save(&cfg); err != nil {

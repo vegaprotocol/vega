@@ -9,8 +9,8 @@ Feature: Position resolution case 1
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | ethDec21Oracle     | 0.9145                    | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | ethDec21Oracle     | 0.9145                 | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -124,9 +124,9 @@ Feature: Position resolution case 1
     And then the network moves ahead "10" blocks
 
     Then the parties should have the following profit and loss:
-      | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | -8700          | 0            |
-      | sellSideProvider | -291   | 8700           | 0            |
-      | buySideProvider  | 1      | 0              | 0            |
-      | aux              | 1      | -30            | 0            |
-      | aux2             | -1     | 30             | 0            |
+      | party            | volume | realised pnl | unrealised pnl |
+      | designatedLooser | 290    | -8700        | 0              |
+      | sellSideProvider | -291   | 8700         | 0              |
+      | buySideProvider  | 1      | 0            | 0              |
+      | aux              | 1      | -30          | 0              |
+      | aux2             | -1     | 30           | 0              |

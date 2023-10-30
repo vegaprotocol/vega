@@ -10,9 +10,9 @@ import (
 	time "time"
 
 	assets "code.vegaprotocol.io/vega/core/assets"
-	common "code.vegaprotocol.io/vega/core/execution/common"
+	common "code.vegaprotocol.io/vega/core/datasource/common"
+	common0 "code.vegaprotocol.io/vega/core/execution/common"
 	governance "code.vegaprotocol.io/vega/core/governance"
-	oracles "code.vegaprotocol.io/vega/core/oracles"
 	types "code.vegaprotocol.io/vega/core/types"
 	crypto "code.vegaprotocol.io/vega/libs/crypto"
 	num "code.vegaprotocol.io/vega/libs/num"
@@ -279,7 +279,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, a
 }
 
 // AmendOrder mocks base method.
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string, arg3 common.IDGenerator) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string, arg3 common0.IDGenerator) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -291,6 +291,18 @@ func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.Order
 func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1, arg2, arg3)
+}
+
+// BeginBlock mocks base method.
+func (m *MockExecutionEngine) BeginBlock(arg0 context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BeginBlock", arg0)
+}
+
+// BeginBlock indicates an expected call of BeginBlock.
+func (mr *MockExecutionEngineMockRecorder) BeginBlock(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockExecutionEngine)(nil).BeginBlock), arg0)
 }
 
 // BlockEnd mocks base method.
@@ -320,7 +332,7 @@ func (mr *MockExecutionEngineMockRecorder) CancelLiquidityProvision(arg0, arg1, 
 }
 
 // CancelOrder mocks base method.
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string, arg3 common.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string, arg3 common0.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
@@ -335,7 +347,7 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1, arg2, arg3 in
 }
 
 // CancelStopOrders mocks base method.
-func (m *MockExecutionEngine) CancelStopOrders(arg0 context.Context, arg1 *types.StopOrdersCancellation, arg2 string, arg3 common.IDGenerator) error {
+func (m *MockExecutionEngine) CancelStopOrders(arg0 context.Context, arg1 *types.StopOrdersCancellation, arg2 string, arg3 common0.IDGenerator) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelStopOrders", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -419,7 +431,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2, arg3 i
 }
 
 // SubmitOrder mocks base method.
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string, arg3 common.IDGenerator, arg4 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string, arg3 common0.IDGenerator, arg4 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -433,8 +445,22 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
 }
 
+// SubmitSpotMarket mocks base method.
+func (m *MockExecutionEngine) SubmitSpotMarket(arg0 context.Context, arg1 *types.Market, arg2 string, arg3 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitSpotMarket", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitSpotMarket indicates an expected call of SubmitSpotMarket.
+func (mr *MockExecutionEngineMockRecorder) SubmitSpotMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitSpotMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitSpotMarket), arg0, arg1, arg2, arg3)
+}
+
 // SubmitStopOrders mocks base method.
-func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator, arg4, arg5 *string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common0.IDGenerator, arg4, arg5 *string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitStopOrders", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -474,6 +500,48 @@ func (m *MockExecutionEngine) UpdateMarket(arg0 context.Context, arg1 *types.Mar
 func (mr *MockExecutionEngineMockRecorder) UpdateMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarket), arg0, arg1)
+}
+
+// UpdateMarketState mocks base method.
+func (m *MockExecutionEngine) UpdateMarketState(arg0 context.Context, arg1 *types.MarketStateUpdateConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarketState", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarketState indicates an expected call of UpdateMarketState.
+func (mr *MockExecutionEngineMockRecorder) UpdateMarketState(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketState", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarketState), arg0, arg1)
+}
+
+// UpdateSpotMarket mocks base method.
+func (m *MockExecutionEngine) UpdateSpotMarket(arg0 context.Context, arg1 *types.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSpotMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSpotMarket indicates an expected call of UpdateSpotMarket.
+func (mr *MockExecutionEngineMockRecorder) UpdateSpotMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSpotMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateSpotMarket), arg0, arg1)
+}
+
+// VerifyUpdateMarketState mocks base method.
+func (m *MockExecutionEngine) VerifyUpdateMarketState(arg0 *types.MarketStateUpdateConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyUpdateMarketState", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyUpdateMarketState indicates an expected call of VerifyUpdateMarketState.
+func (mr *MockExecutionEngineMockRecorder) VerifyUpdateMarketState(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyUpdateMarketState", reflect.TypeOf((*MockExecutionEngine)(nil).VerifyUpdateMarketState), arg0)
 }
 
 // MockGovernanceEngine is a mock of GovernanceEngine interface.
@@ -1712,6 +1780,21 @@ func (mr *MockNetworkParametersMockRecorder) DispatchChanges(arg0 interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges), arg0)
 }
 
+// GetInt mocks base method.
+func (m *MockNetworkParameters) GetInt(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInt", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInt indicates an expected call of GetInt.
+func (mr *MockNetworkParametersMockRecorder) GetInt(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockNetworkParameters)(nil).GetInt), arg0)
+}
+
 // IsUpdateAllowed mocks base method.
 func (m *MockNetworkParameters) IsUpdateAllowed(arg0 string) error {
 	m.ctrl.T.Helper()
@@ -1764,7 +1847,7 @@ func (m *MockOraclesEngine) EXPECT() *MockOraclesEngineMockRecorder {
 }
 
 // BroadcastData mocks base method.
-func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 oracles.OracleData) error {
+func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 common.Data) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastData", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -1778,7 +1861,7 @@ func (mr *MockOraclesEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *
 }
 
 // HasMatch mocks base method.
-func (m *MockOraclesEngine) HasMatch(arg0 oracles.OracleData) (bool, error) {
+func (m *MockOraclesEngine) HasMatch(arg0 common.Data) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasMatch", arg0)
 	ret0, _ := ret[0].(bool)
@@ -1793,7 +1876,7 @@ func (mr *MockOraclesEngineMockRecorder) HasMatch(arg0 interface{}) *gomock.Call
 }
 
 // ListensToSigners mocks base method.
-func (m *MockOraclesEngine) ListensToSigners(arg0 oracles.OracleData) bool {
+func (m *MockOraclesEngine) ListensToSigners(arg0 common.Data) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListensToSigners", arg0)
 	ret0, _ := ret[0].(bool)
@@ -1830,10 +1913,10 @@ func (m *MockOracleAdaptors) EXPECT() *MockOracleAdaptorsMockRecorder {
 }
 
 // Normalise mocks base method.
-func (m *MockOracleAdaptors) Normalise(arg0 crypto.PublicKey, arg1 v1.OracleDataSubmission) (*oracles.OracleData, error) {
+func (m *MockOracleAdaptors) Normalise(arg0 crypto.PublicKey, arg1 v1.OracleDataSubmission) (*common.Data, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Normalise", arg0, arg1)
-	ret0, _ := ret[0].(*oracles.OracleData)
+	ret0, _ := ret[0].(*common.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1893,6 +1976,34 @@ func (m *MockLimits) CanProposeMarket() bool {
 func (mr *MockLimitsMockRecorder) CanProposeMarket() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeMarket))
+}
+
+// CanProposePerpsMarket mocks base method.
+func (m *MockLimits) CanProposePerpsMarket() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanProposePerpsMarket")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanProposePerpsMarket indicates an expected call of CanProposePerpsMarket.
+func (mr *MockLimitsMockRecorder) CanProposePerpsMarket() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposePerpsMarket", reflect.TypeOf((*MockLimits)(nil).CanProposePerpsMarket))
+}
+
+// CanProposeSpotMarket mocks base method.
+func (m *MockLimits) CanProposeSpotMarket() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanProposeSpotMarket")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanProposeSpotMarket indicates an expected call of CanProposeSpotMarket.
+func (mr *MockLimitsMockRecorder) CanProposeSpotMarket() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeSpotMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeSpotMarket))
 }
 
 // CanTrade mocks base method.

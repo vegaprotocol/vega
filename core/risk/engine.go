@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package risk
 
@@ -233,7 +236,7 @@ func (e *Engine) GetRiskFactors() *types.RiskFactor {
 	return e.factors
 }
 
-func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint) ([]events.Risk, []events.Margin) {
+func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal) ([]events.Risk, []events.Margin) {
 	if len(evts) == 0 {
 		return nil, nil
 	}
@@ -243,15 +246,16 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	eventBatch := make([]*events.MarginLevels, 0, len(evts))
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
+	nowTS := e.timeSvc.GetTimeNow().UnixNano()
 	for _, evt := range evts {
-		levels := e.calculateMargins(evt, price, rFactors, true, true)
+		levels := e.calculateMargins(evt, price, rFactors, true, true, increment)
 		if levels == nil {
 			continue
 		}
 
 		levels.Party = evt.Party()
 		levels.Asset = e.asset // This is assuming there's a single asset at play here
-		levels.Timestamp = e.timeSvc.GetTimeNow().UnixNano()
+		levels.Timestamp = nowTS
 		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
@@ -291,12 +295,12 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // party margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint) (events.Risk, events.Margin, error) {
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint, increment num.Decimal) (events.Risk, events.Margin, error) {
 	if evt == nil {
 		return nil, nil, nil
 	}
 	auction := e.as.InAuction() && !e.as.CanLeave()
-	margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction)
+	margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment)
 
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -372,7 +376,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
-	ctx context.Context, evts []events.Margin, markPrice *num.Uint,
+	ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
 ) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	now := e.timeSvc.GetTimeNow().UnixNano()
@@ -414,7 +418,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 		// channel is closed, and we've got a nil interface
 		auction := e.as.InAuction() && !e.as.CanLeave()
-		margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction)
+		margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction, increment)
 
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -498,13 +502,13 @@ func (e *Engine) UpdateMarginsOnSettlement(
 // ExpectMargins is used in the case some parties are in a distressed positions
 // in this situation we will only check if the party margin is > to the maintenance margin.
 func (e *Engine) ExpectMargins(
-	evts []events.Margin, markPrice *num.Uint,
+	evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
 ) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	auction := e.as.InAuction() && !e.as.CanLeave()
 	for _, evt := range evts {
-		margins := e.calculateMargins(evt, markPrice, *e.factors, false, auction)
+		margins := e.calculateMargins(evt, markPrice, *e.factors, false, auction, increment)
 		// no margins updates, nothing to do then
 		if margins == nil {
 			okMargins = append(okMargins, evt)

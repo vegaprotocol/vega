@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -67,7 +70,28 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			orderSubmission.ReduceOnly = true
 		}
 
-		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		// check for pegged orders
+		if row.PeggedReference() != types.PeggedReferenceUnspecified {
+			orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: row.PeggedReference(), Offset: row.PeggedOffset()}
+		}
+
+		// check for stop orders
+		stopOrderSubmission, err := buildStopOrder(&orderSubmission, row, now)
+		if err != nil {
+			return err
+		}
+
+		var resp *types.OrderConfirmation
+		if stopOrderSubmission != nil {
+			resp, err = exec.SubmitStopOrder(
+				context.Background(),
+				stopOrderSubmission,
+				row.Party(),
+			)
+		} else {
+			resp, err = exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		}
+
 		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
 			return ceerr
 		}
@@ -76,16 +100,18 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			continue
 		}
 
-		actualTradeCount := int64(len(resp.Trades))
-		if actualTradeCount != row.ResultingTrades() {
-			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
-				map[string]string{
-					"total": i64ToS(row.ResultingTrades()),
-				},
-				map[string]string{
-					"total": i64ToS(actualTradeCount),
-				},
-			)
+		if resp != nil {
+			actualTradeCount := int64(len(resp.Trades))
+			if actualTradeCount != row.ResultingTrades() {
+				return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
+					map[string]string{
+						"total": i64ToS(row.ResultingTrades()),
+					},
+					map[string]string{
+						"total": i64ToS(actualTradeCount),
+					},
+				)
+			}
 		}
 		// make it look like we start a new block
 		epochService.OnBlockEnd(context.Background())
@@ -184,6 +210,11 @@ func PartiesPlaceTheFollowingOrders(
 			orderSubmission.PostOnly = true
 		case Reduce:
 			orderSubmission.ReduceOnly = true
+		}
+
+		// check for pegged orders
+		if row.PeggedReference() != types.PeggedReferenceUnspecified {
+			orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: row.PeggedReference(), Offset: row.PeggedOffset()}
 		}
 
 		// check for stop orders
@@ -378,6 +409,8 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"ra trailing",
 		"so expires in",
 		"so expiry strategy",
+		"pegged reference",
+		"pegged offset",
 	})
 }
 
@@ -517,7 +550,7 @@ func (r submitOrderRow) StopOrderExpirationDate(now time.Time) int64 {
 	if !r.row.HasColumn("so expires in") {
 		return 0
 	}
-	return now.Add(r.row.MustDurationSec("so expires in")).Local().UnixNano()
+	return now.Add(r.row.MustDurationSec2("so expires in")).Local().UnixNano()
 }
 
 func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {
@@ -525,4 +558,18 @@ func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {
 		return types.StopOrderExpiryStrategyCancels
 	}
 	return r.row.MustExpiryStrategy("so expiry strategy")
+}
+
+func (r submitOrderRow) PeggedReference() types.PeggedReference {
+	if !r.row.HasColumn("pegged reference") {
+		return types.PeggedReferenceUnspecified
+	}
+	return r.row.MustPeggedReference("pegged reference")
+}
+
+func (r submitOrderRow) PeggedOffset() *num.Uint {
+	if !r.row.HasColumn("pegged offset") {
+		return nil
+	}
+	return r.row.MustUint("pegged offset")
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package risk
 
 import (
@@ -13,11 +28,11 @@ type OrderInfo struct {
 	IsMarketOrder bool
 }
 
-func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders num.Decimal, err error) {
+func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders num.Decimal, err error) {
 	openVolume := num.DecimalFromInt64(sizePosition).Div(positionFactor)
 
 	if sizePosition != 0 {
-		liquidationPriceForOpenVolume, err = calculateLiquidationPrice(openVolume, currentPrice, collateralAvailable, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		liquidationPriceForOpenVolume, err = calculateLiquidationPrice(openVolume, currentPrice, collateralAvailable, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition)
 	}
 
 	liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders = liquidationPriceForOpenVolume, liquidationPriceForOpenVolume
@@ -45,12 +60,12 @@ func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders,
 		return sellOrders[i].Price.LessThan(sellOrders[j].Price)
 	})
 
-	liquidationPriceWithBuyOrders, err = calculateLiquidationPriceWithOrders(liquidationPriceForOpenVolume, buyOrders, true, openVolume, currentPrice, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+	liquidationPriceWithBuyOrders, err = calculateLiquidationPriceWithOrders(liquidationPriceForOpenVolume, buyOrders, true, openVolume, currentPrice, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition)
 	if err != nil {
 		liquidationPriceWithBuyOrders = num.DecimalZero()
 		return
 	}
-	liquidationPriceWithSellOrders, err = calculateLiquidationPriceWithOrders(liquidationPriceForOpenVolume, sellOrders, false, openVolume, currentPrice, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+	liquidationPriceWithSellOrders, err = calculateLiquidationPriceWithOrders(liquidationPriceForOpenVolume, sellOrders, false, openVolume, currentPrice, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition)
 	if err != nil {
 		liquidationPriceWithSellOrders = num.DecimalZero()
 		return
@@ -59,7 +74,7 @@ func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders,
 	return liquidationPriceForOpenVolume, liquidationPriceWithBuyOrders, liquidationPriceWithSellOrders, nil
 }
 
-func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition num.Decimal) (num.Decimal, error) {
 	if openVolume.IsZero() {
 		return num.DecimalZero(), nil
 	}
@@ -74,14 +89,23 @@ func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralA
 		return num.DecimalZero(), fmt.Errorf("liquidation price not defined")
 	}
 
-	ret := collateralAvailable.Sub(openVolume.Mul(currentPrice)).Div(denominator)
+	numerator := collateralAvailable
+
+	if !openVolume.IsZero() {
+		numerator = numerator.Sub(openVolume.Mul(currentPrice))
+		if !fundingPaymentPerUnitPosition.IsZero() {
+			numerator = numerator.Sub(num.MaxD(num.DecimalZero(), openVolume.Mul(fundingPaymentPerUnitPosition)))
+		}
+	}
+
+	ret := numerator.Div(denominator)
 	if ret.IsNegative() {
 		return num.DecimalZero(), nil
 	}
 	return ret, nil
 }
 
-func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Decimal, orders []*OrderInfo, buySide bool, openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Decimal, orders []*OrderInfo, buySide bool, openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constant num.Decimal) (num.Decimal, error) {
 	var err error
 	liquidationPrice := liquidationPriceOpenVolumeOnly
 	exposureWithOrders := openVolume
@@ -101,7 +125,7 @@ func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Deci
 			exposureWithOrders = exposureWithOrders.Sub(num.DecimalFromInt64(int64(o.Size)).Div(positionFactor))
 		}
 
-		liquidationPrice, err = calculateLiquidationPrice(exposureWithOrders, o.Price, collateralWithOrders, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		liquidationPrice, err = calculateLiquidationPrice(exposureWithOrders, o.Price, collateralWithOrders, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constant)
 		if err != nil {
 			return num.DecimalZero(), err
 		}

@@ -1,27 +1,30 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package positions
 
 import (
 	"context"
-
-	"code.vegaprotocol.io/vega/core/events"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/logging"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/maps"
 )
 
 type SnapshotEngine struct {
@@ -46,34 +49,6 @@ func NewSnapshotEngine(
 func (e *SnapshotEngine) StopSnapshots() {
 	e.log.Debug("market has been cleared, stopping snapshot production", logging.String("marketid", e.marketID))
 	e.stopped = true
-}
-
-func (e *SnapshotEngine) RegisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	return e.Engine.RegisterOrder(ctx, order)
-}
-
-func (e *SnapshotEngine) UnregisterOrder(ctx context.Context, order *types.Order) *MarketPosition {
-	return e.Engine.UnregisterOrder(ctx, order)
-}
-
-func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
-	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
-}
-
-func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
-	return e.Engine.UpdateNetwork(ctx, trade, passiveOrder)
-}
-
-func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
-	return e.Engine.Update(ctx, trade, passiveOrder, aggressiveOrder)
-}
-
-func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
-	return e.Engine.RemoveDistressed(parties)
-}
-
-func (e *SnapshotEngine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
-	return e.Engine.UpdateMarkPrice(markPrice)
 }
 
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
@@ -105,7 +80,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadMarketPositions:
-
 		// Check the payload is for this market
 		if e.marketID != pl.MarketPositions.MarketID {
 			return nil, types.ErrUnknownSnapshotType
@@ -125,7 +99,24 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			if p.Distressed {
 				e.distressedPos[p.PartyID] = struct{}{}
 			}
+
+			// ensure these exists on the first snapshot after the upgrade
+			e.partiesHighestVolume[p.PartyID] = &openVolumeRecord{}
 		}
+
+		for _, v := range pl.MarketPositions.PartieRecords {
+			if v.LatestOpenInterest != nil && v.LowestOpenInterest != nil {
+				e.partiesHighestVolume[v.Party] = &openVolumeRecord{
+					Latest:  *v.LatestOpenInterest,
+					Highest: *v.LowestOpenInterest,
+				}
+			}
+
+			if v.TradedVolume != nil {
+				e.partiesTradedSize[v.Party] = *v.TradedVolume
+			}
+		}
+
 		e.data, err = proto.Marshal(payload.IntoProto())
 		return nil, err
 
@@ -141,7 +132,7 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		return nil, nil
 	}
 
-	e.log.Debug("serilaising snapshot", logging.Int("positions", len(e.positionsCpy)))
+	e.log.Debug("serialising snapshot", logging.Int("positions", len(e.positionsCpy)))
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
 
 	for _, evt := range e.positionsCpy {
@@ -159,10 +150,41 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		}
 		positions = append(positions, pos)
 	}
+
+	partiesRecordsMap := map[string]*snapshotpb.PartyPositionStats{}
+
+	// now iterate over both map as some could have been remove
+	// when closing positions or being closed out.
+	for party, poi := range e.partiesHighestVolume {
+		partiesRecordsMap[party] = &snapshotpb.PartyPositionStats{
+			Party:              party,
+			LowestOpenInterest: ptr.From(poi.Highest),
+			LatestOpenInterest: ptr.From(poi.Latest),
+		}
+	}
+
+	for party, tradedSize := range e.partiesTradedSize {
+		if pr, ok := partiesRecordsMap[party]; ok {
+			pr.TradedVolume = ptr.From(tradedSize)
+			continue
+		}
+
+		partiesRecordsMap[party] = &snapshotpb.PartyPositionStats{
+			Party:        party,
+			TradedVolume: ptr.From(tradedSize),
+		}
+	}
+
+	partiesRecord := maps.Values(partiesRecordsMap)
+	sort.Slice(partiesRecord, func(i, j int) bool {
+		return partiesRecord[i].Party < partiesRecord[j].Party
+	})
+
 	e.pl.Data = &types.PayloadMarketPositions{
 		MarketPositions: &types.MarketPositions{
-			MarketID:  e.marketID,
-			Positions: positions,
+			MarketID:      e.marketID,
+			Positions:     positions,
+			PartieRecords: partiesRecord,
 		},
 	}
 

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -17,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -76,7 +80,7 @@ type Account struct {
 	Owner    string
 	Balance  *num.Uint
 	Asset    string
-	MarketID string
+	MarketID string // NB: this market may not always refer to a valid market id. instead in the case of transfers it just represents a hash corresponding to a dispatch metric.
 	Type     AccountType
 }
 
@@ -94,7 +98,7 @@ func (a Account) String() string {
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
-		uintPointerToString(a.Balance),
+		stringer.UintPointerToString(a.Balance),
 		a.Asset,
 		a.MarketID,
 		a.Type.String(),
@@ -241,17 +245,20 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 	return out
 }
 
-type Party = proto.Party
-
 type AccountType = proto.AccountType
 
 const (
 	// Default value.
 	AccountTypeUnspecified AccountType = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
+	// Per asset network treasury.
+	AccountTypeNetworkTreasury AccountType = proto.AccountType_ACCOUNT_TYPE_NETWORK_TREASURY
 	// Insurance pool accounts contain insurance pool funds for a market.
 	AccountTypeInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_INSURANCE
 	// Settlement accounts exist only during settlement or mark-to-market.
 	AccountTypeSettlement AccountType = proto.AccountType_ACCOUNT_TYPE_SETTLEMENT
+	// Global insurance account for the asset.
+	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
+
 	// Margin accounts contain margin funds for a party and each party will
 	// have multiple margin accounts, one for each market they have traded in
 	//
@@ -291,7 +298,18 @@ const (
 	// Market account for holding in-flight spot passive orders funds.
 	AccountTypeHolding AccountType = proto.AccountType_ACCOUNT_TYPE_HOLDING
 	// Market account per LP to receive liquidity fees.
-	AccountTypeLPLiquidityFees AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
-
+	AccountTypeLPLiquidityFees                AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
 	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
+	AccountTypeVestingRewards                 AccountType = proto.AccountType_ACCOUNT_TYPE_VESTING_REWARDS
+	AccountTypeVestedRewards                  AccountType = proto.AccountType_ACCOUNT_TYPE_VESTED_REWARDS
+	// Reward account for average position metric.
+	AccountTypeAveragePositionReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_AVERAGE_POSITION
+	// Reward account for relative return metric.
+	AccountTypeRelativeReturnReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN
+	// Reward account for return volatility metric.
+	AccountTypeReturnVolatilityReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY
+	// Reward account for validator ranking metric.
+	AccountTypeValidatorRankingReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
+	// Account for pending fee referral rewards.
+	AccountTypePendingFeeReferralReward AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
 )

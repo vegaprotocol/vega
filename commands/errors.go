@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
@@ -9,44 +24,61 @@ import (
 )
 
 var (
-	ErrIsRequired                                  = errors.New("is required")
-	ErrMustBePositive                              = errors.New("must be positive")
-	ErrMustBePositiveOrZero                        = errors.New("must be positive or zero")
-	ErrMustBeNegativeOrZero                        = errors.New("must be negative or zero")
-	ErrMustBeLessThan150                           = errors.New("must be less than 150")
-	ErrMustBeAtMost1M                              = errors.New("must be at most 1000000")
-	ErrMustBeAtMost100                             = errors.New("must be at most 100")
-	ErrMustBeWithinRange7                          = errors.New("must be between -7 and 7")
-	ErrIsNotValid                                  = errors.New("is not a valid value")
-	ErrIsNotValidWithOCO                           = errors.New("is not a valid with one cancel other")
-	ErrIsNotValidNumber                            = errors.New("is not a valid number")
-	ErrIsNotSupported                              = errors.New("is not supported")
-	ErrIsUnauthorised                              = errors.New("is unauthorised")
-	ErrCannotAmendToGFA                            = errors.New("cannot amend to time in force GFA")
-	ErrCannotAmendToGFN                            = errors.New("cannot amend to time in force GFN")
-	ErrNonGTTOrderWithExpiry                       = errors.New("non GTT order with expiry")
-	ErrGTTOrderWithNoExpiry                        = errors.New("GTT order without expiry")
-	ErrIsMismatching                               = errors.New("is mismatching")
-	ErrReferenceTooLong                            = errors.New("reference is too long")
-	ErrNotAValidInteger                            = errors.New("not a valid integer")
-	ErrNotAValidFloat                              = errors.New("not a valid float")
-	ErrMustBeLessThan100Chars                      = errors.New("must be less than 100 characters")
-	ErrMustNotExceed20000Chars                     = errors.New("must not exceed 20000 characters")
-	ErrShouldBeHexEncoded                          = errors.New("should be hex encoded")
-	ErrSignatureNotVerifiable                      = errors.New("signature is not verifiable")
-	ErrInvalidSignature                            = errors.New("invalid signature")
-	ErrUnsupportedAlgorithm                        = errors.New("unsupported algorithm")
-	ErrEmptyBatchMarketInstructions                = errors.New("empty batch market instructions")
-	ErrIsNotValidVegaPubkey                        = errors.New("is not a valid vega public key")
-	ErrIsNotValidEthereumAddress                   = errors.New("is not a valid ethereum address")
-	ErrMustBeWithinRange01                         = errors.New("must be between 0 and 1")
-	ErrMustBeLTE1                                  = errors.New("must be less than or equal to 1")
-	ErrMustBeReduceOnly                            = errors.New("must be reduce only")
-	ErrExpiryStrategyRequiredWhenExpiresAtSet      = errors.New("expiry strategy required when expires_at set")
-	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow  = errors.New("must have at least one of rises above or falls bellow")
-	ErrMustHaveAStopOrderTrigger                   = errors.New("must have a stop order trigger")
-	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame = errors.New("falls below and rises above market id must be the same")
-	ErrTrailingPercentOffsetMinimalIncrementMustBe = errors.New("trailing percent offset minimal increment must be >= 0.001")
+	ErrIsRequired                                      = errors.New("is required")
+	ErrMustBePositive                                  = errors.New("must be positive")
+	ErrMustBePositiveOrZero                            = errors.New("must be positive or zero")
+	ErrMustBeNegativeOrZero                            = errors.New("must be negative or zero")
+	ErrMustBeLessThan150                               = errors.New("must be less than 150")
+	ErrMustBeAtMost1M                                  = errors.New("must be at most 1000000")
+	ErrMustBeAtMost100                                 = errors.New("must be at most 100")
+	ErrMustBeWithinRange7                              = errors.New("must be between -7 and 7")
+	ErrIsNotValid                                      = errors.New("is not a valid value")
+	ErrIsNotValidWithOCO                               = errors.New("is not a valid with one cancel other")
+	ErrIsNotValidNumber                                = errors.New("is not a valid number")
+	ErrIsNotSupported                                  = errors.New("is not supported")
+	ErrIsUnauthorised                                  = errors.New("is unauthorised")
+	ErrCannotAmendToGFA                                = errors.New("cannot amend to time in force GFA")
+	ErrCannotAmendToGFN                                = errors.New("cannot amend to time in force GFN")
+	ErrNonGTTOrderWithExpiry                           = errors.New("non GTT order with expiry")
+	ErrGTTOrderWithNoExpiry                            = errors.New("GTT order without expiry")
+	ErrIsMismatching                                   = errors.New("is mismatching")
+	ErrReferenceTooLong                                = errors.New("reference is too long")
+	ErrNotAValidInteger                                = errors.New("not a valid integer")
+	ErrNotAValidFloat                                  = errors.New("not a valid float")
+	ErrMustBeLessThan100Chars                          = errors.New("must be less than 100 characters")
+	ErrMustBeLessThan200Chars                          = errors.New("must be less than 200 characters")
+	ErrMustNotExceed20000Chars                         = errors.New("must not exceed 20000 characters")
+	ErrShouldBeHexEncoded                              = errors.New("should be hex encoded")
+	ErrSignatureNotVerifiable                          = errors.New("signature is not verifiable")
+	ErrInvalidSignature                                = errors.New("invalid signature")
+	ErrUnsupportedAlgorithm                            = errors.New("unsupported algorithm")
+	ErrEmptyBatchMarketInstructions                    = errors.New("empty batch market instructions")
+	ErrIsNotValidVegaPubkey                            = errors.New("is not a valid vega public key")
+	ErrIsNotValidEthereumAddress                       = errors.New("is not a valid ethereum address")
+	ErrEmptyEthereumCallSpec                           = errors.New("ethereum call spec is required")
+	ErrInvalidEthereumAbi                              = errors.New("is not a valid ethereum abi definition")
+	ErrInvalidEthereumCallTrigger                      = errors.New("ethereum call trigger not valid")
+	ErrInvalidEthereumCallArgs                         = errors.New("ethereum call arguments not valid")
+	ErrInvalidEthereumFilters                          = errors.New("ethereum call filters not valid")
+	ErrInvalidEthereumCallSpec                         = errors.New("ethereum call spec is not valid")
+	ErrMustBeWithinRange01                             = errors.New("must be between 0 and 1")
+	ErrMustBeWithinRange11                             = errors.New("must be between -1 and 1")
+	ErrMustBeLTE1                                      = errors.New("must be less than or equal to 1")
+	ErrMustBeGTE1                                      = errors.New("must be greater than or equal to 1")
+	ErrMustBeReduceOnly                                = errors.New("must be reduce only")
+	ErrExpiryStrategyRequiredWhenExpiresAtSet          = errors.New("expiry strategy required when expires_at set")
+	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow      = errors.New("must have at least one of rises above or falls below")
+	ErrMustHaveAStopOrderTrigger                       = errors.New("must have a stop order trigger")
+	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame     = errors.New("market ID for falls below and rises above must be the same")
+	ErrTrailingPercentOffsetMinimalIncrementNotReached = errors.New("trailing percent offset minimal increment must be >= 0.001")
+	ErrMustBeEmpty                                     = errors.New("must be empty")
+	ErrMustBeGTEClampLowerBound                        = errors.New("must be greater than or equal to clamp lower bound")
+	ErrOneTimeTriggerAllowedMax                        = errors.New("maximum one time trigger allowed")
+	ErrMustBeBetween01                                 = errors.New("must be between 0 (excluded) and 1 (included)")
+	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
+	ErrMustBeLessThen366                               = errors.New("must be less then 366")
+	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
+	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
 )
 
 type Errors map[string][]error

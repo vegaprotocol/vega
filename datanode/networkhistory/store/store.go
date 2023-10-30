@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package store
 
 import (
@@ -14,6 +29,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
@@ -85,6 +101,7 @@ type Store struct {
 	index        index
 	swarmKeySeed string
 	swarmKey     string
+	lastGC       time.Time
 
 	indexPath  string
 	stagingDir string
@@ -105,7 +122,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	storePath := filepath.Join(networkHistoryHome, "store")
 
 	p := &Store{
-		log:        log,
+		log:        log.Named("store"),
 		cfg:        cfg,
 		indexPath:  filepath.Join(storePath, "index"),
 		stagingDir: filepath.Join(storePath, "staging"),
@@ -141,7 +158,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		PrivKey: cfg.PrivKey,
 	}
 
-	log.Infof("starting network history store with ipfs Peer Id:%s", p.identity.PeerID)
+	p.log.Infof("starting network history store with ipfs Peer Id:%s", p.identity.PeerID)
 
 	if plugins == nil {
 		plugins, err = loadPlugins(p.ipfsPath)
@@ -150,11 +167,11 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		}
 	}
 
-	log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
+	p.log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
 	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
 		cfg.SwarmPort)
 
-	log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
+	p.log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node configuration:%w", err)
@@ -337,13 +354,11 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 		logging.String("previous history segment id", previousHistorySegmentID),
 	)
 
-	p.log.Debug("AddSnapshotData: removing old history segments")
-
-	segments, err := p.garbageCollectOldHistorySegments(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to remove old history segments:%s", err)
+	if time.Now().After(p.lastGC.Add(p.cfg.GarbageCollectionInterval.Duration)) {
+		if err := p.CollectGarbage(ctx); err != nil {
+			return err
+		}
 	}
-	p.log.Infof("removed %d old history segments", len(segments))
 
 	ipfsSize, err := p.ipfsRepo.GetStorageUsage(ctx)
 	if err != nil {
@@ -351,6 +366,17 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 	}
 	metrics.SetNetworkHistoryIpfsStoreBytes(float64(ipfsSize))
 
+	return nil
+}
+
+func (p *Store) CollectGarbage(ctx context.Context) (err error) {
+	p.lastGC = time.Now()
+	p.log.Debug("AddSnapshotData: removing old history segments")
+	segments, err := p.garbageCollectOldHistorySegments(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to remove old history segments:%w", err)
+	}
+	p.log.Infof("removed %d old history segments", len(segments))
 	return nil
 }
 
@@ -665,6 +691,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 }
 
 func (p *Store) StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error) {
+	p.log.Info("staging full-segment", logging.String("segment", s.ZipFileName()))
 	ss := segment.Staged{
 		Full:      s,
 		Directory: p.stagingDir,

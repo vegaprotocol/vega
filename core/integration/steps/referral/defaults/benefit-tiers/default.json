@@ -1,0 +1,22 @@
+{
+  "benefitTiers": [
+    {
+      "minimumRunningNotionalTakerVolume": "",
+      "minimumEpochs": "",
+      "referralRewardFactor": "",
+      "referralDiscountFactor": ""
+    },
+    {
+      "minimumRunningNotionalTakerVolume": "",
+      "minimumEpochs": "",
+      "referralRewardFactor": "",
+      "referralDiscountFactor": ""
+    },
+    {
+      "minimumRunningNotionalTakerVolume": "",
+      "minimumEpochs": "",
+      "referralRewardFactor": "",
+      "referralDiscountFactor": ""
+    }
+  ]
+}

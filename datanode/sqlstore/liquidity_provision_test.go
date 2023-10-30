@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,6 +32,10 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
@@ -39,6 +58,7 @@ func TestLiquidityProvision(t *testing.T) {
 	t.Run("Get should return LP with the corresponding reference for live orders", testGetLPByReferenceAndPartyLiveOrders)
 	t.Run("Get should return LP with the corresponding reference", testGetLPByReferenceAndParty)
 	t.Run("GetByTxHash", testLiquidityProvisionGetByTxHash)
+	t.Run("Get should return the current LP and pending LP if the current LP is pending", testGetLPWithPending)
 }
 
 func TestLiquidityProvisionPagination(t *testing.T) {
@@ -59,8 +79,7 @@ func setupLPTests(t *testing.T) (*sqlstore.Blocks, *sqlstore.LiquidityProvision,
 }
 
 func testInsertNewInCurrentBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -81,9 +100,51 @@ func testInsertNewInCurrentBlock(t *testing.T) {
 	assert.Equal(t, 1, rowCount)
 }
 
+func toCurrentAndPreviousLP(in ...entities.LiquidityProvision) []entities.CurrentAndPreviousLiquidityProvisions {
+	out := make([]entities.CurrentAndPreviousLiquidityProvisions, len(in))
+	for i, l := range in {
+		out[i] = entities.CurrentAndPreviousLiquidityProvisions{
+			ID:               l.ID,
+			PartyID:          l.PartyID,
+			CreatedAt:        l.CreatedAt,
+			UpdatedAt:        l.UpdatedAt,
+			MarketID:         l.MarketID,
+			CommitmentAmount: l.CommitmentAmount,
+			Fee:              l.Fee,
+			Sells:            l.Sells,
+			Buys:             l.Buys,
+			Version:          l.Version,
+			Status:           l.Status,
+			Reference:        l.Reference,
+			TxHash:           l.TxHash,
+			VegaTime:         l.VegaTime,
+		}
+	}
+	return out
+}
+
+func toCurrentAndPreviousLPWithPrevious(current, previous entities.LiquidityProvision) entities.CurrentAndPreviousLiquidityProvisions {
+	lp := toCurrentAndPreviousLP(current)[0]
+	lp.PreviousID = previous.ID
+	lp.PreviousPartyID = previous.PartyID
+	lp.PreviousCreatedAt = &previous.CreatedAt
+	lp.PreviousUpdatedAt = &previous.UpdatedAt
+	lp.PreviousMarketID = previous.MarketID
+	lp.PreviousCommitmentAmount = &previous.CommitmentAmount
+	lp.PreviousFee = &previous.Fee
+	lp.PreviousSells = previous.Sells
+	lp.PreviousBuys = previous.Buys
+	lp.PreviousVersion = &previous.Version
+	lp.PreviousStatus = &previous.Status
+	lp.PreviousReference = &previous.Reference
+	lp.PreviousTxHash = previous.TxHash
+	lp.PreviousVegaTime = &previous.VegaTime
+
+	return lp
+}
+
 func testUpdateExistingInCurrentBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -108,8 +169,7 @@ func testUpdateExistingInCurrentBlock(t *testing.T) {
 }
 
 func testGetLPByReferenceAndParty(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -146,8 +206,7 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 }
 
 func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -184,8 +243,7 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 }
 
 func testLiquidityProvisionGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -226,9 +284,42 @@ func testLiquidityProvisionGetByTxHash(t *testing.T) {
 	require.Equal(t, lps[1].ID, assets2[0].ID)
 }
 
+func testGetLPWithPending(t *testing.T) {
+	ctx := tempTransaction(t)
+	bs, lp, conn := setupLPTests(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	lps := []entities.LiquidityProvision{}
+	for _, lpp := range getTestLiquidityProvisionsWithPendingUpdate(t, ctx, bs) {
+		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), time.Unix(0, lpp.UpdatedAt))
+		require.NoError(t, err)
+		assert.NoError(t, lp.Upsert(ctx, data))
+		err = lp.Flush(ctx)
+		require.NoError(t, err)
+		lps = append(lps, data)
+	}
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
+	assert.Equal(t, 3, rowCount)
+
+	want := []entities.CurrentAndPreviousLiquidityProvisions{
+		toCurrentAndPreviousLP(lps[0])[0],
+		toCurrentAndPreviousLP(lps[1])[0],
+		toCurrentAndPreviousLPWithPrevious(lps[2], lps[1]),
+	}
+
+	partyID := entities.PartyID("deadbaad")
+	marketID := entities.MarketID("")
+	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", false, entities.CursorPagination{})
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
 func testGetLPByPartyOnly(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -239,7 +330,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 	// Test with all LP orders
 	lpProto := getTestLiquidityProvision(false)
 
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -254,7 +345,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
-		want = append(want, data)
+		want = append(want, toCurrentAndPreviousLP(data)[0])
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -269,8 +360,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 }
 
 func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -281,7 +371,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 	// Test with live LP orders
 	lpProto := getTestLiquidityProvision(true)
 
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -296,7 +386,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
-		want = append(want, data)
+		want = append(want, toCurrentAndPreviousLP(data)[0])
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from live_liquidity_provisions").Scan(&rowCount))
@@ -311,8 +401,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 }
 
 func testGetLPByPartyAndMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -325,7 +414,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 	wantMarketID := "dabbad00"
 
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -341,7 +430,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, data)
+			want = append(want, toCurrentAndPreviousLP(data)[0])
 		}
 	}
 
@@ -357,8 +446,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 }
 
 func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -371,7 +459,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 
 	wantMarketID := "dabbad00"
 
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -387,7 +475,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, data)
+			want = append(want, toCurrentAndPreviousLP(data)[0])
 		}
 	}
 
@@ -403,8 +491,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 }
 
 func testGetLPNoPartyAndMarketErrors(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	_, lp, _ := setupLPTests(t)
 	partyID := entities.PartyID("")
@@ -417,8 +504,7 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 }
 
 func testGetLPNoPartyWithMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -429,7 +515,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	// Test for all LP orders
 	lpProto := getTestLiquidityProvision(false)
 	wantMarketID := "dabbad00"
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -445,7 +531,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, data)
+			want = append(want, toCurrentAndPreviousLP(data)[0])
 		}
 	}
 
@@ -460,8 +546,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 }
 
 func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lp, conn := setupLPTests(t)
 
@@ -472,7 +557,7 @@ func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
 	// Test for live LP orders
 	lpProto := getTestLiquidityProvision(true)
 	wantMarketID := "dabbad00"
-	want := make([]entities.LiquidityProvision, 0)
+	want := make([]entities.CurrentAndPreviousLiquidityProvisions, 0)
 
 	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
@@ -488,7 +573,7 @@ func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		if data.MarketID.String() == wantMarketID {
-			want = append(want, data)
+			want = append(want, toCurrentAndPreviousLP(data)[0])
 		}
 	}
 
@@ -600,11 +685,65 @@ func getTestLiquidityProvision(live bool) []*vega.LiquidityProvision {
 	return testres
 }
 
+func getTestLiquidityProvisionsWithPendingUpdate(t *testing.T, ctx context.Context, bs *sqlstore.Blocks) []*vega.LiquidityProvision {
+	t.Helper()
+	created := addTestBlock(t, ctx, bs)
+	testres := []*vega.LiquidityProvision{
+		{
+			Id:               "deadbeef",
+			PartyId:          "deadbaad",
+			CreatedAt:        created.VegaTime.UnixNano(),
+			UpdatedAt:        created.VegaTime.UnixNano(),
+			MarketId:         "cafed00d",
+			CommitmentAmount: "100000",
+			Fee:              "0.3",
+			Sells:            nil,
+			Buys:             nil,
+			Version:          1,
+			Status:           vega.LiquidityProvision_STATUS_PENDING,
+			Reference:        "TEST1",
+		},
+	}
+
+	updated := addTestBlock(t, ctx, bs)
+	testres = append(testres, &vega.LiquidityProvision{
+		Id:               "deadbeef",
+		PartyId:          "deadbaad",
+		CreatedAt:        created.VegaTime.UnixNano(),
+		UpdatedAt:        updated.VegaTime.UnixNano(),
+		MarketId:         "cafed00d",
+		CommitmentAmount: "100000",
+		Fee:              "0.3",
+		Sells:            nil,
+		Buys:             nil,
+		Version:          1,
+		Status:           vega.LiquidityProvision_STATUS_ACTIVE,
+		Reference:        "TEST1",
+	})
+
+	updated = addTestBlock(t, ctx, bs)
+	testres = append(testres, &vega.LiquidityProvision{
+		Id:               "deadbeef",
+		PartyId:          "deadbaad",
+		CreatedAt:        created.VegaTime.UnixNano(),
+		UpdatedAt:        updated.VegaTime.UnixNano(),
+		MarketId:         "cafed00d",
+		CommitmentAmount: "100000",
+		Fee:              "0.3",
+		Sells:            nil,
+		Buys:             nil,
+		Version:          2,
+		Status:           vega.LiquidityProvision_STATUS_PENDING,
+		Reference:        "TEST1",
+	})
+	return testres
+}
+
 func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
-	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
+	testLps := toCurrentAndPreviousLP(addLiquidityProvisions(ctx, t, bs, lpStore)...)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -625,11 +764,10 @@ func testLiquidityProvisionPaginationNoPagination(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, lpStore, _ := setupLPTests(t)
-	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
+	testLps := toCurrentAndPreviousLP(addLiquidityProvisions(ctx, t, bs, lpStore)...)
 
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -652,10 +790,10 @@ func testLiquidityProvisionPaginationFirst(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
-	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
+	testLps := toCurrentAndPreviousLP(addLiquidityProvisions(ctx, t, bs, lpStore)...)
 
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
@@ -678,10 +816,10 @@ func testLiquidityProvisionPaginationLast(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lpStore, _ := setupLPTests(t)
-	testLps := addLiquidityProvisions(ctx, t, bs, lpStore)
+	testLps := toCurrentAndPreviousLP(addLiquidityProvisions(ctx, t, bs, lpStore)...)
 
 	first := int32(3)
 	after := testLps[2].Cursor().Encode()
@@ -705,10 +843,10 @@ func testLiquidityProvisionPaginationFirstAfter(t *testing.T) {
 }
 
 func testLiquidityProvisionPaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	bs, lsStore, _ := setupLPTests(t)
-	testLps := addLiquidityProvisions(ctx, t, bs, lsStore)
+	testLps := toCurrentAndPreviousLP(addLiquidityProvisions(ctx, t, bs, lsStore)...)
 
 	last := int32(3)
 	before := entities.NewCursor(entities.LiquidityProvisionCursor{
@@ -761,14 +899,289 @@ func addLiquidityProvisions(ctx context.Context, t *testing.T, bs *sqlstore.Bloc
 		require.NoError(t, err, "Converting withdrawal proto to database entity")
 		err = lpstore.Upsert(ctx, withdrawal)
 		require.NoError(t, err)
+		err = lpstore.Flush(ctx)
 		require.NoError(t, err)
-		lpstore.Flush(ctx)
 		lps = append(lps, withdrawal)
-		require.NoError(t, err)
 
 		vegaTime = vegaTime.Add(time.Second)
 		amount += 100
 	}
 
 	return lps
+}
+
+func TestLiquidityProvision_ListProviders(t *testing.T) {
+	t.Run("ListLiquidityProviders should return all liquidity provider data for active liquidity provisions given a liquidity provider party id", testListLiquidityProviderValidPartyID)
+	t.Run("ListLiquidityProviders should return an empty list if the party id does not exist", testListLiquidityProviderInvalidPartyID)
+	t.Run("ListLiquidityProviders should return all active liquidity providers for a market if it exists", testListLiquidityProviderValidMarketID)
+	t.Run("ListLiquidityProviders should return a empty list if the market does not exist", testListLiquidityProviderInvalidMarketID)
+	t.Run("ListLiquidityProviders should return the liquidity providers information for a given market and liquidity provider party id", testListLiquidityProviderValidMarketIDValidPartyID)
+	t.Run("ListLiquidityProviders should return an error if the market id and party id is not provided", testListLiquidityProviderNoMarketIDNoPartyID)
+}
+
+func testListLiquidityProviderValidPartyID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("deadbaad")), nil, entities.CursorPagination{})
+	require.NoError(t, err)
+
+	want := []entities.LiquidityProvider{
+		providers[0],
+		providers[2],
+	}
+
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[1].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderInvalidPartyID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("acacacac")), nil, entities.CursorPagination{})
+	require.NoError(t, err)
+
+	var want []entities.LiquidityProvider
+
+	assert.Len(t, lps, 0)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     "",
+		EndCursor:       "",
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderValidMarketID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, nil, ptr.From(entities.MarketID("cafed00d")), entities.CursorPagination{})
+	require.NoError(t, err)
+	want := providers[:2]
+
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[1].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderInvalidMarketID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, nil, ptr.From(entities.MarketID("deaddaad")), entities.CursorPagination{})
+	require.NoError(t, err)
+
+	var want []entities.LiquidityProvider
+
+	assert.Len(t, lps, 0)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     "",
+		EndCursor:       "",
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderValidMarketIDValidPartyID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	providers := addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	lps, pageInfo, err := lpStore.ListProviders(ctx, ptr.From(entities.PartyID("deadbaad")),
+		ptr.From(entities.MarketID("cafed00d")), entities.CursorPagination{})
+	require.NoError(t, err)
+
+	want := []entities.LiquidityProvider{providers[0]}
+
+	assert.Len(t, lps, 1)
+	assert.Equal(t, want, lps)
+	assert.Equal(t, entities.PageInfo{
+		StartCursor:     want[0].Cursor().Encode(),
+		EndCursor:       want[0].Cursor().Encode(),
+		HasNextPage:     false,
+		HasPreviousPage: false,
+	}, pageInfo)
+}
+
+func testListLiquidityProviderNoMarketIDNoPartyID(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, lpStore, _ := setupLPTests(t)
+	mds := sqlstore.NewMarketData(connectionSource)
+
+	addLiquidityProvisionsMultiProvider(ctx, t, bs, lpStore, mds)
+
+	_, _, err := lpStore.ListProviders(ctx, nil, nil, entities.CursorPagination{})
+	require.Error(t, err)
+}
+
+func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
+	lpstore *sqlstore.LiquidityProvision, mds *sqlstore.MarketData,
+) []entities.LiquidityProvider {
+	t.Helper()
+	vegaTime := time.Now().Truncate(time.Microsecond)
+	amount := int64(1000)
+
+	setupProviders := []struct {
+		PartyID string
+		Status  vega.LiquidityProvision_Status
+	}{
+		{
+			PartyID: "deadbaad",
+			Status:  vega.LiquidityProvision_STATUS_ACTIVE,
+		},
+		{
+			PartyID: "deadd00d",
+			Status:  vega.LiquidityProvision_STATUS_ACTIVE,
+		},
+		{
+			PartyID: "deadbeef",
+			Status:  vega.LiquidityProvision_STATUS_STOPPED,
+		},
+	}
+
+	activeProviders := make([]entities.LiquidityProvider, 0)
+	marketData := []entities.MarketData{
+		{
+			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
+			MarketState:                "STATE_ACTIVE",
+			AuctionTrigger:             "AUCTION_TRIGGER_UNSPECIFIED",
+			ExtensionTrigger:           "AUCTION_TRIGGER_UNSPECIFIED",
+			LiquidityProviderFeeShares: []*vega.LiquidityProviderFeeShare{},
+			TxHash:                     generateTxHash(),
+			SeqNum:                     0,
+			Market:                     entities.MarketID("cafed00d"),
+		},
+		{
+			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
+			MarketState:                "STATE_ACTIVE",
+			AuctionTrigger:             "AUCTION_TRIGGER_UNSPECIFIED",
+			ExtensionTrigger:           "AUCTION_TRIGGER_UNSPECIFIED",
+			LiquidityProviderFeeShares: []*vega.LiquidityProviderFeeShare{},
+			TxHash:                     generateTxHash(),
+			SeqNum:                     0,
+			Market:                     entities.MarketID("cafedaad"),
+		},
+	}
+
+	for _, md := range marketData {
+		var ordinality int64
+		for i, provider := range setupProviders {
+			addTestBlockForTime(t, ctx, bs, vegaTime)
+
+			lp := &vega.LiquidityProvision{
+				Id:               helpers.GenerateID(),
+				PartyId:          provider.PartyID,
+				CreatedAt:        vegaTime.UnixNano(),
+				UpdatedAt:        vegaTime.UnixNano(),
+				MarketId:         md.Market.String(),
+				CommitmentAmount: "100000",
+				Fee:              "0.3",
+				Sells:            nil,
+				Buys:             nil,
+				Version:          0,
+				Status:           provider.Status,
+				Reference:        fmt.Sprintf("TEST1%s%00d", provider.PartyID, i),
+			}
+
+			withdrawal, err := entities.LiquidityProvisionFromProto(lp, generateTxHash(), vegaTime)
+			require.NoError(t, err, "Converting withdrawal proto to database entity")
+			err = lpstore.Upsert(ctx, withdrawal)
+			require.NoError(t, err)
+			err = lpstore.Flush(ctx)
+			require.NoError(t, err)
+
+			md.SeqNum = uint64(i)
+			md.LiquidityProviderFeeShares = append(md.LiquidityProviderFeeShares, &vega.LiquidityProviderFeeShare{
+				Party:                 provider.PartyID,
+				EquityLikeShare:       "0",
+				AverageEntryValuation: "0",
+				AverageScore:          "0",
+				VirtualStake:          "0",
+			})
+			md.LiquidityProviderSLA = append(md.LiquidityProviderSLA, &vega.LiquidityProviderSLA{
+				Party:                            provider.PartyID,
+				CurrentEpochFractionOfTimeOnBook: "0.5",
+				LastEpochFractionOfTimeOnBook:    "1",
+				LastEpochFeePenalty:              "0",
+				LastEpochBondPenalty:             "0",
+				HysteresisPeriodFeePenalties:     []string{"0"},
+				RequiredLiquidity:                "1000",
+				NotionalVolumeBuys:               "1010",
+				NotionalVolumeSells:              "1005",
+			})
+			md.SyntheticTime = vegaTime
+			md.VegaTime = vegaTime
+
+			err = mds.Add(&md)
+			require.NoError(t, err)
+
+			_, err = mds.Flush(ctx)
+			require.NoError(t, err)
+
+			vegaTime = vegaTime.Add(time.Second)
+			amount += 100
+
+			if provider.Status == vega.LiquidityProvision_STATUS_ACTIVE {
+				ordinality += 1
+				activeProviders = append(activeProviders, entities.LiquidityProvider{
+					PartyID:    entities.PartyID(provider.PartyID),
+					MarketID:   md.Market,
+					Ordinality: ordinality,
+					FeeShare: &vega.LiquidityProviderFeeShare{
+						Party:                 provider.PartyID,
+						EquityLikeShare:       "0",
+						AverageEntryValuation: "0",
+						AverageScore:          "0",
+						VirtualStake:          "0",
+					},
+					SLA: &vega.LiquidityProviderSLA{
+						Party:                            provider.PartyID,
+						CurrentEpochFractionOfTimeOnBook: "0.5",
+						LastEpochFractionOfTimeOnBook:    "1",
+						LastEpochFeePenalty:              "0",
+						LastEpochBondPenalty:             "0",
+						HysteresisPeriodFeePenalties:     []string{"0"},
+						RequiredLiquidity:                "1000",
+						NotionalVolumeBuys:               "1010",
+						NotionalVolumeSells:              "1005",
+					},
+				})
+			}
+		}
+	}
+
+	return activeProviders
 }

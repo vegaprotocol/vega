@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package stoporders
 
 import (
@@ -76,6 +91,19 @@ func (p *Pool) ToProto() *v1.StopOrders {
 
 func (p *Pool) GetStopOrderCount() uint64 {
 	return uint64(len(p.orderToParty))
+}
+
+func (p *Pool) Settled() []*types.StopOrder {
+	out := []*types.StopOrder{}
+	for _, v := range p.orders {
+		for _, so := range v {
+			so.Status = types.StopOrderStatusStopped
+			out = append(out, so)
+		}
+	}
+
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
@@ -185,6 +213,11 @@ func (p *Pool) removeWithOCO(
 ) ([]*types.StopOrder, error) {
 	partyOrders, ok := p.orders[partyID]
 	if !ok {
+		// return an error only when trying to find a specific stop order
+		if len(orderID) > 0 {
+			return nil, ErrStopOrderNotFound
+		}
+
 		// this party have no stop orders, move on
 		return nil, nil
 	}

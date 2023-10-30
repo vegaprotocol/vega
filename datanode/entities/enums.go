@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -336,12 +351,13 @@ func (m *AssetStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type MarketTradingMode vega.Market_TradingMode
 
 const (
-	MarketTradingModeUnspecified       = MarketTradingMode(vega.Market_TRADING_MODE_UNSPECIFIED)
-	MarketTradingModeContinuous        = MarketTradingMode(vega.Market_TRADING_MODE_CONTINUOUS)
-	MarketTradingModeBatchAuction      = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
-	MarketTradingModeOpeningAuction    = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
-	MarketTradingModeMonitoringAuction = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
-	MarketTradingModeNoTrading         = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
+	MarketTradingModeUnspecified            = MarketTradingMode(vega.Market_TRADING_MODE_UNSPECIFIED)
+	MarketTradingModeContinuous             = MarketTradingMode(vega.Market_TRADING_MODE_CONTINUOUS)
+	MarketTradingModeBatchAuction           = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
+	MarketTradingModeOpeningAuction         = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
+	MarketTradingModeMonitoringAuction      = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
+	MarketTradingModeNoTrading              = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
+	MarketTradingModeSuspendedViaGovernance = MarketTradingMode(vega.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE)
 )
 
 func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -365,16 +381,17 @@ func (m *MarketTradingMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type MarketState vega.Market_State
 
 const (
-	MarketStateUnspecified       = MarketState(vega.Market_STATE_UNSPECIFIED)
-	MarketStateProposed          = MarketState(vega.Market_STATE_PROPOSED)
-	MarketStateRejected          = MarketState(vega.Market_STATE_REJECTED)
-	MarketStatePending           = MarketState(vega.Market_STATE_PENDING)
-	MarketStateCancelled         = MarketState(vega.Market_STATE_CANCELLED)
-	MarketStateActive            = MarketState(vega.Market_STATE_ACTIVE)
-	MarketStateSuspended         = MarketState(vega.Market_STATE_SUSPENDED)
-	MarketStateClosed            = MarketState(vega.Market_STATE_CLOSED)
-	MarketStateTradingTerminated = MarketState(vega.Market_STATE_TRADING_TERMINATED)
-	MarketStateSettled           = MarketState(vega.Market_STATE_SETTLED)
+	MarketStateUnspecified            = MarketState(vega.Market_STATE_UNSPECIFIED)
+	MarketStateProposed               = MarketState(vega.Market_STATE_PROPOSED)
+	MarketStateRejected               = MarketState(vega.Market_STATE_REJECTED)
+	MarketStatePending                = MarketState(vega.Market_STATE_PENDING)
+	MarketStateCancelled              = MarketState(vega.Market_STATE_CANCELLED)
+	MarketStateActive                 = MarketState(vega.Market_STATE_ACTIVE)
+	MarketStateSuspended              = MarketState(vega.Market_STATE_SUSPENDED)
+	MarketStateClosed                 = MarketState(vega.Market_STATE_CLOSED)
+	MarketStateTradingTerminated      = MarketState(vega.Market_STATE_TRADING_TERMINATED)
+	MarketStateSettled                = MarketState(vega.Market_STATE_SETTLED)
+	MarketStateSuspendedViaGovernance = MarketState(vega.Market_STATE_SUSPENDED_VIA_GOVERNANCE)
 )
 
 func (s MarketState) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -529,6 +546,10 @@ const (
 	ProposalErrorInvalidSpot                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SPOT)
 	ProposalErrorSpotNotEnabled                   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED)
 	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
+	ProposalErrorInvalidStateUpdate               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE)
+	ProposalErrorInvalidSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SLA_PARAMS)
+	ProposalErrorMissingSLAParams                 = ProposalError(vega.ProposalError_PROPOSAL_ERROR_MISSING_SLA_PARAMS)
+	ProposalInvalidPerpetualProduct               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_PERPETUAL_PRODUCT)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -900,5 +921,59 @@ func (s *StopOrderStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 		return fmt.Errorf("unknown stop order status: %s", src)
 	}
 	*s = StopOrderStatus(val)
+	return nil
+}
+
+type StopOrderRejectionReason vega.StopOrder_RejectionReason
+
+const (
+	StopOrderRejectionReasonUnspecified                  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_UNSPECIFIED)
+	StopOrderRejectionReasonTradingNotAllowed            = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED)
+	StopOrderRejectionReasonExpiryInThePast              = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST)
+	StopOrderRejectionReasonMustBeReduceOnly             = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY)
+	StopOrderRejectionReasonMaxStopOrdersPerPartyReached = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED)
+	StopOrderRejectionReasonNotAllowedWithoutAPosition   = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION)
+	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
+)
+
+func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.StopOrder_RejectionReason_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stop order status: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *StopOrderRejectionReason) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.StopOrder_RejectionReason_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stop order status: %s", src)
+	}
+	*s = StopOrderRejectionReason(val)
+	return nil
+}
+
+type FundingPeriodDataPointSource eventspb.FundingPeriodDataPoint_Source
+
+const (
+	FundingPeriodDataPointSourceUnspecified = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED)
+	FundingPeriodDataPointSourceExternal    = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_EXTERNAL)
+	FundingPeriodDataPointSourceInternal    = FundingPeriodDataPointSource(eventspb.FundingPeriodDataPoint_SOURCE_INTERNAL)
+)
+
+func (s FundingPeriodDataPointSource) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := eventspb.FundingPeriodDataPoint_Source_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown funding period data point source: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *FundingPeriodDataPointSource) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := eventspb.FundingPeriodDataPoint_Source_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown funding period data point source: %s", src)
+	}
+	*s = FundingPeriodDataPointSource(val)
 	return nil
 }

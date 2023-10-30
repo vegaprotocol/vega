@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package gql
 
 import (
@@ -5,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,6 +33,8 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 		in0 context.Context
 		obj *vegapb.OracleSpec
 	}
+	var timeBasic time.Time
+	timeNow := uint64(timeBasic.UnixNano())
 	tests := []struct {
 		name    string
 		o       oracleSpecResolver
@@ -62,7 +80,8 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 			},
 			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"Oracle":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
-		}, {
+		},
+		{
 			name: "success: DataSourceDefinition_Internal",
 			args: args{
 				obj: &vegapb.OracleSpec{
@@ -90,6 +109,50 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 				},
 			},
 			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"Internal":{"SourceType":{"Time":{"conditions":[{"operator":12,"value":"blah"}]}}}}},"status":"STATUS_ACTIVE"}}`,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "success: DataSourceDefinition_External",
+			args: args{
+				obj: &vegapb.OracleSpec{
+					ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+						Spec: &vegapb.DataSourceSpec{
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+							Data: &vegapb.DataSourceDefinition{
+								SourceType: &vegapb.DataSourceDefinition_External{
+									External: &vegapb.DataSourceDefinitionExternal{
+										SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+											EthOracle: &vegapb.EthCallSpec{
+												Address: "test-address",
+												Abi:     "",
+												Args:    nil,
+												Method:  "stake",
+												Trigger: &vegapb.EthCallTrigger{
+													Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+														TimeTrigger: &vegapb.EthTimeTrigger{
+															Initial: &timeNow,
+														},
+													},
+												},
+												RequiredConfirmations: uint64(0),
+												Filters: []*v1.Filter{
+													{
+														Key: &v1.PropertyKey{
+															Name: "property-name",
+															Type: v1.PropertyKey_TYPE_BOOLEAN,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"EthOracle":{"address":"test-address","method":"stake","trigger":{"Trigger":{"TimeTrigger":{"initial":11651379494838206464}}},"filters":[{"key":{"name":"property-name","type":4}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}

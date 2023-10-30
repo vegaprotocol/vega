@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023  Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package context
 
@@ -26,6 +29,7 @@ type (
 	blockHeight     int
 	chainID         int
 	txHash          int
+	snapshot        int
 )
 
 var (
@@ -34,6 +38,7 @@ var (
 	blockHeightKey        blockHeight
 	chainIDKey            chainID
 	txHashKey             txHash
+	snapshotKey           snapshot
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 	ErrChainIDMissing     = errors.New("no or invalid chain id set on context")
@@ -129,4 +134,27 @@ func WithChainID(ctx context.Context, chainID string) context.Context {
 func WithTxHash(ctx context.Context, txHash string) context.Context {
 	txHash = strings.ToUpper(txHash)
 	return context.WithValue(ctx, txHashKey, txHash)
+}
+
+type snapshotInfo struct {
+	version string
+	upgrade bool
+}
+
+func WithSnapshotInfo(ctx context.Context, version string, upgrade bool) context.Context {
+	return context.WithValue(ctx, snapshotKey, snapshotInfo{version: version, upgrade: upgrade})
+}
+
+// InProgressUpgradeFrom returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot taken for a protocol-upgrade by the given version.
+func InProgressUpgradeFrom(ctx context.Context, from string) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	si, ok := v.(snapshotInfo)
+	if !ok {
+		return false
+	}
+	return from == si.version && si.upgrade
 }

@@ -46,6 +46,14 @@ type Product interface {
 	IsProduct()
 }
 
+type ProductConfiguration interface {
+	IsProductConfiguration()
+}
+
+type ProductData interface {
+	IsProductData()
+}
+
 type ProposalChange interface {
 	IsProposalChange()
 }
@@ -66,6 +74,10 @@ type TransferKind interface {
 	IsTransferKind()
 }
 
+type TriggerKind interface {
+	IsTriggerKind()
+}
+
 // One of the possible asset sources for update assets proposals
 type UpdateAssetSource interface {
 	IsUpdateAssetSource()
@@ -73,6 +85,10 @@ type UpdateAssetSource interface {
 
 type UpdateMarketRiskParameters interface {
 	IsUpdateMarketRiskParameters()
+}
+
+type UpdateProductConfiguration interface {
+	IsUpdateProductConfiguration()
 }
 
 type WithdrawalDetails interface {
@@ -112,6 +128,14 @@ type BusEvent struct {
 	Event Event `json:"event"`
 }
 
+// Condition describes the condition that must be validated by the data source engine
+type Condition struct {
+	// The type of comparison to make on the value.
+	Operator v1.Condition_Operator `json:"operator"`
+	// The value to compare against.
+	Value *string `json:"value"`
+}
+
 // A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
@@ -123,7 +147,8 @@ type Data struct {
 	// signers is the list of public keys/ETH addresses that signed the data
 	Signers []*Signer `json:"signers"`
 	// properties contains all the properties sent by a data source
-	Data []*v1.Property `json:"data"`
+	Data     []*v1.Property `json:"data"`
+	MetaData []*v1.Property `json:"metaData"`
 	// List of all the data specs that matched this source data.
 	// When the array is empty, it means no data spec matched this source data.
 	MatchedSpecIds []string `json:"matchedSpecIds"`
@@ -147,22 +172,24 @@ type DataSourceSpec struct {
 	Status DataSourceSpecStatus `json:"status"`
 }
 
+// Bindings to describe which property of the data source data is to be used as settlement data
+// and which is to be used as the trading termination trigger.
+type DataSourceSpecPerpetualBinding struct {
+	// Name of the property in the source data that should be used as settlement data.
+	// For example, if it is set to "prices.BTC.value", then the perpetual market will use the value of this property
+	// as settlement data.
+	SettlementDataProperty string `json:"settlementDataProperty"`
+	// Name of the property in the source data that should be used as settlement schedule.
+	// For example, if it is set to "prices.BTC.timestamp", then the perpetual market will use the value of this property
+	SettlementScheduleProperty string `json:"settlementScheduleProperty"`
+}
+
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
 	Duration int `json:"duration"`
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
-}
-
-// Dispatch strategy for a recurring transfer
-type DispatchStrategy struct {
-	// Defines the data that will be used to compare markets so as to distribute rewards appropriately
-	DispatchMetric vega.DispatchMetric `json:"dispatchMetric"`
-	// The asset to use for measuring contribution to the metric
-	DispatchMetricAssetID string `json:"dispatchMetricAssetId"`
-	// Scope the dispatch to this market only under the metric asset
-	MarketIdsInScope []string `json:"marketIdsInScope"`
 }
 
 // An asset originated from an Ethereum ERC20 Token
@@ -264,7 +291,7 @@ type Erc20WithdrawalApproval struct {
 	Signatures string `json:"signatures"`
 	// The target address that will receive the funds
 	TargetAddress string `json:"targetAddress"`
-	// Timestamp at which the withdrawal was created
+	// RFC3339Nano timestamp at which the withdrawal was created
 	Creation string `json:"creation"`
 }
 
@@ -275,6 +302,26 @@ type Erc20WithdrawalDetails struct {
 }
 
 func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
+
+// EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+type EthCallTrigger struct {
+	Trigger TriggerKind `json:"trigger"`
+}
+
+// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
+// one-off or repeating.
+type EthTimeTrigger struct {
+	// Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
+	Initial *int64 `json:"initial"`
+	// Repeat the call every n seconds after the initial call. If no time for
+	// initial call was specified, begin repeating immediately.
+	Every *int `json:"every"`
+	// If repeating, stop once Ethereum time is greater than this time, in Unix
+	// seconds. If not set, then repeat indefinitely.
+	Until *int64 `json:"until"`
+}
+
+func (EthTimeTrigger) IsTriggerKind() {}
 
 // An Ethereum data source
 type EthereumEvent struct {
@@ -304,6 +351,16 @@ type FeeEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 }
 
+// Filter describes the conditions under which oracle data is considered of
+// interest or not.
+type Filter struct {
+	// key is the data source data property key targeted by the filter.
+	Key *PropertyKey `json:"key"`
+	// The conditions that should be matched by the data to be
+	// considered of interest.
+	Conditions []*Condition `json:"conditions"`
+}
+
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
@@ -326,6 +383,28 @@ type LiquidityProviderFeeShare struct {
 	AverageScore string `json:"averageScore"`
 	// The virtual stake for this liquidity provider
 	VirtualStake string `json:"virtualStake"`
+}
+
+// The SLA statistics for each liquidity provider
+type LiquidityProviderSLA struct {
+	// The liquidity provider party ID
+	Party *vega.Party `json:"party"`
+	// Indicates how often LP meets the commitment during the current epoch.
+	CurrentEpochFractionOfTimeOnBook string `json:"currentEpochFractionOfTimeOnBook"`
+	// Indicates how often LP met the commitment in the previous epoch.
+	LastEpochFractionOfTimeOnBook string `json:"lastEpochFractionOfTimeOnBook"`
+	// Indicates the fee penalty amount applied in the previous epoch.
+	LastEpochFeePenalty string `json:"lastEpochFeePenalty"`
+	// Indicates the bond penalty amount applied in the previous epoch.
+	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
+	// Determines how the fee penalties from past epochs affect future fee revenue.
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
+	RequiredLiquidity string `json:"requiredLiquidity"`
+	// Notional volume of orders within the range provided on the buy side of the book.
+	NotionalVolumeBuys string `json:"notionalVolumeBuys"`
+	// Notional volume of orders within the range provided on the sell side of the book.
+	NotionalVolumeSells string `json:"notionalVolumeSells"`
 }
 
 type LossSocialization struct {
@@ -382,6 +461,13 @@ type NodeSet struct {
 	Maximum *int `json:"maximum"`
 }
 
+// Normaliser to convert the data returned from the contract method
+// into a standard format.
+type Normaliser struct {
+	Name       string `json:"name"`
+	Expression string `json:"expression"`
+}
+
 // The equity like share of liquidity fee for each liquidity provider
 type ObservableLiquidityProviderFeeShare struct {
 	// The liquidity provider party ID
@@ -392,6 +478,28 @@ type ObservableLiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 	// The average liquidity score
 	AverageScore string `json:"averageScore"`
+}
+
+// The SLA statistics for each liquidity provider
+type ObservableLiquidityProviderSLA struct {
+	// The liquidity provider party ID
+	Party string `json:"party"`
+	// Indicates how often LP meets the commitment during the current epoch.
+	CurrentEpochFractionOfTimeOnBook string `json:"currentEpochFractionOfTimeOnBook"`
+	// Indicates how often LP meets the commitment during last epoch.
+	LastEpochFractionOfTimeOnBook string `json:"lastEpochFractionOfTimeOnBook"`
+	// Indicates the fee penalty amount applied in the previous epoch.
+	LastEpochFeePenalty string `json:"lastEpochFeePenalty"`
+	// Indicates the bond penalty amount applied in the previous epoch.
+	LastEpochBondPenalty string `json:"lastEpochBondPenalty"`
+	// Determines how the fee penalties from past epochs affect future fee revenue.
+	HysteresisPeriodFeePenalties []string `json:"hysteresisPeriodFeePenalties"`
+	// Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s settlement currency, spread on both buy and sell sides of the order book within a defined range.
+	RequiredLiquidity string `json:"requiredLiquidity"`
+	// Notional volume of orders within the range provided on the buy side of the book.
+	NotionalVolumeBuys string `json:"notionalVolumeBuys"`
+	// Notional volume of orders within the range provided on the sell side of the book.
+	NotionalVolumeSells string `json:"notionalVolumeSells"`
 }
 
 type OrderByMarketAndPartyIdsFilter struct {
@@ -432,7 +540,7 @@ type OrderInfo struct {
 	IsMarketOrder bool `json:"isMarketOrder"`
 }
 
-// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
 	Margin *v2.MarginEstimate `json:"margin"`
@@ -485,6 +593,17 @@ type PriceMonitoringTrigger struct {
 	// breach its theoretical level over the specified horizon at the specified
 	// probability level (> 0)
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
+}
+
+// PropertyKey describes the property key contained in a source data.
+type PropertyKey struct {
+	// The name of the property.
+	Name *string `json:"name"`
+	// The type of the property.
+	Type v1.PropertyKey_Type `json:"type"`
+	// An optional decimal place to be applied on the provided value.
+	// Valid only for PropertyType of type DECIMAL, INTEGER.
+	NumberDecimalPlaces *int `json:"numberDecimalPlaces"`
 }
 
 type ProposalVote struct {
@@ -631,6 +750,18 @@ type TradeFee struct {
 	InfrastructureFee string `json:"infrastructureFee"`
 	// The fee paid to the liquidity providers that committed liquidity to the market
 	LiquidityFee string `json:"liquidityFee"`
+	// Referral discount on maker fees for the trade
+	MakerFeeReferralDiscount *string `json:"makerFeeReferralDiscount"`
+	// Volume discount on maker fees for the trade
+	MakerFeeVolumeDiscount *string `json:"makerFeeVolumeDiscount"`
+	// Referral discount on infrastructure fees for the trade
+	InfrastructureFeeReferralDiscount *string `json:"infrastructureFeeReferralDiscount"`
+	// Volume discount on infrastructure fees for the trade
+	InfrastructureFeeVolumeDiscount *string `json:"infrastructureFeeVolumeDiscount"`
+	// Referral discount on liquidity fees for the trade
+	LiquidityFeeReferralDiscount *string `json:"liquidityFeeReferralDiscount"`
+	// Volume discount on liquidity fees for the trade
+	LiquidityFeeVolumeDiscount *string `json:"liquidityFeeVolumeDiscount"`
 }
 
 type TradeSettlement struct {
@@ -664,6 +795,16 @@ type TransferBalance struct {
 	Balance string `json:"balance"`
 }
 
+// A transfer fee record
+type TransferFee struct {
+	// Transfer ID of the transfer for which the fee was paid
+	TransferID string `json:"transferId"`
+	// The fee amount
+	Amount string `json:"amount"`
+	// The epoch when this fee was paid
+	Epoch int `json:"epoch"`
+}
+
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
 	Transfers []*vega.LedgerEntry `json:"transfers"`
@@ -690,9 +831,30 @@ type UpdateErc20 struct {
 func (UpdateErc20) IsUpdateAssetSource() {}
 
 type UpdateInstrumentConfiguration struct {
-	Code    string                    `json:"code"`
-	Product *vega.UpdateFutureProduct `json:"product"`
+	Code    string                     `json:"code"`
+	Product UpdateProductConfiguration `json:"product"`
 }
+
+type UpdatePerpetualProduct struct {
+	// Quote name of the instrument
+	QuoteName string `json:"quoteName"`
+	// Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]
+	MarginFundingFactor string `json:"marginFundingFactor"`
+	// Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]
+	InterestRate string `json:"interestRate"`
+	// Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
+	ClampLowerBound string `json:"clampLowerBound"`
+	// Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
+	ClampUpperBound string `json:"clampUpperBound"`
+	// Data source specification describing the data source for settlement schedule
+	DataSourceSpecForSettlementSchedule *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementSchedule"`
+	// Data source specification describing the data source for settlement
+	DataSourceSpecForSettlementData *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementData"`
+	// Binding between the data source spec and the settlement data
+	DataSourceSpecBinding *DataSourceSpecPerpetualBinding `json:"dataSourceSpecBinding"`
+}
+
+func (UpdatePerpetualProduct) IsUpdateProductConfiguration() {}
 
 // Event types
 type BusEventType string
@@ -832,6 +994,55 @@ func (e *GovernanceTransferType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MarketUpdateType string
+
+const (
+	// Default value, always invalid
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_UNSPECIFIED"
+	// Terminate the market
+	MarketUpdateTypeMarketStateUpdateTypeTerminate MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_TERMINATE"
+	// Suspend the market
+	MarketUpdateTypeMarketStateUpdateTypeSuspend MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_SUSPEND"
+	// Resume a suspended market
+	MarketUpdateTypeMarketStateUpdateTypeResume MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_RESUME"
+)
+
+var AllMarketUpdateType = []MarketUpdateType{
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified,
+	MarketUpdateTypeMarketStateUpdateTypeTerminate,
+	MarketUpdateTypeMarketStateUpdateTypeSuspend,
+	MarketUpdateTypeMarketStateUpdateTypeResume,
+}
+
+func (e MarketUpdateType) IsValid() bool {
+	switch e {
+	case MarketUpdateTypeMarketStateUpdateTypeUnspecified, MarketUpdateTypeMarketStateUpdateTypeTerminate, MarketUpdateTypeMarketStateUpdateTypeSuspend, MarketUpdateTypeMarketStateUpdateTypeResume:
+		return true
+	}
+	return false
+}
+
+func (e MarketUpdateType) String() string {
+	return string(e)
+}
+
+func (e *MarketUpdateType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketUpdateType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketUpdateType", str)
+	}
+	return nil
+}
+
+func (e MarketUpdateType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package cmd
 
 import (
@@ -29,7 +44,7 @@ var (
 	}
 )
 
-type APITokenInitHandler func(home string, f *InitAPITokenFlags) error
+type APITokenInitHandler func(home string, f *InitAPITokenFlags) (bool, error)
 
 func NewCmdInitAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdInitAPIToken(w, InitAPIToken, rf)
@@ -44,13 +59,14 @@ func BuildCmdInitAPIToken(w io.Writer, handler APITokenInitHandler, rf *RootFlag
 		Long:    apiTokenInitLong,
 		Example: apiTokenInitExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			if err := handler(rf.Home, f); err != nil {
+			initialized, err := handler(rf.Home, f)
+			if err != nil {
 				return err
 			}
 
 			switch rf.Output {
 			case flags.InteractiveOutput:
-				PrintAPITokenInitResponse(w)
+				PrintAPITokenInitResponse(w, initialized)
 			}
 			return nil
 		},
@@ -76,36 +92,41 @@ type InitAPITokenFlags struct {
 	Force          bool
 }
 
-func InitAPIToken(home string, f *InitAPITokenFlags) error {
+func InitAPIToken(home string, f *InitAPITokenFlags) (bool, error) {
 	vegaPaths := paths.New(home)
 
 	// Verify the init state of the tokens store
 	init, err := tokenStoreV1.IsStoreBootstrapped(vegaPaths)
 	if err != nil {
-		return fmt.Errorf("could not verify the initialization state of the tokens store: %w", err)
+		return false, fmt.Errorf("could not verify the initialization state of the tokens store: %w", err)
 	}
-	if !init || f.Force {
-		passphrase, err := flags.GetConfirmedPassphraseWithContext(tokenPassphraseOptions, f.PassphraseFile)
-		if err != nil {
-			return err
-		}
-		tokenStore, err := tokenStoreV1.ReinitialiseStore(vegaPaths, passphrase)
-		if err != nil {
-			return fmt.Errorf("couldn't initialise the tokens store: %w", err)
-		}
-		tokenStore.Close()
+	if init && !f.Force {
+		return false, nil
 	}
 
-	return nil
+	passphrase, err := flags.GetConfirmedPassphraseWithContext(tokenPassphraseOptions, f.PassphraseFile)
+	if err != nil {
+		return false, err
+	}
+	tokenStore, err := tokenStoreV1.ReinitialiseStore(vegaPaths, passphrase)
+	if err != nil {
+		return false, fmt.Errorf("couldn't initialise the tokens store: %w", err)
+	}
+	tokenStore.Close()
+	return true, nil
 }
 
-func PrintAPITokenInitResponse(w io.Writer) {
+func PrintAPITokenInitResponse(w io.Writer, init bool) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().SuccessText("Support for long-living tokens has been initialised.").NextSection()
+	if init {
+		str.CheckMark().SuccessText("Support for long-living tokens has been initialised.").NextSection()
+	} else {
+		str.CheckMark().SuccessText("Support for long-living tokens has ").SuccessBold("already").SuccessText(" been initialised.").NextSection()
+	}
 
 	str.BlueArrow().InfoText("Generate a long-living API token").NextLine()
 	str.Text("To generate a long-living API token, use the following command:").NextSection()

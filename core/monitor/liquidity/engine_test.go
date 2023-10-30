@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package liquidity_test
 
@@ -112,9 +115,6 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		{"Current <  (Target * c1)", num.NewUint(10), num.NewUint(30), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
 		{"Current >  (Target * c1)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
 		{"Current == (Target * c1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
-		{"Current >  (Target * c1), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target * c1), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target * c1), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
@@ -126,8 +126,6 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
 				h.AuctionState.EXPECT().StartLiquidityAuctionUnmetTarget(now, gomock.Any()).Times(1)
-			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
-				h.AuctionState.EXPECT().StartLiquidityAuctionNoOrders(now, gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade
 			rf := types.RiskFactor{}
@@ -157,9 +155,6 @@ func TestEngineInOpeningAuction(t *testing.T) {
 		{"Current >  (Target)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
 		{"Current == (Target * C1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
 		{"Current == (Target)", num.NewUint(20), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
-		{"Current >  (Target), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
-		{"Current == (Target), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInOpeningAuction()
@@ -171,8 +166,6 @@ func TestEngineInOpeningAuction(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
 				h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(gomock.Any()).Times(1)
-			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
-				h.AuctionState.EXPECT().ExtendAuctionLiquidityNoOrders(gomock.Any()).Times(1)
 			} else {
 				// opening auciton is flagged as ready to leave
 				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)

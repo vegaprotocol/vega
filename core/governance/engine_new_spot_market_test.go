@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -39,8 +42,7 @@ func TesSpottProposalForNewMarket(t *testing.T) {
 }
 
 func testSubmittingProposalForNewSpotMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
@@ -61,8 +63,7 @@ func testSubmittingProposalForNewSpotMarketSucceeds(t *testing.T) {
 }
 
 func testSubmittingDuplicatedProposalForNewSpotMarketFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -105,8 +106,7 @@ func testSubmittingDuplicatedProposalForNewSpotMarketFails(t *testing.T) {
 }
 
 func testSubmittingProposalForNewSpotMarketWithBadRiskParameterFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
@@ -160,16 +160,14 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	lnm.Params.Sigma = num.DecimalFromFloat(1.0)
 
 	// now all risk params are valid
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-	eng.markets.EXPECT().SpotsMarketsEnabled().AnyTimes()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow())
-	proposal.Terms.GetNewSpotMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
+	proposal := eng.newProposalForNewSpotMarket(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
+	proposal.Terms.GetNewSpotMarket().Changes.RiskParameters = &types.NewSpotMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -178,12 +176,11 @@ func TestSubmittingProposalForNewSpotMarketWithOutOfRangeRiskParameterFails(t *t
 	_, err := eng.submitProposal(t, proposal)
 
 	// then
-	require.Equal(t, "spot trading not enabled", err.Error())
+	require.NoError(t, err)
 }
 
 func testRejectingProposalForNewSpotMarketSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
@@ -221,8 +218,7 @@ func testRejectingProposalForNewSpotMarketSucceeds(t *testing.T) {
 }
 
 func testVotingForNewSpotMarketProposalSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -258,8 +254,7 @@ func testVotingForNewSpotMarketProposalSucceeds(t *testing.T) {
 }
 
 func testVotingWithMajorityOfYesMakesNewSpotMarketProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
@@ -338,8 +333,7 @@ func testVotingWithMajorityOfYesMakesNewSpotMarketProposalPassed(t *testing.T) {
 }
 
 func testVotingWithMajorityOfNoMakesNewSpotMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)
@@ -417,8 +411,7 @@ func testVotingWithMajorityOfNoMakesNewSpotMarketProposalDeclined(t *testing.T) 
 }
 
 func testVotingWithInsufficientParticipationMakesNewSpotMarketProposalDeclined(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	proposer := vgrand.RandomStr(5)

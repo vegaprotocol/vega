@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -19,34 +22,34 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type Order struct {
-	ID                   string
-	MarketID             string
-	Party                string
-	Side                 Side
-	Price                *num.Uint
-	OriginalPrice        *num.Uint
-	Size                 uint64
-	Remaining            uint64
-	TimeInForce          OrderTimeInForce
-	Type                 OrderType
-	CreatedAt            int64
-	Status               OrderStatus
-	ExpiresAt            int64
-	Reference            string
-	Reason               OrderError
-	UpdatedAt            int64
-	Version              uint64
-	BatchID              uint64
-	PeggedOrder          *PeggedOrder
-	LiquidityProvisionID string
-	PostOnly             bool
-	ReduceOnly           bool
-	extraRemaining       uint64
-	IcebergOrder         *IcebergOrder
+	ID             string
+	MarketID       string
+	Party          string
+	Side           Side
+	Price          *num.Uint
+	OriginalPrice  *num.Uint
+	Size           uint64
+	Remaining      uint64
+	TimeInForce    OrderTimeInForce
+	Type           OrderType
+	CreatedAt      int64
+	Status         OrderStatus
+	ExpiresAt      int64
+	Reference      string
+	Reason         OrderError
+	UpdatedAt      int64
+	Version        uint64
+	BatchID        uint64
+	PeggedOrder    *PeggedOrder
+	PostOnly       bool
+	ReduceOnly     bool
+	extraRemaining uint64
+	IcebergOrder   *IcebergOrder
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -174,7 +177,7 @@ func (o Order) Clone() *Order {
 
 func (o Order) String() string {
 	return fmt.Sprintf(
-		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v) iceberg(%s)",
+		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v) iceberg(%s)",
 		o.ID,
 		o.MarketID,
 		o.Party,
@@ -189,15 +192,14 @@ func (o Order) String() string {
 		o.Reason.String(),
 		o.Version,
 		o.BatchID,
-		o.LiquidityProvisionID,
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
-		uintPointerToString(o.OriginalPrice),
-		reflectPointerToString(o.PeggedOrder),
+		stringer.UintPointerToString(o.OriginalPrice),
+		stringer.ReflectPointerToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
-		reflectPointerToString(o.IcebergOrder),
+		stringer.ReflectPointerToString(o.IcebergOrder),
 	)
 }
 
@@ -209,10 +211,6 @@ func (o Orders) IntoProto() []*proto.Order {
 		out = append(out, v.IntoProto())
 	}
 	return out
-}
-
-func (o *Order) IsLiquidityOrder() bool {
-	return len(o.LiquidityProvisionID) > 0
 }
 
 func (o *Order) IntoProto() *proto.Order {
@@ -231,28 +229,27 @@ func (o *Order) IntoProto() *proto.Order {
 	}
 
 	return &proto.Order{
-		Id:                   o.ID,
-		MarketId:             o.MarketID,
-		PartyId:              o.Party,
-		Side:                 o.Side,
-		Price:                num.UintToString(o.Price),
-		Size:                 o.Size,
-		Remaining:            o.Remaining,
-		TimeInForce:          o.TimeInForce,
-		Type:                 o.Type,
-		CreatedAt:            o.CreatedAt,
-		Status:               o.Status,
-		ExpiresAt:            o.ExpiresAt,
-		Reference:            o.Reference,
-		Reason:               reason,
-		UpdatedAt:            o.UpdatedAt,
-		Version:              o.Version,
-		BatchId:              o.BatchID,
-		PeggedOrder:          pegged,
-		LiquidityProvisionId: o.LiquidityProvisionID,
-		PostOnly:             o.PostOnly,
-		ReduceOnly:           o.ReduceOnly,
-		IcebergOrder:         iceberg,
+		Id:           o.ID,
+		MarketId:     o.MarketID,
+		PartyId:      o.Party,
+		Side:         o.Side,
+		Price:        num.UintToString(o.Price),
+		Size:         o.Size,
+		Remaining:    o.Remaining,
+		TimeInForce:  o.TimeInForce,
+		Type:         o.Type,
+		CreatedAt:    o.CreatedAt,
+		Status:       o.Status,
+		ExpiresAt:    o.ExpiresAt,
+		Reference:    o.Reference,
+		Reason:       reason,
+		UpdatedAt:    o.UpdatedAt,
+		Version:      o.Version,
+		BatchId:      o.BatchID,
+		PeggedOrder:  pegged,
+		PostOnly:     o.PostOnly,
+		ReduceOnly:   o.ReduceOnly,
+		IcebergOrder: iceberg,
 	}
 }
 
@@ -286,28 +283,27 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		reason = *o.Reason
 	}
 	return &Order{
-		ID:                   o.Id,
-		MarketID:             o.MarketId,
-		Party:                o.PartyId,
-		Side:                 o.Side,
-		Price:                price,
-		Size:                 o.Size,
-		Remaining:            o.Remaining,
-		TimeInForce:          o.TimeInForce,
-		Type:                 o.Type,
-		CreatedAt:            o.CreatedAt,
-		Status:               o.Status,
-		ExpiresAt:            o.ExpiresAt,
-		Reference:            o.Reference,
-		Reason:               reason,
-		UpdatedAt:            o.UpdatedAt,
-		Version:              o.Version,
-		BatchID:              o.BatchId,
-		PeggedOrder:          pegged,
-		LiquidityProvisionID: o.LiquidityProvisionId,
-		PostOnly:             o.PostOnly,
-		ReduceOnly:           o.ReduceOnly,
-		IcebergOrder:         iceberg,
+		ID:           o.Id,
+		MarketID:     o.MarketId,
+		Party:        o.PartyId,
+		Side:         o.Side,
+		Price:        price,
+		Size:         o.Size,
+		Remaining:    o.Remaining,
+		TimeInForce:  o.TimeInForce,
+		Type:         o.Type,
+		CreatedAt:    o.CreatedAt,
+		Status:       o.Status,
+		ExpiresAt:    o.ExpiresAt,
+		Reference:    o.Reference,
+		Reason:       reason,
+		UpdatedAt:    o.UpdatedAt,
+		Version:      o.Version,
+		BatchID:      o.BatchId,
+		PeggedOrder:  pegged,
+		PostOnly:     o.PostOnly,
+		ReduceOnly:   o.ReduceOnly,
+		IcebergOrder: iceberg,
 	}, nil
 }
 
@@ -356,6 +352,151 @@ func (o *Order) HasTraded() bool {
 	return o.Size != o.Remaining
 }
 
+func (o *Order) applyOrderAmendmentSizeIceberg(delta int64) {
+	// handle increase in size
+	if delta > 0 {
+		o.Size += uint64(delta)
+		o.IcebergOrder.ReservedRemaining += uint64(delta)
+		return
+	}
+
+	// handle decrease in size
+	dec := uint64(-delta)
+	o.Size -= dec
+
+	if o.IcebergOrder.ReservedRemaining >= dec {
+		o.IcebergOrder.ReservedRemaining -= dec
+		return
+	}
+
+	diff := dec - o.IcebergOrder.ReservedRemaining
+	if o.Remaining > diff {
+		o.Remaining -= dec - o.IcebergOrder.ReservedRemaining
+	} else {
+		o.Remaining = 0
+	}
+	o.IcebergOrder.ReservedRemaining = 0
+}
+
+// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
+func (o *Order) applyOrderAmendmentSizeDelta(delta int64) {
+	if o.IcebergOrder != nil {
+		o.applyOrderAmendmentSizeIceberg(delta)
+		return
+	}
+
+	// handle size increase
+	if delta > 0 {
+		o.Size += uint64(delta)
+		o.Remaining += uint64(delta)
+		return
+	}
+
+	// handle size decrease
+	dec := uint64(-delta)
+	o.Size -= dec
+	if o.Remaining > dec {
+		o.Remaining -= dec
+	} else {
+		o.Remaining = 0
+	}
+}
+
+// ApplyOrderAmendment assumes the amendment have been validated before.
+func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int64, priceFactor *num.Uint) (order *Order, err error) {
+	order = o.Clone()
+	order.UpdatedAt = updatedAtNano
+	order.Version++
+
+	if o.PeggedOrder != nil {
+		order.PeggedOrder = &PeggedOrder{
+			Reference: o.PeggedOrder.Reference,
+			Offset:    o.PeggedOrder.Offset,
+		}
+	}
+
+	var amendPrice *num.Uint
+	if amendment.Price != nil {
+		amendPrice = amendment.Price.Clone()
+		amendPrice.Mul(amendPrice, priceFactor)
+	}
+	// apply price changes
+	if amendment.Price != nil && o.Price.NEQ(amendPrice) {
+		order.Price = amendPrice.Clone()
+		order.OriginalPrice = amendment.Price.Clone()
+	}
+
+	// apply size changes
+	if delta := amendment.SizeDelta; delta != 0 {
+		order.applyOrderAmendmentSizeDelta(delta)
+	}
+
+	// apply tif
+	if amendment.TimeInForce != OrderTimeInForceUnspecified {
+		order.TimeInForce = amendment.TimeInForce
+		if amendment.TimeInForce != OrderTimeInForceGTT {
+			order.ExpiresAt = 0
+		}
+	}
+	if amendment.ExpiresAt != nil {
+		order.ExpiresAt = *amendment.ExpiresAt
+	}
+
+	// apply pegged order values
+	if order.PeggedOrder != nil {
+		if amendment.PeggedOffset != nil {
+			order.PeggedOrder.Offset = amendment.PeggedOffset.Clone()
+		}
+
+		if amendment.PeggedReference != PeggedReferenceUnspecified {
+			order.PeggedOrder.Reference = amendment.PeggedReference
+		}
+		if verr := order.ValidatePeggedOrder(); verr != OrderErrorUnspecified {
+			err = verr
+		}
+	}
+
+	return order, err
+}
+
+func (order *Order) ValidatePeggedOrder() OrderError {
+	if order.Type != OrderTypeLimit {
+		// All pegged orders must be LIMIT orders
+		return ErrPeggedOrderMustBeLimitOrder
+	}
+
+	if order.TimeInForce != OrderTimeInForceGTT && order.TimeInForce != OrderTimeInForceGTC && order.TimeInForce != OrderTimeInForceGFN {
+		// Pegged orders can only be GTC or GTT
+		return ErrPeggedOrderMustBeGTTOrGTC
+	}
+
+	if order.PeggedOrder.Reference == PeggedReferenceUnspecified {
+		// We must specify a valid reference
+		return ErrPeggedOrderWithoutReferencePrice
+	}
+
+	if order.Side == SideBuy {
+		switch order.PeggedOrder.Reference {
+		case PeggedReferenceBestAsk:
+			return ErrPeggedOrderBuyCannotReferenceBestAskPrice
+		case PeggedReferenceMid:
+			if order.PeggedOrder.Offset.IsZero() {
+				return ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	} else {
+		switch order.PeggedOrder.Reference {
+		case PeggedReferenceBestBid:
+			return ErrPeggedOrderSellCannotReferenceBestBidPrice
+		case PeggedReferenceMid:
+			if order.PeggedOrder.Offset.IsZero() {
+				return ErrPeggedOrderOffsetMustBeGreaterThanZero
+			}
+		}
+	}
+	return OrderErrorUnspecified
+}
+
 type PeggedOrder struct {
 	Reference PeggedReference
 	Offset    *num.Uint
@@ -393,7 +534,7 @@ func (p PeggedOrder) String() string {
 	return fmt.Sprintf(
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
-		uintPointerToString(p.Offset),
+		stringer.UintPointerToString(p.Offset),
 	)
 }
 
@@ -531,8 +672,8 @@ func (t Trade) String() string {
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,
 		t.MarketID,
-		uintPointerToString(t.Price),
-		uintPointerToString(t.MarketPrice),
+		stringer.UintPointerToString(t.Price),
+		stringer.UintPointerToString(t.MarketPrice),
 		t.Size,
 		t.Buyer,
 		t.Seller,
@@ -543,8 +684,8 @@ func (t Trade) String() string {
 		t.Type.String(),
 		t.BuyerAuctionBatch,
 		t.SellerAuctionBatch,
-		reflectPointerToString(t.SellerFee),
-		reflectPointerToString(t.BuyerFee),
+		stringer.ReflectPointerToString(t.SellerFee),
+		stringer.ReflectPointerToString(t.BuyerFee),
 	)
 }
 

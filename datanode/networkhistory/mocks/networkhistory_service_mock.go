@@ -68,20 +68,20 @@ func (mr *MockNetworkHistoryMockRecorder) GetDatanodeBlockSpan(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDatanodeBlockSpan", reflect.TypeOf((*MockNetworkHistory)(nil).GetDatanodeBlockSpan), arg0)
 }
 
-// GetMostRecentHistorySegmentFromPeers mocks base method.
-func (m *MockNetworkHistory) GetMostRecentHistorySegmentFromPeers(arg0 context.Context, arg1 []int) (*networkhistory.PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
+// GetMostRecentHistorySegmentFromBootstrapPeers mocks base method.
+func (m *MockNetworkHistory) GetMostRecentHistorySegmentFromBootstrapPeers(arg0 context.Context, arg1 []int) (*networkhistory.PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMostRecentHistorySegmentFromPeers", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetMostRecentHistorySegmentFromBootstrapPeers", arg0, arg1)
 	ret0, _ := ret[0].(*networkhistory.PeerResponse)
 	ret1, _ := ret[1].(map[string]*v2.GetMostRecentNetworkHistorySegmentResponse)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetMostRecentHistorySegmentFromPeers indicates an expected call of GetMostRecentHistorySegmentFromPeers.
-func (mr *MockNetworkHistoryMockRecorder) GetMostRecentHistorySegmentFromPeers(arg0, arg1 interface{}) *gomock.Call {
+// GetMostRecentHistorySegmentFromBootstrapPeers indicates an expected call of GetMostRecentHistorySegmentFromBootstrapPeers.
+func (mr *MockNetworkHistoryMockRecorder) GetMostRecentHistorySegmentFromBootstrapPeers(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentHistorySegmentFromPeers", reflect.TypeOf((*MockNetworkHistory)(nil).GetMostRecentHistorySegmentFromPeers), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMostRecentHistorySegmentFromBootstrapPeers", reflect.TypeOf((*MockNetworkHistory)(nil).GetMostRecentHistorySegmentFromBootstrapPeers), arg0, arg1)
 }
 
 // ListAllHistorySegments mocks base method.

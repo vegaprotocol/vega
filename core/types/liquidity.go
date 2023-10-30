@@ -1,23 +1,26 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -42,6 +45,53 @@ const (
 	// margin check fails, then they will be cancelled without any penalties.
 	LiquidityProvisionStatusPending LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_PENDING
 )
+
+type LiquiditySLAParams struct {
+	PriceRange                  num.Decimal
+	CommitmentMinTimeFraction   num.Decimal
+	PerformanceHysteresisEpochs uint64
+	SlaCompetitionFactor        num.Decimal
+}
+
+func (l LiquiditySLAParams) IntoProto() *proto.LiquiditySLAParameters {
+	return &proto.LiquiditySLAParameters{
+		PriceRange:                  l.PriceRange.String(),
+		CommitmentMinTimeFraction:   l.CommitmentMinTimeFraction.String(),
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        l.SlaCompetitionFactor.String(),
+	}
+}
+
+func LiquiditySLAParamsFromProto(l *proto.LiquiditySLAParameters) *LiquiditySLAParams {
+	if l == nil {
+		return nil
+	}
+	return &LiquiditySLAParams{
+		PriceRange:                  num.MustDecimalFromString(l.PriceRange),
+		CommitmentMinTimeFraction:   num.MustDecimalFromString(l.CommitmentMinTimeFraction),
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        num.MustDecimalFromString(l.SlaCompetitionFactor),
+	}
+}
+
+func (l LiquiditySLAParams) String() string {
+	return fmt.Sprintf(
+		"priceRange(%s) commitmentMinTimeFraction(%s) performanceHysteresisEpochs(%v) slaCompetitionFactor(%s)",
+		l.PriceRange.String(),
+		l.CommitmentMinTimeFraction.String(),
+		l.PerformanceHysteresisEpochs,
+		l.SlaCompetitionFactor.String(),
+	)
+}
+
+func (l LiquiditySLAParams) DeepClone() *LiquiditySLAParams {
+	return &LiquiditySLAParams{
+		PriceRange:                  l.PriceRange,
+		CommitmentMinTimeFraction:   l.CommitmentMinTimeFraction,
+		PerformanceHysteresisEpochs: l.PerformanceHysteresisEpochs,
+		SlaCompetitionFactor:        l.SlaCompetitionFactor,
+	}
+}
 
 type TargetStakeParameters struct {
 	TimeWindow    int64
@@ -85,32 +135,17 @@ type LiquidityProvisionSubmission struct {
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
 	Fee num.Decimal
-	// A set of liquidity sell orders to meet the liquidity provision obligation
-	Sells []*LiquidityOrder
-	// A set of liquidity buy orders to meet the liquidity provision obligation
-	Buys []*LiquidityOrder
 	// A reference to be added to every order created out of this liquidityProvisionSubmission
 	Reference string
 }
 
 func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvisionSubmission {
-	lps := &commandspb.LiquidityProvisionSubmission{
+	return &commandspb.LiquidityProvisionSubmission{
 		MarketId:         l.MarketID,
 		CommitmentAmount: num.UintToString(l.CommitmentAmount),
 		Fee:              l.Fee.String(),
-		Sells:            make([]*proto.LiquidityOrder, 0, len(l.Sells)),
-		Buys:             make([]*proto.LiquidityOrder, 0, len(l.Buys)),
 		Reference:        l.Reference,
 	}
-
-	for _, sell := range l.Sells {
-		lps.Sells = append(lps.Sells, sell.IntoProto())
-	}
-
-	for _, buy := range l.Buys {
-		lps.Buys = append(lps.Buys, buy.IntoProto())
-	}
-	return lps
 }
 
 func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
@@ -132,38 +167,19 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 		Fee:              fee,
 		MarketID:         p.MarketId,
 		CommitmentAmount: commitmentAmount,
-		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
-		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
 		Reference:        p.Reference,
 	}
 
-	for _, sell := range p.Sells {
-		order, err := LiquidityOrderFromProto(sell)
-		if err != nil {
-			return nil, err
-		}
-		l.Sells = append(l.Sells, order)
-	}
-
-	for _, buy := range p.Buys {
-		order, err := LiquidityOrderFromProto(buy)
-		if err != nil {
-			return nil, err
-		}
-		l.Buys = append(l.Buys, order)
-	}
 	return &l, nil
 }
 
 func (l LiquidityProvisionSubmission) String() string {
 	return fmt.Sprintf(
-		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%s) buys(%s)",
+		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		l.MarketID,
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
-		LiquidityOrders(l.Sells).String(),
-		LiquidityOrders(l.Buys).String(),
 	)
 }
 
@@ -184,13 +200,9 @@ type LiquidityProvision struct {
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
 	Fee num.Decimal
-	// A set of liquidity sell orders to meet the liquidity provision obligation
-	Sells []*LiquidityOrderReference
-	// A set of liquidity buy orders to meet the liquidity provision obligation
-	Buys []*LiquidityOrderReference
-	// Version of this liquidity provision order
+	// Version of this liquidity provision
 	Version uint64
-	// Status of this liquidity provision order
+	// Status of this liquidity provision
 	Status LiquidityProvisionStatus
 	// A reference shared between this liquidity provision and all it's orders
 	Reference string
@@ -198,16 +210,14 @@ type LiquidityProvision struct {
 
 func (l LiquidityProvision) String() string {
 	return fmt.Sprintf(
-		"ID(%s) marketID(%s) party(%s) status(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%s) buys(%s) version(%v) createdAt(%v) updatedAt(%v)",
+		"ID(%s) marketID(%s) party(%s) status(%s) reference(%s) commitmentAmount(%s) fee(%s) version(%v) createdAt(%v) updatedAt(%v)",
 		l.ID,
 		l.MarketID,
 		l.Party,
 		l.Status.String(),
 		l.Reference,
-		uintPointerToString(l.CommitmentAmount),
+		stringer.UintPointerToString(l.CommitmentAmount),
 		l.Fee.String(),
-		LiquidityOrderReferences(l.Sells).String(),
-		LiquidityOrderReferences(l.Buys).String(),
 		l.Version,
 		l.CreatedAt,
 		l.UpdatedAt,
@@ -226,17 +236,8 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 		Version:          l.Version,
 		Status:           l.Status,
 		Reference:        l.Reference,
-		Sells:            make([]*proto.LiquidityOrderReference, 0, len(l.Sells)),
-		Buys:             make([]*proto.LiquidityOrderReference, 0, len(l.Buys)),
 	}
 
-	for _, sell := range l.Sells {
-		lp.Sells = append(lp.Sells, sell.IntoProto())
-	}
-
-	for _, buy := range l.Buys {
-		lp.Buys = append(lp.Buys, buy.IntoProto())
-	}
 	return lp
 }
 
@@ -261,138 +262,9 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvisi
 		Status:           p.Status,
 		UpdatedAt:        p.UpdatedAt,
 		Version:          p.Version,
-		Sells:            make([]*LiquidityOrderReference, 0, len(p.Sells)),
-		Buys:             make([]*LiquidityOrderReference, 0, len(p.Buys)),
-	}
-
-	for _, sell := range p.Sells {
-		lor, err := LiquidityOrderReferenceFromProto(sell)
-		if err != nil {
-			return nil, err
-		}
-		l.Sells = append(l.Sells, lor)
-	}
-
-	for _, buy := range p.Buys {
-		lor, err := LiquidityOrderReferenceFromProto(buy)
-		if err != nil {
-			return nil, err
-		}
-		l.Buys = append(l.Buys, lor)
 	}
 
 	return &l, nil
-}
-
-type LiquidityOrderReferences []*LiquidityOrderReference
-
-func (ls LiquidityOrderReferences) String() string {
-	if ls == nil {
-		return "[]"
-	}
-	strs := make([]string, 0, len(ls))
-	for _, l := range ls {
-		strs = append(strs, l.String())
-	}
-	return "[" + strings.Join(strs, ", ") + "]"
-}
-
-type LiquidityOrderReference struct {
-	// Unique identifier of the pegged order generated by the core to fulfil this liquidity order
-	OrderID string
-	// The liquidity order from the original submission
-	LiquidityOrder *LiquidityOrder
-}
-
-func (l LiquidityOrderReference) String() string {
-	return fmt.Sprintf(
-		"orderID(%s) liquidityOrder(%s)",
-		l.OrderID,
-		reflectPointerToString(l.LiquidityOrder),
-	)
-}
-
-func (l LiquidityOrderReference) IntoProto() *proto.LiquidityOrderReference {
-	var order *proto.LiquidityOrder
-	if l.LiquidityOrder != nil {
-		order = l.LiquidityOrder.IntoProto()
-	}
-	return &proto.LiquidityOrderReference{
-		OrderId:        l.OrderID,
-		LiquidityOrder: order,
-	}
-}
-
-func LiquidityOrderReferenceFromProto(p *proto.LiquidityOrderReference) (*LiquidityOrderReference, error) {
-	lo, err := LiquidityOrderFromProto(p.LiquidityOrder)
-	if err != nil {
-		return nil, err
-	}
-
-	return &LiquidityOrderReference{
-		OrderID:        p.OrderId,
-		LiquidityOrder: lo,
-	}, nil
-}
-
-type LiquidityOrders []*LiquidityOrder
-
-func (ls LiquidityOrders) String() string {
-	if ls == nil {
-		return "[]"
-	}
-	strs := make([]string, 0, len(ls))
-	for _, l := range ls {
-		strs = append(strs, l.String())
-	}
-	return "[" + strings.Join(strs, ", ") + "]"
-}
-
-type LiquidityOrder struct {
-	// The pegged reference point for the order
-	Reference PeggedReference
-	// The relative proportion of the commitment to be allocated at a price level
-	Proportion uint32
-	// The offset/amount of units away for the order
-	Offset *num.Uint
-}
-
-func (l LiquidityOrder) String() string {
-	return fmt.Sprintf(
-		"reference(%s) proportion(%v) offset(%s)",
-		l.Reference.String(),
-		l.Proportion,
-		uintPointerToString(l.Offset),
-	)
-}
-
-func (l LiquidityOrder) DeepClone() *LiquidityOrder {
-	return &LiquidityOrder{
-		Reference:  l.Reference,
-		Proportion: l.Proportion,
-		Offset:     l.Offset,
-	}
-}
-
-func (l LiquidityOrder) IntoProto() *proto.LiquidityOrder {
-	return &proto.LiquidityOrder{
-		Reference:  l.Reference,
-		Proportion: l.Proportion,
-		Offset:     l.Offset.String(),
-	}
-}
-
-func LiquidityOrderFromProto(p *proto.LiquidityOrder) (*LiquidityOrder, error) {
-	offset, overflow := num.UintFromString(p.Offset, 10)
-	if overflow {
-		return nil, errors.New("invalid offset")
-	}
-
-	return &LiquidityOrder{
-		Offset:     offset,
-		Proportion: p.Proportion,
-		Reference:  p.Reference,
-	}, nil
 }
 
 type LiquidityMonitoringParameters struct {
@@ -433,7 +305,7 @@ func (l LiquidityMonitoringParameters) String() string {
 		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
 		l.AuctionExtension,
 		l.TriggeringRatio.String(),
-		reflectPointerToString(l.TargetStakeParameters),
+		stringer.ReflectPointerToString(l.TargetStakeParameters),
 	)
 }
 
@@ -465,10 +337,6 @@ type LiquidityProvisionAmendment struct {
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
 	Fee num.Decimal
-	// A set of liquidity sell orders to meet the liquidity provision obligation
-	Sells []*LiquidityOrder
-	// A set of liquidity buy orders to meet the liquidity provision obligation
-	Buys []*LiquidityOrder
 	// A reference to be added to every order created out of this liquidityProvisionAmendment
 	Reference string
 }
@@ -488,103 +356,35 @@ func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendm
 		}
 	}
 
-	l := LiquidityProvisionAmendment{
+	return &LiquidityProvisionAmendment{
 		Fee:              fee,
 		MarketID:         p.MarketId,
 		CommitmentAmount: commitmentAmount,
-		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
-		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
 		Reference:        p.Reference,
-	}
-
-	for _, sell := range p.Sells {
-		offset := num.UintZero()
-
-		if len(p.CommitmentAmount) > 0 {
-			var overflowed bool
-			offset, overflowed = num.UintFromString(sell.Offset, 10)
-			if overflowed {
-				return nil, errors.New("invalid sell side offset")
-			}
-		}
-
-		order := &LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     offset,
-		}
-		l.Sells = append(l.Sells, order)
-	}
-
-	for _, buy := range p.Buys {
-		offset := num.UintZero()
-
-		if len(p.CommitmentAmount) > 0 {
-			var overflowed bool
-			offset, overflowed = num.UintFromString(buy.Offset, 10)
-			if overflowed {
-				return nil, errors.New("invalid buy side offset")
-			}
-		}
-
-		order := &LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     offset,
-		}
-		l.Buys = append(l.Buys, order)
-	}
-	return &l, nil
+	}, nil
 }
 
 func (a LiquidityProvisionAmendment) IntoProto() *commandspb.LiquidityProvisionAmendment {
-	lps := &commandspb.LiquidityProvisionAmendment{
+	return &commandspb.LiquidityProvisionAmendment{
 		MarketId:         a.MarketID,
 		CommitmentAmount: num.UintToString(a.CommitmentAmount),
 		Fee:              a.Fee.String(),
-		Sells:            make([]*proto.LiquidityOrder, 0, len(a.Sells)),
-		Buys:             make([]*proto.LiquidityOrder, 0, len(a.Buys)),
 		Reference:        a.Reference,
 	}
-
-	for _, sell := range a.Sells {
-		order := &proto.LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     sell.Offset.String(),
-		}
-		lps.Sells = append(lps.Sells, order)
-	}
-
-	for _, buy := range a.Buys {
-		order := &proto.LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     buy.Offset.String(),
-		}
-		lps.Buys = append(lps.Buys, order)
-	}
-	return lps
 }
 
 func (a LiquidityProvisionAmendment) String() string {
 	return fmt.Sprintf(
-		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
+		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		a.MarketID,
 		a.Reference,
-		uintPointerToString(a.CommitmentAmount),
+		stringer.UintPointerToString(a.CommitmentAmount),
 		a.Fee.String(),
-		LiquidityOrders(a.Sells).String(),
-		LiquidityOrders(a.Buys).String(),
 	)
 }
 
 func (a LiquidityProvisionAmendment) GetMarketID() string {
 	return a.MarketID
-}
-
-func (a LiquidityProvisionAmendment) ContainsOrders() bool {
-	return len(a.Sells) > 0 || len(a.Buys) > 0
 }
 
 type LiquidityProvisionCancellation struct {

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package events_test
 
@@ -16,6 +19,9 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -25,18 +31,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func changeOracleSpec(spec *types.DataSourceSpec) {
+func changeOracleSpec(spec *datasource.Spec) {
 	spec.ID = "Changed"
 	spec.CreatedAt = 999
 	spec.UpdatedAt = 999
 
-	filters := []*types.DataSourceSpecFilter{
+	filters := []*dstypes.SpecFilter{
 		{
-			Key: &types.DataSourceSpecPropertyKey{
+			Key: &dstypes.SpecPropertyKey{
 				Name: "Changed",
 				Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
 			},
-			Conditions: []*types.DataSourceSpecCondition{
+			Conditions: []*dstypes.SpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
 					Value:    "Changed",
@@ -46,8 +52,8 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	}
 
 	spec.Data.SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)},
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("Changed", dstypes.SignerTypePubKey)},
 			Filters: filters,
 		},
 	)
@@ -55,7 +61,7 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	spec.Status = vegapb.DataSourceSpec_STATUS_UNSPECIFIED
 }
 
-func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types.DataSourceSpec) {
+func assertSpecsNotEqual(t *testing.T, spec1 *datasource.Spec, spec2 *datasource.Spec) {
 	t.Helper()
 	assert.NotEqual(t, spec1.ID, spec2.ID)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
@@ -70,8 +76,8 @@ func assertSpecsNotEqual(t *testing.T, spec1 *types.DataSourceSpec, spec2 *types
 
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("PubKey", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("PubKey", dstypes.SignerTypePubKey),
 	}
 
 	pme := vegapb.Market{
@@ -97,7 +103,7 @@ func TestMarketDeepClone(t *testing.T) {
 									External: &vegapb.DataSourceDefinitionExternal{
 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -128,7 +134,7 @@ func TestMarketDeepClone(t *testing.T) {
 									External: &vegapb.DataSourceDefinitionExternal{
 										SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 											Oracle: &vegapb.DataSourceSpecConfiguration{
-												Signers: types.SignersIntoProto(pubKeys),
+												Signers: dstypes.SignersIntoProto(pubKeys),
 												Filters: []*datapb.Filter{
 													{
 														Key: &datapb.PropertyKey{
@@ -207,6 +213,12 @@ func TestMarketDeepClone(t *testing.T) {
 			},
 			TriggeringRatio:  "123.45",
 			AuctionExtension: 5000,
+		},
+		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
+			PriceRange:                  "0.95",
+			CommitmentMinTimeFraction:   "0.5",
+			PerformanceHysteresisEpochs: 4,
+			SlaCompetitionFactor:        "0.5",
 		},
 		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
 		State:       vegapb.Market_STATE_ACTIVE,

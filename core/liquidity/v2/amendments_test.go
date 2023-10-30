@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package liquidity_test
 
@@ -18,13 +21,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -43,7 +46,7 @@ func TestAmendments(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	assert.EqualError(t,
-		tng.engine.CanAmend(nil, party),
+		tng.engine.CanAmend(nil, party, true),
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
@@ -66,7 +69,7 @@ func TestAmendments(t *testing.T) {
 
 	_, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, zeroD)
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
 	tng.engine.ApplyPendingProvisions(ctx, now)
 	originalLp := tng.engine.LiquidityProvisionByPartyID(party)
 
@@ -80,9 +83,10 @@ func TestAmendments(t *testing.T) {
 		Reference:        "ref-lp-submission-1",
 	})
 	// now we can do a OK can amend
-	assert.NoError(t, tng.engine.CanAmend(lpa, party))
+	assert.NoError(t, tng.engine.CanAmend(lpa, party, true))
 
-	assert.NoError(t, tng.engine.AmendLiquidityProvision(ctx, lpa, party))
+	_, err = tng.engine.AmendLiquidityProvision(ctx, lpa, party, true)
+	assert.NoError(t, err)
 
 	// first validate that the amendment is pending
 	pendingLp := tng.engine.PendingProvisionByPartyID(party)
@@ -96,7 +100,7 @@ func TestAmendments(t *testing.T) {
 	assert.Equal(t, originalLp.Version, lp.Version)
 
 	// amendment should take place at the start of new epoch
-	tng.engine.ResetSLAEpoch(ctx, now, zero, zero, zeroD)
+	tng.engine.ResetSLAEpoch(now, zero, zero, zeroD)
 	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	lp = tng.engine.LiquidityProvisionByPartyID(party)
@@ -108,7 +112,68 @@ func TestAmendments(t *testing.T) {
 	// so let's check for negatives instead
 	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
-		tng.engine.CanAmend(lpa, party),
+		tng.engine.CanAmend(lpa, party, true),
 		"invalid liquidity provision fee",
 	)
+}
+
+func TestCancelTroughAmendmentDuringOpeningAuction(t *testing.T) {
+	var (
+		party = "party-1"
+		ctx   = context.Background()
+		tng   = newTestEngine(t)
+	)
+	defer tng.ctrl.Finish()
+
+	assert.EqualError(t,
+		tng.engine.CanAmend(nil, party, true),
+		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
+	)
+
+	lps, _ := types.LiquidityProvisionSubmissionFromProto(&commandspb.LiquidityProvisionSubmission{
+		MarketId:         market,
+		CommitmentAmount: "10000",
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+	})
+
+	idgen := idgeneration.New(crypto.RandomHash())
+	// initially submit our provision to be amended, does not matter what's in
+	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// set opening auction
+	tng.auctionState.EXPECT().InAuction().Return(true).AnyTimes()
+	tng.auctionState.EXPECT().IsOpeningAuction().Return(true).AnyTimes()
+
+	applied, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	// amend to zero - cancel
+	lpa, _ := types.LiquidityProvisionAmendmentFromProto(&commandspb.LiquidityProvisionAmendment{
+		MarketId:         market,
+		CommitmentAmount: "0",
+		Fee:              "0",
+	})
+
+	applied, err = tng.engine.AmendLiquidityProvision(ctx, lpa, party, true)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	// should not be in pending
+	pendingLp := tng.engine.PendingProvisionByPartyID(party)
+	assert.Nil(t, pendingLp)
+
+	// should not be in current
+	currentLp := tng.engine.LiquidityProvisionByPartyID(party)
+	assert.Nil(t, currentLp)
+
+	// LP is able to submit again - since they cancelled before
+	applied, err = tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
+	assert.NoError(t, err)
+	assert.True(t, applied)
+
+	lp := tng.engine.LiquidityProvisionByPartyID(party)
+	assert.Equal(t, lps.CommitmentAmount.String(), lp.CommitmentAmount.String())
+	assert.Equal(t, lps.Fee.String(), lp.Fee.String())
+	assert.EqualValues(t, 1, lp.Version)
 }

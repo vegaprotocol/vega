@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //lint:file-ignore SA5008 duplicated struct tags are ok for config
 
@@ -30,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral"
 	cfgencoding "code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/coreapi"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -41,7 +45,6 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -54,6 +57,7 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/core/vesting"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -71,7 +75,7 @@ type Config struct {
 	Ethereum          eth.Config             `group:"Ethereum"          namespace:"ethereum"`
 	Processor         processor.Config       `group:"Processor"         namespace:"processor"`
 	Logging           logging.Config         `group:"Logging"           namespace:"logging"`
-	Oracles           oracles.Config         `group:"Oracles"           namespace:"oracles"`
+	Oracles           spec.Config            `group:"Oracles"           namespace:"oracles"`
 	Time              vegatime.Config        `group:"Time"              namespace:"time"`
 	Epoch             epochtime.Config       `group:"Epoch"             namespace:"epochtime"`
 	Metrics           metrics.Config         `group:"Metrics"           namespace:"metrics"`
@@ -98,6 +102,7 @@ type Config struct {
 	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig"     namespace:"erc20multisig"`
 	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade"   namespace:"protocolupgrade"`
 	Pprof             pprof.Config           `group:"Pprof"             namespace:"pprof"`
+	Vesting           vesting.Config         `group:"Vesting"           namespace:"vesting"`
 
 	NodeMode         cfgencoding.NodeMode `description:"The mode of the vega node [validator, full]"                            long:"mode"`
 	MaxMemoryPercent uint8                `description:"The maximum amount of memory reserved for the vega node (default: 33%)" long:"max-memory-percent"`
@@ -116,7 +121,7 @@ func NewDefaultConfig() Config {
 		Execution:         execution.NewDefaultConfig(),
 		Ethereum:          eth.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
-		Oracles:           oracles.NewDefaultConfig(),
+		Oracles:           spec.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Epoch:             epochtime.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
@@ -137,11 +142,12 @@ func NewDefaultConfig() Config {
 		Checkpoint:        checkpoint.NewDefaultConfig(),
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
-		Snapshot:          snapshot.NewDefaultConfig(),
+		Snapshot:          snapshot.DefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 		ERC20MultiSig:     erc20multisig.NewDefaultConfig(),
 		PoW:               pow.NewDefaultConfig(),
 		ProtocolUpgrade:   protocolupgrade.NewDefaultConfig(),
+		Vesting:           vesting.NewDefaultConfig(),
 	}
 }
 
@@ -165,10 +171,7 @@ func (c Config) GetMaxMemoryFactor() (float64, error) {
 }
 
 func (c Config) HaveEthClient() bool {
-	if c.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		return false
-	}
-	return c.IsValidator()
+	return c.IsValidator() && len(c.Ethereum.RPCEndpoint) > 0
 }
 
 type Loader struct {

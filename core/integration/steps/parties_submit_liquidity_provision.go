@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -30,8 +33,6 @@ type LPUpdate struct {
 	MarketID         string
 	CommitmentAmount *num.Uint
 	Fee              num.Decimal
-	Sells            []*types.LiquidityOrder
-	Buys             []*types.LiquidityOrder
 	Reference        string
 	LpType           string
 	Err              string
@@ -52,8 +53,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 	parties := map[string]string{}
 	keys := []string{}
 
-	// var clp *types.LiquidityProvisionSubmission
-	// checkAmt := num.NewUint(50000000)
 	var errRow ErroneousRow
 	for _, r := range parseSubmitLiquidityProvisionTable(table) {
 		row := submitLiquidityProvisionRow{row: r}
@@ -63,14 +62,11 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		id := row.ID()
 		ref := id
 
-		lp, ok := lps[id]
-		if !ok {
-			lp = &LPUpdate{
+		if _, ok := lps[id]; !ok {
+			lp := &LPUpdate{
 				MarketID:         row.MarketID(),
 				CommitmentAmount: row.CommitmentAmount(),
 				Fee:              row.Fee(),
-				Sells:            []*types.LiquidityOrder{},
-				Buys:             []*types.LiquidityOrder{},
 				Reference:        ref,
 				LpType:           row.LpType(),
 				Err:              row.Error(),
@@ -78,16 +74,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			parties[id] = row.Party()
 			lps[id] = lp
 			keys = append(keys, id)
-		}
-		lo := &types.LiquidityOrder{
-			Reference:  row.PeggedReference(),
-			Proportion: row.Proportion(),
-			Offset:     row.Offset(),
-		}
-		if row.Side() == types.SideBuy {
-			lp.Buys = append(lp.Buys, lo)
-		} else {
-			lp.Sells = append(lp.Sells, lo)
 		}
 	}
 	// ensure we always submit in the same order
@@ -107,8 +93,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				MarketID:         lp.MarketID,
 				CommitmentAmount: lp.CommitmentAmount,
 				Fee:              lp.Fee,
-				Sells:            lp.Sells,
-				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
 
@@ -121,8 +105,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				MarketID:         lp.MarketID,
 				CommitmentAmount: lp.CommitmentAmount,
 				Fee:              lp.Fee,
-				Sells:            lp.Sells,
-				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
 			deterministicID := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
@@ -162,10 +144,6 @@ func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 		"market id",
 		"commitment amount",
 		"fee",
-		"side",
-		"pegged reference",
-		"proportion",
-		"offset",
 		"lp type",
 	}, []string{
 		"reference",
@@ -190,6 +168,9 @@ func (r submitLiquidityProvisionRow) MarketID() string {
 }
 
 func (r submitLiquidityProvisionRow) Side() types.Side {
+	if len(r.row.Str("side")) == 0 {
+		return types.SideUnspecified
+	}
 	return r.row.MustSide("side")
 }
 
@@ -201,20 +182,8 @@ func (r submitLiquidityProvisionRow) Fee() num.Decimal {
 	return r.row.MustDecimal("fee")
 }
 
-func (r submitLiquidityProvisionRow) Offset() *num.Uint {
-	return r.row.MustUint("offset")
-}
-
 func (r submitLiquidityProvisionRow) LpType() string {
 	return r.row.MustStr("lp type")
-}
-
-func (r submitLiquidityProvisionRow) Proportion() uint32 {
-	return r.row.MustU32("proportion")
-}
-
-func (r submitLiquidityProvisionRow) PeggedReference() types.PeggedReference {
-	return r.row.MustPeggedReference("pegged reference")
 }
 
 func (r submitLiquidityProvisionRow) Reference() string {

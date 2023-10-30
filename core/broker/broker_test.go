@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package broker_test
 
@@ -27,9 +30,9 @@ import (
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
@@ -89,7 +92,6 @@ func (b brokerTst) randomEvt() *evt {
 
 func (b *brokerTst) Finish() {
 	b.cfunc()
-	b.ctrl.Finish()
 }
 
 func TestSequenceIDGen(t *testing.T) {
@@ -714,7 +716,6 @@ func testEventTypeSubscription(t *testing.T) {
 func testStreamsOverSocket(t *testing.T) {
 	t.Parallel()
 	ctx, cfunc := context.WithCancel(context.Background())
-	ctrl := gomock.NewController(t)
 	config := broker.NewDefaultConfig()
 	config.Socket.Enabled = true
 	config.Socket.Transport = "inproc"
@@ -733,7 +734,6 @@ func testStreamsOverSocket(t *testing.T) {
 
 	defer func() {
 		cfunc()
-		ctrl.Finish()
 		sock.Close()
 	}()
 
@@ -754,7 +754,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 	t.Parallel()
 	if os.Getenv("RUN_TEST") == "1" {
 		ctx, cfunc := context.WithCancel(context.Background())
-		ctrl := gomock.NewController(t)
 		config := broker.NewDefaultConfig()
 		config.Socket.Enabled = true
 		config.Socket.Transport = "inproc"
@@ -777,7 +776,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 
 		defer func() {
 			cfunc()
-			ctrl.Finish()
 			sock.Close()
 		}()
 

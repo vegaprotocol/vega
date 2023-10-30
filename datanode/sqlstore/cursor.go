@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -46,6 +61,8 @@ type ColumnOrdering struct {
 	// Prefix is the prefix to add to the column name in order to resolve duplicate
 	// column names that might be in the query
 	Prefix string
+	// If the column originates from parsing a JSON field, how it should be referenced in the query.
+	Ref string
 }
 
 func NewColumnOrdering(name string, sorting Sorting) ColumnOrdering {
@@ -74,10 +91,10 @@ func (t *TableOrdering) Reversed() TableOrdering {
 	reversed := make([]ColumnOrdering, len(*t))
 	for i, column := range *t {
 		if column.Sorting == DESC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: ASC, Ref: column.Ref}
 		}
 		if column.Sorting == ASC {
-			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC}
+			reversed[i] = ColumnOrdering{Name: column.Name, Sorting: DESC, Ref: column.Ref}
 		}
 	}
 	return reversed
@@ -132,14 +149,18 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 		}
 
 		bindVar := nextBindVar(&args, value)
-		inequalityPredicate := fmt.Sprintf("%s%s %s %s", prefix, column.Name, operator, bindVar)
+		ref := column.Name
+		if len(column.Ref) > 0 {
+			ref = column.Ref
+		}
+		inequalityPredicate := fmt.Sprintf("%s%s %s %s", prefix, ref, operator, bindVar)
 
 		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equalityPredicate := fmt.Sprintf("%s%s = %s", prefix, column.Name, bindVar)
+		equalityPredicate := fmt.Sprintf("%s%s = %s", prefix, ref, bindVar)
 		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
@@ -199,7 +220,16 @@ func PaginateQuery[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
-	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false)
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false, false)
+}
+
+func PaginateQueryWithWhere[T any, PT parserPtr[T]](
+	query string,
+	args []interface{},
+	ordering TableOrdering,
+	pagination entities.CursorPagination,
+) (string, []interface{}, error) {
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false, true)
 }
 
 func PaginateQueryWithoutOrderBy[T any, PT parserPtr[T]](
@@ -208,7 +238,7 @@ func PaginateQueryWithoutOrderBy[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
-	return paginateQueryInternal[T, PT](query, args, ordering, pagination, true)
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, true, false)
 }
 
 func paginateQueryInternal[T any, PT parserPtr[T]](
@@ -217,6 +247,7 @@ func paginateQueryInternal[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 	omitOrderBy bool,
+	forceWhere bool,
 ) (string, []interface{}, error) {
 	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
@@ -239,7 +270,7 @@ func paginateQueryInternal[T any, PT parserPtr[T]](
 	}
 	if !isEmpty {
 		whereOrAnd := "WHERE"
-		if strings.Contains(strings.ToUpper(query), "WHERE") {
+		if !forceWhere && strings.Contains(strings.ToUpper(query), "WHERE") {
 			whereOrAnd = "AND"
 		}
 

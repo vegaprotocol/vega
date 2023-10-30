@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands_test
 
 import (
@@ -5,6 +20,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/test"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
@@ -323,7 +339,7 @@ func testOrderSubmissionWithGTTAndNonPositiveExpirationDateFails(t *testing.T) {
 			value: 0,
 		}, {
 			msg:   "with negative expiration date",
-			value: RandomNegativeI64(),
+			value: test.RandomNegativeI64(),
 		},
 	}
 	for _, tc := range testCases {
@@ -364,7 +380,7 @@ func testOrderSubmissionWithoutGTTAndExpirationDateFails(t *testing.T) {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkOrderSubmission(&commandspb.OrderSubmission{
 				TimeInForce: tc.value,
-				ExpiresAt:   RandomI64(),
+				ExpiresAt:   test.RandomI64(),
 			})
 
 			assert.Contains(t, err.Get("order_submission.expires_at"), errors.New("is only available when the time in force is of type GTT"))
@@ -375,7 +391,7 @@ func testOrderSubmissionWithoutGTTAndExpirationDateFails(t *testing.T) {
 func testOrderSubmissionWithMarketTypeAndPriceFails(t *testing.T) {
 	err := checkOrderSubmission(&commandspb.OrderSubmission{
 		Type:  types.Order_TYPE_MARKET,
-		Price: RandomPositiveU64AsString(),
+		Price: test.RandomPositiveU64AsString(),
 	})
 
 	assert.Contains(t, err.Get("order_submission.price"), errors.New("is unavailable when the order is of type MARKET"))
@@ -592,7 +608,7 @@ func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceAndNonNegativeOffset
 			value: "0",
 		}, {
 			msg:   "with positive offset",
-			value: RandomPositiveU64AsString(),
+			value: test.RandomPositiveU64AsString(),
 		},
 	}
 	for _, tc := range testCases {
@@ -620,7 +636,7 @@ func testPeggedOrderSubmissionWithSideBuyAndMidReferenceAndNonPositiveOffsetFail
 			value: "0",
 		}, {
 			msg:   "with negative offset",
-			value: RandomNegativeI64AsString(),
+			value: test.RandomNegativeI64AsString(),
 		},
 	}
 	for _, tc := range testCases {
@@ -643,7 +659,7 @@ func testPeggedOrderSubmissionWithSideBuyAndMidReferenceAndNegativeOffsetSucceed
 		Side: types.Side_SIDE_BUY,
 		PeggedOrder: &types.PeggedOrder{
 			Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
-			Offset:    RandomPositiveU64AsString(),
+			Offset:    test.RandomPositiveU64AsString(),
 		},
 	})
 
@@ -677,7 +693,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNegativeOffsetFa
 		Side: types.Side_SIDE_SELL,
 		PeggedOrder: &types.PeggedOrder{
 			Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-			Offset:    RandomNegativeI64AsString(),
+			Offset:    test.RandomNegativeI64AsString(),
 		},
 	})
 
@@ -694,7 +710,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNonNegativeOffse
 			value: "0",
 		}, {
 			msg:   "with positive offset",
-			value: RandomPositiveU64AsString(),
+			value: test.RandomPositiveU64AsString(),
 		},
 	}
 	for _, tc := range testCases {
@@ -745,7 +761,7 @@ func testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSuccee
 		Side: types.Side_SIDE_SELL,
 		PeggedOrder: &types.PeggedOrder{
 			Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
-			Offset:    RandomPositiveU64AsString(),
+			Offset:    test.RandomPositiveU64AsString(),
 		},
 	})
 
@@ -755,8 +771,8 @@ func testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSuccee
 func checkOrderSubmission(cmd *commandspb.OrderSubmission) commands.Errors {
 	err := commands.CheckOrderSubmission(cmd)
 
-	e, ok := err.(commands.Errors)
-	if !ok {
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
 		return commands.NewErrors()
 	}
 

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
@@ -20,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
@@ -28,18 +32,29 @@ func (mat *MarketActivityTracker) Name() types.CheckpointName {
 }
 
 func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
-	markets := make([]string, 0, len(mat.marketToTracker))
-	for k := range mat.marketToTracker {
-		markets = append(markets, k)
+	assets := make([]string, 0, len(mat.assetToMarketTrackers))
+	for k := range mat.assetToMarketTrackers {
+		assets = append(assets, k)
 	}
-	sort.Strings(markets)
+	sort.Strings(assets)
 
-	marketTracker := make([]*checkpoint.MarketActivityTracker, 0, len(markets))
-	for _, market := range markets {
-		marketTracker = append(marketTracker, mat.marketToTracker[market].IntoProto(market))
+	marketTracker := []*checkpoint.MarketActivityTracker{}
+	for _, asset := range assets {
+		assetTrackers := mat.assetToMarketTrackers[asset]
+		markets := make([]string, 0, len(assetTrackers))
+		for k := range assetTrackers {
+			markets = append(markets, k)
+		}
+		sort.Strings(markets)
+		for _, market := range markets {
+			mt := assetTrackers[market]
+			marketTracker = append(marketTracker, mt.IntoProto(market))
+		}
 	}
+
 	msg := &checkpoint.MarketTracker{
-		MarketActivity: marketTracker,
+		MarketActivity:      marketTracker,
+		TakerNotionalVolume: takerNotionalToProto(mat.partyTakerNotionalVolume),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -55,7 +70,15 @@ func (mat *MarketActivityTracker) Load(ctx context.Context, data []byte) error {
 	}
 
 	for _, data := range b.MarketActivity {
-		mat.marketToTracker[data.Market] = marketTrackerFromProto(data)
+		if _, ok := mat.assetToMarketTrackers[data.Asset]; !ok {
+			mat.assetToMarketTrackers[data.Asset] = map[string]*marketTracker{}
+		}
+		mat.assetToMarketTrackers[data.Asset][data.Market] = marketTrackerFromProto(data)
+	}
+	for _, tnv := range b.TakerNotionalVolume {
+		if len(tnv.Volume) > 0 {
+			mat.partyTakerNotionalVolume[tnv.Party] = num.UintFromBytes(tnv.Volume)
+		}
 	}
 	return nil
 }

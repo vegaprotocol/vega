@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package matching
 
@@ -22,6 +25,35 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func submitPeggedIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64) (*types.Order, *types.OrderConfirmation) {
+	t.Helper()
+	o := &types.Order{
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      book.marketID,
+		Party:         "A",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          size,
+		Remaining:     size,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Type:          types.OrderTypeLimit,
+		ExpiresAt:     10,
+		PeggedOrder: &types.PeggedOrder{
+			Reference: types.PeggedReferenceMid,
+			Offset:    num.UintOne(),
+		},
+		IcebergOrder: &types.IcebergOrder{
+			PeakSize:           peak,
+			MinimumVisibleSize: minPeak,
+		},
+	}
+	confirm, err := book.SubmitOrder(o)
+	require.NoError(t, err)
+	return o, confirm
+}
 
 func submitIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64, addToBook bool) (*types.Order, *types.OrderConfirmation) {
 	t.Helper()
@@ -568,4 +600,25 @@ func TestIcebergWashTradeAggressiveIcebergPartialFill(t *testing.T) {
 	assert.Equal(t, types.OrderStatusPartiallyFilled, iceberg.Status)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, uint64(10), book.getTotalSellVolume())
+}
+
+func TestRefreshedPeggedIcebergStillPegged(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// create a pegged iceberg order
+	iceberg, _ := submitPeggedIcebergOrder(t, book, 100, 4, 2)
+
+	// check it is returned as pegged
+	pegged := book.GetActivePeggedOrderIDs()
+	assert.Equal(t, iceberg.ID, pegged[0])
+
+	// submit an order that will trade a cause a refresh
+	_, confirm := submitCrossedOrder(t, book, 3)
+	assert.Equal(t, 1, len(confirm.Trades))
+
+	// check it is still returned as pegged
+	pegged = book.GetActivePeggedOrderIDs()
+	assert.Equal(t, iceberg.ID, pegged[0])
 }

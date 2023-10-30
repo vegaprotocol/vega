@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023  Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package num_test
 
@@ -192,6 +195,70 @@ func TestAdd(t *testing.T) {
 	assert.Equal(t, "-5", i.String())
 }
 
+func TestMul(t *testing.T) {
+	// Mul positive-positive
+	i := num.NewInt(100)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "10000", i.String())
+
+	// Mul negative-negative
+	i = num.NewInt(-100)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "10000", i.String())
+
+	// Mul positive-negative
+	i = num.NewInt(100)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "-10000", i.String())
+
+	// Mul negative-positive
+	i = num.NewInt(-100)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "-10000", i.String())
+
+	// Mul zero-positive
+	i = num.NewInt(0)
+	i.Mul(num.NewInt(100))
+	assert.Equal(t, "0", i.String())
+
+	// Mul zero-negative
+	i = num.NewInt(0)
+	i.Mul(num.NewInt(-100))
+	assert.Equal(t, "0", i.String())
+}
+
+func TestDiv(t *testing.T) {
+	// Div positive-positive
+	i := num.NewInt(1000)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "10", i.String())
+
+	// Div negative-negative
+	i = num.NewInt(-1000)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "10", i.String())
+
+	// Div positive-negative
+	i = num.NewInt(1000)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "-10", i.String())
+
+	// Div negative-positive
+	i = num.NewInt(-1000)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "-10", i.String())
+
+	// Div zero-positive
+	i = num.NewInt(0)
+	i.Div(num.NewInt(100))
+	assert.Equal(t, "0", i.String())
+
+	// Div zero-negative
+	i = num.NewInt(0)
+	i.Div(num.NewInt(-100))
+	assert.Equal(t, "0", i.String())
+}
+
 func TestAddSum(t *testing.T) {
 	num1 := num.NewInt(10)
 	num2 := num.NewInt(20)
@@ -230,7 +297,6 @@ func testAddLoop(t *testing.T) {
 		bigNum1.Add(bigNum2)
 
 		assert.Equal(t, num1+num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 
@@ -245,7 +311,6 @@ func testSubLoop(t *testing.T) {
 		bigNum1.Sub(bigNum2)
 
 		assert.Equal(t, num1-num2, bigNum1.Int64())
-		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -19,8 +22,9 @@ import (
 
 	"github.com/cucumber/godog"
 
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
-	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -30,7 +34,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	pubKeys := StrSlice(rawPubKeys, ",")
 	pubKeysSigners := make([]*datav1.Signer, len(pubKeys))
 	for i, s := range pubKeys {
-		pks := types.CreateSignerFromString(s, types.DataSignerTypePubKey)
+		pks := dstypes.CreateSignerFromString(s, dstypes.SignerTypePubKey)
 		pubKeysSigners[i] = pks.IntoProto()
 	}
 
@@ -40,10 +44,16 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	filters := make([]*datav1.Filter, 0, len(rows))
 	for _, r := range rows {
 		row := oracleSpecRow{row: r}
+		var numDec *uint64
+		decimals, ok := row.propertyDecimals()
+		if ok {
+			numDec = ptr.From(decimals)
+		}
 		filter := &datav1.Filter{
 			Key: &datav1.PropertyKey{
-				Name: row.propertyName(),
-				Type: row.propertyType(),
+				Name:                row.propertyName(),
+				Type:                row.propertyType(),
+				NumberDecimalPlaces: numDec,
 			},
 			Conditions: []*datav1.Condition{},
 		}
@@ -87,11 +97,13 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		&protoTypes.DataSourceSpec{
 			Id: vgrand.RandomStr(10),
 			Data: protoTypes.NewDataSourceDefinition(
-				protoTypes.DataSourceDefinitionTypeExt,
+				protoTypes.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&protoTypes.DataSourceSpecConfiguration{
-					Signers: pubKeysSigners,
-					Filters: filters,
+				&protoTypes.DataSourceDefinitionExternal_Oracle{
+					Oracle: &protoTypes.DataSourceSpecConfiguration{
+						Signers: pubKeysSigners,
+						Filters: filters,
+					},
 				},
 			),
 		},
@@ -105,6 +117,7 @@ func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 		"type",
 		"binding",
 	}, []string{
+		"decimals",
 		"condition",
 		"value",
 	})
@@ -120,6 +133,10 @@ func (r oracleSpecRow) propertyName() string {
 
 func (r oracleSpecRow) propertyType() datav1.PropertyKey_Type {
 	return r.row.MustOracleSpecPropertyType("type")
+}
+
+func (r oracleSpecRow) propertyDecimals() (uint64, bool) {
+	return r.row.U64B("decimals")
 }
 
 func (r oracleSpecRow) destination() string {

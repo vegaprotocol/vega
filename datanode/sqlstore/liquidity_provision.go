@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,12 +32,15 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/protos/vega"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 var lpOrdering = TableOrdering{
@@ -30,10 +48,40 @@ var lpOrdering = TableOrdering{
 	ColumnOrdering{Name: "id", Sorting: ASC},
 }
 
+var providerOrdering = TableOrdering{
+	ColumnOrdering{Name: "market_id", Sorting: ASC},
+	ColumnOrdering{Name: "party_id", Sorting: ASC},
+	ColumnOrdering{Name: "ordinality", Sorting: ASC},
+}
+
 type LiquidityProvision struct {
 	*ConnectionSource
 	batcher  MapBatcher[entities.LiquidityProvisionKey, entities.LiquidityProvision]
 	observer utils.Observer[entities.LiquidityProvision]
+}
+
+type LiquidityProviderFeeShare struct {
+	Ordinality            int64
+	MarketID              entities.MarketID
+	PartyID               string
+	AverageLiquidityScore string `db:"average_score"`
+	EquityLikeShare       string
+	AverageEntryValuation string
+	VirtualStake          string
+}
+
+type LiquidityProviderSLA struct {
+	Ordinality                       int64
+	MarketID                         entities.MarketID
+	PartyID                          string
+	CurrentEpochFractionOfTimeOnBook string
+	LastEpochFractionOfTimeOnBook    string
+	LastEpochFeePenalty              string
+	LastEpochBondPenalty             string
+	HysteresisPeriodFeePenalties     []string
+	RequiredLiquidity                string
+	NotionalVolumeBuys               string
+	NotionalVolumeSells              string
 }
 
 const (
@@ -84,7 +132,7 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	reference string,
 	live bool,
 	pagination entities.Pagination,
-) ([]entities.LiquidityProvision, entities.PageInfo, error) {
+) ([]entities.CurrentAndPreviousLiquidityProvisions, entities.PageInfo, error) {
 	if len(partyID) == 0 && len(marketID) == 0 {
 		return nil, entities.PageInfo{}, errors.New("market or party filters are required")
 	}
@@ -111,9 +159,183 @@ func (lp *LiquidityProvision) GetByTxHash(ctx context.Context, txHash entities.T
 	return liquidityProvisions, nil
 }
 
+func (lp *LiquidityProvision) ListProviders(ctx context.Context, partyID *entities.PartyID,
+	marketID *entities.MarketID, pagination entities.CursorPagination) (
+	[]entities.LiquidityProvider, entities.PageInfo, error,
+) {
+	var pageInfo entities.PageInfo
+	var feeShares []LiquidityProviderFeeShare
+	var slas []LiquidityProviderSLA
+	var err error
+
+	if partyID == nil && marketID == nil {
+		return nil, pageInfo, errors.New("market, party or both filters are required")
+	}
+
+	// query providers fee shares
+	feeQuery, feeArgs := buildLiquidityProviderFeeShareQuery(partyID, marketID)
+	feeQuery, feeArgs, err = PaginateQuery[entities.LiquidityProviderCursor](feeQuery, feeArgs, providerOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	// query providers sla
+	slaQuery, slaArgs := buildLiquidityProviderSLA(partyID, marketID)
+	slaQuery, slaArgs, err = PaginateQuery[entities.LiquidityProviderCursor](slaQuery, slaArgs, providerOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	batch := &pgx.Batch{}
+
+	batch.Queue(feeQuery, feeArgs...)
+	batch.Queue(slaQuery, slaArgs...)
+
+	results := lp.Connection.SendBatch(ctx, batch)
+	defer results.Close()
+
+	feeRows, err := results.Query()
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	if err := pgxscan.ScanAll(&feeShares, feeRows); err != nil {
+		return nil, pageInfo, fmt.Errorf("querying fee shares: %w", err)
+	}
+
+	slaRows, err := results.Query()
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	if err := pgxscan.ScanAll(&slas, slaRows); err != nil {
+		return nil, pageInfo, fmt.Errorf("querying SLAs: %w", err)
+	}
+
+	slaPerParty := map[string]LiquidityProviderSLA{}
+	for _, sla := range slas {
+		slaPerParty[sla.PartyID] = sla
+	}
+
+	providers := []entities.LiquidityProvider{}
+	for _, feeShare := range feeShares {
+		provider := entities.LiquidityProvider{
+			Ordinality: feeShare.Ordinality,
+			PartyID:    entities.PartyID(feeShare.PartyID),
+			MarketID:   feeShare.MarketID,
+			FeeShare: &vega.LiquidityProviderFeeShare{
+				Party:                 feeShare.PartyID,
+				EquityLikeShare:       feeShare.EquityLikeShare,
+				AverageEntryValuation: feeShare.AverageEntryValuation,
+				AverageScore:          feeShare.AverageLiquidityScore,
+				VirtualStake:          feeShare.VirtualStake,
+			},
+		}
+
+		if sla, ok := slaPerParty[feeShare.PartyID]; ok {
+			provider.SLA = &vega.LiquidityProviderSLA{
+				Party:                            sla.PartyID,
+				CurrentEpochFractionOfTimeOnBook: sla.CurrentEpochFractionOfTimeOnBook,
+				LastEpochFractionOfTimeOnBook:    sla.LastEpochFractionOfTimeOnBook,
+				LastEpochFeePenalty:              sla.LastEpochFeePenalty,
+				LastEpochBondPenalty:             sla.LastEpochBondPenalty,
+				HysteresisPeriodFeePenalties:     sla.HysteresisPeriodFeePenalties,
+				RequiredLiquidity:                sla.RequiredLiquidity,
+				NotionalVolumeBuys:               sla.NotionalVolumeBuys,
+				NotionalVolumeSells:              sla.NotionalVolumeSells,
+			}
+		}
+
+		providers = append(providers, provider)
+	}
+
+	providers, pageInfo = entities.PageEntities[*v2.LiquidityProviderEdge](providers, pagination)
+
+	return providers, pageInfo, nil
+}
+
+func buildLiquidityProviderFeeShareQuery(partyID *entities.PartyID, marketID *entities.MarketID) (string, []interface{}) {
+	args := []interface{}{}
+
+	// The lp data is available in the current market data table
+	subQuery := `
+select
+    ordinality,
+	cmd.market,
+	coalesce(lpfs.fee_share ->> 'party', '')                   as party,
+	coalesce(lpfs.fee_share ->> 'average_score', '')           as average_score,
+	coalesce(lpfs.fee_share ->> 'equity_like_share', '')       as equity_like_share,
+	coalesce(lpfs.fee_share ->> 'average_entry_valuation', '') as average_entry_valuation,
+	coalesce(lpfs.fee_share ->> 'virtual_stake', '') 		   as virtual_stake
+from current_market_data cmd,
+jsonb_array_elements(liquidity_provider_fee_shares) with ordinality lpfs(fee_share, ordinality)
+where liquidity_provider_fee_shares != 'null' and liquidity_provider_fee_shares is not null
+`
+
+	if partyID != nil {
+		subQuery = fmt.Sprintf("%s and decode(lpfs.fee_share ->>'party', 'hex') = %s", subQuery, nextBindVar(&args, partyID))
+	}
+
+	// if a specific market is requested, then filter by that market too
+	if marketID != nil {
+		subQuery = fmt.Sprintf("%s and cmd.market = %s", subQuery, nextBindVar(&args, *marketID))
+	}
+
+	// we join with the live liquidity providers table to make sure we are only returning data
+	// for liquidity providers that are currently active
+	query := fmt.Sprintf(`WITH liquidity_provider_fee_share(ordinality, market_id, party_id, average_score, equity_like_share, average_entry_valuation, virtual_stake) as (%s)
+        SELECT fs.ordinality, fs.market_id, fs.party_id, fs.average_score, fs.equity_like_share, fs.average_entry_valuation, fs.virtual_stake
+	    FROM liquidity_provider_fee_share fs
+        JOIN live_liquidity_provisions lps ON encode(lps.party_id, 'hex') = fs.party_id
+        	AND lps.market_id = fs.market_id`, subQuery)
+
+	return query, args
+}
+
+func buildLiquidityProviderSLA(partyID *entities.PartyID, marketID *entities.MarketID) (string, []interface{}) {
+	args := []interface{}{}
+
+	// The lp data is available in the current market data table
+	subQuery := `
+select
+    ordinality,
+	cmd.market,
+	lpsla.sla ->> 'party' as party,
+	coalesce(lpsla.sla ->> 'current_epoch_fraction_of_time_on_book', '') as current_epoch_fraction_of_time_on_book,
+	coalesce(lpsla.sla ->> 'last_epoch_fraction_of_time_on_book', '') 	 as last_epoch_fraction_of_time_on_book,
+	coalesce(lpsla.sla ->> 'last_epoch_fee_penalty', '')       			 as last_epoch_fee_penalty,
+	coalesce(lpsla.sla ->> 'last_epoch_bond_penalty', '') 				 as last_epoch_bond_penalty,
+	coalesce(lpsla.sla ->> 'required_liquidity', '') 					 as required_liquidity,
+	coalesce(lpsla.sla ->> 'notional_volume_buys', '') 					 as notional_volume_buys,
+	coalesce(lpsla.sla ->> 'notional_volume_sells', '') 				 as notional_volume_sells,
+	lpsla.sla -> 'hysteresis_period_fee_penalties' 		                 as hysteresis_period_fee_penalties
+from current_market_data cmd,
+jsonb_array_elements(liquidity_provider_sla) with ordinality lpsla(sla, ordinality)
+where liquidity_provider_sla != 'null' and liquidity_provider_sla is not null
+`
+
+	if partyID != nil {
+		subQuery = fmt.Sprintf("%s and decode(lpsla.sla ->>'party', 'hex') = %s", subQuery, nextBindVar(&args, partyID))
+	}
+
+	// if a specific market is requested, then filter by that market too
+	if marketID != nil {
+		subQuery = fmt.Sprintf("%s and cmd.market = %s", subQuery, nextBindVar(&args, *marketID))
+	}
+
+	// we join with the live liquidity providers table to make sure we are only returning data
+	// for liquidity providers that are currently active
+	query := fmt.Sprintf(`WITH liquidity_provider_sla(ordinality, market_id, party_id, current_epoch_fraction_of_time_on_book, last_epoch_fraction_of_time_on_book, last_epoch_fee_penalty, last_epoch_bond_penalty, required_liquidity, notional_volume_buys, notional_volume_sells, hysteresis_period_fee_penalties) as (%s)
+        SELECT fs.ordinality, fs.market_id, fs.party_id, fs.current_epoch_fraction_of_time_on_book, fs.last_epoch_fraction_of_time_on_book, fs.last_epoch_fee_penalty, fs.last_epoch_bond_penalty, fs.required_liquidity, fs.notional_volume_buys, fs.notional_volume_sells, fs.hysteresis_period_fee_penalties
+	    FROM liquidity_provider_sla fs
+        JOIN live_liquidity_provisions lps ON encode(lps.party_id, 'hex') = fs.party_id
+        	AND lps.market_id = fs.market_id`, subQuery)
+	return query, args
+}
+
 func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
 	reference string, live bool, pagination entities.CursorPagination,
-) ([]entities.LiquidityProvision, entities.PageInfo, error) {
+) ([]entities.CurrentAndPreviousLiquidityProvisions, entities.PageInfo, error) {
 	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference, live)
 
 	var err error
@@ -123,13 +345,13 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 		return nil, pageInfo, err
 	}
 
-	var liquidityProvisions []entities.LiquidityProvision
+	var liquidityProvisions []entities.CurrentAndPreviousLiquidityProvisions
 
 	if err = pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...); err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 
-	pagedLiquidityProvisions, pageInfo := entities.PageEntities[*v2.LiquidityProvisionsEdge](liquidityProvisions, pagination)
+	pagedLiquidityProvisions, pageInfo := entities.PageEntities[*v2.LiquidityProvisionWithPendingEdge](liquidityProvisions, pagination)
 	return pagedLiquidityProvisions, pageInfo, nil
 }
 
@@ -137,14 +359,32 @@ func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.Pa
 	reference string, live bool,
 ) (string, []interface{}) {
 	var bindVars []interface{}
-	selectSQL := ""
+	sourceTable := "liquidity_provisions"
 	if live {
-		selectSQL = fmt.Sprintf(`select %s
-from live_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
-	} else {
-		selectSQL = fmt.Sprintf(`select %s
-from liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
+		sourceTable = "live_liquidity_provisions"
 	}
+
+	selectSQL := fmt.Sprintf(`with last_active as (
+		select distinct on (id, version) *
+		FROM liquidity_provisions
+		WHERE status = 'STATUS_ACTIVE'
+		order by id, version, vega_time desc
+	), lps as (
+	select llp.id, llp.party_id, llp.created_at, llp.updated_at, llp.market_id,
+		   llp.commitment_amount, llp.fee, llp.sells, llp.buys, llp.version,
+		   llp.status, llp.reference, llp.tx_hash, llp.vega_time,
+		   lp.id previous_id, lp.party_id previous_party_id, lp.created_at previous_created_at,
+		   lp.updated_at previous_updated_at, lp.market_id previous_market_id,
+		   lp.commitment_amount previous_commitment_amount, lp.fee previous_fee,
+		   lp.sells previous_sells, lp.buys previous_buys, lp.version previous_version,
+		   lp.status previous_status, lp.reference previous_reference, lp.tx_hash previous_tx_hash,
+		   lp.vega_time previous_vega_time
+	from %s llp
+	left join last_active lp on llp.id = lp.id and llp.version - 1 = lp.version
+)
+	select *
+	from lps
+	`, sourceTable)
 
 	where := ""
 

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future
 
@@ -31,17 +34,28 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		return
 	}
 
+	if m.mkt.State == types.MarketStateSuspendedViaGovernance {
+		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+		}
+	}
+
 	// here we are in auction, we'll want to check
 	// the triggers if we are leaving
 	defer func() {
 		m.triggerStopOrders(ctx, idgen)
 	}()
+	var (
+		trades []*types.Trade
+		err    error
+	)
+
+	checkExceeded := m.mkt.State == types.MarketStatePending
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()
 	if isOpening && !m.pMonitor.Initialised() {
-		trades, err := m.matching.GetIndicativeTrades()
-		if err != nil {
+		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
 		if len(trades) > 0 {
@@ -52,11 +66,17 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	}
 
 	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
+		if isOpening && checkExceeded && m.as.ExceededMaxOpening(now) {
+			// cancel the market, exceeded opening auction
+			m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+			m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+		}
 		return
 	}
-	trades, err := m.matching.GetIndicativeTrades()
-	if err != nil {
-		m.log.Panic("Can't get indicative trades")
+	if len(trades) == 0 {
+		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
 	}
 
 	// opening auction
@@ -68,6 +88,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		// first check liquidity - before we mark auction as ready to leave
 		m.checkLiquidity(ctx, trades, true)
 		if !m.as.CanLeave() {
+			if checkExceeded && m.as.ExceededMaxOpening(now) {
+				// cancel the market, exceeded opening auction
+				m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+				m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+				return
+			}
 			if e := m.as.AuctionExtended(ctx, now); e != nil {
 				m.broker.Send(e)
 			}
@@ -89,15 +115,24 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
 		m.leaveAuction(ctx, now)
 
+		// tell the product we're ready to start
+		m.tradableInstrument.Instrument.Product.OnLeaveOpeningAuction(ctx, now.UnixNano())
+
 		m.equityShares.OpeningAuctionEnded()
 		// start the market fee window
 		m.feeSplitter.TimeWindowStart(now)
+
+		// reset SLA epoch
+		m.liquidity.OnEpochStart(ctx,
+			m.timeService.GetTimeNow(),
+			m.getCurrentMarkPrice(),
+			m.midPrice(),
+			m.getTargetStake(),
+			m.positionFactor,
+		)
 		return
 	}
 	// price and liquidity auctions
-	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
-		return
-	}
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if !isPrice {
 		m.checkLiquidity(ctx, trades, true)

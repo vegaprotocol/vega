@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -58,17 +73,6 @@ func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.
 	if obj.EndEpoch != nil {
 		i := int(*obj.EndEpoch)
 		return &i, nil
-	}
-	return nil, nil
-}
-
-func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransfer) (*DispatchStrategy, error) {
-	if obj.DispatchStrategy != nil {
-		return &DispatchStrategy{
-			DispatchMetric:        obj.DispatchStrategy.Metric,
-			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
-			MarketIdsInScope:      obj.DispatchStrategy.Markets,
-		}, nil
 	}
 	return nil, nil
 }

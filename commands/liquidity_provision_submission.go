@@ -1,12 +1,25 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package commands
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 	"strconv"
 
-	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -34,7 +47,7 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 
 	if len(cmd.MarketId) <= 0 {
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.MarketId) {
+	} else if !IsVegaID(cmd.MarketId) {
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -73,117 +86,6 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 			errs.AddForProperty("liquidity_provision_submission.fee", ErrMustBePositive)
 		}
 	}
-
-	errs.Merge(checkLiquidityProvisionShape(cmd.Buys, types.Side_SIDE_BUY, false))
-	errs.Merge(checkLiquidityProvisionShape(cmd.Sells, types.Side_SIDE_SELL, false))
-
-	return errs
-}
-
-func checkLiquidityProvisionShape(
-	orders []*types.LiquidityOrder, side types.Side, isAmendment bool,
-) Errors {
-	var (
-		errs           = NewErrors()
-		shapeSideField = "liquidity_provision_submission.buys"
-	)
-	if side == types.Side_SIDE_SELL {
-		shapeSideField = "liquidity_provision_submission.sells"
-	}
-
-	if len(orders) <= 0 && !isAmendment {
-		errs.AddForProperty(shapeSideField, errors.New("empty shape"))
-		return errs
-	}
-
-	zero := big.NewInt(0)
-
-	for idx, order := range orders {
-		if _, ok := types.PeggedReference_name[int32(order.Reference)]; !ok {
-			errs.AddForProperty(
-				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
-				ErrIsNotValid,
-			)
-		}
-		if order.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
-			errs.AddForProperty(
-				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
-				ErrOrderInShapeWithoutReference,
-			)
-		}
-		if order.Proportion == 0 {
-			errs.AddForProperty(
-				fmt.Sprintf("%v.%d.proportion", shapeSideField, idx),
-				ErrOrderInShapeWithoutProportion,
-			)
-		}
-
-		if side == types.Side_SIDE_BUY {
-			switch order.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				errs.AddForProperty(
-					fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
-					ErrOrderInBuySideShapeWithBestAskPrice,
-				)
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				if offset, ok := big.NewInt(0).SetString(order.Offset, 10); !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrNotAValidInteger,
-					)
-				} else if offset.Cmp(zero) == -1 {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrOrderInBuySideShapeOffsetInf0,
-					)
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				if offset, ok := big.NewInt(0).SetString(order.Offset, 10); !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrNotAValidInteger,
-					)
-				} else if offset.Cmp(zero) <= 0 {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrOrderInBuySideShapeOffsetInfEq0,
-					)
-				}
-			}
-		} else {
-			switch order.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				if offset, ok := big.NewInt(0).SetString(order.Offset, 10); !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrNotAValidInteger,
-					)
-				} else if offset.Cmp(zero) == -1 {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrOrderInSellSideShapeOffsetInf0,
-					)
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				errs.AddForProperty(
-					fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-					ErrOrderInSellSideShapeWithBestBidPrice,
-				)
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				if offset, ok := big.NewInt(0).SetString(order.Offset, 10); !ok {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrNotAValidInteger,
-					)
-				} else if offset.Cmp(zero) <= 0 {
-					errs.AddForProperty(
-						fmt.Sprintf("%v.%d.offset", shapeSideField, idx),
-						ErrOrderInSellSideShapeOffsetInfEq0,
-					)
-				}
-			}
-		}
-	}
 	return errs
 }
 
@@ -200,7 +102,7 @@ func checkLiquidityProvisionCancellation(cmd *commandspb.LiquidityProvisionCance
 
 	if len(cmd.MarketId) <= 0 {
 		return errs.FinalAddForProperty("liquidity_provision_cancellation.market_id", ErrIsRequired)
-	} else if !IsVegaPubkey(cmd.MarketId) {
+	} else if !IsVegaID(cmd.MarketId) {
 		errs.AddForProperty("liquidity_provision_cancellation.market_id", ErrShouldBeAValidVegaID)
 	}
 
@@ -224,8 +126,6 @@ func checkLiquidityProvisionAmendment(cmd *commandspb.LiquidityProvisionAmendmen
 
 	if len(cmd.CommitmentAmount) <= 0 &&
 		len(cmd.Fee) <= 0 &&
-		len(cmd.Sells) <= 0 &&
-		len(cmd.Buys) <= 0 &&
 		len(cmd.Reference) <= 0 {
 		return errs.FinalAddForProperty("liquidity_provision_amendment", ErrIsRequired)
 	}
@@ -233,9 +133,5 @@ func checkLiquidityProvisionAmendment(cmd *commandspb.LiquidityProvisionAmendmen
 	if len(cmd.Reference) > ReferenceMaxLen {
 		errs.AddForProperty("liquidity_provision_amendment.reference", ErrReferenceTooLong)
 	}
-
-	errs.Merge(checkLiquidityProvisionShape(cmd.Buys, types.Side_SIDE_BUY, true))
-	errs.Merge(checkLiquidityProvisionShape(cmd.Sells, types.Side_SIDE_SELL, true))
-
 	return errs
 }

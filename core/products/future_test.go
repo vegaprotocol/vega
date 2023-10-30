@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package products_test
 
@@ -16,15 +19,18 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/oracles"
+	"code.vegaprotocol.io/vega/core/datasource"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/products/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,6 +39,7 @@ func TestScalingOfSettlementData(t *testing.T) {
 	t.Run("Need to scale up the settlement data for asset decimals", testScalingUpNeeded)
 	t.Run("Need to scale down the settlement data for asset decimals no loss of precision", testScalingDownNeeded)
 	t.Run("Need to scale down the settlement data for asset decimals with loss of precision", testScalingDownNeededWithPrecisionLoss)
+	t.Run("a future product can be updated", testUpdateFuture)
 }
 
 func testNoScalingNeeded(t *testing.T) {
@@ -143,35 +150,55 @@ func testScalingDownNeededWithPrecisionLoss(t *testing.T) {
 	require.Equal(t, num.NewUint(123450000), scaled)
 }
 
+func testUpdateFuture(t *testing.T) {
+	// Create test future with settlement data type integer with decimals (that represents a decimal)
+	ft := testFuture(t, datapb.PropertyKey_TYPE_INTEGER)
+
+	fp := getTestFutureProd(t, datapb.PropertyKey_TYPE_INTEGER, 10)
+
+	// two new subscription
+	ft.oe.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(subscriptionID(3), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+	ft.oe.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(subscriptionID(4), func(ctx context.Context, sid spec.SubscriptionID) {}, nil)
+
+	ft.future.Update(context.Background(), &types.InstrumentFuture{Future: fp}, ft.oe)
+
+	assert.Equal(t, 2, ft.unsub)
+}
+
 type tstFuture struct {
 	oe     *mocks.MockOracleEngine
 	future *products.Future
+	unsub  int
 }
 
-func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
+func (tf *tstFuture) unsubscribe(_ context.Context, _ spec.SubscriptionID) {
+	tf.unsub++
+}
+
+func getTestFutureProd(t *testing.T, propertyTpe datapb.PropertyKey_Type, dp uint64) *types.Future {
 	t.Helper()
-
-	log := logging.NewTestLogger()
-	ctrl := gomock.NewController(t)
-	oe := mocks.NewMockOracleEngine(ctrl)
-
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
-	var dp uint64 = 5
 	f := &types.Future{
 		SettlementAsset: "ETH",
 		QuoteName:       "ETH",
-		DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+		DataSourceSpecForTradingTermination: &datasource.Spec{
+			Data: datasource.NewDefinition(
+				datasource.ContentTypeOracle,
 			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
+				&signedoracle.SpecConfiguration{
 					Signers: pubKeys,
-					Filters: []*types.DataSourceSpecFilter{
+					Filters: []*dstypes.SpecFilter{
 						{
-							Key: &types.DataSourceSpecPropertyKey{
+							Key: &dstypes.SpecPropertyKey{
 								Name: "trading.termination",
 								Type: datapb.PropertyKey_TYPE_BOOLEAN,
 							},
@@ -181,21 +208,21 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 				},
 			),
 		},
-		DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
+		DataSourceSpecBinding: &datasource.SpecBindingForFuture{
 			SettlementDataProperty:     "price.ETH.value",
 			TradingTerminationProperty: "trading.termination",
 		},
 	}
 
-	f.DataSourceSpecForSettlementData = &types.DataSourceSpec{
-		Data: types.NewDataSourceDefinition(
-			vegapb.DataSourceDefinitionTypeExt,
+	f.DataSourceSpecForSettlementData = &datasource.Spec{
+		Data: datasource.NewDefinition(
+			datasource.ContentTypeOracle,
 		).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
+			&signedoracle.SpecConfiguration{
 				Signers: pubKeys,
-				Filters: []*types.DataSourceSpecFilter{
+				Filters: []*dstypes.SpecFilter{
 					{
-						Key: &types.DataSourceSpecPropertyKey{
+						Key: &dstypes.SpecPropertyKey{
 							Name:                "price.ETH.value",
 							Type:                propertyTpe,
 							NumberDecimalPlaces: &dp,
@@ -207,27 +234,42 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 		),
 	}
 
+	return f
+}
+
+func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
+	t.Helper()
+
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	oe := mocks.NewMockOracleEngine(ctrl)
+
+	var dp uint64 = 5
+	f := getTestFutureProd(t, propertyTpe, dp)
+
+	testFuture := &tstFuture{
+		oe: oe,
+	}
+
 	ctx := context.Background()
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(1), testFuture.unsubscribe, nil)
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(2), testFuture.unsubscribe, nil)
 
-	future, err := products.NewFuture(ctx, log, f, oe)
+	future, err := products.NewFuture(ctx, log, f, oe, uint32(dp))
 	if err != nil {
 		t.Fatalf("couldn't create a Future for testing: %v", err)
 	}
-	return &tstFuture{
-		future: future,
-		oe:     oe,
-	}
+	testFuture.future = future
+	return testFuture
 }
 
-func subscriptionID(i uint64) oracles.SubscriptionID {
-	return oracles.SubscriptionID(i)
+func subscriptionID(i uint64) spec.SubscriptionID {
+	return spec.SubscriptionID(i)
 }

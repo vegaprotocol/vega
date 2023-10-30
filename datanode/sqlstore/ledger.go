@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -18,6 +33,8 @@ import (
 	"io"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
 
@@ -29,8 +46,12 @@ import (
 )
 
 var aggregateLedgerEntriesOrdering = TableOrdering{
-	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+	ColumnOrdering{Name: "ledger_entry_time", Sorting: ASC},
 }
+
+const (
+	LedgerMaxDays = 5 * 24 * time.Hour
+)
 
 type Ledger struct {
 	*ConnectionSource
@@ -98,6 +119,33 @@ func (ls *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	return ledgerEntries, err
 }
 
+// Return at most 5 days of ledger entries so that we don't have long-running queries that scan through
+// too much historic data in timescale to try and match the given date ranges.
+func (ls *Ledger) validateDateRange(dateRange entities.DateRange) entities.DateRange {
+	if dateRange.Start == nil && dateRange.End == nil {
+		return entities.DateRange{
+			Start: ptr.From(time.Now().Add(-LedgerMaxDays)),
+		}
+	}
+
+	if dateRange.Start == nil && dateRange.End != nil {
+		return entities.DateRange{
+			Start: ptr.From(dateRange.End.Add(-LedgerMaxDays)),
+			End:   dateRange.End,
+		}
+	}
+
+	if (dateRange.Start != nil && dateRange.End == nil) ||
+		(dateRange.Start != nil && dateRange.End != nil && dateRange.End.Sub(*dateRange.Start) > LedgerMaxDays) {
+		return entities.DateRange{
+			Start: dateRange.Start,
+			End:   ptr.From(dateRange.Start.Add(LedgerMaxDays)),
+		}
+	}
+
+	return dateRange
+}
+
 // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 // the summed ledger entries of the set of specified accounts changes.
@@ -117,7 +165,7 @@ func (ls *Ledger) Query(
 ) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 
-	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, dateRange)
+	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, ls.validateDateRange(dateRange))
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -166,10 +214,10 @@ func (ls *Ledger) Export(
 
 	args := []any{pidBytes}
 	query := `
-		SELECT 
+		SELECT
 			l.vega_time,
 			l.quantity,
-			CASE 
+			CASE
 				WHEN ta.party_id = $1 AND fa.party_id != $1 THEN quantity
 				WHEN fa.party_id = $1 AND ta.party_id != $1 THEN -quantity
 				ELSE 0
@@ -179,7 +227,7 @@ func (ls *Ledger) Export(
 			encode(fa.market_id, 'hex') AS account_from_market_id,
 			CASE
 				WHEN fa.party_id='\x03' THEN 'network'
-				ELSE encode(fa.party_id, 'hex') 
+				ELSE encode(fa.party_id, 'hex')
 				END AS account_from_party_id,
 			CASE
 				WHEN fa.type=0 THEN 'UNSPECIFIED'
@@ -200,12 +248,22 @@ func (ls *Ledger) Export(
 				WHEN fa.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
 				WHEN fa.type=17 THEN 'REWARD_MARKET_PROPOSERS'
 				WHEN fa.type=18 THEN 'HOLDING'
+				WHEN fa.type=19 THEN 'LP_LIQUIDITY_FEES'
+				WHEN fa.type=20 THEN 'LIQUIDITY_FEES_BONUS_DISTRIBUTION'
+				WHEN fa.type=21 THEN 'NETWORK_TREASURY'
+				WHEN fa.type=22 THEN 'VESTING_REWARDS'
+				WHEN fa.type=23 THEN 'VESTED_REWARDS'
+				WHEN fa.type=24 THEN 'REWARD_AVERAGE_POSITION'
+				WHEN fa.type=25 THEN 'REWARD_RELATIVE_RETURN'
+				WHEN fa.type=26 THEN 'REWARD_RETURN_VOLATILITY'
+				WHEN fa.type=27 THEN 'REWARD_VALIDATOR_RANKING'
+				WHEN fa.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'
 				ELSE 'UNKNOWN' END AS account_from_account_type,
 			l.account_from_balance AS account_from_balance,
 			encode(ta.market_id, 'hex') AS account_to_market_id,
 			CASE
 				WHEN ta.party_id='\x03' THEN 'network'
-				ELSE encode(ta.party_id, 'hex') 
+				ELSE encode(ta.party_id, 'hex')
 				END AS account_to_party_id,
 			CASE
 				WHEN ta.type=0 THEN 'UNSPECIFIED'
@@ -226,14 +284,24 @@ func (ls *Ledger) Export(
 				WHEN ta.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
 				WHEN ta.type=17 THEN 'REWARD_MARKET_PROPOSERS'
 				WHEN ta.type=18 THEN 'HOLDING'
+				WHEN fa.type=19 THEN 'LP_LIQUIDITY_FEES'
+				WHEN fa.type=20 THEN 'LIQUIDITY_FEES_BONUS_DISTRIBUTION'
+				WHEN fa.type=21 THEN 'NETWORK_TREASURY'
+				WHEN fa.type=22 THEN 'VESTING_REWARDS'
+				WHEN fa.type=23 THEN 'VESTED_REWARDS'
+				WHEN fa.type=24 THEN 'REWARD_AVERAGE_POSITION'
+				WHEN fa.type=25 THEN 'REWARD_RELATIVE_RETURN'
+				WHEN fa.type=26 THEN 'REWARD_RETURN_VOLATILITY'
+				WHEN fa.type=27 THEN 'REWARD_VALIDATOR_RANKING'
+				WHEN fa.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'
 				ELSE 'UNKNOWN' END AS account_to_account_type,
 			l.account_to_balance AS account_to_balance
-		FROM 
+		FROM
 			ledger l
 			INNER JOIN accounts AS fa ON l.account_from_id=fa.id
 			INNER JOIN accounts AS ta ON l.account_to_id=ta.id
 
-		WHERE ta.party_id = $1 OR fa.party_id = $1
+		WHERE (ta.party_id = $1 OR fa.party_id = $1)
 		`
 
 	if assetID != nil {
@@ -246,14 +314,14 @@ func (ls *Ledger) Export(
 	}
 
 	if dateRange.Start != nil {
-		query = fmt.Sprintf("%s AND l.vega_time >= %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+		query = fmt.Sprintf("%s AND l.ledger_entry_time >= %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
 	}
 
 	if dateRange.End != nil {
-		query = fmt.Sprintf("%s AND l.vega_time < %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+		query = fmt.Sprintf("%s AND l.ledger_entry_time < %s", query, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
 	}
 
-	query = fmt.Sprintf("copy (%s ORDER BY l.vega_time) to STDOUT (FORMAT csv, HEADER)", query)
+	query = fmt.Sprintf("copy (%s ORDER BY l.ledger_entry_time) to STDOUT (FORMAT csv, HEADER)", query)
 
 	tag, err := ls.Connection.CopyTo(ctx, writer, query, args...)
 	if err != nil {
@@ -272,7 +340,7 @@ func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entiti
 
 	whereDate := ""
 	if dateRange.Start != nil {
-		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+		whereDate = fmt.Sprintf("WHERE ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
 	}
 
 	if dateRange.End != nil {
@@ -281,7 +349,7 @@ func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entiti
 		} else {
 			whereDate = "WHERE "
 		}
-		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
+		whereDate = fmt.Sprintf("%s ledger_entry_time < %s", whereDate, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
 	}
 
 	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
@@ -364,7 +432,8 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 				account_from.type AS account_from_account_type,
 				account_to.party_id AS account_to_party_id,
 				account_to.market_id AS account_to_market_id,
-				account_to.type AS account_to_account_type
+				account_to.type AS account_to_account_type,
+				ledger.ledger_entry_time
 			FROM ledger
 			INNER JOIN accounts AS account_from
 			ON ledger.account_from_id=account_from.id
@@ -375,7 +444,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 			SELECT vega_time, quantity, transfer_type, asset_id,
 				account_from_market_id, account_from_party_id, account_from_account_type,
 				account_to_market_id, account_to_party_id, account_to_account_type,
-				account_from_balance, account_to_balance
+				account_from_balance, account_to_balance, ledger_entry_time
 			FROM %s
 			%s
 		)
@@ -398,7 +467,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 				whereClause = fmt.Sprintf("WHERE (%s) AND (%s)", filterQueries[0], filterQueries[1])
 			} else {
 				tableName = tableNameOpenOnFilterQuery
-				whereClause = fmt.Sprintf("WHERE (%s) OR (%s)", filterQueries[0], filterQueries[1])
+				whereClause = fmt.Sprintf("WHERE ((%s) OR (%s))", filterQueries[0], filterQueries[1])
 			}
 		}
 	} else {

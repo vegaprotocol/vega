@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package netparams
 
@@ -90,6 +93,8 @@ type Store struct {
 	checkpointOverwrites map[string]struct{}
 
 	state *snapState
+
+	protocolUpgradeNewParameters []string
 }
 
 func New(log *logging.Logger, cfg Config, broker Broker) *Store {
@@ -128,21 +133,25 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	}
 
 	evts := make([]events.Event, 0, len(s.store))
+	keys := maps.Keys(s.store)
+	sort.Strings(keys)
 	// first we going to send the initial state through the broker
-	for k, v := range s.store {
-		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v.String()))
+	for _, k := range keys {
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
 	}
 	s.broker.SendBatch(evts)
 
 	// now iterate over all parameters and update the existing ones
-	for k, v := range state {
-		if err := s.UpdateOptionalValidation(ctx, k, v, false); err != nil {
+	keys = maps.Keys(state)
+	sort.Strings(keys)
+	for _, k := range keys {
+		if err := s.UpdateOptionalValidation(ctx, k, state[k], false, true); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
 		}
 	}
 
 	// now we are going to iterate over ALL the netparams,
-	// and run validation, so we will now if any was forgotten,
+	// and run validation, so we will know if any was forgotten,
 	// and left to a default which required explicit UponGenesis
 	// through the genesis block
 	for k := range AllKeys {
@@ -158,7 +167,9 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	// now we can iterate again over ALL the net params,
 	// and dispatch the value of them all so any watchers can get updated
 	// with genesis values
-	for k := range s.store {
+	keys = maps.Keys(s.store)
+	sort.Strings(keys)
+	for _, k := range keys {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}
@@ -222,6 +233,23 @@ func (s *Store) AnyWatchers(p string) bool {
 // OnTick is trigger once per blocks
 // we will send parameters update to watchers.
 func (s *Store) OnTick(ctx context.Context, _ time.Time) {
+	// This is useful only when a protocol upgrade
+	// is running. we will dispatch all new parameter
+	// on the first time update here.
+	// we propagate all parameters update to paliate
+	// for previous release where parameters didn't
+	// get propagated.
+	if len(s.protocolUpgradeNewParameters) > 0 {
+		keys := maps.Keys(s.store)
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			s.broker.Send(events.NewNetworkParameterEvent(ctx, k, s.store[k].String()))
+		}
+
+		s.protocolUpgradeNewParameters = nil
+	}
+
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
@@ -271,15 +299,20 @@ func (s *Store) Validate(key, value string) error {
 // Update will update the stored value for a given key
 // will return an error if the value do not pass validation.
 func (s *Store) Update(ctx context.Context, key, value string) error {
-	return s.UpdateOptionalValidation(ctx, key, value, true)
+	return s.UpdateOptionalValidation(ctx, key, value, true, true)
 }
 
-func (s *Store) UpdateOptionalValidation(ctx context.Context, key, value string, validate bool) error {
+func (s *Store) UpdateOptionalValidation(ctx context.Context, key, value string, validate, failIfUnknown bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return ErrUnknownKey
+		if failIfUnknown {
+			return ErrUnknownKey
+		}
+
+		s.log.Warn("unknown network parameter", logging.String("key", key))
+		return nil
 	}
 
 	if err := svalue.UpdateOptionalValidation(value, validate); err != nil {

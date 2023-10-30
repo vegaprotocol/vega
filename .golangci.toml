@@ -100,7 +100,11 @@ linters = ["staticcheck"]
 text = "SA5008:"
 
 [[issues.exclude-rules]]
-path = "_test\\.go"
+path = "core/integration/setup_test.go"
+linters = ["forbidigo"]
+
+[[issues.exclude-rules]]
+path = "core/matching/orderbook_test.go"
 linters = ["forbidigo"]
 
 [[issues.exclude-rules]]

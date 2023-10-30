@@ -42,6 +42,23 @@ message StopOrder {
     STATUS_REJECTED = 6;
   }
 
+  enum RejectionReason {
+    // Never valid
+    REJECTION_REASON_UNSPECIFIED = 0;
+    // Trading is not allowed yet
+    REJECTION_REASON_TRADING_NOT_ALLOWED = 1;
+    // Expiry of the stop order is in the past
+    REJECTION_REASON_EXPIRY_IN_THE_PAST = 2;
+    // Stop orders submission must be reduce only
+    REJECTION_REASON_MUST_BE_REDUCE_ONLY = 3;
+    // Party has reached the maximum stop orders allowed for this market
+    REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED = 4;
+    // Stop orders are not allowed if there is no open position
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
+    // This stop order does not close the position
+    REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
+  }
+
   // ID of this stop order
   // also the ID of the associated order if it is ever triggered
   string id = 1;
@@ -65,6 +82,8 @@ message StopOrder {
   string party_id = 10;
   // ID of the market the stop order is submitted to.
   string market_id = 11;
+  // An optional reason for why a stop order was rejected
+  optional RejectionReason rejection_reason = 12;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
@@ -153,8 +172,10 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_LIQUIDITY = 4;
   // Liquidity auction due to not enough committed liquidity
   AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET = 5;
-  // Liquidity auction due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book
-  AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6;
+  // Deprecated
+  AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6 [deprecated = true];
+  // Market is suspended and put into auction via governance
+  AUCTION_TRIGGER_GOVERNANCE_SUSPENSION = 7;
 }
 
 // Pegged reference defines which price point a pegged order is linked to - meaning
@@ -515,6 +536,22 @@ message Fee {
   string infrastructure_fee = 2;
   // Fee amount paid to market makers. This field is an unsigned integer scaled to the asset's decimal places.
   string liquidity_fee = 3;
+
+  // Volume discounts.
+  // Discount on maker fee based on the taker volume.
+  string maker_fee_volume_discount = 4;
+  // Discount on infrastructure fee based on the taker volume.
+  string infrastructure_fee_volume_discount = 5;
+  // Discount on liquidity fee basedo on taker volume.
+  string liquidity_fee_volume_discount = 6;
+
+  // Referrer discounts.
+  // Discount on maker fee for eligible referrer.
+  string maker_fee_referrer_discount = 7;
+  // Discount on infrastructure fee for eligible referrer.
+  string infrastructure_fee_referrer_discount = 8;
+  // Discount on liquidity fee for eligible referrer.
+  string liquidity_fee_referrer_discount = 9;
 }
 
 message TradeSet {
@@ -787,6 +824,30 @@ enum AccountType {
   // Network controlled liquidity fees bonus distribution account, per market.
   ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION = 20;
 
+  // Network controlled treasury
+  ACCOUNT_TYPE_NETWORK_TREASURY = 21;
+
+  // Account holding user's rewards for the vesting period
+  ACCOUNT_TYPE_VESTING_REWARDS = 22;
+
+  // Account holding user's rewards after the vesting period
+  ACCOUNT_TYPE_VESTED_REWARDS = 23;
+
+  // Per asset market reward account given for average position
+  ACCOUNT_TYPE_REWARD_AVERAGE_POSITION = 24;
+
+  // Per asset market reward account given for relative return
+  ACCOUNT_TYPE_REWARD_RELATIVE_RETURN = 25;
+
+  // Per asset market reward account given for return volatility
+  ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY = 26;
+
+  // Per asset market reward account given to validators by their ranking
+  ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING = 27;
+
+  // Per asset account for pending fee referral reward payouts
+  ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD = 28;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -890,6 +951,16 @@ enum TransferType {
   TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT = 34;
   // Distributes performance bonus from market bonus to liquidity provider's general account.
   TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE = 35;
+  // Funds deducted from margin account after a perpetuals funding loss.
+  TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS = 36;
+  // Funds added to margin account after a perpetuals funding gain.
+  TRANSFER_TYPE_PERPETUALS_FUNDING_WIN = 37;
+  // Funds moved from the vesting account to the vested account once the vesting period is reached.
+  TRANSFER_TYPE_REWARDS_VESTED = 38;
+  // Fee referrer reward paid from general account.
+  TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY = 39;
+  // Fee referrer reward received into general account of the referrer.
+  TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE = 44;
 }
 
 // Represents a financial transfer within Vega
@@ -908,14 +979,48 @@ message Transfer {
 
 enum DispatchMetric {
   DISPATCH_METRIC_UNSPECIFIED = 0;
-  // Dispatch metric that is using the total maker fees paid in the market
+  // Dispatch metric that uses the total maker fees paid in the market
   DISPATCH_METRIC_MAKER_FEES_PAID = 1;
-  // Dispatch metric that is using the total maker fees received in the market
+  // Dispatch metric that uses the total maker fees received in the market
   DISPATCH_METRIC_MAKER_FEES_RECEIVED = 2;
-  // Dispatch metric that is using the total LP fees received in the market
+  // Dispatch metric that uses the total LP fees received in the market
   DISPATCH_METRIC_LP_FEES_RECEIVED = 3;
-  // Dispatch metric that is using total value of the market if above the required threshold and not paid given proposer bonus yet
+  // Dispatch metric that uses total value of the market if above the required threshold and not paid given proposer bonus yet
   DISPATCH_METRIC_MARKET_VALUE = 4;
+  // Dispatch metric that uses the time weighted average position
+  DISPATCH_METRIC_AVERAGE_POSITION = 5;
+  // Dispatch metric that uses the relative PNL of the party in the market
+  DISPATCH_METRIC_RELATIVE_RETURN = 6;
+  // Dispatch metric that uses return volatility of the party in the market
+  DISPATCH_METRIC_RETURN_VOLATILITY = 7;
+  // Dispatch metric that uses the validator ranking of the validator as metric
+  DISPATCH_METRIC_VALIDATOR_RANKING = 8;
+}
+
+enum EntityScope {
+  ENTITY_SCOPE_UNSPECIFIED = 0;
+  // Rewards must be distributed directly to eligible parties.
+  ENTITY_SCOPE_INDIVIDUALS = 1;
+  // Rewards must be distributed to directly eligible teams, and then amongst team members
+  ENTITY_SCOPE_TEAMS = 2;
+}
+
+enum IndividualScope {
+  INDIVIDUAL_SCOPE_UNSPECIFIED = 0;
+  // All parties on the network are within the scope of this reward.
+  INDIVIDUAL_SCOPE_ALL = 1;
+  // All parties that are part of a team are within the scope of this reward.
+  INDIVIDUAL_SCOPE_IN_TEAM = 2;
+  // All parties that are not part of a team are within the scope of this reward.
+  INDIVIDUAL_SCOPE_NOT_IN_TEAM = 3;
+}
+
+enum DistributionStrategy {
+  DISTRIBUTION_STRATEGY_UNSPECIFIED = 0;
+  // Rewards funded using the pro-rata strategy should be distributed pro-rata by each entity's reward metric, scaled by any active multipliers that party has.
+  DISTRIBUTION_STRATEGY_PRO_RATA = 1;
+  // Rewards funded using the party rank.
+  DISTRIBUTION_STRATEGY_RANK = 2;
 }
 
 message DispatchStrategy {
@@ -925,6 +1030,31 @@ message DispatchStrategy {
   DispatchMetric metric = 2;
   // Optional markets in scope.
   repeated string markets = 3;
+  // Mandatory enum that defines the entities within scope.
+  EntityScope entity_scope = 4;
+  // Optional enum if the entity scope defined is for individuals, which determines the subset of individuals that are eligible to be rewarded.
+  IndividualScope individual_scope = 5;
+  // Optional list applicable if the reward type has a scope of teams, which allows the funder to define a list of team IDs that are eligible to be rewarded from this transfer
+  repeated string team_scope = 6;
+  // The proportion of the top performers in the team for a given metric to be averaged for the metric calculation if the scope is team
+  string n_top_performers = 7;
+  // Minimum number of governance (e.g. VEGA) tokens staked for a party to be considered eligible. Defaults to 0
+  string staking_requirement = 8;
+  // Minimum notional time-weighted averaged position required for a party to be considered eligible. Defaults to 0
+  string notional_time_weighted_average_position_requirement = 9;
+  // Number of epochs to evaluate the metric on
+  uint64 window_length = 10;
+  // Number of epochs after distribution to delay vesting of rewards by
+  uint64 lock_period = 11;
+  // Controls how the reward is distributed between qualifying parties
+  DistributionStrategy distribution_strategy = 12;
+  // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
+  repeated Rank rank_table = 13;
+}
+
+message Rank {
+  uint32 start_rank = 1;
+  uint32 share_ratio = 2;
 }
 
 // Represents a request to transfer from one set of accounts to another
@@ -1008,6 +1138,25 @@ message MarginLevels {
   int64 timestamp = 8;
 }
 
+// Represents market data specific to a perpetual market.
+message PerpetualData {
+  // Current funding payment for the in-progress funding period.
+  string funding_payment = 1;
+  // Current funding rate for the in-progress funding period.
+  string funding_rate = 2;
+  // Time-weighted-average the internal data-points for the in-progress funding period.
+  string internal_twap = 3;
+  // Time-weighted-average the external data points for the in-progress funding period.
+  string external_twap = 4;
+}
+
+// Represents market data specific to a particular product type.
+message ProductData {
+  oneof data {
+    PerpetualData perpetual_data = 31;
+  }
+}
+
 // Represents data generated by a market when open
 message MarketData {
   // Mark price, as an unsigned integer, for example `123456` is a correctly
@@ -1078,6 +1227,10 @@ message MarketData {
   string last_traded_price = 29;
   // Market growth at the last market time window.
   string market_growth = 30;
+  // Data related to the particular product type of the market.
+  optional ProductData product_data = 31;
+  // SLA performance for each liquidity provider.
+  repeated LiquidityProviderSLA liquidity_provider_sla = 32;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
@@ -1092,6 +1245,29 @@ message LiquidityProviderFeeShare {
   string average_score = 4;
   // The virtual stake of this liquidity provider.
   string virtual_stake = 5;
+}
+
+// SLA performance for each liquidity provider
+message LiquidityProviderSLA {
+  // Liquidity provider party ID.
+  string party = 1;
+  // Indicates how often LP meets the commitment during the current epoch.
+  string current_epoch_fraction_of_time_on_book = 2;
+  // Indicates how often LP met the commitment in the previous epoch.
+  string last_epoch_fraction_of_time_on_book = 3;
+  // Indicates the fee penalty amount applied in the previous epoch.
+  string last_epoch_fee_penalty = 4;
+  // Shows the bond penalties from past epochs.
+  string last_epoch_bond_penalty = 5;
+  // Determines how the fee penalties from past epochs affect future fee revenue.
+  repeated string hysteresis_period_fee_penalties = 6;
+  // Represents the total amount of funds LP must supply. The amount to be supplied is in the market’s
+  // settlement currency, spread on both buy and sell sides of the order book within a defined range.
+  string required_liquidity = 7;
+  // Notional volume of orders within the range provided on the buy side of the book.
+  string notional_volume_buys = 8;
+  // Notional volume of orders within the range provided on the sell side of the book.
+  string notional_volume_sells = 9;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
@@ -1144,6 +1320,10 @@ message NetworkLimits {
   int64 propose_market_enabled_from = 8;
   // Timestamp in Unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
   int64 propose_asset_enabled_from = 9;
+  // Are spot market proposals allowed at this point in time.
+  bool can_propose_spot_market = 10;
+  // Are perpetual market proposals allowed at this point in time.
+  bool can_propose_perpetual_market = 11;
 }
 
 // Represents a liquidity order
@@ -1166,7 +1346,7 @@ message LiquidityOrderReference {
 
 // Liquidity provider commitment
 message LiquidityProvision {
-  // Status of a liquidity provision order.
+  // Status of a liquidity provision.
   enum Status {
     // Always invalid
     STATUS_UNSPECIFIED = 0;
@@ -1190,11 +1370,11 @@ message LiquidityProvision {
   string id = 1;
   // Unique party ID for the creator of the provision.
   string party_id = 2;
-  // Timestamp in Unix nanoseconds for when the order was created.
+  // Timestamp in Unix nanoseconds for when the liquidity provision was created.
   int64 created_at = 3;
-  // Timestamp in Unix nanoseconds for when the order was updated.
+  // Timestamp in Unix nanoseconds for when the liquidity provision was updated.
   int64 updated_at = 4;
-  // Market ID for the order.
+  // Market ID for the liquidity provision.
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market.
   // This field is an unsigned integer scaled to the asset's decimal places.
@@ -1205,9 +1385,9 @@ message LiquidityProvision {
   repeated LiquidityOrderReference sells = 8;
   // Set of liquidity buy orders to meet the liquidity provision obligation.
   repeated LiquidityOrderReference buys = 9;
-  // Version of this liquidity provision order.
+  // Version of this liquidity provision.
   uint64 version = 10;
-  // Status of this liquidity provision order.
+  // Status of this liquidity provision.
   Status status = 11;
   // Reference shared between this liquidity provision and all its orders.
   string reference = 12;
@@ -1441,6 +1621,8 @@ message Reward {
   string market_id = 7;
   // Type of reward being paid.
   string reward_type = 8;
+  // The epoch when the reward is being released.
+  uint64 locked_until_epoch = 9;
 }
 
 // Details for rewards for a single asset
@@ -1500,4 +1682,92 @@ message VectorValue {
 
 message MatrixValue {
   repeated VectorValue value = 1;
+}
+
+message ReferralProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers ordered by increasing discounts.
+  repeated BenefitTier benefit_tiers = 3;
+  // Timestamp in Unix nanoseconds, after which when the current epoch ends,
+  // the program will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which the referral set's running volume is evaluated.
+  uint64 window_length = 5;
+  // Defined benefit tiers ordered by increasing reward multiplier. Determines the level of
+  // benefit a party can expect based on their staking.
+  repeated StakingTier staking_tiers = 6;
+}
+
+message VolumeBenefitTier {
+  // Required running notional taker volume in quantum units for parties
+  // to access this tier.
+  string minimum_running_notional_taker_volume = 1;
+  // Proportion of the taker fees to be discounted.
+  string volume_discount_factor = 2;
+}
+
+message BenefitTier {
+  // Required running notional taker volume in quantum units for parties
+  // to access this tier.
+  string minimum_running_notional_taker_volume = 1;
+  // Required number of epochs a party must have been in a referral set to
+  // access this tier.
+  string minimum_epochs = 2;
+  // Proportion of the referee's taker fees to be rewarded to the referrer.
+  string referral_reward_factor = 3;
+  // Proportion of the referee's taker fees to be discounted.
+  string referral_discount_factor = 4;
+}
+
+message VestingBenefitTiers {
+  repeated VestingBenefitTier tiers = 1;
+}
+
+message VestingBenefitTier {
+  string minimum_quantum_balance = 1;
+  string reward_multiplier = 2;
+}
+
+message StakingTier {
+  // Required number of governance tokens ($VEGA) a referrer must have staked to
+  // receive the multiplier.
+  string minimum_staked_tokens = 1;
+  // Multiplier applied to the referral reward factor when calculating referral
+  // rewards due to the referrer.
+  string referral_reward_multiplier = 2;
+}
+
+message VolumeDiscountProgram {
+  // Incremental version of the program. It is incremented after each program
+  // update.
+  uint64 version = 1;
+  // Unique ID generated from the proposal that created this program.
+  string id = 2;
+  // Defined benefit tiers ordered by increasing discounts.
+  repeated VolumeBenefitTier benefit_tiers = 3;
+  // Timestamp in Unix seconds, after which when the current epoch
+  // ends, the program will end and benefits will be disabled.
+  int64 end_of_program_timestamp = 4;
+  // Number of epochs over which a referral set's running volume is evaluated.
+  uint64 window_length = 5;
+}
+
+// A list of activity streak benefit tiers
+message ActivityStreakBenefitTiers {
+  // Defined benefit tiers ordered by increasing reward multipliers.
+  repeated ActivityStreakBenefitTier tiers = 1;
+}
+
+// An activity streak benefit tier
+message ActivityStreakBenefitTier {
+  // Number of epochs a party must be active to receive the multiplier.
+  uint64 minimum_activity_streak = 1;
+  // Reward multiplier applicable to this tier.
+  string reward_multiplier = 2;
+  // Vesting bonus applicable to this tier.
+  string vesting_multiplier = 3;
 }

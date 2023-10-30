@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,24 +32,45 @@ import (
 )
 
 type (
-	Asset              struct{ *sqlstore.Assets }
-	Block              struct{ *sqlstore.Blocks }
-	Party              struct{ *sqlstore.Parties }
-	NetworkLimits      struct{ *sqlstore.NetworkLimits }
-	Epoch              struct{ *sqlstore.Epochs }
-	Deposit            struct{ *sqlstore.Deposits }
-	Withdrawal         struct{ *sqlstore.Withdrawals }
-	RiskFactor         struct{ *sqlstore.RiskFactors }
-	NetworkParameter   struct{ *sqlstore.NetworkParameters }
-	Checkpoint         struct{ *sqlstore.Checkpoints }
-	OracleSpec         struct{ *sqlstore.OracleSpec }
-	OracleData         struct{ *sqlstore.OracleData }
-	LiquidityProvision struct{ *sqlstore.LiquidityProvision }
-	Transfer           struct{ *sqlstore.Transfers }
-	StakeLinking       struct{ *sqlstore.StakeLinking }
-	Notary             struct{ *sqlstore.Notary }
-	MultiSig           struct {
+	Asset               struct{ *sqlstore.Assets }
+	Block               struct{ *sqlstore.Blocks }
+	Party               struct{ *sqlstore.Parties }
+	PartyActivityStreak struct{ *sqlstore.PartyActivityStreaks }
+	FundingPayment      struct{ *sqlstore.FundingPayments }
+	NetworkLimits       struct{ *sqlstore.NetworkLimits }
+	Epoch               struct{ *sqlstore.Epochs }
+	Deposit             struct{ *sqlstore.Deposits }
+	Withdrawal          struct{ *sqlstore.Withdrawals }
+	RiskFactor          struct{ *sqlstore.RiskFactors }
+	NetworkParameter    struct{ *sqlstore.NetworkParameters }
+	Checkpoint          struct{ *sqlstore.Checkpoints }
+	OracleSpec          struct{ *sqlstore.OracleSpec }
+	OracleData          struct{ *sqlstore.OracleData }
+	LiquidityProvision  struct{ *sqlstore.LiquidityProvision }
+	Transfer            struct{ *sqlstore.Transfers }
+	StakeLinking        struct{ *sqlstore.StakeLinking }
+	Notary              struct{ *sqlstore.Notary }
+	MultiSig            struct {
 		*sqlstore.ERC20MultiSigSignerEvent
+	}
+	FundingPeriods         struct{ *sqlstore.FundingPeriods }
+	ReferralPrograms       struct{ *sqlstore.ReferralPrograms }
+	ReferralSets           struct{ *sqlstore.ReferralSets }
+	Teams                  struct{ *sqlstore.Teams }
+	VestingStats           struct{ *sqlstore.VestingStats }
+	VolumeDiscountStats    struct{ *sqlstore.VolumeDiscountStats }
+	FeesStats              struct{ *sqlstore.FeesStats }
+	VolumeDiscountPrograms struct {
+		*sqlstore.VolumeDiscountPrograms
+	}
+	PaidLiquidityFeesStats struct {
+		*sqlstore.PaidLiquidityFeesStats
+	}
+	PartyLockedBalances struct {
+		*sqlstore.PartyLockedBalance
+	}
+	PartyVestingBalances struct {
+		*sqlstore.PartyVestingBalance
 	}
 )
 
@@ -53,6 +89,14 @@ func NewBlock(store *sqlstore.Blocks) *Block {
 
 func NewParty(store *sqlstore.Parties) *Party {
 	return &Party{Parties: store}
+}
+
+func NewPartyActivityStreak(store *sqlstore.PartyActivityStreaks) *PartyActivityStreak {
+	return &PartyActivityStreak{PartyActivityStreaks: store}
+}
+
+func NewFundingPayment(store *sqlstore.FundingPayments) *FundingPayment {
+	return &FundingPayment{FundingPayments: store}
 }
 
 func NewNetworkLimits(store *sqlstore.NetworkLimits) *NetworkLimits {
@@ -117,4 +161,48 @@ func NewKeyRotations(store *sqlstore.KeyRotations) *KeyRotations {
 
 func NewNode(store *sqlstore.Node) *Node {
 	return &Node{Node: store}
+}
+
+func NewFundingPeriods(store *sqlstore.FundingPeriods) *FundingPeriods {
+	return &FundingPeriods{FundingPeriods: store}
+}
+
+func NewReferralPrograms(store *sqlstore.ReferralPrograms) *ReferralPrograms {
+	return &ReferralPrograms{ReferralPrograms: store}
+}
+
+func NewReferralSets(store *sqlstore.ReferralSets) *ReferralSets {
+	return &ReferralSets{ReferralSets: store}
+}
+
+func NewTeams(store *sqlstore.Teams) *Teams {
+	return &Teams{Teams: store}
+}
+
+func NewVestingStats(store *sqlstore.VestingStats) *VestingStats {
+	return &VestingStats{VestingStats: store}
+}
+
+func NewVolumeDiscountStats(store *sqlstore.VolumeDiscountStats) *VolumeDiscountStats {
+	return &VolumeDiscountStats{VolumeDiscountStats: store}
+}
+
+func NewFeesStats(store *sqlstore.FeesStats) *FeesStats {
+	return &FeesStats{FeesStats: store}
+}
+
+func NewVolumeDiscountPrograms(store *sqlstore.VolumeDiscountPrograms) *VolumeDiscountPrograms {
+	return &VolumeDiscountPrograms{VolumeDiscountPrograms: store}
+}
+
+func NewPaidLiquidityFeesStats(store *sqlstore.PaidLiquidityFeesStats) *PaidLiquidityFeesStats {
+	return &PaidLiquidityFeesStats{PaidLiquidityFeesStats: store}
+}
+
+func NewPartyLockedBalances(store *sqlstore.PartyLockedBalance) *PartyLockedBalances {
+	return &PartyLockedBalances{PartyLockedBalance: store}
+}
+
+func NewPartyVestingBalances(store *sqlstore.PartyVestingBalance) *PartyVestingBalances {
+	return &PartyVestingBalances{PartyVestingBalance: store}
 }

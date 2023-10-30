@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -69,6 +84,18 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 			t.SellerLiquidityFee,
 			t.BuyerAuctionBatch,
 			t.SellerAuctionBatch,
+			t.BuyerMakerFeeReferralDiscount,
+			t.BuyerInfrastructureFeeReferralDiscount,
+			t.BuyerLiquidityFeeReferralDiscount,
+			t.BuyerMakerFeeVolumeDiscount,
+			t.BuyerInfrastructureFeeVolumeDiscount,
+			t.BuyerLiquidityFeeVolumeDiscount,
+			t.SellerMakerFeeReferralDiscount,
+			t.SellerInfrastructureFeeReferralDiscount,
+			t.SellerLiquidityFeeReferralDiscount,
+			t.SellerMakerFeeVolumeDiscount,
+			t.SellerInfrastructureFeeVolumeDiscount,
+			t.SellerLiquidityFeeVolumeDiscount,
 		})
 	}
 
@@ -82,7 +109,10 @@ func (ts *Trades) Flush(ctx context.Context) ([]*entities.Trade, error) {
 				"synthetic_time", "tx_hash", "vega_time", "seq_num", "id", "market_id", "price", "size", "buyer", "seller",
 				"aggressor", "buy_order", "sell_order", "type", "buyer_maker_fee", "buyer_infrastructure_fee",
 				"buyer_liquidity_fee", "seller_maker_fee", "seller_infrastructure_fee", "seller_liquidity_fee",
-				"buyer_auction_batch", "seller_auction_batch",
+				"buyer_auction_batch", "seller_auction_batch", "buyer_maker_fee_referral_discount", "buyer_infrastructure_fee_referral_discount",
+				"buyer_liquidity_fee_referral_discount", "buyer_maker_fee_volume_discount", "buyer_infrastructure_fee_volume_discount", "buyer_liquidity_fee_volume_discount",
+				"seller_maker_fee_referral_discount", "seller_infrastructure_fee_referral_discount", "seller_liquidity_fee_referral_discount",
+				"seller_maker_fee_volume_discount", "seller_infrastructure_fee_volume_discount", "seller_liquidity_fee_volume_discount",
 			},
 			pgx.CopyFromRows(rows),
 		)

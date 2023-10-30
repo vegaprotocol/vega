@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package stoporders_test
 
 import (
@@ -233,7 +248,7 @@ func TestOCOStopOrders(t *testing.T) {
 	t.Run("removing when party have submitted nothing returns no error", func(t *testing.T) {
 		affectedOrders, err := pool.Cancel("p1", "a")
 		assert.Len(t, affectedOrders, 0)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, stoporders.ErrStopOrderNotFound.Error())
 	})
 
 	t.Run("price update trigger OCO trailing order", func(t *testing.T) {

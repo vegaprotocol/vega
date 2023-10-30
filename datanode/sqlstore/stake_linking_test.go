@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -42,8 +57,7 @@ func setupStakeLinkingTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.StakeLinki
 }
 
 func testUpsertShouldAddNewInBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, sl := setupStakeLinkingTest(t)
 
@@ -65,8 +79,7 @@ func testUpsertShouldAddNewInBlock(t *testing.T) {
 }
 
 func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, sl := setupStakeLinkingTest(t)
 	conn := connectionSource.Connection
@@ -88,8 +101,7 @@ func testUpsertShouldUpdateExistingInBlock(t *testing.T) {
 }
 
 func testGetStake(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, sl := setupStakeLinkingTest(t)
 	conn := connectionSource.Connection
@@ -181,8 +193,7 @@ func TestStakeLinkingPagination(t *testing.T) {
 }
 
 func testStakeLinkingPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -203,8 +214,7 @@ func testStakeLinkingPaginationNoPagination(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -226,8 +236,7 @@ func testStakeLinkingPaginationFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -249,8 +258,7 @@ func testStakeLinkingPaginationLast(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -273,8 +281,7 @@ func testStakeLinkingPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -297,8 +304,7 @@ func testStakeLinkingPaginationLastAndBefore(t *testing.T) {
 }
 
 func testStakeLinkingPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -319,8 +325,7 @@ func testStakeLinkingPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -342,8 +347,7 @@ func testStakeLinkingPaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -365,8 +369,7 @@ func testStakeLinkingPaginationLastNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 
@@ -389,8 +392,7 @@ func testStakeLinkingPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testStakeLinkingPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ls, links := setupStakeLinkingPaginationTest(t, ctx)
 

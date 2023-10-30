@@ -1,6 +1,22 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package sqlstore_test
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -60,6 +76,7 @@ func generateTestStopOrders(t *testing.T, testOrders []testStopOrderInputs) []en
 				Type:        entities.OrderTypeMarket,
 				Reference:   o.orderID,
 			},
+			RejectionReason: entities.StopOrderRejectionReasonUnspecified,
 		}
 		orders = append(orders, so)
 	}
@@ -73,8 +90,7 @@ func TestStopOrders_Add(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	blocks := []entities.Block{
 		addTestBlock(t, ctx, bs),
@@ -141,30 +157,43 @@ func TestStopOrders_Get(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	block := addTestBlock(t, ctx, bs)
+	block2 := addTestBlock(t, ctx, bs)
 
 	party := addTestParty(t, ctx, ps, block)
 
 	markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
 
+	orderID := helpers.GenerateID()
 	stopOrders := generateTestStopOrders(t, []testStopOrderInputs{
 		{
-			orderID:        helpers.GenerateID(),
+			orderID:        orderID,
 			vegaTime:       block.VegaTime,
 			createdAt:      block.VegaTime,
 			triggerPrice:   "100",
 			partyID:        party.ID,
 			marketID:       markets[0].ID,
-			status:         entities.StopOrderStatusUnspecified,
+			status:         entities.StopOrderStatusPending,
+			expiryStrategy: entities.StopOrderExpiryStrategyUnspecified,
+		},
+		{
+			orderID:        orderID,
+			vegaTime:       block2.VegaTime,
+			createdAt:      block.VegaTime,
+			triggerPrice:   "100",
+			partyID:        party.ID,
+			marketID:       markets[0].ID,
+			status:         entities.StopOrderStatusTriggered,
 			expiryStrategy: entities.StopOrderExpiryStrategyUnspecified,
 		},
 	})
 
-	err := so.Add(stopOrders[0])
-	require.NoError(t, err)
+	for i := range stopOrders {
+		err := so.Add(stopOrders[i])
+		require.NoError(t, err)
+	}
 
 	want, err := so.Flush(ctx)
 	require.NoError(t, err)
@@ -176,9 +205,9 @@ func TestStopOrders_Get(t *testing.T) {
 	})
 
 	t.Run("Get should return the order if the order ID does exist", func(t *testing.T) {
-		got, err := so.GetStopOrder(ctx, stopOrders[0].ID.String())
+		got, err := so.GetStopOrder(ctx, orderID)
 		require.NoError(t, err)
-		assert.Equal(t, want[0], got)
+		assert.Equal(t, want[1], got)
 	})
 }
 
@@ -188,10 +217,13 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	// ctx := tempTransaction(t)
+	//
+
+	ctx := context.Background()
 
 	blocks := []entities.Block{
+		addTestBlock(t, ctx, bs),
 		addTestBlock(t, ctx, bs),
 		addTestBlock(t, ctx, bs),
 		addTestBlock(t, ctx, bs),
@@ -200,6 +232,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 	}
 
 	parties := []entities.Party{
+		addTestParty(t, ctx, ps, blocks[0]),
 		addTestParty(t, ctx, ps, blocks[0]),
 		addTestParty(t, ctx, ps, blocks[0]),
 		addTestParty(t, ctx, ps, blocks[0]),
@@ -216,7 +249,9 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 		"deadbeef07",
 		"deadbeef08",
 		"deadbeef09",
-		"deadbeef0a",
+		"deadbeef10",
+		"deadbeef11",
+		"deadbeef12",
 	}
 
 	stopOrders := generateTestStopOrders(t, []testStopOrderInputs{
@@ -524,6 +559,26 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			status:         entities.StopOrderStatusStopped,
 			expiryStrategy: entities.StopOrderExpiryStrategySubmit,
 		},
+		{ // 30
+			orderID:        orderIDs[10],
+			vegaTime:       blocks[4].VegaTime,
+			createdAt:      blocks[0].VegaTime,
+			triggerPrice:   "100",
+			partyID:        parties[3].ID,
+			marketID:       markets[8].ID,
+			status:         entities.StopOrderStatusPending,
+			expiryStrategy: entities.StopOrderExpiryStrategyCancels,
+		},
+		{ // 31
+			orderID:        orderIDs[11],
+			vegaTime:       blocks[5].VegaTime,
+			createdAt:      blocks[0].VegaTime,
+			triggerPrice:   "100",
+			partyID:        parties[3].ID,
+			marketID:       markets[9].ID,
+			status:         entities.StopOrderStatusPending,
+			expiryStrategy: entities.StopOrderExpiryStrategyCancels,
+		},
 	})
 
 	for _, o := range stopOrders {
@@ -555,6 +610,8 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			stopOrders[22],
 			stopOrders[21],
 			stopOrders[16],
+			stopOrders[30],
+			stopOrders[31],
 		}
 
 		sort.Slice(want, func(i, j int) bool {
@@ -573,12 +630,14 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			HasNextPage:     false,
 			HasPreviousPage: false,
 			StartCursor:     want[0].Cursor().Encode(),
-			EndCursor:       want[9].Cursor().Encode(),
+			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}, pageInfo)
 	})
 
 	t.Run("should paginate the data correctly", func(t *testing.T) {
 		current := []entities.StopOrder{
+			stopOrders[31],
+			stopOrders[30],
 			stopOrders[29],
 			stopOrders[28],
 			stopOrders[25],
@@ -610,7 +669,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			if currentIndex > -1 {
 				p, err = entities.NewCursorPagination(&first, ptr.From(current[currentIndex].Cursor().Encode()), nil, nil, true)
 				require.NoError(t, err)
-				hasNext = (currentIndex + int(first)) < len(current)
+				hasNext = (currentIndex + int(first)) < len(current)-1
 				hasPrevious = true
 			} else {
 				p, err = entities.NewCursorPagination(&first, nil, nil, nil, true)
@@ -696,6 +755,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			}
 
 			want := []entities.StopOrder{
+				stopOrders[30],
 				stopOrders[28],
 				stopOrders[25],
 				stopOrders[24],
@@ -813,6 +873,8 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			}
 
 			want := []entities.StopOrder{
+				stopOrders[31],
+				stopOrders[30],
 				stopOrders[28],
 				stopOrders[26],
 				stopOrders[24],
@@ -890,6 +952,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 			}
 
 			want := []entities.StopOrder{
+				stopOrders[30],
 				stopOrders[28],
 				stopOrders[24],
 			}
@@ -911,6 +974,32 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 				HasPreviousPage: false,
 				StartCursor:     want[0].Cursor().Encode(),
 				EndCursor:       want[len(want)-1].Cursor().Encode(),
+			}, pageInfo)
+		})
+
+		tt.Run("live only", func(ts *testing.T) {
+			filter := entities.StopOrderFilter{
+				LiveOnly: true,
+			}
+
+			want := []entities.StopOrder{
+				stopOrders[31],
+				stopOrders[30],
+			}
+			sort.Slice(want, func(i, j int) bool {
+				return want[i].ID < want[j].ID
+			})
+			p, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
+			require.NoError(ts, err)
+			got, pageInfo, err := so.ListStopOrders(ctx, filter, p)
+			require.NoError(ts, err)
+
+			assert.Equal(ts, want, got)
+			assert.Equal(ts, entities.PageInfo{
+				HasNextPage:     false,
+				HasPreviousPage: false,
+				StartCursor:     want[0].Cursor().Encode(),
+				EndCursor:       want[1].Cursor().Encode(),
 			}, pageInfo)
 		})
 	})

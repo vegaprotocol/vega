@@ -1,48 +1,51 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package netparams
 
 const (
-	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+	SpotMarketTradingEnabled  = "limits.markets.proposeSpotEnabled"
+	PerpsMarketTradingEnabled = "limits.markets.proposePerpetualEnabled"
+	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
-	// market related parameters.
-	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
-	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
-	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
-	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
-	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
-	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
-	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
-	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
-	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
-	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
-	MarketMinProbabilityOfTradingForLPOrders        = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
-	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
-	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
-	MarketValueWindowLength                         = "market.value.windowLength"
-	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
-	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
-	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
-	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
+	MarketMarginScalingFactors        = "market.margin.scalingFactors"
+	MarketFeeFactorsMakerFee          = "market.fee.factors.makerFee"
+	MarketFeeFactorsInfrastructureFee = "market.fee.factors.infrastructureFee"
+	MarketAuctionMinimumDuration      = "market.auction.minimumDuration"
+	MarketAuctionMaximumDuration      = "market.auction.maximumDuration"
 
-	// Parameters for liquidity framework version 2.
-	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"
-	MarketLiquidityV2EarlyExitPenalty                  = "market.liquidityV2.earlyExitPenalty"
-	MarketLiquidityV2MaximumLiquidityFeeFactorLevel    = "market.liquidityV2.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityV2SLANonPerformanceBondPenaltyMax   = "market.liquidityV2.sla.nonPerformanceBondPenaltyMax"
-	MarketLiquidityV2SLANonPerformanceBondPenaltySlope = "market.liquidityV2.sla.nonPerformanceBondPenaltySlope"
-	MarketLiquidityV2StakeToCCYVolume                  = "market.liquidityV2.stakeToCcyVolume"
+	MarketTargetStakeTimeWindow               = "market.stake.target.timeWindow"
+	MarketTargetStakeScalingFactor            = "market.stake.target.scalingFactor"
+	MarketLiquidityTargetStakeTriggeringRatio = "market.liquidity.targetstake.triggering.ratio"
+	MarketValueWindowLength                   = "market.value.windowLength"
+	MarketPriceMonitoringDefaultParameters    = "market.monitor.price.defaultParameters"
+
+	MarketMinLpStakeQuantumMultiple          = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketProbabilityOfTradingTauScaling     = "market.liquidity.probabilityOfTrading.tau.scaling"
+	MarketMinProbabilityOfTradingForLPOrders = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
+	MarketSuccessorLaunchWindow              = "market.liquidity.successorLaunchWindowLength"
+
+	MarketLiquidityProvisionShapesMaxSize            = "market.liquidityProvision.shapes.maxSize"
+	MarketLiquidityTargetStakeTriggeringRatioXXX     = "market.liquidity.targetstake.triggering.ratio"
+	MarketLiquidityBondPenaltyParameter              = "market.liquidity.bondPenaltyParameter"
+	MarketLiquidityEarlyExitPenalty                  = "market.liquidity.earlyExitPenalty"
+	MarketLiquidityMaximumLiquidityFeeFactorLevel    = "market.liquidity.maximumLiquidityFeeFactorLevel"
+	MarketLiquiditySLANonPerformanceBondPenaltyMax   = "market.liquidity.sla.nonPerformanceBondPenaltyMax"
+	MarketLiquiditySLANonPerformanceBondPenaltySlope = "market.liquidity.sla.nonPerformanceBondPenaltySlope"
+	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
+	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
 
 	RewardAsset = "reward.asset"
 
@@ -119,6 +122,26 @@ const (
 	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
 	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
 
+	// Network parameters for referral program update.
+	GovernanceProposalReferralProgramMinClose              = "governance.proposal.referralProgram.minClose"
+	GovernanceProposalReferralProgramMaxClose              = "governance.proposal.referralProgram.maxClose"
+	GovernanceProposalReferralProgramMinEnact              = "governance.proposal.referralProgram.minEnact"
+	GovernanceProposalReferralProgramMaxEnact              = "governance.proposal.referralProgram.maxEnact"
+	GovernanceProposalReferralProgramRequiredParticipation = "governance.proposal.referralProgram.requiredParticipation"
+	GovernanceProposalReferralProgramRequiredMajority      = "governance.proposal.referralProgram.requiredMajority"
+	GovernanceProposalReferralProgramMinProposerBalance    = "governance.proposal.referralProgram.minProposerBalance"
+	GovernanceProposalReferralProgramMinVoterBalance       = "governance.proposal.referralProgram.minVoterBalance"
+
+	// Network parameters for referral program update.
+	GovernanceProposalVolumeDiscountProgramMinClose              = "governance.proposal.VolumeDiscountProgram.minClose"
+	GovernanceProposalVolumeDiscountProgramMaxClose              = "governance.proposal.VolumeDiscountProgram.maxClose"
+	GovernanceProposalVolumeDiscountProgramMinEnact              = "governance.proposal.VolumeDiscountProgram.minEnact"
+	GovernanceProposalVolumeDiscountProgramMaxEnact              = "governance.proposal.VolumeDiscountProgram.maxEnact"
+	GovernanceProposalVolumeDiscountProgramRequiredParticipation = "governance.proposal.VolumeDiscountProgram.requiredParticipation"
+	GovernanceProposalVolumeDiscountProgramRequiredMajority      = "governance.proposal.VolumeDiscountProgram.requiredMajority"
+	GovernanceProposalVolumeDiscountProgramMinProposerBalance    = "governance.proposal.VolumeDiscountProgram.minProposerBalance"
+	GovernanceProposalVolumeDiscountProgramMinVoterBalance       = "governance.proposal.VolumeDiscountProgram.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -130,7 +153,8 @@ const (
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
-	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
+	RewardMarketCreationQuantumMultiple       = "rewards.marketCreationQuantumMultiple"
+	MinEpochsInTeamForMetricRewardEligibility = "rewards.team.minEpochsInTeam"
 
 	// spam policies params.
 	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
@@ -143,6 +167,12 @@ const (
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
 	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
+
+	SpamProtectionMaxCreateReferralSet     = "spam.protection.max.createReferralSet"
+	SpamProtectionMaxUpdateReferralSet     = "spam.protection.max.updateReferralSet"
+	SpamProtectionMaxApplyReferralCode     = "spam.protection.max.applyReferralCode"
+	SpamProtectionBalanceSnapshotFrequency = "spam.protection.balanceSnapshotFrequency"
+	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -196,148 +226,208 @@ const (
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
+
+	RewardsVestingBaseRate        = "rewards.vesting.baseRate"
+	RewardsVestingMinimumTransfer = "rewards.vesting.minimumTransfer"
+	RewardsVestingBenefitTiers    = "rewards.vesting.benefitTiers"
+
+	// Referral program.
+	ReferralProgramMaxReferralTiers                        = "referralProgram.maxReferralTiers"
+	ReferralProgramMaxReferralRewardFactor                 = "referralProgram.maxReferralRewardFactor"
+	ReferralProgramMaxReferralDiscountFactor               = "referralProgram.maxReferralDiscountFactor"
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch = "referralProgram.maxPartyNotionalVolumeByQuantumPerEpoch"
+	ReferralProgramMinStakedVegaTokens                     = "referralProgram.minStakedVegaTokens"
+	ReferralProgramMaxReferralRewardProportion             = "referralProgram.maxReferralRewardProportion"
+
+	// volume discount program.
+	VolumeDiscountProgramMaxBenefitTiers         = "volumeDiscountProgram.maxBenefitTiers"
+	VolumeDiscountProgramMaxVolumeDiscountFactor = "volumeDiscountProgram.maxVolumeDiscountFactor"
+
+	RewardsActivityStreakBenefitTiers          = "rewards.activityStreak.benefitTiers"
+	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
+	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
+	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
 )
 
 var Deprecated = map[string]struct{}{
 	StakingAndDelegationRewardPayoutFraction:    {},
 	StakingAndDelegationRewardPayoutDelay:       {},
 	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
+	MarketLiquidityTargetStakeTriggeringRatio:   {},
+	MarketTargetStakeTimeWindow:                 {},
+	MarketTargetStakeScalingFactor:              {},
 }
 
 var AllKeys = map[string]struct{}{
-	SpotMarketTradingEnabled:                                 {},
-	MaxPeggedOrders:                                          {},
-	MaxGasPerBlock:                                           {},
-	DefaultGas:                                               {},
-	MinBlockCapacity:                                         {},
-	RewardMarketCreationQuantumMultiple:                      {},
-	MarketMarginScalingFactors:                               {},
-	MarketFeeFactorsMakerFee:                                 {},
-	MarketFeeFactorsInfrastructureFee:                        {},
-	MarketAuctionMinimumDuration:                             {},
-	MarketAuctionMaximumDuration:                             {},
-	MarketLiquidityBondPenaltyParameter:                      {},
-	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
-	MarketLiquidityStakeToCCYVolume:                          {},
-	MarketLiquidityProvidersFeeDistributionTimeStep:          {},
-	MarketLiquidityTargetStakeTriggeringRatio:                {},
-	MarketLiquidityV2BondPenaltyParameter:                    {},
-	MarketLiquidityV2EarlyExitPenalty:                        {},
-	MarketLiquidityV2MaximumLiquidityFeeFactorLevel:          {},
-	MarketLiquidityV2SLANonPerformanceBondPenaltySlope:       {},
-	MarketLiquidityV2SLANonPerformanceBondPenaltyMax:         {},
-	MarketLiquidityV2StakeToCCYVolume:                        {},
-	MarketTargetStakeTimeWindow:                              {},
-	MarketTargetStakeScalingFactor:                           {},
-	MarketPriceMonitoringDefaultParameters:                   {},
-	MarketMinLpStakeQuantumMultiple:                          {},
-	RewardAsset:                                              {},
-	GovernanceProposalMarketMinClose:                         {},
-	GovernanceProposalMarketMaxClose:                         {},
-	GovernanceProposalMarketMinEnact:                         {},
-	GovernanceProposalMarketMaxEnact:                         {},
-	GovernanceProposalMarketRequiredParticipation:            {},
-	GovernanceProposalMarketRequiredMajority:                 {},
-	GovernanceProposalMarketMinProposerBalance:               {},
-	GovernanceProposalMarketMinVoterBalance:                  {},
-	GovernanceProposalAssetMinClose:                          {},
-	GovernanceProposalAssetMaxClose:                          {},
-	GovernanceProposalAssetMinEnact:                          {},
-	GovernanceProposalAssetMaxEnact:                          {},
-	GovernanceProposalAssetRequiredParticipation:             {},
-	GovernanceProposalAssetRequiredMajority:                  {},
-	GovernanceProposalAssetMinProposerBalance:                {},
-	GovernanceProposalAssetMinVoterBalance:                   {},
-	GovernanceProposalUpdateMarketMinClose:                   {},
-	GovernanceProposalUpdateMarketMaxClose:                   {},
-	GovernanceProposalUpdateMarketMinEnact:                   {},
-	GovernanceProposalUpdateMarketMaxEnact:                   {},
-	GovernanceProposalUpdateMarketRequiredParticipation:      {},
-	GovernanceProposalUpdateMarketRequiredMajority:           {},
-	GovernanceProposalUpdateMarketMinProposerBalance:         {},
-	GovernanceProposalUpdateMarketMinVoterBalance:            {},
-	GovernanceProposalUpdateNetParamMinClose:                 {},
-	GovernanceProposalUpdateNetParamMaxClose:                 {},
-	GovernanceProposalUpdateNetParamMinEnact:                 {},
-	GovernanceProposalUpdateNetParamMaxEnact:                 {},
-	GovernanceProposalUpdateNetParamRequiredParticipation:    {},
-	GovernanceProposalUpdateNetParamRequiredMajority:         {},
-	GovernanceProposalUpdateNetParamMinProposerBalance:       {},
-	GovernanceProposalUpdateNetParamMinVoterBalance:          {},
-	GovernanceProposalUpdateMarketRequiredParticipationLP:    {},
-	GovernanceProposalUpdateMarketRequiredMajorityLP:         {},
-	GovernanceProposalUpdateMarketMinProposerEquityLikeShare: {},
-	GovernanceProposalFreeformMinClose:                       {},
-	GovernanceProposalFreeformMaxClose:                       {},
-	GovernanceProposalFreeformRequiredParticipation:          {},
-	GovernanceProposalFreeformRequiredMajority:               {},
-	GovernanceProposalFreeformMinProposerBalance:             {},
-	GovernanceProposalFreeformMinVoterBalance:                {},
-	GovernanceProposalTransferMinClose:                       {},
-	GovernanceProposalTransferMaxClose:                       {},
-	GovernanceProposalTransferMinEnact:                       {},
-	GovernanceProposalTransferMaxEnact:                       {},
-	GovernanceProposalTransferRequiredParticipation:          {},
-	GovernanceProposalTransferRequiredMajority:               {},
-	GovernanceProposalTransferMinProposerBalance:             {},
-	GovernanceProposalTransferMinVoterBalance:                {},
-	GovernanceTransferMaxAmount:                              {},
-	GovernanceTransferMaxFraction:                            {},
-	BlockchainsEthereumConfig:                                {},
-	MarketLiquidityProvisionShapesMaxSize:                    {},
-	MarketProbabilityOfTradingTauScaling:                     {},
-	MarketMinProbabilityOfTradingForLPOrders:                 {},
-	ValidatorsEpochLength:                                    {},
-	DelegationMinAmount:                                      {},
-	StakingAndDelegationRewardPayoutFraction:                 {},
-	StakingAndDelegationRewardMaxPayoutPerParticipant:        {},
-	StakingAndDelegationRewardPayoutDelay:                    {},
-	StakingAndDelegationRewardDelegatorShare:                 {},
-	StakingAndDelegationRewardMinimumValidatorStake:          {},
-	ValidatorsVoteRequired:                                   {},
-	NetworkCheckpointTimeElapsedBetweenCheckpoints:           {},
-	MarketValueWindowLength:                                  {},
-	StakingAndDelegationRewardMaxPayoutPerEpoch:              {},
-	SpamProtectionMinTokensForProposal:                       {},
-	SpamProtectionMaxVotes:                                   {},
-	SpamProtectionMaxProposals:                               {},
-	SpamProtectionMinTokensForVoting:                         {},
-	SpamProtectionMaxDelegations:                             {},
-	SpamProtectionMinTokensForDelegation:                     {},
-	StakingAndDelegationRewardCompetitionLevel:               {},
-	StakingAndDelegationRewardsMinValidators:                 {},
-	StakingAndDelegationRewardOptimalStakeMultiplier:         {},
-	SnapshotIntervalLength:                                   {},
-	FloatingPointUpdatesDuration:                             {},
-	TransferFeeFactor:                                        {},
-	NumberOfTendermintValidators:                             {},
-	ValidatorIncumbentBonus:                                  {},
-	NumberEthMultisigSigners:                                 {},
-	ErsatzvalidatorsRewardFactor:                             {},
-	MultipleOfTendermintValidatorsForEtsatzSet:               {},
-	MinimumEthereumEventsForNewValidator:                     {},
-	TransferMinTransferQuantumMultiple:                       {},
-	TransferMaxCommandsPerEpoch:                              {},
-	SpamPoWNumberOfPastBlocks:                                {},
-	SpamPoWDifficulty:                                        {},
-	SpamPoWHashFunction:                                      {},
-	SpamPoWNumberOfTxPerBlock:                                {},
-	SpamPoWIncreasingDifficulty:                              {},
-	LimitsProposeMarketEnabledFrom:                           {},
-	LimitsProposeAssetEnabledFrom:                            {},
-	GovernanceProposalUpdateAssetMinClose:                    {},
-	GovernanceProposalUpdateAssetMaxClose:                    {},
-	GovernanceProposalUpdateAssetMinEnact:                    {},
-	GovernanceProposalUpdateAssetMaxEnact:                    {},
-	GovernanceProposalUpdateAssetRequiredParticipation:       {},
-	GovernanceProposalUpdateAssetRequiredMajority:            {},
-	GovernanceProposalUpdateAssetMinProposerBalance:          {},
-	GovernanceProposalUpdateAssetMinVoterBalance:             {},
-	SpamProtectionMaxBatchSize:                               {},
-	MarkPriceUpdateMaximumFrequency:                          {},
-	ValidatorPerformanceScalingFactor:                        {},
-	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
-	SpamProtectionMinMultisigUpdates:                         {},
-	MarketSuccessorLaunchWindow:                              {},
-	SpamProtectionMaxStopOrdersPerMarket:                     {},
+	GovernanceProposalVolumeDiscountProgramMinClose:              {},
+	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
+	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
+	GovernanceProposalVolumeDiscountProgramMaxEnact:              {},
+	GovernanceProposalVolumeDiscountProgramRequiredParticipation: {},
+	GovernanceProposalVolumeDiscountProgramRequiredMajority:      {},
+	GovernanceProposalVolumeDiscountProgramMinProposerBalance:    {},
+	GovernanceProposalVolumeDiscountProgramMinVoterBalance:       {},
+	ReferralProgramMaxReferralRewardProportion:                   {},
+	MinEpochsInTeamForMetricRewardEligibility:                    {},
+	RewardsVestingBenefitTiers:                                   {},
+	RewardsVestingMinimumTransfer:                                {},
+	RewardsActivityStreakInactivityLimit:                         {},
+	RewardsActivityStreakBenefitTiers:                            {},
+	RewardsActivityStreakMinQuantumOpenVolume:                    {},
+	RewardsActivityStreakMinQuantumTradeVolume:                   {},
+	RewardsVestingBaseRate:                                       {},
+	SpotMarketTradingEnabled:                                     {},
+	PerpsMarketTradingEnabled:                                    {},
+	EthereumOraclesEnabled:                                       {},
+	MaxPeggedOrders:                                              {},
+	MaxGasPerBlock:                                               {},
+	DefaultGas:                                                   {},
+	MinBlockCapacity:                                             {},
+	RewardMarketCreationQuantumMultiple:                          {},
+	MarketMarginScalingFactors:                                   {},
+	MarketFeeFactorsMakerFee:                                     {},
+	MarketFeeFactorsInfrastructureFee:                            {},
+	MarketAuctionMinimumDuration:                                 {},
+	MarketAuctionMaximumDuration:                                 {},
+	MarketLiquidityBondPenaltyParameter:                          {},
+	MarketLiquidityMaximumLiquidityFeeFactorLevel:                {},
+	MarketLiquidityTargetStakeTriggeringRatio:                    {},
+	MarketLiquidityEarlyExitPenalty:                              {},
+	MarketLiquiditySLANonPerformanceBondPenaltySlope:             {},
+	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
+	MarketLiquidityStakeToCCYVolume:                              {},
+	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
+	MarketTargetStakeTimeWindow:                                  {},
+	MarketTargetStakeScalingFactor:                               {},
+	MarketPriceMonitoringDefaultParameters:                       {},
+	MarketMinLpStakeQuantumMultiple:                              {},
+	RewardAsset:                                                  {},
+	GovernanceProposalMarketMinClose:                             {},
+	GovernanceProposalMarketMaxClose:                             {},
+	GovernanceProposalMarketMinEnact:                             {},
+	GovernanceProposalMarketMaxEnact:                             {},
+	GovernanceProposalMarketRequiredParticipation:                {},
+	GovernanceProposalMarketRequiredMajority:                     {},
+	GovernanceProposalMarketMinProposerBalance:                   {},
+	GovernanceProposalMarketMinVoterBalance:                      {},
+	GovernanceProposalAssetMinClose:                              {},
+	GovernanceProposalAssetMaxClose:                              {},
+	GovernanceProposalAssetMinEnact:                              {},
+	GovernanceProposalAssetMaxEnact:                              {},
+	GovernanceProposalAssetRequiredParticipation:                 {},
+	GovernanceProposalAssetRequiredMajority:                      {},
+	GovernanceProposalAssetMinProposerBalance:                    {},
+	GovernanceProposalAssetMinVoterBalance:                       {},
+	GovernanceProposalUpdateMarketMinClose:                       {},
+	GovernanceProposalUpdateMarketMaxClose:                       {},
+	GovernanceProposalUpdateMarketMinEnact:                       {},
+	GovernanceProposalUpdateMarketMaxEnact:                       {},
+	GovernanceProposalUpdateMarketRequiredParticipation:          {},
+	GovernanceProposalUpdateMarketRequiredMajority:               {},
+	GovernanceProposalUpdateMarketMinProposerBalance:             {},
+	GovernanceProposalUpdateMarketMinVoterBalance:                {},
+	GovernanceProposalUpdateNetParamMinClose:                     {},
+	GovernanceProposalUpdateNetParamMaxClose:                     {},
+	GovernanceProposalUpdateNetParamMinEnact:                     {},
+	GovernanceProposalUpdateNetParamMaxEnact:                     {},
+	GovernanceProposalUpdateNetParamRequiredParticipation:        {},
+	GovernanceProposalUpdateNetParamRequiredMajority:             {},
+	GovernanceProposalUpdateNetParamMinProposerBalance:           {},
+	GovernanceProposalUpdateNetParamMinVoterBalance:              {},
+	GovernanceProposalUpdateMarketRequiredParticipationLP:        {},
+	GovernanceProposalUpdateMarketRequiredMajorityLP:             {},
+	GovernanceProposalUpdateMarketMinProposerEquityLikeShare:     {},
+	GovernanceProposalFreeformMinClose:                           {},
+	GovernanceProposalFreeformMaxClose:                           {},
+	GovernanceProposalFreeformRequiredParticipation:              {},
+	GovernanceProposalFreeformRequiredMajority:                   {},
+	GovernanceProposalFreeformMinProposerBalance:                 {},
+	GovernanceProposalFreeformMinVoterBalance:                    {},
+	GovernanceProposalTransferMinClose:                           {},
+	GovernanceProposalTransferMaxClose:                           {},
+	GovernanceProposalTransferMinEnact:                           {},
+	GovernanceProposalTransferMaxEnact:                           {},
+	GovernanceProposalTransferRequiredParticipation:              {},
+	GovernanceProposalTransferRequiredMajority:                   {},
+	GovernanceProposalTransferMinProposerBalance:                 {},
+	GovernanceProposalTransferMinVoterBalance:                    {},
+	GovernanceTransferMaxAmount:                                  {},
+	GovernanceTransferMaxFraction:                                {},
+	GovernanceProposalReferralProgramMinClose:                    {},
+	GovernanceProposalReferralProgramMaxClose:                    {},
+	GovernanceProposalReferralProgramMinEnact:                    {},
+	GovernanceProposalReferralProgramMaxEnact:                    {},
+	GovernanceProposalReferralProgramRequiredParticipation:       {},
+	GovernanceProposalReferralProgramRequiredMajority:            {},
+	GovernanceProposalReferralProgramMinProposerBalance:          {},
+	GovernanceProposalReferralProgramMinVoterBalance:             {},
+	BlockchainsEthereumConfig:                                    {},
+	MarketLiquidityProvisionShapesMaxSize:                        {},
+	MarketProbabilityOfTradingTauScaling:                         {},
+	MarketMinProbabilityOfTradingForLPOrders:                     {},
+	ValidatorsEpochLength:                                        {},
+	DelegationMinAmount:                                          {},
+	StakingAndDelegationRewardPayoutFraction:                     {},
+	StakingAndDelegationRewardMaxPayoutPerParticipant:            {},
+	StakingAndDelegationRewardPayoutDelay:                        {},
+	StakingAndDelegationRewardDelegatorShare:                     {},
+	StakingAndDelegationRewardMinimumValidatorStake:              {},
+	ValidatorsVoteRequired:                                       {},
+	NetworkCheckpointTimeElapsedBetweenCheckpoints:               {},
+	MarketValueWindowLength:                                      {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch:                  {},
+	SpamProtectionMinTokensForProposal:                           {},
+	SpamProtectionMaxVotes:                                       {},
+	SpamProtectionMaxProposals:                                   {},
+	SpamProtectionMinTokensForVoting:                             {},
+	SpamProtectionMaxDelegations:                                 {},
+	SpamProtectionMinTokensForDelegation:                         {},
+	StakingAndDelegationRewardCompetitionLevel:                   {},
+	StakingAndDelegationRewardsMinValidators:                     {},
+	StakingAndDelegationRewardOptimalStakeMultiplier:             {},
+	SnapshotIntervalLength:                                       {},
+	FloatingPointUpdatesDuration:                                 {},
+	TransferFeeFactor:                                            {},
+	NumberOfTendermintValidators:                                 {},
+	ValidatorIncumbentBonus:                                      {},
+	NumberEthMultisigSigners:                                     {},
+	ErsatzvalidatorsRewardFactor:                                 {},
+	MultipleOfTendermintValidatorsForEtsatzSet:                   {},
+	MinimumEthereumEventsForNewValidator:                         {},
+	TransferMinTransferQuantumMultiple:                           {},
+	TransferMaxCommandsPerEpoch:                                  {},
+	SpamPoWNumberOfPastBlocks:                                    {},
+	SpamPoWDifficulty:                                            {},
+	SpamPoWHashFunction:                                          {},
+	SpamPoWNumberOfTxPerBlock:                                    {},
+	SpamPoWIncreasingDifficulty:                                  {},
+	LimitsProposeMarketEnabledFrom:                               {},
+	LimitsProposeAssetEnabledFrom:                                {},
+	GovernanceProposalUpdateAssetMinClose:                        {},
+	GovernanceProposalUpdateAssetMaxClose:                        {},
+	GovernanceProposalUpdateAssetMinEnact:                        {},
+	GovernanceProposalUpdateAssetMaxEnact:                        {},
+	GovernanceProposalUpdateAssetRequiredParticipation:           {},
+	GovernanceProposalUpdateAssetRequiredMajority:                {},
+	GovernanceProposalUpdateAssetMinProposerBalance:              {},
+	GovernanceProposalUpdateAssetMinVoterBalance:                 {},
+	SpamProtectionMaxBatchSize:                                   {},
+	MarkPriceUpdateMaximumFrequency:                              {},
+	ValidatorPerformanceScalingFactor:                            {},
+	SpamProtectionMinimumWithdrawalQuantumMultiple:               {},
+	SpamProtectionMinMultisigUpdates:                             {},
+	MarketSuccessorLaunchWindow:                                  {},
+	SpamProtectionMaxStopOrdersPerMarket:                         {},
+	ReferralProgramMaxReferralTiers:                              {},
+	ReferralProgramMaxReferralRewardFactor:                       {},
+	ReferralProgramMaxReferralDiscountFactor:                     {},
+	ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch:       {},
+	ReferralProgramMinStakedVegaTokens:                           {},
+	VolumeDiscountProgramMaxBenefitTiers:                         {},
+	VolumeDiscountProgramMaxVolumeDiscountFactor:                 {},
+	SpamProtectionMaxCreateReferralSet:                           {},
+	SpamProtectionMaxUpdateReferralSet:                           {},
+	SpamProtectionMaxApplyReferralCode:                           {},
+	SpamProtectionBalanceSnapshotFrequency:                       {},
+	SpamProtectionApplyReferralMinFunds:                          {},
 }

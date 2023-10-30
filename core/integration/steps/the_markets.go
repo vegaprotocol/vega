@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -20,6 +23,8 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
@@ -72,7 +77,20 @@ func TheMarkets(
 	markets := make([]types.Market, 0, len(rows))
 
 	for _, row := range rows {
-		mkt := newMarket(config, netparams, marketRow{row: row})
+		mRow := marketRow{row: row}
+		isPerp := mRow.isPerp()
+		if !isPerp {
+			// check if we have a perp counterpart for this oracle, if so, swap to that
+			if oName := mRow.oracleConfig(); oName != config.OracleConfigs.CheckName(oName) {
+				isPerp = true
+			}
+		}
+		var mkt types.Market
+		if isPerp {
+			mkt = newPerpMarket(config, mRow)
+		} else {
+			mkt = newMarket(config, mRow)
+		}
 		markets = append(markets, mkt)
 	}
 
@@ -84,10 +102,17 @@ func TheMarkets(
 		return nil, err
 	}
 
-	if err := submitMarkets(markets, executionEngine, now); err != nil {
-		return nil, err
+	for i, row := range rows {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
+			return nil, fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
+		}
+		// only start opening auction if the market is explicitly marked to leave opening auction now
+		if !row.HasColumn("is passed") || row.Bool("is passed") {
+			if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
+				return nil, fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
+			}
+		}
 	}
-
 	return markets, nil
 }
 
@@ -102,18 +127,6 @@ func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Executi
 		}
 	}
 	return fmt.Errorf("couldn't enact successor market %s - no such market ID", sID)
-}
-
-func submitMarkets(markets []types.Market, executionEngine Execution, now time.Time) error {
-	for i := range markets {
-		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
-			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
-		}
-		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
-			return fmt.Errorf("could not start opening auction for market %s: %v", markets[i].ID, err)
-		}
-	}
-	return nil
 }
 
 func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, executionEngine Execution) error {
@@ -135,7 +148,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Quantum: num.DecimalZero(),
+				Quantum: num.DecimalOne(),
 				Symbol:  assetToEnable,
 			},
 		})
@@ -176,47 +189,47 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
-		oracleSettlement, err := config.OracleConfigs.Get(oracle, "settlement data")
-		if err != nil {
-			panic(err)
-		}
-		oracleTermination, err := config.OracleConfigs.Get(oracle, "trading termination")
-		if err != nil {
-			panic(err)
-		}
-		// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
-		settleSpec := types.OracleSpecFromProto(oracleSettlement.Spec)
-		termSpec := types.OracleSpecFromProto(oracleTermination.Spec)
-		settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
-			filters := settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters()
+			oracleSettlement, err := config.OracleConfigs.GetFuture(oracle, "settlement data")
+			if err != nil {
+				panic(err)
+			}
+			oracleTermination, err := config.OracleConfigs.GetFuture(oracle, "trading termination")
+			if err != nil {
+				panic(err)
+			}
+			// we probably want to X-check the current spec, and make sure only filters + pubkeys are changed
+			settleSpec := datasource.FromOracleSpecProto(oracleSettlement.Spec)
+			termSpec := datasource.FromOracleSpecProto(oracleTermination.Spec)
+			settlementDecimals := config.OracleConfigs.GetSettlementDataDP(oracle)
+			filters := settleSpec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
-				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+				DataSourceSpecForSettlementData: *datasource.NewDefinition(
+					datasource.ContentTypeOracle,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+					&signedoracle.SpecConfiguration{
+						Signers: settleSpec.Data.GetSigners(),
 						Filters: filters,
 					},
 				),
-				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+				DataSourceSpecForTradingTermination: *datasource.NewDefinition(
+					datasource.ContentTypeOracle,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+					&signedoracle.SpecConfiguration{
+						Signers: settleSpec.Data.GetSigners(),
 						Filters: filters,
 					},
 				),
-				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
+				DataSourceSpecBinding: datasource.SpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
 					SettlementDataProperty:     oracleSettlement.Binding.SettlementDataProperty,
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
-			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDecimals)).ToDataSourceSpec()
-			ti.Future.DataSourceSpecForTradingTermination = termSpec.ExternalDataSourceSpec.Spec
+			ti.Future.DataSourceSpecForSettlementData = datasource.SpecFromDefinition(*settleSpec.Data.SetFilterDecimals(uint64(settlementDecimals)))
+			ti.Future.DataSourceSpecForTradingTermination = termSpec
 			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
 			// ensure we update the existing market
 			existing.TradableInstrument.Instrument.Product = ti
@@ -225,6 +238,39 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					Future: futureUp,
 				},
 			}
+		case *types.InstrumentPerps:
+			perp, err := config.OracleConfigs.GetFullPerp(oracle)
+			if err != nil {
+				panic(err)
+			}
+			pfp := types.PerpsFromProto(perp)
+			if pfp.DataSourceSpecForSettlementData == nil || pfp.DataSourceSpecForSettlementData.Data == nil {
+				panic("Oracle does not have a data source for settlement data")
+			}
+			if pfp.DataSourceSpecForSettlementSchedule == nil || pfp.DataSourceSpecForSettlementSchedule.Data == nil {
+				panic("Oracle does not have a data source for settlement schedule")
+			}
+			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
+				Product: &types.UpdateInstrumentConfigurationPerps{
+					Perps: &types.UpdatePerpsProduct{
+						QuoteName:                           pfp.QuoteName,
+						MarginFundingFactor:                 pfp.MarginFundingFactor,
+						ClampLowerBound:                     pfp.ClampLowerBound,
+						ClampUpperBound:                     pfp.ClampUpperBound,
+						DataSourceSpecForSettlementData:     *pfp.DataSourceSpecForSettlementData.Data,
+						DataSourceSpecForSettlementSchedule: *pfp.DataSourceSpecForSettlementSchedule.Data,
+						DataSourceSpecBinding:               pfp.DataSourceSpecBinding,
+					},
+				},
+			}
+			// apply update
+			ti.Perps.ClampLowerBound = pfp.ClampLowerBound
+			ti.Perps.ClampUpperBound = pfp.ClampUpperBound
+			ti.Perps.MarginFundingFactor = pfp.MarginFundingFactor
+			ti.Perps.DataSourceSpecBinding = pfp.DataSourceSpecBinding
+			ti.Perps.DataSourceSpecForSettlementData = pfp.DataSourceSpecForSettlementData
+			ti.Perps.DataSourceSpecForSettlementSchedule = pfp.DataSourceSpecForSettlementSchedule
+			existing.TradableInstrument.Instrument.Product = ti
 		default:
 			panic("unsuported product")
 		}
@@ -273,13 +319,6 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update existing
 		existing.TradableInstrument = current
 	}
-	// lp price range
-	if lppr, ok := row.tryLpPriceRange(); ok {
-		lpprD := num.DecimalFromFloat(lppr)
-		update.Changes.LpPriceRange = lpprD
-		existing.LPPriceRange = lpprD
-	}
-
 	// linear slippage factor
 	if slippage, ok := row.tryLinearSlippageFactor(); ok {
 		slippageD := num.DecimalFromFloat(slippage)
@@ -293,27 +332,131 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.QuadraticSlippageFactor = slippageD
 		existing.QuadraticSlippageFactor = slippageD
 	}
+
+	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
+		sla, err := config.LiquiditySLAParams.Get(liquiditySla)
+		if err != nil {
+			panic(err)
+		}
+		slaParams := types.LiquiditySLAParamsFromProto(sla)
+		// update existing
+		existing.LiquiditySLAParams = slaParams
+		update.Changes.LiquiditySLAParameters = slaParams
+	}
+
 	return update
 }
 
-func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
+func newPerpMarket(config *market.Config, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
 	}
 
-	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement data")
+	perp, err := config.OracleConfigs.GetFullPerp(row.oracleConfig())
+	if err != nil {
+		panic(err)
+	}
+	pfp := types.PerpsFromProto(perp)
+	asset, quote := row.asset(), row.quoteName()
+	// long term, this should become redundant, but for the perps flag this is useful to have
+	if asset != pfp.SettlementAsset {
+		pfp.SettlementAsset = asset
+	}
+	if quote != pfp.QuoteName {
+		pfp.QuoteName = row.quoteName()
+	}
+
+	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
 	if err != nil {
 		panic(err)
 	}
 
-	oracleConfigForTradingTermination, err := config.OracleConfigs.Get(row.oracleConfig(), "trading termination")
+	marginCalculator, err := config.MarginCalculators.Get(row.marginCalculator())
+	if err != nil {
+		panic(err)
+	}
+
+	liqMon, err := config.LiquidityMonitoring.GetType(row.liquidityMonitoring())
+	if err != nil {
+		panic(err)
+	}
+
+	linearSlippageFactor := row.linearSlippageFactor()
+	quadraticSlippageFactor := row.quadraticSlippageFactor()
+
+	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
+	if err != nil {
+		panic(err)
+	}
+
+	m := types.Market{
+		TradingMode:           types.MarketTradingModeContinuous,
+		State:                 types.MarketStateActive,
+		ID:                    row.id(),
+		DecimalPlaces:         row.decimalPlaces(),
+		PositionDecimalPlaces: row.positionDecimalPlaces(),
+		Fees:                  types.FeesFromProto(fees),
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				ID:   fmt.Sprintf("Crypto/%s/Perpetual", row.id()),
+				Code: fmt.Sprintf("CRYPTO/%v", row.id()),
+				Name: fmt.Sprintf("%s perpetual", row.id()),
+				Metadata: &types.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:perpetual",
+					},
+				},
+				Product: &types.InstrumentPerps{
+					Perps: pfp,
+				},
+			},
+			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
+		},
+		OpeningAuction:                openingAuction(row),
+		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
+		LiquidityMonitoringParameters: liqMon,
+		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
+		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+	}
+
+	if row.isSuccessor() {
+		m.ParentMarketID = row.parentID()
+		m.InsurancePoolFraction = row.insuranceFraction()
+		// increase opening auction duration by a given amount
+		m.OpeningAuction.Duration += row.successorAuction()
+	}
+
+	tip := m.TradableInstrument.IntoProto()
+	err = config.RiskModels.LoadModel(row.riskModel(), tip)
+	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
+	if err != nil {
+		panic(err)
+	}
+
+	return m
+}
+
+func newMarket(config *market.Config, row marketRow) types.Market {
+	fees, err := config.FeesConfig.Get(row.fees())
+	if err != nil {
+		panic(err)
+	}
+
+	oracleConfigForSettlement, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "settlement data")
+	if err != nil {
+		panic(err)
+	}
+
+	oracleConfigForTradingTermination, err := config.OracleConfigs.GetFuture(row.oracleConfig(), "trading termination")
 	if err != nil {
 		panic(err)
 	}
 
 	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
-	settlSpec := types.OracleSpecFromProto(oracleConfigForSettlement.Spec)
+	settlSpec := datasource.FromOracleSpecProto(oracleConfigForSettlement.Spec)
 	var binding proto.DataSourceSpecToFutureBinding
 	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
@@ -333,12 +476,13 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		panic(err)
 	}
 
-	lpPriceRange := row.lpPriceRange()
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
-	setLiquidityMonitoringNetParams(liqMon, netparams)
-
+	slaParams, err := config.LiquiditySLAParams.Get(row.liquiditySLA())
+	if err != nil {
+		panic(err)
+	}
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -361,9 +505,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                     row.asset(),
 						QuoteName:                           row.quoteName(),
-						DataSourceSpecForSettlementData:     settlSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDataDecimals)).ToDataSourceSpec(),
-						DataSourceSpecForTradingTermination: types.DataSourceSpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
-						DataSourceSpecBinding:               types.DataSourceSpecBindingForFutureFromProto(&binding),
+						DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(*settlSpec.Data.SetFilterDecimals(uint64(settlementDataDecimals))),
+						DataSourceSpecForTradingTermination: datasource.SpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
+						DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(&binding),
 					},
 				},
 			},
@@ -372,9 +516,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		OpeningAuction:                openingAuction(row),
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
-		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
+		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 	}
 
 	if row.isSuccessor() {
@@ -392,22 +536,6 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	return m
-}
-
-func setLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters, netparams *netparams.Store) {
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we do this step here manually
-	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
-	}
-
-	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = sf
-	}
-
-	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		liqMon.TriggeringRatio = tr
-	}
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {
@@ -434,14 +562,16 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"auction duration",
 		"linear slippage factor",
 		"quadratic slippage factor",
+		"sla params",
 	}, []string{
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
-		"lp price range",
 		"parent market id",
 		"insurance pool fraction",
 		"successor auction",
+		"is passed",
+		"market type",
 	})
 }
 
@@ -455,7 +585,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
-		"lp price range",
+		"sla params",
 	})
 }
 
@@ -560,12 +690,16 @@ func (r marketRow) liquidityMonitoring() string {
 	return r.row.MustStr("liquidity monitoring")
 }
 
-func (r marketRow) lpPriceRange() float64 {
-	if !r.row.HasColumn("lp price range") {
-		// set to 1 by default
-		return 1
+func (r marketRow) liquiditySLA() string {
+	return r.row.MustStr("sla params")
+}
+
+func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
+	if r.row.HasColumn("sla params") {
+		sla := r.row.MustStr("sla params")
+		return sla, true
 	}
-	return r.row.MustF64("lp price range")
+	return "", false
 }
 
 func (r marketRow) linearSlippageFactor() float64 {
@@ -591,6 +725,13 @@ func (r marketRow) isSuccessor() bool {
 	return true
 }
 
+func (r marketRow) isPerp() bool {
+	if mt, ok := r.row.StrB("market type"); !ok || mt != "perp" {
+		return false
+	}
+	return true
+}
+
 func (r marketRow) parentID() string {
 	return r.row.MustStr("parent market id")
 }
@@ -607,13 +748,6 @@ func (r marketRow) successorAuction() int64 {
 		return 5 * r.auctionDuration() // five times auction duration
 	}
 	return r.row.MustI64("successor auction")
-}
-
-func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
-	if r.row.HasColumn("lp price range") {
-		return r.row.MustF64("lp price range"), true
-	}
-	return -1, false
 }
 
 func (r marketUpdateRow) tryLinearSlippageFactor() (float64, bool) {

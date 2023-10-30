@@ -3,13 +3,14 @@ Feature: Leave a monitoring auction, enter a liquidity auction
   Background:
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 0.01                   | 0                         |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 0.01                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 1500  |
 
+  @SLABug
   Scenario:
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
@@ -21,10 +22,14 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
-
+      | id  | party   | market id | commitment amount | fee | lp type    |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | submission |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:      
+      | party   | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | partylp | ETH/DEC19 | 2         | 1                    | buy  | BID              | 2          | 10     |
+      | partylp | ETH/DEC19 | 2         | 1                    | sell | ASK              | 13         | 10     |
+    
     # get out of auction
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
@@ -91,5 +96,5 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party1 | ETH/DEC19 | sell | 125    | 95000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
 
     And time is updated to "2019-11-30T00:10:00Z"
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
-    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"

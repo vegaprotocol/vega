@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance
 
@@ -18,10 +21,15 @@ import (
 	"strconv"
 	"time"
 
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
+
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -43,9 +51,15 @@ var (
 	ErrSettlementWithInternalDataSourceIsNotAllowed = errors.New("settlement with internal data source is not allwed")
 	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
 	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
+	// ErrMissingDataSourceSpecForSettlementSchedule is returned when the data source spec for trading termination is absent.
+	ErrMissingDataSourceSpecForSettlementSchedule = errors.New("missing data source spec for settlement schedule")
+	// ErrInternalTimeTriggerForFuturesInNotAllowed is returned when a proposal containing timetrigger terminaiton type of data is received.
+	ErrInternalTimeTriggerForFuturesInNotAllowed = errors.New("setting internal time trigger for future termination is not allowed")
 	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
 	// for time triggered termination condition.
 	ErrDataSourceSpecTerminationTimeBeforeEnactment = errors.New("data source spec termination time before enactment")
+	// ErrMissingPerpsProduct is returned when perps product is absent from the instrument.
+	ErrMissingPerpsProduct = errors.New("missing perps product")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrMissingSpotProduct is returned when spot product is absent from the instrument.
@@ -54,6 +68,7 @@ var (
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
 	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
+	ErrUpdateMarketDifferentProduct = errors.New("cannot update a market to a different product type")
 )
 
 func assignProduct(
@@ -82,9 +97,39 @@ func assignProduct(
 			Future: &types.Future{
 				SettlementAsset:                     product.Future.SettlementAsset,
 				QuoteName:                           product.Future.QuoteName,
-				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
-				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
+				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData),
+				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
+			},
+		}
+	case *types.InstrumentConfigurationPerps:
+		if product.Perps == nil {
+			return types.ProposalErrorInvalidPerpsProduct, ErrMissingPerpsProduct
+		}
+		settlData := &product.Perps.DataSourceSpecForSettlementData
+		if settlData == nil {
+			return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+		}
+
+		settlSchedule := &product.Perps.DataSourceSpecForSettlementSchedule
+		if settlSchedule == nil {
+			return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForTradingTermination
+		}
+		if product.Perps.DataSourceSpecBinding == nil {
+			return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecBinding
+		}
+
+		target.Product = &types.InstrumentPerps{
+			Perps: &types.Perps{
+				SettlementAsset:                     product.Perps.SettlementAsset,
+				QuoteName:                           product.Perps.QuoteName,
+				InterestRate:                        product.Perps.InterestRate,
+				MarginFundingFactor:                 product.Perps.MarginFundingFactor,
+				ClampLowerBound:                     product.Perps.ClampLowerBound,
+				ClampUpperBound:                     product.Perps.ClampUpperBound,
+				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData),
+				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule),
+				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
 			},
 		}
 	case *types.InstrumentConfigurationSpot:
@@ -184,29 +229,6 @@ func buildMarketFromProposal(
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
-	if definition.Changes.LiquidityMonitoringParameters == nil ||
-		definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters == nil {
-		// get target stake parameters
-		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
-		// get triggering ratio
-		triggeringRatio, _ := netp.GetDecimal(netparams.MarketLiquidityTargetStakeTriggeringRatio)
-
-		params := &types.TargetStakeParameters{
-			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
-		}
-
-		if definition.Changes.LiquidityMonitoringParameters == nil {
-			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
-				TargetStakeParameters: params,
-				TriggeringRatio:       triggeringRatio,
-			}
-		} else {
-			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = params
-		}
-	}
-
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
@@ -232,7 +254,7 @@ func buildMarketFromProposal(
 			Parameters: definition.Changes.PriceMonitoringParameters,
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
-		LPPriceRange:                  definition.Changes.LpPriceRange,
+		LiquiditySLAParams:            definition.Changes.LiquiditySLAParameters,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
@@ -266,17 +288,6 @@ func buildSpotMarketFromProposal(
 		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
-	}
-
-	if definition.Changes.TargetStakeParameters == nil {
-		// get target stake parameters
-		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
-		params := &types.TargetStakeParameters{
-			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
-		}
-		definition.Changes.TargetStakeParameters = params
 	}
 
 	liquidityMonitoring := &types.LiquidityMonitoringParameters{
@@ -316,6 +327,7 @@ func buildSpotMarketFromProposal(
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LinearSlippageFactor:          num.DecimalZero(),
 		QuadraticSlippageFactor:       num.DecimalZero(),
+		LiquiditySLAParams:            definition.Changes.SLAParams,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -378,8 +390,15 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepC
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if settlData.Content() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
@@ -395,6 +414,15 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if tterm.Content() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	tp, _ := tterm.Type()
+	if tp == datasource.ContentTypeInternalTimeTriggerTermination {
+		return types.ProposalErrorInvalidFutureProduct, ErrInternalTimeTriggerForFuturesInNotAllowed
 	}
 
 	filters := future.DataSourceSpecForTradingTermination.GetFilters()
@@ -422,7 +450,7 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -441,13 +469,13 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
 	switch future.DataSourceSpecBinding.TradingTerminationProperty {
-	case oracles.BuiltinOracleTimestamp:
+	case spec.BuiltinTimestamp:
 		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
@@ -460,12 +488,104 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
+func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool) (types.ProposalError, error) {
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+
+	settlData := &perps.DataSourceSpecForSettlementData
+	if settlData == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if settlData.Content() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidPerpsProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
+	}
+
+	settlSchedule := &perps.DataSourceSpecForSettlementSchedule
+	if settlSchedule == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if settlSchedule.Content() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if perps.DataSourceSpecBinding == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecBinding
+	}
+
+	// ensure the oracle spec for settlement data can be constructed
+	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData))
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+	switch perps.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	default:
+		err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	}
+
+	// ensure the oracle spec for market termination can be constructed
+	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule))
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+
+	switch perps.DataSourceSpecBinding.SettlementScheduleProperty {
+	case spec.BuiltinTimeTrigger:
+		tt := perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration()
+		if len(tt.Triggers) != 1 {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid settlement schedule, only 1 trigger allowed")
+		}
+
+		if tt.Triggers[0] == nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("at least 1 time trigger is required")
+		}
+
+		if tt.Triggers[0].Initial == nil {
+			tt.SetInitial(time.Unix(et.current, 0), currentTime)
+		}
+		tt.SetNextTrigger(currentTime)
+
+		// can't have the first trigger in the past
+		if tt.Triggers[0].Initial.Before(currentTime) {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger starts in the past")
+		}
+
+		if err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementScheduleProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement schedule: %w", err)
+		}
+	default:
+		return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger only supported for now")
+	}
+
+	return validateAsset(perps.SettlementAsset, decimals, assets, deepCheck)
+}
+
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
 		return validateFuture(product.Future, decimals, assets, et, deepCheck)
+	case *types.InstrumentConfigurationPerps:
+		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck)
 	case *types.InstrumentConfigurationSpot:
 		return validateSpot(product.Spot, decimals, assets, deepCheck)
 	default:
@@ -498,6 +618,10 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 		return validateLogNormalRiskParams(r.LogNormal)
 	case *types.UpdateMarketConfigurationLogNormal:
 		return validateLogNormalRiskParams(r.LogNormal)
+	case *types.NewSpotMarketConfigurationLogNormal:
+		return validateLogNormalRiskParams(r.LogNormal)
+	case *types.UpdateSpotMarketConfigurationLogNormal:
+		return validateLogNormalRiskParams(r.LogNormal)
 	case nil:
 		return types.ProposalErrorNoRiskParameters, ErrMissingRiskParameters
 	default:
@@ -505,9 +629,29 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	}
 }
 
+func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalError, error) {
+	if slaParams == nil {
+		return types.ProposalErrorMissingSLAParams, fmt.Errorf("liquidity provision SLA must be provided")
+	}
+	if slaParams.PriceRange.IsZero() || slaParams.PriceRange.LessThan(num.DecimalZero()) || slaParams.PriceRange.GreaterThan(num.DecimalFromFloat(20)) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("price range must be strictly greater than 0 and less than or equal to 20")
+	}
+	if slaParams.CommitmentMinTimeFraction.LessThan(num.DecimalZero()) || slaParams.CommitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("commitment min time fraction must be in range [0, 1]")
+	}
+	if slaParams.SlaCompetitionFactor.LessThan(num.DecimalZero()) || slaParams.SlaCompetitionFactor.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("sla competition factor must be in range [0, 1]")
+	}
+
+	if slaParams.PerformanceHysteresisEpochs > 366 {
+		return types.ProposalErrorInvalidSLAParams, fmt.Errorf("provider performance hysteresis epochs must be less then 366")
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
-	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
+	if proposedDuration < minAuctionDuration {
 		// Auction duration is too small
 		return types.ProposalErrorOpeningAuctionDurationTooSmall,
 			fmt.Errorf("proposal opening auction duration is too short, expected > %v, got %v", minAuctionDuration, proposedDuration)
@@ -535,13 +679,6 @@ func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.Pr
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
-	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
-		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
-	}
-	return types.ProposalErrorUnspecified, nil
-}
-
 func validateNewSpotMarketChange(
 	terms *types.NewSpotMarket,
 	assets Assets,
@@ -550,7 +687,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -561,6 +698,9 @@ func validateNewSpotMarketChange(
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLPSLAParams(terms.Changes.SLAParams); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil
@@ -575,9 +715,11 @@ func validateNewMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 	parent *types.Market,
+	currentTime time.Time,
+	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime)); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets
@@ -585,7 +727,7 @@ func validateNewMarketChange(
 		return perr, err
 	}
 	// if this is a successor market, check if that's set up fine:
-	if perr, err := validateSuccessorMarket(terms, parent); err != nil {
+	if perr, err := validateSuccessorMarket(terms, parent, restore); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -595,7 +737,7 @@ func validateNewMarketChange(
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
 			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
@@ -607,9 +749,9 @@ func validateNewMarketChange(
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market, restore bool) (types.ProposalError, error) {
 	suc := terms.Successor()
-	if parent == nil && suc == nil {
+	if (parent == nil && suc == nil) || (parent == nil && restore) {
 		return types.ProposalErrorUnspecified, nil
 	}
 	// if parent is not nil, then terms.Successor() was not nil and vice-versa. Either both are set or neither is.
@@ -651,18 +793,21 @@ func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.Propos
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
+	if perr, err := validateLPSLAParams(terms.Changes.SLAParams); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, etu); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
+	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
@@ -674,20 +819,33 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future, et)
+		return validateUpdateFuture(product.Future, mkt, et)
+	case *types.UpdateInstrumentConfigurationPerps:
+		return validateUpdatePerps(product.Perps, mkt, et, currentTime)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime) (types.ProposalError, error) {
+	if mkt.GetFuture() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
+	}
+
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if settlData.Content() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
@@ -703,6 +861,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if tterm.Content() == nil {
+		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	tp, _ := tterm.Type()
+	if tp == datasource.ContentTypeInternalTimeTriggerTermination {
+		return types.ProposalErrorInvalidFutureProduct, ErrInternalTimeTriggerForFuturesInNotAllowed
 	}
 
 	filters := future.DataSourceSpecForTradingTermination.GetFilters()
@@ -732,7 +899,7 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -751,13 +918,13 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
 
 	switch future.DataSourceSpecBinding.TradingTerminationProperty {
-	case oracles.BuiltinOracleTimestamp:
+	case spec.BuiltinTimestamp:
 		if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.TradingTerminationProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
 			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 		}
@@ -768,4 +935,116 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	return types.ProposalErrorUnspecified, nil
+}
+
+func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+	if mkt.GetPerps() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
+	}
+
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+
+	settlData := &perps.DataSourceSpecForSettlementData
+	if settlData == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if settlData.Content() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidPerpsProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
+	}
+
+	settlSchedule := &perps.DataSourceSpecForSettlementSchedule
+	if settlSchedule == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if settlSchedule.Content() == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if perps.DataSourceSpecBinding == nil {
+		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecBinding
+	}
+
+	// ensure the oracle spec for settlement data can be constructed
+	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData))
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+	switch perps.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	default:
+		err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+	}
+
+	// ensure the oracle spec for market termination can be constructed
+	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule))
+	if err != nil {
+		return types.ProposalErrorInvalidPerpsProduct, err
+	}
+
+	switch perps.DataSourceSpecBinding.SettlementScheduleProperty {
+	case spec.BuiltinTimeTrigger:
+		tt := perps.DataSourceSpecForSettlementSchedule.GetInternalTimeTriggerSpecConfiguration()
+		if len(tt.Triggers) != 1 {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid settlement schedule, only 1 trigger allowed")
+		}
+
+		if tt.Triggers[0] == nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("at least 1 time trigger is required")
+		}
+
+		if tt.Triggers[0].Initial == nil {
+			tt.SetInitial(time.Unix(et.current, 0), currentTime)
+		}
+		tt.SetNextTrigger(currentTime)
+
+		// can't have the first trigger in the past, don't recheck if we've come in from preEnact
+		if !et.shouldNotVerify && tt.Triggers[0].Initial.Before(currentTime) {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger starts in the past")
+		}
+
+		if err := ospec.EnsureBoundableProperty(perps.DataSourceSpecBinding.SettlementScheduleProperty, datapb.PropertyKey_TYPE_TIMESTAMP); err != nil {
+			return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("invalid oracle spec binding for settlement schedule: %w", err)
+		}
+	default:
+		return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger only supported for now")
+	}
+
+	return types.ProposalErrorUnspecified, nil
+}
+
+func setDatasourceDefinitionDefaults(def dsdefinition.Definition, et *enactmentTime) dsdefinition.Definition {
+	if def.IsEthCallSpec() {
+		spec := def.GetEthCallSpec()
+		if spec.Trigger != nil {
+			switch trigger := spec.Trigger.(type) {
+			case ethcallcommon.TimeTrigger:
+				if trigger.Initial == 0 {
+					trigger.Initial = uint64(et.current)
+				}
+				spec.Trigger = trigger
+			}
+		}
+		def.DataSourceType = spec
+	}
+
+	return def
 }

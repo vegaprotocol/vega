@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -201,6 +204,13 @@ func (r RowWrapper) Decimal(name string) num.Decimal {
 	value, err := Decimal(r.values[name])
 	panicW(name, err)
 	return value
+}
+
+func (r RowWrapper) DecimalB(name string) (num.Decimal, bool) {
+	if !r.HasColumn(name) {
+		return num.DecimalZero(), false
+	}
+	return r.Decimal(name), true
 }
 
 func Decimal(rawValue string) (num.Decimal, error) {
@@ -635,6 +645,20 @@ func AuctionTrigger(name string) (types.AuctionTrigger, error) {
 	return types.AuctionTrigger(at), nil
 }
 
+func (r RowWrapper) MustMarketUpdateState(name string) types.MarketStateUpdateType {
+	msu, err := MarketStateUpdate(r.MustStr(name))
+	panicW(name, err)
+	return msu
+}
+
+func MarketStateUpdate(name string) (types.MarketStateUpdateType, error) {
+	msu, ok := proto.MarketStateUpdateType_value[name]
+	if !ok {
+		return types.MarketStateUpdateTypeUnspecified, fmt.Errorf("couldn't find %s as market state update type", name)
+	}
+	return types.MarketStateUpdateType(msu), nil
+}
+
 func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	ty, err := TradingMode(r.MustStr(name))
 	panicW(name, err)
@@ -720,6 +744,14 @@ func (r RowWrapper) MustDurationStr(name string) time.Duration {
 
 func (r RowWrapper) MustDurationSec(name string) time.Duration {
 	n := r.MustU64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
+}
+
+func (r RowWrapper) MustDurationSec2(name string) time.Duration {
+	n := r.MustI64(name)
 	if n == 0 {
 		return 0
 	}

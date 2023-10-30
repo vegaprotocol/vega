@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package pow
 
@@ -35,6 +38,8 @@ const (
 	minBanDuration = time.Second * 30 // minimum ban duration
 )
 
+var ErrNonceAlreadyUsedByParty = errors.New("nonce already used by party")
+
 var banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 
 type EpochEngine interface {
@@ -50,6 +55,11 @@ type params struct {
 	spamPoWIncreasingDifficulty bool
 	fromBlock                   uint64
 	untilBlock                  *uint64
+}
+
+type nonceRef struct {
+	party string
+	nonce uint64
 }
 
 // isActive for a given block height returns true if:
@@ -81,15 +91,22 @@ type Engine struct {
 	activeStates  []*state             // active states corresponding to the sets of parameters
 	bannedParties map[string]time.Time // banned party -> release time
 
-	currentBlock uint64              // the current block height
-	blockHeight  [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
-	blockHash    [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
-	seenTx       map[string]struct{} // seen transactions in scope set
-	heightToTx   map[uint64][]string // height to slice of seen transaction in scope ring buffer
-	seenTid      map[string]struct{} // seen tid in scope set
-	heightToTid  map[uint64][]string // height to slice of seen tid in scope ring buffer
+	currentBlock     uint64              // the current block height
+	blockHeight      [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
+	blockHash        [ringSize]string    // block hashes in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
+	seenTx           map[string]struct{} // seen transactions in scope set
+	heightToTx       map[uint64][]string // height to slice of seen transaction in scope ring buffer
+	seenTid          map[string]struct{} // seen tid in scope set
+	heightToTid      map[uint64][]string // height to slice of seen tid in scope ring buffer
+	lastPruningBlock uint64
+
+	// tracking the nonces used in the input data to make sure they are not reused
+	seenNonceRef     map[nonceRef]struct{}
+	heightToNonceRef map[uint64][]nonceRef
 
 	mempoolSeenTid map[string]struct{} // tids seen already in this node's mempool, cleared at the end of the block
+
+	noVerify bool // disables verification of PoW in scenario, where we use the null chain and we do not want to send transaction w/o verification
 
 	// snapshot key
 	hashKeys    []string
@@ -103,17 +120,19 @@ func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		bannedParties:  map[string]time.Time{},
-		log:            log,
-		hashKeys:       []string{(&types.PayloadProofOfWork{}).Key()},
-		activeParams:   []*params{},
-		activeStates:   []*state{},
-		seenTx:         map[string]struct{}{},
-		heightToTx:     map[uint64][]string{},
-		seenTid:        map[string]struct{}{},
-		mempoolSeenTid: map[string]struct{}{},
-		heightToTid:    map[uint64][]string{},
-		timeService:    timeService,
+		bannedParties:    map[string]time.Time{},
+		log:              log,
+		hashKeys:         []string{(&types.PayloadProofOfWork{}).Key()},
+		activeParams:     []*params{},
+		activeStates:     []*state{},
+		seenTx:           map[string]struct{}{},
+		heightToTx:       map[uint64][]string{},
+		heightToNonceRef: map[uint64][]nonceRef{},
+		seenTid:          map[string]struct{}{},
+		seenNonceRef:     map[nonceRef]struct{}{},
+		mempoolSeenTid:   map[string]struct{}{},
+		heightToTid:      map[uint64][]string{},
+		timeService:      timeService,
 	}
 	e.log.Info("PoW spam protection started")
 	return e
@@ -157,8 +176,32 @@ func (e *Engine) EndOfBlock() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	// run this once for migration cleanup
+	// this is going to clean up blocks that belong to inactive states which are unreachable by the latter loop.
+	if e.lastPruningBlock == 0 {
+		if e.activeParams[0].fromBlock > 0 {
+			end := e.activeParams[0].fromBlock
+			for block := uint64(0); block <= end; block++ {
+				if b, ok := e.heightToTx[block]; ok {
+					for _, v := range b {
+						delete(e.seenTx, v)
+					}
+				}
+				for _, v := range e.heightToTid[block] {
+					delete(e.seenTid, v)
+				}
+				for _, v := range e.heightToNonceRef[block] {
+					delete(e.seenNonceRef, v)
+				}
+				delete(e.heightToTx, block)
+				delete(e.heightToTid, block)
+				delete(e.heightToNonceRef, block)
+			}
+		}
+	}
+
 	toDelete := []int{}
-	// iterate over parameters set and clear then out if ther's not relevant anymore.
+	// iterate over parameters set and clear them out if they're not relevant anymore.
 	for i, p := range e.activeParams {
 		// is active means if we're still accepting transactions from it i.e. if the untilBlock + spamPoWNumberOfPastBlocks <= blockHeight
 		if !p.isActive(e.currentBlock) {
@@ -172,20 +215,31 @@ func (e *Engine) EndOfBlock() {
 		if outOfScopeBlock < 0 {
 			continue
 		}
-		uOutOfScopeBlock := uint64(outOfScopeBlock)
-		b, ok := e.heightToTx[uOutOfScopeBlock]
-		if !ok {
-			continue
+
+		start := uint64(outOfScopeBlock)
+		end := uint64(outOfScopeBlock)
+		if e.currentBlock%1000 == 0 {
+			start = e.lastPruningBlock
+			e.lastPruningBlock = e.currentBlock
 		}
-		for _, v := range b {
-			delete(e.seenTx, v)
+
+		for block := start; block <= end; block++ {
+			if b, ok := e.heightToTx[block]; ok {
+				for _, v := range b {
+					delete(e.seenTx, v)
+				}
+			}
+			for _, v := range e.heightToTid[block] {
+				delete(e.seenTid, v)
+			}
+			for _, v := range e.heightToNonceRef[block] {
+				delete(e.seenNonceRef, v)
+			}
+			delete(e.heightToTx, block)
+			delete(e.heightToTid, block)
+			delete(e.heightToNonceRef, block)
+			delete(e.activeStates[i].blockToPartyState, block)
 		}
-		for _, v := range e.heightToTid[uOutOfScopeBlock] {
-			delete(e.seenTid, v)
-		}
-		delete(e.heightToTx, uOutOfScopeBlock)
-		delete(e.heightToTid, uOutOfScopeBlock)
-		delete(e.activeStates[i].blockToPartyState, uOutOfScopeBlock)
 	}
 
 	// delete all out of scope configurations and states
@@ -199,6 +253,11 @@ func (e *Engine) Commit() {
 	e.lock.Lock()
 	e.mempoolSeenTid = map[string]struct{}{}
 	e.lock.Unlock()
+}
+
+func (e *Engine) DisableVerification() {
+	e.log.Info("Disabling PoW verification")
+	e.noVerify = true
 }
 
 // CheckTx is called by checkTx in the abci and verifies the proof of work, it doesn't update any state.
@@ -261,7 +320,9 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if version supports pow, save the pow result and the tid
 	e.heightToTid[tx.BlockHeight()] = append(e.heightToTid[tx.BlockHeight()], tx.GetPoWTID())
+	e.heightToNonceRef[tx.BlockHeight()] = append(e.heightToNonceRef[tx.BlockHeight()], nonceRef{tx.Party(), tx.GetNonce()})
 	e.seenTid[tx.GetPoWTID()] = struct{}{}
+	e.seenNonceRef[nonceRef{tx.Party(), tx.GetNonce()}] = struct{}{}
 
 	// if it's the first transaction we're seeing from any party for this block height, initialise the state
 	if _, ok := state.blockToPartyState[txBlock]; !ok {
@@ -371,6 +432,10 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	defer e.lock.RUnlock()
 	var h byte
 
+	if e.noVerify {
+		return h, nil
+	}
+
 	// check if the party is banned for the epoch
 	if _, ok := e.bannedParties[tx.Party()]; ok {
 		e.log.Error("party is banned", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
@@ -384,11 +449,6 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	if _, ok := e.seenTx[txHash]; ok {
 		e.log.Error("replay attack: txHash already used", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()), logging.String("command", tx.Command().String()))
 		return h, errors.New("transaction hash already used")
-	}
-
-	// validator commands skip PoW verification
-	if tx.Command().IsValidatorCommand() {
-		return h, nil
 	}
 
 	// check if the block height is in scope and is known
@@ -410,12 +470,25 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		return h, errors.New("unknown block height for tx:" + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party())
 	}
 
+	// validator commands skip PoW verification
+	if tx.Command().IsValidatorCommand() {
+		return h, nil
+	}
+
 	// check if the tid was seen in scope
 	if _, ok := e.seenTid[tx.GetPoWTID()]; ok {
 		if e.log.IsDebug() {
 			e.log.Debug("tid already used", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
 		}
 		return h, errors.New("proof of work tid already used")
+	}
+
+	// check if the nonce was seen in scope
+	if _, ok := e.seenNonceRef[nonceRef{tx.Party(), tx.GetNonce()}]; ok {
+		if e.log.IsDebug() {
+			e.log.Debug("nonce already used by party", logging.Uint64("nonce", tx.GetNonce()), logging.String("party", tx.Party()))
+		}
+		return h, ErrNonceAlreadyUsedByParty
 	}
 
 	// verify the proof of work

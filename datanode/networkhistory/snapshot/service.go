@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package snapshot
 
 import (
@@ -9,14 +24,21 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/mutex"
 	"code.vegaprotocol.io/vega/logging"
 )
+
+type HistoryStore interface {
+	StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error)
+}
 
 type Service struct {
 	log      *logging.Logger
 	config   Config
 	connPool *pgxpool.Pool
+
+	historyStore HistoryStore
 
 	createSnapshotLock         mutex.CtxMutex
 	copyToPath                 string
@@ -25,6 +47,7 @@ type Service struct {
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
+	historyStore HistoryStore,
 	snapshotsCopyToPath string,
 	migrateDatabaseToVersion func(version int64) error,
 	migrateSchemaDownToVersion func(version int64) error,
@@ -43,6 +66,7 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 		copyToPath:                 snapshotsCopyToPath,
 		migrateSchemaUpToVersion:   migrateDatabaseToVersion,
 		migrateSchemaDownToVersion: migrateSchemaDownToVersion,
+		historyStore:               historyStore,
 	}
 
 	err = os.MkdirAll(s.copyToPath, fs.ModePerm)

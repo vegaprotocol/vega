@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package broker
 
 import (
@@ -52,9 +67,10 @@ func Test_RemoveOldArchiveFilesIfDirectoryFull(t *testing.T) {
 
 	var preCleanUpSize int64
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			preCleanUpSize += info.Size()
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		preCleanUpSize += info.Size()
 		return nil
 	})
 	assert.NoError(t, err)
@@ -62,9 +78,10 @@ func Test_RemoveOldArchiveFilesIfDirectoryFull(t *testing.T) {
 	removeOldArchiveFilesIfDirectoryFull(path, preCleanUpSize/2+1)
 	var postRemoveFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			postRemoveFiles = append(postRemoveFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		postRemoveFiles = append(postRemoveFiles, info)
 		return nil
 	})
 	assert.NoError(t, err)
@@ -113,9 +130,10 @@ func Test_CompressUncompressedFilesInDir(t *testing.T) {
 
 	var preCompressFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			preCompressFiles = append(preCompressFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		preCompressFiles = append(preCompressFiles, info)
 		return nil
 	})
 	sort.Slice(preCompressFiles, func(i, j int) bool {
@@ -128,9 +146,10 @@ func Test_CompressUncompressedFilesInDir(t *testing.T) {
 
 	var postCompressFiles []fs.FileInfo
 	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if !info.IsDir() {
-			postCompressFiles = append(postCompressFiles, info)
+		if err != nil || (info != nil && info.IsDir()) {
+			return nil //nolint:nilerr
 		}
+		postCompressFiles = append(postCompressFiles, info)
 		return nil
 	})
 	assert.NoError(t, err)

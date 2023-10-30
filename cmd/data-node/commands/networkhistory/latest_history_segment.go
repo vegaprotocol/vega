@@ -1,9 +1,25 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package networkhistory
 
 import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
@@ -74,15 +90,15 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 
 		latestSegment = response.Segments[0]
 	} else {
-		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store,
-			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), cmd.Config.MaxMemoryPercent)
+		// we don't need to fire up a whole IPFS node, lets just dip our fingers into the DB
+		idx, err := store.NewIndex(filepath.Join(vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), "store", "index"), log)
 		if err != nil {
-			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
+			handleErr(log, cmd.Output.IsJSON(), "failed to create new index", err)
 			os.Exit(1)
 		}
-		defer networkHistoryStore.Stop()
+		defer idx.Close()
 
-		segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
+		segments, err := idx.ListAllEntriesOldestFirst()
 		if err != nil {
 			handleErr(log, cmd.Output.IsJSON(), "failed to list all network history segments", err)
 			os.Exit(1)

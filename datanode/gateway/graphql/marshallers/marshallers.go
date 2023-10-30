@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package marshallers
 
 import (
@@ -17,6 +32,66 @@ import (
 )
 
 var ErrUnimplemented = errors.New("unmarshaller not implemented as this API is query only")
+
+func MarshalIndividualScope(t vega.IndividualScope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalIndividualScope(v interface{}) (vega.IndividualScope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED, fmt.Errorf("expected individual scope to be a string")
+	}
+
+	t, ok := vega.IndividualScope_value[s]
+	if !ok {
+		return vega.IndividualScope_INDIVIDUAL_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert IndividualScope from GraphQL to Proto: %v", s)
+	}
+
+	return vega.IndividualScope(t), nil
+}
+
+func MarshalDistributionStrategy(t vega.DistributionStrategy) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalDistributionStrategy(v interface{}) (vega.DistributionStrategy, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.DistributionStrategy_DISTRIBUTION_STRATEGY_UNSPECIFIED, fmt.Errorf("expected distribution strategy to be a string")
+	}
+
+	t, ok := vega.DistributionStrategy_value[s]
+	if !ok {
+		return vega.DistributionStrategy_DISTRIBUTION_STRATEGY_UNSPECIFIED, fmt.Errorf("failed to convert DistributionStrategy from GraphQL to Proto: %v", s)
+	}
+
+	return vega.DistributionStrategy(t), nil
+}
+
+func MarshalEntityScope(t vega.EntityScope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(t.String())))
+	})
+}
+
+func UnmarshalEntityScope(v interface{}) (vega.EntityScope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED, fmt.Errorf("expected entity scope to be a string")
+	}
+
+	t, ok := vega.EntityScope_value[s]
+	if !ok {
+		return vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert EntityScope from GraphQL to Proto: %v", s)
+	}
+
+	return vega.EntityScope(t), nil
+}
 
 func MarshalAccountType(t vega.AccountType) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
@@ -308,6 +383,16 @@ func UnmarshalOrderRejectionReason(v interface{}) (vega.OrderError, error) {
 	return vega.OrderError_ORDER_ERROR_UNSPECIFIED, ErrUnimplemented
 }
 
+func MarshalStopOrderRejectionReason(s vega.StopOrder_RejectionReason) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderRejectionReason(v interface{}) (vega.StopOrder_RejectionReason, error) {
+	return vega.StopOrder_REJECTION_REASON_UNSPECIFIED, ErrUnimplemented
+}
+
 func MarshalOrderType(s vega.Order_Type) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
@@ -508,4 +593,22 @@ func UnmarshalStopOrderTriggerDirection(v interface{}) (vega.StopOrder_TriggerDi
 		return vega.StopOrder_TRIGGER_DIRECTION_UNSPECIFIED, fmt.Errorf("failed to convert stop order trigger direction to Proto: %v", s)
 	}
 	return vega.StopOrder_TriggerDirection(t), nil
+}
+
+func MarshalFundingPeriodDataPointSource(s eventspb.FundingPeriodDataPoint_Source) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalFundingPeriodDataPointSource(v interface{}) (eventspb.FundingPeriodDataPoint_Source, error) {
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED, fmt.Errorf("expected funding period source to be a string")
+	}
+	t, ok := eventspb.FundingPeriodDataPoint_Source_value[s]
+	if !ok {
+		return eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED, fmt.Errorf("failed to convert funding period source to Proto: %v", s)
+	}
+	return eventspb.FundingPeriodDataPoint_Source(t), nil
 }

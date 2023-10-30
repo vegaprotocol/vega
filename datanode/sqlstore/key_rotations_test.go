@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package sqlstore_test
 
 import (
@@ -13,8 +28,7 @@ import (
 )
 
 func TestKeyRotationsGetByTx(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keyRotations := setKeyRotationStoreTest(t, ctx)
 
@@ -56,8 +70,7 @@ func TestKeyRotationsCursorPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -77,8 +90,7 @@ func testKeyRotationPaginationNoPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -99,8 +111,7 @@ func testKeyRotationPaginationFirstPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -121,8 +132,7 @@ func testKeyRotationPaginationLastPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -144,8 +154,7 @@ func testKeyRotationPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -168,8 +177,7 @@ func testKeyRotationPaginationLastAndBefore(t *testing.T) {
 }
 
 func testKeyRotationPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -189,8 +197,7 @@ func testKeyRotationPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -211,8 +218,7 @@ func testKeyRotationPaginationFirstPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -233,8 +239,7 @@ func testKeyRotationPaginationLastPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -256,8 +261,7 @@ func testKeyRotationPaginationFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -279,8 +283,7 @@ func testKeyRotationPaginationLastAndBeforeNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -300,8 +303,7 @@ func testKeyRotationPaginationForNodeNoPagination(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -322,8 +324,7 @@ func testKeyRotationPaginationForNodeFirstPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastPage(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -344,8 +345,7 @@ func testKeyRotationPaginationForNodeLastPage(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -367,8 +367,7 @@ func testKeyRotationPaginationForNodeFirstAndAfter(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -390,8 +389,7 @@ func testKeyRotationPaginationForNodeLastAndBefore(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -411,8 +409,7 @@ func testKeyRotationPaginationForNodeNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -433,8 +430,7 @@ func testKeyRotationPaginationForNodeFirstPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastPageNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)
@@ -455,8 +451,7 @@ func testKeyRotationPaginationForNodeLastPageNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeFirstAndAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	first := int32(3)
@@ -478,8 +473,7 @@ func testKeyRotationPaginationForNodeFirstAndAfterNewestFirst(t *testing.T) {
 }
 
 func testKeyRotationPaginationForNodeLastAndBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ks, keys := setKeyRotationStoreTest(t, ctx)
 	last := int32(3)

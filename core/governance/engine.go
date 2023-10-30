@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance
 
@@ -21,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -29,14 +34,13 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/pkg/errors"
 )
 
 var (
 	ErrProposalDoesNotExist                      = errors.New("proposal does not exist")
 	ErrMarketDoesNotExist                        = errors.New("market does not exist")
-	ErrMarketNotEnactedYet                       = errors.New("market has been enacted yet")
+	ErrMarketStateUpdateNotAllowed               = errors.New("market state does not allow for state update")
+	ErrMarketProposalStillOpen                   = errors.New("original market proposal is still open")
 	ErrProposalNotOpenForVotes                   = errors.New("proposal is not open for votes")
 	ErrProposalIsDuplicate                       = errors.New("proposal with given ID already exists")
 	ErrVoterInsufficientTokensAndEquityLikeShare = errors.New("vote requires tokens or equity-like share")
@@ -45,9 +49,9 @@ var (
 	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
-	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 	ErrParentMarketDoesNotExist                  = errors.New("market to succeed does not exist")
-	ErrParentMarketAlreadySucceeded              = errors.New("the market was already succeeded by a prior proposal")
+	ErrParentMarketAlreadySucceeded              = errors.New("the parent market was already succeeded by a prior proposal")
+	ErrParentMarketSucceededByCompeting          = errors.New("the parent market has been succeeded by a competing propsal")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
@@ -68,7 +72,6 @@ type Markets interface {
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	SpotsMarketsEnabled() bool
 	IsSucceeded(mktID string) bool
 }
 
@@ -281,6 +284,12 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.t = &ToEnactTransfer{}
 	case types.ProposalTermsTypeCancelTransfer:
 		te.c = &ToEnactCancelTransfer{}
+	case types.ProposalTermsTypeUpdateMarketState:
+		te.msu = &ToEnactMarketStateUpdate{}
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		te.referralProgramChanges = updatedReferralProgramFromProposal(p)
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		te.volumeDiscountProgram = updatedVolumeDiscountProgramFromProposal(p)
 	}
 	return //nolint:nakedret
 }
@@ -290,15 +299,12 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 		p: p.Proposal,
 	}
 	switch p.Terms.Change.GetTermType() {
-	case types.ProposalTermsTypeNewMarket:
+	case types.ProposalTermsTypeNewMarket, types.ProposalTermsTypeNewSpotMarket:
 		startAuction := true
 		if p.State != types.ProposalStatePassed {
 			startAuction = false
-		} else {
-			// this proposal needs to be included in the checkpoint but we don't need to copy
-			// the proposal here, as it may reach the enacted state shortly
-			e.enactedProposals = append(e.enactedProposals, p)
 		}
+
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
 		}
@@ -306,7 +312,7 @@ func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 	return vc
 }
 
-func (e *Engine) removeProposal(ctx context.Context, id string) {
+func (e *Engine) removeActiveProposalByID(ctx context.Context, id string) {
 	for i, p := range e.activeProposals {
 		if p.ID == id {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
@@ -336,19 +342,20 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 
 	now := t.Unix()
 
-	// use slice for deterministic behaviour and event order
-	// succeededMarkets := []string{}
-	// use map internally for O(1) lookups
-	ignoreSuccession := map[string]struct{}{}
 	for _, proposal := range e.activeProposals {
-		if proposal.IsSuccessorMarket() {
-			if _, ok := e.markets.GetMarket(proposal.ID, false); !ok {
-				// successor proposal for a successor market which cannot be enacted anymore -> remove the proposal
-				proposal.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-				// ensure the event is sent
+		// check if the market for successor proposals still exists, if not, reject the proposal
+		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				continue
 			}
 		}
+
+		// do not check parent market, the market was either rejected when the parent was succeeded
+		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+		// loses its parent market reference
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
@@ -358,19 +365,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			toBeRemoved = append(toBeRemoved, proposal.ID)
 		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
 			enact, perr, err := e.preEnactProposal(ctx, proposal)
-			if err == nil && proposal.IsSuccessorMarket() {
-				parentID, _ := proposal.NewMarket().ParentMarketID()
-				if _, ok := ignoreSuccession[parentID]; ok {
-					// @TODO we have a successor market ready, other proposals should not go through
-					// perhaps we ought to not set the errors here, but rather wait until
-					// we are sure the successor market went through
-					err = ErrParentMarketAlreadySucceeded
-					perr = types.ProposalErrorInvalidSuccessorMarket // @TODO proposal Error types
-				} else {
-					ignoreSuccession[parentID] = struct{}{}
-					// succeededMarkets = append(succeededMarkets, sucP.Changes.ParentID)
-				}
-			}
 			if err != nil {
 				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 				toBeRemoved = append(toBeRemoved, proposal.ID)
@@ -420,36 +414,26 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 				id = prop.Terms.GetUpdateMarket().MarketID
 			}
 
-			_, err := e.markets.GetMarketState(id)
-			if err != nil {
+			// before trying to enact a successor market proposal, check if the market wasn't rejected due
+			// to another successor leaving opening auction
+			if _, err := e.markets.GetMarketState(id); err != nil {
+				if nm := prop.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+					prop.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
+					e.broker.Send(events.NewProposalEvent(ctx, *prop.Proposal))
+					continue
+				}
 				e.log.Error("could not get state of market %s", logging.String("market-id", id))
 				continue
 			}
 		}
 
-		// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
-		found := false
-		for i, p := range e.enactedProposals {
-			if p.ID == prop.ID {
-				e.enactedProposals[i] = &prop // replace with pointer to copy
-				found = true
-				break
-			}
-		}
-		// no need to append
-		if found {
-			toBeEnacted = append(toBeEnacted, preparedToEnact[i])
-			continue
-		}
-
-		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
 		toBeEnacted = append(toBeEnacted, preparedToEnact[i])
 	}
 
 	// now we iterate over all proposal ids to remove them from the list
 	for _, id := range toBeRemoved {
-		e.removeProposal(ctx, id)
+		e.removeActiveProposalByID(ctx, id)
 	}
 
 	// flush here for now
@@ -528,7 +512,7 @@ func (e *Engine) SubmitProposal(
 		e.startProposal(p)
 	}
 
-	return e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp})
+	return e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp}, false)
 }
 
 func (e *Engine) RejectProposal(
@@ -548,30 +532,6 @@ func (e *Engine) RejectProposal(
 // from a snapshot we can propagate the proposal with the latest state back into the API service.
 func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 	// find the proposal so we can update the state after enactment
-	if prop.State == types.ProposalStateEnacted {
-		// we have enacted a successor market
-		if nm := prop.NewMarket(); nm != nil {
-			// we have a successor market
-			if pid, ok := nm.ParentMarketID(); ok {
-				evts := []events.Event{}
-				toRM := []string{}
-				for _, pp := range e.activeProposals {
-					if pp.SucceedsMarket(pid) {
-						p := pp.Proposal
-						toRM = append(toRM, pp.ID)
-						e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
-						evts = append(evts, events.NewProposalEvent(ctx, *p))
-					}
-				}
-				if len(evts) > 0 {
-					e.broker.SendBatch(evts)
-					for _, id := range toRM {
-						e.removeProposal(ctx, id)
-					}
-				}
-			}
-		}
-	}
 	for _, enacted := range e.enactedProposals {
 		if enacted.ID == prop.ID {
 			enacted.State = prop.State
@@ -582,13 +542,13 @@ func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
 }
 
 func (e *Engine) rejectProposal(ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error) {
-	e.removeProposal(ctx, p.ID)
+	e.removeActiveProposalByID(ctx, p.ID)
 	p.RejectWithErr(r, errorDetails)
 }
 
 // toSubmit build the return response for the SubmitProposal
 // method.
-func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enactmentTime) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enactmentTime, restore bool) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
@@ -603,20 +563,27 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		if suc := newMarket.Successor(); suc != nil {
 			pm, ok := e.markets.GetMarket(suc.ParentID, true)
 			if !ok {
-				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
-				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+				if !restore {
+					e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
+					return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+				}
+			} else {
+				parent = &pm
 			}
 			// proposal to succeed a market that was already succeeded
-			if e.markets.IsSucceeded(suc.ParentID) {
+			// on restore, the parent market may be succeeded and the restored market may have own state (ie was the successor)
+			// So skip this check when restoring markets from checkpoints
+			if !restore && e.markets.IsSucceeded(suc.ParentID) {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketAlreadySucceeded, types.ProposalErrorInvalidSuccessorMarket)
 			}
-			parent = &pm
+			// restore can be true while parent == nil. This is fine, though
 		}
+		now := e.timeService.GetTimeNow()
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
-		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent); err != nil {
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now, restore); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
@@ -631,14 +598,10 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			m: mkt,
 		}
 	case types.ProposalTermsTypeNewSpotMarket:
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewSpotMarket()
 		auctionDuration := enactTime.Sub(closeTime)
-		if !e.markets.SpotsMarketsEnabled() {
-			e.rejectProposal(ctx, p, types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled)
-			return nil, fmt.Errorf("%w, %v", ErrSpotsNotEnabled, types.ProposalErrorSpotNotEnabled)
-		}
 		if perr, err := validateNewSpotMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -710,12 +673,18 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getNewSpotMarketProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateSpotMarket:
 		return e.getUpdateSpotMarketProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateMarketState:
+		// reusing market update net params
+		return e.getUpdateMarketStateProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		return e.getReferralProgramNetworkParameters(), nil
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		return e.getVolumeDiscountProgramNetworkParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
 }
 
-// validateOpenProposal reads from the chain.
 func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
@@ -802,8 +771,14 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 
 	checkProposerToken := true
 
-	if proposal.IsMarketUpdate() {
-		proposalError, err := e.validateMarketUpdate(proposal, params)
+	if proposal.IsMarketUpdate() || proposal.IsMarketStateUpdate() {
+		marketID := ""
+		if proposal.Terms.GetMarketStateUpdate() != nil {
+			marketID = proposal.Terms.GetMarketStateUpdate().Changes.MarketID
+		} else {
+			marketID = proposal.MarketUpdate().MarketID
+		}
+		proposalError, err := e.validateMarketUpdate(proposal.ID, marketID, proposal.Party, params)
 		if err != nil && proposalError != types.ProposalErrorInsufficientEquityLikeShare {
 			return proposalError, err
 		}
@@ -925,29 +900,28 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 	return proposal, nil
 }
 
-func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
-	updateMarket := proposal.MarketUpdate()
-	if !e.markets.MarketExists(updateMarket.MarketID) {
+func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *ProposalParameters) (types.ProposalError, error) {
+	if !e.markets.MarketExists(marketID) {
 		e.log.Debug("market does not exist",
-			logging.MarketID(updateMarket.MarketID),
-			logging.PartyID(proposal.Party),
-			logging.ProposalID(proposal.ID))
+			logging.MarketID(marketID),
+			logging.PartyID(party),
+			logging.ProposalID(ID))
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
 	for _, p := range e.activeProposals {
-		if p.ID == updateMarket.MarketID {
-			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		if p.ID == marketID && p.IsOpen() {
+			return types.ProposalErrorInvalidMarket, ErrMarketProposalStillOpen
 		}
 	}
 
-	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
+	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(marketID, party)
 	if partyELS.LessThan(params.MinEquityLikeShare) {
 		e.log.Debug("proposer have insufficient equity-like share",
 			logging.String("expect-balance", params.MinEquityLikeShare.String()),
 			logging.String("proposer-balance", partyELS.String()),
-			logging.PartyID(proposal.Party),
-			logging.MarketID(updateMarket.MarketID),
-			logging.ProposalID(proposal.ID))
+			logging.PartyID(party),
+			logging.MarketID(marketID),
+			logging.ProposalID(ID))
 		return types.ProposalErrorInsufficientEquityLikeShare,
 			fmt.Errorf("proposer have insufficient equity-like share, expected >= %v got %v", params.MinEquityLikeShare, partyELS)
 	}
@@ -965,8 +939,8 @@ func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *Prop
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
 	for _, p := range e.activeProposals {
-		if p.ID == updateMarket.MarketID {
-			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		if p.ID == updateMarket.MarketID && p.IsOpen() {
+			return types.ProposalErrorInvalidMarket, ErrMarketProposalStillOpen
 		}
 	}
 
@@ -985,7 +959,6 @@ func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *Prop
 	return types.ProposalErrorUnspecified, nil
 }
 
-// validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 	enct := &enactmentTime{current: terms.EnactmentTimestamp}
@@ -1002,10 +975,16 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			}
 			parent = &pm
 		}
-		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent)
+		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow(), false)
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
-		return validateUpdateMarketChange(terms.GetUpdateMarket(), enct)
+		marketUpdate := terms.GetUpdateMarket()
+		mkt, ok := e.markets.GetMarket(marketUpdate.MarketID, false)
+		if !ok {
+			return types.ProposalErrorInvalidMarket, ErrParentMarketDoesNotExist
+		}
+
+		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow())
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1016,15 +995,18 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return e.validateGovernanceTransfer(terms.GetNewTransfer())
 	case types.ProposalTermsTypeCancelTransfer:
 		return e.validateCancelGovernanceTransfer(terms.GetCancelTransfer().Changes.TransferID)
+	case types.ProposalTermsTypeUpdateMarketState:
+		return e.validateMarketUpdateState(terms.GetMarketStateUpdate().Changes)
 	case types.ProposalTermsTypeNewSpotMarket:
-		if !e.markets.SpotsMarketsEnabled() {
-			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
-		}
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateSpotMarket:
 		enct.shouldNotVerify = true
 		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket())
+	case types.ProposalTermsTypeUpdateReferralProgram:
+		return validateUpdateReferralProgram(e.netp, terms.GetUpdateReferralProgram(), terms.EnactmentTimestamp)
+	case types.ProposalTermsTypeUpdateVolumeDiscountProgram:
+		return validateUpdateVolumeDiscountProgram(e.netp, terms.GetUpdateVolumeDiscountProgram())
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
@@ -1041,6 +1023,26 @@ func (e *Engine) validateCancelGovernanceTransfer(transferID string) (types.Prop
 	if err := e.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
 		return types.ProporsalErrorFailedGovernanceTransferCancel, err
 	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) validateMarketUpdateState(update *types.MarketStateUpdateConfiguration) (types.ProposalError, error) {
+	marketID := update.MarketID
+	if !e.markets.MarketExists(marketID) {
+		e.log.Debug("market does not exist", logging.MarketID(marketID))
+		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
+	}
+
+	marketState, err := e.markets.GetMarketState(marketID)
+	if err != nil {
+		return types.ProposalErrorInvalidMarket, err
+	}
+
+	// if the market is already terminated or not yet started or settled
+	if marketState == types.MarketStateCancelled || marketState == types.MarketStateClosed || marketState == types.MarketStateTradingTerminated || marketState == types.MarketStateSettled || marketState == types.MarketStateProposed {
+		return types.ProposalErrorInvalidMarket, ErrMarketStateUpdateNotAllowed
+	}
+
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -1119,8 +1121,8 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 		votes = append(votes, events.NewVoteEvent(ctx, *n))
 	}
 
-	sort.Slice(votes, func(i, j int) bool {
-		return votes[i].Proto().Timestamp < votes[j].Proto().Timestamp
+	sort.SliceStable(votes, func(i, j int) bool {
+		return votes[i].PartyID() < votes[j].PartyID()
 	})
 
 	evts := make([]events.Event, 0, len(votes))
@@ -1154,6 +1156,7 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			Metadata:                  terms.Changes.Metadata,
 			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
+			SLAParams:                 terms.Changes.SLAParams,
 		},
 	}
 
@@ -1183,7 +1186,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			Metadata:                      terms.Changes.Metadata,
 			PriceMonitoringParameters:     terms.Changes.PriceMonitoringParameters,
 			LiquidityMonitoringParameters: terms.Changes.LiquidityMonitoringParameters,
-			LpPriceRange:                  terms.Changes.LpPriceRange,
+			LiquiditySLAParameters:        terms.Changes.LiquiditySLAParameters,
 			LinearSlippageFactor:          terms.Changes.LinearSlippageFactor,
 			QuadraticSlippageFactor:       terms.Changes.QuadraticSlippageFactor,
 		},
@@ -1218,11 +1221,26 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
+	case *types.UpdateInstrumentConfigurationPerps:
+		assets, _ := existingMarket.GetAssets()
+		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationPerps{
+			Perps: &types.PerpsProduct{
+				SettlementAsset:                     assets[0],
+				QuoteName:                           product.Perps.QuoteName,
+				MarginFundingFactor:                 product.Perps.MarginFundingFactor,
+				InterestRate:                        product.Perps.InterestRate,
+				ClampLowerBound:                     product.Perps.ClampLowerBound,
+				ClampUpperBound:                     product.Perps.ClampUpperBound,
+				DataSourceSpecForSettlementData:     product.Perps.DataSourceSpecForSettlementData,
+				DataSourceSpecForSettlementSchedule: product.Perps.DataSourceSpecForSettlementSchedule,
+				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
+			},
+		}
 	default:
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
 		return nil, perr, err
 	}
 

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -14,6 +29,8 @@ package gql
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -70,6 +87,34 @@ func (o *oracleDataResolver) ExternalData(_ context.Context, obj *vegapb.OracleD
 	return
 }
 
+func resolveTrigger(obj any) (trigger TriggerKind) {
+	if obj != nil {
+		switch trig := obj.(type) {
+		case *vegapb.EthCallTrigger_TimeTrigger:
+			if trig.TimeTrigger != nil {
+				var (
+					init  *int64
+					until *int64
+				)
+				if trig.TimeTrigger.GetInitial() != 0 {
+					init = ptr.From(time.Unix(int64(trig.TimeTrigger.GetInitial()), 0).UnixNano())
+				}
+				every := int(trig.TimeTrigger.GetEvery())
+				if trig.TimeTrigger.GetUntil() != 0 {
+					until = ptr.From(time.Unix(int64(trig.TimeTrigger.GetUntil()), 0).UnixNano())
+				}
+				trigger = &EthTimeTrigger{
+					Initial: init,
+					Every:   &every,
+					Until:   until,
+				}
+			}
+		}
+	}
+
+	return
+}
+
 func resolveSigners(obj []*v1.Signer) (signers []*Signer) {
 	for i := range obj {
 		signers = append(signers, &Signer{Signer: resolveSigner(obj[i].Signer)})
@@ -87,20 +132,122 @@ func resolveSigner(obj any) (signer SignerKind) {
 	return
 }
 
+func resolveFilters(obj []*v1.Filter) (filters []*Filter, e error) {
+	filters = []*Filter{}
+	if obj != nil {
+		for _, f := range obj {
+			if f != nil {
+				filter, err := resolveFilter(f)
+				if err != nil {
+					e = err
+					return
+				}
+				filters = append(filters, filter)
+			}
+		}
+		return
+	}
+
+	return
+}
+
+func resolveFilter(obj *v1.Filter) (filter *Filter, e error) {
+	filter = &Filter{
+		Key:        &PropertyKey{},
+		Conditions: []*Condition{},
+	}
+
+	if obj.Key != nil {
+		filter.Key = &PropertyKey{
+			Name: &obj.Key.Name,
+			Type: obj.Key.Type,
+		}
+
+		if obj.Key.NumberDecimalPlaces != nil {
+			indp := new(int)
+			*indp = int(*obj.Key.NumberDecimalPlaces)
+			filter.Key.NumberDecimalPlaces = indp
+		}
+	} else {
+		e = errors.New("Property key is empty")
+		return
+	}
+
+	if obj.Conditions != nil || len(obj.Conditions) > 0 {
+		filter.Conditions = resolveConditions(obj.Conditions)
+	} else {
+		e = errors.New("Conditions list is empty")
+		return
+	}
+
+	return
+}
+
+func resolveConditions(obj []*v1.Condition) (conditions []*Condition) {
+	conditions = []*Condition{}
+	for _, c := range obj {
+		conditions = append(
+			conditions,
+			&Condition{
+				Operator: c.Operator,
+				Value:    &c.Value,
+			},
+		)
+	}
+	return
+}
+
+func resolveNormalisers(obj []*vegapb.Normaliser) (normalisers []*Normaliser) {
+	if obj != nil {
+		for _, n := range obj {
+			normalisers = append(normalisers, resolveNormaliser(n))
+		}
+		return
+	}
+
+	normalisers = []*Normaliser{}
+	return
+}
+
+func resolveNormaliser(obj any) (normaliser *Normaliser) {
+	normaliser = &Normaliser{}
+
+	// if obj != nil {
+	switch norm := obj.(type) {
+	case *vegapb.Normaliser:
+		normaliser = &Normaliser{
+			Name:       norm.Name,
+			Expression: norm.Expression,
+		}
+		// return
+	}
+	//}
+
+	return
+}
+
 func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.DataSourceDefinition) {
 	ds = &vegapb.DataSourceDefinition{}
 	if d == nil || d.SourceType == nil {
-		return
+		return ds
 	}
 	data := d.Content()
 	if data != nil {
 		switch tp := data.(type) {
 		case *vegapb.DataSourceSpecConfiguration:
-
 			ds.SourceType = &vegapb.DataSourceDefinition_External{
 				External: &vegapb.DataSourceDefinitionExternal{
 					SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 						Oracle: tp,
+					},
+				},
+			}
+
+		case *vegapb.EthCallSpec:
+			ds.SourceType = &vegapb.DataSourceDefinition_External{
+				External: &vegapb.DataSourceDefinitionExternal{
+					SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+						EthOracle: tp,
 					},
 				},
 			}
@@ -113,10 +260,18 @@ func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.Dat
 					},
 				},
 			}
+		case *vegapb.DataSourceSpecConfigurationTimeTrigger:
+			ds.SourceType = &vegapb.DataSourceDefinition_Internal{
+				Internal: &vegapb.DataSourceDefinitionInternal{
+					SourceType: &vegapb.DataSourceDefinitionInternal_TimeTrigger{
+						TimeTrigger: tp,
+					},
+				},
+			}
 		}
 	}
 
-	return
+	return ds
 }
 
 func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {

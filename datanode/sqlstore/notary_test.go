@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -39,8 +54,7 @@ func setupNotaryStoreTests(t *testing.T) (*sqlstore.Notary, *sqlstore.Blocks, sq
 }
 
 func testAddSignatures(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, bs, conn := setupNotaryStoreTests(t)
 
@@ -60,8 +74,7 @@ func testAddSignatures(t *testing.T) {
 }
 
 func testAddMultipleSignatures(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, bs, _ := setupNotaryStoreTests(t)
 
@@ -111,8 +124,7 @@ func getTestNodeSignature(t *testing.T, ctx context.Context, bs *sqlstore.Blocks
 }
 
 func testNoResource(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ws, _, _ := setupNotaryStoreTests(t)
 
@@ -122,8 +134,7 @@ func testNoResource(t *testing.T) {
 }
 
 func testSignatureGetByTx(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, bs, _ := setupNotaryStoreTests(t)
 
@@ -159,8 +170,7 @@ func TestNodeSignaturePagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -179,8 +189,7 @@ func testNodeSignaturePaginationNoPagination(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -200,8 +209,7 @@ func testNodeSignaturePaginationFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -221,8 +229,7 @@ func testNodeSignaturePaginationLast(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -243,8 +250,7 @@ func testNodeSignaturePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -265,8 +271,7 @@ func testNodeSignaturePaginationLastBefore(t *testing.T) {
 }
 
 func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -285,8 +290,7 @@ func testNodeSignaturePaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -306,8 +310,7 @@ func testNodeSignaturePaginationFirstNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)
@@ -327,8 +330,7 @@ func testNodeSignaturePaginationLastNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	first := int32(3)
@@ -349,8 +351,7 @@ func testNodeSignaturePaginationFirstAfterNewestFirst(t *testing.T) {
 }
 
 func testNodeSignaturePaginationLastBeforeNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns, sigs := setupNodeSignaturePaginationTest(t, ctx)
 	last := int32(3)

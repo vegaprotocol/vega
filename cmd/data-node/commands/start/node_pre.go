@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package start
 
@@ -29,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -322,9 +326,16 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 
 	snapshotServiceLog := networkHistoryLog.Named("snapshot")
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
+	home := l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome)
+
+	networkHistoryStore, err := store.New(l.ctx, networkHistoryServiceLog, l.conf.ChainID, l.conf.NetworkHistory.Store, home,
+		l.conf.MaxMemoryPercent)
+	if err != nil {
+		return fmt.Errorf("failed to create network history store: %w", err)
+	}
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		networkHistoryPool,
+		networkHistoryPool, networkHistoryStore,
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
@@ -341,11 +352,12 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
 
-	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory,
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.ChainID, l.conf.NetworkHistory,
 		networkHistoryPool,
-		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), l.conf.MaxMemoryPercent)
+		l.snapshotService,
+		networkHistoryStore,
+		l.conf.API.Port,
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}

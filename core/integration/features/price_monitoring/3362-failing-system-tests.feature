@@ -10,11 +10,12 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | 
-      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | sla params      | 
+      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+      | limits.markets.maxPeggedOrders | 2     |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
@@ -35,9 +36,13 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | submission |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party1 | ETH/DEC20 |  152      | 1                    | buy  | BID              | 152    | 10     |
+      | party1 | ETH/DEC20 | 150       | 1                    | sell | ASK              | 150    | 10     | 
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 

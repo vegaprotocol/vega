@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -66,7 +81,7 @@ func (so *StopOrders) GetStopOrder(ctx context.Context, orderID string) (entitie
 	order := entities.StopOrder{}
 	id := entities.StopOrderID(orderID)
 	defer metrics.StartSQLQuery("StopOrders", "GetStopOrder")()
-	query := `select * from stop_orders where id=$1`
+	query := `select * from stop_orders_current_desc where id=$1`
 	err = pgxscan.Get(ctx, so.Connection, &order, query, id)
 
 	return order, so.wrapE(err)
@@ -106,7 +121,7 @@ func (so *StopOrders) queryWithPagination(ctx context.Context, query string, p e
 	// We don't have the necessary views and indexes for iterating backwards for now so we can't use 'last'
 	// as it requires us to order in reverse
 	if p.HasBackward() {
-		return nil, pageInfo, fmt.Errorf("'last' pagination for stop orders is not currently supported")
+		return nil, pageInfo, ErrLastPaginationNotSupported
 	}
 
 	query, args, err = paginateQuery(query, args, ordering, p)
@@ -126,6 +141,10 @@ func (so *StopOrders) queryWithPagination(ctx context.Context, query string, p e
 func stopOrderView(f entities.StopOrderFilter, p entities.CursorPagination) (string, bool, error) {
 	if !p.NewestFirst {
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
+	}
+
+	if f.LiveOnly {
+		return "stop_orders_live", false, nil
 	}
 
 	if len(f.PartyIDs) > 0 {

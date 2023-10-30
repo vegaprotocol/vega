@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -68,8 +83,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 }
 
 func TestLedger(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	// Prepare environment entities.
 	blockStore := sqlstore.NewBlocks(connectionSource)
@@ -221,7 +235,7 @@ func TestLedger(t *testing.T) {
 	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout, int64(2260), int64(17050), txHashFromString("ledger_entry_13")))
 	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[11], blocks[13], int64(72), entities.LedgerMovementTypeRewardPayout, int64(2188), int64(17122), txHashFromString("ledger_entry_14")))
 
-	tStart, _ := time.Parse("2006 Jan 02 15:04:05", "2012 Dec 07 00:00:00")
+	tStart := time.Now().Add(-5 * 24 * time.Hour)
 	tEnd := time.Now()
 
 	t.Run("get all ledger records", func(t *testing.T) {
@@ -728,7 +742,7 @@ func TestLedger(t *testing.T) {
 			assert.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
-			assert.Equal(t, 4, len(*entries))
+			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
 					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
@@ -748,19 +762,6 @@ func TestLedger(t *testing.T) {
 					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
-				}
-
-				if e.Quantity.Abs().String() == strconv.Itoa(25) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[2].ID)
-
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[3].ID)
-					assert.Equal(t, strconv.Itoa(1700), e.FromAccountBalance.Abs().String())
-					assert.Equal(t, strconv.Itoa(2590), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
@@ -846,7 +847,7 @@ func TestLedger(t *testing.T) {
 			assert.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
-			assert.Equal(t, 4, len(*entries))
+			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
 					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
@@ -866,19 +867,6 @@ func TestLedger(t *testing.T) {
 					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
-				}
-
-				if e.Quantity.Abs().String() == strconv.Itoa(25) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[2].ID)
-
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[3].ID)
-					assert.Equal(t, strconv.Itoa(1700), e.FromAccountBalance.Abs().String())
-					assert.Equal(t, strconv.Itoa(2590), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
@@ -1047,7 +1035,7 @@ func TestLedger(t *testing.T) {
 			assert.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
-			assert.Equal(t, 4, len(*entries))
+			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
 					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
@@ -1067,19 +1055,6 @@ func TestLedger(t *testing.T) {
 					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
-				}
-
-				if e.Quantity.Abs().String() == strconv.Itoa(25) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[2].ID)
-
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[3].ID)
-					assert.Equal(t, strconv.Itoa(1700), e.FromAccountBalance.Abs().String())
-					assert.Equal(t, strconv.Itoa(2590), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package api
 
 import (
@@ -60,12 +75,12 @@ type AdminSendTransaction struct {
 }
 
 func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	receivedAt := time.Now()
+
 	params, err := validateAdminSendTransactionParams(rawParams)
 	if err != nil {
 		return nil, InvalidParams(err)
 	}
-
-	receivedAt := time.Now()
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
 		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))

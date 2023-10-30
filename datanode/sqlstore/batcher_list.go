@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -57,7 +72,7 @@ func (b *ListBatcher[T]) Flush(ctx context.Context, connection Connection) ([]T,
 		pgx.CopyFromRows(rows),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to copy %s entries into database:%w", b.tableName, err)
+		return nil, fmt.Errorf("failed to copy %q entries into database: %w", b.tableName, err)
 	}
 
 	if copyCount != int64(len(b.pending)) {

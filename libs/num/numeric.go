@@ -1,3 +1,18 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package num
 
 import (
@@ -7,13 +22,21 @@ import (
 )
 
 type Numeric struct {
+	asInt     *Int
 	asUint    *Uint
 	asDecimal *Decimal
 }
 
 func (n *Numeric) Clone() *Numeric {
 	if n.asUint != nil {
-		nn := n
+		nn := &Numeric{}
+		nn.SetUint(n.Uint().Clone())
+		return nn
+	}
+
+	if n.asInt != nil {
+		nn := &Numeric{}
+		nn.SetInt(n.Int().Clone())
 		return nn
 	}
 
@@ -32,6 +55,9 @@ func (n *Numeric) String() string {
 	}
 	if n.asDecimal != nil {
 		return n.asDecimal.String()
+	}
+	if n.asInt != nil {
+		return n.asInt.String()
 	}
 
 	return ""
@@ -60,6 +86,13 @@ func NumericFromString(s string) (*Numeric, error) {
 		}
 		return &Numeric{
 			asDecimal: &d,
+		}, nil
+	}
+
+	if strings.HasPrefix(s, "-") {
+		in, _ := IntFromString(s, 10)
+		return &Numeric{
+			asInt: in,
 		}, nil
 	}
 
@@ -107,16 +140,24 @@ func (n *Numeric) SupportDecimalPlaces(dp int64) bool {
 	return true
 }
 
+func (n *Numeric) SetInt(in *Int) *Numeric {
+	n.asInt = in
+	n.asDecimal = nil
+	n.asUint = nil
+	return n
+}
+
 func (n *Numeric) SetUint(u *Uint) *Numeric {
 	n.asUint = u
 	n.asDecimal = nil
+	n.asInt = nil
 	return n
 }
 
 func (n *Numeric) SetDecimal(d *Decimal) *Numeric {
 	n.asDecimal = d
 	n.asUint = nil
-
+	n.asInt = nil
 	return n
 }
 
@@ -136,10 +177,22 @@ func (n *Numeric) Uint() *Uint {
 	return &u
 }
 
+func (n *Numeric) Int() *Int {
+	if n.asInt == nil {
+		return nil
+	}
+	in := *n.asInt
+	return &in
+}
+
 func (n *Numeric) IsDecimal() bool {
 	return n.asDecimal != nil
 }
 
 func (n *Numeric) IsUint() bool {
 	return n.asUint != nil
+}
+
+func (n *Numeric) IsInt() bool {
+	return n.asInt != nil
 }

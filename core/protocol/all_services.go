@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package protocol
 
@@ -16,8 +19,7 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
+	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -29,6 +31,12 @@ import (
 	ethclient "code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
+	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
+	oracleAdaptors "code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
@@ -42,26 +50,41 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams/dispatch"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
-	"code.vegaprotocol.io/vega/core/oracles"
-	"code.vegaprotocol.io/vega/core/oracles/adaptors"
-	oracleAdaptors "code.vegaprotocol.io/vega/core/oracles/adaptors"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/core/vesting"
+	"code.vegaprotocol.io/vega/core/volumediscount"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
 )
+
+type EthCallEngine interface {
+	Start()
+	StartAtHeight(height uint64, timestamp uint64)
+	Stop()
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	GetEthTime(ctx context.Context, atBlock uint64) (uint64, error)
+	GetRequiredConfirmations(id string) (uint64, error)
+	GetInitialTriggerTime(id string) (uint64, error)
+	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
+	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
+}
 
 type allServices struct {
 	ctx             context.Context
@@ -82,33 +105,38 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *common.MarketActivityTracker
-	statevar              *statevar.Engine
-	snapshot              *snapshot.Engine
-	executionEngine       *execution.Engine
-	governance            *governance.Engine
-	collateral            *collateral.Engine
-	oracle                *oracles.Engine
-	oracleAdaptors        *adaptors.Adaptors
-	netParams             *netparams.Store
-	delegation            *delegation.Engine
-	limits                *limits.Engine
-	rewards               *rewards.Engine
-	checkpoint            *checkpoint.Engine
-	spam                  *spam.Engine
-	pow                   processor.PoWEngine
-	builtinOracle         *oracles.Builtin
-	codec                 abci.Codec
+	marketActivityTracker   *common.MarketActivityTracker
+	statevar                *statevar.Engine
+	snapshotEngine          *snapshot.Engine
+	executionEngine         *execution.Engine
+	governance              *governance.Engine
+	collateral              *collateral.Engine
+	oracle                  *spec.Engine
+	oracleAdaptors          *adaptors.Adaptors
+	netParams               *netparams.Store
+	delegation              *delegation.Engine
+	limits                  *limits.Engine
+	rewards                 *rewards.Engine
+	checkpoint              *checkpoint.Engine
+	spam                    *spam.Engine
+	pow                     processor.PoWEngine
+	builtinOracle           *spec.Builtin
+	codec                   abci.Codec
+	ethereumOraclesVerifier *ethverifier.Verifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
+	ethCallEngine         EthCallEngine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
 	protocolUpgradeEngine *protocolupgrade.Engine
+
+	teamsEngine     *teams.SnapshottedEngine
+	referralProgram *referral.SnapshottedEngine
 
 	// staking
 	ethClient             *ethclient.Client
@@ -122,6 +150,10 @@ type allServices struct {
 
 	commander  *nodewallets.Commander
 	gastimator *processor.Gastimator
+
+	activityStreak *activitystreak.SnapshotEngine
+	vesting        *vesting.SnapshotEngine
+	volumeDiscount *volumediscount.SnapshottedEngine
 }
 
 func newServices(
@@ -175,10 +207,6 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
-
-	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
-	svcs.oracleAdaptors = oracleAdaptors.New()
 
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
@@ -189,8 +217,7 @@ func newServices(
 	)
 
 	if svcs.conf.IsValidator() {
-		svcs.topology = validators.NewTopology(
-			svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
+		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, validators.WrapNodeWallets(nodeWallets), svcs.broker, svcs.conf.IsValidator(), svcs.commander, svcs.erc20MultiSigTopology, svcs.timeService)
 	} else {
 		svcs.topology = validators.NewTopology(svcs.log, svcs.conf.Validators, nil, svcs.broker, svcs.conf.IsValidator(), nil, svcs.erc20MultiSigTopology, svcs.timeService)
 	}
@@ -208,7 +235,20 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	// this is done to go around circular deps again...
+	svcs.oracle = spec.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
+
+	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
+	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
+
+	svcs.builtinOracle = spec.NewBuiltin(svcs.oracle, svcs.timeService)
+	svcs.oracleAdaptors = oracleAdaptors.New()
+
+	// this is done to go around circular deps again..s
 	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.eventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
@@ -217,8 +257,10 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(svcs.topology.OnEpochEvent, svcs.topology.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
+	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
+
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 
@@ -231,28 +273,67 @@ func newServices(
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
-	// instantiate the execution engine
-	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets,
+	// The referral program is used to compute rewards, and can end when reaching
+	// the end of epoch. Since the engine will reject computations when the program
+	// is marked as ended, it needs to be one of the last service to register on
+	// epoch update, so the computation can happen for this epoch.
+	svcs.referralProgram = referral.NewSnapshottedEngine(svcs.broker, svcs.timeService, svcs.marketActivityTracker, svcs.stakingAccounts)
+	// The referral program engine must be notified of the epoch change *after* the
+	// market activity tracker, as it relies on computation that must happen, at
+	// the end of the epoch, in market activity tracker.
+	svcs.epochService.NotifyOnEpoch(svcs.referralProgram.OnEpoch, svcs.referralProgram.OnEpochRestore)
+
+	svcs.volumeDiscount = volumediscount.NewSnapshottedEngine(svcs.broker, svcs.marketActivityTracker)
+	svcs.epochService.NotifyOnEpoch(
+		svcs.volumeDiscount.OnEpoch,
+		svcs.volumeDiscount.OnEpochRestore,
 	)
 
+	// instantiate the execution engine
+	svcs.executionEngine = execution.NewEngine(
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount,
+	)
+	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
+	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
 	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
+	svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
+
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
-		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
-		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
+
+		if svcs.conf.HaveEthClient() {
+			svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
+			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
+		} else {
+			stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
+			svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
+			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
+		}
+
+		// disable spam protection based on config
+		if !svcs.conf.Blockchain.Null.SpamProtection {
+			svcs.spam.DisableSpamProtection() // Disable evaluation for the spam policies by the Spam Engine
+		}
 	} else {
 		svcs.codec = &processor.TxCodec{}
-		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
+	svcs.activityStreak = activitystreak.NewSnapshotEngine(svcs.log, svcs.executionEngine, svcs.broker)
+	svcs.epochService.NotifyOnEpoch(
+		svcs.activityStreak.OnEpochEvent,
+		svcs.activityStreak.OnEpochRestore,
+	)
+
+	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
+
+	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
+	svcs.epochService.NotifyOnEpoch(svcs.vesting.OnEpochEvent, svcs.vesting.OnEpochRestore)
 
 	svcs.registerTimeServiceCallbacks()
 
@@ -267,7 +348,7 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
-		svcs.eventForwarderEngine.Start()
+		svcs.vesting.OnCheckpointLoaded()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -286,56 +367,60 @@ func newServices(
 		svcs.checkpoint.UponGenesis,
 	)
 
-	svcs.snapshot, err = snapshot.New(svcs.ctx, svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
+	svcs.snapshotEngine, err = snapshot.NewEngine(svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
 	if err != nil {
-		return nil, fmt.Errorf("failed to start snapshot engine: %w", err)
+		return nil, fmt.Errorf("could not initialize the snapshot engine: %w", err)
 	}
 
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
-	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
+	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
+		svcs.teamsEngine)
 
-	if svcs.spam != nil {
-		svcs.snapshot.AddProviders(svcs.spam)
-	}
-	powWatchers := []netparams.WatchParam{}
+	svcs.snapshotEngine.AddProviders(svcs.spam)
 
+	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		svcs.pow = pow.NewNoop()
-	} else {
-		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
-		svcs.pow = pow
-		svcs.snapshot.AddProviders(pow)
-		powWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.SpamPoWNumberOfPastBlocks,
-				Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
-			},
-			{
-				Param:   netparams.SpamPoWDifficulty,
-				Watcher: pow.UpdateSpamPoWDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWHashFunction,
-				Watcher: pow.UpdateSpamPoWHashFunction,
-			},
-			{
-				Param:   netparams.SpamPoWIncreasingDifficulty,
-				Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWNumberOfTxPerBlock,
-				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-			},
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: pow.OnEpochDurationChanged,
-			},
-		}
+		pow.DisableVerification()
 	}
+	svcs.pow = pow
+	svcs.snapshotEngine.AddProviders(pow)
+	powWatchers := []netparams.WatchParam{
+		{
+			Param:   netparams.SpamPoWNumberOfPastBlocks,
+			Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
+		},
+		{
+			Param:   netparams.SpamPoWDifficulty,
+			Watcher: pow.UpdateSpamPoWDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWHashFunction,
+			Watcher: pow.UpdateSpamPoWHashFunction,
+		},
+		{
+			Param:   netparams.SpamPoWIncreasingDifficulty,
+			Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWNumberOfTxPerBlock,
+			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
+		},
+		{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: pow.OnEpochDurationChanged,
+		},
+	}
+
+	// The team engine is used to know the team a party belongs to. The computation
+	// of the referral program rewards requires this information. Since the team
+	// switches happen when the end of epoch is reached, it needs to be one of the
+	// last services to register on epoch update, so the computation is made based
+	// on the team the parties belonged to during the epoch and not the new one.
+	svcs.epochService.NotifyOnEpoch(svcs.teamsEngine.OnEpoch, svcs.teamsEngine.OnEpochRestore)
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()
@@ -354,7 +439,6 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 	svcs.timeService.NotifyOnTick(
 		svcs.epochService.OnTick,
 		svcs.builtinOracle.OnTick,
-
 		svcs.netParams.OnTick,
 		svcs.erc20MultiSigTopology.OnTick,
 		svcs.witness.OnTick,
@@ -368,13 +452,16 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.banking.OnTick,
 		svcs.assets.OnTick,
 		svcs.limits.OnTick,
+
+		svcs.ethereumOraclesVerifier.OnTick,
 	)
 }
 
 func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
-	svcs.snapshot.Close()
+	svcs.snapshotEngine.Close()
+	svcs.ethCallEngine.Stop()
 }
 
 func (svcs *allServices) registerConfigWatchers() {
@@ -450,10 +537,34 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				Param:   netparams.SpamProtectionMinMultisigUpdates,
 				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
 			},
+			{
+				Param:   netparams.ReferralProgramMinStakedVegaTokens,
+				Watcher: svcs.spam.OnMinTokensForReferral,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxCreateReferralSet,
+				Watcher: svcs.spam.OnMaxCreateReferralSet,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxUpdateReferralSet,
+				Watcher: svcs.spam.OnMaxUpdateReferralSet,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxApplyReferralCode,
+				Watcher: svcs.spam.OnMaxApplyReferralCode,
+			},
 		}
 	}
 
 	watchers := []netparams.WatchParam{
+		{
+			Param:   netparams.SpamProtectionBalanceSnapshotFrequency,
+			Watcher: svcs.collateral.OnBalanceSnapshotFrequencyUpdated,
+		},
+		{
+			Param:   netparams.MinEpochsInTeamForMetricRewardEligibility,
+			Watcher: svcs.marketActivityTracker.OnMinEpochsInTeamForRewardEligibilityUpdated,
+		},
 		{
 			Param:   netparams.MinBlockCapacity,
 			Watcher: svcs.gastimator.OnMinBlockCapacityUpdate,
@@ -523,10 +634,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
@@ -550,14 +657,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: svcs.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
-		},
-		{
 			Param:   netparams.MarketMinLpStakeQuantumMultiple,
 			Watcher: svcs.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
@@ -570,12 +669,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: svcs.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		{
 			Param:   netparams.MarketAuctionMinimumDuration,
 			Watcher: svcs.executionEngine.OnMarketAuctionMinimumDurationUpdate,
+		},
+		{
+			Param:   netparams.MarketAuctionMaximumDuration,
+			Watcher: svcs.executionEngine.OnMarketAuctionMaximumDurationUpdate,
 		},
 		{
 			Param:   netparams.MarketProbabilityOfTradingTauScaling,
@@ -587,28 +686,32 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		// Liquidity version 2.
 		{
-			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Param:   netparams.MarketLiquidityEarlyExitPenalty,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltySlope,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Param:   netparams.MarketLiquiditySLANonPerformanceBondPenaltyMax,
 			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
-			Watcher: svcs.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2StakeToCCYVolumeUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityProvidersFeeCalculationTimeStep,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2ProvidersFeeCalculationTimeStep,
 		},
 		// End of liquidity version 2.
 		{
@@ -661,7 +764,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param:   netparams.SnapshotIntervalLength,
-			Watcher: svcs.snapshot.OnSnapshotIntervalUpdate,
+			Watcher: svcs.snapshotEngine.OnSnapshotIntervalUpdate,
 		},
 		{
 			Param:   netparams.ValidatorsVoteRequired,
@@ -712,6 +815,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.limits.OnLimitsProposeMarketEnabledFromUpdate,
 		},
 		{
+			Param:   netparams.SpotMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposeSpotMarketEnabledFromUpdate,
+		},
+		{
+			Param:   netparams.PerpsMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposePerpsMarketEnabledFromUpdate,
+		},
+		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
 		},
@@ -726,6 +837,54 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingMinimumTransfer,
+			Watcher: svcs.vesting.OnRewardVestingMinimumTransferUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBaseRate,
+			Watcher: svcs.vesting.OnRewardVestingBaseRateUpdate,
+		},
+		{
+			Param:   netparams.RewardsVestingBenefitTiers,
+			Watcher: svcs.vesting.OnBenefitTiersUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxPartyNotionalVolumeByQuantumPerEpoch,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxPartyNotionalVolumeByQuantumPerEpochUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMaxReferralRewardProportion,
+			Watcher: svcs.referralProgram.OnReferralProgramMaxReferralRewardProportionUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.referralProgram.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.ReferralProgramMinStakedVegaTokens,
+			Watcher: svcs.teamsEngine.OnReferralProgramMinStakedVegaTokensUpdate,
+		},
+		{
+			Param:   netparams.SpamProtectionApplyReferralMinFunds,
+			Watcher: svcs.referralProgram.OnMinBalanceForApplyReferralCodeUpdated,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakBenefitTiers,
+			Watcher: svcs.activityStreak.OnBenefitTiersUpdate,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakMinQuantumOpenVolume,
+			Watcher: svcs.activityStreak.OnMinQuantumOpenNationalVolumeUpdate,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakMinQuantumTradeVolume,
+			Watcher: svcs.activityStreak.OnMinQuantumTradeVolumeUpdate,
+		},
+		{
+			Param:   netparams.RewardsActivityStreakInactivityLimit,
+			Watcher: svcs.activityStreak.OnRewardsActivityStreakInactivityLimit,
 		},
 	}
 

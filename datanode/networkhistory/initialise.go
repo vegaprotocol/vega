@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package networkhistory
 
 import (
@@ -28,78 +43,85 @@ var ErrChainNotFound = errors.New("no chain found")
 type NetworkHistory interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error)
 	LoadNetworkHistoryIntoDatanode(ctx context.Context, chunk segment.ContiguousHistory[segment.Full], cfg sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool) (snapshot.LoadResult, error)
-	GetMostRecentHistorySegmentFromPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
+	GetMostRecentHistorySegmentFromBootstrapPeers(ctx context.Context, grpcAPIPorts []int) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error)
 	GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error)
 	ListAllHistorySegments() (segment.Segments[segment.Full], error)
 }
 
-func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg InitializationConfig, log *logging.Logger,
+func InitialiseDatanodeFromNetworkHistory(ctx context.Context, cfg InitializationConfig, log *logging.Logger,
 	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory,
 	grpcPorts []int, verboseMigration bool,
 ) error {
-	var (
-		blocksFetched int64
-		currentSpan   sqlstore.DatanodeBlockSpan
-		err           error
-	)
-
-	sqlCtx, cancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, cfg.TimeOut.Duration)
 	defer cancel()
 
-	currentSpan, err = networkHistoryService.GetDatanodeBlockSpan(sqlCtx)
-	if err != nil {
-		return fmt.Errorf("failed to get datanode block span: %w", err)
-	}
-
-	var toSegmentID string
-	blocksToFetch := cfg.MinimumBlockCount
 	if len(cfg.ToSegment) == 0 {
-		response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromPeers(sqlCtx,
-			grpcPorts)
-		if err != nil {
-			log.Errorf("failed to get most recent history segment from peers: %v", err)
-			return fmt.Errorf("failed to get most recent history segment from peers: %w", err)
-		}
-
-		if response == nil {
-			log.Error("unable to get a most recent segment response from peers")
-			return errors.New("unable to get a most recent segment response from peers")
-		}
-
-		mostRecentHistorySegment := response.Response.Segment
-
-		log.Info("got most recent history segment",
-			logging.String("segment", mostRecentHistorySegment.String()), logging.String("peer", response.PeerAddr))
-
-		toSegmentID = mostRecentHistorySegment.HistorySegmentId
-
-		if currentSpan.HasData {
-			if currentSpan.ToHeight >= mostRecentHistorySegment.ToHeight {
-				log.Infof("data node height %d is already at or beyond the height of the most recent history segment %d, not loading any history",
-					currentSpan.ToHeight, mostRecentHistorySegment.ToHeight)
-				return nil
+		for {
+			mostRecentHistorySegment, err := getMostRecentNetworkHistorySegment(ctxWithTimeout, networkHistoryService, grpcPorts, log)
+			if err != nil {
+				return fmt.Errorf("failed to get most recent history segment: %w", err)
 			}
 
-			blocksToFetch = mostRecentHistorySegment.ToHeight - currentSpan.ToHeight
+			toSegmentID := mostRecentHistorySegment.HistorySegmentId
+
+			currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctxWithTimeout)
+			if err != nil {
+				return fmt.Errorf("failed to get datanode block span: %w", err)
+			}
+
+			var blocksToFetch int64
+			if currentSpan.HasData {
+				if currentSpan.ToHeight >= mostRecentHistorySegment.ToHeight {
+					log.Infof("data node height %d is already at or beyond the height of the most recent history segment %d, no further history to load",
+						currentSpan.ToHeight, mostRecentHistorySegment.ToHeight)
+					return nil
+				}
+
+				blocksToFetch = mostRecentHistorySegment.ToHeight - currentSpan.ToHeight
+			} else {
+				// check if goes < 0
+				blocksToFetch = cfg.MinimumBlockCount
+				if mostRecentHistorySegment.ToHeight-cfg.MinimumBlockCount < 0 {
+					blocksToFetch = -1
+				}
+			}
+
+			err = loadSegments(ctxWithTimeout, log, connCfg, networkHistoryService, currentSpan,
+				toSegmentID, blocksToFetch, verboseMigration)
+			if err != nil {
+				return fmt.Errorf("failed to load segments: %w", err)
+			}
 		}
 	} else {
-		toSegmentID = cfg.ToSegment
+		currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get datanode block span: %w", err)
+		}
+
+		err = loadSegments(ctxWithTimeout, log, connCfg, networkHistoryService, currentSpan,
+			cfg.ToSegment, cfg.MinimumBlockCount, verboseMigration)
+		if err != nil {
+			return fmt.Errorf("failed to load segments: %w", err)
+		}
 	}
 
-	initialiseContext, cancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
-	defer cancelFn()
+	return nil
+}
 
+func loadSegments(ctx context.Context, log *logging.Logger,
+	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory, currentSpan sqlstore.DatanodeBlockSpan, toSegmentID string, blocksToFetch int64,
+	verboseMigration bool,
+) error {
 	log.Infof("fetching history using as the first segment:{%s} and minimum blocks to fetch %d", toSegmentID, blocksToFetch)
 
-	blocksFetched, err = FetchHistoryBlocks(initialiseContext, log.Infof, toSegmentID,
+	blocksFetched, err := FetchHistoryBlocks(ctx, log.Infof, toSegmentID,
 		func(ctx context.Context, historySegmentID string) (FetchResult, error) {
-			segment, err := networkHistoryService.FetchHistorySegment(initialiseContext, historySegmentID)
+			segment, err := networkHistoryService.FetchHistorySegment(ctx, historySegmentID)
 			if err != nil {
 				return FetchResult{}, err
 			}
 			return FromSegmentIndexEntry(segment), nil
 		}, blocksToFetch)
-
 	if err != nil {
 		log.Errorf("failed to fetch history blocks: %v", err)
 	}
@@ -136,7 +158,7 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	from := lastChunk.HeightFrom
 	if currentSpan.HasData {
 		for _, segment := range lastChunk.Segments {
-			if segment.GetFromHeight() <= currentSpan.ToHeight && segment.GetToHeight() > currentSpan.ToHeight {
+			if segment.GetFromHeight() <= (currentSpan.ToHeight+1) && segment.GetToHeight() > currentSpan.ToHeight {
 				from = segment.GetFromHeight()
 				break
 			}
@@ -148,16 +170,33 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 		return fmt.Errorf("failed to load history into the datanode: %w", err)
 	}
 
-	loadCtx, loadCtxCancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
-	defer loadCtxCancel()
-
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(loadCtx, chunkToLoad, connCfg, currentSpan.HasData, verboseMigration)
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunkToLoad, connCfg, currentSpan.HasData, verboseMigration)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode: %w", err)
 	}
 	log.Infof("loaded history from height %d to %d into the datanode", loaded.LoadedFromHeight, loaded.LoadedToHeight)
 
 	return nil
+}
+
+func getMostRecentNetworkHistorySegment(ctx context.Context, networkHistoryService NetworkHistory, grpcPorts []int, log *logging.Logger) (*v2.HistorySegment, error) {
+	response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromBootstrapPeers(ctx,
+		grpcPorts)
+	if err != nil {
+		log.Errorf("failed to get most recent history segment from peers: %v", err)
+		return nil, fmt.Errorf("failed to get most recent history segment from peers: %w", err)
+	}
+
+	if response == nil {
+		log.Error("unable to get a most recent segment response from peers")
+		return nil, errors.New("unable to get a most recent segment response from peers")
+	}
+
+	mostRecentHistorySegment := response.Response.Segment
+
+	log.Info("got most recent history segment",
+		logging.String("segment", mostRecentHistorySegment.String()), logging.String("peer", response.PeerAddr))
+	return mostRecentHistorySegment, nil
 }
 
 func VerifyChainID(chainID string, chainService *service.Chain) error {
@@ -204,7 +243,7 @@ func FetchHistoryBlocks(ctx context.Context, logInfo func(s string, args ...inte
 	numBlocksToFetch int64,
 ) (int64, error) {
 	blocksFetched := int64(0)
-	for blocksFetched < numBlocksToFetch {
+	for blocksFetched < numBlocksToFetch || numBlocksToFetch == -1 {
 		logInfo("fetching history for segment id:%s", historySegmentID)
 		indexEntry, err := fetchHistory(ctx, historySegmentID)
 		if err != nil {
@@ -219,6 +258,9 @@ func FetchHistoryBlocks(ctx context.Context, logInfo func(s string, args ...inte
 		}
 
 		historySegmentID = indexEntry.PreviousHistorySegmentID
+		if len(historySegmentID) == 0 {
+			break
+		}
 	}
 
 	return blocksFetched, nil

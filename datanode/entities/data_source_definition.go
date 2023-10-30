@@ -1,8 +1,27 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package entities
 
 import (
-	"code.vegaprotocol.io/vega/core/types"
+	"fmt"
+
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -29,12 +48,57 @@ func (s *DataSourceDefinition) GetOracle() (*DataSourceSpecConfiguration, error)
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			signers, err := SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err := SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
 			ds.Signers = signers
 			ds.Filters = FiltersFromProto(tp.GetFilters())
+		}
+	}
+
+	return ds, nil
+}
+
+func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
+	ds := &EthCallSpec{
+		ArgsJson:    []string{},
+		Trigger:     EthCallTrigger{},
+		Filters:     []Filter{},
+		Normalisers: []Normaliser{},
+	}
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *vega.EthCallSpec:
+			ds.Address = tp.Address
+			abi := tp.GetAbi()
+			ds.Abi = []byte(abi)
+			ds.Method = tp.Method
+			args := tp.GetArgs()
+			for _, arg := range args {
+				jsonArg, err := arg.MarshalJSON()
+				if err != nil {
+					return nil, err // TODO: Fix all of the errors
+				}
+				ds.ArgsJson = append(ds.ArgsJson, string(jsonArg))
+			}
+			trigger, err := ethcallcommon.TriggerFromProto(tp.Trigger)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get trigger from proto: %w", err)
+			}
+			ds.Trigger = EthCallTrigger{Trigger: trigger}
+			ds.RequiredConfirmations = tp.RequiredConfirmations
+			ds.Filters = FiltersFromProto(tp.GetFilters())
+
+			normalisers := []Normaliser{}
+			for _, n := range tp.Normalisers {
+				normalisers = append(normalisers, Normaliser{
+					Name:       n.Name,
+					Expression: n.Expression,
+				})
+			}
+			ds.Normalisers = normalisers
 		}
 	}
 
@@ -67,7 +131,7 @@ func (s *DataSourceDefinition) GetSigners() (Signers, error) {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
 			var err error
-			signers, err = SerializeSigners(types.SignersFromProto(tp.GetSigners()))
+			signers, err = SerializeSigners(dstypes.SignersFromProto(tp.GetSigners()))
 			if err != nil {
 				return nil, err
 			}
@@ -84,7 +148,9 @@ func (s *DataSourceDefinition) GetFilters() []Filter {
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			filters = FiltersFromProto(tp.GetFilters())
+			filters = FiltersFromProto(tp.Filters)
+		case *vega.EthCallSpec:
+			filters = FiltersFromProto(tp.Filters)
 		}
 	}
 
@@ -101,6 +167,27 @@ func (s *DataSourceDefinition) GetConditions() []Condition {
 			for _, c := range tp.Conditions {
 				conditions = append(conditions, ConditionFromProto(c))
 			}
+		case *vega.DataSourceSpecConfiguration:
+			if tp.Filters != nil {
+				for _, f := range tp.Filters {
+					if f.Conditions != nil {
+						for _, c := range f.Conditions {
+							conditions = append(conditions, ConditionFromProto(c))
+						}
+					}
+				}
+			}
+
+		case *vega.EthCallSpec:
+			if tp.Filters != nil {
+				for _, f := range tp.Filters {
+					if f.Conditions != nil {
+						for _, c := range f.Conditions {
+							conditions = append(conditions, ConditionFromProto(c))
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -116,6 +203,91 @@ func DataSourceDefinitionFromProto(dsp *vega.DataSourceDefinition) DataSourceDef
 type DataSourceSpecConfiguration struct {
 	Signers Signers
 	Filters []Filter
+}
+
+type EthCallTrigger struct {
+	ethcallcommon.Trigger
+}
+
+type Normaliser struct {
+	Name       string
+	Expression string
+}
+
+type EthCallSpec struct {
+	Address               string
+	Abi                   []byte
+	Method                string
+	ArgsJson              []string
+	Trigger               EthCallTrigger
+	RequiredConfirmations uint64
+	Filters               []Filter
+	Normalisers           []Normaliser
+}
+
+func (es *EthCallSpec) GetFilters() []Filter {
+	if es != nil {
+		return es.Filters
+	}
+
+	return []Filter{}
+}
+
+func (es *EthCallSpec) GetAddress() string {
+	if es != nil {
+		return es.Address
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetAbi() []byte {
+	if es != nil {
+		return es.Abi
+	}
+
+	return nil
+}
+
+func (es *EthCallSpec) GetMethod() string {
+	if es != nil {
+		return es.Method
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetArgs() []string {
+	if es != nil {
+		return es.ArgsJson
+	}
+
+	return []string{}
+}
+
+func (es *EthCallSpec) GetTrigger() EthCallTrigger {
+	if es != nil {
+		return es.Trigger
+	}
+
+	return EthCallTrigger{}
+}
+
+func (es *EthCallSpec) GetRequiredConfirmations() uint64 {
+	if es != nil {
+		return es.RequiredConfirmations
+	}
+
+	return uint64(0)
+}
+
+func (es *EthCallSpec) GetNormalisers() []Normaliser {
+	n := []Normaliser{}
+	if es != nil {
+		n = es.Normalisers
+	}
+
+	return n
 }
 
 // DataSourceSpecConfigurationTime is a simplified version of the internal time

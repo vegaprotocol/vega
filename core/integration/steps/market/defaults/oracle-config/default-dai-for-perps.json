@@ -1,0 +1,69 @@
+{
+  "quoteName": "DAI",
+  "settlementAsset": "DAI",
+  "marginFundingFactor": "0",
+  "interestRate": "0",
+  "clampLowerBound": "0",
+  "clampUpperBound": "0",
+  "dataSourceSpecForSettlementData": {
+    "id": "100",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0x0000"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "price.DAI.value",
+                "type": "TYPE_INTEGER",
+                "numberDecimalPlaces": "2"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecForSettlementSchedule": {
+    "id": "2",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "data": {
+      "external": {
+        "oracle": {
+          "signers": [
+            {
+              "pubKey": {
+                "key": "0x0000"
+              }
+            }
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "funding.DAI.period",
+                "type": "TYPE_TIMESTAMP"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "dataSourceSpecBinding": {
+    "settlementDataProperty": "price.DAI.value",
+    "settlementScheduleProperty": "funding.DAI.period"
+  }
+}

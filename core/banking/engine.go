@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package banking
 
@@ -31,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/emirpasic/gods/sets/treeset"
@@ -68,6 +72,7 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.LedgerMovement, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyVestedRewardAccount(partyID, asset string) (*types.Account, error)
 	TransferFunds(ctx context.Context,
 		transfers []*types.Transfer,
 		accountTypes []types.AccountType,
@@ -102,9 +107,11 @@ type Topology interface {
 }
 
 type MarketActivityTracker interface {
-	GetMarketScores(asset string, markets []string, dispatchMetric proto.DispatchMetric) []*types.MarketContributionScore
+	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
+	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
-	MarkPaidProposer(market, payoutAsset string, marketsInScope []string, funder string)
+	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
+	MarketTrackedForAsset(market, asset string) bool
 }
 
 type EthereumEventSource interface {
@@ -118,6 +125,11 @@ const (
 )
 
 var defaultValidationDuration = 30 * 24 * time.Hour
+
+type dispatchStrategyCacheEntry struct {
+	ds       *proto.DispatchStrategy
+	refCount int
+}
 
 type Engine struct {
 	cfg            Config
@@ -152,6 +164,9 @@ type Engine struct {
 	recurringGovernanceTransfers    []*types.GovernanceTransfer
 	recurringGovernanceTransfersMap map[string]*types.GovernanceTransfer
 
+	// a hash of a dispatch strategy to the dispatch strategy details
+	hashToStrategy map[string]*dispatchStrategyCacheEntry
+
 	// recurring transfers in the order they were created
 	recurringTransfers []*types.RecurringTransfer
 	// transfer id to recurringTransfers
@@ -162,8 +177,8 @@ type Engine struct {
 
 	minWithdrawQuantumMultiple num.Decimal
 
-	maxGovTransferAmount   *num.Uint
-	maxGovTransferFraction num.Decimal
+	maxGovTransferQunatumMultiplier num.Decimal
+	maxGovTransferFraction          num.Decimal
 }
 
 type withdrawalRef struct {
@@ -219,6 +234,7 @@ func New(
 		minTransferQuantumMultiple:      num.DecimalZero(),
 		minWithdrawQuantumMultiple:      num.DecimalZero(),
 		marketActivityTracker:           marketActivityTracker,
+		hashToStrategy:                  map[string]*dispatchStrategyCacheEntry{},
 		bridgeState: &bridgeState{
 			active: true,
 		},
@@ -232,7 +248,7 @@ func (e *Engine) OnMaxFractionChanged(ctx context.Context, f num.Decimal) error 
 }
 
 func (e *Engine) OnMaxAmountChanged(ctx context.Context, f num.Decimal) error {
-	e.maxGovTransferAmount, _ = num.UintFromDecimal(f)
+	e.maxGovTransferQunatumMultiplier = f
 	return nil
 }
 
@@ -259,6 +275,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	switch ep.Action {
 	case proto.EpochAction_EPOCH_ACTION_START:
 		e.currentEpoch = ep.Seq
+		e.cleanupStaleDispatchStrategies()
 	case proto.EpochAction_EPOCH_ACTION_END:
 		e.distributeRecurringTransfers(ctx, e.currentEpoch)
 		e.distributeRecurringGovernanceTransfers(ctx)
@@ -508,6 +525,16 @@ func (e *Engine) newDeposit(
 		CreationDate: e.timeService.GetTimeNow().UnixNano(),
 		TxHash:       txHash,
 	}
+}
+
+func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
+	ds, ok := e.hashToStrategy[hash]
+	if !ok {
+		e.log.Warn("could not find dispatch strategy in banking engine", logging.String("hash", hash))
+		return nil
+	}
+
+	return ds.ds
 }
 
 func getRefKey(ref snapshot.TxRef) (string, error) {

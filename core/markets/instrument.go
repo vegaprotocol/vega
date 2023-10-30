@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package markets
 
@@ -16,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -27,12 +31,13 @@ type TradableInstrument struct {
 	Instrument       *Instrument
 	MarginCalculator *types.MarginCalculator
 	RiskModel        risk.Model
+	assetDP          uint32
 }
 
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument.
-func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe)
+func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, marketID string, ts common.TimeService, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*TradableInstrument, error) {
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, marketID, ts, oe, broker, assetDP)
 	if err != nil {
 		return nil, err
 	}
@@ -45,23 +50,20 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 		Instrument:       instrument,
 		MarginCalculator: pti.MarginCalculator,
 		RiskModel:        riskModel,
+		assetDP:          assetDP, // keep it here for the update call
 	}, nil
 }
 
-func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, oe products.OracleEngine) error {
-	instrument, err := NewInstrument(ctx, log, ti.Instrument, oe)
-	if err != nil {
-		return err
-	}
+func (i *TradableInstrument) UpdateInstrument(ctx context.Context, log *logging.Logger, ti *types.TradableInstrument, marketID string, oe products.OracleEngine, broker products.Broker) error {
+	i.Instrument.Update(ctx, log, ti.Instrument, oe)
 
-	asset := instrument.Product.GetAsset()
+	asset := i.Instrument.Product.GetAsset()
 
 	riskModel, err := risk.NewModel(ti.RiskModel, asset)
 	if err != nil {
 		return fmt.Errorf("unable to instantiate risk model: %w", err)
 	}
 
-	i.Instrument = instrument
 	i.RiskModel = riskModel
 	i.MarginCalculator = ti.MarginCalculator
 	return nil
@@ -80,8 +82,8 @@ type Instrument struct {
 
 // NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument.
-func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) (*Instrument, error) {
-	product, err := products.New(ctx, log, pi.Product, oe)
+func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, marketID string, ts common.TimeService, oe products.OracleEngine, broker products.Broker, assetDP uint32) (*Instrument, error) {
+	product, err := products.New(ctx, log, pi.Product, marketID, ts, oe, broker, assetDP)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate product from instrument configuration: %w", err)
 	}
@@ -105,4 +107,18 @@ func (i *Instrument) UnsubscribeSettlementData(ctx context.Context) {
 func (i *Instrument) Unsubscribe(ctx context.Context) {
 	i.UnsubscribeTradingTerminated(ctx)
 	i.UnsubscribeSettlementData(ctx)
+}
+
+// NewInstrument will instantiate a new instrument
+// using a market framework configuration for a instrument.
+func (i *Instrument) Update(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) error {
+	if err := i.Product.Update(ctx, pi.Product, oe); err != nil {
+		return err
+	}
+
+	i.ID = pi.ID
+	i.Code = pi.Code
+	i.Name = pi.Name
+	i.Metadata = pi.Metadata
+	return nil
 }

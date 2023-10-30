@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -35,16 +38,15 @@ func TestProposalForNewAsset(t *testing.T) {
 	t.Run("Submitting a proposal for new asset succeeds", testSubmittingProposalForNewAssetSucceeds)
 	t.Run("Submitting a proposal for new asset with closing time before validation time fails", testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails)
 	t.Run("Voting during validation of proposal for new asset succeeds", testVotingDuringValidationOfProposalForNewAssetSucceeds)
-	t.Run("rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
+	t.Run("Rejects erc20 proposals for address already used", testRejectsERC20ProposalForAddressAlreadyUsed)
 }
 
 func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	newAssetERC20 := newAssetTerms()
 	newAssetERC20.NewAsset.Changes.Source = &types.AssetDetailsErc20{
@@ -70,12 +72,11 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 }
 
 func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	eng.assets.EXPECT().NewAsset(gomock.Any(), proposal.ID, gomock.Any()).Times(1).Return(proposal.ID, nil)
@@ -95,12 +96,11 @@ func testSubmittingProposalForNewAssetSucceeds(t *testing.T) {
 }
 
 func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(party, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
 
 	// setup
@@ -115,12 +115,11 @@ func testSubmittingProposalForNewAssetWithClosingTimeBeforeValidationTimeFails(t
 }
 
 func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	var bAsset *assets.Asset
@@ -221,8 +220,7 @@ func testVotingDuringValidationOfProposalForNewAssetSucceeds(t *testing.T) {
 }
 
 func TestNoVotesAnd0RequiredFails(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	ctx := context.Background()
 	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, netparams.GovernanceProposalAssetRequiredParticipation, "0")).Times(1)
@@ -235,7 +233,7 @@ func TestNoVotesAnd0RequiredFails(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newProposalForNewAsset(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 
 	// setup
 	var fcheck func(interface{}, bool)

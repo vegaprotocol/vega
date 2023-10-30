@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package liquidity
 
@@ -26,11 +29,12 @@ type AuctionState interface {
 	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsLiquidityExtension() bool
-	StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration)
 	StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration)
+	StartGovernanceSuspensionAuction(t time.Time)
+	EndGovernanceSuspensionAuction()
+
 	SetReadyToLeave()
 	InAuction() bool
-	ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration)
 	ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration)
 	ExpiresAt() *time.Time
 }
@@ -86,7 +90,7 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`,
 // "true" gets returned if non-persistent order should be rejected.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
-	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool,
+	rf types.RiskFactor, refPrice *num.Uint, _, _ uint64, persistent bool,
 ) bool {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
@@ -106,42 +110,32 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 
 	isOpening := as.IsOpeningAuction()
 	if exp != nil && as.IsLiquidityAuction() || as.IsLiquidityExtension() || isOpening {
-		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+		if currentStake.GTE(targetStake) {
 			as.SetReadyToLeave()
 			return false // all done
 		}
+
 		// we're still in trouble, extend the auction
-		extend := as.ExtendAuctionLiquidityNoOrders
-		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			extend = as.ExtendAuctionLiquidityUnmetTarget
-		}
-		extend(ext)
+		as.ExtendAuctionLiquidityUnmetTarget(ext)
 		return false
 	}
 	// multiply target stake by triggering ratio
 	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	stakeUndersupplied := currentStake.LT(scaledTargetStake)
-	if stakeUndersupplied || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
-		if stakeUndersupplied && len(trades) > 0 && !persistent {
+	if stakeUndersupplied {
+		if len(trades) > 0 && !persistent {
 			// non-persistent order cannot trigger auction by raising target stake
 			// we're going to stay in continuous trading
 			return true
 		}
 		if exp != nil {
-			extend := as.ExtendAuctionLiquidityNoOrders
-			if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-				extend = as.ExtendAuctionLiquidityUnmetTarget
-			}
-			extend(ext)
+			as.ExtendAuctionLiquidityUnmetTarget(ext)
 
 			return false
 		}
-		start := as.StartLiquidityAuctionNoOrders
-		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			start = as.StartLiquidityAuctionUnmetTarget
-		}
-		start(t, &types.AuctionDuration{
+
+		as.StartLiquidityAuctionUnmetTarget(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
 		})
 	}

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -27,13 +30,14 @@ import (
 
 // TestProposalForNetParamInvalidOnProposal verifies that an invalid value with respect to current values (i.e. crossing with the other current value) fails at submission time.
 func TestProposalForNetParamInvalidOnProposal(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	now := time.Now()
+
+	eng := getTestEngine(t, now)
 
 	party := eng.newValidParty("a-valid-party", 1)
 
 	// propose a min time that is greater than the max time, this should be invalid upon proposal and should be immediately rejected
-	p1 := eng.newProposalForNetParam(party.Id, netparams.MarketAuctionMinimumDuration, "169h", time.Now())
+	p1 := eng.newProposalForNetParam(party.Id, netparams.MarketAuctionMinimumDuration, "169h", now.Add(48*time.Hour))
 
 	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -47,13 +51,13 @@ func TestProposalForNetParamInvalidOnProposal(t *testing.T) {
 // TestProposalForNetParamCrossingOnUpdate submits two crossing proposals with the same enactment time. In this case the proposals pass the initial validation but also
 // pass the enactment validation and only fail at the last step of updating the param. The proposal will be marked as faild and only one of the values will go through.
 func TestProposalForNetParamCrossingOnUpdate(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	party1 := eng.newValidParty("a-valid-party", 1)
 	party2 := eng.newValidParty("another-valid-party", 1)
 
-	date1 := time.Date(2022, 10, 30, 0, 0, 0, 0, time.UTC)
+	now := eng.tsvc.GetTimeNow()
+	date1 := now.Add(5 * 24 * time.Hour)
 
 	// lower the max first, this should go through
 	p1 := eng.newProposalForNetParam(party1.Id, netparams.MarketAuctionMaximumDuration, "10h", date1)
@@ -117,14 +121,15 @@ func TestProposalForNetParamCrossingOnUpdate(t *testing.T) {
 // TestProposalForNetParamCrossingAtEnactment submits two crossing proposals such that one goes in before the other. In this case the first proposal passes and will get updated while
 // the second proposal will fail pre-enactment.
 func TestProposalForNetParamCrossingAtEnactment(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	party1 := eng.newValidParty("a-valid-party", 1)
 	party2 := eng.newValidParty("another-valid-party", 1)
 
-	date1 := time.Date(2022, 10, 30, 0, 0, 0, 0, time.UTC)
-	date2 := time.Date(2022, 10, 30, 1, 0, 0, 0, time.UTC)
+	now := eng.tsvc.GetTimeNow()
+
+	date1 := now.Add(5 * 24 * time.Hour)
+	date2 := date1.Add(time.Hour)
 
 	// lower the max first, this should go through
 	p1 := eng.newProposalForNetParam(party1.Id, netparams.MarketAuctionMaximumDuration, "10h", date1)

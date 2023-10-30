@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package events
 
@@ -24,10 +27,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrUnsupportedEvent = errors.New("unknown payload for event")
-	ErrInvalidEventType = errors.New("invalid proto event type")
-)
+var ErrInvalidEventType = errors.New("invalid proto event type")
 
 type Type int
 
@@ -140,7 +140,31 @@ const (
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
+	SpotLiquidityProvisionEvent
 	StopOrderEvent
+	FundingPeriodEvent
+	FundingPeriodDataPointEvent
+	TeamCreatedEvent
+	TeamUpdatedEvent
+	RefereeSwitchedTeamEvent
+	RefereeJoinedTeamEvent
+	ReferralProgramStartedEvent
+	ReferralProgramEndedEvent
+	ReferralProgramUpdatedEvent
+	ReferralSetCreatedEvent
+	RefereeJoinedReferralSetEvent
+	PartyActivityStreakEvent
+	VolumeDiscountProgramStartedEvent
+	VolumeDiscountProgramEndedEvent
+	VolumeDiscountProgramUpdatedEvent
+	ReferralSetStatsUpdatedEvent
+	VestingStatsUpdatedEvent
+	VolumeDiscountStatsUpdatedEvent
+	FeesStatsEvent
+	FundingPaymentsEvent
+	PaidLiquidityFeesStatsEvent
+	VestingBalancesSummaryEvent
+	TransferFeesEvent
 )
 
 var (
@@ -153,66 +177,89 @@ var (
 	}
 
 	protoMap = map[eventspb.BusEventType]Type{
-		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                              All,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                      TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:                 LedgerMovementsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:              PositionResolution,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                           MarketEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                            OrderEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:                          AccountEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:                            PartyEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:                            TradeEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:                    MarginLevelsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:                         ProposalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                             VoteEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:                      MarketDataEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:                   NodeSignatureEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:               LossSocializationEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:                  SettlePositionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:                SettleDistressedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:                   MarketCreatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:                   MarketUpdatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:                            AssetEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:                      MarketTickEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:                       WithdrawalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:                          DepositEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:                          AuctionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:                      RiskFactorEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:                NetworkParameterEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:              LiquidityProvisionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:                         TxErrEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:                      OracleSpecEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:                      OracleDataEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:                     EpochUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:              RewardPayoutEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:               DelegationBalanceEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE:                  ValidatorScoreEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:                    StakeLinkingEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:                 ValidatorUpdateEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:                       CheckpointEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:                     KeyRotationEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:                        StateVarEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:                   NetworkLimitsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:                         TransferEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:                ValidatorRankingEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD:    ERC20MultiSigThresholdSetEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT:     ERC20MultiSigSignerEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:     ERC20MultiSigSignerAddedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED:   ERC20MultiSigSignerRemovedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                   PositionStateEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION:            EthereumKeyRotationEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:        ProtocolUpgradeEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:                      BeginBlockEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:                        EndBlockEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:         ProtocolUpgradeStartedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                    SettleMarketEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:               TransactionResultEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:                   CoreSnapshotEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY: ProtocolUpgradeDataNodeReadyEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:         DistressedOrdersClosedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                   ExpiredOrdersEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:             DistressedPositionsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:                       StopOrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                               All,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                       TimeUpdate,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LEDGER_MOVEMENTS:                  LedgerMovementsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:               PositionResolution,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                            MarketEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                             OrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:                           AccountEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:                             PartyEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:                             TradeEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:                     MarginLevelsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:                          ProposalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                              VoteEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:                       MarketDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:                    NodeSignatureEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:                LossSocializationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:                   SettlePositionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:                 SettleDistressedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:                    MarketCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:                    MarketUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:                             AssetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:                       MarketTickEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:                        WithdrawalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:                           DepositEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:                           AuctionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:                       RiskFactorEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:                 NetworkParameterEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:               LiquidityProvisionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:                          TxErrEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:                       OracleSpecEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:                       OracleDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:                      EpochUpdate,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:               RewardPayoutEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:                DelegationBalanceEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE:                   ValidatorScoreEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:                     StakeLinkingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:                  ValidatorUpdateEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:                        CheckpointEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:                      KeyRotationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:                         StateVarEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:                    NetworkLimitsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:                          TransferEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:                 ValidatorRankingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SET_THRESHOLD:     ERC20MultiSigThresholdSetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_EVENT:      ERC20MultiSigSignerEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_ADDED:      ERC20MultiSigSignerAddedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ERC20_MULTI_SIG_SIGNER_REMOVED:    ERC20MultiSigSignerRemovedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_STATE:                    PositionStateEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION:             EthereumKeyRotationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL:         ProtocolUpgradeEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK:                       BeginBlockEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_END_BLOCK:                         EndBlockEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED:          ProtocolUpgradeStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET:                     SettleMarketEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT:                TransactionResultEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN:                    CoreSnapshotEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY:  ProtocolUpgradeDataNodeReadyEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:          DistressedOrdersClosedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                    ExpiredOrdersEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:              DistressedPositionsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:                        StopOrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD:                    FundingPeriodEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT:         FundingPeriodDataPointEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED:                      TeamCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED:                      TeamUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM:             RefereeSwitchedTeamEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM:               RefereeJoinedTeamEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED:          ReferralProgramStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED:            ReferralProgramEndedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED:          ReferralProgramUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED:              ReferralSetCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET:       RefereeJoinedReferralSetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK:             PartyActivityStreakEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED:   VolumeDiscountProgramStartedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED:     VolumeDiscountProgramEndedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED:   VolumeDiscountProgramUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED:        ReferralSetStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED:             VestingStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED:     VolumeDiscountStatsUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED:                FeesStatsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS:                  FundingPaymentsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED: PaidLiquidityFeesStatsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY:                   VestingBalancesSummaryEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID:                TransferFeesEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -276,6 +323,29 @@ var (
 		ExpiredOrdersEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS,
 		DistressedPositionsEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS,
 		StopOrderEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER,
+		FundingPeriodEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD,
+		FundingPeriodDataPointEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PERIOD_DATA_POINT,
+		TeamCreatedEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_CREATED,
+		TeamUpdatedEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_TEAM_UPDATED,
+		RefereeSwitchedTeamEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_SWITCHED_TEAM,
+		RefereeJoinedTeamEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_TEAM,
+		ReferralProgramStartedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_STARTED,
+		ReferralProgramEndedEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_ENDED,
+		ReferralProgramUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_PROGRAM_UPDATED,
+		ReferralSetCreatedEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_CREATED,
+		RefereeJoinedReferralSetEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_REFEREE_JOINED_REFERRAL_SET,
+		PartyActivityStreakEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_ACTIVITY_STREAK,
+		VolumeDiscountProgramStartedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_STARTED,
+		VolumeDiscountProgramEndedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_ENDED,
+		VolumeDiscountProgramUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_PROGRAM_UPDATED,
+		ReferralSetStatsUpdatedEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_REFERRAL_SET_STATS_UPDATED,
+		VestingStatsUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_STATS_UPDATED,
+		VolumeDiscountStatsUpdatedEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VOLUME_DISCOUNT_STATS_UPDATED,
+		FeesStatsEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_FEES_STATS_UPDATED,
+		FundingPaymentsEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_FUNDING_PAYMENTS,
+		PaidLiquidityFeesStatsEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED,
+		VestingBalancesSummaryEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY,
+		TransferFeesEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -340,6 +410,28 @@ var (
 		ExpiredOrdersEvent:                "ExpiredOrdersEvent",
 		DistressedPositionsEvent:          "DistressedPositionsEvent",
 		StopOrderEvent:                    "StopOrderEvent",
+		FundingPeriodEvent:                "FundingPeriodEvent",
+		FundingPeriodDataPointEvent:       "FundingPeriodDataPointEvent",
+		TeamCreatedEvent:                  "TeamCreatedEvent",
+		TeamUpdatedEvent:                  "TeamUpdatedEvent",
+		RefereeSwitchedTeamEvent:          "RefereeSwitchedTeamEvent",
+		RefereeJoinedTeamEvent:            "RefereeJoinedTeamEvent",
+		ReferralProgramStartedEvent:       "ReferralProgramStartedEvent",
+		ReferralProgramEndedEvent:         "ReferralProgramEndedEvent",
+		ReferralProgramUpdatedEvent:       "ReferralProgramUpdatedEvent",
+		ReferralSetCreatedEvent:           "ReferralSetCreatedEvent",
+		RefereeJoinedReferralSetEvent:     "RefereeJoinReferralSetEvent",
+		PartyActivityStreakEvent:          "PartyActivityStreakEvent",
+		VolumeDiscountProgramStartedEvent: "VolumeDiscountProgramStartedEvent",
+		VolumeDiscountProgramEndedEvent:   "VolumeDiscountProgramEndedEvent",
+		VolumeDiscountProgramUpdatedEvent: "VolumeDiscountProgramUpdatedEvent",
+		ReferralSetStatsUpdatedEvent:      "ReferralSetStatsUpdatedEvent",
+		VestingStatsUpdatedEvent:          "VestingStatsUpdatedEvent",
+		VolumeDiscountStatsUpdatedEvent:   "VolumeDiscountStatsUpdatedEvent",
+		FeesStatsEvent:                    "FeesStatsEvent",
+		FundingPaymentsEvent:              "FundingPaymentsEvent",
+		PaidLiquidityFeesStatsEvent:       "LiquidityFeesStatsEvent",
+		VestingBalancesSummaryEvent:       "VestingBalancesSummaryEvent",
 	}
 )
 

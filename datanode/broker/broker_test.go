@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -27,10 +42,10 @@ import (
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/types"
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 
@@ -61,6 +76,7 @@ func getBroker(t *testing.T) *brokerTst {
 	ctrl := gomock.NewController(t)
 	logger := logging.NewTestLogger()
 	broker, _ := broker.New(ctx, logger, broker.NewDefaultConfig(), stats.NewBlockchain())
+	t.Cleanup(cfunc)
 	return &brokerTst{
 		Broker: broker,
 		cfunc:  cfunc,
@@ -81,11 +97,6 @@ func (b brokerTst) randomEvt() *evt {
 		cid:    "testchain",
 		txHash: "testTxHash",
 	}
-}
-
-func (b *brokerTst) Finish() {
-	b.cfunc()
-	b.ctrl.Finish()
 }
 
 func TestSequenceIDGen(t *testing.T) {
@@ -121,7 +132,7 @@ func TestSendEvent(t *testing.T) {
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
-	defer tstBroker.Finish()
+
 	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
@@ -170,7 +181,7 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
-	defer tstBroker.Finish()
+
 	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
@@ -220,7 +231,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 func testSubUnsubSuccess(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	reqSub := mocks.NewMockSubscriber(broker.ctrl)
 	// subscribe + unsubscribe -> 2 calls
@@ -244,7 +255,7 @@ func testSubUnsubSuccess(t *testing.T) {
 func testSubReuseKey(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	sub.EXPECT().Types().Times(4).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
@@ -263,7 +274,7 @@ func testSubReuseKey(t *testing.T) {
 func testAutoUnsubscribe(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	// sub, auto-unsub, sub again
 	sub.EXPECT().Types().Times(3).Return(nil)
@@ -302,7 +313,6 @@ func testSendBatch(t *testing.T) {
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	cancelCh := make(chan struct{})
 	defer func() {
-		tstBroker.Finish()
 		close(cancelCh)
 	}()
 	sub.EXPECT().Types().Times(1).Return(nil)
@@ -336,7 +346,6 @@ func testSendBatchChannel(t *testing.T) {
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
-		tstBroker.Finish()
 		close(closedCh)
 		close(skipCh)
 	}()
@@ -418,7 +427,6 @@ func testSkipOptional(t *testing.T) {
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
 	defer func() {
-		tstBroker.Finish()
 		close(closedCh)
 		close(skipCh)
 	}()
@@ -486,7 +494,7 @@ func testSkipOptional(t *testing.T) {
 func testStopCtx(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	ch := make(chan struct{})
 	sub.EXPECT().Closed().AnyTimes().Return(ch)
@@ -507,7 +515,7 @@ func testStopCtx(t *testing.T) {
 func testStopCtxSendAgain(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	ch := make(chan struct{})
 	sub.EXPECT().Closed().AnyTimes().Return(ch)
@@ -530,7 +538,7 @@ func testStopCtxSendAgain(t *testing.T) {
 func testSubscriberSkip(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	skipCh, closeCh := make(chan struct{}), make(chan struct{})
 	skip := int64(0)
@@ -575,7 +583,7 @@ func testSubscriberSkip(t *testing.T) {
 func testEventTypeSubscription(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)
-	defer broker.Finish()
+
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	allSub := mocks.NewMockSubscriber(broker.ctrl)
 	diffSub := mocks.NewMockSubscriber(broker.ctrl)
@@ -634,7 +642,6 @@ func testEventTypeSubscription(t *testing.T) {
 func testStreamsOverSocket(t *testing.T) {
 	t.Parallel()
 	ctx, cfunc := context.WithCancel(context.Background())
-	ctrl := gomock.NewController(t)
 	config := broker.NewDefaultConfig()
 	config.Socket.Enabled = true
 	config.Socket.Transport = "inproc"
@@ -653,7 +660,7 @@ func testStreamsOverSocket(t *testing.T) {
 
 	defer func() {
 		cfunc()
-		ctrl.Finish()
+
 		sock.Close()
 	}()
 
@@ -674,7 +681,6 @@ func testStopsProcessOnStreamError(t *testing.T) {
 	t.Parallel()
 	if os.Getenv("RUN_TEST") == "1" {
 		ctx, cfunc := context.WithCancel(context.Background())
-		ctrl := gomock.NewController(t)
 		config := broker.NewDefaultConfig()
 		config.Socket.Enabled = true
 		config.Socket.Transport = "inproc"
@@ -697,7 +703,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 
 		defer func() {
 			cfunc()
-			ctrl.Finish()
+
 			sock.Close()
 		}()
 

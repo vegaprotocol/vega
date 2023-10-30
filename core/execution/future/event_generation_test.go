@@ -1,20 +1,22 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -142,8 +144,6 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 	}
 
 	if !assert.Equal(t, tm.market.GetMarketData().BestOfferVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.SideSell, bestAsk.Uint64())) {
-		fmt.Println("BestAskVolume in OB:", tm.market.GetMarketData().BestOfferVolume)
-		fmt.Println("BestAskVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.SideSell, bestAsk.Uint64()))
 		correct = false
 	}
 
@@ -429,16 +429,13 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	// assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, uint64(4), tm.orderEventCount)
-	// assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	// assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
@@ -918,63 +915,6 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice(tm.market.GetID(), types.SideSell, 100))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
-}
-
-func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
-	now := time.Unix(10, 0)
-	ctx := context.Background()
-	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
-
-	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "party-B", 1, 98)
-	o2conf, err := tm.market.SubmitOrder(ctx, o2)
-	require.NotNil(t, o2conf)
-	require.NoError(t, err)
-
-	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-B", 1, 100)
-	o3conf, err := tm.market.SubmitOrder(ctx, o3)
-	require.NotNil(t, o3conf)
-	require.NoError(t, err)
-
-	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideSell, "party-B", 1, 110)
-	o5conf, err := tm.market.SubmitOrder(ctx, o5)
-	require.NotNil(t, o5conf)
-	require.NoError(t, err)
-
-	buys := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
-	}
-	sells := []*types.LiquidityOrder{
-		newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
-	}
-
-	lps := &types.LiquidityProvisionSubmission{
-		Fee:              num.DecimalFromFloat(0.05),
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(10),
-		Buys:             buys,
-		Sells:            sells,
-	}
-
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
-	require.NoError(t, err)
-	assert.Equal(t, 1, tm.market.GetLPSCount())
-
-	o6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order06", types.SideSell, "party-C", 2, 99)
-	o6conf, err := tm.market.SubmitOrder(ctx, o6)
-	require.NotNil(t, o6conf)
-	require.NoError(t, err)
-
-	// Check we have the right amount of events
-	assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
-
-	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
-	// assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
 func TestEvents_PeggedOrders(t *testing.T) {

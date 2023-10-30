@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package steps
 
@@ -52,7 +55,7 @@ func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 // unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encoutered.
 func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error) error {
 	if row.ExpectError() && returnedErr == nil {
-		return fmt.Errorf("action on \"%s\" should have fail", row.Reference())
+		return fmt.Errorf("action on %q should have fail", row.Reference())
 	}
 
 	if returnedErr != nil {
@@ -60,11 +63,11 @@ func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error
 			if unexpectedErrDetail != nil {
 				return unexpectedErrDetail
 			}
-			return fmt.Errorf("action on \"%s\" has failed: %s", row.Reference(), returnedErr.Error())
+			return fmt.Errorf("action on %q has failed: %s", row.Reference(), returnedErr.Error())
 		}
 
 		if row.Error() != returnedErr.Error() {
-			return formatDiff(fmt.Sprintf("action on \"%s\" is failing as expected but not with the expected error message", row.Reference()),
+			return formatDiff(fmt.Sprintf("action on %q is failing as expected but not with the expected error message", row.Reference()),
 				map[string]string{
 					"error": row.Error(),
 				},

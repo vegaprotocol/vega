@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -42,8 +57,7 @@ const (
 )
 
 func TestStorageGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	tradeStore := sqlstore.NewTrades(connectionSource)
 
@@ -369,8 +383,7 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 }
 
 func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -394,8 +407,7 @@ func testTradesCursorPaginationByMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -420,8 +432,7 @@ func testTradesCursorPaginationByPartyNoMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -444,8 +455,7 @@ func testTradesCursorPaginationByPartyAndMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -469,8 +479,7 @@ func testTradesCursorPaginationByMarketWithCursorFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -493,8 +502,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -518,8 +526,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -543,8 +550,7 @@ func testTradesCursorPaginationByMarketWithCursorLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -567,8 +573,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -592,8 +597,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLast(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -618,8 +622,7 @@ func testTradesCursorPaginationByMarketWithCursorForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -643,8 +646,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -669,8 +671,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -694,8 +695,7 @@ func testTradesCursorPaginationByMarketWithCursorBackward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -719,8 +719,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackward(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -746,8 +745,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackward(t *testing.T) 
 
 // Newest First.
 func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -771,8 +769,7 @@ func testTradesCursorPaginationByMarketNoCursorNewestFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -797,8 +794,7 @@ func testTradesCursorPaginationByPartyNoMarketNoCursorNewestFirst(t *testing.T) 
 }
 
 func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -821,8 +817,7 @@ func testTradesCursorPaginationByPartyAndMarketNoCursorNewestFirst(t *testing.T)
 }
 
 func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -846,8 +841,7 @@ func testTradesCursorPaginationByMarketWithCursorFirstNewestFirst(t *testing.T) 
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -870,8 +864,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketFirstNewestFirst(t *test
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -895,8 +888,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorFirstNewestFirst(t *tes
 }
 
 func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -920,8 +912,7 @@ func testTradesCursorPaginationByMarketWithCursorLastNewestFirst(t *testing.T) {
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -944,8 +935,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketLastNewestFirst(t *testi
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -969,8 +959,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorLastNewestFirst(t *test
 }
 
 func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -995,8 +984,7 @@ func testTradesCursorPaginationByMarketWithCursorForwardNewestFirst(t *testing.T
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1020,8 +1008,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketForwardNewestFirst(t *te
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1046,8 +1033,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorForwardNewestFirst(t *t
 }
 
 func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1071,8 +1057,7 @@ func testTradesCursorPaginationByMarketWithCursorBackwardNewestFirst(t *testing.
 }
 
 func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1096,8 +1081,7 @@ func testTradesCursorPaginationByPartyWithCursorNoMarketBackwardNewestFirst(t *t
 }
 
 func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1122,8 +1106,7 @@ func testTradesCursorPaginationByPartyAndMarketWithCursorBackwardNewestFirst(t *
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1150,8 +1133,7 @@ func testTradesCursorPaginationBetweenDatesByMarketNoCursor(t *testing.T) {
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1178,8 +1160,7 @@ func testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst(t *testin
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketWithCursorLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)
@@ -1206,8 +1187,7 @@ func testTradesCursorPaginationBetweenDatesByMarketWithCursorLast(t *testing.T) 
 }
 
 func testTradesCursorPaginationBetweenDatesByMarketWithCursorForward(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ts := setupTradesTest(t)
 	blockTimes := make(map[string]time.Time)

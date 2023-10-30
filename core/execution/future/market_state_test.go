@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future_test
 
@@ -92,13 +95,6 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
-		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", vgcrypto.RandomHash())
@@ -172,14 +168,6 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(15000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time
@@ -223,14 +211,6 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(15000),
 		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
-		},
-		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
-		},
 	}
 	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
 	// now move to after the opening auction time

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -16,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -26,7 +30,7 @@ type ProposalTermsNewSpotMarket struct {
 func (a ProposalTermsNewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"newSpotMarket(%s)",
-		reflectPointerToString(a.NewSpotMarket),
+		stringer.ReflectPointerToString(a.NewSpotMarket),
 	)
 }
 
@@ -99,7 +103,7 @@ func (n NewSpotMarket) DeepClone() *NewSpotMarket {
 func (n NewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -111,6 +115,8 @@ type NewSpotMarketConfiguration struct {
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            newRiskParams
+	SLAParams                 *LiquiditySLAParams
+
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -150,6 +156,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
+		SlaParams:                 n.SLAParams.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -165,6 +172,7 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 		DecimalPlaces:         n.DecimalPlaces,
 		PositionDecimalPlaces: n.PositionDecimalPlaces,
 		Metadata:              make([]string, len(n.Metadata)),
+		SLAParams:             n.SLAParams.DeepClone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -184,14 +192,15 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 
 func (n NewSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		reflectPointerToString(n.Instrument),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.TargetStakeParameters),
-		reflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.TargetStakeParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.ReflectPointerToString(n.SLAParams),
 	)
 }
 
@@ -199,9 +208,13 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
+	var err error
 	var instrument *InstrumentConfiguration
 	if p.Instrument != nil {
-		instrument = InstrumentConfigurationFromProto(p.Instrument)
+		instrument, err = InstrumentConfigurationFromProto(p.Instrument)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse instrument configuration: %w", err)
+		}
 	}
 
 	var priceMonitoring *PriceMonitoringParameters
@@ -210,6 +223,11 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 	}
 	targetStakeParams := TargetStakeParametersFromProto(p.TargetStakeParameters)
 
+	var slaParams *LiquiditySLAParams
+	if p.SlaParams != nil {
+		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
+	}
+
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
 		DecimalPlaces:             p.DecimalPlaces,
@@ -217,6 +235,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		Metadata:                  md,
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
+		SLAParams:                 slaParams,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -236,7 +255,7 @@ type NewSpotMarketConfigurationSimple struct {
 func (n NewSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -291,7 +310,7 @@ func (n NewSpotMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{
 func (n NewSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 
@@ -312,7 +331,7 @@ type InstrumentConfigurationSpot struct {
 func (i InstrumentConfigurationSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		reflectPointerToString(i.Spot),
+		stringer.ReflectPointerToString(i.Spot),
 	)
 }
 

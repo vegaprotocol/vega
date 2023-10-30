@@ -2,14 +2,15 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Depth
   Scenario: Check order events with larger pegged orders, and lower balance; check cancelling all orders for a party per market 0033-OCAN-010
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

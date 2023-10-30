@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -17,7 +20,10 @@ import (
 	"fmt"
 	"strings"
 
+	"code.vegaprotocol.io/vega/core/datasource"
+	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -31,6 +37,7 @@ type ProductType int32
 const (
 	ProductTypeFuture ProductType = iota
 	ProductTypeSpot
+	ProductTypePerps
 )
 
 type ProposalTermsNewMarket struct {
@@ -40,7 +47,7 @@ type ProposalTermsNewMarket struct {
 func (a ProposalTermsNewMarket) String() string {
 	return fmt.Sprintf(
 		"newMarket(%s)",
-		reflectPointerToString(a.NewMarket),
+		stringer.ReflectPointerToString(a.NewMarket),
 	)
 }
 
@@ -107,6 +114,10 @@ func (n NewMarket) Successor() *SuccessorConfig {
 	return &cpy
 }
 
+func (n *NewMarket) ClearSuccessor() {
+	n.Changes.Successor = nil
+}
+
 func (n NewMarket) IntoProto() *vegapb.NewMarket {
 	var changes *vegapb.NewMarketConfiguration
 	if n.Changes != nil {
@@ -128,7 +139,7 @@ func (n NewMarket) DeepClone() *NewMarket {
 func (n NewMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		reflectPointerToString(n.Changes),
+		stringer.ReflectPointerToString(n.Changes),
 	)
 }
 
@@ -144,11 +155,12 @@ type NewMarketConfiguration struct {
 	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                newRiskParams
-	LpPriceRange                  num.Decimal
-	LinearSlippageFactor          num.Decimal
-	QuadraticSlippageFactor       num.Decimal
-	Successor                     *SuccessorConfig
+	LiquiditySLAParameters        *LiquiditySLAParams
+
+	RiskParameters          newRiskParams
+	LinearSlippageFactor    num.Decimal
+	QuadraticSlippageFactor num.Decimal
+	Successor               *SuccessorConfig
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -181,6 +193,11 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		liquidityMonitoring = n.LiquidityMonitoringParameters.IntoProto()
 	}
 
+	var liquiditySLAParameters *vegapb.LiquiditySLAParameters
+	if n.LiquiditySLAParameters != nil {
+		liquiditySLAParameters = n.LiquiditySLAParameters.IntoProto()
+	}
+
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 n.DecimalPlaces,
@@ -188,7 +205,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
-		LpPriceRange:                  n.LpPriceRange.String(),
+		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
@@ -209,7 +226,6 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		DecimalPlaces:           n.DecimalPlaces,
 		PositionDecimalPlaces:   n.PositionDecimalPlaces,
 		Metadata:                make([]string, len(n.Metadata)),
-		LpPriceRange:            n.LpPriceRange.Copy(),
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 	}
@@ -226,6 +242,9 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
 	}
+	if n.LiquiditySLAParameters != nil {
+		cpy.LiquiditySLAParameters = n.LiquiditySLAParameters.DeepClone()
+	}
 	if n.Successor != nil {
 		cs := *n.Successor
 		cpy.Successor = &cs
@@ -235,15 +254,14 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		reflectPointerToString(n.Instrument),
-		reflectPointerToString(n.PriceMonitoringParameters),
-		reflectPointerToString(n.LiquidityMonitoringParameters),
-		reflectPointerToString(n.RiskParameters),
-		n.LpPriceRange.String(),
+		stringer.ReflectPointerToString(n.Instrument),
+		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
+		stringer.ReflectPointerToString(n.LiquidityMonitoringParameters),
+		stringer.ReflectPointerToString(n.RiskParameters),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 	)
@@ -261,6 +279,14 @@ func (n NewMarketConfiguration) GetFuture() *InstrumentConfigurationFuture {
 	return nil
 }
 
+func (n NewMarketConfiguration) GetPerps() *InstrumentConfigurationPerps {
+	if n.ProductType() == ProductTypePerps {
+		p, _ := n.Instrument.Product.(*InstrumentConfigurationPerps)
+		return p
+	}
+	return nil
+}
+
 func (n NewMarketConfiguration) GetSpot() *InstrumentConfigurationSpot {
 	if n.ProductType() == ProductTypeSpot {
 		f, _ := n.Instrument.Product.(*InstrumentConfigurationSpot)
@@ -273,9 +299,13 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
+	var err error
 	var instrument *InstrumentConfiguration
 	if p.Instrument != nil {
-		instrument = InstrumentConfigurationFromProto(p.Instrument)
+		instrument, err = InstrumentConfigurationFromProto(p.Instrument)
+		if err != nil {
+			return nil, fmt.Errorf("error getting new instrument configuration from proto: %w", err)
+		}
 	}
 
 	var priceMonitoring *PriceMonitoringParameters
@@ -290,7 +320,11 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 		}
 	}
-	lppr, _ := num.DecimalFromString(p.LpPriceRange)
+
+	var liquiditySLAParameters *LiquiditySLAParams
+	if p.LiquiditySlaParameters != nil {
+		liquiditySLAParameters = LiquiditySLAParamsFromProto(p.LiquiditySlaParameters)
+	}
 
 	if len(p.LinearSlippageFactor) == 0 || len(p.QuadraticSlippageFactor) == 0 {
 		return nil, ErrMissingSlippageFactor
@@ -311,7 +345,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		Metadata:                      md,
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
-		LpPriceRange:                  lppr,
+		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
@@ -368,7 +402,7 @@ type NewMarketConfigurationSimple struct {
 func (n NewMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		reflectPointerToString(n.Simple),
+		stringer.ReflectPointerToString(n.Simple),
 	)
 }
 
@@ -423,7 +457,7 @@ func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
 func (n NewMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		reflectPointerToString(n.LogNormal),
+		stringer.ReflectPointerToString(n.LogNormal),
 	)
 }
 
@@ -453,7 +487,7 @@ type InstrumentConfigurationFuture struct {
 func (i InstrumentConfigurationFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		reflectPointerToString(i.Future),
+		stringer.ReflectPointerToString(i.Future),
 	)
 }
 
@@ -474,11 +508,64 @@ func (InstrumentConfigurationFuture) Type() ProductType {
 	return ProductTypeFuture
 }
 
+func (i InstrumentConfigurationFuture) IntoProto() *vegapb.InstrumentConfiguration_Future {
+	return &vegapb.InstrumentConfiguration_Future{
+		Future: i.Future.IntoProto(),
+	}
+}
+
+func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
+
+type InstrumentConfigurationPerps struct {
+	Perps *PerpsProduct
+}
+
+func (i InstrumentConfigurationPerps) String() string {
+	return fmt.Sprintf(
+		"perps(%s)",
+		stringer.ReflectPointerToString(i.Perps),
+	)
+}
+
+func (i InstrumentConfigurationPerps) DeepClone() instrumentConfigurationProduct {
+	if i.Perps == nil {
+		return &InstrumentConfigurationPerps{}
+	}
+	return &InstrumentConfigurationPerps{
+		Perps: i.Perps.DeepClone(),
+	}
+}
+
+func (i InstrumentConfigurationPerps) Assets() []string {
+	return i.Perps.Assets()
+}
+
+func (InstrumentConfigurationPerps) Type() ProductType {
+	return ProductTypePerps
+}
+
+func (i InstrumentConfigurationPerps) IntoProto() *vegapb.InstrumentConfiguration_Perpetual {
+	return &vegapb.InstrumentConfiguration_Perpetual{
+		Perpetual: i.Perps.IntoProto(),
+	}
+}
+
+func (i InstrumentConfigurationPerps) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (InstrumentConfigurationPerps) isInstrumentConfigurationProduct() {}
+
 type InstrumentConfiguration struct {
 	Name string
 	Code string
 	// *InstrumentConfigurationFuture
 	// *InstrumentConfigurationSpot
+	// *InstrumentConfigurationPerps
 	Product instrumentConfigurationProduct
 }
 
@@ -502,6 +589,8 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	switch pr := p.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
 		r.Product = pr
+	case *vegapb.InstrumentConfiguration_Perpetual:
+		r.Product = pr
 	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = pr
 	}
@@ -513,13 +602,13 @@ func (i InstrumentConfiguration) String() string {
 		"name(%s) code(%s) product(%s)",
 		i.Name,
 		i.Code,
-		reflectPointerToString(i.Product),
+		stringer.ReflectPointerToString(i.Product),
 	)
 }
 
 func InstrumentConfigurationFromProto(
 	p *vegapb.InstrumentConfiguration,
-) *InstrumentConfiguration {
+) (*InstrumentConfiguration, error) {
 	r := &InstrumentConfiguration{
 		Name: p.Name,
 		Code: p.Code,
@@ -527,13 +616,60 @@ func InstrumentConfigurationFromProto(
 
 	switch pr := p.Product.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
+		settl, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+
+		term, err := datasource.DefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
+		}
 		r.Product = &InstrumentConfigurationFuture{
 			Future: &FutureProduct{
 				SettlementAsset:                     pr.Future.SettlementAsset,
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
-				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
+				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
+				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+			},
+		}
+	case *vegapb.InstrumentConfiguration_Perpetual:
+		settlement, err := datasource.DefinitionFromProto(pr.Perpetual.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+
+		settlementSchedule, err := datasource.DefinitionFromProto(pr.Perpetual.DataSourceSpecForSettlementSchedule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement schedule data source spec: %w", err)
+		}
+
+		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound num.Decimal
+		if marginFundingFactor, err = num.DecimalFromString(pr.Perpetual.MarginFundingFactor); err != nil {
+			return nil, fmt.Errorf("failed to parse margin funding factor: %w", err)
+		}
+		if interestRate, err = num.DecimalFromString(pr.Perpetual.InterestRate); err != nil {
+			return nil, fmt.Errorf("failed to parse interest rate: %w", err)
+		}
+		if clampLowerBound, err = num.DecimalFromString(pr.Perpetual.ClampLowerBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp lower bound: %w", err)
+		}
+		if clampUpperBound, err = num.DecimalFromString(pr.Perpetual.ClampUpperBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp upper bound: %w", err)
+		}
+
+		r.Product = &InstrumentConfigurationPerps{
+			Perps: &PerpsProduct{
+				SettlementAsset:                     pr.Perpetual.SettlementAsset,
+				QuoteName:                           pr.Perpetual.QuoteName,
+				MarginFundingFactor:                 marginFundingFactor,
+				InterestRate:                        interestRate,
+				ClampLowerBound:                     clampLowerBound,
+				ClampUpperBound:                     clampUpperBound,
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
+				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
+				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perpetual.DataSourceSpecBinding),
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Spot:
@@ -545,27 +681,15 @@ func InstrumentConfigurationFromProto(
 			},
 		}
 	}
-	return r
+	return r, nil
 }
-
-func (i InstrumentConfigurationFuture) IntoProto() *vegapb.InstrumentConfiguration_Future {
-	return &vegapb.InstrumentConfiguration_Future{
-		Future: i.Future.IntoProto(),
-	}
-}
-
-func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
-	return i.IntoProto()
-}
-
-func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
 type FutureProduct struct {
 	SettlementAsset                     string
 	QuoteName                           string
-	DataSourceSpecForSettlementData     DataSourceDefinition
-	DataSourceSpecForTradingTermination DataSourceDefinition
-	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForTradingTermination dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForFuture
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
@@ -579,13 +703,11 @@ func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
-	settlData := f.DataSourceSpecForSettlementData.DeepClone()
-	termData := f.DataSourceSpecForTradingTermination.DeepClone()
 	return &FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     settlData,
-		DataSourceSpecForTradingTermination: termData,
+		DataSourceSpecForSettlementData:     *f.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForTradingTermination: *f.DataSourceSpecForTradingTermination.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }
@@ -595,14 +717,75 @@ func (f FutureProduct) String() string {
 		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
-		reflectPointerToString(f.DataSourceSpecForSettlementData),
-		reflectPointerToString(f.DataSourceSpecForTradingTermination),
-		reflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
+		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
 	)
 }
 
 func (f FutureProduct) Assets() []string {
 	return []string{f.SettlementAsset}
+}
+
+type PerpsProduct struct {
+	SettlementAsset string
+	QuoteName       string
+
+	MarginFundingFactor num.Decimal
+	InterestRate        num.Decimal
+	ClampLowerBound     num.Decimal
+	ClampUpperBound     num.Decimal
+
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForSettlementSchedule dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+}
+
+func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
+	return &vegapb.PerpetualProduct{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor.String(),
+		InterestRate:                        p.InterestRate.String(),
+		ClampLowerBound:                     p.ClampLowerBound.String(),
+		ClampUpperBound:                     p.ClampUpperBound.String(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+	}
+}
+
+func (p PerpsProduct) DeepClone() *PerpsProduct {
+	return &PerpsProduct{
+		SettlementAsset:                     p.SettlementAsset,
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor,
+		InterestRate:                        p.InterestRate,
+		ClampLowerBound:                     p.ClampLowerBound,
+		ClampUpperBound:                     p.ClampUpperBound,
+		DataSourceSpecForSettlementData:     *p.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForSettlementSchedule: *p.DataSourceSpecForSettlementSchedule.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.DeepClone(),
+	}
+}
+
+func (p PerpsProduct) String() string {
+	return fmt.Sprintf(
+		"quote(%s) settlementAsset(%s) marginFundingFactor(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) settlementSchedule(%s) binding(%s)",
+		p.QuoteName,
+		p.SettlementAsset,
+		p.MarginFundingFactor.String(),
+		p.InterestRate.String(),
+		p.ClampLowerBound.String(),
+		p.ClampUpperBound.String(),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+	)
+}
+
+func (p PerpsProduct) Assets() []string {
+	return []string{p.SettlementAsset}
 }
 
 type MetadataList []string

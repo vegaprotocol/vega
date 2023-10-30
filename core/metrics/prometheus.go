@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package metrics
 
@@ -56,7 +59,11 @@ var (
 	// Total time counters for each request type per API.
 	apiRequestTimeCounter *prometheus.CounterVec
 	// Total time spent snapshoting.
-	snapshotTimeCounter *prometheus.CounterVec
+	snapshotTimeGauge *prometheus.GaugeVec
+	// Size of the snapshot per namespace.
+	snapshotSizeGauge *prometheus.GaugeVec
+	// Height of the last snapshot.
+	snapshotBlockHeightCounter prometheus.Gauge
 	// Core HTTP bindings that we will check against when updating HTTP metrics.
 	httpBindings *protos.Bindings
 )
@@ -170,8 +177,8 @@ func BufCap(bc uint32) InstrumentOption {
 	}
 }
 
-// addInstrument  configure and register new metrics instrument
-// this will, over time, be moved to use custom Registries, etc...
+// addInstrument configures and registers new metrics instrument.
+// This will, over time, be moved to use custom Registries, etc...
 func addInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, error) {
 	var col prometheus.Collector
 	ret := mi{}
@@ -236,7 +243,7 @@ func Start(conf Config) {
 		return
 	}
 	if err := setupMetrics(); err != nil {
-		panic("could not set up metrics")
+		panic(fmt.Sprintf("could not set up metrics: %v", err))
 	}
 	http.Handle(conf.Path, promhttp.Handler())
 	go func() {
@@ -481,8 +488,8 @@ func setupMetrics() error {
 
 	// snapshots times
 	h, err = addInstrument(
-		Counter,
-		"snapshot_time_total",
+		Gauge,
+		"snapshot_time_seconds",
 		Namespace("vega"),
 		Vectors("engine"),
 		Help("Total time spent snapshotting state"),
@@ -490,11 +497,44 @@ func setupMetrics() error {
 	if err != nil {
 		return err
 	}
-	snap, err := h.CounterVec()
+	snap, err := h.GaugeVec()
 	if err != nil {
 		return err
 	}
-	snapshotTimeCounter = snap
+	snapshotTimeGauge = snap
+
+	// snapshots sizes
+	h, err = addInstrument(
+		Gauge,
+		"snapshot_size_bytes",
+		Namespace("vega"),
+		Vectors("engine"),
+		Help("Total size of the snapshotting state"),
+	)
+	if err != nil {
+		return err
+	}
+	snapSize, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	snapshotSizeGauge = snapSize
+
+	// snapshots block heights
+	h, err = addInstrument(
+		Gauge,
+		"snapshot_block_height",
+		Namespace("vega"),
+		Help("Block height of the last snapshot"),
+	)
+	if err != nil {
+		return err
+	}
+	snapBlockHeight, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	snapshotBlockHeightCounter = snapBlockHeight
 
 	return nil
 }
@@ -603,13 +643,34 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 	}
 }
 
-func StartSnapshot(engine string) func() {
+func RegisterSnapshotNamespaces(
+	namespace string,
+	timeTaken time.Duration,
+	size int,
+) {
+	if snapshotTimeGauge == nil || snapshotSizeGauge == nil {
+		return
+	}
+	snapshotTimeGauge.WithLabelValues(namespace).Set(timeTaken.Seconds())
+	snapshotSizeGauge.WithLabelValues(namespace).Set(float64(size))
+}
+
+func RegisterSnapshotBlockHeight(
+	blockHeight uint64,
+) {
+	if snapshotBlockHeightCounter == nil {
+		return
+	}
+	snapshotBlockHeightCounter.Set(float64(blockHeight))
+}
+
+func StartSnapshot(namespace string) func() {
 	startTime := time.Now()
 	return func() {
-		if snapshotTimeCounter == nil {
+		if snapshotTimeGauge == nil {
 			return
 		}
 		duration := time.Since(startTime).Seconds()
-		snapshotTimeCounter.WithLabelValues(engine).Add(duration)
+		snapshotTimeGauge.WithLabelValues(namespace).Set(duration)
 	}
 }

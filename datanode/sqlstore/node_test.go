@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -65,8 +80,7 @@ func addRankingScore(t *testing.T, ctx context.Context, ps *sqlstore.Node, node 
 }
 
 func TestUpdateNodePubKey(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -91,8 +105,7 @@ func TestUpdateNodePubKey(t *testing.T) {
 }
 
 func TestGetNodes(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -141,8 +154,7 @@ func TestGetNodes(t *testing.T) {
 }
 
 func TestNodeGetByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -167,8 +179,7 @@ func TestNodeGetByTxHash(t *testing.T) {
 }
 
 func TestGetNodesJoiningAndLeaving(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -199,8 +210,7 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 }
 
 func TestGetNodeData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)
@@ -396,8 +406,7 @@ func addPaginationTestNodes(t *testing.T, ctx context.Context, ns *sqlstore.Node
 }
 
 func testNodePaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -427,8 +436,7 @@ func testNodePaginationNoPagination(t *testing.T) {
 }
 
 func testNodePaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -451,8 +459,7 @@ func testNodePaginationFirst(t *testing.T) {
 }
 
 func testNodePaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -476,8 +483,7 @@ func testNodePaginationLast(t *testing.T) {
 }
 
 func testNodePaginationFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -502,8 +508,7 @@ func testNodePaginationFirstAfter(t *testing.T) {
 }
 
 func testNodePaginationLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ns := sqlstore.NewNode(connectionSource)
 	nodes := addPaginationTestNodes(t, ctx, ns)
@@ -528,8 +533,7 @@ func testNodePaginationLastBefore(t *testing.T) {
 }
 
 func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs := sqlstore.NewBlocks(connectionSource)
 	ns := sqlstore.NewNode(connectionSource)

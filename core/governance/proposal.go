@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance
 
@@ -37,19 +40,24 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p                 *proposal
-	m                 *ToEnactNewMarket
-	s                 *ToEnactNewSpotMarket
-	newAsset          *types.Asset
-	updatedAsset      *types.Asset
-	n                 *types.NetworkParameter
-	as                *types.AssetDetails
-	updatedMarket     *types.Market
-	updatedSpotMarket *types.Market
-	f                 *ToEnactFreeform
-	t                 *ToEnactTransfer
-	c                 *ToEnactCancelTransfer
+	p                      *proposal
+	m                      *ToEnactNewMarket
+	s                      *ToEnactNewSpotMarket
+	newAsset               *types.Asset
+	updatedAsset           *types.Asset
+	n                      *types.NetworkParameter
+	as                     *types.AssetDetails
+	updatedMarket          *types.Market
+	updatedSpotMarket      *types.Market
+	f                      *ToEnactFreeform
+	t                      *ToEnactTransfer
+	c                      *ToEnactCancelTransfer
+	msu                    *ToEnactMarketStateUpdate
+	referralProgramChanges *types.ReferralProgram
+	volumeDiscountProgram  *types.VolumeDiscountProgram
 }
+
+type ToEnactMarketStateUpdate struct{}
 
 type ToEnactTransfer struct{}
 
@@ -65,6 +73,18 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsVolumeDiscountProgramUpdate() bool {
+	return t.volumeDiscountProgram != nil
+}
+
+func (t ToEnact) IsReferralProgramUpdate() bool {
+	return t.referralProgramChanges != nil
+}
+
+func (t ToEnact) IsMarketStateUpdate() bool {
+	return t.msu != nil
+}
 
 func (t ToEnact) IsCancelTransfer() bool {
 	return t.c != nil
@@ -107,6 +127,10 @@ func (t ToEnact) IsFreeform() bool {
 	return t.f != nil
 }
 
+func (t *ToEnact) MarketStateUpdate() *ToEnactMarketStateUpdate {
+	return t.msu
+}
+
 func (t *ToEnact) NewTransfer() *ToEnactTransfer {
 	return t.t
 }
@@ -129,6 +153,14 @@ func (t *ToEnact) NewAssetDetails() *types.AssetDetails {
 
 func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
+}
+
+func (t *ToEnact) ReferralProgramChanges() *types.ReferralProgram {
+	return t.referralProgramChanges
+}
+
+func (t *ToEnact) VolumeDiscountProgramUpdate() *types.VolumeDiscountProgram {
+	return t.volumeDiscountProgram
 }
 
 func (t *ToEnact) UpdateMarket() *types.Market {

@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package governance_test
 
@@ -29,12 +32,11 @@ func TestFreeformProposal(t *testing.T) {
 }
 
 func testSubmittingFreeformProposalSucceeds(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow())
+	proposal := eng.newFreeformProposal(party.Id, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	// setup
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
@@ -48,12 +50,11 @@ func testSubmittingFreeformProposalSucceeds(t *testing.T) {
 }
 
 func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
+	eng := getTestEngine(t, time.Now())
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow())
+	proposal := eng.newFreeformProposal(proposer, eng.tsvc.GetTimeNow().Add(48*time.Hour))
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)

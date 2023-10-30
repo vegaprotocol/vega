@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package banking_test
 
@@ -33,7 +36,6 @@ func TestCheckpoint(t *testing.T) {
 
 func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
 
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -58,7 +60,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	require.NoError(t, err)
 
 	loadEng := getTestEngine(t)
-	defer loadEng.ctrl.Finish()
 
 	loadEng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 	loadEng.tsvc.EXPECT().GetTimeNow().AnyTimes()
@@ -76,7 +77,6 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 
 func testSimpledScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
 
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
@@ -148,7 +148,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
 	checkp, err := e.Checkpoint()
@@ -202,8 +202,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 func TestGovernancedScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
-
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)
@@ -239,6 +238,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
+	e2.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 
 	// load the checkpoint
 	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -270,7 +270,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 
 func TestGovernanceRecurringTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	defer e.ctrl.Finish()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
 
 	ctx := context.Background()
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
@@ -306,6 +306,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
+	e2.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(10)}), nil).AnyTimes()
 
 	// load the checkpoint
 	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -317,7 +318,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 
 	// now lets end epoch 0 and 1 so that we can get the transfer out
 	e2.col.EXPECT().GetSystemAccountBalance(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.NewUint(1000), nil).AnyTimes()
-	e2.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))
+	e2.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(10000))
 	e2.OnMaxFractionChanged(context.Background(), num.DecimalFromFloat(0.5))
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -37,8 +52,8 @@ func addNetParam(t *testing.T, ctx context.Context, ns *sqlstore.NetworkParamete
 }
 
 func TestNetParams(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	netParamStore := sqlstore.NewNetworkParameters(connectionSource)
 	blockStore := sqlstore.NewBlocks(connectionSource)
 	block1 := addTestBlock(t, ctx, blockStore)
@@ -86,8 +101,8 @@ func TestNetworkParameterPagination(t *testing.T) {
 }
 
 func testNetworkParameterPaginationNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -105,8 +120,8 @@ func testNetworkParameterPaginationNoPagination(t *testing.T) {
 }
 
 func testNetworkParameterPaginationFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	first := int32(3)
@@ -125,8 +140,8 @@ func testNetworkParameterPaginationFirst(t *testing.T) {
 }
 
 func testNetworkParameterPaginationLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	last := int32(3)
@@ -145,8 +160,8 @@ func testNetworkParameterPaginationLast(t *testing.T) {
 }
 
 func testNetworkParameterPaginationFirstAndAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	first := int32(3)
@@ -166,8 +181,8 @@ func testNetworkParameterPaginationFirstAndAfter(t *testing.T) {
 }
 
 func testNetworkParameterPaginationLastAndBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	ps, parameters := setupNetworkParameterPaginationTest(t, ctx)
 
 	last := int32(3)

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,7 +32,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -31,6 +46,8 @@ func TestOracleData(t *testing.T) {
 	t.Run("ListOracleData should return all data where matched spec ids contains the provided id", testGetOracleDataBySpecID)
 	t.Run("ListOracleData should return all data if the spec id is not provided", testGetOracleDataWithoutSpecID)
 	t.Run("GetByTxHash", testGetOracleDataByTxHash)
+	t.Run("Add should insert and retrieve oracle data with error", testAddAndRetrieveOracleDataWithError)
+	t.Run("Add should insert and retrieve oracle data with meta data", testAddAndRetrieveOracleDataWithMetaData)
 }
 
 func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, sqlstore.Connection) {
@@ -40,9 +57,62 @@ func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, 
 	return bs, od, connectionSource.Connection
 }
 
+func testAddAndRetrieveOracleDataWithError(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, od, conn := setupOracleDataTest(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	dataProtos := getTestOracleData()
+
+	for i, proto := range dataProtos {
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
+		require.NoError(t, err)
+		assert.NoError(t, od.Add(ctx, data))
+	}
+
+	dataForSpec, _, err := od.ListOracleData(ctx, "deadbeef01", entities.CursorPagination{})
+	assert.NoError(t, err)
+	assert.Equal(t, len(dataForSpec), 1)
+
+	data := dataForSpec[0]
+
+	assert.Equal(t, dataProtos[0].ExternalData.Data.Error, data.ExternalData.Data.Error)
+}
+
+func testAddAndRetrieveOracleDataWithMetaData(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	bs, od, conn := setupOracleDataTest(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	dataProtos := getTestOracleData()
+
+	for i, proto := range dataProtos {
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
+		require.NoError(t, err)
+		assert.NoError(t, od.Add(ctx, data))
+	}
+
+	dataForSpec, _, err := od.ListOracleData(ctx, "deadbeef01", entities.CursorPagination{})
+	assert.NoError(t, err)
+	assert.Equal(t, len(dataForSpec), 1)
+
+	data := dataForSpec[0]
+
+	assert.Equal(t, dataProtos[0].ExternalData.Data.MetaData[0].Value, data.ExternalData.Data.MetaData[0].Value)
+}
+
 func testAddOracleData(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -64,8 +134,7 @@ func testAddOracleData(t *testing.T) {
 }
 
 func testGetOracleDataBySpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -96,8 +165,7 @@ func testGetOracleDataBySpecID(t *testing.T) {
 }
 
 func testGetOracleDataWithoutSpecID(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -128,8 +196,7 @@ func testGetOracleDataWithoutSpecID(t *testing.T) {
 }
 
 func testGetOracleDataByTxHash(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, od, conn := setupOracleDataTest(t)
 
@@ -169,26 +236,28 @@ func testGetOracleDataByTxHash(t *testing.T) {
 }
 
 func getTestOracleData() []*vegapb.OracleData {
-	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+	pk1 := dstypes.CreateSignerFromString("b105f00d", dstypes.SignerTypePubKey)
+	pk2 := dstypes.CreateSignerFromString("baddcafe", dstypes.SignerTypePubKey)
+	testError := "testError"
 
 	return []*vegapb.OracleData{
 		{ // 0
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{
 					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-					Data: []*datapb.Property{
+					MetaData: []*datapb.Property{
 						{
-							Name:  "Ticker",
-							Value: "USDBTC",
+							Name:  "metaKey",
+							Value: "metaValue",
 						},
 					},
 					MatchedSpecIds: []string{"deadbeef01"},
 					BroadcastAt:    0,
+					Error:          &testError,
 				},
 			},
 		},
-		//},
+		// },
 		{ // 1
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{
@@ -199,6 +268,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "USDETH",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef02"},
 					BroadcastAt:    0,
 				},
@@ -214,6 +284,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "USDETH",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef02"},
 					BroadcastAt:    0,
 				},
@@ -229,6 +300,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "USDSOL",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef03"},
 					BroadcastAt:    0,
 				},
@@ -244,6 +316,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "AAAA",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -258,6 +331,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "BBBB",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -272,6 +346,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "CCCC",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -286,6 +361,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "DDDD",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -300,6 +376,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "EEEE",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -314,6 +391,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "FFFF",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -328,6 +406,7 @@ func getTestOracleData() []*vegapb.OracleData {
 							Value: "GGGG",
 						},
 					},
+					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef04"},
 				},
 			},
@@ -366,8 +445,7 @@ func TestOracleData_GetOracleDataBySpecIDCursorPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecNoPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -387,8 +465,7 @@ func testOracleDataGetBySpecNoPagination(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -409,8 +486,7 @@ func testOracleDataGetBySpecFirst(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLast(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -431,8 +507,7 @@ func testOracleDataGetBySpecLast(t *testing.T) {
 }
 
 func testOracleDataGetBySpecFirstAfter(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)
@@ -454,8 +529,7 @@ func testOracleDataGetBySpecFirstAfter(t *testing.T) {
 }
 
 func testOracleDataGetBySpecLastBefore(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, ds, _ := setupOracleDataTest(t)
 	data := getTestPaginationOracleData(t, ctx, bs, ds)

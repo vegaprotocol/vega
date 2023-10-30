@@ -1,32 +1,38 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package future_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/fee"
+	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/core/liquidity"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
@@ -34,6 +40,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -49,9 +56,9 @@ func TestRestoreSettledMarket(t *testing.T) {
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
 	var unsubs uint64
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) { unsubs++ }
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) { unsubs++ }
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -73,13 +80,13 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
 	var termUnsub bool
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
-		if id == oracles.SubscriptionID(2) {
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
+		if id == spec.SubscriptionID(2) {
 			termUnsub = true
 		}
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -105,10 +112,10 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 	defer ctrl.Finish()
 	oracleEngine := mocks.NewMockOracleEngine(ctrl)
 
-	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -121,8 +128,8 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 
 func getTerminatedMarket(t *testing.T) *testMarket {
 	t.Helper()
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
 	now := time.Unix(10, 0)
@@ -130,7 +137,7 @@ func getTerminatedMarket(t *testing.T) *testMarket {
 	defer tm.ctrl.Finish()
 
 	// terminate the market
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"trading.terminated": "true",
@@ -147,11 +154,11 @@ func getSettledMarket(t *testing.T) *testMarket {
 
 	tm := getTerminatedMarket(t)
 
-	pubKeys := []*types.Signer{
-		types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
+	pubKeys := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey),
 	}
 
-	err := tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+	err := tm.oracleEngine.BroadcastData(context.Background(), dstypes.Data{
 		Signers: pubKeys,
 		Data: map[string]string{
 			"prices.ETH.value": "100",
@@ -182,7 +189,11 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	teams := mocks.NewMockTeams(ctrl)
+	bc := mocks.NewMockAccountBalanceChecker(ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
+
 	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
@@ -190,7 +201,13 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
 
 	positionConfig.StreamPositionVerbose = true
+	referralDiscountReward := fmock.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscount := fmock.NewMockVolumeDiscountService(ctrl)
+	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+
 	return future.NewMarketFromSnapshot(context.Background(), log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
-		peggedOrderCounterForTest)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
 }

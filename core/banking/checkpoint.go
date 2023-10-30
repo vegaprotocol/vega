@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package banking
 
@@ -23,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/emirpasic/gods/sets/treeset"
@@ -225,9 +229,24 @@ func (e *Engine) loadRecurringTransfers(
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers = append(e.recurringTransfers, transfer)
 		e.recurringTransfersMap[transfer.ID] = transfer
+		// reload the dispatch strategy to the hash cache
+		if transfer.DispatchStrategy != nil {
+			e.registerDispatchStrategy(transfer.DispatchStrategy)
+			// reset defaults for new dispatch strategy params:
+			if transfer.DispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED {
+				e.applyMigrationDefaults(transfer.DispatchStrategy)
+			}
+		}
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
 	return evts
+}
+
+func (e *Engine) applyMigrationDefaults(ds *vega.DispatchStrategy) {
+	ds.EntityScope = vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS
+	ds.LockPeriod = 0
+	ds.WindowLength = 1
+	ds.DistributionStrategy = vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA
 }
 
 func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers []*checkpoint.GovernanceTransfer) []events.Event {
@@ -236,6 +255,9 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		transfer := types.GovernanceTransferFromProto(v)
 		e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, transfer)
 		e.recurringGovernanceTransfersMap[transfer.ID] = transfer
+		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
+			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
+		}
 		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
 	}
 	return evts

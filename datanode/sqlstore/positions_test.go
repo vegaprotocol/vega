@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // Copyright (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -71,8 +86,7 @@ func assertPositionsMatch(t *testing.T, expected, actual []entities.Position) {
 }
 
 func TestPosition(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	qs := sqlstore.NewParties(connectionSource)
@@ -186,8 +200,7 @@ func TestPositions_CursorPagination(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -229,8 +242,7 @@ func testPositionCursorPaginationPartyNoCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -266,8 +278,7 @@ func testPositionCursorPaginationPartyFirstCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -303,8 +314,7 @@ func testPositionCursorPaginationPartyLastCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -341,8 +351,7 @@ func testPositionCursorPaginationPartyFirstAfterCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -379,8 +388,7 @@ func testPositionCursorPaginationPartyLastBeforeCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -413,8 +421,7 @@ func testPositionCursorPaginationPartyMarketNoCursor(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -458,8 +465,7 @@ func testPositionCursorPaginationPartyNoCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -495,8 +501,7 @@ func testPositionCursorPaginationPartyFirstCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -532,8 +537,7 @@ func testPositionCursorPaginationPartyLastCursorNewestFirst(t *testing.T) {
 }
 
 func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -570,8 +574,7 @@ func testPositionCursorPaginationPartyFirstAfterCursorNewestFirst(t *testing.T) 
 }
 
 func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)
@@ -608,8 +611,7 @@ func testPositionCursorPaginationPartyLastBeforeCursorNewestFirst(t *testing.T) 
 }
 
 func testPositionCursorPaginationPartyMarketNoCursorNewestFirst(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	ps := sqlstore.NewPositions(connectionSource)
 	pts := sqlstore.NewParties(connectionSource)

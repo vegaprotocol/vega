@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package processor
 
@@ -27,6 +30,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.uber.org/zap"
+
+	"code.vegaprotocol.io/vega/core/referral"
+	"code.vegaprotocol.io/vega/core/snapshot"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -36,6 +43,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -60,14 +68,15 @@ import (
 const AppVersion = 1
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction without balance")
-	ErrUnexpectedTxPubKey                            = errors.New("no one listens to the public keys that signed this oracle data")
-	ErrTradingDisabled                               = errors.New("trading disabled")
-	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
-	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
-	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
-	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
-	ErrOracleDataNormalization                       = func(err error) error {
+	ErrUnexpectedTxPubKey          = errors.New("no one listens to the public keys that signed this oracle data")
+	ErrTradingDisabled             = errors.New("trading disabled")
+	ErrMarketProposalDisabled      = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled       = errors.New("asset proposal disabled")
+	ErrEthOraclesDisabled          = errors.New("ethereum oracles disabled")
+	ErrOracleNoSubscribers         = errors.New("there are no subscribes to the oracle data")
+	ErrSpotMarketProposalDisabled  = errors.New("spot market proposal disabled")
+	ErrPerpsMarketProposalDisabled = errors.New("perps market proposal disabled")
+	ErrOracleDataNormalization     = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
 )
@@ -94,27 +103,44 @@ type PoWEngine interface {
 }
 
 //nolint:interfacebloat
-type Snapshot interface {
+type SnapshotEngine interface {
 	Info() ([]byte, int64, string)
-	Snapshot(ctx context.Context) ([]byte, error)
-	SnapshotNow(ctx context.Context) (b []byte, errlol error)
-	AddProviders(provs ...types.StateProvider)
-	CheckLoaded() (bool, error)
-	ClearAndInitialise() error
+	Snapshot(context.Context) ([]byte, snapshot.DoneCh, error)
+	SnapshotNow(context.Context) ([]byte, error)
+	AddProviders(...types.StateProvider)
+	HasSnapshots() (bool, error)
 
-	// Calls related to statesync
-	ListMeta() ([]*tmtypes.Snapshot, error)
-	ReceiveSnapshot(snap *types.Snapshot) error
-	RejectSnapshot() error
-	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
-	GetMissingChunks() []uint32
-	ApplySnapshot(ctx context.Context) error
-	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
+	// Calls related to state-sync
+
+	ListLatestSnapshots() ([]*tmtypes.Snapshot, error)
+	ReceiveSnapshot(*types.Snapshot) tmtypes.ResponseOfferSnapshot
+	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ResponseApplySnapshotChunk
+	RetrieveSnapshotChunk(uint64, uint32, uint32) (*types.RawChunk, error)
+	HasRestoredStateAlready() bool
 }
 
 type StateVarEngine interface {
 	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
 	OnBlockEnd(ctx context.Context)
+}
+
+type TeamsEngine interface {
+	TeamExists(team types.TeamID) bool
+	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet_Team) error
+	UpdateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.UpdateReferralSet_Team) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
+}
+
+type ReferralProgram interface {
+	UpdateProgram(program *types.ReferralProgram)
+	SetExists(types.ReferralSetID) bool
+	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
+	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
+	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
+}
+
+type VolumeDiscountProgram interface {
+	UpdateProgram(program *types.VolumeDiscountProgram)
 }
 
 type BlockchainClient interface {
@@ -131,6 +157,15 @@ type ProtocolUpgradeService interface {
 	SetCoreReadyForUpgrade()
 	Cleanup(ctx context.Context)
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
+}
+
+type BalanceChecker interface {
+	GetPartyBalance(party string) *num.Uint
+	BeginBlock(context.Context)
+}
+
+type EthCallEngine interface {
+	Start()
 }
 
 type App struct {
@@ -176,11 +211,16 @@ type App struct {
 	spam                   SpamEngine
 	pow                    PoWEngine
 	epoch                  EpochService
-	snapshot               Snapshot
+	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
+	teamsEngine            TeamsEngine
+	referralProgram        ReferralProgram
+	volumeDiscountProgram  VolumeDiscountProgram
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
 	gastimator             *Gastimator
+	ethCallEngine          EthCallEngine
+	balanceChecker         BalanceChecker
 
 	nilPow  bool
 	nilSpam bool
@@ -216,14 +256,19 @@ func NewApp(
 	spam SpamEngine,
 	pow PoWEngine,
 	stakingAccounts StakingAccounts,
-	snapshot Snapshot,
+	snapshot SnapshotEngine,
 	stateVarEngine StateVarEngine,
+	teamsEngine TeamsEngine,
+	referralProgram ReferralProgram,
+	volumeDiscountProgram VolumeDiscountProgram,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 	gastimator *Gastimator,
+	ethCallEngine EthCallEngine,
+	balanceChecker BalanceChecker,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -262,13 +307,18 @@ func NewApp(
 		pow:                    pow,
 		stakingAccounts:        stakingAccounts,
 		epoch:                  epoch,
-		snapshot:               snapshot,
+		snapshotEngine:         snapshot,
 		stateVar:               stateVarEngine,
+		teamsEngine:            teamsEngine,
+		referralProgram:        referralProgram,
+		volumeDiscountProgram:  volumeDiscountProgram,
 		version:                version,
 		blockchainClient:       blockchainClient,
 		erc20MultiSigTopology:  erc20MultiSigTopology,
 		protocolUpgradeService: protocolUpgradeService,
 		gastimator:             gastimator,
+		ethCallEngine:          ethCallEngine,
+		balanceChecker:         balanceChecker,
 	}
 
 	// setup handlers
@@ -299,7 +349,8 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
-		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand)
+		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
+		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
 
 	app.abci.
 		// node commands
@@ -406,6 +457,15 @@ func NewApp(
 					addDeterministicID(app.DeliverBatchMarketInstructions),
 				),
 			),
+		).
+		HandleDeliverTx(txn.CreateReferralSetCommand,
+			app.SendTransactionResult(addDeterministicID(app.CreateReferralSet)),
+		).
+		HandleDeliverTx(txn.UpdateReferralSetCommand,
+			app.SendTransactionResult(app.UpdateReferralSet),
+		).
+		HandleDeliverTx(txn.ApplyReferralCodeCommand,
+			app.SendTransactionResult(app.ApplyReferralCode),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -416,7 +476,7 @@ func NewApp(
 	return app
 }
 
-func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
+func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uint) error {
 	app.maxBatchSize.Store(u.Uint64())
 	return nil
 }
@@ -552,18 +612,22 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	// returns whether or not we have loaded from a snapshot (and may even do the loading)
 	old := app.broker.SetStreaming(false)
 	defer app.broker.SetStreaming(old)
-	loaded, err := app.snapshot.CheckLoaded()
-	if err != nil {
-		app.log.Panic("failed to check if snapshot has been loaded", logging.Error(err))
-	}
 
 	resp := tmtypes.ResponseInfo{
 		AppVersion: AppVersion,
 		Version:    app.version,
 	}
 
-	if loaded {
-		hash, height, chainID := app.snapshot.Info()
+	hasSnapshots, err := app.snapshotEngine.HasSnapshots()
+	if err != nil {
+		app.log.Panic("Failed to verify if the snapshot engine has stored snapshots", logging.Error(err))
+	}
+
+	// If the snapshot engine has snapshots stored, the node can safely advertise
+	// its chain info. This comes from the snapshot engine because it is
+	// its responsibility to store it.
+	if hasSnapshots {
+		hash, height, chainID := app.snapshotEngine.Info()
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
 		app.abci.SetChainID(chainID)
@@ -581,116 +645,87 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
 	app.log.Debug("ABCI service ListSnapshots requested")
-	snapshots, err := app.snapshot.ListMeta()
-	resp := tmtypes.ResponseListSnapshots{}
+
+	latestSnapshots, err := app.snapshotEngine.ListLatestSnapshots()
 	if err != nil {
-		app.log.Error("Could not list snapshots", logging.Error(err))
-		return resp
+		app.log.Error("Could not list latest snapshots", logging.Error(err))
+		return tmtypes.ResponseListSnapshots{}
 	}
-	resp.Snapshots = snapshots
-	return resp
+
+	return tmtypes.ResponseListSnapshots{
+		Snapshots: latestSnapshots,
+	}
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	app.log.Debug("ABCI service OfferSnapshot start")
-	snap, err := types.SnapshotFromTM(req.Snapshot)
+
+	if app.snapshotEngine.HasRestoredStateAlready() {
+		app.log.Warn("The snapshot engine aborted the snapshot offer from state-sync since the state has already been restored")
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_ABORT,
+		}
+	}
+
+	deserializedSnapshot, err := types.SnapshotFromTM(req.Snapshot)
 	if err != nil {
-		app.log.Error("failed to convert snapshot", logging.Error(err))
+		app.log.Error("Could not deserialize snapshot", logging.Error(err))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
 		}
 	}
 
 	// check that our unpacked snapshot's hash matches that which tendermint thinks it sent
-	if !bytes.Equal(snap.Hash, req.AppHash) {
-		app.log.Error("hash mismatch",
-			logging.String("snap.Hash", hex.EncodeToString(snap.Hash)),
-			logging.String("rep.AppHash", hex.EncodeToString(req.AppHash)))
+	if !bytes.Equal(deserializedSnapshot.Hash, req.AppHash) {
+		app.log.Error("The hashes from the request and the deserialized snapshot mismatch",
+			logging.String("deserialized-hash", hex.EncodeToString(deserializedSnapshot.Hash)),
+			logging.String("request-hash", hex.EncodeToString(req.AppHash)))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
 	}
 
-	// see what the snapshot engine thinks
-	if err := app.snapshot.ReceiveSnapshot(snap); err != nil {
-		ret := tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT,
-		}
-		if err == types.ErrSnapshotMetaMismatch {
-			// hashes match, but the meta doesn't, do not trust
-			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
-		}
-		app.log.Error("snapshot rejected", logging.Error(err))
-		return ret
-	}
-
-	return tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
-	}
+	return app.snapshotEngine.ReceiveSnapshot(deserializedSnapshot)
 }
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
 	app.log.Debug("ABCI service ApplySnapshotChunk start")
-	chunk := types.RawChunk{
+
+	if app.snapshotEngine.HasRestoredStateAlready() {
+		app.log.Warn("The snapshot engine aborted the snapshot chunk from state-sync since the state has already been restored")
+		return tmtypes.ResponseApplySnapshotChunk{
+			Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
+		}
+	}
+
+	chunk := &types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
 	}
-	resp := tmtypes.ResponseApplySnapshotChunk{}
-	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
-	if err != nil {
-		app.log.Error("could not apply snapshot chunk", logging.Error(err))
 
-		switch err {
-		case types.ErrUnknownSnapshot:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?
-		case types.ErrChunkOutOfRange:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT // try another snapshot
-		case types.ErrSnapshotMetaMismatch:
-			// refetch the chunk from someone else
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
-			resp.RejectSenders = []string{req.Sender}
-		case types.ErrMissingChunks:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
-			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		default:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			// @TODO panic?
-		}
-		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
-				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
-				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
-			}
-		}
-		return resp
-	}
-	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
-	if ready {
-		err = app.snapshot.ApplySnapshot(ctx)
-		if err != nil {
-			app.log.Error("failed to apply snapshot", logging.Error(err))
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-		}
-	}
-	return resp
+	return app.snapshotEngine.ReceiveSnapshotChunk(ctx, chunk, req.Sender)
 }
 
 func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
-	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
+
+	rawChunk, err := app.snapshotEngine.RetrieveSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
-		app.log.Error("failed to load snapshot chunk", logging.Error(err), logging.Uint64("height", req.Height))
+		app.log.Error("Could not load a snapshot chunk from snapshot engine",
+			logging.Uint64("height", req.Height),
+			logging.Error(err),
+		)
 		return tmtypes.ResponseLoadSnapshotChunk{}
 	}
+
 	return tmtypes.ResponseLoadSnapshotChunk{
-		Chunk: raw.Data,
+		Chunk: rawChunk.Data,
 	}
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	app.log.Debug("ABCI service InitChain start")
-	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
+	hash := hex.EncodeToString(vgcrypto.Hash([]byte(req.ChainId)))
 	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
 	ctx := vgcontext.WithBlockHeight(app.chainCtx, req.InitialHeight)
@@ -715,6 +750,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 			Height: uint64(req.InitialHeight),
 		}),
 	)
+
+	app.ethCallEngine.Start()
 
 	return tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
@@ -814,13 +851,19 @@ func (app *App) OnBeginBlock(
 
 	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
 	app.top.BeginBlock(ctx, req)
+	app.balanceChecker.BeginBlock(ctx)
+	app.exec.BeginBlock(ctx)
 
 	return ctx, resp
 }
 
 func (app *App) startProtocolUpgrade(ctx context.Context) {
-	// Stop blockchain server so it doesn't acceptc transactions and it doesn't times out.
-	go func() { app.stopBlockchain() }()
+	// Stop blockchain server so it doesn't accept transactions and it doesn't times out.
+	go func() {
+		if err := app.stopBlockchain(); err != nil {
+			app.log.Error("an error occurred while stopping the blockchain", zap.Error(err))
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -877,6 +920,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
+
 	t0 := time.Now()
 
 	var snapHash []byte
@@ -884,12 +928,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	// if there is an approved protocol upgrade proposal and the current block height is later than the proposal's block height then take a snapshot and wait to be killed by the process manager
 	if app.protocolUpgradeService.TimeForUpgrade() {
 		app.protocolUpgradeService.Cleanup(app.blockCtx)
-		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
+		snapHash, err = app.snapshotEngine.SnapshotNow(app.blockCtx)
 		if err == nil {
 			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
 	} else {
-		snapHash, err = app.snapshot.Snapshot(app.blockCtx)
+		snapHash, _, err = app.snapshotEngine.Snapshot(app.blockCtx)
 	}
 
 	if err != nil {
@@ -899,7 +943,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	t1 := time.Now()
 	if len(snapHash) > 0 {
-		app.log.Info("#### snapshot took ", logging.Float64("time", t1.Sub(t0).Seconds()))
+		app.log.Info("State has been snapshotted", logging.Float64("duration", t1.Sub(t0).Seconds()))
 	}
 	resp.Data = snapHash
 
@@ -1138,12 +1182,93 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if !app.limits.CanProposeMarket() {
 				return ErrMarketProposalDisabled
 			}
+			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
+				return ErrPerpsMarketProposalDisabled
+			}
+			return validateUseOfEthOracles(p.Terms, app.netp)
+		case types.ProposalTermsTypeUpdateMarket:
+			return validateUseOfEthOracles(p.Terms, app.netp)
+
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
 			}
+		case types.ProposalTermsTypeNewSpotMarket:
+			if !app.limits.CanProposeSpotMarket() {
+				return ErrSpotMarketProposalDisabled
+			}
 		}
 	}
+	return nil
+}
+
+func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters) error {
+	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
+
+	switch terms.Change.GetTermType() {
+	case types.ProposalTermsTypeNewMarket:
+		m := terms.GetNewMarket()
+		if m == nil {
+			return nil
+		}
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.InstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.InstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
+		}
+
+	case types.ProposalTermsTypeUpdateMarket:
+		m := terms.GetUpdateMarket()
+		if m == nil {
+			return nil
+		}
+
+		if m.Changes == nil {
+			return nil
+		}
+
+		// Here the instrument is *types.UpdateInstrumentConfiguration
+		if m.Changes.Instrument == nil {
+			return nil
+		}
+
+		if m.Changes.Instrument.Product == nil {
+			return nil
+		}
+
+		switch product := m.Changes.Instrument.Product.(type) {
+		case *types.UpdateInstrumentConfigurationFuture:
+			if product.Future == nil {
+				return nil
+			}
+			terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+			settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+			if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+				return ErrEthOraclesDisabled
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -1200,14 +1325,14 @@ func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) er
 	return app.protocolUpgradeService.IsValidProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
 }
 
-func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
+func (app *App) RequireValidatorPubKey(_ context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
 }
 
-func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) error {
 	bmi := &commandspb.BatchMarketInstructions{}
 	if err := tx.Unmarshal(bmi); err != nil {
 		return err
@@ -1236,7 +1361,7 @@ func (app *App) DeliverBatchMarketInstructions(
 		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
-func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
+func (app *App) RequireValidatorMasterPubKey(_ context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorNodeID(tx.PubKeyHex()) {
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
@@ -1277,7 +1402,14 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
 }
 
-func (app *App) CheckTransferCommand(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckApplyReferralCode(_ context.Context, tx abci.Tx) error {
+	if err := app.referralProgram.CheckSufficientBalanceForApplyReferralCode(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckTransferCommand(_ context.Context, tx abci.Tx) error {
 	tfr := &commandspb.Transfer{}
 	if err := tx.Unmarshal(tfr); err != nil {
 		return err
@@ -1496,7 +1628,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) CheckPropose(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	p := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(p); err != nil {
 		return err
@@ -1554,11 +1686,28 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
-			// an error happened when submitting the market + liquidity
+			// an error happened when submitting the market
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
 				// this should never happen
-				app.log.Panic("tried to reject an non-existing proposal",
+				app.log.Panic("tried to reject a nonexistent proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	} else if toSubmit.IsNewSpotMarket() {
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+		nm := toSubmit.NewSpotMarket()
+		if err := app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+			app.log.Debug("unable to submit new spot market",
+				logging.ProposalID(nm.Market().ID),
+				logging.Error(err))
+			// an error happened when submitting the market
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject a nonexistent proposal",
 					logging.String("proposal-id", toSubmit.Proposal().ID),
 					logging.Error(err))
 			}
@@ -1637,7 +1786,10 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 
 	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
 	if err != nil {
-		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		app.log.Debug("error on cancelling order",
+			logging.PartyID(tx.Party()),
+			logging.String("liquidity-provision-market-id", lpc.MarketID),
+			logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderCancelDebug {
@@ -1664,7 +1816,10 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	// Submit the amend liquidity provision request to the Vega trading core
 	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
 	if err != nil {
-		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		app.log.Debug("error on amending Liquidity Provision",
+			logging.String("liquidity-provision-market-id", lpa.MarketID),
+			logging.PartyID(tx.Party()),
+			logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderAmendDebug {
@@ -1740,7 +1895,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 	for _, voteClosed := range voteClosedProposals {
 		prop := voteClosed.Proposal()
 		switch {
-		case voteClosed.IsNewMarket():
+		case voteClosed.IsNewMarket(): // can be spot or futures new market
 			// Here we panic in both case as we should never reach a point
 			// where we try to Reject or start the opening auction of a
 			// non-existing market or any other error would be quite critical
@@ -1779,12 +1934,16 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactSuccessorMarket(ctx, prop)
 		case toEnact.IsNewMarket():
 			app.enactMarket(ctx, prop)
+		case toEnact.IsNewSpotMarket():
+			app.enactSpotMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateAsset():
 			app.enactAssetUpdate(ctx, prop, toEnact.UpdateAsset())
 		case toEnact.IsUpdateMarket():
 			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
+		case toEnact.IsUpdateSpotMarket():
+			app.enactUpdateSpotMarket(ctx, prop, toEnact.UpdateSpotMarket())
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
@@ -1793,6 +1952,14 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactNewTransfer(ctx, prop)
 		case toEnact.IsCancelTransfer():
 			app.enactCancelTransfer(ctx, prop)
+		case toEnact.IsMarketStateUpdate():
+			app.enactMarketStateUpdate(ctx, prop)
+		case toEnact.IsReferralProgramUpdate():
+			prop.State = types.ProposalStateEnacted
+			app.referralProgram.UpdateProgram(toEnact.ReferralProgramChanges())
+		case toEnact.IsVolumeDiscountProgramUpdate():
+			prop.State = types.ProposalStateEnacted
+			app.volumeDiscountProgram.UpdateProgram(toEnact.VolumeDiscountProgramUpdate())
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -1894,6 +2061,10 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	// TODO: add checks for end of auction in here
 }
 
+func (app *App) enactSpotMarket(_ context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+}
+
 func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
 	// There is nothing to enact in a freeform proposal so we just set the state
 	prop.State = types.ProposalStateEnacted
@@ -1909,7 +2080,7 @@ func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
 		return
 	}
 
-	app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
+	_ = app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
 }
 
 func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {
@@ -1924,6 +2095,20 @@ func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {
 		app.log.Error("failed to enact governance transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
 		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
 		return
+	}
+}
+
+func (app *App) enactMarketStateUpdate(ctx context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+	changes := prop.Terms.GetMarketStateUpdate().Changes
+	if err := app.exec.VerifyUpdateMarketState(changes); err != nil {
+		app.log.Error("failed to enact governance market state update", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProposalErrorInvalidStateUpdate, err)
+		return
+	}
+	if err := app.exec.UpdateMarketState(ctx, changes); err != nil {
+		app.log.Error("failed to enact governance market state update", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProposalErrorInvalidStateUpdate, err)
 	}
 }
 
@@ -2026,6 +2211,17 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 	prop.State = types.ProposalStateEnacted
 }
 
+func (app *App) enactUpdateSpotMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
+	if err := app.exec.UpdateSpotMarket(ctx, market); err != nil {
+		prop.FailUnexpectedly(err)
+		app.log.Error("failed to update spot market",
+			logging.ProposalID(prop.ID),
+			logging.Error(err))
+		return
+	}
+	prop.State = types.ProposalStateEnacted
+}
+
 func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
 	kr := &commandspb.EthereumKeyRotateSubmission{}
 	if err := tx.Unmarshal(kr); err != nil {
@@ -2038,4 +2234,75 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 		kr,
 		signatures.VerifyEthereumSignature,
 	)
+}
+
+func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CreateReferralSet{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CreateReferralSet command: %w", err)
+	}
+
+	if err := app.referralProgram.CreateReferralSet(ctx, types.PartyID(tx.Party()), types.ReferralSetID(deterministicID)); err != nil {
+		return err
+	}
+
+	if params.IsTeam {
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), types.TeamID(deterministicID), params.Team)
+	}
+
+	return nil
+}
+
+// UpdateReferralSet this is effectively Update team, but also served to create
+// a team for an existing referral set...
+func (app *App) UpdateReferralSet(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdateReferralSet{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateReferralSet command: %w", err)
+	}
+
+	if !app.referralProgram.SetExists(types.ReferralSetID(params.Id)) {
+		return fmt.Errorf("no referral set for ID %q", params.Id)
+	}
+
+	if params.IsTeam {
+		teamID := types.TeamID(params.Id)
+		if app.teamsEngine.TeamExists(teamID) {
+			return app.teamsEngine.UpdateTeam(ctx, types.PartyID(tx.Party()), teamID, params.Team)
+		}
+
+		return app.teamsEngine.CreateTeam(ctx, types.PartyID(tx.Party()), teamID, &commandspb.CreateReferralSet_Team{
+			Name:      ptr.UnBox(params.Team.Name),
+			AvatarUrl: params.Team.AvatarUrl,
+			TeamUrl:   params.Team.TeamUrl,
+			Closed:    ptr.UnBox(params.Team.Closed),
+		})
+	}
+
+	return nil
+}
+
+func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.ApplyReferralCode{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize ApplyReferralCode command: %w", err)
+	}
+
+	partyID := types.PartyID(tx.Party())
+	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
+
+	// It's OK to switch team if the party was already a referee.
+	if err != nil && err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() {
+		return fmt.Errorf("could not apply the referral code: %w", err)
+	}
+
+	// temporarily disable team support
+	// teamID := types.TeamID(params.Id)
+	// err = app.teamsEngine.JoinTeam(ctx, partyID, params)
+	// // This is ok as well, as not all referral sets are teams as well.
+	// if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
+	// 	return fmt.Errorf("couldn't join team: %w", err)
+	// }
+
+	return nil
 }

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package segment
 
 import (
@@ -163,12 +178,18 @@ func (s Segments[T]) ContiguousHistoryInRange(fromHeight int64, toHeight int64) 
 			fromSegmentFound := false
 			toSegmentFound := false
 			for _, segment := range ch.Segments {
-				if segment.GetFromHeight() == fromHeight {
+				if !fromSegmentFound && segment.GetFromHeight() == fromHeight {
 					fromSegmentFound = true
+					if toSegmentFound {
+						break
+					}
 				}
 
-				if segment.GetToHeight() == toHeight {
+				if !toSegmentFound && segment.GetToHeight() == toHeight {
 					toSegmentFound = true
+					if fromSegmentFound {
+						break
+					}
 				}
 			}
 
@@ -178,5 +199,5 @@ func (s Segments[T]) ContiguousHistoryInRange(fromHeight int64, toHeight int64) 
 		}
 	}
 
-	return ContiguousHistory[T]{}, fmt.Errorf("no contiguous segment range found with height %d to %d", fromHeight, toHeight)
+	return ContiguousHistory[T]{}, fmt.Errorf("heights %d to %d do not lie within a continuous segment range", fromHeight, toHeight)
 }

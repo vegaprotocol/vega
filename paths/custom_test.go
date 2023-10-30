@@ -1,7 +1,21 @@
+// Copyright (C) 2023  Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package paths_test
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -24,8 +38,7 @@ func TestCustomPaths(t *testing.T) {
 }
 
 func testGettingCustomPathForCacheFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomCachePathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -33,8 +46,7 @@ func testGettingCustomPathForCacheFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForConfigFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomConfigPathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -42,8 +54,7 @@ func testGettingCustomPathForConfigFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForDataFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomDataPathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -51,8 +62,7 @@ func testGettingCustomPathForDataFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathForStateFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	path, err := paths.CreateCustomStatePathFor(home, "fake-file.empty")
 	require.NoError(t, err)
 	vgtest.AssertDirAccess(t, filepath.Dir(home))
@@ -60,8 +70,7 @@ func testGettingCustomPathForStateFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForCacheFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateCachePathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -70,8 +79,7 @@ func testGettingCustomPathFromStructForCacheFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForConfigFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateConfigPathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -80,8 +88,7 @@ func testGettingCustomPathFromStructForConfigFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForDataFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateDataPathFor("fake-file.empty")
 	require.NoError(t, err)
@@ -90,8 +97,7 @@ func testGettingCustomPathFromStructForDataFileSucceeds(t *testing.T) {
 }
 
 func testGettingCustomPathFromStructForStateFileSucceeds(t *testing.T) {
-	home := vgtest.RandomPath()
-	defer os.RemoveAll(home)
+	home := t.TempDir()
 	customPaths := &paths.CustomPaths{CustomHome: home}
 	path, err := customPaths.CreateStatePathFor("fake-file.empty")
 	require.NoError(t, err)

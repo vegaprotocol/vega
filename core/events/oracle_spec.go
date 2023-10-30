@@ -1,14 +1,17 @@
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package events
 
@@ -21,22 +24,21 @@ import (
 
 type OracleSpec struct {
 	*Base
-	o vegapb.OracleSpec
+	o *vegapb.OracleSpec
 }
 
-func NewOracleSpecEvent(ctx context.Context, spec vegapb.OracleSpec) *OracleSpec {
-	cpy := spec.DeepClone()
+func NewOracleSpecEvent(ctx context.Context, spec *vegapb.OracleSpec) *OracleSpec {
 	return &OracleSpec{
 		Base: newBase(ctx, OracleSpecEvent),
-		o:    *cpy,
+		o:    spec,
 	}
 }
 
-func (o *OracleSpec) OracleSpec() vegapb.OracleSpec {
+func (o *OracleSpec) OracleSpec() *vegapb.OracleSpec {
 	return o.o
 }
 
-func (o OracleSpec) Proto() vegapb.OracleSpec {
+func (o OracleSpec) Proto() *vegapb.OracleSpec {
 	return o.o
 }
 
@@ -45,7 +47,7 @@ func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 
 	busEvent := newBusEventFromBase(o.Base)
 	busEvent.Event = &eventspb.BusEvent_OracleSpec{
-		OracleSpec: &spec,
+		OracleSpec: spec,
 	}
 
 	return busEvent
@@ -54,6 +56,6 @@ func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 func OracleSpecEventFromStream(ctx context.Context, be *eventspb.BusEvent) *OracleSpec {
 	return &OracleSpec{
 		Base: newBaseFromBusEvent(ctx, OracleSpecEvent, be),
-		o:    *be.GetOracleSpec(),
+		o:    be.GetOracleSpec(),
 	}
 }

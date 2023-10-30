@@ -1,9 +1,25 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package v2
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -101,6 +117,17 @@ func (a *API) unmarshallRequest(traceID string, r *http.Request) (jsonrpc.Reques
 }
 
 func (a *API) processJSONRPCRequest(ctx context.Context, traceID string, lw *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) *jsonrpc.Response {
+	// check for unicode headers
+	for k, h := range httpRequest.Header {
+		for _, v := range h {
+			if len([]rune(v)) != len(v) {
+				return jsonrpc.NewErrorResponse(rpcRequest.ID, &jsonrpc.ErrorDetails{
+					Code:    jsonrpc.ErrorCodeInvalidRequest,
+					Message: fmt.Sprintf("Header %s contains invalid characters", k),
+				})
+			}
+		}
+	}
 	if err := rpcRequest.Check(); err != nil {
 		a.log.Info("invalid RPC request",
 			zap.String("trace-id", traceID),

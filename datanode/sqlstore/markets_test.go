@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 // (c) 2022 Gobalsky Labs Limited
 //
 // Use of this software is governed by the Business Source License included
@@ -17,6 +32,11 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -24,11 +44,14 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestMarkets_Add(t *testing.T) {
 	t.Run("Add should insert a valid market record", shouldInsertAValidMarketRecord)
 	t.Run("Add should update a valid market record if the block number already exists", shouldUpdateAValidMarketRecord)
+	t.Run("Add should insert a valid spot market record", shouldInsertAValidSpotMarketRecord)
+	t.Run("Add should insert a valid perpetual market record", shouldInsertAValidPerpetualMarketRecord)
 }
 
 func TestMarkets_Get(t *testing.T) {
@@ -36,13 +59,15 @@ func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
 	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
 	t.Run("GetByTxHash", getByTxHashReturnsMatchingMarkets)
+	t.Run("GetByID should return a spot market if it exists", getByIDShouldReturnASpotMarketIfItExists)
+	t.Run("GetByID should return a perpetual market if it exists", getByIDShouldReturnAPerpetualMarketIfItExists)
 }
 
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -62,11 +87,51 @@ func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	assert.Equal(t, market.State, marketFromDB.State)
 }
 
+func getByIDShouldReturnASpotMarketIfItExists(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx := tempTransaction(t)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	marketFromDB, err := md.GetByID(ctx, market.ID.String())
+	require.NoError(t, err)
+	marketToProto := marketFromDB.ToProto()
+	assert.IsType(t, &vega.Spot{}, marketToProto.TradableInstrument.GetInstrument().GetSpot())
+}
+
+func getByIDShouldReturnAPerpetualMarketIfItExists(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx := tempTransaction(t)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	marketFromDB, err := md.GetByID(ctx, market.ID.String())
+	require.NoError(t, err)
+	marketToProto := marketFromDB.ToProto()
+	assert.IsType(t, &vega.Perpetual{}, marketToProto.TradableInstrument.GetInstrument().GetPerpetual())
+}
+
 func getByTxHashReturnsMatchingMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -90,8 +155,8 @@ func getByTxHashReturnsMatchingMarkets(t *testing.T) {
 func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -110,8 +175,8 @@ func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	block := addTestBlock(t, ctx, bs)
 
 	market := entities.Market{
@@ -150,8 +215,7 @@ func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
 func shouldInsertAValidMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
 
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -162,7 +226,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 
-	marketProto := getTestMarket(true)
+	marketProto := getTestFutureMarket(true)
 	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
@@ -184,8 +248,7 @@ func setupMarketsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets) {
 
 func shouldUpdateAValidMarketRecord(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	conn := connectionSource.Connection
 	var rowCount int
@@ -201,7 +264,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
-		marketProto = getTestMarket(false)
+		marketProto = getTestFutureMarket(false)
 
 		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -237,7 +300,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 
 	t.Run("should add the updated market record to the database if the block number has changed", func(t *testing.T) {
-		newMarketProto := marketProto.DeepClone()
+		newMarketProto := proto.Clone(marketProto).(*vega.Market)
 		newMarketProto.TradableInstrument.Instrument.Metadata.Tags = append(newMarketProto.TradableInstrument.Instrument.Metadata.Tags, "DDD")
 		newBlock := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Second))
 
@@ -267,17 +330,232 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 }
 
-func getTestMarket(termInt bool) *vega.Market {
+func shouldInsertAValidSpotMarketRecord(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx := tempTransaction(t)
+
+	conn := connectionSource.Connection
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestSpotMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, rowCount)
+}
+
+func shouldInsertAValidPerpetualMarketRecord(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx := tempTransaction(t)
+
+	conn := connectionSource.Connection
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+
+	marketProto := getTestPerpetualMarket()
+
+	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = md.Upsert(ctx, market)
+	require.NoError(t, err, "Saving market entity to database")
+	err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, rowCount)
+}
+
+func getTestSpotMarket() *vega.Market {
+	mkt := getTestMarket()
+
+	mkt.TradableInstrument.Instrument.Product = &vega.Instrument_Spot{
+		Spot: &vega.Spot{
+			BaseAsset:  "Ethereum",
+			QuoteAsset: "USD",
+			Name:       "ETH/USD",
+		},
+	}
+
+	return mkt
+}
+
+func getTestPerpetualMarket() *vega.Market {
+	pk := dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)
+	mkt := getTestMarket()
+	mkt.TradableInstrument.Instrument.Product = &vega.Instrument_Perpetual{
+		Perpetual: &vega.Perpetual{
+			SettlementAsset:     "Ethereum/Ether",
+			QuoteName:           "ETH-230929",
+			MarginFundingFactor: "0.5",
+			InterestRate:        "0.012",
+			ClampLowerBound:     "0.2",
+			ClampUpperBound:     "0.8",
+			DataSourceSpecForSettlementSchedule: &vega.DataSourceSpec{
+				Id:        "test-settlement-schedule",
+				CreatedAt: time.Now().UnixNano(),
+				UpdatedAt: time.Now().UnixNano(),
+				Data: vega.NewDataSourceDefinition(
+					vega.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&vega.DataSourceDefinitionExternal_Oracle{
+						Oracle: &vega.DataSourceSpecConfiguration{
+							Signers: []*v1.Signer{pk.IntoProto()},
+							Filters: []*v1.Filter{
+								{
+									Key: &v1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: v1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*v1.Condition{},
+								},
+							},
+						},
+					},
+				),
+				Status: vega.DataSourceSpec_STATUS_ACTIVE,
+			},
+			DataSourceSpecForSettlementData: &vega.DataSourceSpec{
+				Id:        "test-settlement-data",
+				CreatedAt: time.Now().UnixNano(),
+				UpdatedAt: time.Now().UnixNano(),
+				Data: vega.NewDataSourceDefinition(
+					vega.DataSourceContentTypeOracle,
+				).SetOracleConfig(
+					&vega.DataSourceDefinitionExternal_Oracle{
+						Oracle: &vega.DataSourceSpecConfiguration{
+							Signers: []*v1.Signer{pk.IntoProto()},
+							Filters: []*v1.Filter{
+								{
+									Key: &v1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: v1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*v1.Condition{},
+								},
+							},
+						},
+					},
+				),
+				Status: vega.DataSourceSpec_STATUS_ACTIVE,
+			},
+			DataSourceSpecBinding: &vega.DataSourceSpecToPerpetualBinding{
+				SettlementDataProperty:     "prices.ETH.value",
+				SettlementScheduleProperty: "2023-09-29T00:00:00.000000000Z",
+			},
+		},
+	}
+	return mkt
+}
+
+func getTestMarket() *vega.Market {
+	return &vega.Market{
+		Id: helpers.GenerateID(),
+		TradableInstrument: &vega.TradableInstrument{
+			Instrument: &vega.Instrument{
+				Id:   "Crypto/BTCUSD/Futures/Dec19",
+				Code: "FX:BTCUSD/DEC19",
+				Name: "December 2019 BTC vs USD future",
+				Metadata: &vega.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:futures",
+					},
+				},
+			},
+			MarginCalculator: &vega.MarginCalculator{
+				ScalingFactors: &vega.ScalingFactors{
+					SearchLevel:       1.1,
+					InitialMargin:     1.2,
+					CollateralRelease: 1.4,
+				},
+			},
+			RiskModel: &vega.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &vega.LogNormalRiskModel{
+					RiskAversionParameter: 0.01,
+					Tau:                   1.0 / 365.25 / 24,
+					Params: &vega.LogNormalModelParams{
+						Mu:    0,
+						R:     0.016,
+						Sigma: 0.09,
+					},
+				},
+			},
+		},
+		Fees: &vega.Fees{
+			Factors: &vega.FeeFactors{
+				MakerFee:          "",
+				InfrastructureFee: "",
+				LiquidityFee:      "",
+			},
+		},
+		OpeningAuction: &vega.AuctionDuration{
+			Duration: 0,
+			Volume:   0,
+		},
+		PriceMonitoringSettings: &vega.PriceMonitoringSettings{
+			Parameters: &vega.PriceMonitoringParameters{
+				Triggers: []*vega.PriceMonitoringTrigger{
+					{
+						Horizon:          0,
+						Probability:      "",
+						AuctionExtension: 0,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &vega.LiquidityMonitoringParameters{
+			TargetStakeParameters: &vega.TargetStakeParameters{
+				TimeWindow:    0,
+				ScalingFactor: 0,
+			},
+			TriggeringRatio:  "0",
+			AuctionExtension: 0,
+		},
+		TradingMode: vega.Market_TRADING_MODE_CONTINUOUS,
+		State:       vega.Market_STATE_ACTIVE,
+		MarketTimestamps: &vega.MarketTimestamps{
+			Proposed: 0,
+			Pending:  0,
+			Open:     0,
+			Close:    0,
+		},
+		PositionDecimalPlaces:   8,
+		LpPriceRange:            "0.95",
+		LinearSlippageFactor:    "1.23",
+		QuadraticSlippageFactor: "5.67",
+	}
+}
+
+func getTestFutureMarket(termInt bool) *vega.Market {
 	term := &vega.DataSourceSpec{
 		Id:        "",
 		CreatedAt: 0,
 		UpdatedAt: 0,
 		Data: vega.NewDataSourceDefinition(
-			vega.DataSourceDefinitionTypeExt,
+			vega.DataSourceContentTypeOracle,
 		).SetOracleConfig(
-			&vega.DataSourceSpecConfiguration{
-				Signers: nil,
-				Filters: nil,
+			&vega.DataSourceDefinitionExternal_Oracle{
+				Oracle: &vega.DataSourceSpecConfiguration{
+					Signers: nil,
+					Filters: nil,
+				},
 			},
 		),
 		Status: 0,
@@ -289,7 +567,7 @@ func getTestMarket(termInt bool) *vega.Market {
 			CreatedAt: 0,
 			UpdatedAt: 0,
 			Data: vega.NewDataSourceDefinition(
-				vega.DataSourceDefinitionTypeInt,
+				vega.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*v1.Condition{
 					{
@@ -321,11 +599,13 @@ func getTestMarket(termInt bool) *vega.Market {
 							CreatedAt: 0,
 							UpdatedAt: 0,
 							Data: vega.NewDataSourceDefinition(
-								vega.DataSourceDefinitionTypeExt,
+								vega.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vega.DataSourceSpecConfiguration{
-									Signers: nil,
-									Filters: nil,
+								&vega.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vega.DataSourceSpecConfiguration{
+										Signers: nil,
+										Filters: nil,
+									},
 								},
 							),
 							Status: 0,
@@ -400,6 +680,12 @@ func getTestMarket(termInt bool) *vega.Market {
 		LpPriceRange:            "0.95",
 		LinearSlippageFactor:    "1.23",
 		QuadraticSlippageFactor: "5.67",
+		LiquiditySlaParams: &vega.LiquiditySLAParameters{
+			PriceRange:                  "0.75",
+			CommitmentMinTimeFraction:   "0.5",
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        "1.0",
+		},
 	}
 }
 
@@ -476,8 +762,7 @@ func TestMarketsCursorPagination(t *testing.T) {
 }
 
 func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, md := setupMarketsTest(t)
 
@@ -510,8 +795,8 @@ func testCursorPaginationReturnsTheSpecifiedMarket(t *testing.T) {
 
 func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -548,8 +833,8 @@ func testCursorPaginationReturnsAllMarkets(t *testing.T) {
 
 func testCursorPaginationReturnsFirstPage(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -587,8 +872,8 @@ func testCursorPaginationReturnsFirstPage(t *testing.T) {
 
 func testCursorPaginationReturnsLastPage(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -626,8 +911,8 @@ func testCursorPaginationReturnsLastPage(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -671,8 +956,8 @@ func testCursorPaginationReturnsPageTraversingForward(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -716,8 +1001,8 @@ func testCursorPaginationReturnsPageTraversingBackward(t *testing.T) {
 
 func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -752,8 +1037,8 @@ func testCursorPaginationReturnsTheSpecifiedMarketNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 
@@ -790,8 +1075,8 @@ func testCursorPaginationReturnsAllMarketsNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -829,8 +1114,8 @@ func testCursorPaginationReturnsFirstPageNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -868,8 +1153,8 @@ func testCursorPaginationReturnsLastPageNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	first := int32(3)
@@ -913,8 +1198,8 @@ func testCursorPaginationReturnsPageTraversingForwardNewestFirst(t *testing.T) {
 
 func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) {
 	bs, md := setupMarketsTest(t)
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	blockTimes := make(map[string]time.Time)
 	populateTestMarkets(ctx, t, bs, md, blockTimes)
 	last := int32(3)
@@ -963,8 +1248,7 @@ func TestSuccessorMarkets(t *testing.T) {
 }
 
 func testMarketLineageCreated(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	bs, md := setupMarketsTest(t)
 	parentMarket := entities.Market{
@@ -1096,8 +1380,8 @@ func testMarketLineageCreated(t *testing.T) {
 }
 
 func testListSuccessorMarkets(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
+
 	md, markets, proposals := setupSuccessorMarkets(t, ctx)
 
 	successors := []entities.SuccessorMarket{
@@ -1169,11 +1453,21 @@ func testListSuccessorMarkets(t *testing.T) {
 			EndCursor:       wantEndCursor,
 		}, pageInfo)
 	})
+
+	t.Run("should list the parent market even if it has not entered continuous trading and has no successors", func(t *testing.T) {
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef04", false, entities.CursorPagination{})
+		require.NoError(t, err)
+		want := []entities.SuccessorMarket{
+			{
+				Market: markets[10],
+			},
+		}
+		assert.Equal(t, want, got)
+	})
 }
 
 func testGetMarketWithParentAndSuccessor(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
+	ctx := tempTransaction(t)
 
 	md, _, _ := setupSuccessorMarkets(t, ctx)
 
@@ -1212,6 +1506,12 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		TradableInstrument: entities.TradableInstrument{
 			TradableInstrument: &vega.TradableInstrument{},
 		},
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
+		},
 	}
 
 	successorMarketA := entities.Market{
@@ -1221,6 +1521,12 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		ParentMarketID: parentMarket.ID,
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
+		},
 	}
 
 	parentMarket.SuccessorMarketID = successorMarketA.ID
@@ -1232,6 +1538,26 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			TradableInstrument: &vega.TradableInstrument{},
 		},
 		ParentMarketID: successorMarketA.ID,
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
+		},
+	}
+
+	parentMarket2 := entities.Market{
+		ID:           entities.MarketID("deadbeef04"),
+		InstrumentID: "deadbeef04",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+		LiquiditySLAParameters: entities.LiquiditySLAParameters{
+			PriceRange:                  num.NewDecimalFromFloat(0),
+			CommitmentMinTimeFraction:   num.NewDecimalFromFloat(0),
+			PerformanceHysteresisEpochs: 0,
+			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
+		},
 	}
 
 	successorMarketA.SuccessorMarketID = successorMarketB.ID
@@ -1395,6 +1721,11 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			market:      successorMarketB,
 			state:       entities.MarketStateActive,
 			tradingMode: entities.MarketTradingModeContinuous,
+		},
+		{
+			market:      parentMarket2,
+			state:       entities.MarketStatePending,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 	}
 

@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package service_test
 
 import (
@@ -609,6 +624,10 @@ func testCheckTransactionSucceeds(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -661,6 +680,10 @@ func testCheckTransactionWithRejectedTransactionSucceeds(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -711,6 +734,10 @@ func testCheckTransactionWithFailedTransactionFails(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -752,6 +779,10 @@ func testAcceptSigningTransactionSucceeds(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -828,6 +859,10 @@ func testFailedTransactionSigningFails(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -888,6 +923,11 @@ func testSigningTransactionWithInvalidRequestFails(t *testing.T) {
 			statusCode, _, _ := s.serveHTTP(tt, signTxRequest(tt, tc.payload, tc.headers))
 			// then
 			assert.Equal(tt, http.StatusBadRequest, statusCode)
+			tc.headers["Origin"] = "Contains 世界"
+			// when
+			statusCode, _, _ = s.serveHTTP(tt, signTxRequest(tt, tc.payload, tc.headers))
+			// then
+			assert.Equal(tt, http.StatusBadRequest, statusCode)
 		})
 	}
 }
@@ -909,6 +949,10 @@ func testAcceptSigningTransactionFailsSpam(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},
@@ -1115,6 +1159,10 @@ func TestEmptyChainIDFromNetworkFails(t *testing.T) {
 			Transfers:         &api.SpamStatistic{},
 			Delegations:       &api.SpamStatistic{},
 			NodeAnnouncements: &api.SpamStatistic{},
+			IssueSignatures:   &api.SpamStatistic{},
+			CreateReferralSet: &api.SpamStatistic{},
+			UpdateReferralSet: &api.SpamStatistic{},
+			ApplyReferralCode: &api.SpamStatistic{},
 			Votes:             &api.VoteSpamStatistics{},
 			Pow: &api.PoWStatistic{
 				BlockStates: []*api.PoWBlockState{},

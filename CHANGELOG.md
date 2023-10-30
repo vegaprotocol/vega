@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.73.0
+## Unreleased 0.74.0
 
 ### 🚨 Breaking changes
 
@@ -19,6 +19,369 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.73.0
+
+### 🚨 Breaking changes
+
+- [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `load-from-block-height` no longer accept `-1` as value. To reload from the latest snapshot, it should be valued `0`.
+- [8679](https://github.com/vegaprotocol/vega/issues/8679) - Snapshot configuration `snapshot-keep-recent` only accept values from `1` (included) to `10` (included) .
+- [8944](https://github.com/vegaprotocol/vega/issues/8944) - Asset ID field on the `ExportLedgerEntriesRequest gRPC API` for exporting ledger entries has changed type to make it optional.
+- [9562](https://github.com/vegaprotocol/vega/issues/9562) - `--lite` and `--archive` options to data node have been replaced with `--retention-profile=[archive|conservative|minimal]` with default mode as archive.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Rework `GetReferralSetStats` endpoint.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/volume-discount-stats` to `/volume-discount-program/stats`.
+- [9258](https://github.com/vegaprotocol/vega/issues/9258) - Change HTTP endpoint from `/referral-sets/stats/{id}` to `/referral-sets/{id}/stats`.
+- [9719](https://github.com/vegaprotocol/vega/issues/9719) - Remove unnecessary fields from referral and volume discount program proposals.
+- [9733](https://github.com/vegaprotocol/vega/issues/9733) - Making `set_id` optional in `referral set stats` endpoint
+- [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
+- [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
+- [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
+
+
+### 🛠 Improvements
+
+- [9484](https://github.com/vegaprotocol/vega/issues/9484) - Remove network parameters that only provide defaults for market liquidity settings.
+- [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
+- [8590](https://github.com/vegaprotocol/vega/issues/8590) - Improved Ethereum oracle support.
+- [8754](https://github.com/vegaprotocol/vega/issues/8754) - Introduce Perpetuals and their funding payment calculations.
+- [8731](https://github.com/vegaprotocol/vega/issues/8731) - Add liquidity provision `SLA` to governance proposals for spot market.
+- [8741](https://github.com/vegaprotocol/vega/issues/8741) - Add a network parameter for disabling `Ethereum` oracles.
+- [8600](https://github.com/vegaprotocol/vega/issues/8600) - Clean and refactor data source packages.
+- [8845](https://github.com/vegaprotocol/vega/issues/8845) - Add support for network treasury and global insurance accounts.
+- [9545](https://github.com/vegaprotocol/vega/issues/9545) - Auto load new segments after load finishes
+- [8661](https://github.com/vegaprotocol/vega/issues/8661) - Refactor the snapshot engine to make it testable.
+- [8680](https://github.com/vegaprotocol/vega/issues/8680) - Move loading the local snapshot in the initialization steps.
+- [8682](https://github.com/vegaprotocol/vega/issues/8682) - Share snapshot by search the metadata database instead of loading the tree.
+- [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
+- [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes
+- [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
+- [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
+- [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
+- [9678](https://github.com/vegaprotocol/vega/issues/9678) - Cache and forward referral rewards multiplier and factor multiplier
+- [8779](https://github.com/vegaprotocol/vega/issues/8779) - Query all details of liquidity providers via an API.
+- [8924](https://github.com/vegaprotocol/vega/issues/8924) - Refactor slightly to remove need to deep clone `proto` types
+- [8782](https://github.com/vegaprotocol/vega/issues/8782) - List all active liquidity providers for a market via API.
+- [8753](https://github.com/vegaprotocol/vega/issues/8753) - Governance for new market proposal.
+- [8752](https://github.com/vegaprotocol/vega/issues/8752) - Add `PERPS` network parameter.
+- [8759](https://github.com/vegaprotocol/vega/issues/8759) - Add update market support for `PERPS`.
+- [8758](https://github.com/vegaprotocol/vega/issues/8758) - Internal recurring time trigger for `PERPS`.
+- [8913](https://github.com/vegaprotocol/vega/issues/8913) - Add business logic for team management.
+- [8765](https://github.com/vegaprotocol/vega/issues/8765) - Implement snapshots state for `PERPS`.
+- [8918](https://github.com/vegaprotocol/vega/issues/8918) - Implement commands for team management.
+- [9401](https://github.com/vegaprotocol/vega/issues/9401) - Use boot strap peers when fetching initial network history segment
+- [9670](https://github.com/vegaprotocol/vega/issues/9670) - Do not check destination account exists when validating transfer proposal
+- [8960](https://github.com/vegaprotocol/vega/issues/8960) - Improve wiring perpetual markets through governance.
+- [8969](https://github.com/vegaprotocol/vega/issues/8969) - Improve wiring of internal time triggers for perpetual markets.
+- [9001](https://github.com/vegaprotocol/vega/issues/9001) - Improve wiring of perpetual markets into the data node.
+- [8985](https://github.com/vegaprotocol/vega/issues/8985) - Improve snapshot restore of internal time triggers for perpetual markets.
+- [9146](https://github.com/vegaprotocol/vega/issues/9146) - Improve `TWAP` for perpetual markets to do calculations incrementally.
+- [8817](https://github.com/vegaprotocol/vega/issues/8817) - Add interest term to perpetual funding payment calculation.
+- [8755](https://github.com/vegaprotocol/vega/issues/8755) - Improve testing for perpetual settlement and collateral transfers.
+- [9319](https://github.com/vegaprotocol/vega/issues/9319) - Introduce product data field in market data for product specific information.
+- [8756](https://github.com/vegaprotocol/vega/issues/8756) - Settlement and margin implementation for `PERPS`.
+- [8932](https://github.com/vegaprotocol/vega/issues/8932) - Fix range validation of `performanceHysteresisEpochs`
+- [8887](https://github.com/vegaprotocol/vega/pull/8887) - Remove differences for snapshot loading when the `nullchain` is used instead of `tendermint`
+- [8973](https://github.com/vegaprotocol/vega/issues/8973) - Do some more validation on Ethereum call specifications, add explicit error types to improve reporting
+- [8957](https://github.com/vegaprotocol/vega/issues/8957) - Oracle bindings for `PERPS`.
+- [8770](https://github.com/vegaprotocol/vega/issues/8770) - Add `PERPS` to integration tests.
+- [8763](https://github.com/vegaprotocol/vega/issues/8763) - Periodic settlement data endpoint.
+- [8920](https://github.com/vegaprotocol/vega/issues/8920) - Emit events when something happens to teams.
+- [8917](https://github.com/vegaprotocol/vega/issues/8917) - Support teams engine snapshots
+- [9007](https://github.com/vegaprotocol/vega/issues/9007) - Add reward vesting mechanisms.
+- [8914](https://github.com/vegaprotocol/vega/issues/8914) - Add referral network parameters.
+- [9023](https://github.com/vegaprotocol/vega/issues/9023) - Add transaction comparison tool.
+- [8120](https://github.com/vegaprotocol/vega/issues/8120) - Data node `API` support for spot markets, data and governance.
+- [8762](https://github.com/vegaprotocol/vega/issues/8762) - Data node `API` support for perpetual markets, data and governance.
+- [8761](https://github.com/vegaprotocol/vega/issues/8761) - Add terminating `PERPS` via governance.
+- [9021](https://github.com/vegaprotocol/vega/issues/9021) - Add rejection reason to stop orders.
+- [9012](https://github.com/vegaprotocol/vega/issues/9012) - Add governance to update the referral program.
+- [9077](https://github.com/vegaprotocol/vega/issues/9077) - Ensure liquidity `SLA` parameters are exposed on markets and proposals
+- [9046](https://github.com/vegaprotocol/vega/issues/9046) - Send event on referral engine state change.
+- [9045](https://github.com/vegaprotocol/vega/issues/9045) - Snapshot the referral engine.
+- [9136](https://github.com/vegaprotocol/vega/issues/9136) - Referral engine returns reward factor for a given party
+- [9076](https://github.com/vegaprotocol/vega/issues/9076) - Add current funding rate to market data.
+- [1932](https://github.com/vegaprotocol/devops-infra/issues/1932) - Allow configuring an `SQL` statement timeout.
+- [9162](https://github.com/vegaprotocol/vega/issues/9162) - Refactor transfers to support new metric based rewards and distribution strategies
+- [9163](https://github.com/vegaprotocol/vega/issues/9163) - Refactor reward engine to support the new metric based reward distribution
+- [9164](https://github.com/vegaprotocol/vega/issues/9164) - Refactor market activity tracker to support more metrics and history
+- [9219](https://github.com/vegaprotocol/vega/issues/9219) - Don't do `IPFS` garbage collection every segment
+- [9208](https://github.com/vegaprotocol/vega/issues/9208) - Refactor referral set and teams state
+- [9204](https://github.com/vegaprotocol/vega/issues/9204) - Ensure teams names are not duplicates
+- [9080](https://github.com/vegaprotocol/vega/issues/9080) - Add support for vested and vesting account in GraphQL
+- [9147](https://github.com/vegaprotocol/vega/issues/9147) - Add reward multiplier to vesting engine
+- [9593](https://github.com/vegaprotocol/vega/issues/9593) - Version and whether it was taken for a protocol upgrade added to snapshot.
+- [9234](https://github.com/vegaprotocol/vega/issues/9234) - Add support for transfers out of the vested account
+- [9199](https://github.com/vegaprotocol/vega/issues/9199) - Consider running notional volume to determine referrers and referees tier
+- [9214](https://github.com/vegaprotocol/vega/issues/9214) - Add staking tier on referral program
+- [9205](https://github.com/vegaprotocol/vega/issues/9205) - Ensure staking requirement when creating / joining referral sets
+- [9032](https://github.com/vegaprotocol/vega/issues/9032) - Implement activity streaks.
+- [9133](https://github.com/vegaprotocol/vega/issues/9133) - Apply discounts/rewards in fee calculation
+- [9281](https://github.com/vegaprotocol/vega/issues/9281) - Add ability to filter funding period data points by the sequence they land in.
+- [9254](https://github.com/vegaprotocol/vega/issues/9254) - Add fee discounts to trade API
+- [9246](https://github.com/vegaprotocol/vega/issues/9246) - Add rewards multiplier support in the referral engine.
+- [9063](https://github.com/vegaprotocol/vega/issues/9063) - Make `calculationTimeStep` a network parameter
+- [9167](https://github.com/vegaprotocol/vega/issues/9167) - Rename liquidity network parameters
+- [9302](https://github.com/vegaprotocol/vega/issues/9302) - Volume discount program
+- [9288](https://github.com/vegaprotocol/vega/issues/9288) - Add check for current epoch to integration tests.
+- [9288](https://github.com/vegaprotocol/vega/issues/9288) - Allow integration test time to progress by epoch.
+- [9078](https://github.com/vegaprotocol/vega/issues/9078) - Add activity streak `API`.
+- [9351](https://github.com/vegaprotocol/vega/issues/9351) - Avoid using strings in market activity tracker snapshot and checkpoint
+- [9079](https://github.com/vegaprotocol/vega/issues/9079) - Add API to get the current referral program
+- [8916](https://github.com/vegaprotocol/vega/issues/8916) - Add data node `API` for teams.
+- [7461](https://github.com/vegaprotocol/vega/issues/7461) - Add endpoint to get transfer by ID.
+- [9417](https://github.com/vegaprotocol/vega/issues/9417) - Add additional filters for referral set `APIs`.
+- [9375](https://github.com/vegaprotocol/vega/issues/9375) - Apply SLA parameters at epoch boundary.
+- [9279](https://github.com/vegaprotocol/vega/issues/9279) - Remove checks for best bid/ask when leaving opening auction.
+- [9456](https://github.com/vegaprotocol/vega/issues/9456) - Add liquidity `SLA` parameters to `NewMarket` and `UpdateMarketConfiguration` proposals in `GraphQL`.
+- [9408](https://github.com/vegaprotocol/vega/issues/9408) - Check for integer overflow in pagination.
+- [5176](https://github.com/vegaprotocol/vega/issues/5176) - Check for duplicate asset registration in integration tests.
+- [9496](https://github.com/vegaprotocol/vega/issues/9496) - Added support for new dispatch strategy fields in feature tests
+- [9536](https://github.com/vegaprotocol/vega/issues/9536) - Feature tests for average position metric transfers and reward
+- [9547](https://github.com/vegaprotocol/vega/issues/9547) - Less disk space is now needed to initialise a data node from network history.
+- [8764](https://github.com/vegaprotocol/vega/issues/8764) - Include funding payment in margin and liquidation price estimates for `PERPS`.
+- [9519](https://github.com/vegaprotocol/vega/issues/9519) - Fix `oracle_specs` data in the `database` that was inadvertently removed during an earlier database migration
+- [9475](https://github.com/vegaprotocol/vega/issues/9475) - Make `oracle_data` and `oracle_data_oracle_specs` into `hypertables`
+- [9478](https://github.com/vegaprotocol/vega/issues/8764) - Add SLA statistics to market data and liquidity provision APIs.
+- [9558](https://github.com/vegaprotocol/vega/issues/9558) - Feature tests for relative return metric transfers and reward
+- [9559](https://github.com/vegaprotocol/vega/issues/9559) - Feature tests for return volatility metric transfers and reward
+- [9564](https://github.com/vegaprotocol/vega/issues/9564) - Fix error message for too many staking tiers.
+- [8421](https://github.com/vegaprotocol/vega/issues/8421) - Markets that spend too long in opening auction should be cancelled.
+- [9575](https://github.com/vegaprotocol/vega/issues/9575) - Expand SLA statistics by required liquidity and notional volumes.
+- [9578](https://github.com/vegaprotocol/vega/issues/9578) - Add spam protection for referral transactions
+- [9590](https://github.com/vegaprotocol/vega/issues/9590) - Restore positions for market activity tracker on migration from old version.
+- [9589](https://github.com/vegaprotocol/vega/issues/9589) - Add event for funding payments.
+- [9460](https://github.com/vegaprotocol/vega/issues/9460) - Add APIs for volume discount program.
+- [9628](https://github.com/vegaprotocol/vega/issues/9628) - Upgrade `CometBFT`.
+- [9577](https://github.com/vegaprotocol/vega/issues/9577) - Feature test coverage for distribution strategy
+- [9542](https://github.com/vegaprotocol/vega/issues/9542) - Ensure all per asset accounts exist after migration
+- [8475](https://github.com/vegaprotocol/vega/issues/8475) - Emit margin levels event when margin balance is cleared.
+- [9664](https://github.com/vegaprotocol/vega/issues/9664) - Handle pagination of release request with github.
+- [9681](https://github.com/vegaprotocol/vega/issues/9681) - Move referral set reward factor to the referral set stats events
+- [9708](https://github.com/vegaprotocol/vega/issues/9708) - Use the correct transaction hash when submitting orders through the `nullblockchain`
+- [9755](https://github.com/vegaprotocol/vega/issues/9755) - Add referral program spam statistics to `GetSpamStatistics` core API.
+- [409](https://github.com/vegaprotocol/OctoberACs/issues/409) - Add integration test for team rewards `0056-REWA-106`
+- [410](https://github.com/vegaprotocol/OctoberACs/issues/410) - Add integration test for team rewards `0056-REWA-107`
+- [411](https://github.com/vegaprotocol/OctoberACs/issues/411) - Add integration test for team rewards `0056-REWA-108`
+- [408](https://github.com/vegaprotocol/OctoberACs/issues/408) - Add integration test for team rewards `0056-REWA-105`
+- [407](https://github.com/vegaprotocol/OctoberACs/issues/407) - Add integration test for team rewards `0056-REWA-104`
+- [406](https://github.com/vegaprotocol/OctoberACs/issues/406) - Add integration test for team rewards `0056-REWA-103`
+- [388](https://github.com/vegaprotocol/OctoberACs/issues/388) - Add integration test for `0029-FEES-031`
+- [387](https://github.com/vegaprotocol/OctoberACs/issues/387) - Add integration test for `0029-FEES-028`
+- [9710](https://github.com/vegaprotocol/vega/issues/9710) - Add config to keep spam and `POW` enabled when using null chain.
+- [403](https://github.com/vegaprotocol/OctoberACs/issues/403) - Add integration test for team rewards `0056-REWA-100`
+- [402](https://github.com/vegaprotocol/OctoberACs/issues/402) - Add integration test for team rewards `0056-REWA-099`
+- [401](https://github.com/vegaprotocol/OctoberACs/issues/401) - Add integration test for team rewards `0056-REWA-098`
+- [400](https://github.com/vegaprotocol/OctoberACs/issues/400) - Add integration test for team rewards `0056-REWA-097`
+- [2971](https://github.com/vegaprotocol/system-tests/issues/2971) - Fix margin calculation for `PERPS`.
+- [2948](https://github.com/vegaprotocol/system-tests/issues/2948) - Add integration test for failing system test.
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add X day aggregate totals for referral set referees.
+- [2985](https://github.com/vegaprotocol/system-tests/issues/2985) - Coverage for insurance pool transfers, fix deadlock when terminating pending market through governance.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug.
+- [9785](https://github.com/vegaprotocol/vega/issues/9785) - Support transfers to network treasury.
+- [9743](https://github.com/vegaprotocol/system-tests/issues/9743) - Expose maker fees in fees stats API.
+- [9750](https://github.com/vegaprotocol/vega/issues/9750) - Add paid liquidity fees statistics to API.
+- [8919](https://github.com/vegaprotocol/vega/issues/8919) - Add `CreatedAt` field to transaction type in the block explorer API.
+- [7248](https://github.com/vegaprotocol/vega/issues/7248) - Add transaction proof of work and version in block explorer API.
+- [9815](https://github.com/vegaprotocol/vega/issues/9815) - Introduce API to get fees statistics for a given party.
+- [9861](https://github.com/vegaprotocol/vega/issues/9861) - Add `lockedUntilEpoch` to rewards API
+- [9846](https://github.com/vegaprotocol/vega/issues/9846) - Add API for vesting and locked balances.
+- [9876](https://github.com/vegaprotocol/vega/issues/9876) - Disable teams support in transfers and referral sets.
+- [8056](https://github.com/vegaprotocol/vega/issues/8056) - Add transfer fees event.
+- [9883](https://github.com/vegaprotocol/vega/issues/9883) - Add reward filter to transfer API.
+- [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
+- [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
+- [9827](https://github.com/vegaprotocol/vega/issues/9827) - Expose `was_eligible` in the referral set statistics.
+- [9918](https://github.com/vegaprotocol/vega/issues/9918) - Expose vesting quantum balance.
+- [9923](https://github.com/vegaprotocol/vega/issues/9923) - Add referrer volume to referral set stats.
+
+### 🐛 Fixes
+
+- [8417](https://github.com/vegaprotocol/vega/issues/8417) - Fix normalisation of Ethereum calls that return structures
+- [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
+- [8721](https://github.com/vegaprotocol/vega/issues/8721) - Fix panic with triggered OCO expiring
+- [8751](https://github.com/vegaprotocol/vega/issues/8751) - Fix Ethereum oracle data error event sent with incorrect sequence number
+- [8906](https://github.com/vegaprotocol/vega/issues/8906) - Fix Ethereum oracle confirmation height not be used
+- [8729](https://github.com/vegaprotocol/vega/issues/8729) - Stop order direction not set in datanode
+- [8545](https://github.com/vegaprotocol/vega/issues/8545) - Block Explorer pagination does not order correctly.
+- [8748](https://github.com/vegaprotocol/vega/issues/8748) - `ListSuccessorMarkets` does not return results.
+- [9784](https://github.com/vegaprotocol/vega/issues/9784) - Referral timestamp consistency
+- [8749](https://github.com/vegaprotocol/vega/issues/8749) - Ensure stop order expiry is in the future
+- [9337](https://github.com/vegaprotocol/vega/issues/9337) - Non deterministic ordering of vesting ledger events
+- [8773](https://github.com/vegaprotocol/vega/issues/8773) - Fix panic with stop orders
+- [9343](https://github.com/vegaprotocol/vega/issues/9343) - Prevent malicious validator submitting Ethereum oracle chain event prior to initial start time
+- [8792](https://github.com/vegaprotocol/vega/issues/8792) - Fix panic when starting null block chain node.
+- [8739](https://github.com/vegaprotocol/vega/issues/8739) - Cancel orders for rejected markets.
+- [9831](https://github.com/vegaprotocol/vega/issues/9831) - Disable auto vacuum during network history load
+- [9685](https://github.com/vegaprotocol/vega/issues/9685) - All events for core are sent out in a stable order.
+- [9594](https://github.com/vegaprotocol/vega/issues/9594) - non deterministic order events on market termination
+- [9350](https://github.com/vegaprotocol/vega/issues/9350) - Clear account ledger events causing segment divergence
+- [9118](https://github.com/vegaprotocol/vega/issues/9118) - Improve list stop orders error message
+- [9406](https://github.com/vegaprotocol/vega/issues/9105) - Fix Ethereum oracle validation failing unexpectedly when using go 1.19
+- [9105](https://github.com/vegaprotocol/vega/issues/9105) - Truncate virtual stake decimal places
+- [9517](https://github.com/vegaprotocol/vega/issues/9517) - Start and end time stamps in `GetMarketDataHistoryByID` now work as expected.
+- [9348](https://github.com/vegaprotocol/vega/issues/9348) - Nil pointer error in Ethereum call engine when running with null block chain
+- [8800](https://github.com/vegaprotocol/vega/issues/8800) - `expiresAt` is always null in the Stop Orders `API`.
+- [8796](https://github.com/vegaprotocol/vega/issues/8796) - Avoid updating active proposals slice while iterating over it.
+- [8631](https://github.com/vegaprotocol/vega/issues/8631) - Prevent duplicate Ethereum call chain event after snapshot start
+- [9528](https://github.com/vegaprotocol/vega/issues/9528) - Allow order submission when in governance suspended auction.
+- [8679](https://github.com/vegaprotocol/vega/issues/8679) - Disallow snapshot state-sync if local snapshots exist
+- [8364](https://github.com/vegaprotocol/vega/issues/8364) - Initialising from network history not working after database wipe
+- [8827](https://github.com/vegaprotocol/vega/issues/8827) - Add block height validation to validator initiated transactions and pruning to the `pow` engine cache
+- [8836](https://github.com/vegaprotocol/vega/issues/8836) - Fix enactment of market update state
+- [9760](https://github.com/vegaprotocol/vega/issues/9760) - Validate that a recurring transfer with markets matches the asset in the transfer.
+- [8848](https://github.com/vegaprotocol/vega/issues/8848) - Handle the case where the market is terminated and the epoch ends at the same block.
+- [8853](https://github.com/vegaprotocol/vega/issues/8853) - Liquidity provision amendment bug fixes
+- [8862](https://github.com/vegaprotocol/vega/issues/8862) - Fix settlement via governance
+- [9088](https://github.com/vegaprotocol/vega/issues/9088) - Include error field in `contractCall` snapshot.
+- [8854](https://github.com/vegaprotocol/vega/issues/8854) - Add liquidity `v2` snapshots to the list of providers
+- [8772](https://github.com/vegaprotocol/vega/issues/8772) - Checkpoint panic on successor markets.
+- [8962](https://github.com/vegaprotocol/vega/issues/8962) - Refreshed pegged iceberg orders remain tracked as pegged orders.
+- [8837](https://github.com/vegaprotocol/vega/issues/8837) - Remove successor entries from snapshot if they will be removed next tick.
+- [8868](https://github.com/vegaprotocol/vega/issues/8868) - Fix `oracle_specs` table null value error.
+- [9038](https://github.com/vegaprotocol/vega/issues/9038) - New market proposals are no longer in both the active and enacted slices to prevent pointer sharing.
+- [8878](https://github.com/vegaprotocol/vega/issues/8878) - Fix amend to consider market decimals when checking for sufficient funds.
+- [8698](https://github.com/vegaprotocol/vega/issues/8698) - Final settlement rounding can be off by a 1 factor instead of just one.
+- [9113](https://github.com/vegaprotocol/vega/issues/9113) - Only add pending signatures to the retry list when the notary engine snapshot restores.
+- [8861](https://github.com/vegaprotocol/vega/issues/8861) - Fix successor proposals never leaving proposed state.
+- [9086](https://github.com/vegaprotocol/vega/issues/9086) - Set identifier generator during perpetual settlement for closed out orders.
+- [8884](https://github.com/vegaprotocol/vega/issues/8884) - Do not assume `\n` is present on the first read chunk of the input
+- [8477](https://github.com/vegaprotocol/vega/issues/8477) - Do not allow opening auction duration of 0
+- [9272](https://github.com/vegaprotocol/vega/issues/9272) - Fix dead-lock when terminating a perpetual market.
+- [8891](https://github.com/vegaprotocol/vega/issues/8891) - Emit market update event when resuming via governance
+- [8874](https://github.com/vegaprotocol/vega/issues/8874) - Database migration can fail when rolling back and migrating up again.
+- [8855](https://github.com/vegaprotocol/vega/issues/8855) - Preserve reference to parent market when restoring checkpoint data
+- [9576](https://github.com/vegaprotocol/vega/issues/9576) - Metric collection during bridge stops no longer causes a panic.
+- [8909](https://github.com/vegaprotocol/vega/issues/8909) - initialise id generator for all branches of market state update
+- [9004](https://github.com/vegaprotocol/vega/issues/9004) - Clear insurance pools in a deterministic order in successor markets.
+- [8908](https://github.com/vegaprotocol/vega/issues/8908) - A rejected parent market should result in all successors getting rejected, too.
+- [8953](https://github.com/vegaprotocol/vega/issues/8953) - Fix reward distribution when validator delegate to other validators
+- [8898](https://github.com/vegaprotocol/vega/issues/8898) - Fix auction uncrossing handling for spots
+- [8968](https://github.com/vegaprotocol/vega/issues/8968) - Fix missing parent reference on checkpoint restore.
+- [9009](https://github.com/vegaprotocol/vega/issues/9009) - Fix non determinism in `RollbackParentELS`
+- [8945](https://github.com/vegaprotocol/vega/issues/8945) - Expose missing order from the stop order `GraphQL` endpoint.
+- [9034](https://github.com/vegaprotocol/vega/issues/9034) - Add missing transfer types to `GraphQL` schema definition.
+- [9075](https://github.com/vegaprotocol/vega/issues/9075) - `Oracle Specs API` can fail when oracle data is null.
+- [8944](https://github.com/vegaprotocol/vega/issues/8944) - Fix ignoring of asset `ID` in ledger export, and make it optional.
+- [8971](https://github.com/vegaprotocol/vega/issues/8971) - Record the epoch start time even in opening auction
+- [8992](https://github.com/vegaprotocol/vega/issues/8992) - allow for 0 time step for `SLA` fee calculation
+- [9266](https://github.com/vegaprotocol/vega/issues/9266) - Preserve perpetual state when updating product
+- [8988](https://github.com/vegaprotocol/vega/issues/8988) - allow amend/cancel of pending liquidity provision
+- [8993](https://github.com/vegaprotocol/vega/issues/8993) - handle the case where commitment min time fraction is 1
+- [9252](https://github.com/vegaprotocol/vega/issues/9252) - Preserve the order of pegged orders in snapshots.
+- [9066](https://github.com/vegaprotocol/vega/issues/9066) - Ensure a party have a liquidity provision before trying to cancel
+- [9140](https://github.com/vegaprotocol/vega/issues/9140) - Stop orders table should be a `hypertable` with retention policy.
+- [9153](https://github.com/vegaprotocol/vega/issues/9153) - `MTM` win transfers can be less than one.
+- [9227](https://github.com/vegaprotocol/vega/issues/9227) - Do not allow market updates that change the product type.
+- [9535](https://github.com/vegaprotocol/vega/issues/9535) - Populate referral statistics when loading from a snapshot.
+- [9178](https://github.com/vegaprotocol/vega/issues/9178) - Fix LP amendment panic
+- [9329](https://github.com/vegaprotocol/vega/issues/9329) - Roll next trigger time forward until after the time that triggered it.
+- [9053](https://github.com/vegaprotocol/vega/issues/9053) - Handle settle market events in core positions plug-in.
+- [9189](https://github.com/vegaprotocol/vega/issues/9189) - Fix stop orders snapshots
+- [9313](https://github.com/vegaprotocol/vega/issues/9313) - `ListLedgerEntries` transfers type filter works as expected with open to and from filters.
+- [9198](https://github.com/vegaprotocol/vega/issues/9198) - Fix panic during LP amendment applications
+- [9196](https://github.com/vegaprotocol/vega/issues/9196) - `API` documentation should specify the time format.
+- [9294](https://github.com/vegaprotocol/vega/issues/9294) - Data node panics when many markets use the same data source
+- [9203](https://github.com/vegaprotocol/vega/issues/9203) - Do not remove LPs from the parties map if they are an LP without an open position
+- [9202](https://github.com/vegaprotocol/vega/issues/9202) - Fix `ELS` not calculated when leaving opening auction.
+- [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
+- [9276](https://github.com/vegaprotocol/vega/issues/9276) - Properly save stats in the positions snapshot
+- [9305](https://github.com/vegaprotocol/vega/issues/9305) - Properly propagate `providersFeeCalculationTimeStep` parameter
+- [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` ignored reference filter.
+- [9385](https://github.com/vegaprotocol/vega/issues/9385) - Support deprecated liquidity auction type for compatibility
+- [9398](https://github.com/vegaprotocol/vega/issues/9398) - Fix division by zero panic in market liquidity
+- [9413](https://github.com/vegaprotocol/vega/issues/9413) - Fix range validation for SLA parameters
+- [9332](https://github.com/vegaprotocol/vega/issues/9332) - Ethereum oracles sending data to unintended destinations
+- [9447](https://github.com/vegaprotocol/vega/issues/9447) - Store current SLA parameters in the liquidity engine snapshot.
+- [9433](https://github.com/vegaprotocol/vega/issues/9433) - fix referral set snapshot
+- [9432](https://github.com/vegaprotocol/vega/issues/9432) - fix referral set not saved to database.
+- [9449](https://github.com/vegaprotocol/vega/issues/9449) - if expiration is empty, never expire a discount/reward program
+- [9263](https://github.com/vegaprotocol/vega/issues/9263) - save dispatch strategy details in the database and allow for its retrieval.
+- [9374](https://github.com/vegaprotocol/vega/issues/9374) - `ListGovernanceData` returns an error instead of results.
+- [9344](https://github.com/vegaprotocol/vega/issues/9344) - Verify `EthTime` in submitted `ChainEvent` transactions matches the chain.
+- [9461](https://github.com/vegaprotocol/vega/issues/9461) - Do not make SLA related transfers for 0 amount.
+- [9462](https://github.com/vegaprotocol/vega/issues/9462) - Add missing proposal error `enum` values to the database.
+- [9466](https://github.com/vegaprotocol/vega/issues/9466) - `ListReferralSets` returns error when there are no stats available.
+- [9341](https://github.com/vegaprotocol/vega/issues/9341) - Fix checkpoint loading
+- [9472](https://github.com/vegaprotocol/vega/issues/9472) - `ListTeams` returns error when filtering by referrer or team.
+- [9477](https://github.com/vegaprotocol/vega/issues/947y) - Teams data not persisted to the database.
+- [9412](https://github.com/vegaprotocol/vega/issues/9412) - Use vote close time for opening auction start time.
+- [9487](https://github.com/vegaprotocol/vega/issues/9487) - Reset auction trigger appropriately when market is resumed via governance.
+- [9489](https://github.com/vegaprotocol/vega/issues/9489) - A referrer cannot join another team.
+- [9441](https://github.com/vegaprotocol/vega/issues/9441) - fix occasional double close of channel in integration tests
+- [9074](https://github.com/vegaprotocol/vega/issues/9074) - Fix error response for `CSV` exports.
+- [9512](https://github.com/vegaprotocol/vega/issues/9512) - Allow hysteresis period to be set to 0.
+- [9526](https://github.com/vegaprotocol/vega/issues/9526) - Rename go enum value `REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION` to match `db` schema
+- [8979](https://github.com/vegaprotocol/vega/issues/8979) - Add trusted proxy config and verification for `XFF` header.
+- [9530](https://github.com/vegaprotocol/vega/issues/9530) - Referral program end timestamp not correctly displaying in `GraphQL API`.
+- [9532](https://github.com/vegaprotocol/vega/issues/9532) - Data node crashes if referral program starts and ends in the same block.
+- [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection errors for `UpdateReferralProgram`.
+- [9570](https://github.com/vegaprotocol/vega/issues/9570) - Ledger entry export doesn't work if `dateRange.End` is specified
+- [9571](https://github.com/vegaprotocol/vega/issues/9571) - Ledger entry `CSV` export slow even when looking at narrow time window
+- [8934](https://github.com/vegaprotocol/vega/issues/8934) - Check for special characters in headers.
+- [9609](https://github.com/vegaprotocol/vega/issues/9609) - Do not prompt for funding payments when terminating a perpetual market if we have already processed a trigger.
+- [8979](https://github.com/vegaprotocol/vega/issues/8979) - Update `XFF` information in rate limiter documentation.
+- [9540](https://github.com/vegaprotocol/vega/issues/9540) - Proposals connection does not resolve `UpdateReferralProgram` proposals correctly.
+- [9580](https://github.com/vegaprotocol/vega/issues/9580) - Add program end time validation for referral proposals.
+- [9588](https://github.com/vegaprotocol/vega/issues/9588) - Fix snapshot state for referral and volume discount programs.
+- [9596](https://github.com/vegaprotocol/vega/issues/9596) - Empty positions and potential positions are excluded from win socialisation.
+- [9619](https://github.com/vegaprotocol/vega/issues/9619) - Win socialisation on funding payments should include parties who haven't traded.
+- [9624](https://github.com/vegaprotocol/vega/issues/9624) - Fix get returns when window is larger than available returns
+- [9634](https://github.com/vegaprotocol/vega/issues/9634) - Do not allow to submit liquidity provision for pending LPs
+- [9636](https://github.com/vegaprotocol/vega/issues/9636) - include ersatz validator for validator ranking reward.
+- [9655](https://github.com/vegaprotocol/vega/issues/9655) - Make liquidity monitoring parameter required in market proposals validation
+- [9280](https://github.com/vegaprotocol/vega/issues/9280) - Fix block height off by one issue.
+- [9658](https://github.com/vegaprotocol/vega/issues/9658) - Fix `updateVolumeDiscountProgram` GraphQL resolver.
+- [9672](https://github.com/vegaprotocol/vega/issues/9672) - Fix margin being non-zero on `PERPS`, add tests to ensure distressed parties are handled correctly
+- [9280](https://github.com/vegaprotocol/vega/issues/9280) - Get block height directly from `blocks` table.
+- [9787](https://github.com/vegaprotocol/vega/issues/9787) - Do not sort market input so that tracking of dispatch strategies are not disturbed.
+- [9675](https://github.com/vegaprotocol/vega/issues/9675) - Fix snapshot issue with not applying `providersCalculationStep` at epoch start.
+- [9693](https://github.com/vegaprotocol/vega/issues/9693) - Add missing validation for general account public key in governance transfer
+- [9691](https://github.com/vegaprotocol/vega/issues/9691) - Refactor referral engine snapshot
+- [8570](https://github.com/vegaprotocol/vega/issues/8570) - Ensure pagination doesn't trigger a sequential scan on block-explorer transactions table.
+- [9704](https://github.com/vegaprotocol/vega/issues/9704) - Fix referral program snapshot
+- [9705](https://github.com/vegaprotocol/vega/issues/9705) - Ensure vote events are sent in the same order.
+- [9714](https://github.com/vegaprotocol/vega/issues/9714) - Missing data from the fee stats
+- [9722](https://github.com/vegaprotocol/vega/issues/9722) - Add missing wiring for activity streak `gRPC`
+- [9734](https://github.com/vegaprotocol/vega/issues/9734) - Fix creation of new account types for existing assets during migration
+- [9731](https://github.com/vegaprotocol/vega/issues/9731) - Allow team rewards to apply to all teams.
+- [9727](https://github.com/vegaprotocol/vega/issues/9727) - Initialize teams earlier to avoid panic.
+- [9746](https://github.com/vegaprotocol/vega/issues/9746) - Fix handling of LP fees reward
+- [9747](https://github.com/vegaprotocol/vega/issues/9747) - Return correct destination type
+- [9541](https://github.com/vegaprotocol/vega/issues/9731) - Add filtering for party to the referral fees API.
+- [9751](https://github.com/vegaprotocol/vega/issues/9751) - Make sure that LP fee party accounts exists.
+- [9762](https://github.com/vegaprotocol/vega/issues/9762) - Referral fees API not filtering by party correctly.
+- [9775](https://github.com/vegaprotocol/vega/issues/9775) - Do not pay discount if set is not eligible
+- [9788](https://github.com/vegaprotocol/vega/issues/9788) - Fix transfer account validation.
+- [9859](https://github.com/vegaprotocol/vega/issues/9859) - Cache nonces in `pow` engine to prevent reuse.
+- [9544](https://github.com/vegaprotocol/vega/issues/9544) - Fix race in visor restart logic.
+- [9797](https://github.com/vegaprotocol/vega/issues/9797) - Default pagination limits are not always correctly set.
+- [9813](https://github.com/vegaprotocol/vega/issues/9813) - Add validation for team scope vs individual scope
+- [8570](https://github.com/vegaprotocol/vega/issues/8570) - Make sure the filtering by `cmd_type` on block explorer doesn't result with a bad query planning.
+- [9801](https://github.com/vegaprotocol/vega/issues/9801) - Set right numbers on volume discount in fees stats
+- [9835](https://github.com/vegaprotocol/vega/issues/9835) - Fix panic batch market instruction.
+- [9841](https://github.com/vegaprotocol/vega/issues/9841) - Release `postgres` connections after ledger export is complete
+- [9833](https://github.com/vegaprotocol/vega/issues/9833) - Validate market exists before enacting governance transfer.
+- [9725](https://github.com/vegaprotocol/vega/issues/9725) - List ledger entries `API` documentation and functionality.
+- [9874](https://github.com/vegaprotocol/vega/issues/9874) - Use correct field reference when paging with `JSONB` fields.
+- [9818](https://github.com/vegaprotocol/vega/issues/9818) - Correctly register generated rewards in fees statistics.
+- [9850](https://github.com/vegaprotocol/vega/issues/9850) - Do not use default cursor when Before or After is defined.
+- [9855](https://github.com/vegaprotocol/vega/issues/9855) - Use max governance transfer amount as a quantum multiplier
+- [9853](https://github.com/vegaprotocol/vega/issues/9853) - Data node crashing due to duplicate key violation in paid liquidity fees table.
+- [9843](https://github.com/vegaprotocol/vega/issues/9843) - Migration script `0039` down migration drops incorrect column.
+- [9858](https://github.com/vegaprotocol/vega/issues/9858) - Fix missing where statement in list referral set referees.
+- [9868](https://github.com/vegaprotocol/vega/issues/9868) - Avoid empty ledger entries from governance transfers for metric when there is no activity.
+- [9871](https://github.com/vegaprotocol/vega/issues/9871) - Fix panic on snapshot after market termination following protocol upgrade.
+- [8769](https://github.com/vegaprotocol/vega/issues/8769) - Support timestamp data from different oracle types.
+- [9894](https://github.com/vegaprotocol/vega/issues/9894) - Reset distress party position in market activity tracker.
+- [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
+- [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9911](https://github.com/vegaprotocol/vega/issues/9911) - Bind correct property in `GraphQL` resolver.
+- [9913](https://github.com/vegaprotocol/vega/issues/9913) - Add missing properties in schema.
+- [9916](https://github.com/vegaprotocol/vega/issues/9916) - Fix activity streak locked account until epoch.
+- [9924](https://github.com/vegaprotocol/vega/issues/9924) - Referral set referees `API` should aggregate by number of epochs.
+- [9922](https://github.com/vegaprotocol/vega/issues/9922) - Ensure the factors in referral program account for set eligibility.
+
 ## 0.72.1
 
 ### 🐛 Fixes
@@ -27,7 +390,11 @@
 - [8713](https://github.com/vegaprotocol/vega/issues/8713) - Wallet name with upper-case letter is allowed, again
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
 - [8711](https://github.com/vegaprotocol/vega/issues/8711) - Fix market lineage trigger.
-
+- [8737](https://github.com/vegaprotocol/vega/issues/8737) - Fix `GetStopOrder` errors when order has a state change.
+- [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
+- [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
+- [9651](https://github.com/vegaprotocol/vega/issues/9651) - Park pegged orders if they lose their peg
+- [9666](https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
 
 ## 0.72.0
 
@@ -72,6 +439,7 @@
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
 - [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
 - [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
+- [8118](https://github.com/vegaprotocol/vega/issues/8118) - Spot market execution
 - [7416](https://github.com/vegaprotocol/vega/issues/7416) - Support for governance transfers
 - [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
@@ -84,6 +452,7 @@
 - [8466](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
 - [8467](https://github.com/vegaprotocol/vega/issues/8467) - Add stop orders data structures
 - [8516](https://github.com/vegaprotocol/vega/issues/8516) - Add stop orders network parameter
+- [9509](https://github.com/vegaprotocol/vega/issues/9509) - Markets can now be updated when they are in an opening auction.
 - [8470](https://github.com/vegaprotocol/vega/issues/8470) - Stop orders snapshots
 - [8548](https://github.com/vegaprotocol/vega/issues/8548) - Use default for tendermint `RPC` address and better validation for `semver`
 - [8472](https://github.com/vegaprotocol/vega/issues/8472) - Add support for stop orders with batch market instructions
@@ -95,7 +464,9 @@
 - [8635](https://github.com/vegaprotocol/vega/issues/8635) - Allow market update proposal with ELS only
 - [8675](https://github.com/vegaprotocol/vega/issues/8675) - Fix inconsistent naming for successor markets.
 - [8504](https://github.com/vegaprotocol/vega/issues/8504) - Add market liquidity common layer for spot market.
+- [8415](https://github.com/vegaprotocol/vega/issues/8415) - Allow to terminate, suspend/resume market via governance
 - [8690](https://github.com/vegaprotocol/vega/issues/8690) - Add gas estimation for stop orders.
+- [8505](https://github.com/vegaprotocol/vega/issues/8505) - Add snapshots to liquidity engine version 2.
 
 ### 🐛 Fixes
 
@@ -162,6 +533,8 @@
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
+- [9773](https://github.com/vegaprotocol/vega/issues/9773) - Ensure invalid market for transfer doesn't panic
+- [9777](https://github.com/vegaprotocol/vega/issues/9777) - Ensure new account types are created for existing assets
 
 ## 0.71.0
 
@@ -268,6 +641,7 @@
 - [8157](https://github.com/vegaprotocol/vega/issues/8157) - Handle kill/interrupt signals in datanode, and clean up properly.
 - [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
+- [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
 
 ## 0.70.0
 

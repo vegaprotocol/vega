@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package networkhistory
 
 import (
@@ -40,25 +55,7 @@ type Service struct {
 	publishLock sync.Mutex
 }
 
-func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool,
-	chainID string,
-	snapshotService *snapshot.Service, datanodeGrpcAPIPort int,
-	snapshotsCopyFromDir, snapshotsCopyToDir string, maxMemoryPercent uint8,
-) (*Service, error) {
-	storeLog := log.Named("store")
-	storeLog.SetLevel(cfg.Level.Get())
-
-	networkHistoryStore, err := store.New(ctx, storeLog, chainID, cfg.Store, networkHistoryHome,
-		maxMemoryPercent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create network history store:%w", err)
-	}
-
-	return NewWithStore(ctx, log, chainID, cfg, connPool, snapshotService, networkHistoryStore, datanodeGrpcAPIPort,
-		snapshotsCopyToDir)
-}
-
-func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
+func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
 	snapshotService *snapshot.Service,
 	networkHistoryStore *store.Store, datanodeGrpcAPIPort int,
 	snapshotsCopyToPath string,
@@ -111,12 +108,7 @@ func (d *Service) RollbackToHeight(ctx context.Context, log snapshot.LoadLog, he
 		return fmt.Errorf("failed to get history segment for height %d: %w", height, err)
 	}
 
-	stagedSegment, err := d.store.StagedSegment(ctx, rollbackToSegment)
-	if err != nil {
-		return fmt.Errorf("failed to get staged segment for height %d: %w", height, err)
-	}
-
-	err = d.snapshotService.RollbackToSegment(ctx, log, stagedSegment)
+	err = d.snapshotService.RollbackToSegment(ctx, log, rollbackToSegment)
 
 	if err != nil {
 		return fmt.Errorf("failed to rollback to segment: %w", err)
@@ -282,40 +274,55 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log
 
 	start := time.Now()
 
-	chunkToLoad := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
-	stagedChunk, err := d.store.StagedContiguousHistory(ctx, chunkToLoad)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to load history:%w", err)
-	}
-
-	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, stagedChunk, connConfig, withIndexesAndOrderTriggers, verbose)
+	chunks := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
+	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, chunks, connConfig, withIndexesAndOrderTriggers, verbose)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
 	}
 
 	log.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
 		logging.Duration("time taken", time.Since(start)))
+
 	return loadResult, err
 }
 
-func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
+func (d *Service) GetMostRecentHistorySegmentFromBootstrapPeers(ctx context.Context,
 	grpcAPIPorts []int,
 ) (*PeerResponse, map[string]*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
-	var activePeerAddresses []string
-	// Time for connections to be established
-	time.Sleep(5 * time.Second)
-	for retries := 0; retries < 5; retries++ {
-		activePeerAddresses = d.GetActivePeerIPAddresses()
-		if len(activePeerAddresses) == 0 {
-			time.Sleep(5 * time.Second)
+	bootstrapPeers := d.GetBootstrapPeers()
+	if len(bootstrapPeers) == 0 {
+		return nil, nil, errors.New("no bootstrap peers found")
+	}
+
+	ip4Protocol := multiaddr.ProtocolWithName("ip4")
+	ip6Protocol := multiaddr.ProtocolWithName("ip6")
+	dnsProtocol := multiaddr.ProtocolWithName("dns")
+
+	bootstrapPeerAddresses := make([]string, 0, len(bootstrapPeers))
+
+	for _, bootstrapPeer := range bootstrapPeers {
+		addr, err := multiaddr.NewMultiaddr(bootstrapPeer)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse bootstrap peer address %s: %w", bootstrapPeer, err)
+		}
+
+		ipAddr, err := addr.ValueForProtocol(ip4Protocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, ipAddr)
+		}
+
+		ipAddr, err = addr.ValueForProtocol(ip6Protocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, ipAddr)
+		}
+
+		dnsAddr, err := addr.ValueForProtocol(dnsProtocol.Code)
+		if err == nil {
+			bootstrapPeerAddresses = append(bootstrapPeerAddresses, dnsAddr)
 		}
 	}
 
-	if len(activePeerAddresses) == 0 {
-		return nil, nil, errors.New("no active peers found")
-	}
-
-	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, activePeerAddresses, d.GetSwarmKeySeed(), grpcAPIPorts)
+	return GetMostRecentHistorySegmentFromPeersAddresses(ctx, bootstrapPeerAddresses, d.GetSwarmKeySeed(), grpcAPIPorts)
 }
 
 func (d *Service) GetDatanodeBlockSpan(ctx context.Context) (sqlstore.DatanodeBlockSpan, error) {

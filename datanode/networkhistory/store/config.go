@@ -1,10 +1,27 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package store
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"time"
 
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/ipfs/kubo/config"
@@ -25,7 +42,8 @@ type Config struct {
 	// Without this there would be no way to isolate an environment if needed and process a given chains data (e.g. for dev)
 	SwarmKeyOverride string `description:"optional swarm key override, the default behaviour is to use the datanode's chain id'" long:"swarm-key-override"`
 
-	HistoryRetentionBlockSpan int64 `description:"the block span of history, from the most recent history segment, that should be retained" long:"history-retention-block-span"`
+	HistoryRetentionBlockSpan int64             `description:"the block span of history, from the most recent history segment, that should be retained" long:"history-retention-block-span"`
+	GarbageCollectionInterval encoding.Duration `description:"the interval at which garbage collection should be run"                                   long:"garbage-collection-interval"`
 }
 
 func NewDefaultConfig() Config {
@@ -44,6 +62,7 @@ func NewDefaultConfig() Config {
 		SwarmPort: 4001,
 
 		HistoryRetentionBlockSpan: 604800, // One week of history at 1s per block
+		GarbageCollectionInterval: encoding.Duration{Duration: 24 * time.Hour},
 	}
 }
 
