@@ -594,8 +594,9 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
 		Details: &types.AssetDetails{
-			Name:   "Ethereum/Ether",
-			Symbol: "Ethereum/Ether",
+			Name:    "Ethereum/Ether",
+			Symbol:  "Ethereum/Ether",
+			Quantum: num.DecimalFromInt64(1),
 		},
 	}
 	require.NoError(t, collateralEngine.EnableAsset(context.Background(), ethAsset))
@@ -657,8 +658,9 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
 		Details: &types.AssetDetails{
-			Name:   "Ethereum/Ether",
-			Symbol: "Ethereum/Ether",
+			Name:    "Ethereum/Ether",
+			Symbol:  "Ethereum/Ether",
+			Quantum: num.DecimalFromInt64(1),
 		},
 	}
 	collateralEngine.EnableAsset(context.Background(), ethAsset)

@@ -161,7 +161,7 @@ func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 	total.Add(total, amount)
 }
 
-func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
+func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.FeesStats {
 	fs := &eventspb.FeesStats{
 		Asset:                    asset,
 		TotalRewardsReceived:     make([]*eventspb.PartyAmount, 0, len(f.TotalRewardsReceived)),
@@ -177,8 +177,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 	for _, party := range totalRewardsReceivedParties {
 		amount := f.TotalRewardsReceived[party]
 		fs.TotalRewardsReceived = append(fs.TotalRewardsReceived, &eventspb.PartyAmount{
-			Party:  party,
-			Amount: amount.String(),
+			Party:         party,
+			Amount:        amount.String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 		})
 	}
 
@@ -187,8 +188,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 	for _, party := range refereesDiscountAppliedParties {
 		amount := f.RefereeDiscountApplied[party]
 		fs.RefereesDiscountApplied = append(fs.RefereesDiscountApplied, &eventspb.PartyAmount{
-			Party:  party,
-			Amount: amount.String(),
+			Party:         party,
+			Amount:        amount.String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 		})
 	}
 
@@ -197,8 +199,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 	for _, party := range volumeDiscountAppliedParties {
 		amount := f.VolumeDiscountApplied[party]
 		fs.VolumeDiscountApplied = append(fs.VolumeDiscountApplied, &eventspb.PartyAmount{
-			Party:  party,
-			Amount: amount.String(),
+			Party:         party,
+			Amount:        amount.String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 		})
 	}
 
@@ -219,8 +222,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 			rewardsGenerated.GeneratedReward = append(
 				rewardsGenerated.GeneratedReward,
 				&eventspb.PartyAmount{
-					Party:  party,
-					Amount: amount.String(),
+					Party:         party,
+					Amount:        amount.String(),
+					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 				},
 			)
 		}
@@ -233,8 +237,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 	for _, maker := range totalMakerFeesReceivedParties {
 		amount := f.TotalMakerFeesReceived[maker]
 		fs.TotalMakerFeesReceived = append(fs.TotalMakerFeesReceived, &eventspb.PartyAmount{
-			Party:  maker,
-			Amount: amount.String(),
+			Party:         maker,
+			Amount:        amount.String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 		})
 	}
 
@@ -255,8 +260,9 @@ func (f *FeesStats) ToProto(asset string) *eventspb.FeesStats {
 			rewardsGenerated.MakerFeesPaid = append(
 				rewardsGenerated.MakerFeesPaid,
 				&eventspb.PartyAmount{
-					Party:  maker,
-					Amount: amount.String(),
+					Party:         maker,
+					Amount:        amount.String(),
+					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
 				},
 			)
 		}

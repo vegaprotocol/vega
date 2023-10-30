@@ -288,7 +288,7 @@ with epoch_range as (select coalesce(max(id) - %d, 0) as start_epoch, coalesce(m
     and   jsonb_typeof(referees_stats) != 'null'
     group by ref_stats->>'party_id'
 ), ref_period_rewards (party, period_rewards) as (
-    select decode(gen_rewards->>'party', 'hex'), sum((gen_rewards ->> 'amount')::numeric) as period_rewards
+    select decode(gen_rewards->>'party', 'hex'), sum((gen_rewards ->> 'quantum_amount')::numeric) as period_rewards
     from fees_stats,
          jsonb_array_elements(referrer_rewards_generated) as ref_rewards,
          jsonb_array_elements(ref_rewards->'generated_reward') as gen_rewards,

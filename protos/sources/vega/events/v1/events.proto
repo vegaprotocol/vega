@@ -129,6 +129,8 @@ message PartyAmount {
   string party = 1;
   // Amount received.
   string amount = 2;
+  // Amount value in quantum.
+  string quantum_amount = 3;
 }
 
 // The updated activity streak of a party at end of epoch

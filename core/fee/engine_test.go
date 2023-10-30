@@ -199,20 +199,23 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{},
 		RefereesDiscountApplied: []*eventspb.PartyAmount{
 			{
-				Party:  "party1",
-				Amount: "0",
+				Party:         "party1",
+				Amount:        "0",
+				QuantumAmount: "0",
 			},
 		},
 		VolumeDiscountApplied: []*eventspb.PartyAmount{
 			{
-				Party:  "party1",
-				Amount: "0",
+				Party:         "party1",
+				Amount:        "0",
+				QuantumAmount: "0",
 			},
 		},
 		TotalMakerFeesReceived: []*eventspb.PartyAmount{
 			{
-				Party:  "party2",
-				Amount: "125",
+				Party:         "party2",
+				Amount:        "125",
+				QuantumAmount: "125",
 			},
 		},
 		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
@@ -220,13 +223,14 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 				Taker: "party1",
 				MakerFeesPaid: []*eventspb.PartyAmount{
 					{
-						Party:  "party2",
-						Amount: "125",
+						Party:         "party2",
+						Amount:        "125",
+						QuantumAmount: "125",
 					},
 				},
 			},
 		},
-	}, eng.GetFeesStatsOnEpochEnd())
+	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
 }
 
 func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
@@ -287,8 +291,9 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 		Asset: testAsset,
 		TotalRewardsReceived: []*eventspb.PartyAmount{
 			{
-				Party:  "party3",
-				Amount: "110",
+				Party:         "party3",
+				Amount:        "110",
+				QuantumAmount: "110",
 			},
 		},
 		ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
@@ -296,28 +301,32 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 				Referrer: "party3",
 				GeneratedReward: []*eventspb.PartyAmount{
 					{
-						Party:  "party1",
-						Amount: "110",
+						Party:         "party1",
+						Amount:        "110",
+						QuantumAmount: "110",
 					},
 				},
 			},
 		},
 		RefereesDiscountApplied: []*eventspb.PartyAmount{
 			{
-				Party:  "party1",
-				Amount: "262",
+				Party:         "party1",
+				Amount:        "262",
+				QuantumAmount: "262",
 			},
 		},
 		VolumeDiscountApplied: []*eventspb.PartyAmount{
 			{
-				Party:  "party1",
-				Amount: "60",
+				Party:         "party1",
+				Amount:        "60",
+				QuantumAmount: "60",
 			},
 		},
 		TotalMakerFeesReceived: []*eventspb.PartyAmount{
 			{
-				Party:  "party2",
-				Amount: "64",
+				Party:         "party2",
+				Amount:        "64",
+				QuantumAmount: "64",
 			},
 		},
 		MakerFeesGenerated: []*eventspb.MakerFeesGenerated{
@@ -325,13 +334,14 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 				Taker: "party1",
 				MakerFeesPaid: []*eventspb.PartyAmount{
 					{
-						Party:  "party2",
-						Amount: "64",
+						Party:         "party2",
+						Amount:        "64",
+						QuantumAmount: "64",
 					},
 				},
 			},
 		},
-	}, eng.GetFeesStatsOnEpochEnd())
+	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
 }
 
 func testCalcContinuousTradingAndCheckAmountsWithDiscountsAndRewardsBySide(t *testing.T, aggressorSide types.Side) {

@@ -130,6 +130,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	collateralService.EXPECT().CreateSpotMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().GetAssetQuantum("ETH").AnyTimes().Return(num.DecimalFromInt64(1), nil)
+	collateralService.EXPECT().GetAssetQuantum("Ethereum/Ether").AnyTimes().Return(num.DecimalFromInt64(1), nil)
 	collateralService.EXPECT().GetOrCreatePartyBondAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetOrCreatePartyLiquidityFeeAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().BondSpotUpdate(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
@@ -564,6 +565,7 @@ func TestValidSpotMarketSnapshot(t *testing.T) {
 func TestValidSettledMarketSnapshot(t *testing.T) {
 	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
 	engine := getMockedEngine(t)
+	engine.collateral.EXPECT().GetAssetQuantum("Ethereum/Ether").AnyTimes().Return(num.DecimalFromInt64(1), nil)
 	engine.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
@@ -692,6 +694,7 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 func TestSuccessorMapSnapshot(t *testing.T) {
 	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
 	engine := getMockedEngine(t)
+	engine.collateral.EXPECT().GetAssetQuantum("Ethereum/Ether").AnyTimes().Return(num.DecimalFromInt64(1), nil)
 	engine.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
