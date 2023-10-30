@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased 0.73.0
+## Unreleased 0.74.0
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -17,10 +36,6 @@
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 - [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
 
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 
