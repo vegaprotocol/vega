@@ -179,7 +179,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		fs.TotalRewardsReceived = append(fs.TotalRewardsReceived, &eventspb.PartyAmount{
 			Party:         party,
 			Amount:        amount.String(),
-			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 		})
 	}
 
@@ -190,7 +190,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		fs.RefereesDiscountApplied = append(fs.RefereesDiscountApplied, &eventspb.PartyAmount{
 			Party:         party,
 			Amount:        amount.String(),
-			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 		})
 	}
 
@@ -201,7 +201,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		fs.VolumeDiscountApplied = append(fs.VolumeDiscountApplied, &eventspb.PartyAmount{
 			Party:         party,
 			Amount:        amount.String(),
-			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 		})
 	}
 
@@ -224,7 +224,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 				&eventspb.PartyAmount{
 					Party:         party,
 					Amount:        amount.String(),
-					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 				},
 			)
 		}
@@ -239,7 +239,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		fs.TotalMakerFeesReceived = append(fs.TotalMakerFeesReceived, &eventspb.PartyAmount{
 			Party:         maker,
 			Amount:        amount.String(),
-			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 		})
 	}
 
@@ -262,7 +262,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 				&eventspb.PartyAmount{
 					Party:         maker,
 					Amount:        amount.String(),
-					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(2).String(),
+					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
 				},
 			)
 		}

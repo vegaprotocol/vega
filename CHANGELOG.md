@@ -16,7 +16,8 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [9941](https://github.com/vegaprotocol/vega/issues/9941) - Add data node mapping for `WasEligible` field in referral set.
+- [9940](https://github.com/vegaprotocol/vega/issues/9940) - Truncate fee stats in quantum down to the 6 decimal.
 
 
 ## 0.73.0
