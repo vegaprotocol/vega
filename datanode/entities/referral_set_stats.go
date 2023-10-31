@@ -87,6 +87,7 @@ func (s FlattenReferralSetStats) ToProto() *v2.ReferralSetStats {
 		EpochNotionalTakerVolume:              s.EpochNotionalTakerVolume,
 		RewardsMultiplier:                     s.RewardsMultiplier,
 		RewardsFactorMultiplier:               s.RewardsFactorMultiplier,
+		WasEligible:                           s.WasEligible,
 	}
 }
 
