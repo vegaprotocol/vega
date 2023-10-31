@@ -185,14 +185,19 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 		outVesting = make([]*eventspb.PartyVestingBalance, 0, len(vestingBalances))
 		outLocked  = make([]*eventspb.PartyLockedBalance, 0, len(lockedBalances))
 		epoch      *uint64
+		setEpoch   = func(e uint64) {
+			if epoch == nil {
+				epoch = ptr.From(e)
+				return
+			}
+			if *epoch < e {
+				epoch = ptr.From(e)
+			}
+		}
 	)
-	if len(vestingBalances) > 0 {
-		epoch = ptr.From(vestingBalances[0].AtEpoch)
-	} else if len(lockedBalances) > 0 {
-		epoch = ptr.From(lockedBalances[0].AtEpoch)
-	}
 
 	for _, v := range vestingBalances {
+		setEpoch(v.AtEpoch)
 		outVesting = append(
 			outVesting, &eventspb.PartyVestingBalance{
 				Asset:   v.AssetID.String(),
@@ -202,6 +207,7 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 	}
 
 	for _, v := range lockedBalances {
+		setEpoch(v.AtEpoch)
 		outLocked = append(
 			outLocked, &eventspb.PartyLockedBalance{
 				Asset:      v.AssetID.String(),

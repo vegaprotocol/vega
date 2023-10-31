@@ -27,7 +27,7 @@ func (plb *PartyLockedBalance) Prune(
 	defer metrics.StartSQLQuery("PartyLockedBalance", "Prune")()
 	_, err := plb.Connection.Exec(
 		ctx,
-		"DELETE FROM party_locked_balances_current WHERE until_epoch < $1",
+		"DELETE FROM party_locked_balances_current WHERE until_epoch <= $1",
 		currentEpoch,
 	)
 
