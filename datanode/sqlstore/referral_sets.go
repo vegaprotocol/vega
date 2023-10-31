@@ -257,9 +257,9 @@ func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSet
 		hasWhere = true
 	}
 
-	paginate := PaginateQueryWithWhere[entities.ReferralSetRefereeCursor]
+	paginate := PaginateQuery[entities.ReferralSetRefereeCursor]
 	if hasWhere {
-		paginate = PaginateQuery[entities.ReferralSetRefereeCursor]
+		paginate = PaginateQueryWithWhere[entities.ReferralSetRefereeCursor]
 	}
 
 	query, args, err = paginate(query, args, referralSetRefereeOrdering, pagination)
