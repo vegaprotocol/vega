@@ -4295,5 +4295,5 @@ message ObserveTransactionResultsRequest {
 // Stream of transaction results
 message ObserveTransactionResultsResponse {
   // List of 0 or more transaction results.
-  repeated vega.events.v1.TransactionResult transactionResults = 1;
+  repeated vega.events.v1.TransactionResult transaction_results = 1;
 }
