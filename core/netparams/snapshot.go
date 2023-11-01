@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
@@ -125,6 +126,54 @@ func (s *Store) GetState(k string) ([]byte, []types.StateProvider, error) {
 }
 
 func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error) {
+	overrideSet := map[string]struct{}{}
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.1") {
+		// this is our list of network parameters to override
+		overrides := []types.NetworkParameter{
+			{
+				Key:   "governance.proposal.transfer.minProposerBalance",
+				Value: "20000000000000000000000",
+			},
+			{
+				Key:   "governance.proposal.transfer.minVoterBalance",
+				Value: "1000000000000000000",
+			},
+			{
+				Key:   "governance.proposal.transfer.minVoterBalance",
+				Value: "1000000000000000000",
+			},
+			{
+				Key:   "governance.proposal.transfer.requiredParticipation",
+				Value: "0.01",
+			},
+			{
+				Key:   "governance.proposal.transfer.minClose",
+				Value: "168h",
+			},
+			{
+				Key:   "governance.proposal.transfer.minEnact",
+				Value: "168h",
+			},
+		}
+
+		// let's apply them first
+		for _, v := range overrides {
+			// add to the set
+			overrideSet[v.Key] = struct{}{}
+
+			// always in the override
+			s.protocolUpgradeNewParameters = append(
+				s.protocolUpgradeNewParameters, v.Key,
+			)
+
+			// then apply the update
+			if err := s.UpdateOptionalValidation(ctx, v.Key, v.Value, false, false); err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
 	if pl.Namespace() != s.state.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
@@ -135,8 +184,11 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 
 	fromSnapshot := map[string]struct{}{}
 	for _, kv := range np.NetParams.Params {
-		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
-			return nil, err
+		// execute this if not in the override list
+		if _, ok := overrideSet[kv.Key]; !ok {
+			if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
+				return nil, err
+			}
 		}
 
 		fromSnapshot[kv.Key] = struct{}{}
