@@ -153,6 +153,10 @@ type Engine struct {
 	// 72 > 73, as we would need to cancel all remaining LP
 	// order which are eventually still seating in the book.
 	legacyOrderIDs []string
+
+	// Disable the penalties for a few epochs so the participants
+	// can adapt their strategies, to be removed in future releases
+	bondPenaltiesDisabledRemainingEpochs uint64
 }
 
 // NewEngine returns a new Liquidity Engine.

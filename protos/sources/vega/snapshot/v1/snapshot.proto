@@ -925,6 +925,7 @@ message LiquidityV2Parameters {
   string stake_to_volume = 3;
   string bond_penalty_slope = 4;
   string bond_penalty_max = 5;
+  uint64 bond_penalties_disabled_remaining_epochs = 6;
 }
 
 message LiquidityV2PaidFeesStats {

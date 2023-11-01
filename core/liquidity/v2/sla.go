@@ -38,6 +38,12 @@ func (e *Engine) ResetSLAEpoch(
 	midPrice *num.Uint,
 	positionFactor num.Decimal,
 ) {
+	// to be removed later, decrease the counter of epoch with
+	// penalties disabled
+	if e.bondPenaltiesDisabledRemainingEpochs != 0 {
+		e.bondPenaltiesDisabledRemainingEpochs -= 1
+	}
+
 	e.allocatedFeesStats = types.NewLiquidityFeeStats()
 	e.slaEpochStart = now
 
@@ -223,9 +229,16 @@ func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.De
 }
 
 func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal {
+	bondPenaltyMax := e.nonPerformanceBondPenaltyMax
+
+	// if bond penalty are still disable, set it to zero
+	if e.bondPenaltiesDisabledRemainingEpochs > 0 {
+		bondPenaltyMax = num.DecimalZero()
+	}
+
 	// min(nonPerformanceBondPenaltyMax, nonPerformanceBondPenaltySlope * (1-timeBookFraction/commitmentMinTimeFraction))
 	min := num.MinD(
-		e.nonPerformanceBondPenaltyMax,
+		bondPenaltyMax,
 		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.slaParams.CommitmentMinTimeFraction))),
 	)
 

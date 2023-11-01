@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -113,7 +114,7 @@ func (e *snapshotV2) LoadState(ctx context.Context, p *types.Payload) ([]types.S
 	case *types.PayloadLiquidityV2Scores:
 		return nil, e.loadScores(pl.Scores, p)
 	case *types.PayloadLiquidityV2Parameters:
-		return nil, e.loadParameters(pl.Parameters, p)
+		return nil, e.loadParameters(ctx, pl.Parameters, p)
 	case *types.PayloadPaidLiquidityV2FeeStats:
 		e.loadFeeStats(pl.Stats, p)
 		return nil, nil
@@ -346,11 +347,12 @@ func (e *snapshotV2) serialiseParameters() ([]byte, error) {
 	payload := &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquidityV2Parameters{
 			LiquidityV2Parameters: &snapshotpb.LiquidityV2Parameters{
-				MarketId:            e.market,
-				MarketSlaParameters: e.slaParams.IntoProto(),
-				StakeToVolume:       e.stakeToCcyVolume.String(),
-				BondPenaltySlope:    e.nonPerformanceBondPenaltySlope.String(),
-				BondPenaltyMax:      e.nonPerformanceBondPenaltyMax.String(),
+				MarketId:                             e.market,
+				MarketSlaParameters:                  e.slaParams.IntoProto(),
+				StakeToVolume:                        e.stakeToCcyVolume.String(),
+				BondPenaltySlope:                     e.nonPerformanceBondPenaltySlope.String(),
+				BondPenaltyMax:                       e.nonPerformanceBondPenaltyMax.String(),
+				BondPenaltiesDisabledRemainingEpochs: e.bondPenaltiesDisabledRemainingEpochs,
 			},
 		},
 	}
@@ -505,8 +507,15 @@ func (e *snapshotV2) loadScores(ls *snapshotpb.LiquidityV2Scores, p *types.Paylo
 	return err
 }
 
-func (e *snapshotV2) loadParameters(ls *snapshotpb.LiquidityV2Parameters, p *types.Payload) error {
+func (e *snapshotV2) loadParameters(ctx context.Context, ls *snapshotpb.LiquidityV2Parameters, p *types.Payload) error {
 	var err error
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.1") {
+		// on the upgrade we set this value to be 7 epochs
+		e.bondPenaltiesDisabledRemainingEpochs = 7
+	} else {
+		e.bondPenaltiesDisabledRemainingEpochs = ls.BondPenaltiesDisabledRemainingEpochs
+	}
 
 	// market SLA parameters
 	e.slaParams = types.LiquiditySLAParamsFromProto(ls.MarketSlaParameters)
