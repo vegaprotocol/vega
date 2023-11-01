@@ -165,6 +165,8 @@ type Market struct {
 	// are applied properly
 	ensuredMigration73 bool
 	epoch              types.Epoch
+
+	publishMarketOnRestart bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -433,6 +435,10 @@ func (m *Market) onEpochEndPartiesStats() {
 }
 
 func (m *Market) BeginBlock(ctx context.Context) {
+	if m.publishMarketOnRestart {
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.publishMarketOnRestart = false
+	}
 	if m.ensuredMigration73 {
 		return
 	}

@@ -139,10 +139,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 				Value: "1000000000000000000",
 			},
 			{
-				Key:   "governance.proposal.transfer.minVoterBalance",
-				Value: "1000000000000000000",
-			},
-			{
 				Key:   "governance.proposal.transfer.requiredParticipation",
 				Value: "0.01",
 			},

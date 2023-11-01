@@ -39,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -172,6 +173,11 @@ func NewMarketFromSnapshot(
 		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
 
+	var publishMarket bool
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.1") {
+		publishMarket = true
+	}
+
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -218,6 +224,7 @@ func NewMarketFromSnapshot(
 		stopOrders:                    stopOrders,
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
+		publishMarketOnRestart:        publishMarket,
 	}
 
 	for _, p := range em.Parties {
