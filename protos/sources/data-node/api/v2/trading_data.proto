@@ -863,6 +863,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Vesting"};
   }
 
+  // Observe transaction results
+  //
+  // Subscribe to a stream of transaction results, optionally filtered by party/hash/status
+  rpc ObserveTransactionResults(ObserveTransactionResultsRequest) returns (stream ObserveTransactionResultsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransactionResults"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -4266,4 +4273,27 @@ message FeesStatsForParty {
   string volume_discount_applied = 4;
   // Total maker fees received by the maker side.
   string total_maker_fees_received = 5;
+}
+
+// Request to subscribe to a stream of user transaction results
+message ObserveTransactionResultsRequest {
+  // Request fields party ID, hash and status are all optional filters:
+  // If omitted all transaction results, for all parties with all hashes and states will be returned on the stream
+  // If party ID is given, transaction results from that party will be returned on the stream
+  // If hash is given, transaction result with that hash will be returned on the stream
+  // If status is given, transaction result with that status (true/false - success failure) will be returned on the stream
+  // All filters can be combined.
+
+  // Restrict the transactions results streamed to those made by the given parties.
+  repeated string party_ids = 1;
+  // Restrict the transactions results streamed to those with given hashes.
+  repeated string hashes = 2;
+  // Restrict the transactions results streamed to those with given status true/false (success/failure).
+  optional bool status = 3;
+}
+
+// Stream of transaction results
+message ObserveTransactionResultsResponse {
+  // List of 0 or more transaction results.
+  repeated vega.events.v1.TransactionResult transactionResults = 1;
 }

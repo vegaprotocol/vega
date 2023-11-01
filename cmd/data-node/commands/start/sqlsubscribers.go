@@ -180,6 +180,7 @@ type SQLSubscribers struct {
 	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
+	transactionResultsSub     *sqlsubscribers.TransactionResults
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -233,6 +234,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.volumeDiscountProgramSub,
 		s.paidLiquidityFeesStatsSub,
 		s.vestingSummarySub,
+		s.transactionResultsSub,
 	}
 }
 
@@ -360,7 +362,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	return nil
 }
 
-func (s *SQLSubscribers) SetupSQLSubscribers() {
+func (s *SQLSubscribers) SetupSQLSubscribers(log *logging.Logger) {
 	s.accountSub = sqlsubscribers.NewAccount(s.accountService)
 	s.assetSub = sqlsubscribers.NewAsset(s.assetService)
 	s.partySub = sqlsubscribers.NewParty(s.partyService)
@@ -408,4 +410,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
+	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 }

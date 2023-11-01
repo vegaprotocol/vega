@@ -29,6 +29,16 @@ import (
 	"strings"
 	"time"
 
+<<<<<<< HEAD
+=======
+	"github.com/georgysavva/scany/pgxscan"
+
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
+	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/core/events"
+>>>>>>> f7ef6a543 (feat: add transaction result subscription)
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -124,6 +134,7 @@ type TradingDataServiceV2 struct {
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
 	vestingStats                  *service.VestingStats
+	transactionResults            *service.TransactionResults
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -4734,4 +4745,35 @@ func (t *TradingDataServiceV2) GetVolumeDiscountStats(ctx context.Context, req *
 			PageInfo: pageInfo.ToProto(),
 		},
 	}, nil
+}
+
+// ObserveTransactionResults opens a subscription to the transaction results.
+func (t *TradingDataServiceV2) ObserveTransactionResults(req *v2.ObserveTransactionResultsRequest, srv v2.TradingDataService_ObserveTransactionResultsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	tradesChan, ref := t.transactionResults.Observe(ctx, t.config.StreamRetries, req.PartyIds, req.Hashes, req.Status)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Transaction results subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "TransactionResults", tradesChan, ref, func(results []events.TransactionResult) error {
+		protos := make([]*eventspb.TransactionResult, 0, len(results))
+		for _, v := range results {
+			p := v.Proto()
+			protos = append(protos, &p)
+		}
+
+		batches := batch(protos, snapshotPageSize)
+
+		for _, batch := range batches {
+			response := &v2.ObserveTransactionResultsResponse{TransactionResults: batch}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending transaction results")
+			}
+		}
+		return nil
+	})
 }
