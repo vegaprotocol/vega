@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.73.2
+
+### 🐛 Fixes
+
+- [9951](https://github.com/vegaprotocol/vega/issues/9951) - Fix time on book calculation for existing market.
+- [9950](https://github.com/vegaprotocol/vega/issues/9950) - Publish market update on restart.
+- Update governance transfer default parameters.
+
 ## 0.73.1
 
 ### 🐛 Fixes
