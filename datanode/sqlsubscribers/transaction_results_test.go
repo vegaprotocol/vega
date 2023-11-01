@@ -116,7 +116,6 @@ func TestTransactionResults(t *testing.T) {
 	}
 
 	wg.Done()
-
 }
 
 func generateTestTransactionResultEvents(successCount, failureCount int) []*events.TransactionResult {

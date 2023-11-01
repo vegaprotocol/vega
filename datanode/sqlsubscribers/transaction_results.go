@@ -61,6 +61,7 @@ func (tr *TransactionResults) Push(ctx context.Context, evt events.Event) error 
 		return nil
 	}
 }
+
 func (tr *TransactionResults) Types() []events.Type {
 	return []events.Type{events.TransactionResultEvent}
 }
