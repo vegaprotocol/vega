@@ -166,17 +166,19 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 
 	// first update with trades
 	trade := vega.Trade{
-		Id:       "t1",
-		MarketId: market,
-		Price:    "1000",
-		Size:     2,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t1",
+		MarketId:   market,
+		Price:      "1000",
+		Size:       2,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1000",
 	}
 	position.UpdateWithTrade(trade, false, dp)
 	trade.Id = "t2"
 	trade.Size = 3
 	trade.Price = "1200"
+	trade.AssetPrice = "1200"
 	position.UpdateWithTrade(trade, false, dp)
 	pp := position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
@@ -200,12 +202,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 
 	// let's make it look like this party is trading, buyer in this case
 	trade = vega.Trade{
-		Id:       "t3",
-		MarketId: market,
-		Price:    "1150",
-		Size:     1,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t3",
+		MarketId:   market,
+		Price:      "1150",
+		Size:       1,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1150",
 	}
 	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
 	position.UpdateWithTrade(trade, false, dp)
@@ -227,12 +230,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now close a position to see some realised PnL
 	trade = vega.Trade{
-		Id:       "t4",
-		MarketId: market,
-		Price:    "1250",
-		Size:     1,
-		Buyer:    "buyer",
-		Seller:   party,
+		Id:         "t4",
+		MarketId:   market,
+		Price:      "1250",
+		Size:       1,
+		Buyer:      "buyer",
+		Seller:     party,
+		AssetPrice: "1250",
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
@@ -252,12 +256,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.EqualValues(t, 5, pp.OpenVolume)
 	// now close the position
 	trade = vega.Trade{
-		Id:       "t5",
-		MarketId: market,
-		Price:    "1300",
-		Size:     5,
-		Buyer:    "buyer",
-		Seller:   party,
+		Id:         "t5",
+		MarketId:   market,
+		Price:      "1300",
+		Size:       5,
+		Buyer:      "buyer",
+		Seller:     party,
+		AssetPrice: "1300",
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
@@ -307,12 +312,13 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	assert.Equal(t, "-200", pp.UnrealisedPnl)
 	// let's make it look like this party is trading, buyer in this case
 	trade := vega.Trade{
-		Id:       "t1",
-		MarketId: market,
-		Price:    "1150",
-		Size:     1,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t1",
+		MarketId:   market,
+		Price:      "1150",
+		Size:       1,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1150",
 	}
 	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
 	position.UpdateWithTrade(trade, false, dp)
@@ -386,8 +392,9 @@ func (t tradeStub) ToVega(dp num.Decimal) vega.Trade {
 		size = uint64(-t.size)
 	}
 	return vega.Trade{
-		Size:  size,
-		Price: t.price.String(),
+		Size:       size,
+		Price:      t.price.String(),
+		AssetPrice: t.price.String(),
 	}
 }
 
