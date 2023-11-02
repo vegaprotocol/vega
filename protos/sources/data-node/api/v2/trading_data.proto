@@ -4275,7 +4275,7 @@ message FeesStatsForParty {
   string total_maker_fees_received = 5;
 }
 
-// Request to subscribe to a stream of user transaction results
+// Request to subscribe to a stream of users' transaction results
 message ObserveTransactionResultsRequest {
   // Request fields party ID, hash and status are all optional filters:
   // If omitted all transaction results, for all parties with all hashes and states will be returned on the stream
@@ -4284,11 +4284,11 @@ message ObserveTransactionResultsRequest {
   // If status is given, transaction result with that status (true/false - success failure) will be returned on the stream
   // All filters can be combined.
 
-  // Restrict the transactions results streamed to those made by the given parties.
+  // Restrict the transaction results streamed to those made by the given parties.
   repeated string party_ids = 1;
-  // Restrict the transactions results streamed to those with given hashes.
+  // Restrict the transaction results streamed to those with given hashes.
   repeated string hashes = 2;
-  // Restrict the transactions results streamed to those with given status true/false (success/failure).
+  // Restrict the transaction results streamed to those with given status true/false (success/failure).
   optional bool status = 3;
 }
 
