@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.73.3
+
+- Fix transfers migrations
+
 ## 0.73.2
 
 ### 🐛 Fixes
