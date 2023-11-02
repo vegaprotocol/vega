@@ -526,7 +526,7 @@ message Trade {
   uint64 buyer_auction_batch = 14;
   // Auction batch number that the sell side order was placed in.
   uint64 seller_auction_batch = 15;
-  // Price for the trade, using asset decimals as opposed to market decimals used
+  // Price for the trade using asset decimals, as opposed to market decimals used
   // in the price field. This is only used in trade events for position updates.
   string asset_price = 16;
 }

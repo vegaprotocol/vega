@@ -2999,7 +2999,7 @@ type Trade struct {
 	BuyerAuctionBatch uint64 `protobuf:"varint,14,opt,name=buyer_auction_batch,json=buyerAuctionBatch,proto3" json:"buyer_auction_batch,omitempty"`
 	// Auction batch number that the sell side order was placed in.
 	SellerAuctionBatch uint64 `protobuf:"varint,15,opt,name=seller_auction_batch,json=sellerAuctionBatch,proto3" json:"seller_auction_batch,omitempty"`
-	// Price for the trade, using asset decimals as opposed to market decimals used
+	// Price for the trade using asset decimals, as opposed to market decimals used
 	// in the price field. This is only used in trade events for position updates.
 	AssetPrice string `protobuf:"bytes,16,opt,name=asset_price,json=assetPrice,proto3" json:"asset_price,omitempty"`
 }
