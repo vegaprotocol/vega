@@ -231,11 +231,11 @@ func (e *Engine) loadRecurringTransfers(
 		e.recurringTransfersMap[transfer.ID] = transfer
 		// reload the dispatch strategy to the hash cache
 		if transfer.DispatchStrategy != nil {
-			e.registerDispatchStrategy(transfer.DispatchStrategy)
 			// reset defaults for new dispatch strategy params:
 			if transfer.DispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED {
 				e.applyMigrationDefaults(transfer.DispatchStrategy)
 			}
+			e.registerDispatchStrategy(transfer.DispatchStrategy)
 		}
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
