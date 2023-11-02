@@ -45,10 +45,7 @@ func PartiesAmendTheFollowingPeggedIcebergOrders(
 		if row.HasTimeInForce() {
 			tif = row.TimeInForce()
 		}
-		var offset *num.Uint
-		if row.HasOffset() {
-			offset = row.Offset()
-		}
+
 		var pegRef types.PeggedReference
 		if row.HasPeggedReference() {
 			pegRef = row.PeggedReference()
@@ -58,9 +55,10 @@ func PartiesAmendTheFollowingPeggedIcebergOrders(
 			OrderID:         o.Id,
 			MarketID:        o.MarketId,
 			SizeDelta:       row.SizeDelta(),
-			TimeInForce:     tif,
+			Size:            row.Size(),
 			ExpiresAt:       row.ExpirationDate(now),
-			PeggedOffset:    offset,
+			TimeInForce:     tif,
+			PeggedOffset:    row.Offset(),
 			PeggedReference: pegRef,
 		}
 
@@ -76,10 +74,11 @@ func parseAmendPeggedIcebergOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"reference",
-		"size delta",
 	}, []string{
 		"pegged reference",
 		"offset",
+		"size delta",
+		"size",
 		"tif",
 		"error",
 		"expires in",
@@ -95,7 +94,14 @@ func (r amendPeggedIcebergOrderRow) Party() string {
 }
 
 func (r amendPeggedIcebergOrderRow) SizeDelta() int64 {
+	if !r.row.HasColumn("size delta") {
+		return 0
+	}
 	return r.row.MustI64("size delta")
+}
+
+func (r amendPeggedIcebergOrderRow) Size() *uint64 {
+	return r.row.MaybeU64("size")
 }
 
 func (r amendPeggedIcebergOrderRow) HasTimeInForce() bool {
@@ -140,5 +146,5 @@ func (r amendPeggedIcebergOrderRow) HasOffset() bool {
 }
 
 func (r amendPeggedIcebergOrderRow) Offset() *num.Uint {
-	return r.row.Uint("offset")
+	return r.row.MaybeUint("offset")
 }

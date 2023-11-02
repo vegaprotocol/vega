@@ -1,5 +1,7 @@
 Feature: Simple Spot Order between two parties match successfully
+
   Scenario: Simple Spot Order matches with counter party
+
   Background:
     Given the following assets are registered:
       | id  | decimal places |
@@ -31,9 +33,9 @@ Feature: Simple Spot Order between two parties match successfully
     Then "party1" should have holding account balance of "1000000" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 100000 | 10000 | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 100000 | 10000 | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 100000 | 100000    | 10000 | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 100000 | 100000    | 10000 | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"

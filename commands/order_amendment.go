@@ -68,7 +68,14 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 		}
 	}
 
+	if cmd.Size != nil {
+		isAmending = true
+	}
+
 	if cmd.SizeDelta != 0 {
+		if cmd.Size != nil {
+			errs.AddForProperty("order_amendment.size_delta", ErrMustBeSetTo0IfSizeSet)
+		}
 		isAmending = true
 	}
 

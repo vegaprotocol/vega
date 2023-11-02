@@ -40,9 +40,9 @@ Feature: Test market depth events for pegged orders
       | aux              | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1         |
       | aux2             | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1         |
     Then the orders should have the following states:
-      | party            | market id | side | volume | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
+      | party            | market id | side | volume | remaining | price | status        |
+      | sellSideProvider | ETH/DEC19 | sell | 1000   | 1000      | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 1000      | 80    | STATUS_ACTIVE |
     # Checked out, remove the order events we've checked, now let's have a look at the pegged order events
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
