@@ -113,7 +113,7 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	if seller {
 		size *= -1
 	}
-	marketPrice, _ := num.DecimalFromString(trade.Price) // this is market price
+	marketPrice, _ := num.DecimalFromString(trade.AssetPrice) // this is market price
 	// Scale the trade to the correct size
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
 	realisedPnlDelta := marketPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
