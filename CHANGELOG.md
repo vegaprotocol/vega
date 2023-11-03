@@ -8,7 +8,7 @@
 
 ### 🗑️ Deprecation
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [9881](https://github.com/vegaprotocol/vega/issues/9881) - Liquidity monitoring auctions to be removed.
 
 ### 🛠 Improvements
 

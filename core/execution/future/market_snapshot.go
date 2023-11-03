@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
@@ -138,7 +137,6 @@ func NewMarketFromSnapshot(
 
 	exp := assetDecimals - mkt.DecimalPlaces
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
-	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
@@ -192,7 +190,6 @@ func NewMarketFromSnapshot(
 		liquidityEngine:               liquidityEngine,
 		liquidity:                     marketLiquidity,
 		parties:                       map[string]struct{}{},
-		lMonitor:                      lMonitor,
 		tsCalc:                        tsCalc,
 		feeSplitter:                   common.NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                            as,

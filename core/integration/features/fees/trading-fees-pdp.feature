@@ -893,10 +893,6 @@ Feature: Fees calculations
       | trader4  | ETH/DEC21 | sell | 300    | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
     And the network moves ahead "1" blocks
 
-    Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger                          |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
-
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | lp type   |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | amendment |
@@ -934,10 +930,6 @@ Feature: Fees calculations
       | trader4  | ETH   | ETH/DEC21 | 5234   | 0       |
 
     # We apparently left auction
-    # we're still in liquidity auction
-    #Then the market data for the market "ETH/DEC21" should be:
-    #| trading mode                    | auction trigger           |
-    #  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:

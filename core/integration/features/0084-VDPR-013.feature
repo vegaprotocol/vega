@@ -64,7 +64,8 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | market.liquidity.earlyExitPenalty                   | 0.25  |
 
     Given the average block duration is "1"
-  @Now
+
+  @Now @DebugNoLA
   Scenario: 001: Check that the volume discount factor is updated after each epoch
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -131,14 +132,14 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
       | id  | party | market id | commitment amount | fee   | lp type      |
       | lp1 | lp1   | ETH/MAR24 | 0                 | 0.001 | cancellation |
     And the network moves ahead "1" epochs
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/MAR24"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR24"
 
     And the party "party3" has the following discount factor "0.03"
 
     Given the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR24 | buy  | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/MAR24 | sell | 100    | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/MAR24 | sell | 100    | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee  | lp type    |
@@ -146,10 +147,6 @@ Feature: A parties volume_discount_factor is set equal to the factors in the hig
     When the network moves ahead "1" epochs
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR24"
 
-    # the parties split the fees but party3 has a discount and au
-    # infra fee discount - floor(50 *0.03) = 1
-    # no lp fee
     Then the following transfers should happen:
       | from   | to | from account         | to account                       | market id | amount | asset |
-      | party3 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 49     | ETH   |
-      | party1 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 50     | ETH   |
+      | party3 |    | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 97     | ETH   |

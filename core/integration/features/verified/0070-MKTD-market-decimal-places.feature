@@ -381,7 +381,6 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party0 | USD/DEC19 | sell | 1      | 1100   | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2a |
 
         When the opening auction period ends for market "USD/DEC20"
-        And the opening auction period ends for market "USD/DEC19"
 
         Then the price monitoring bounds for the market "USD/DEC19" should be:
             | min bound | max bound |

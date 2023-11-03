@@ -180,12 +180,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 #     #The upshot is that seemingly, we transferred too much to the margin account, because briefly (between placing the new order and repricing the LP orders), that was the balance required.
 
     # move to the next block to perform liquidity check
-    Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
-    And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 462397       | 50000          | 130           |
-
 #   @Now
 #   Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
 

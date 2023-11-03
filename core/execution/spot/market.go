@@ -45,7 +45,6 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
-	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -159,7 +158,7 @@ func NewMarket(
 	mkt *types.Market,
 	timeService common.TimeService,
 	broker common.Broker,
-	as *monitor.AuctionState,
+	as common.AuctionState,
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	baseAssetDetails *assets.Asset,

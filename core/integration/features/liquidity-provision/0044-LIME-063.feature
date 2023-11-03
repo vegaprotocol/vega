@@ -48,7 +48,7 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.1 |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.1   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | validators.epoch.length                             | 10s   |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
@@ -61,10 +61,12 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | party  | asset | amount |
       | lp1    | USD   | 100000 |
       | lp2    | USD   | 100000 |
-      | lp3 | USD | 100000 |
+      | lp3    | USD   | 100000 |
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
+      | ptbuy  | USD   | 100000 |
+      | ptsell | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -136,10 +138,21 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | party2 | ETH/MAR22 | sell | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "1" blocks
-    And the current epoch is "1"
+    Then the current epoch is "1"
+    # Check the current price bounds, then place some orders to trigger the auction
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 10670        | 6000           | 3             |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 10670        | 6000           | 3             |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptbuy  | ETH/MAR22 | buy  | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptbuy  | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 17250        | 6000           | 3             | 3           |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2400 |
@@ -153,12 +166,17 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
       | lp1   | ETH/MAR22 | sell | 10     | 1050  | 0                | TYPE_LIMIT | TIF_GFA | lp1-GFA-s |
     Then the network moves ahead "1" epochs
     And the current epoch is "2"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | auction end |
+      | 970        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 17250        | 5652           | 5             | 0           |
 
-    #margin accont for lp1 and lp2 increased after placing GFA orders during liquidity auction
+    ## No margin for lp1 and lp2, orders were GFA only
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 56022  | 40978   | 2400 |
-      | lp2   | USD   | ETH/MAR22 | 54421  | 41579   | 3600 |
+      | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2261 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 3391 |
+      #| lp1   | USD   | ETH/MAR22 | 56022  | 40978   | 2400 |
+      #| lp2 | USD | ETH/MAR22 | 54421 | 41579 | 3600 |
 
     #lp3 mades a new LP commitment and get the market out of liquidity auction
     And the parties submit the following liquidity provision:
@@ -168,24 +186,24 @@ Feature: Test LP mechanics when there are multiple liquidity providers, and LPs 
     And the current epoch is "2"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 10670        | 11000          | 3             |
+      | 970        | TRADING_MODE_CONTINUOUS | 3600    | 944       | 996       | 17250        | 10652          | 5             |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2400 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 3600 |
-    And the insurance pool balance should be "1030" for the market "ETH/MAR22"
+      | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2261 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 3391 |
+    And the insurance pool balance should be "1417" for the market "ETH/MAR22"
 
     Then the network moves ahead "1" epochs
     And the current epoch is "3"
     #AC 0044-LIME-081: GFA orders during continuous trading mode from LP do not count towards the LP's liquidity commitment
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2194 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 3290 |
+      | lp1   | USD   | ETH/MAR22 | 0      | 97000   | 2035 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 96000   | 3052 |
 
     Then the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |
-      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 206    | USD   |
-      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 310    | USD   |
-    And the insurance pool balance should be "1546" for the market "ETH/MAR22"
+      | lp1  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 226    | USD   |
+      | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 339    | USD   |
+    And the insurance pool balance should be "1982" for the market "ETH/MAR22"

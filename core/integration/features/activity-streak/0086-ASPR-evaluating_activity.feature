@@ -128,12 +128,12 @@ Feature: Evaluating trader activity
       | id  | party  | market id   | commitment amount | fee   | lp type      |
       | lp1 | lpprov | ETH/USD.0.1 | 0                 | 0.001 | cancellation |
     And the network moves ahead "1" epochs
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/USD.0.1"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD.0.1"
 
     Given the parties place the following orders:
       | party   | market id   | side | volume | price | resulting trades | type       | tif     |
       | aux1    | ETH/USD.0.1 | buy  | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/USD.0.1 | sell | <size> | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/USD.0.1 | sell | <size> | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party  | market id   | commitment amount | fee   | lp type    |
       | lp2 | lpprov | ETH/USD.0.1 | 1000000           | 0.001 | submission |
