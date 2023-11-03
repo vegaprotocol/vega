@@ -612,3 +612,23 @@ func UnmarshalFundingPeriodDataPointSource(v interface{}) (eventspb.FundingPerio
 	}
 	return eventspb.FundingPeriodDataPoint_Source(t), nil
 }
+
+func MarshalLiquidityFeeMethod(s vega.LiquidityFeeSettings_Method) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalLiquidityFeeMethod(v interface{}) (vega.LiquidityFeeSettings_Method, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.LiquidityFeeSettings_METHOD_UNSPECIFIED, fmt.Errorf("expected method state to be a string")
+	}
+
+	side, ok := vega.Proposal_State_value[s]
+	if !ok {
+		return vega.LiquidityFeeSettings_METHOD_UNSPECIFIED, fmt.Errorf("failed to convert method from GraphQL to Proto: %v", s)
+	}
+
+	return vega.LiquidityFeeSettings_Method(side), nil
+}

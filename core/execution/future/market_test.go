@@ -708,6 +708,9 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 				InfrastructureFee: num.DecimalFromFloat(0.001),
 				MakerFee:          num.DecimalFromFloat(0.004),
 			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: types.LiquidityFeeMethodMarginalCost,
+			},
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
@@ -5278,12 +5281,10 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.001),
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
+	mktCfg.Fees.Factors = &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.001),
+		InfrastructureFee: num.DecimalFromFloat(0.0005),
+		MakerFee:          num.DecimalFromFloat(0.00025),
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -5471,12 +5472,10 @@ func Test2963EnsureEquityShareAreInMarketData(t *testing.T) {
 	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.001),
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
+	mktCfg.Fees.Factors = &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.001),
+		InfrastructureFee: num.DecimalFromFloat(0.0005),
+		MakerFee:          num.DecimalFromFloat(0.00025),
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -5638,12 +5637,10 @@ func TestAverageEntryValuation(t *testing.T) {
 	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.001),
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
+	mktCfg.Fees.Factors = &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.001),
+		InfrastructureFee: num.DecimalFromFloat(0.0005),
+		MakerFee:          num.DecimalFromFloat(0.00025),
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -5745,12 +5742,10 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.001),
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
+	mktCfg.Fees.Factors = &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.001),
+		InfrastructureFee: num.DecimalFromFloat(0.0005),
+		MakerFee:          num.DecimalFromFloat(0.00025),
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -6262,12 +6257,10 @@ func TestAmendTrade(t *testing.T) {
 	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.001),
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
+	mktCfg.Fees.Factors = &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.001),
+		InfrastructureFee: num.DecimalFromFloat(0.0005),
+		MakerFee:          num.DecimalFromFloat(0.00025),
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -6406,4 +6399,95 @@ func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
 	tm.now = tm.now.Add(openingAuctionDuration)
 	tm.market.OnTick(ctx, tm.now)
 	require.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
+}
+
+func TestLiquidityFeeSettingsWeightedAverage(t *testing.T) {
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 1})
+	mktCfg.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+		Method: proto.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+	}
+
+	now := time.Unix(10, 0)
+	tm := newTestMarket(t, now).Run(context.Background(), mktCfg)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
+
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccountWithAmount(tm, "lpprov", 10000000)
+	addAccountWithAmount(tm, "lpprov2", 10000000)
+	tm.StartOpeningAuction()
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(27500),
+		Fee:              num.DecimalFromFloat(0.01),
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(27500),
+		Fee:              num.DecimalFromFloat(0.02),
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp2, "lpprov2", vgcrypto.RandomHash()))
+
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
+
+	var fee string
+	for _, evt := range tm.events {
+		if mup, ok := evt.(*events.MarketUpdated); ok {
+			fee = mup.Market().Fees.Factors.LiquidityFee
+		}
+	}
+	// two LPs with same comittment, fee should be the average (0.01 + 0.02) / 2 = 0.015
+	assert.Equal(t, "0.015", fee)
+}
+
+func TestLiquidityFeeSettingsConstantFee(t *testing.T) {
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 1})
+	mktCfg.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+		Method:      proto.LiquidityFeeSettings_METHOD_CONSTANT,
+		FeeConstant: num.NewDecimalFromFloat(0.8),
+	}
+
+	now := time.Unix(10, 0)
+	tm := newTestMarket(t, now).Run(context.Background(), mktCfg)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
+
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	addAccountWithAmount(tm, "lpprov", 10000000)
+	addAccountWithAmount(tm, "lpprov2", 10000000)
+	tm.StartOpeningAuction()
+
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(27500),
+		Fee:              num.DecimalFromFloat(0.01),
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+
+	lp2 := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(27500),
+		Fee:              num.DecimalFromFloat(0.02),
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp2, "lpprov2", vgcrypto.RandomHash()))
+
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
+
+	var fee string
+	for _, evt := range tm.events {
+		if mup, ok := evt.(*events.MarketUpdated); ok {
+			fee = mup.Market().Fees.Factors.LiquidityFee
+		}
+	}
+	// doesn't matter what the LP's set in their nomination, the fee is going to be a constant 0.8
+	assert.Equal(t, "0.8", fee)
 }

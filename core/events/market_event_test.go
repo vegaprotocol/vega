@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -189,6 +190,9 @@ func TestMarketDeepClone(t *testing.T) {
 				MakerFee:          "0.1",
 				InfrastructureFee: "0.2",
 				LiquidityFee:      "0.3",
+			},
+			LiquidityFeeSettings: &vega.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		OpeningAuction: &vegapb.AuctionDuration{

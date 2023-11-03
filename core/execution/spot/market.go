@@ -1543,8 +1543,18 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake := m.getTargetStake()
-	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(stake)
+	var fee num.Decimal
+	switch m.mkt.Fees.LiquidityFeeSettings.Method {
+	case types.LiquidityFeeMethodConstant:
+		fee = m.mkt.Fees.LiquidityFeeSettings.FeeConstant
+	case types.LiquidityFeeMethodMarginalCost:
+		fee = m.liquidityEngine.ProvisionsPerParty().FeeForTarget(m.getTargetStake())
+	case types.LiquidityFeeMethodWeightedAverage:
+		fee = m.liquidityEngine.ProvisionsPerParty().FeeForWeightedAverage()
+	default:
+		m.log.Panic("unknown liquidity fee method")
+	}
+
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)

@@ -21,7 +21,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -205,6 +207,22 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			no:           votesAsMap(p.No),
 			invalidVotes: votesAsMap(p.Invalid),
 		}
+
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.2") {
+			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
+				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
+				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+					Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+				}
+			}
+			if nm := pp.Proposal.Terms.GetUpdateMarket(); nm != nil {
+				e.log.Info("migrating liquidity fee settings update market proposal", logging.String("pid", pp.ID))
+				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+					Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+				}
+			}
+		}
+
 		e.log.Debug("proposals",
 			logging.String("id", pp.ID),
 			logging.Int("yes", len(pp.yes)),

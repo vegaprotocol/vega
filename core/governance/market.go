@@ -229,6 +229,13 @@ func buildMarketFromProposal(
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
+	// if a liquidity fee setting isn't supplied in the proposal, we'll default to margin-cost.
+	if definition.Changes.LiquidityFeeSettings == nil {
+		definition.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method: proto.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+		}
+	}
+
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
@@ -240,6 +247,7 @@ func buildMarketFromProposal(
 				MakerFee:          makerFeeDec,
 				InfrastructureFee: infraFeeDec,
 			},
+			LiquidityFeeSettings: definition.Changes.LiquidityFeeSettings,
 		},
 		OpeningAuction: &types.AuctionDuration{
 			Duration: int64(openingAuctionDuration.Seconds()),
@@ -290,6 +298,13 @@ func buildSpotMarketFromProposal(
 		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
+	// if a liquidity fee setting isn't supplied in the proposal, we'll default to margin-cost.
+	if definition.Changes.LiquidityFeeSettings == nil {
+		definition.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method: proto.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+		}
+	}
+
 	liquidityMonitoring := &types.LiquidityMonitoringParameters{
 		TargetStakeParameters: definition.Changes.TargetStakeParameters,
 		TriggeringRatio:       num.DecimalZero(),
@@ -307,6 +322,7 @@ func buildSpotMarketFromProposal(
 				MakerFee:          makerFeeDec,
 				InfrastructureFee: infraFeeDec,
 			},
+			LiquidityFeeSettings: definition.Changes.LiquidityFeeSettings,
 		},
 		OpeningAuction: &types.AuctionDuration{
 			Duration: int64(openingAuctionDuration.Seconds()),

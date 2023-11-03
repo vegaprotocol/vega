@@ -2352,8 +2352,22 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*t
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake := m.getTargetStake()
-	fee := m.liquidityEngine.ProvisionsPerParty().FeeForTarget(stake)
+	var fee num.Decimal
+	provisions := m.liquidityEngine.ProvisionsPerParty()
+
+	switch m.mkt.Fees.LiquidityFeeSettings.Method {
+	case types.LiquidityFeeMethodConstant:
+		if len(provisions) != 0 {
+			fee = m.mkt.Fees.LiquidityFeeSettings.FeeConstant
+		}
+	case types.LiquidityFeeMethodMarginalCost:
+		fee = provisions.FeeForTarget(m.getTargetStake())
+	case types.LiquidityFeeMethodWeightedAverage:
+		fee = provisions.FeeForWeightedAverage()
+	default:
+		m.log.Panic("unknown liquidity fee method")
+	}
+
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)

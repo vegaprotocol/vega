@@ -38,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -65,6 +66,15 @@ func NewMarketFromSnapshot(
 	volumeDiscountService fee.VolumeDiscountService,
 ) (*Market, error) {
 	mkt := em.Market
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.2") {
+		// protocol upgrade from v0.73.2, lets populate the new liquidity-fee-settings with a default marginal-cost method
+		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
+		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method: types.LiquidityFeeMethodMarginalCost,
+		}
+	}
+
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 	if len(em.Market.ID) == 0 {
 		return nil, common.ErrEmptyMarketID

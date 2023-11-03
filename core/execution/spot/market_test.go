@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -118,6 +119,9 @@ func getMarketWithDP(base, quote string, pMonitorSettings *types.PriceMonitoring
 			Factors: &types.FeeFactors{
 				InfrastructureFee: num.DecimalFromFloat(0.001),
 				MakerFee:          num.DecimalFromFloat(0.004),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{

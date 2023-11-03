@@ -119,6 +119,9 @@ func TestMarketFromIntoProto(t *testing.T) {
 				InfrastructureFee: "0.001",
 				LiquidityFee:      "0.003",
 			},
+			LiquidityFeeSettings: &vegapb.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+			},
 		},
 		OpeningAuction: &vegapb.AuctionDuration{
 			Duration: 1,

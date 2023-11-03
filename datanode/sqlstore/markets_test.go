@@ -504,6 +504,9 @@ func getTestMarket() *vega.Market {
 				InfrastructureFee: "",
 				LiquidityFee:      "",
 			},
+			LiquidityFeeSettings: &vega.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+			},
 		},
 		OpeningAuction: &vega.AuctionDuration{
 			Duration: 0,
@@ -643,6 +646,9 @@ func getTestFutureMarket(termInt bool) *vega.Market {
 				MakerFee:          "",
 				InfrastructureFee: "",
 				LiquidityFee:      "",
+			},
+			LiquidityFeeSettings: &vega.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		OpeningAuction: &vega.AuctionDuration{
