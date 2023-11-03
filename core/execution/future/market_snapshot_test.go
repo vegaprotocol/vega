@@ -60,7 +60,7 @@ func TestRestoreSettledMarket(t *testing.T) {
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
-	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
+	snap, err := newMarketFromSnapshot(t, context.Background(), ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)
 
@@ -88,7 +88,7 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
-	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
+	snap, err := newMarketFromSnapshot(t, context.Background(), ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)
 
@@ -117,13 +117,45 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
-	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
+	snap, err := newMarketFromSnapshot(t, context.Background(), ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)
 
-	em2 := tm.market.GetState()
+	em2 := snap.GetState()
 	assert.Nil(t, em2.LastTradedPrice)
 	assert.Nil(t, em2.CurrentMarkPrice)
+}
+
+func TestRestoreMarketUpgradeV0_73_2(t *testing.T) {
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	defer tm.ctrl.Finish()
+
+	em := tm.market.GetState()
+	assert.Nil(t, em.LastTradedPrice)
+	assert.Nil(t, em.CurrentMarkPrice)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	oracleEngine := mocks.NewMockOracleEngine(ctrl)
+
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
+	}
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
+
+	// set the liquidity fee settings to nil, like if we can come from an older version
+	em.Market.Fees.LiquidityFeeSettings = nil
+
+	// and set in the context the information that says we are upgrading
+	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.2", true)
+	snap, err := newMarketFromSnapshot(t, ctx, ctrl, em, oracleEngine)
+	require.NoError(t, err)
+	require.NotEmpty(t, snap)
+
+	em2 := snap.GetState()
+	require.NotNil(t, em2.Market.Fees.LiquidityFeeSettings)
+	assert.Equal(t, em2.Market.Fees.LiquidityFeeSettings.Method, types.LiquidityFeeMethodMarginalCost)
 }
 
 func getTerminatedMarket(t *testing.T) *testMarket {
@@ -171,7 +203,7 @@ func getSettledMarket(t *testing.T) *testMarket {
 }
 
 // newMarketFromSnapshot is a wrapper for NewMarketFromSnapshot with a lot of defaults handled.
-func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.ExecMarket, oracleEngine products.OracleEngine) (*future.Market, error) {
+func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Controller, em *types.ExecMarket, oracleEngine products.OracleEngine) (*future.Market, error) {
 	t.Helper()
 	var (
 		riskConfig       = risk.NewDefaultConfig()
@@ -207,7 +239,7 @@ func newMarketFromSnapshot(t *testing.T, ctrl *gomock.Controller, em *types.Exec
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 
-	return future.NewMarketFromSnapshot(context.Background(), log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
+	return future.NewMarketFromSnapshot(ctx, log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
 		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
 }

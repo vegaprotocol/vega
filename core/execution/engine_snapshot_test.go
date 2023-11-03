@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -283,6 +284,9 @@ func getMarketConfig() *types.Market {
 				MakerFee:          num.DecimalFromFloat(0.1),
 				InfrastructureFee: num.DecimalFromFloat(0.1),
 				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{

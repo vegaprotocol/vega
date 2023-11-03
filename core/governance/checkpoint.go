@@ -108,8 +108,12 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
 
+			// handle markets that were proposed in older versions so will not have these new fields when we resubmit
 			if prop.NewMarket().Changes.LiquiditySLAParameters == nil {
 				prop.NewMarket().Changes.LiquiditySLAParameters = ptr.From(liquidity.DefaultSLAParameters)
+			}
+			if prop.NewMarket().Changes.LiquidityFeeSettings == nil {
+				prop.NewMarket().Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{Method: types.LiquidityFeeMethodMarginalCost}
 			}
 
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct, true)

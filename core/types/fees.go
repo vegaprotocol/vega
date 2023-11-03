@@ -75,7 +75,8 @@ func (f FeeFactors) String() string {
 }
 
 type Fees struct {
-	Factors *FeeFactors
+	Factors              *FeeFactors
+	LiquidityFeeSettings *LiquidityFeeSettings
 }
 
 func FeesFromProto(f *proto.Fees) *Fees {
@@ -83,19 +84,22 @@ func FeesFromProto(f *proto.Fees) *Fees {
 		return nil
 	}
 	return &Fees{
-		Factors: FeeFactorsFromProto(f.Factors),
+		Factors:              FeeFactorsFromProto(f.Factors),
+		LiquidityFeeSettings: LiquidityFeeSettingsFromProto(f.LiquidityFeeSettings),
 	}
 }
 
 func (f Fees) IntoProto() *proto.Fees {
 	return &proto.Fees{
-		Factors: f.Factors.IntoProto(),
+		Factors:              f.Factors.IntoProto(),
+		LiquidityFeeSettings: f.LiquidityFeeSettings.IntoProto(),
 	}
 }
 
 func (f Fees) DeepClone() *Fees {
 	return &Fees{
-		Factors: f.Factors.DeepClone(),
+		Factors:              f.Factors.DeepClone(),
+		LiquidityFeeSettings: f.LiquidityFeeSettings.DeepClone(),
 	}
 }
 

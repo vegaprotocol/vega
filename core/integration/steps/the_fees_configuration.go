@@ -30,6 +30,9 @@ func TheFeesConfiguration(config *market.Config, name string, table *godog.Table
 			InfrastructureFee: row.infrastructureFee(),
 			MakerFee:          row.makerFee(),
 		},
+		LiquidityFeeSettings: &types.LiquidityFeeSettings{
+			Method: types.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+		},
 	})
 }
 

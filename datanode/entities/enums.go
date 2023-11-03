@@ -977,3 +977,29 @@ func (s *FundingPeriodDataPointSource) DecodeText(_ *pgtype.ConnInfo, src []byte
 	*s = FundingPeriodDataPointSource(val)
 	return nil
 }
+
+type LiquidityFeeSettingsMethod vega.LiquidityFeeSettings_Method
+
+const (
+	LiquidityFeeMethodUnspecified     = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_UNSPECIFIED)
+	LiquidityFeeMethodMarginalCost    = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_MARGINAL_COST)
+	LiquidityFeeMethodWeightedAverage = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE)
+	LiquidityFeeMethodConstant        = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_CONSTANT)
+)
+
+func (s LiquidityFeeSettingsMethod) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := vega.LiquidityFeeSettings_Method_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown liquidity provision status: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *LiquidityFeeSettingsMethod) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.LiquidityFeeSettings_Method_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown liquidity provision status: %s", src)
+	}
+	*s = LiquidityFeeSettingsMethod(val)
+	return nil
+}

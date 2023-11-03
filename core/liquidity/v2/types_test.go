@@ -69,3 +69,24 @@ func TestPartiesTotalStake(t *testing.T) {
 	}
 	assert.Equal(t, num.NewUint(210), parties.TotalStake())
 }
+
+func TestWeightAverageFee(t *testing.T) {
+	got := liquidity.ProvisionsPerParty{
+		"p1": {CommitmentAmount: num.NewUint(20), Fee: num.DecimalFromFloat(2.0)},
+		"p2": {CommitmentAmount: num.NewUint(60), Fee: num.DecimalFromFloat(1.0)},
+	}.FeeForWeightedAverage()
+
+	// (20 * 2) + (60 * 1) / 80 = 1.25
+	assert.Equal(t, num.DecimalFromFloat(1.25).String(), got.String())
+
+	// no LPs
+	got = liquidity.ProvisionsPerParty{}.FeeForWeightedAverage()
+	assert.Equal(t, num.DecimalFromFloat(0).String(), got.String())
+
+	// LPs but all with 0 commitment for whatever reason
+	got = liquidity.ProvisionsPerParty{
+		"p1": {CommitmentAmount: num.UintZero(), Fee: num.DecimalFromFloat(2.0)},
+		"p2": {CommitmentAmount: num.UintZero(), Fee: num.DecimalFromFloat(1.0)},
+	}.FeeForWeightedAverage()
+	assert.Equal(t, num.DecimalFromFloat(0).String(), got.String())
+}

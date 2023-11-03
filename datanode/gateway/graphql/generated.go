@@ -710,7 +710,8 @@ type ComplexityRoot struct {
 	}
 
 	Fees struct {
-		Factors func(childComplexity int) int
+		Factors              func(childComplexity int) int
+		LiquidityFeeSettings func(childComplexity int) int
 	}
 
 	FeesStats struct {
@@ -884,6 +885,11 @@ type ComplexityRoot struct {
 		IncludingBuyOrders  func(childComplexity int) int
 		IncludingSellOrders func(childComplexity int) int
 		OpenVolumeOnly      func(childComplexity int) int
+	}
+
+	LiquidityFeeSettings struct {
+		FeeConstant func(childComplexity int) int
+		Method      func(childComplexity int) int
 	}
 
 	LiquidityMonitoringParameters struct {
@@ -1237,6 +1243,7 @@ type ComplexityRoot struct {
 		DecimalPlaces                 func(childComplexity int) int
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
+		LiquidityFeeSettings          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquiditySLAParameters        func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
@@ -1250,6 +1257,7 @@ type ComplexityRoot struct {
 	NewSpotMarket struct {
 		DecimalPlaces             func(childComplexity int) int
 		Instrument                func(childComplexity int) int
+		LiquidityFeeSettings      func(childComplexity int) int
 		LiquiditySLAParams        func(childComplexity int) int
 		Metadata                  func(childComplexity int) int
 		PositionDecimalPlaces     func(childComplexity int) int
@@ -2497,6 +2505,7 @@ type ComplexityRoot struct {
 	UpdateMarketConfiguration struct {
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
+		LiquidityFeeSettings          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquiditySlaParameters        func(childComplexity int) int
 		Metadata                      func(childComplexity int) int
@@ -2547,6 +2556,7 @@ type ComplexityRoot struct {
 	}
 
 	UpdateSpotMarketConfiguration struct {
+		LiquidityFeeSettings      func(childComplexity int) int
 		LiquiditySLAParams        func(childComplexity int) int
 		Metadata                  func(childComplexity int) int
 		PriceMonitoringParameters func(childComplexity int) int
@@ -2933,6 +2943,7 @@ type NewMarketResolver interface {
 	QuadraticSlippageFactor(ctx context.Context, obj *vega.NewMarket) (string, error)
 	SuccessorConfiguration(ctx context.Context, obj *vega.NewMarket) (*vega.SuccessorConfiguration, error)
 	LiquiditySLAParameters(ctx context.Context, obj *vega.NewMarket) (*vega.LiquiditySLAParameters, error)
+	LiquidityFeeSettings(ctx context.Context, obj *vega.NewMarket) (*vega.LiquidityFeeSettings, error)
 }
 type NewSpotMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewSpotMarket) (*vega.InstrumentConfiguration, error)
@@ -2943,6 +2954,7 @@ type NewSpotMarketResolver interface {
 	RiskParameters(ctx context.Context, obj *vega.NewSpotMarket) (RiskModel, error)
 	PositionDecimalPlaces(ctx context.Context, obj *vega.NewSpotMarket) (int, error)
 	LiquiditySLAParams(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquiditySLAParameters, error)
+	LiquidityFeeSettings(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquidityFeeSettings, error)
 }
 type NewTransferResolver interface {
 	Source(ctx context.Context, obj *vega.NewTransfer) (string, error)
@@ -5577,6 +5589,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Fees.Factors(childComplexity), true
 
+	case "Fees.liquidityFeeSettings":
+		if e.complexity.Fees.LiquidityFeeSettings == nil {
+			break
+		}
+
+		return e.complexity.Fees.LiquidityFeeSettings(childComplexity), true
+
 	case "FeesStats.assetId":
 		if e.complexity.FeesStats.AssetID == nil {
 			break
@@ -6241,6 +6260,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquidationPrice.OpenVolumeOnly(childComplexity), true
+
+	case "LiquidityFeeSettings.feeConstant":
+		if e.complexity.LiquidityFeeSettings.FeeConstant == nil {
+			break
+		}
+
+		return e.complexity.LiquidityFeeSettings.FeeConstant(childComplexity), true
+
+	case "LiquidityFeeSettings.method":
+		if e.complexity.LiquidityFeeSettings.Method == nil {
+			break
+		}
+
+		return e.complexity.LiquidityFeeSettings.Method(childComplexity), true
 
 	case "LiquidityMonitoringParameters.auctionExtensionSecs":
 		if e.complexity.LiquidityMonitoringParameters.AuctionExtensionSecs == nil {
@@ -7782,6 +7815,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMarket.LinearSlippageFactor(childComplexity), true
 
+	case "NewMarket.liquidityFeeSettings":
+		if e.complexity.NewMarket.LiquidityFeeSettings == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.LiquidityFeeSettings(childComplexity), true
+
 	case "NewMarket.liquidityMonitoringParameters":
 		if e.complexity.NewMarket.LiquidityMonitoringParameters == nil {
 			break
@@ -7851,6 +7891,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewSpotMarket.Instrument(childComplexity), true
+
+	case "NewSpotMarket.liquidityFeeSettings":
+		if e.complexity.NewSpotMarket.LiquidityFeeSettings == nil {
+			break
+		}
+
+		return e.complexity.NewSpotMarket.LiquidityFeeSettings(childComplexity), true
 
 	case "NewSpotMarket.liquiditySLAParams":
 		if e.complexity.NewSpotMarket.LiquiditySLAParams == nil {
@@ -13747,6 +13794,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateMarketConfiguration.LinearSlippageFactor(childComplexity), true
 
+	case "UpdateMarketConfiguration.liquidityFeeSettings":
+		if e.complexity.UpdateMarketConfiguration.LiquidityFeeSettings == nil {
+			break
+		}
+
+		return e.complexity.UpdateMarketConfiguration.LiquidityFeeSettings(childComplexity), true
+
 	case "UpdateMarketConfiguration.liquidityMonitoringParameters":
 		if e.complexity.UpdateMarketConfiguration.LiquidityMonitoringParameters == nil {
 			break
@@ -13928,6 +13982,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdateSpotMarket.UpdateSpotMarketConfiguration(childComplexity), true
+
+	case "UpdateSpotMarketConfiguration.liquidityFeeSettings":
+		if e.complexity.UpdateSpotMarketConfiguration.LiquidityFeeSettings == nil {
+			break
+		}
+
+		return e.complexity.UpdateSpotMarketConfiguration.LiquidityFeeSettings(childComplexity), true
 
 	case "UpdateSpotMarketConfiguration.liquiditySLAParams":
 		if e.complexity.UpdateSpotMarketConfiguration.LiquiditySLAParams == nil {
@@ -31744,6 +31805,53 @@ func (ec *executionContext) fieldContext_Fees_factors(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Fees_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField, obj *vega.Fees) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Fees_liquidityFeeSettings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFeeSettings, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityFeeSettings)
+	fc.Result = res
+	return ec.marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Fees_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Fees",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "method":
+				return ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+			case "feeConstant":
+				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FeesStats_marketId(ctx context.Context, field graphql.CollectedField, obj *v1.FeesStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FeesStats_marketId(ctx, field)
 	if err != nil {
@@ -36197,6 +36305,91 @@ func (ec *executionContext) _LiquidationPrice_including_sell_orders(ctx context.
 func (ec *executionContext) fieldContext_LiquidationPrice_including_sell_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidationPrice",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityFeeSettings_method(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityFeeSettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Method, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(vega.LiquidityFeeSettings_Method)
+	fc.Result = res
+	return ec.marshalNLiquidityFeeMethod2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings_Method(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityFeeSettings_method(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityFeeSettings",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type LiquidityFeeMethod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityFeeSettings_feeConstant(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityFeeSettings) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FeeConstant, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityFeeSettings_feeConstant(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityFeeSettings",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -41397,6 +41590,8 @@ func (ec *executionContext) fieldContext_Market_fees(ctx context.Context, field 
 			switch field.Name {
 			case "factors":
 				return ec.fieldContext_Fees_factors(ctx, field)
+			case "liquidityFeeSettings":
+				return ec.fieldContext_Fees_liquidityFeeSettings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Fees", field.Name)
 		},
@@ -47314,6 +47509,53 @@ func (ec *executionContext) fieldContext_NewMarket_liquiditySLAParameters(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _NewMarket_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_liquidityFeeSettings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().LiquidityFeeSettings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityFeeSettings)
+	fc.Result = res
+	return ec.marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "method":
+				return ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+			case "feeConstant":
+				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NewSpotMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NewSpotMarket_instrument(ctx, field)
 	if err != nil {
@@ -47688,6 +47930,53 @@ func (ec *executionContext) fieldContext_NewSpotMarket_liquiditySLAParams(ctx co
 				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewSpotMarket_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField, obj *vega.NewSpotMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewSpotMarket_liquidityFeeSettings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewSpotMarket().LiquidityFeeSettings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityFeeSettings)
+	fc.Result = res
+	return ec.marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewSpotMarket_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewSpotMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "method":
+				return ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+			case "feeConstant":
+				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
 		},
 	}
 	return fc, nil
@@ -86106,6 +86395,8 @@ func (ec *executionContext) fieldContext_UpdateMarket_updateMarketConfiguration(
 				return ec.fieldContext_UpdateMarketConfiguration_quadraticSlippageFactor(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_UpdateMarketConfiguration_liquiditySLAParameters(ctx, field)
+			case "liquidityFeeSettings":
+				return ec.fieldContext_UpdateMarketConfiguration_liquidityFeeSettings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UpdateMarketConfiguration", field.Name)
 		},
@@ -86482,6 +86773,53 @@ func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquiditySLAP
 				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateMarketConfiguration_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateMarketConfiguration_liquidityFeeSettings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFeeSettings, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityFeeSettings)
+	fc.Result = res
+	return ec.marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "method":
+				return ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+			case "feeConstant":
+				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
 		},
 	}
 	return fc, nil
@@ -87469,6 +87807,8 @@ func (ec *executionContext) fieldContext_UpdateSpotMarket_updateSpotMarketConfig
 				return ec.fieldContext_UpdateSpotMarketConfiguration_riskParameters(ctx, field)
 			case "liquiditySLAParams":
 				return ec.fieldContext_UpdateSpotMarketConfiguration_liquiditySLAParams(ctx, field)
+			case "liquidityFeeSettings":
+				return ec.fieldContext_UpdateSpotMarketConfiguration_liquidityFeeSettings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UpdateSpotMarketConfiguration", field.Name)
 		},
@@ -87711,6 +88051,53 @@ func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidity
 				return ec.fieldContext_LiquiditySLAParameters_slaCompetitionFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquiditySLAParameters", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdateSpotMarketConfiguration_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateSpotMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateSpotMarketConfiguration_liquidityFeeSettings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityFeeSettings, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidityFeeSettings)
+	fc.Result = res
+	return ec.marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateSpotMarketConfiguration_liquidityFeeSettings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateSpotMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "method":
+				return ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
+			case "feeConstant":
+				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
 		},
 	}
 	return fc, nil
@@ -97212,6 +97599,10 @@ func (ec *executionContext) _Fees(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "liquidityFeeSettings":
+
+			out.Values[i] = ec._Fees_liquidityFeeSettings(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -98664,6 +99055,38 @@ func (ec *executionContext) _LiquidationPrice(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var liquidityFeeSettingsImplementors = []string{"LiquidityFeeSettings"}
+
+func (ec *executionContext) _LiquidityFeeSettings(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquidityFeeSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityFeeSettingsImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityFeeSettings")
+		case "method":
+
+			out.Values[i] = ec._LiquidityFeeSettings_method(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "feeConstant":
+
+			out.Values[i] = ec._LiquidityFeeSettings_feeConstant(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -101919,6 +102342,23 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 				return innerFunc(ctx)
 
 			})
+		case "liquidityFeeSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_liquidityFeeSettings(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -102090,6 +102530,23 @@ func (ec *executionContext) _NewSpotMarket(ctx context.Context, sel ast.Selectio
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidityFeeSettings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewSpotMarket_liquidityFeeSettings(ctx, field, obj)
 				return res
 			}
 
@@ -114089,6 +114546,10 @@ func (ec *executionContext) _UpdateMarketConfiguration(ctx context.Context, sel 
 
 			out.Values[i] = ec._UpdateMarketConfiguration_liquiditySLAParameters(ctx, field, obj)
 
+		case "liquidityFeeSettings":
+
+			out.Values[i] = ec._UpdateMarketConfiguration_liquidityFeeSettings(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -114592,6 +115053,10 @@ func (ec *executionContext) _UpdateSpotMarketConfiguration(ctx context.Context, 
 				return innerFunc(ctx)
 
 			})
+		case "liquidityFeeSettings":
+
+			out.Values[i] = ec._UpdateSpotMarketConfiguration_liquidityFeeSettings(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -117162,6 +117627,21 @@ func (ec *executionContext) marshalNLiquidationPrice2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._LiquidationPrice(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNLiquidityFeeMethod2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings_Method(ctx context.Context, v interface{}) (vega.LiquidityFeeSettings_Method, error) {
+	res, err := marshallers.UnmarshalLiquidityFeeMethod(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLiquidityFeeMethod2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings_Method(ctx context.Context, sel ast.SelectionSet, v vega.LiquidityFeeSettings_Method) graphql.Marshaler {
+	res := marshallers.MarshalLiquidityFeeMethod(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNLiquidityMonitoringParameters2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v LiquidityMonitoringParameters) graphql.Marshaler {
@@ -122025,6 +122505,13 @@ func (ec *executionContext) marshalOLiquidationEstimate2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._LiquidationEstimate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityFeeSettings) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityFeeSettings(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {

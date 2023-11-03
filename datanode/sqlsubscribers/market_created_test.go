@@ -42,6 +42,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 
+	"code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -157,6 +158,9 @@ func getTestMarket(termInt bool) types.Market {
 				MakerFee:          num.DecimalZero(),
 				InfrastructureFee: num.DecimalZero(),
 				LiquidityFee:      num.DecimalZero(),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		OpeningAuction: nil,

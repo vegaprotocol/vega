@@ -20,9 +20,19 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+)
+
+type LiquidityFeeMethod = proto.LiquidityFeeSettings_Method
+
+const (
+	LiquidityFeeMethodUnspecified     LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_UNSPECIFIED
+	LiquidityFeeMethodMarginalCost    LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_MARGINAL_COST
+	LiquidityFeeMethodWeightedAverage LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE
+	LiquidityFeeMethodConstant        LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_CONSTANT
 )
 
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
@@ -412,4 +422,59 @@ func (l LiquidityProvisionCancellation) String() string {
 
 func (l LiquidityProvisionCancellation) GetMarketID() string {
 	return l.MarketID
+}
+
+type LiquidityFeeSettings struct {
+	Method      LiquidityFeeMethod
+	FeeConstant num.Decimal
+}
+
+func (l *LiquidityFeeSettings) IntoProto() *proto.LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+
+	r := &proto.LiquidityFeeSettings{
+		Method: l.Method,
+	}
+
+	if l.Method == LiquidityFeeMethodConstant {
+		r.FeeConstant = ptr.From(l.FeeConstant.String())
+	}
+
+	return r
+}
+
+func LiquidityFeeSettingsFromProto(l *proto.LiquidityFeeSettings) *LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+
+	fc := num.DecimalZero()
+	if l.Method == LiquidityFeeMethodConstant {
+		fc, _ = num.DecimalFromString(*l.FeeConstant)
+	}
+
+	return &LiquidityFeeSettings{
+		Method:      l.Method,
+		FeeConstant: fc,
+	}
+}
+
+func (l *LiquidityFeeSettings) DeepClone() *LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+	return &LiquidityFeeSettings{
+		Method:      l.Method,
+		FeeConstant: l.FeeConstant,
+	}
+}
+
+func (l LiquidityFeeSettings) String() string {
+	return fmt.Sprintf(
+		"method(%s) feeConstant(%s)",
+		l.Method.String(),
+		l.FeeConstant.String(),
+	)
 }
