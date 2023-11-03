@@ -64,7 +64,7 @@ type Delegation interface {
 // Collateral engine provides access to account data and transferring rewards.
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
-	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer, rewardType types.AccountType) ([]*types.LedgerMovement, error)
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 
@@ -441,7 +441,7 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		})
 	}
 
-	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
+	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers, po.rewardType)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
