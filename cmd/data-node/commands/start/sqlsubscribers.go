@@ -347,6 +347,8 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
+
+	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
 
 	toInit := []interface{ Initialise(context.Context) error }{
@@ -364,7 +366,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	return nil
 }
 
-func (s *SQLSubscribers) SetupSQLSubscribers(log *logging.Logger) {
+func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.accountSub = sqlsubscribers.NewAccount(s.accountService)
 	s.assetSub = sqlsubscribers.NewAsset(s.assetService)
 	s.partySub = sqlsubscribers.NewParty(s.partyService)
@@ -412,5 +414,4 @@ func (s *SQLSubscribers) SetupSQLSubscribers(log *logging.Logger) {
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
-	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 }
