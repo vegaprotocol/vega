@@ -396,13 +396,12 @@ func TestErsatzTendermintRewardSplit(t *testing.T) {
 	// node 4 gets 25000
 
 	// get party account balances
-	ctx := context.Background()
-	party1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party1", "VEGA")
-	party2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party2", "VEGA")
-	node1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node1", "VEGA")
-	node2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node2", "VEGA")
-	node3Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node3", "VEGA")
-	node4Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node4", "VEGA")
+	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
+	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "VEGA")
+	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "VEGA")
+	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "VEGA")
+	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "VEGA")
+	node4Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node4", "VEGA")
 
 	require.Equal(t, num.NewUint(172500), party1Acc.Balance)
 	require.Equal(t, num.NewUint(15000), party2Acc.Balance)
