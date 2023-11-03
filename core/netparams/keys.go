@@ -203,6 +203,7 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
+	TransferMaxQuantumAmount           = "transfer.fee.maxQuantumAmount"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -395,6 +396,7 @@ var AllKeys = map[string]struct{}{
 	MultipleOfTendermintValidatorsForEtsatzSet:                   {},
 	MinimumEthereumEventsForNewValidator:                         {},
 	TransferMinTransferQuantumMultiple:                           {},
+	TransferMaxQuantumAmount:                                     {},
 	TransferMaxCommandsPerEpoch:                                  {},
 	SpamPoWNumberOfPastBlocks:                                    {},
 	SpamPoWDifficulty:                                            {},

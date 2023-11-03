@@ -160,6 +160,7 @@ type Engine struct {
 	scheduledTransfers         map[int64][]scheduledTransfer
 	transferFeeFactor          num.Decimal
 	minTransferQuantumMultiple num.Decimal
+	maxQuantumAmount           num.Decimal
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer

@@ -36,6 +36,11 @@ func (e *Engine) OnMinTransferQuantumMultiple(ctx context.Context, f num.Decimal
 	return nil
 }
 
+func (e *Engine) OnMaxQuantumAmountUpdate(ctx context.Context, f num.Decimal) error {
+	e.maxQuantumAmount = f
+	return nil
+}
+
 func (e *Engine) TransferFunds(
 	ctx context.Context,
 	transfer *types.TransferFunds,
@@ -70,7 +75,7 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return err
 	}
 
-	_, err = e.ensureFeeForTransferFunds(t.Amount, t.From, t.Asset, t.FromAccountType, t.To)
+	_, err = e.ensureFeeForTransferFunds(a, t.Amount, t.From, t.FromAccountType, t.To)
 	if err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
@@ -121,7 +126,8 @@ func (e *Engine) ensureMinimalTransferAmountFromVested(
 
 func (e *Engine) processTransfer(
 	ctx context.Context,
-	from, to, asset, toMarket string,
+	asset *assets.Asset,
+	from, to, toMarket string,
 	fromAcc, toAcc types.AccountType,
 	amount *num.Uint,
 	reference string,
@@ -131,15 +137,17 @@ func (e *Engine) processTransfer(
 	// in case we need to schedule the delivery
 	oneoff *types.OneOffTransfer,
 ) ([]*types.LedgerMovement, error) {
+	assetType := asset.ToAssetType()
+
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc, to)
+	feeTransfer, err := e.ensureFeeForTransferFunds(asset, amount, from, fromAcc, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, "", toMarket, amount, &transferID)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, assetType.ID, "", toMarket, amount, &transferID)
 	transfers := []*types.Transfer{fromTransfer}
 	accountTypes := []types.AccountType{fromAcc}
 	references := []string{reference}
@@ -204,8 +212,9 @@ func (e *Engine) makeTransfers(
 }
 
 func (e *Engine) makeFeeTransferForTransferFunds(
+	asset *types.Asset,
 	amount *num.Uint,
-	from, asset string,
+	from string,
 	fromAccountType types.AccountType,
 	to string,
 ) *types.Transfer {
@@ -214,7 +223,12 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 
 	// first we calculate the fee
 	if !(fromAccountType == types.AccountTypeVestedRewards && from == to) {
-		feeAmount, _ = num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+		// min(transfer amount * transfer.fee.factor, transfer.fee.maxQuantumAmount * quantum)
+		feeAmount, _ := num.UintFromDecimal(num.MinD(
+			amount.ToDecimal().Mul(e.transferFeeFactor),
+			e.maxQuantumAmount.Mul(asset.Details.Quantum),
+		))
+		feeAmount = feeAmount
 	}
 
 	switch fromAccountType {
@@ -222,7 +236,7 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
+			logging.String("asset", asset.ID),
 			logging.String("from", from),
 		)
 	}
@@ -231,7 +245,7 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 		Owner: from,
 		Amount: &types.FinancialAmount{
 			Amount: feeAmount.Clone(),
-			Asset:  asset,
+			Asset:  asset.ID,
 		},
 		Type:      types.TransferTypeInfrastructureFeePay,
 		MinAmount: feeAmount,
@@ -239,13 +253,16 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 }
 
 func (e *Engine) ensureFeeForTransferFunds(
+	asset *assets.Asset,
 	amount *num.Uint,
-	from, asset string,
+	from string,
 	fromAccountType types.AccountType,
 	to string,
 ) (*types.Transfer, error) {
+	assetType := asset.ToAssetType()
+
 	transfer := e.makeFeeTransferForTransferFunds(
-		amount, from, asset, fromAccountType, to,
+		assetType, amount, from, fromAccountType, to,
 	)
 
 	var (
@@ -255,12 +272,12 @@ func (e *Engine) ensureFeeForTransferFunds(
 	)
 	switch fromAccountType {
 	case types.AccountTypeGeneral:
-		account, err = e.col.GetPartyGeneralAccount(from, asset)
+		account, err = e.col.GetPartyGeneralAccount(from, assetType.ID)
 		if err != nil {
 			return nil, err
 		}
 	case types.AccountTypeVestedRewards:
-		account, err = e.col.GetPartyVestedRewardAccount(from, asset)
+		account, err = e.col.GetPartyVestedRewardAccount(from, assetType.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -268,7 +285,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	default:
 		e.log.Panic("from account not supported",
 			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
+			logging.String("asset", assetType.ID),
 			logging.String("from", from),
 		)
 	}
@@ -280,7 +297,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 			logging.BigUint("total-amount", totalAmount),
 			logging.BigUint("account-balance", account.Balance),
 			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
+			logging.String("asset", assetType.ID),
 			logging.String("from", from),
 		)
 		return nil, ErrNotEnoughFundsToTransfer
