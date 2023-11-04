@@ -66,24 +66,33 @@ func (e *Engine) CheckTransfer(t *types.TransferBase) error {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, t.Amount); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, t.Amount, t.FromAccountType, t.From); err != nil {
 		return err
 	}
 
-	_, err = e.ensureFeeForTransferFunds(t.Amount, t.From, t.Asset, t.FromAccountType)
+	_, err = e.ensureFeeForTransferFunds(t.Amount, t.From, t.Asset, t.FromAccountType, t.To)
 	if err != nil {
 		return fmt.Errorf("could not transfer funds, %w", err)
 	}
 	return nil
 }
 
-func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) error {
+func (e *Engine) ensureMinimalTransferAmount(
+	a *assets.Asset,
+	amount *num.Uint,
+	fromAccType types.AccountType,
+	from string,
+) error {
 	quantum := a.Type().Details.Quantum
 	// no reason this would produce an error
 	minAmount, _ := num.UintFromDecimal(quantum.Mul(e.minTransferQuantumMultiple))
 
 	// no verify amount
 	if amount.LT(minAmount) {
+		if fromAccType == types.AccountTypeVestedRewards {
+			return e.ensureMinimalTransferAmountFromVested(amount, from, a.Type().ID)
+		}
+
 		e.log.Debug("cannot transfer funds, less than minimal amount requested to transfer",
 			logging.BigUint("min-amount", minAmount),
 			logging.BigUint("requested-amount", amount),
@@ -92,6 +101,22 @@ func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) 
 	}
 
 	return nil
+}
+
+func (e *Engine) ensureMinimalTransferAmountFromVested(
+	transferAmount *num.Uint,
+	from, asset string,
+) error {
+	account, err := e.col.GetPartyVestedRewardAccount(from, asset)
+	if err != nil {
+		return err
+	}
+
+	if transferAmount.EQ(account.Balance) {
+		return nil
+	}
+
+	return fmt.Errorf("transfer from vested account under minimal transfer amount must be the full balance")
 }
 
 func (e *Engine) processTransfer(
@@ -108,7 +133,7 @@ func (e *Engine) processTransfer(
 ) ([]*types.LedgerMovement, error) {
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc)
+	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
@@ -179,9 +204,15 @@ func (e *Engine) makeFeeTransferForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
+	to string,
 ) *types.Transfer {
+	// no fee for Vested account
+	feeAmount := num.UintZero()
+
 	// first we calculate the fee
-	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+	if !(fromAccountType == types.AccountTypeVestedRewards && from == to) {
+		feeAmount, _ = num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+	}
 
 	switch fromAccountType {
 	case types.AccountTypeGeneral, types.AccountTypeVestedRewards:
@@ -208,9 +239,10 @@ func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
+	to string,
 ) (*types.Transfer, error) {
 	transfer := e.makeFeeTransferForTransferFunds(
-		amount, from, asset, fromAccountType,
+		amount, from, asset, fromAccountType, to,
 	)
 
 	var (

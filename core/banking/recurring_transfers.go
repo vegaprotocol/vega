@@ -87,7 +87,7 @@ func (e *Engine) recurringTransfer(
 		return err
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, transfer.Amount); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
@@ -238,7 +238,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Panic("this should never happen", logging.Error(err))
 		}
 
-		if err = e.ensureMinimalTransferAmount(a, amount); err != nil {
+		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
 				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
@@ -256,7 +256,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
-			if _, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType); err == nil {
+			if _, err = e.ensureFeeForTransferFunds(amount, v.From, v.Asset, v.FromAccountType, v.To); err == nil {
 				// NB: if the metric is market value we're going to transfer the bonus if any directly
 				// to the market account of the asset/reward type - this is similar to previous behaviour and
 				// different to how all other metric based rewards behave. The reason is that we need the context of the funder
