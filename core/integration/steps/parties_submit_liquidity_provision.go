@@ -22,10 +22,10 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
-
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/cucumber/godog"
 )
 

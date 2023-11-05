@@ -20,13 +20,11 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	pbevents "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 type Checkpoint struct {

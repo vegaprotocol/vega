@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/pkg/errors"
 )
 

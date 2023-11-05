@@ -16,9 +16,9 @@
 package steps
 
 import (
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesWithdrawFromStakingAccount(

@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

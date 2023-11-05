@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
-
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/stretchr/testify/assert"

@@ -22,15 +22,14 @@ import (
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 const (

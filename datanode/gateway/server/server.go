@@ -35,15 +35,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rs/cors"
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/rest"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
+	"github.com/rs/cors"
+	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {

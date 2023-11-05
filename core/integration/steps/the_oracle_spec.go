@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/cucumber/godog"
 )
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {

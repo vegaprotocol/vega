@@ -27,6 +27,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"

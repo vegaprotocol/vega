@@ -26,6 +26,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )

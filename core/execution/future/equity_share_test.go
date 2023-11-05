@@ -25,6 +25,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -23,9 +23,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/shopspring/decimal"
-	"google.golang.org/grpc"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -38,6 +35,9 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/shopspring/decimal"
+	"google.golang.org/grpc"
 )
 
 var (

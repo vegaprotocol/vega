@@ -32,15 +32,14 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

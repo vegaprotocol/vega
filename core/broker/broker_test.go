@@ -34,12 +34,12 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/stretchr/testify/require"
-	"go.nanomsg.org/mangos/v3/protocol/pair"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 )
 
 type brokerTst struct {

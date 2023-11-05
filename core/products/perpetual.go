@@ -28,11 +28,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
-
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
 )
 
 var (

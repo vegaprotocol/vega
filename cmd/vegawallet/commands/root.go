@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+
 	"github.com/spf13/cobra"
 )
 

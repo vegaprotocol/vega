@@ -19,8 +19,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/blockexplorer/api"
 	ourGrpc "code.vegaprotocol.io/vega/blockexplorer/api/grpc"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
@@ -28,6 +26,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/net/pipe"
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type BlockExplorer struct {

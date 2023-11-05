@@ -22,6 +22,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/cucumber/godog"
 )
 

@@ -31,10 +31,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type RetentionPeriod string

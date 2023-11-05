@@ -22,6 +22,7 @@ import (
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+
 	"github.com/stretchr/testify/assert"
 )
 

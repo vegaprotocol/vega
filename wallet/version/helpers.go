@@ -24,6 +24,7 @@ import (
 	"time"
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"

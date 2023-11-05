@@ -30,11 +30,11 @@ package sqlsubscribers
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
+
+	"github.com/pkg/errors"
 )
 
 type PartyEvent interface {

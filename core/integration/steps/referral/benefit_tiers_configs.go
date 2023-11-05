@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
 	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jinzhu/copier"
 )

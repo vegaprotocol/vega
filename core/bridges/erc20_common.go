@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"

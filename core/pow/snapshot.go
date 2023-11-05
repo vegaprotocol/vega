@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/protobuf/proto"
 )
 

@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/netparams/checks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-
-	"code.vegaprotocol.io/vega/core/netparams/checks"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 

@@ -23,12 +23,11 @@ import (
 
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/stretchr/testify/assert"
-
-	"code.vegaprotocol.io/vega/core/types"
 )
 
 func TestReceiveEvents(t *testing.T) {

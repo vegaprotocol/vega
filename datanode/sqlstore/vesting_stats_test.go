@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -22,10 +22,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/georgysavva/scany/pgxscan"
-
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 var (

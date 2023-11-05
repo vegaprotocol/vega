@@ -21,11 +21,10 @@ import (
 	"log"
 	"os"
 
-	"google.golang.org/protobuf/reflect/protoreflect"
-
 	"code.vegaprotocol.io/vega/libs/proto"
-
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (

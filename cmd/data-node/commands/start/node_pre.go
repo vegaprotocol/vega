@@ -22,12 +22,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
-	"github.com/cenkalti/backoff"
-	"google.golang.org/grpc"
-	"gopkg.in/natefinch/lumberjack.v2"
-
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
@@ -35,9 +29,14 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/pprof"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
+	"github.com/cenkalti/backoff"
+	"google.golang.org/grpc"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func (l *NodeCommand) persistentPre([]string) (err error) {

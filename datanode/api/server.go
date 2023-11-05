@@ -36,18 +36,15 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/gateway"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
-
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
-	"code.vegaprotocol.io/vega/datanode/ratelimit"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"

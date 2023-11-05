@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

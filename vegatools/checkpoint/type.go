@@ -23,8 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/reflect/protoreflect"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
@@ -33,6 +31,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type all struct {

@@ -21,9 +21,9 @@ import (
 
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFileHelpers(t *testing.T) {

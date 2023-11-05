@@ -32,13 +32,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/pkg/errors"
 )
 
 type fundingPaymentsEvent interface {

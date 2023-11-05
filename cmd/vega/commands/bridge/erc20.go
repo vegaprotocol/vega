@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/jessevdk/go-flags"
 )
 

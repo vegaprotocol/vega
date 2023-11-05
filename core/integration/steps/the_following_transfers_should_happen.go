@@ -18,11 +18,11 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheFollowingTransfersShouldHappen(

@@ -20,11 +20,10 @@ import (
 	"testing"
 	"time"
 
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"

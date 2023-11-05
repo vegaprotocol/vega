@@ -30,10 +30,9 @@ package service
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/libs/slice"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/libs/slice"
 	"code.vegaprotocol.io/vega/logging"
 )
 

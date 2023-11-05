@@ -19,15 +19,15 @@ import (
 	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/datanode/api"
+	"code.vegaprotocol.io/vega/datanode/entities"
+	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"code.vegaprotocol.io/vega/datanode/api"
-	"code.vegaprotocol.io/vega/datanode/entities"
-	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func TestErrorMapUniqueCodes(t *testing.T) {

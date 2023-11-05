@@ -22,13 +22,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+
+	"github.com/cucumber/godog"
 )
 
 type Only string

@@ -17,7 +17,6 @@ package governance_test
 
 import (
 	"context"
-	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"testing"
@@ -44,9 +43,12 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+
+	_ "embed"
 )
 
 //go:embed testcp/checkpoint.cp

@@ -20,18 +20,15 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/admin"
-
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/jessevdk/go-flags"
 	"google.golang.org/grpc"
-
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
-	"code.vegaprotocol.io/vega/datanode/config"
 )
 
 type Cmd struct {

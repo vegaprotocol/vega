@@ -33,6 +33,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

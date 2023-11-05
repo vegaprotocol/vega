@@ -18,10 +18,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/version"
+
+	"github.com/spf13/cobra"
 )
 
 const (

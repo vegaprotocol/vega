@@ -21,14 +21,14 @@ import (
 	"math/big"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/client/eth"
+	"code.vegaprotocol.io/vega/core/client/eth/mocks"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-
-	"code.vegaprotocol.io/vega/core/client/eth"
-	"code.vegaprotocol.io/vega/core/client/eth/mocks"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 )
 
 func TestNullChain(t *testing.T) {

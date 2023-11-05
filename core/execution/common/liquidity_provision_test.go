@@ -21,22 +21,21 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
+	cmocks "code.vegaprotocol.io/vega/core/collateral/mocks"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/fee"
-	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
-	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
-	cmocks "code.vegaprotocol.io/vega/core/collateral/mocks"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	lmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
+	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 type marketLiquidityTest struct {

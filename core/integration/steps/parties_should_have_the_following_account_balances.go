@@ -18,9 +18,9 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesShouldHaveTheFollowingAccountBalances(

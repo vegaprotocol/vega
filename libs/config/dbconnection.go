@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/config/encoding"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 

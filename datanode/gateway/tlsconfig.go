@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"code.vegaprotocol.io/vega/paths"
+
 	"golang.org/x/crypto/acme/autocert"
 )
 

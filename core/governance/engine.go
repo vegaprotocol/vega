@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -34,6 +32,8 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/pkg/errors"
 )
 
 var (

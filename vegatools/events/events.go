@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/broker"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )

@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

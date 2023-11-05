@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+
 	"github.com/mitchellh/mapstructure"
 )
 

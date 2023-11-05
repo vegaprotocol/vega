@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/emirpasic/gods/sets/treeset"
 )
 

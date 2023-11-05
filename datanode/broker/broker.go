@@ -33,10 +33,9 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/broker"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/broker"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 )

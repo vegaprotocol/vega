@@ -29,12 +29,12 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/emirpasic/gods/sets/treeset"
 
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
+	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/golang/protobuf/proto"
 )
 

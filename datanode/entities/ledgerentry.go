@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 )

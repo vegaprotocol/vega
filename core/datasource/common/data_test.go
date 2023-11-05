@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 func TestOracleData(t *testing.T) {

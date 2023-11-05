@@ -16,12 +16,12 @@
 package api
 
 import (
-	"github.com/inhies/go-bytesize"
-
 	"code.vegaprotocol.io/vega/blockexplorer/api/grpc"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/inhies/go-bytesize"
 )
 
 var (

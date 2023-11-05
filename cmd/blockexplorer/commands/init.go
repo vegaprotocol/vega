@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/jessevdk/go-flags"
 )
 

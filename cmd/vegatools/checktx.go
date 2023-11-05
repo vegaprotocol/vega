@@ -18,11 +18,10 @@ package tools
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/vegatools/checktx"
 
 	"github.com/sirupsen/logrus"
-
-	"code.vegaprotocol.io/vega/core/config"
 )
 
 type checkTxCmd struct {

@@ -18,10 +18,10 @@ package steps
 import (
 	"errors"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {

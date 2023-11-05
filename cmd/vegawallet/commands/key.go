@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/spf13/cobra"
 )
 

@@ -21,10 +21,10 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
-	"github.com/jinzhu/copier"
-
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/jinzhu/copier"
 )
 
 var (

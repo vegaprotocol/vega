@@ -23,9 +23,8 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
-	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 )
 
 func (e *Engine) Name() types.CheckpointName {

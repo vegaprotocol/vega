@@ -41,13 +41,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/libs/ptr"
-
-	"code.vegaprotocol.io/vega/protos/vega"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

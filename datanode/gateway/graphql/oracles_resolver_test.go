@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {

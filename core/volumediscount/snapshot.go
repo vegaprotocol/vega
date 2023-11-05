@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/slices"
 )
 

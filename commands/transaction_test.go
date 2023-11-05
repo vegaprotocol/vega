@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"

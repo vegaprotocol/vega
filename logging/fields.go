@@ -22,8 +22,8 @@ import (
 
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 )
 

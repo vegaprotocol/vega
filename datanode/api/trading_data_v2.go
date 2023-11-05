@@ -29,12 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -44,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -56,7 +51,9 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )

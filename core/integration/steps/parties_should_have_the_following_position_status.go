@@ -18,10 +18,10 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesShouldHaveTheFollowingPositionStatus(

@@ -22,12 +22,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jessevdk/go-flags"
-	"go.uber.org/zap"
-
 	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
+	"go.uber.org/zap"
 )
 
 type Start struct {

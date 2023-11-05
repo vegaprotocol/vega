@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

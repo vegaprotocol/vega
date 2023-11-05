@@ -21,8 +21,6 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -39,6 +37,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(

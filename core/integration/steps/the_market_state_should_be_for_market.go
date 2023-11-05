@@ -24,6 +24,7 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/cucumber/godog"
 )
 

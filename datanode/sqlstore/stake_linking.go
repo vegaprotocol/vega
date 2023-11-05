@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/shopspring/decimal"
 )

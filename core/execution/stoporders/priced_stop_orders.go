@@ -21,9 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"golang.org/x/exp/slices"
 
 	"github.com/google/btree"
+	"golang.org/x/exp/slices"
 )
 
 type ordersAtPrice struct {

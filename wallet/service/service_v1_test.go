@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

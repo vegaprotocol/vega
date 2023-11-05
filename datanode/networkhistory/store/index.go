@@ -24,12 +24,11 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
-
-	"code.vegaprotocol.io/vega/logging"
 )
 
 var ErrIndexEntryNotFound = errors.New("index entry not found")

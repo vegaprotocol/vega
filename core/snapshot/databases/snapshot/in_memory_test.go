@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

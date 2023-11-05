@@ -19,7 +19,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
-
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 

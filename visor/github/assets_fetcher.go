@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/visor/utils"
+
 	"github.com/google/go-github/v50/github"
 	"golang.org/x/sync/errgroup"
 )

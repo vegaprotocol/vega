@@ -32,13 +32,13 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (

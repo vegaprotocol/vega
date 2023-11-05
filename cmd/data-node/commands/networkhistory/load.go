@@ -23,22 +23,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	vgterm "code.vegaprotocol.io/vega/libs/term"
-
-	"go.uber.org/zap"
-
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
-	"code.vegaprotocol.io/vega/datanode/config"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"go.uber.org/zap"
 )
 
 type loadCmd struct {

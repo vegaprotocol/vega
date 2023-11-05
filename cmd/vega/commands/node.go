@@ -21,10 +21,9 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"code.vegaprotocol.io/vega/libs/memory"
-
 	"code.vegaprotocol.io/vega/cmd/vega/commands/node"
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/libs/memory"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 

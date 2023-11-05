@@ -32,11 +32,11 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 )
 

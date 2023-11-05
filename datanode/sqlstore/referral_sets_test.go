@@ -24,21 +24,17 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-
-	"golang.org/x/exp/slices"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"golang.org/x/exp/slices"
 )
 
 func setupReferralSetsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, *sqlstore.ReferralSets) {

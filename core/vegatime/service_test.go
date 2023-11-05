@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/broker/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/didip/tollbooth/v7"
 	"github.com/didip/tollbooth/v7/limiter"
 	"go.uber.org/zap"

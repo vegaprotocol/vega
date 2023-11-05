@@ -21,10 +21,9 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
-
-	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"

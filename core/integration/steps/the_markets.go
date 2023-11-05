@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
@@ -30,6 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheMarketsUpdated(

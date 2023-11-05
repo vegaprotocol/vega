@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
