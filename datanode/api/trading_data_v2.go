@@ -29,16 +29,7 @@ import (
 	"strings"
 	"time"
 
-<<<<<<< HEAD
-=======
-	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/core/events"
->>>>>>> f7ef6a543 (feat: add transaction result subscription)
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
