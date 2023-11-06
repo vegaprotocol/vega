@@ -29,7 +29,7 @@ type ProposalTermsUpdateNetworkParameter struct {
 func (a ProposalTermsUpdateNetworkParameter) String() string {
 	return fmt.Sprintf(
 		"updateNetworkParameter(%s)",
-		stringer.ReflectPointerToString(a.UpdateNetworkParameter),
+		stringer.PtrToString(a.UpdateNetworkParameter),
 	)
 }
 
@@ -88,7 +88,7 @@ func (n UpdateNetworkParameter) IntoProto() *vegapb.UpdateNetworkParameter {
 func (n UpdateNetworkParameter) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 

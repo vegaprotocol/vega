@@ -195,11 +195,11 @@ func (o Order) String() string {
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
-		stringer.UintPointerToString(o.OriginalPrice),
-		stringer.ReflectPointerToString(o.PeggedOrder),
+		stringer.PtrToString(o.OriginalPrice),
+		stringer.PtrToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
-		stringer.ReflectPointerToString(o.IcebergOrder),
+		stringer.PtrToString(o.IcebergOrder),
 	)
 }
 
@@ -534,7 +534,7 @@ func (p PeggedOrder) String() string {
 	return fmt.Sprintf(
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
-		stringer.UintPointerToString(p.Offset),
+		stringer.PtrToString(p.Offset),
 	)
 }
 
@@ -672,8 +672,8 @@ func (t Trade) String() string {
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,
 		t.MarketID,
-		stringer.UintPointerToString(t.Price),
-		stringer.UintPointerToString(t.MarketPrice),
+		stringer.PtrToString(t.Price),
+		stringer.PtrToString(t.MarketPrice),
 		t.Size,
 		t.Buyer,
 		t.Seller,
@@ -684,8 +684,8 @@ func (t Trade) String() string {
 		t.Type.String(),
 		t.BuyerAuctionBatch,
 		t.SellerAuctionBatch,
-		stringer.ReflectPointerToString(t.SellerFee),
-		stringer.ReflectPointerToString(t.BuyerFee),
+		stringer.PtrToString(t.SellerFee),
+		stringer.PtrToString(t.BuyerFee),
 	)
 }
 

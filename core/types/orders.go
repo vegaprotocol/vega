@@ -146,9 +146,9 @@ func (o OrderAmendment) String() string {
 		o.SizeDelta,
 		o.TimeInForce.String(),
 		o.PeggedReference.String(),
-		stringer.UintPointerToString(o.Price),
-		stringer.Int64PointerToString(o.ExpiresAt),
-		stringer.UintPointerToString(o.PeggedOffset),
+		stringer.PtrToString(o.Price),
+		stringer.PtrToString(o.ExpiresAt),
+		stringer.PtrToString(o.PeggedOffset),
 	)
 }
 

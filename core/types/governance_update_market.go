@@ -32,7 +32,7 @@ type ProposalTermsUpdateMarket struct {
 func (a ProposalTermsUpdateMarket) String() string {
 	return fmt.Sprintf(
 		"updateMarket(%s)",
-		stringer.ReflectPointerToString(a.UpdateMarket),
+		stringer.PtrToString(a.UpdateMarket),
 	)
 }
 
@@ -91,7 +91,7 @@ func (n UpdateMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -137,11 +137,11 @@ type UpdateMarketConfiguration struct {
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
-		stringer.ReflectPointerToString(n.Instrument),
+		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.LiquidityMonitoringParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.LiquidityMonitoringParameters),
+		stringer.ObjToString(n.RiskParameters),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 	)
@@ -311,7 +311,7 @@ func (i UpdateInstrumentConfiguration) String() string {
 	return fmt.Sprintf(
 		"code(%s) product(%s)",
 		i.Code,
-		stringer.ReflectPointerToString(i.Product),
+		stringer.ObjToString(i.Product),
 	)
 }
 
@@ -344,7 +344,7 @@ func (i UpdateInstrumentConfigurationFuture) DeepClone() updateInstrumentConfigu
 func (i UpdateInstrumentConfigurationFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		stringer.ReflectPointerToString(i.Future),
+		stringer.PtrToString(i.Future),
 	)
 }
 
@@ -376,7 +376,7 @@ func (i UpdateInstrumentConfigurationPerps) DeepClone() updateInstrumentConfigur
 func (i UpdateInstrumentConfigurationPerps) String() string {
 	return fmt.Sprintf(
 		"perps(%s)",
-		stringer.ReflectPointerToString(i.Perps),
+		stringer.PtrToString(i.Perps),
 	)
 }
 
@@ -479,9 +479,9 @@ func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
 		"quoteName(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
-		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
-		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ObjToString(f.DataSourceSpecForSettlementData),
+		stringer.ObjToString(f.DataSourceSpecForTradingTermination),
+		stringer.PtrToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -532,9 +532,9 @@ func (p UpdatePerpsProduct) String() string {
 		p.InterestRate.String(),
 		p.ClampLowerBound.String(),
 		p.ClampUpperBound.String(),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
-		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+		stringer.ObjToString(p.DataSourceSpecForSettlementData),
+		stringer.ObjToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.PtrToString(p.DataSourceSpecBinding),
 	)
 }
 
@@ -545,7 +545,7 @@ type UpdateMarketConfigurationSimple struct {
 func (n UpdateMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -581,7 +581,7 @@ type UpdateMarketConfigurationLogNormal struct {
 func (n UpdateMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 

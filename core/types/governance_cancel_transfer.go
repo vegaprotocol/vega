@@ -29,7 +29,7 @@ type ProposalTermsCancelTransfer struct {
 func (a ProposalTermsCancelTransfer) String() string {
 	return fmt.Sprintf(
 		"cancelTransfer(%s)",
-		stringer.ReflectPointerToString(a.CancelTransfer),
+		stringer.PtrToString(a.CancelTransfer),
 	)
 }
 
@@ -90,7 +90,7 @@ func (c CancelTransfer) IntoProto() *vegapb.CancelTransfer {
 func (c CancelTransfer) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(c.Changes),
+		stringer.PtrToString(c.Changes),
 	)
 }
 

@@ -16,33 +16,26 @@
 package stringer
 
 import (
+	"fmt"
 	"reflect"
-	"strconv"
-
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 type Stringer interface {
 	String() string
 }
 
-func ReflectPointerToString(obj Stringer) string {
-	if obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil() {
+func ObjToString(v Stringer) string {
+	if v == nil || reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil() {
 		return "nil"
 	}
-	return obj.String()
+
+	return v.String()
 }
 
-func UintPointerToString(obj *num.Uint) string {
-	if obj == nil {
+func PtrToString[T any](v *T) string {
+	if v == nil {
 		return "nil"
 	}
-	return obj.String()
-}
 
-func Int64PointerToString(n *int64) string {
-	if n == nil {
-		return "nil"
-	}
-	return strconv.FormatInt(*n, 10)
+	return fmt.Sprintf("%v", *v)
 }

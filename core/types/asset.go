@@ -127,7 +127,7 @@ func (a AssetDetails) String() string {
 		a.Symbol,
 		a.Quantum.String(),
 		a.Decimals,
-		stringer.ReflectPointerToString(a.Source),
+		stringer.ObjToString(a.Source),
 	)
 }
 
@@ -229,7 +229,7 @@ type AssetDetailsBuiltinAsset struct {
 func (a AssetDetailsBuiltinAsset) String() string {
 	return fmt.Sprintf(
 		"builtinAsset(%s)",
-		stringer.ReflectPointerToString(a.BuiltinAsset),
+		stringer.PtrToString(a.BuiltinAsset),
 	)
 }
 
@@ -287,7 +287,7 @@ type BuiltinAsset struct {
 func (a BuiltinAsset) String() string {
 	return fmt.Sprintf(
 		"maxFaucetAmountMint(%s)",
-		stringer.UintPointerToString(a.MaxFaucetAmountMint),
+		stringer.PtrToString(a.MaxFaucetAmountMint),
 	)
 }
 
@@ -298,7 +298,7 @@ type AssetDetailsErc20 struct {
 func (a AssetDetailsErc20) String() string {
 	return fmt.Sprintf(
 		"erc20(%s)",
-		stringer.ReflectPointerToString(a.ERC20),
+		stringer.PtrToString(a.ERC20),
 	)
 }
 
@@ -403,7 +403,7 @@ func (e ERC20) String() string {
 	return fmt.Sprintf(
 		"contractAddress(%s) lifetimeLimit(%s) withdrawThreshold(%s)",
 		e.ContractAddress,
-		stringer.UintPointerToString(e.LifetimeLimit),
-		stringer.UintPointerToString(e.WithdrawThreshold),
+		stringer.PtrToString(e.LifetimeLimit),
+		stringer.PtrToString(e.WithdrawThreshold),
 	)
 }

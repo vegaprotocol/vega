@@ -31,7 +31,7 @@ type ProposalTermsUpdateVolumeDiscountProgram struct {
 func (a ProposalTermsUpdateVolumeDiscountProgram) String() string {
 	return fmt.Sprintf(
 		"updateVolumeDiscountProgram(%s)",
-		stringer.ReflectPointerToString(a.UpdateVolumeDiscountProgram),
+		stringer.PtrToString(a.UpdateVolumeDiscountProgram),
 	)
 }
 
@@ -79,7 +79,7 @@ func (p UpdateVolumeDiscountProgram) IntoProto() *vegapb.UpdateVolumeDiscountPro
 func (p UpdateVolumeDiscountProgram) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(p.Changes),
+		stringer.PtrToString(p.Changes),
 	)
 }
 
