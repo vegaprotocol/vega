@@ -1880,3 +1880,19 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 	e.successorWindow = window
 	return nil
 }
+
+func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	if _, ok := e.futureMarkets[marketID]; !ok {
+		return types.ErrInvalidMarketID
+	}
+	market := e.futureMarkets[marketID]
+	if marginMode == types.MarginModeIsolatedMargin {
+		riskFactors := market.GetRiskFactors()
+		rf := num.MaxD(riskFactors.Long, riskFactors.Short)
+		if marginFactor.LessThanOrEqual(rf) {
+			return fmt.Errorf("Margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
+		}
+	}
+
+	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}

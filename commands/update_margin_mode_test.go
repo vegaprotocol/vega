@@ -1,0 +1,154 @@
+package commands_test
+
+import (
+	"errors"
+	"fmt"
+	"testing"
+
+	"code.vegaprotocol.io/vega/commands"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestUpdateMarginMode(t *testing.T) {
+	positiveMarginFactor := "123"
+	invalidNumderMarginFactor := "banana"
+	invalidDecimalMarginFactor := "1.2.3"
+	negativeMarginFactor := "-0.2"
+	zeroMarginFactor := "0"
+	largeMarginFactor101 := "1.01"
+	validMarginFactor1 := "1"
+	validMarginFactorHalf := "0.5"
+
+	txs := []struct {
+		name    string
+		cmd     *commandspb.UpdateMarginMode
+		errName string
+		err     error
+	}{
+		{
+			"cmd is nil",
+			nil,
+			"update_margin_mode",
+			commands.ErrIsRequired,
+		},
+		{
+			"unspecified mode",
+			&commandspb.UpdateMarginMode{
+				Mode: commandspb.UpdateMarginMode_MODE_CROSS_UNSPECIFIED,
+			},
+			"update_margin_mode.margin_mode",
+			commands.ErrIsNotValid,
+		},
+		{
+			"isolated margin mode without margin factor",
+			&commandspb.UpdateMarginMode{
+				Mode: commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+			},
+			"update_margin_mode.margin_factor",
+			fmt.Errorf("margin factor must be defined when margin mode is isolated margin"),
+		},
+		{
+			"cross margin mode with margin factor",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_CROSS_MARGIN,
+				MarginFactor: &positiveMarginFactor,
+			},
+			"update_margin_mode.margin_factor",
+			fmt.Errorf("margin factor must not be defined when margin mode is cross margin"),
+		},
+		{
+			"cross margin mode with invalid number as margin factor 1",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &invalidNumderMarginFactor,
+			},
+			"update_margin_mode.margin_factor",
+			commands.ErrIsNotValidNumber,
+		},
+		{
+			"cross margin mode with invalid number as margin factor 2",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &invalidDecimalMarginFactor,
+			},
+			"update_margin_mode.margin_factor",
+			commands.ErrIsNotValidNumber,
+		},
+		{
+			"cross margin mode with negative number as margin factor",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &negativeMarginFactor,
+			},
+			"update_margin_mode.margin_factor",
+			commands.ErrMustBeBetween01,
+		},
+		{
+			"cross margin mode with 0 as margin factor",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &zeroMarginFactor,
+			},
+			"update_margin_mode.margin_factor",
+			commands.ErrMustBeBetween01,
+		},
+		{
+			"cross margin mode with >1 as margin factor",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &largeMarginFactor101,
+			},
+			"update_margin_mode.margin_factor",
+			commands.ErrMustBeBetween01,
+		},
+		{
+			"cross margin mode with missing market id",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarginFactor: &validMarginFactor1,
+			},
+			"update_margin_mode.market_id",
+			commands.ErrIsRequired,
+		},
+		{
+			"valid cross margin update",
+			&commandspb.UpdateMarginMode{
+				Mode:     commandspb.UpdateMarginMode_MODE_CROSS_MARGIN,
+				MarketId: "123",
+			},
+			"",
+			nil,
+		},
+		{
+			"valid isolated margin update",
+			&commandspb.UpdateMarginMode{
+				Mode:         commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+				MarketId:     "123",
+				MarginFactor: &validMarginFactorHalf,
+			},
+			"",
+			nil,
+		},
+	}
+
+	for _, v := range txs {
+		err := checkUpdateMarginMode(t, v.cmd)
+		if v.err == nil {
+			require.Empty(t, len(err))
+		} else {
+			require.Contains(t, err.Get(v.errName), v.err, v.name)
+		}
+	}
+}
+
+func checkUpdateMarginMode(t *testing.T, cmd *commandspb.UpdateMarginMode) commands.Errors {
+	t.Helper()
+	err := commands.CheckUpdateMarginMode(cmd)
+	var e commands.Errors
+	if ok := errors.As(err, &e); !ok {
+		return commands.NewErrors()
+	}
+	return e
+}

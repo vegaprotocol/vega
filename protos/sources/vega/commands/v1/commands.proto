@@ -106,6 +106,23 @@ message IcebergOpts {
   uint64 minimum_visible_size = 2;
 }
 
+message UpdateMarginMode {
+  enum Mode {
+    // Never valid.
+    MODE_CROSS_UNSPECIFIED = 0;
+    // Cross margin mode - margin is dynamically acquired and released as a position is marked to market
+    MODE_CROSS_MARGIN = 1;
+    // Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
+    MODE_ISOLATED_MARGIN = 2;
+  }
+  // Market to change margin mode for.
+  string market_id = 1;
+  // Margin mode to use.
+  Mode mode = 2;
+  // Margin factor to use for margin in isolated mode. It is a multiplier that defines how much margin needs to be set aside
+  optional string margin_factor = 3;
+}
+
 // A command that instructs the network to cancel orders, active or partially filled, that were previously submitted by the sender of this transaction.
 // It is not possible to cancel another party's order with this command.
 message OrderCancellation {

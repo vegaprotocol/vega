@@ -264,6 +264,10 @@ const (
 	//
 	// Margin account funds will alter as margin requirements on positions change.
 	AccountTypeMargin AccountType = proto.AccountType_ACCOUNT_TYPE_MARGIN
+
+	// Margin account for isolated margin mode.
+	AccountTypeOrderMargin AccountType = proto.AccountType_ACCOUNT_TYPE_ORDER_MARGIN
+
 	// General accounts contains general funds for a party. A party will
 	// have multiple general accounts, one for each asset they want
 	// to trade with

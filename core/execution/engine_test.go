@@ -18,11 +18,13 @@ package execution_test
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -121,4 +123,25 @@ func TestMarketSuccession(t *testing.T) {
 	require.NoError(t, err)
 	exec.OnTick(ctx, time.Now())
 	require.True(t, seen)
+}
+
+func TestUpdateMarginUpdate(t *testing.T) {
+	engine, ctrl := createEngine(t)
+	defer ctrl.Finish()
+
+	require.Equal(t, types.ErrInvalidMarketID, engine.UpdateMarginMode(context.Background(), "zohar", "unknown", types.MarginModeIsolatedMargin, num.DecimalOne()))
+
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
+			Key: "0xDEADBEEF",
+		},
+	}
+	mkt := newMarket("market-id", pubKey)
+	require.NoError(t, engine.SubmitMarket(context.Background(), mkt, "zohar", time.Now()))
+
+	// rfShort, rfLong = 1
+	require.Equal(t, "Margin factor (0.5) must be greater than max(riskFactorLong (1), riskFactorShort (1))", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(0.5)).Error())
+
+	// all good, just not supported yet
+	require.Error(t, errors.New("Unsupported"), engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(1)))
 }

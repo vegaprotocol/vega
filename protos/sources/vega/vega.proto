@@ -851,6 +851,9 @@ enum AccountType {
   // Per asset account for pending fee referral reward payouts
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD = 28;
 
+  // Per asset market account for party in isolated margin mode
+  ACCOUNT_TYPE_ORDER_MARGIN = 29;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -1773,4 +1776,13 @@ message ActivityStreakBenefitTier {
   string reward_multiplier = 2;
   // Vesting bonus applicable to this tier.
   string vesting_multiplier = 3;
+}
+
+enum MarginMode {
+  // Never valid.
+  MARGIN_MODE_UNSPECIFIED = 0;
+  // Cross margin mode - margin is dynamically acquired and released as a position is marked to market
+  MARGIN_MODE_CROSS_MARGIN = 1;
+  // Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
+  MARGIN_MODE_ISOLATED_MARGIN = 2;
 }

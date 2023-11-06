@@ -453,3 +453,11 @@ func (s SimpleModelParams) DeepClone() *SimpleModelParams {
 		ProbabilityOfTrading: s.ProbabilityOfTrading,
 	}
 }
+
+type MarginMode = proto.MarginMode
+
+const (
+	MarginModeUnspecified    MarginMode = proto.MarginMode_MARGIN_MODE_UNSPECIFIED
+	MarginModeCrossMargin    MarginMode = proto.MarginMode_MARGIN_MODE_CROSS_MARGIN
+	MarginModeIsolatedMargin MarginMode = proto.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
+)
