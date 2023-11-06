@@ -23,6 +23,7 @@ cleanup
 Cleanup
 clef
 codegen
+cometbft
 config
 cyclomatic
 dApp

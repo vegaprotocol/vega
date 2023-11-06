@@ -25,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/cometbft/cometbft/crypto/tmhash"
 )
 
 type Tx struct {
@@ -141,6 +141,10 @@ func (t Tx) Command() txn.Command {
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
+}
+
+func (t Tx) GetLength() int {
+	return len(t.originalTx)
 }
 
 func (t Tx) GetNonce() uint64 {

@@ -88,7 +88,6 @@ type PayloadProofOfWork struct {
 	HeightToTx       map[uint64][]string
 	HeightToTid      map[uint64][]string
 	HeightToNonceRef map[uint64][]*snapshot.NonceRef
-	BannedParties    map[string]int64
 	ActiveParams     []*snapshot.ProofOfWorkParams
 	ActiveStates     []*snapshot.ProofOfWorkState
 	LastPruningBlock uint64
@@ -3790,11 +3789,6 @@ type PartyCount struct {
 	Count uint64
 }
 
-type BannedParty struct {
-	Party string
-	Until int64
-}
-
 type BlockRejectStats struct {
 	Total    uint64
 	Rejected uint64
@@ -3811,18 +3805,15 @@ type PayloadSimpleSpamPolicy struct {
 type SimpleSpamPolicy struct {
 	PolicyName      string
 	PartyToCount    []*PartyCount
-	BannedParty     []*BannedParty
 	CurrentEpochSeq uint64
 }
 
 type VoteSpamPolicy struct {
 	PartyProposalVoteCount  []*PartyProposalVoteCount
-	BannedParty             []*BannedParty
 	RecentBlocksRejectStats []*BlockRejectStats
 	CurrentBlockIndex       uint64
 	LastIncreaseBlock       uint64
 	CurrentEpochSeq         uint64
-	MinVotingTokensFactor   *num.Uint
 }
 
 func PayloadSimpleSpamPolicyFromProto(ssp *snapshot.Payload_SimpleSpamPolicy) *PayloadSimpleSpamPolicy {
@@ -3843,15 +3834,9 @@ func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy
 		partyCount = append(partyCount, PartyCountFromProto(ptv))
 	}
 
-	bannedParties := make([]*BannedParty, 0, len(ssp.BannedParties))
-	for _, ban := range ssp.BannedParties {
-		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
-	}
-
 	return &SimpleSpamPolicy{
 		PolicyName:      ssp.PolicyName,
 		PartyToCount:    partyCount,
-		BannedParty:     bannedParties,
 		CurrentEpochSeq: ssp.CurrentEpochSeq,
 	}
 }
@@ -3862,26 +3847,17 @@ func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
 		partyProposalVoteCount = append(partyProposalVoteCount, PartyProposalVoteCountFromProto(ptv))
 	}
 
-	bannedParties := make([]*BannedParty, 0, len(vsp.BannedParties))
-	for _, ban := range vsp.BannedParties {
-		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
-	}
-
 	recentBlocksRejectStats := make([]*BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
 	for _, rejects := range vsp.RecentBlocksRejectStats {
 		recentBlocksRejectStats = append(recentBlocksRejectStats, BlockRejectStatsFromProto(rejects))
 	}
 
-	minTokensFactor, _ := num.UintFromString(vsp.MinVotingTokensFactor, 10)
-
 	return &VoteSpamPolicy{
 		PartyProposalVoteCount:  partyProposalVoteCount,
-		BannedParty:             bannedParties,
 		RecentBlocksRejectStats: recentBlocksRejectStats,
 		LastIncreaseBlock:       vsp.LastIncreaseBlock,
 		CurrentBlockIndex:       vsp.CurrentBlockIndex,
 		CurrentEpochSeq:         vsp.CurrentEpochSeq,
-		MinVotingTokensFactor:   minTokensFactor,
 	}
 }
 
@@ -3904,13 +3880,6 @@ func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyToken
 	return &PartyTokenBalance{
 		Party:   balance.Party,
 		Balance: b,
-	}
-}
-
-func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
-	return &BannedParty{
-		Party: ban.Party,
-		Until: ban.Until,
 	}
 }
 
@@ -3937,13 +3906,6 @@ func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
 	}
 }
 
-func (b *BannedParty) IntoProto() *snapshot.BannedParty {
-	return &snapshot.BannedParty{
-		Party: b.Party,
-		Until: b.Until,
-	}
-}
-
 func (ptc *PartyTokenBalance) IntoProto() *snapshot.PartyTokenBalance {
 	return &snapshot.PartyTokenBalance{
 		Party:   ptc.Party,
@@ -3957,15 +3919,9 @@ func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
 		partyToCount = append(partyToCount, &snapshot.SpamPartyTransactionCount{Party: pc.Party, Count: pc.Count})
 	}
 
-	bannedParties := make([]*snapshot.BannedParty, 0, len(ssp.BannedParty))
-	for _, ban := range ssp.BannedParty {
-		bannedParties = append(bannedParties, ban.IntoProto())
-	}
-
 	return &snapshot.SimpleSpamPolicy{
 		PolicyName:      ssp.PolicyName,
 		PartyToCount:    partyToCount,
-		BannedParties:   bannedParties,
 		CurrentEpochSeq: ssp.CurrentEpochSeq,
 	}
 }
@@ -3976,23 +3932,16 @@ func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
 		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
 	}
 
-	bannedParties := make([]*snapshot.BannedParty, 0, len(vsp.BannedParty))
-	for _, ban := range vsp.BannedParty {
-		bannedParties = append(bannedParties, ban.IntoProto())
-	}
-
 	recentBlocksRejectStats := make([]*snapshot.BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
 	for _, rejects := range vsp.RecentBlocksRejectStats {
 		recentBlocksRejectStats = append(recentBlocksRejectStats, rejects.IntoProto())
 	}
 	return &snapshot.VoteSpamPolicy{
 		PartyToVote:             partyProposalVoteCount,
-		BannedParties:           bannedParties,
 		RecentBlocksRejectStats: recentBlocksRejectStats,
 		LastIncreaseBlock:       vsp.LastIncreaseBlock,
 		CurrentBlockIndex:       vsp.CurrentBlockIndex,
 		CurrentEpochSeq:         vsp.CurrentEpochSeq,
-		MinVotingTokensFactor:   vsp.MinVotingTokensFactor.String(),
 	}
 }
 
@@ -4694,7 +4643,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	pow := &PayloadProofOfWork{
 		BlockHeight:      s.ProofOfWork.BlockHeight,
 		BlockHash:        s.ProofOfWork.BlockHash,
-		BannedParties:    make(map[string]int64, len(s.ProofOfWork.Banned)),
 		HeightToTx:       make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:      make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
 		HeightToNonceRef: make(map[uint64][]*snapshot.NonceRef, len(s.ProofOfWork.NonceRefsAtHeight)),
@@ -4703,9 +4651,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 		LastPruningBlock: s.ProofOfWork.LastPruningBlock,
 	}
 
-	for _, bp := range s.ProofOfWork.Banned {
-		pow.BannedParties[bp.Party] = bp.Until
-	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
 	}
@@ -4719,12 +4664,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
-	for k, v := range p.BannedParties {
-		banned = append(banned, &snapshot.BannedParty{Party: k, Until: v})
-	}
-	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
-
 	txAtHeight := make([]*snapshot.TransactionsAtHeight, 0, len(p.HeightToTx))
 	for k, v := range p.HeightToTx {
 		txAtHeight = append(txAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
@@ -4746,7 +4685,6 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 		ProofOfWork: &snapshot.ProofOfWork{
 			BlockHeight:       p.BlockHeight,
 			BlockHash:         p.BlockHash,
-			Banned:            banned,
 			TxAtHeight:        txAtHeight,
 			TidAtHeight:       tidAtHeight,
 			PowParams:         p.ActiveParams,

@@ -24,8 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	cometbftdb "github.com/cometbft/cometbft-db"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 const metaDBName = "snapshot_meta"

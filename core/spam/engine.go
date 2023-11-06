@@ -18,9 +18,7 @@ package spam
 import (
 	"context"
 	"encoding/hex"
-	"strconv"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -29,18 +27,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-)
-
-var (
-	increaseFactor             = num.NewUint(2)
-	banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
-	banFactor                  = num.DecimalFromFloat(0.5)
-	rejectRatioForIncrease     = num.DecimalFromFloat(0.3)
-)
-
-const (
-	numberOfBlocksForIncreaseCheck uint64 = 10
-	minBanDuration                        = time.Second * 30 // minimum ban duration
 )
 
 type StakingAccounts interface {
@@ -61,16 +47,15 @@ type Engine struct {
 	currentEpoch            *types.Epoch
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
-	banDuration             time.Duration
-
-	noSpamProtection bool // flag that disables chesk for the spam policies, that is useful for the nullchain
+	noSpamProtection        bool // flag that disables chesk for the spam policies, that is useful for the nullchain
 }
 
 type Policy interface {
 	Reset(epoch types.Epoch)
-	EndOfBlock(blockHeight uint64, now time.Time, banDuration time.Duration)
-	PreBlockAccept(tx abci.Tx) (bool, error)
-	PostBlockAccept(tx abci.Tx) (bool, error)
+	UpdateTx(tx abci.Tx)
+	RollbackProposal()
+	CheckBlockTx(abci.Tx) error
+	PreBlockAccept(tx abci.Tx) error
 	UpdateUintParam(name string, value *num.Uint) error
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
@@ -127,10 +112,10 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		delegationPolicy.policyName:        delegationPolicy,
 		transferPolicy.policyName:          transferPolicy,
 		issuesSignaturesPolicy.policyName:  issuesSignaturesPolicy,
+		voteKey:                            votePolicy,
 		createReferralSetPolicy.policyName: createReferralSetPolicy,
 		updateReferralSetPolicy.policyName: updateReferralSetPolicy,
 		applyReferralCodePolicy.policyName: applyReferralCodePolicy,
-		voteKey:                            votePolicy,
 	}
 	e.hashKeys = []string{
 		proposalPolicy.policyName,
@@ -166,18 +151,6 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 func (e *Engine) DisableSpamProtection() {
 	e.log.Infof("Disabling spam protection for the Spam Engine")
 	e.noSpamProtection = true
-}
-
-// OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
-func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
-	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
-	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
-	if epochImpliedDurationDuration < minBanDuration {
-		e.banDuration = minBanDuration
-	} else {
-		e.banDuration = epochImpliedDurationDuration
-	}
-	return nil
 }
 
 // OnCreateReferralSet is called when the net param for max create referral set per epoch has changed.
@@ -275,66 +248,76 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	}
 }
 
-// EndOfBlock is called when the block is finished.
-func (e *Engine) EndOfBlock(blockHeight uint64, now time.Time) {
-	if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
+func (e *Engine) BeginBlock(txs []abci.Tx) {
+	for _, tx := range txs {
+		if _, ok := e.transactionTypeToPolicy[tx.Command()]; !ok {
+			continue
+		}
+		e.transactionTypeToPolicy[tx.Command()].UpdateTx(tx)
 	}
+}
 
-	if e.noSpamProtection {
-		e.log.Info("Spam protection EndOfBlock disabled", logging.Uint64("blockHeight", blockHeight))
-		return
-	}
-
+func (e *Engine) EndPrepareProposal() {
 	for _, policy := range e.transactionTypeToPolicy {
-		policy.EndOfBlock(blockHeight, now, e.banDuration)
+		policy.RollbackProposal()
 	}
 }
 
 // PreBlockAccept is called from onCheckTx before a tx is added to mempool
 // returns false is rejected by spam engine with a corresponding error.
-func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
+func (e *Engine) PreBlockAccept(tx abci.Tx) error {
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
-		return true, nil
+		return nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
-
 	if e.noSpamProtection {
 		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
-		return true, nil
+		return nil
 	}
-
 	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
+}
+
+func (e *Engine) ProcessProposal(txs []abci.Tx) bool {
+	success := true
+	for _, tx := range txs {
+		command := tx.Command()
+		if _, ok := e.transactionTypeToPolicy[command]; !ok {
+			continue
+		}
+		if e.noSpamProtection {
+			e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+			continue
+		}
+
+		if err := e.transactionTypeToPolicy[command].CheckBlockTx(tx); err != nil {
+			success = false
+		}
+	}
+	for _, p := range e.transactionTypeToPolicy {
+		p.RollbackProposal()
+	}
+	return success
 }
 
 // PostBlockAccept is called from onDeliverTx before the block is processed
 // returns false is rejected by spam engine with a corresponding error.
-func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
+func (e *Engine) CheckBlockTx(tx abci.Tx) error {
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
-		return true, nil
+		return nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
 
 	if e.noSpamProtection {
-		e.log.Debug("Spam protection PostBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
-		return true, nil
-	}
-
-	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
-}
-
-func parseBannedUntil(until int64) *string {
-	if until == 0 {
+		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 		return nil
 	}
-	t := strconv.FormatInt(until, 10)
-	return &t
+	return e.transactionTypeToPolicy[command].CheckBlockTx(tx)
 }
 
 func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {

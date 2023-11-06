@@ -28,10 +28,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type testCommander struct {
