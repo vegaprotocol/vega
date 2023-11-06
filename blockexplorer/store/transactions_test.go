@@ -33,10 +33,10 @@ import (
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 
 	"github.com/cenkalti/backoff"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmTypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (

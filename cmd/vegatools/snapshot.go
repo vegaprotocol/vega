@@ -24,10 +24,9 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/vegatools/snapshotdb"
 
+	tmconfig "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/store"
 	"github.com/spf13/viper"
-	tmconfig "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/store"
 )
 
 type snapshotCmd struct {
@@ -46,7 +45,7 @@ func getLastProcessedBlock(homeDir string) (int64, error) {
 	conf.SetRoot(homeDir)
 
 	// lets get the last processed block from tendermint
-	blockStoreDB, err := node.DefaultDBProvider(&node.DBContext{ID: "blockstore", Config: conf})
+	blockStoreDB, err := tmconfig.DefaultDBProvider(&tmconfig.DBContext{ID: "blockstore", Config: conf})
 	if err != nil {
 		return 0, err
 	}

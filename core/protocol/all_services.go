@@ -378,11 +378,10 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
 		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
-		svcs.teamsEngine)
+		svcs.teamsEngine, svcs.spam)
 
-	svcs.snapshotEngine.AddProviders(svcs.spam)
+	pow := pow.New(svcs.log, svcs.conf.PoW)
 
-	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
@@ -408,10 +407,6 @@ func newServices(
 		{
 			Param:   netparams.SpamPoWNumberOfTxPerBlock,
 			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-		},
-		{
-			Param:   netparams.ValidatorsEpochLength,
-			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
 
@@ -497,10 +492,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	spamWatchers := []netparams.WatchParam{}
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: svcs.spam.OnEpochDurationChanged,
-			},
 			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,

@@ -24,7 +24,7 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	"code.vegaprotocol.io/vega/version"
 
-	tmversion "github.com/tendermint/tendermint/version"
+	tmversion "github.com/cometbft/cometbft/version"
 )
 
 // Stats ties together all other package level application stats types.

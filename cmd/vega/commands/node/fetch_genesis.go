@@ -24,7 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/genesis"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 func genesisDocHTTPFromURL(genesisFilePath string) (*tmtypes.GenesisDoc, error) {

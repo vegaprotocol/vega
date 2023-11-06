@@ -25,7 +25,7 @@ import (
 func VegaContext(chainId string, blockHeight int64) context.Context {
 	return vgcontext.WithChainID(
 		vgcontext.WithTraceID(
-			vgcontext.WithBlockHeight(context.Background(), blockHeight),
+			vgcontext.WithBlockHeight(context.Background(), uint64(blockHeight)),
 			vgcrypto.RandomHash(),
 		),
 		chainId)

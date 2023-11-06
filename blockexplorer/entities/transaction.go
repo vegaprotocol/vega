@@ -26,7 +26,7 @@ import (
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	tmTypes "github.com/tendermint/tendermint/abci/types"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -92,8 +92,8 @@ func extractAttribute(r *tmTypes.TxResult, eType, key string) string {
 	for _, e := range r.Result.Events {
 		if e.Type == eType {
 			for _, a := range e.Attributes {
-				if string(a.Key) == key {
-					return string(a.Value)
+				if a.Key == key {
+					return a.Value
 				}
 			}
 		}
