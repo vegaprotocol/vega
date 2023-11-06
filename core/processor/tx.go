@@ -233,6 +233,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.UpdateReferralSet
 	case *commandspb.InputData_ApplyReferralCode:
 		return cmd.ApplyReferralCode
+	case *commandspb.InputData_UpdateMarginMode:
+		return cmd.UpdateMarginMode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -420,6 +422,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to JoinTeam")
 		}
 		*underlyingCmd = *cmd.ApplyReferralCode
+	case *commandspb.InputData_UpdateMarginMode:
+		underlyingCmd, ok := i.(*commandspb.UpdateMarginMode)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdateMarginMode")
+		}
+		*underlyingCmd = *cmd.UpdateMarginMode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

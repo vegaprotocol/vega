@@ -93,6 +93,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckUpdateReferralSet(cmd.UpdateReferralSet)
 	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
 		cmdErr = commands.CheckApplyReferralCode(cmd.ApplyReferralCode)
+	case *walletpb.SubmitTransactionRequest_UpdateMarginMode:
+		cmdErr = commands.CheckUpdateMarginMode(cmd.UpdateMarginMode)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -227,6 +229,10 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
 		data.Command = &commandspb.InputData_ApplyReferralCode{
 			ApplyReferralCode: req.GetApplyReferralCode(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdateMarginMode:
+		data.Command = &commandspb.InputData_UpdateMarginMode{
+			UpdateMarginMode: req.GetUpdateMarginMode(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

@@ -4189,3 +4189,11 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 		PositionCount:       m.GetTotalOpenPositionCount(),
 	}
 }
+
+func (m *Market) GetRiskFactors() *types.RiskFactor {
+	return m.risk.GetRiskFactors()
+}
+
+func (m *Market) UpdateMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	return errors.New("Unsupported")
+}

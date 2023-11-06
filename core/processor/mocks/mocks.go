@@ -20,6 +20,7 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	types0 "github.com/cometbft/cometbft/abci/types"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockTimeService is a mock of TimeService interface.
@@ -486,6 +487,20 @@ func (m *MockExecutionEngine) SucceedMarket(arg0 context.Context, arg1, arg2 str
 func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2)
+}
+
+// UpdateMarginMode mocks base method.
+func (m *MockExecutionEngine) UpdateMarginMode(arg0 context.Context, arg1, arg2 string, arg3 vega.MarginMode, arg4 decimal.Decimal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarginMode", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarginMode indicates an expected call of UpdateMarginMode.
+func (mr *MockExecutionEngineMockRecorder) UpdateMarginMode(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarginMode", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarginMode), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateMarket mocks base method.

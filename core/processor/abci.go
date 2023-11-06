@@ -480,7 +480,9 @@ func NewApp(
 		).
 		HandleDeliverTx(txn.ApplyReferralCodeCommand,
 			app.SendTransactionResult(app.ApplyReferralCode),
-		)
+		).HandleDeliverTx(txn.UpdateMarginModeCommand,
+		app.SendTransactionResult(app.UpdateMarginMode),
+	)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -2352,6 +2354,22 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	return nil
+}
+
+func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
+	var err error
+	params := &commandspb.UpdateMarginMode{}
+	if err = tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateMarginMode command: %w", err)
+	}
+	marginFactor := num.DecimalZero()
+	if params.MarginFactor != nil && len(*params.MarginFactor) > 0 {
+		marginFactor, err = num.DecimalFromString(*params.MarginFactor)
+		if err != nil {
+			return err
+		}
+	}
+	return app.exec.UpdateMarginMode(ctx, tx.Party(), params.MarketId, types.MarginMode(params.Mode), marginFactor)
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create

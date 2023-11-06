@@ -182,6 +182,10 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_ApplyReferralCode{
 			ApplyReferralCode: tv,
 		}
+	case *commandspb.UpdateMarginMode:
+		t.evt.Transaction = &eventspb.TransactionResult_UpdateMarginMode{
+			UpdateMarginMode: tv,
+		}
 
 	default:
 		panic(fmt.Sprintf("unsupported command: %v", tv))
