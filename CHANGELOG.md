@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
+- [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
 
 ### 🐛 Fixes
 
