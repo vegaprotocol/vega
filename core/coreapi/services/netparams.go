@@ -91,9 +91,12 @@ func (a *NetParams) consume() {
 func (a *NetParams) Push(evts ...events.Event) {
 	for _, e := range evts {
 		if ae, ok := e.(netParamsE); ok {
+			a.mu.Lock()
 			if a.isClosed {
+				a.mu.Unlock()
 				return
 			}
+			a.mu.Unlock()
 			a.ch <- ae.NetworkParameter()
 		}
 	}
