@@ -167,7 +167,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 				return nil, err
 			}
 		}
-
 	}
 
 	if pl.Namespace() != s.state.Namespace() {
