@@ -235,6 +235,10 @@ func buildMarketFromProposal(
 		}
 	}
 
+	var lstrat *types.LiquidationStrategy
+	if definition.Changes.LiquidationStrategy != nil {
+		lstrat = definition.Changes.LiquidationStrategy.DeepClone()
+	}
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
@@ -264,6 +268,7 @@ func buildMarketFromProposal(
 		LiquiditySLAParams:            definition.Changes.LiquiditySLAParameters,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
+		LiquidationStrategy:           lstrat,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {

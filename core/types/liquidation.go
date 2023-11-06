@@ -31,11 +31,16 @@ func LiquidationStrategyFromProto(p *vegapb.LiquidationStrategy) (*LiquidationSt
 	}, nil
 }
 
-func (l LiquidationStrategy) IntoProto() *vegapb.LiquidationStrategy {
+func (l *LiquidationStrategy) IntoProto() *vegapb.LiquidationStrategy {
 	return &vegapb.LiquidationStrategy{
 		DisposalTimeStep:    int64(l.DisposalTimeStep / time.Second),
 		DisposalFraction:    l.DisposalFraction.String(),
 		FullDisposalSize:    l.FullDisposalSize,
 		MaxFractionConsumed: l.MaxFractionConsumed.String(),
 	}
+}
+
+func (l *LiquidationStrategy) DeepClone() *LiquidationStrategy {
+	cpy := *l
+	return &cpy
 }
