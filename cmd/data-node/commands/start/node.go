@@ -236,6 +236,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.paidLiquidityFeesStatsService,
 		l.partyLockedBalancesService,
 		l.partyVestingBalancesService,
+		l.transactionResultsService,
 	)
 	return grpcServer
 }

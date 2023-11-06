@@ -513,6 +513,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get information about a party's vesting rewards
 	GetPartyVestingStats(ctx context.Context, in *GetPartyVestingStatsRequest, opts ...grpc.CallOption) (*GetPartyVestingStatsResponse, error)
+	// Observe transaction results
+	//
+	// Subscribe to a stream of transaction results, optionally filtered by party/hash/status
+	ObserveTransactionResults(ctx context.Context, in *ObserveTransactionResultsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransactionResultsClient, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1925,8 +1929,40 @@ func (c *tradingDataServiceClient) GetPartyVestingStats(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ObserveTransactionResults(ctx context.Context, in *ObserveTransactionResultsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransactionResultsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveTransactionResults", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataServiceObserveTransactionResultsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ObserveTransactionResultsClient interface {
+	Recv() (*ObserveTransactionResultsResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceObserveTransactionResultsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceObserveTransactionResultsClient) Recv() (*ObserveTransactionResultsResponse, error) {
+	m := new(ObserveTransactionResultsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2460,6 +2496,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get information about a party's vesting rewards
 	GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error)
+	// Observe transaction results
+	//
+	// Subscribe to a stream of transaction results, optionally filtered by party/hash/status
+	ObserveTransactionResults(*ObserveTransactionResultsRequest, TradingDataService_ObserveTransactionResultsServer) error
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2862,6 +2902,9 @@ func (UnimplementedTradingDataServiceServer) GetVestingBalancesSummary(context.C
 }
 func (UnimplementedTradingDataServiceServer) GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPartyVestingStats not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ObserveTransactionResults(*ObserveTransactionResultsRequest, TradingDataService_ObserveTransactionResultsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveTransactionResults not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4912,6 +4955,27 @@ func _TradingDataService_GetPartyVestingStats_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ObserveTransactionResults_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveTransactionResultsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServiceServer).ObserveTransactionResults(m, &tradingDataServiceObserveTransactionResultsServer{stream})
+}
+
+type TradingDataService_ObserveTransactionResultsServer interface {
+	Send(*ObserveTransactionResultsResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceObserveTransactionResultsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceObserveTransactionResultsServer) Send(m *ObserveTransactionResultsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5418,6 +5482,11 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObserveLedgerMovements",
 			Handler:       _TradingDataService_ObserveLedgerMovements_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveTransactionResults",
+			Handler:       _TradingDataService_ObserveTransactionResults_Handler,
 			ServerStreams: true,
 		},
 		{

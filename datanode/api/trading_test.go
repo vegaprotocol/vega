@@ -31,6 +31,7 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -160,6 +161,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	paidLiquidityFeesStatsService := service.NewPaidLiquidityFeesStats(sqlstore.NewPaidLiquidityFeesStats(sqlConn))
 	partyLockedBalances := service.NewPartyLockedBalances(sqlstore.NewPartyLockedBalances(sqlConn))
 	partyVestingBalances := service.NewPartyVestingBalances(sqlstore.NewPartyVestingBalances(sqlConn))
+	transactionResults := service.NewTransactionResults(sqlsubscribers.NewTransactionResults(logger))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -216,6 +218,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		paidLiquidityFeesStatsService,
 		partyLockedBalances,
 		partyVestingBalances,
+		transactionResults,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

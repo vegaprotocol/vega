@@ -131,6 +131,7 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 	partyLockedBalancesService    *service.PartyLockedBalances
 	partyVestingBalancesService   *service.PartyVestingBalances
+	transactionResultsService     *service.TransactionResults
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -180,6 +181,7 @@ type SQLSubscribers struct {
 	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
+	transactionResultsSub     *sqlsubscribers.TransactionResults
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -233,6 +235,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.volumeDiscountProgramSub,
 		s.paidLiquidityFeesStatsSub,
 		s.vestingSummarySub,
+		s.transactionResultsSub,
 	}
 }
 
@@ -344,6 +347,9 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
+
+	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
+	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,

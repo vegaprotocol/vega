@@ -14,6 +14,7 @@
 
 - [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
+- [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
 
 ### 🐛 Fixes
 
@@ -22,7 +23,6 @@
 - [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
 - [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
 - [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
-
 
 ## 0.73.0
 
@@ -40,7 +40,6 @@
 - [9743](https://github.com/vegaprotocol/vega/issues/9743) - Rename `ReferralFeeStats` endpoints to `FeesStats`, and `FeeStats` event to `FeesStats`.
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 - [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
-
 
 ### 🛠 Improvements
 
