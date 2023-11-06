@@ -19,10 +19,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/cucumber/godog"
 )
 
 var unwatched = map[string]struct{}{}

@@ -36,6 +36,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/fsnotify/fsnotify"
 )
 

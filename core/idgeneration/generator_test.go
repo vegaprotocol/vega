@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
+
 	"github.com/stretchr/testify/assert"
 )
 

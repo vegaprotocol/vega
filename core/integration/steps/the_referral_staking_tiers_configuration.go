@@ -19,6 +19,7 @@ import (
 	referralcfg "code.vegaprotocol.io/vega/core/integration/steps/referral"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/cucumber/godog"
 )
 

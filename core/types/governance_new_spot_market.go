@@ -116,6 +116,7 @@ type NewSpotMarketConfiguration struct {
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            newRiskParams
 	SLAParams                 *LiquiditySLAParams
+	LiquidityFeeSettings      *LiquidityFeeSettings
 
 	// New market risk model parameters
 	//
@@ -157,6 +158,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
 		SlaParams:                 n.SLAParams.IntoProto(),
+		LiquidityFeeSettings:      n.LiquidityFeeSettings.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -186,6 +188,9 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 	}
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
+	}
+	if n.LiquidityFeeSettings != nil {
+		cpy.LiquidityFeeSettings = n.LiquidityFeeSettings.DeepClone()
 	}
 	return cpy
 }
@@ -228,6 +233,11 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
 	}
 
+	var liquidityFeeSettings *LiquidityFeeSettings
+	if p.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings)
+	}
+
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
 		DecimalPlaces:             p.DecimalPlaces,
@@ -236,6 +246,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
 		SLAParams:                 slaParams,
+		LiquidityFeeSettings:      liquidityFeeSettings,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

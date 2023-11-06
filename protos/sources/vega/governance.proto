@@ -95,6 +95,8 @@ message NewSpotMarketConfiguration {
   int64 position_decimal_places = 6;
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 7;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 8;
 }
 
 // Configuration for a new futures market on Vega
@@ -130,6 +132,8 @@ message NewMarketConfiguration {
   optional SuccessorConfiguration successor = 11;
   // Liquidity SLA parameters
   LiquiditySLAParameters liquidity_sla_parameters = 12;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 13;
 }
 
 // New spot market on Vega
@@ -195,6 +199,8 @@ message UpdateMarketConfiguration {
   string quadratic_slippage_factor = 7;
   // Liquidity SLA parameters
   LiquiditySLAParameters liquidity_sla_parameters = 8;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 9;
 }
 
 // Configuration to update a spot market on Vega
@@ -214,6 +220,8 @@ message UpdateSpotMarketConfiguration {
   }
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 4;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 5;
 }
 
 // Instrument configuration

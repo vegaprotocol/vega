@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/genesis"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"

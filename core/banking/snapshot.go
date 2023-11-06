@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+
 	"github.com/emirpasic/gods/sets/treeset"
 )
 

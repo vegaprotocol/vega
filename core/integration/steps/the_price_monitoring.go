@@ -18,10 +18,10 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func ThePriceMonitoring(config *market.Config, name string, table *godog.Table) error {

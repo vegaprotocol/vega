@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/cucumber/godog"
 )
 
 func TheSpotMarketsUpdated(
@@ -119,7 +119,7 @@ func enableSpotMarketAssets(markets []types.Market, collateralEngine *collateral
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Quantum: num.DecimalZero(),
+				Quantum: num.DecimalOne(),
 				Symbol:  assetToEnable,
 			},
 		})

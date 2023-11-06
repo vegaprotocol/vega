@@ -21,12 +21,12 @@ import (
 	"testing"
 	"time"
 
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func Test_recvEventRequest(t *testing.T) {

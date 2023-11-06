@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/core/volumediscount/mocks"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

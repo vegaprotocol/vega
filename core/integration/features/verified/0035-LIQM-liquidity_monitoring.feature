@@ -167,6 +167,7 @@ Feature: Test liquidity monitoring
       | type         |
       | AuctionEvent |
 
+  # perhaps a bit pointless, liquidity auction was removed, keeping the scenario to make sure everything else works as expected.
   Scenario: 004: When the Max Open Interest field decreases for a created block to a level such that a liquidity auction which is active at the start of a block can now be exited the block stays in auction within the block but leaves at the end. (0035-LIQM-008)
 
     Given the following network parameters are set:
@@ -228,11 +229,7 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | sell | 50     | 1010  | 1                | TYPE_LIMIT | TIF_FOK |
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                          | open interest | target stake | supplied stake |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 10            | 6060         | 6000           |
-
-    When the network moves ahead "5" blocks
+    And the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | open interest | target stake | supplied stake |
       | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 5999           |

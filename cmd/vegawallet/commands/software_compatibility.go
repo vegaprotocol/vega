@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	netv1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	wversion "code.vegaprotocol.io/vega/wallet/version"
+
 	"github.com/spf13/cobra"
 )
 

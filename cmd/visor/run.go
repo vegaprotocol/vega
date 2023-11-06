@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor"
 	"code.vegaprotocol.io/vega/visor/client"
+
 	"github.com/spf13/cobra"
 )
 

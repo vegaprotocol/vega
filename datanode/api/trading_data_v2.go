@@ -29,12 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -44,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -56,7 +51,9 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -146,6 +143,7 @@ func (t *TradingDataServiceV2) GetPartyVestingStats(
 		PartyId:               stats.PartyID.String(),
 		EpochSeq:              stats.AtEpoch,
 		RewardBonusMultiplier: stats.RewardBonusMultiplier.String(),
+		QuantumBalance:        stats.QuantumBalance.String(),
 	}, nil
 }
 
@@ -184,14 +182,19 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 		outVesting = make([]*eventspb.PartyVestingBalance, 0, len(vestingBalances))
 		outLocked  = make([]*eventspb.PartyLockedBalance, 0, len(lockedBalances))
 		epoch      *uint64
+		setEpoch   = func(e uint64) {
+			if epoch == nil {
+				epoch = ptr.From(e)
+				return
+			}
+			if *epoch < e {
+				epoch = ptr.From(e)
+			}
+		}
 	)
-	if len(vestingBalances) > 0 {
-		epoch = ptr.From(vestingBalances[0].AtEpoch)
-	} else if len(lockedBalances) > 0 {
-		epoch = ptr.From(lockedBalances[0].AtEpoch)
-	}
 
 	for _, v := range vestingBalances {
+		setEpoch(v.AtEpoch)
 		outVesting = append(
 			outVesting, &eventspb.PartyVestingBalance{
 				Asset:   v.AssetID.String(),
@@ -201,6 +204,7 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 	}
 
 	for _, v := range lockedBalances {
+		setEpoch(v.AtEpoch)
 		outLocked = append(
 			outLocked, &eventspb.PartyLockedBalance{
 				Asset:      v.AssetID.String(),
@@ -4409,10 +4413,10 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 	}
 
 	var (
-		id              *entities.ReferralSetID
-		referrer        *entities.PartyID
-		referee         *entities.PartyID
-		daysToAggregate uint32 = 30 // default is 30 days
+		id                *entities.ReferralSetID
+		referrer          *entities.PartyID
+		referee           *entities.PartyID
+		epochsToAggregate uint32 = 30 // default is 30 epochs
 	)
 
 	if req.ReferralSetId != nil {
@@ -4427,11 +4431,11 @@ func (t *TradingDataServiceV2) ListReferralSetReferees(ctx context.Context, req 
 		referee = ptr.From(entities.PartyID(*req.Referee))
 	}
 
-	if req.AggregationDays != nil {
-		daysToAggregate = *req.AggregationDays
+	if req.AggregationEpochs != nil {
+		epochsToAggregate = *req.AggregationEpochs
 	}
 
-	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination, daysToAggregate)
+	referees, pageInfo, err := t.referralSetsService.ListReferralSetReferees(ctx, id, referrer, referee, pagination, epochsToAggregate)
 	if err != nil {
 		return nil, formatE(err)
 	}

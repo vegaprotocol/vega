@@ -16,10 +16,9 @@
 package api
 
 import (
-	"github.com/pkg/errors"
-
 	types "code.vegaprotocol.io/vega/protos/vega"
 
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

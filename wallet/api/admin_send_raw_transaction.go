@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/mitchellh/mapstructure"
 )
 

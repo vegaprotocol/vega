@@ -131,6 +131,7 @@ type UpdateMarketConfiguration struct {
 	RiskParameters                updateRiskParams
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
+	LiquidityFeeSettings          *LiquidityFeeSettings
 }
 
 func (n UpdateMarketConfiguration) String() string {
@@ -168,6 +169,9 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	if n.LiquiditySLAParameters != nil {
 		cpy.LiquiditySLAParameters = n.LiquiditySLAParameters.DeepClone()
 	}
+	if n.LiquidityFeeSettings != nil {
+		cpy.LiquidityFeeSettings = n.LiquidityFeeSettings.DeepClone()
+	}
 	return cpy
 }
 
@@ -193,6 +197,11 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		liquiditySLAParameters = n.LiquiditySLAParameters.IntoProto()
 	}
 
+	var liquidityFeeSettings *vegapb.LiquidityFeeSettings
+	if n.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
+	}
+
 	r := &vegapb.UpdateMarketConfiguration{
 		Instrument:                    instrument,
 		Metadata:                      md,
@@ -201,6 +210,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
+		LiquidityFeeSettings:          liquidityFeeSettings,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -259,6 +269,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

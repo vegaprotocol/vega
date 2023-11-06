@@ -18,11 +18,11 @@ package grpc
 import (
 	"net"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	"code.vegaprotocol.io/vega/logging"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {

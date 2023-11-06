@@ -25,7 +25,6 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
-
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"

@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 

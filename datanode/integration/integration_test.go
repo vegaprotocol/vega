@@ -44,11 +44,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"

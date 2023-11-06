@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 )
 

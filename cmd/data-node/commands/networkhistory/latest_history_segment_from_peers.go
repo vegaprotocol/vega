@@ -21,10 +21,9 @@ import (
 	"os"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
-
-	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"

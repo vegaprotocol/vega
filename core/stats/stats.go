@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	"code.vegaprotocol.io/vega/version"
+
 	tmversion "github.com/tendermint/tendermint/version"
 )
 

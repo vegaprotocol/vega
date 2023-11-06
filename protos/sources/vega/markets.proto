@@ -209,6 +209,8 @@ message FeeFactors {
 message Fees {
   // Fee factors.
   FeeFactors factors = 1;
+  // Liquidity fee settings for the market describing how the fee was calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 2;
 }
 
 // PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
@@ -255,6 +257,23 @@ message LiquiditySLAParameters {
   // Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will lose to liquidity providers
   // that achieved a higher SLA performance than them.
   string sla_competition_factor = 5;
+}
+
+// Market settings that describe how the liquidity fee is calculated.
+message LiquidityFeeSettings {
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    // Fee is the smallest value of all bids, such that liquidity providers with nominated fees less than or equal to this value still have sufficient commitment to fulfil the market's target stake.
+    METHOD_MARGINAL_COST = 1;
+    // Fee is the weighted average of all liquidity providers' nominated fees, weighted by their committment.
+    METHOD_WEIGHTED_AVERAGE = 2;
+    // Fee is set by the market to a constant value irrespective of any liquidity provider's nominated fee.
+    METHOD_CONSTANT = 3;
+  }
+  // Method used to calculate the market's liquidity fee.
+  Method method = 1;
+  // Constant liquidity fee used when using the constant fee method.
+  optional string fee_constant = 2;
 }
 
 // TargetStakeParameters contains parameters used in target stake calculation

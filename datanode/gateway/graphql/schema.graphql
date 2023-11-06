@@ -895,8 +895,8 @@ type Query {
     referee: ID
     "Optional pagination information"
     pagination: Pagination
-    "Optional number of days to aggregate referee volume and reward statistics for. If omitted, the default is 30 days."
-    aggregationDays: Int
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 30 epochs."
+    aggregationEpochs: Int
   ): ReferralSetRefereeConnection!
 
   "Get referral set statistics"
@@ -1207,7 +1207,7 @@ type DispatchStrategy {
   distributionStrategy: DistributionStrategy!
 
   "Ascending order list of start rank and corresponding share ratio"
-  rankTable: RankTable
+  rankTable: [RankTable]
 }
 
 type RankTable {
@@ -2095,10 +2095,30 @@ type FeeFactors {
   liquidityFee: String!
 }
 
+enum LiquidityFeeMethod {
+  METHOD_UNSPECIFIED
+  "Fee is smallest value of all bids, such that liquidity providers with nominated fees less than or equal to this value still have sufficient commitment to fulfil the market's target stake."
+  METHOD_MARGINAL_COST
+  "Fee is the weighted average of all liquidity providers' nominated fees, weighted by their commitment"
+  METHOD_WEIGHTED_AVERAGE
+  "Fee is set by the market to a constant value irrespective of any liquidity provider's nominated fee"
+  METHOD_CONSTANT
+}
+
+"Market settings that describe how the liquidity fee is calculated"
+type LiquidityFeeSettings {
+  "Method used to calculate the market's liquidity fee"
+  method: LiquidityFeeMethod!
+  "Constant liquidity fee used when using the constant fee method"
+  feeConstant: String
+}
+
 "The fees applicable to a market"
 type Fees {
   "The factors used to calculate the different fees"
   factors: FeeFactors!
+  "Liquidity fee settings for the market describing how the fee was calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 """
@@ -2629,6 +2649,8 @@ type PartyVestingStats {
   epochSeq: Int!
   "The reward bonus multiplier"
   rewardBonusMultiplier: String!
+  "The balance of the party, in quantum."
+  quantumBalance: String!
 }
 
 """
@@ -4264,6 +4286,8 @@ type NewMarket {
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
   liquiditySLAParameters: LiquiditySLAParameters
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 type SuccessorConfiguration {
@@ -4299,6 +4323,8 @@ type UpdateMarketConfiguration {
   quadraticSlippageFactor: String!
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 type UpdateInstrumentConfiguration {
@@ -4517,6 +4543,8 @@ type NewSpotMarket {
   positionDecimalPlaces: Int!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 "Update an existing spot market on Vega"
@@ -4538,6 +4566,8 @@ type UpdateSpotMarketConfiguration {
   riskParameters: RiskModel!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 type LiquiditySLAParameters {
@@ -6277,6 +6307,8 @@ type ReferralSetStats {
   rewardsMultiplier: String!
   "The proportion of the referees taker fees to be rewarded to the referrer."
   rewardsFactorMultiplier: String!
+  "The referrer's taker volume"
+  referrerTakerVolume: String!
 }
 
 "Team record containing the team information."

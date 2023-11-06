@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/require"
 )
 

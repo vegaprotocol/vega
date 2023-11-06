@@ -128,6 +128,7 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 			AtEpoch:                               update.AtEpoch,
 			WasEligible:                           update.WasEligible,
 			ReferralSetRunningNotionalTakerVolume: update.ReferralSetRunningVolume.String(),
+			ReferrerTakerVolume:                   update.ReferrerTakerVolume.String(),
 			RefereesStats:                         refereesStats,
 			RewardFactor:                          update.RewardFactor.String(),
 			RewardsMultiplier:                     update.RewardsMultiplier.String(),

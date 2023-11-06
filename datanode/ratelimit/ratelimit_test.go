@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRateLimit_HTTPMiddleware(t *testing.T) {

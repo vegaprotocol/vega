@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	errors "code.vegaprotocol.io/vega/core/datasource/errors"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 

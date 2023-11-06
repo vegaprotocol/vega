@@ -34,11 +34,11 @@ import (
 	"math"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -454,13 +454,27 @@ type FeeFactors struct {
 	LiquidityFee      string `json:"liquidityFee,omitempty"`
 }
 
+type LiquidityFeeSettings struct {
+	Method      LiquidityFeeSettingsMethod `json:"makerFee,omitempty"`
+	FeeConstant *string                    `json:"feeConstant,omitempty"`
+}
+
 type Fees struct {
-	Factors *FeeFactors `json:"factors,omitempty"`
+	Factors              *FeeFactors           `json:"factors,omitempty"`
+	LiquidityFeeSettings *LiquidityFeeSettings `json:"liquidityFeeSettings,omitempty"`
 }
 
 func (f Fees) ToProto() *vega.Fees {
 	if f.Factors == nil {
 		return nil
+	}
+
+	var liquidityFeeSettings *vega.LiquidityFeeSettings
+	if f.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = &vega.LiquidityFeeSettings{
+			Method:      vega.LiquidityFeeSettings_Method(f.LiquidityFeeSettings.Method),
+			FeeConstant: f.LiquidityFeeSettings.FeeConstant,
+		}
 	}
 
 	return &vega.Fees{
@@ -469,6 +483,7 @@ func (f Fees) ToProto() *vega.Fees {
 			InfrastructureFee: f.Factors.InfrastructureFee,
 			LiquidityFee:      f.Factors.LiquidityFee,
 		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	}
 }
 
@@ -477,11 +492,20 @@ func feesFromProto(fees *vega.Fees) (Fees, error) {
 		return Fees{}, errors.New("fees cannot be Nil")
 	}
 
+	var liquidityFeeSettings *LiquidityFeeSettings
+	if fees.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = &LiquidityFeeSettings{
+			Method:      LiquidityFeeSettingsMethod(fees.LiquidityFeeSettings.Method),
+			FeeConstant: fees.LiquidityFeeSettings.FeeConstant,
+		}
+	}
+
 	return Fees{
 		Factors: &FeeFactors{
 			MakerFee:          fees.Factors.MakerFee,
 			InfrastructureFee: fees.Factors.InfrastructureFee,
 			LiquidityFee:      fees.Factors.LiquidityFee,
 		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	}, nil
 }

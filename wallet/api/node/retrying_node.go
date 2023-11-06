@@ -24,6 +24,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node/adapters"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
+
 	"github.com/cenkalti/backoff/v4"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"

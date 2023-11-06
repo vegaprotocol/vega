@@ -23,9 +23,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"code.vegaprotocol.io/vega/libs/crypto"
+
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 

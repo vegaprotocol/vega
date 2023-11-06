@@ -21,8 +21,6 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -32,16 +30,18 @@ import (
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -66,6 +66,15 @@ func NewMarketFromSnapshot(
 	volumeDiscountService fee.VolumeDiscountService,
 ) (*Market, error) {
 	mkt := em.Market
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.2") {
+		// protocol upgrade from v0.73.2, lets populate the new liquidity-fee-settings with a default marginal-cost method
+		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
+		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method: types.LiquidityFeeMethodMarginalCost,
+		}
+	}
+
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 	if len(em.Market.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -138,7 +147,6 @@ func NewMarketFromSnapshot(
 
 	exp := assetDecimals - mkt.DecimalPlaces
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
-	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
@@ -192,7 +200,6 @@ func NewMarketFromSnapshot(
 		liquidityEngine:               liquidityEngine,
 		liquidity:                     marketLiquidity,
 		parties:                       map[string]struct{}{},
-		lMonitor:                      lMonitor,
 		tsCalc:                        tsCalc,
 		feeSplitter:                   common.NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                            as,
@@ -274,6 +281,7 @@ func (m *Market) GetState() *types.ExecMarket {
 
 	parties := maps.Keys(m.parties)
 	sort.Strings(parties)
+	assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
 
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -301,7 +309,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		StopOrders:                 m.stopOrders.ToProto(),
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
-		FeesStats:                  m.fee.GetState(),
+		FeesStats:                  m.fee.GetState(assetQuantum),
 	}
 
 	return em

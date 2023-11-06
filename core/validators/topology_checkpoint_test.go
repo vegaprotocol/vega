@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	abcitypes "github.com/tendermint/tendermint/abci/types"

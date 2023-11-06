@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/paths"
-
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/config"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
 )

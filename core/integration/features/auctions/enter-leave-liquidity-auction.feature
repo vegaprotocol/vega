@@ -145,7 +145,6 @@ Feature: Ensure we can enter and leave liquidity auction
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | party1 | ETH/DEC19 | 1                 | 0.1 | submission |
-      | lp1 | party1 | ETH/DEC19 | 1                 | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
@@ -158,23 +157,18 @@ Feature: Ensure we can enter and leave liquidity auction
       | aux2      | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
       | auxiliary | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
-    And the market data for the market "ETH/DEC19" should be:
-      | trading mode                 | extension trigger                        | supplied stake | target stake |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1              | 11           |
 
     # Amend LP, set the commitment amount to be enough to leave opening auction
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type   |
-      | lp1 | party1 | ETH/DEC19 | 30000             | 0.1 | amendment |
       | lp1 | party1 | ETH/DEC19 | 30000             | 0.1 | amendment |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
       | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
     Then the market data for the market "ETH/DEC19" should be:
-      | trading mode                 | supplied stake | target stake |
-      | TRADING_MODE_OPENING_AUCTION | 30000          | 11           |
+      | trading mode            | supplied stake | target stake |
+      | TRADING_MODE_CONTINUOUS | 30000          | 11           |
 
     # after updating the LP, we now can leave opening auction
     When the network moves ahead "3" blocks
@@ -200,7 +194,6 @@ Feature: Ensure we can enter and leave liquidity auction
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | reference | lp type   |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | lp1       | amendment |
       | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | lp1       | amendment |
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/validators"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

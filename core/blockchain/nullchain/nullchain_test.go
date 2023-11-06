@@ -24,13 +24,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/blockchain"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	vgrand "code.vegaprotocol.io/vega/libs/rand"
-
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain/mocks"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

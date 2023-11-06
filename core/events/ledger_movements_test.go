@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

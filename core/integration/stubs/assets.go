@@ -93,7 +93,11 @@ func NewIsAssetStub(id string, dp uint64, quantum *num.Decimal) *assets.Asset {
 func (a isAssetStub) Type() *types.Asset {
 	quantum := num.DecimalFromFloat(5000)
 	if a.Quantum != nil {
-		quantum = *a.Quantum
+		if a.Quantum.IsZero() {
+			quantum = num.DecimalOne()
+		} else {
+			quantum = *a.Quantum
+		}
 	}
 	return &types.Asset{
 		ID: a.ID,

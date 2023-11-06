@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.72.1";
+    version: "v0.74.0-dev";
   }
   schemes: [
     HTTP,
@@ -1002,6 +1002,8 @@ message GetPartyVestingStatsResponse {
   string reward_bonus_multiplier = 2;
   // Epoch for which this information is valid.
   uint64 epoch_seq = 3;
+  // The balance of the party, in quantum.
+  string quantum_balance = 4;
 }
 
 // Request sent to list the vesting and locked balances for a party
@@ -3942,8 +3944,8 @@ message ListReferralSetRefereesRequest {
   optional string referrer = 3;
   // Referee to filter by. If referrer set ID or referrer is provided, this field is ignored.
   optional string referee = 4;
-  // Days to aggregate party volume and rewards over. If omitted, 30 days will be used.
-  optional uint32 aggregation_days = 5;
+  // Epochs to aggregate party volume and rewards over. If omitted, 30 epochs will be used.
+  optional uint32 aggregation_epochs = 5;
 }
 
 // Response containing information about a referral set's referees
@@ -4007,6 +4009,8 @@ message ReferralSetStats {
   string rewards_factor_multiplier = 8;
   // Indicates if the referral set was eligible to be part of the referral program.
   bool was_eligible = 9;
+  // Referrer's taker volume
+  string referrer_taker_volume = 10;
 }
 
 // Team record containing the team information.

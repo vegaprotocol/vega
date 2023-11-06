@@ -32,6 +32,7 @@ import (
 	vgjob "code.vegaprotocol.io/vega/libs/job"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/fsnotify/fsnotify"
 )
 

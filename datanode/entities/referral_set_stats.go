@@ -29,6 +29,7 @@ type (
 		AtEpoch                               uint64
 		WasEligible                           bool
 		ReferralSetRunningNotionalTakerVolume string
+		ReferrerTakerVolume                   string
 		RefereesStats                         []*eventspb.RefereeStats
 		VegaTime                              time.Time
 		RewardFactor                          string
@@ -41,6 +42,7 @@ type (
 		AtEpoch                               uint64
 		WasEligible                           bool
 		ReferralSetRunningNotionalTakerVolume string
+		ReferrerTakerVolume                   string
 		VegaTime                              time.Time
 		PartyID                               string
 		DiscountFactor                        string
@@ -78,12 +80,14 @@ func (s FlattenReferralSetStats) ToProto() *v2.ReferralSetStats {
 	return &v2.ReferralSetStats{
 		AtEpoch:                               s.AtEpoch,
 		ReferralSetRunningNotionalTakerVolume: s.ReferralSetRunningNotionalTakerVolume,
+		ReferrerTakerVolume:                   s.ReferrerTakerVolume,
 		PartyId:                               s.PartyID,
 		DiscountFactor:                        s.DiscountFactor,
 		RewardFactor:                          s.RewardFactor,
 		EpochNotionalTakerVolume:              s.EpochNotionalTakerVolume,
 		RewardsMultiplier:                     s.RewardsMultiplier,
 		RewardsFactorMultiplier:               s.RewardsFactorMultiplier,
+		WasEligible:                           s.WasEligible,
 	}
 }
 
@@ -105,6 +109,7 @@ func ReferralSetStatsFromProto(proto *eventspb.ReferralSetStatsUpdated, vegaTime
 		AtEpoch:                               proto.AtEpoch,
 		WasEligible:                           proto.WasEligible,
 		ReferralSetRunningNotionalTakerVolume: proto.ReferralSetRunningNotionalTakerVolume,
+		ReferrerTakerVolume:                   proto.ReferrerTakerVolume,
 		RefereesStats:                         proto.RefereesStats,
 		VegaTime:                              vegaTime,
 		RewardFactor:                          proto.RewardFactor,

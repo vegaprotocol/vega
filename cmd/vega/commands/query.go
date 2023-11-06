@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/cmd/vega/commands/query"
+
 	"github.com/jessevdk/go-flags"
 )
 

@@ -35,6 +35,7 @@ import (
 	v2connectionsmocks "code.vegaprotocol.io/vega/wallet/service/v2/connections/mocks"
 	v2mocks "code.vegaprotocol.io/vega/wallet/service/v2/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/golang/mock/gomock"
 	"go.uber.org/zap"
 )

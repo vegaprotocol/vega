@@ -115,3 +115,7 @@ func (r *newMarketResolver) SuccessorConfiguration(ctx context.Context, obj *typ
 func (r *newMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *types.NewMarket) (*types.LiquiditySLAParameters, error) {
 	return obj.Changes.LiquiditySlaParameters, nil
 }
+
+func (r *newMarketResolver) LiquidityFeeSettings(ctx context.Context, obj *types.NewMarket) (*types.LiquidityFeeSettings, error) {
+	return obj.Changes.LiquidityFeeSettings, nil
+}

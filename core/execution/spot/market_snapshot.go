@@ -21,8 +21,6 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -39,6 +37,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -191,6 +191,7 @@ func NewMarketFromSnapshot(
 func (m *Market) GetState() *types.ExecSpotMarket {
 	parties := maps.Keys(m.parties)
 	sort.Strings(parties)
+	quoteAssetQuantum, _ := m.collateral.GetAssetQuantum(m.quoteAsset)
 
 	em := &types.ExecSpotMarket{
 		Market:                     m.mkt.DeepClone(),
@@ -212,7 +213,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 		Parties:                    parties,
 		Closed:                     m.closed,
 		HasTraded:                  m.hasTraded,
-		FeesStats:                  m.fee.GetState(),
+		FeesStats:                  m.fee.GetState(quoteAssetQuantum),
 	}
 
 	return em

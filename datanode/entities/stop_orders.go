@@ -21,17 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-
-	pbevents "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
 	"code.vegaprotocol.io/vega/libs/num"
-
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/libs/ptr"
-
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	pbevents "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type (

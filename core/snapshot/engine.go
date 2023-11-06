@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
+
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"

@@ -28,9 +28,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"golang.org/x/exp/maps"
 
 	"github.com/pkg/errors"
+	"golang.org/x/exp/maps"
 )
 
 const (
@@ -804,7 +804,7 @@ func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID stri
 // returns the corresponding transfer request for the slice of transfers
 // if the reward accound doesn't exist return error
 // if the party account doesn't exist log the error and continue.
-func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
+func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID string, transfers []*types.Transfer, rewardType types.AccountType) ([]*types.TransferRequest, error) {
 	rewardAccount, err := e.GetAccountByID(rewardAccountID)
 	if err != nil {
 		return nil, err
@@ -812,27 +812,37 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 
 	rewardTRs := make([]*types.TransferRequest, 0, len(transfers))
 	for _, t := range transfers {
-		vesting := e.GetOrCreatePartyVestingRewardAccount(ctx, t.Owner, t.Amount.Asset)
+		var destination *types.Account
+		if rewardType == types.AccountTypeFeesInfrastructure {
+			destination, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			if err != nil {
+				e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+				destination, _ = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			}
+		} else {
+			destination = e.GetOrCreatePartyVestingRewardAccount(ctx, t.Owner, t.Amount.Asset)
+		}
+
 		rewardTRs = append(rewardTRs, &types.TransferRequest{
 			Amount:      t.Amount.Amount.Clone(),
 			MinAmount:   t.Amount.Amount.Clone(),
 			Asset:       t.Amount.Asset,
 			Type:        types.TransferTypeRewardPayout,
 			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{vesting},
+			ToAccount:   []*types.Account{destination},
 		})
 	}
 	return rewardTRs, nil
 }
 
 // TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account.
-func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
+func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer, rewardType types.AccountType) ([]*types.LedgerMovement, error) {
 	responses := make([]*types.LedgerMovement, 0, len(transfers))
 
 	if len(transfers) == 0 {
 		return responses, nil
 	}
-	transferReqs, err := e.getRewardTransferRequests(ctx, rewardAccountID, transfers)
+	transferReqs, err := e.getRewardTransferRequests(ctx, rewardAccountID, transfers, rewardType)
 	if err != nil {
 		return nil, err
 	}

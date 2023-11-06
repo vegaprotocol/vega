@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/jackc/pgx/v4"
 )
 

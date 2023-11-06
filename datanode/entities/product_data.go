@@ -29,6 +29,7 @@ package entities
 
 import (
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/encoding/protojson"
 )
 

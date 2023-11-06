@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+
 	"github.com/mitchellh/mapstructure"
 )
 

@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/cenkalti/backoff"
 	"golang.org/x/exp/maps"
 )

@@ -32,6 +32,7 @@ type (
 
 	PartyVestingStats struct {
 		RewardBonusMultiplier num.Decimal
+		QuantumBalance        num.Decimal
 		PartyID               PartyID
 		VegaTime              time.Time
 		AtEpoch               uint64
@@ -45,9 +46,14 @@ func NewVestingStatsFromProto(vestingStatsProto *eventspb.VestingStatsUpdated, v
 		if err != nil {
 			return nil, fmt.Errorf("could not convert reward bonus multiplier to decimal: %w", err)
 		}
+		quantumBalance, err := num.DecimalFromString(stat.QuantumBalance)
+		if err != nil {
+			return nil, fmt.Errorf("could not convert quantum balance to decimal: %w", err)
+		}
 
 		partyStats = append(partyStats, &PartyVestingStats{
 			RewardBonusMultiplier: multiplier,
+			QuantumBalance:        quantumBalance,
 			PartyID:               PartyID(stat.PartyId),
 			VegaTime:              vegaTime,
 			AtEpoch:               vestingStatsProto.AtEpoch,

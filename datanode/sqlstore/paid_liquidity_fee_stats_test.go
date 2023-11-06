@@ -20,18 +20,15 @@ import (
 	"testing"
 	"time"
 
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/georgysavva/scany/pgxscan"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
+	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/stretchr/testify/require"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPaidLiquidityFeesStats_Add(t *testing.T) {

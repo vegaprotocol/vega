@@ -31,13 +31,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/golang/mock/gomock"
 )
 
 func TestOracleData_Push(t *testing.T) {

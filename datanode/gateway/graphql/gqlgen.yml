@@ -62,6 +62,9 @@ models:
   OrderStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderStatus
+  LiquidityFeeMethod:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LiquidityFeeMethod
   DepositStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DepositStatus
@@ -312,6 +315,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
   LiquiditySLAParameters:
     model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
+  LiquidityFeeSettings:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquidityFeeSettings
   Asset:
     model: code.vegaprotocol.io/vega/protos/vega.Asset
     fields:
@@ -716,3 +721,13 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetVestingBalancesSummaryResponse
   PartyVestingStats:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetPartyVestingStatsResponse
+  DispatchStrategy:
+    model: code.vegaprotocol.io/vega/protos/vega.DispatchStrategy
+  RankTable:
+    model: code.vegaprotocol.io/vega/protos/vega.Rank
+  IndividualScope:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.IndividualScope
+  EntityScope:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EntityScope
+  DistributionStrategy:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DistributionStrategy

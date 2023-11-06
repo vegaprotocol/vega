@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -93,13 +92,11 @@ type IDGenerator interface {
 //nolint:interfacebloat
 type AuctionState interface {
 	price.AuctionState
-	lmon.AuctionState
 	// are we in auction, and what auction are we in?
 	ExtendAuctionSuspension(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool
-	IsLiquidityAuction() bool
 	IsFBA() bool
 	IsMonitorAuction() bool
 	ExceededMaxOpening(time.Time) bool
@@ -124,6 +121,8 @@ type AuctionState interface {
 	GetState() *types.AuctionState
 	Changed() bool
 	UpdateMaxDuration(ctx context.Context, d time.Duration)
+	StartGovernanceSuspensionAuction(t time.Time)
+	EndGovernanceSuspensionAuction()
 }
 
 type EpochEngine interface {

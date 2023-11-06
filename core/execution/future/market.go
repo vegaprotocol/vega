@@ -35,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
@@ -52,14 +51,6 @@ import (
 
 	"golang.org/x/exp/maps"
 )
-
-// LiquidityMonitor.
-type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) bool
-	SetMinDuration(d time.Duration)
-	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
-	UpdateParameters(*types.LiquidityMonitoringParameters)
-}
 
 // TargetStakeCalculator interface.
 type TargetStakeCalculator interface {
@@ -112,7 +103,6 @@ type Market struct {
 	parties map[string]struct{}
 
 	pMonitor common.PriceMonitor
-	lMonitor LiquidityMonitor
 
 	linearSlippageFactor    num.Decimal
 	quadraticSlippageFactor num.Decimal
@@ -252,8 +242,6 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
-
 	now := timeService.GetTimeNow()
 
 	liquidityEngine := liquidity.NewSnapshotEngine(
@@ -305,7 +293,6 @@ func NewMarket(
 		parties:                       map[string]struct{}{},
 		as:                            auctionState,
 		pMonitor:                      pMonitor,
-		lMonitor:                      lMonitor,
 		tsCalc:                        tsCalc,
 		peggedOrders:                  common.NewPeggedOrders(log, timeService),
 		expiringOrders:                common.NewExpiringOrders(),
@@ -365,7 +352,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		if !m.finalFeesDistributed {
 			m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow(), epoch)
 		}
-		feesStats := m.fee.GetFeesStatsOnEpochEnd()
+		assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
+		feesStats := m.fee.GetFeesStatsOnEpochEnd(assetQuantum)
 		feesStats.Market = m.GetID()
 		feesStats.EpochSeq = epoch.Seq
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
@@ -572,7 +560,6 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
 	m.linearSlippageFactor = m.mkt.LinearSlippageFactor
 	m.quadraticSlippageFactor = m.mkt.QuadraticSlippageFactor
-	m.lMonitor.UpdateParameters(m.mkt.LiquidityMonitoringParameters)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
 	// we should not need to rebind a replacement oracle here, the m.tradableInstrument.UpdateInstrument
@@ -1313,7 +1300,7 @@ func (m *Market) enterAuction(ctx context.Context) {
 	// Send an event bus update
 	m.broker.Send(event)
 
-	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
+	if m.as.InAuction() && m.as.IsPriceAuction() {
 		m.mkt.State = types.MarketStateSuspended
 		m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -1416,7 +1403,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 
-	m.checkLiquidity(ctx, nil, true)
+	m.checkBondBalance(ctx)
 	m.commandLiquidityAuction(ctx)
 
 	if !m.as.InAuction() {
@@ -2365,8 +2352,22 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*t
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake := m.getTargetStake()
-	fee := m.liquidityEngine.ProvisionsPerParty().FeeForTarget(stake)
+	var fee num.Decimal
+	provisions := m.liquidityEngine.ProvisionsPerParty()
+
+	switch m.mkt.Fees.LiquidityFeeSettings.Method {
+	case types.LiquidityFeeMethodConstant:
+		if len(provisions) != 0 {
+			fee = m.mkt.Fees.LiquidityFeeSettings.FeeConstant
+		}
+	case types.LiquidityFeeMethodMarginalCost:
+		fee = provisions.FeeForTarget(m.getTargetStake())
+	case types.LiquidityFeeMethodWeightedAverage:
+		fee = provisions.FeeForWeightedAverage()
+	default:
+		m.log.Panic("unknown liquidity fee method")
+	}
+
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)
@@ -3849,28 +3850,6 @@ func (m *Market) getTargetStake() *num.Uint {
 
 func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidityEngine.CalculateSuppliedStake()
-}
-
-//nolint:unparam
-func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) bool {
-	// before we check liquidity, ensure we've moved all funds that can go towards
-	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
-	m.checkBondBalance(ctx)
-	var vBid, vAsk uint64
-	// if we're not in auction, or we are checking liquidity when leaving opening auction, or we have best bid/ask volume
-	if !m.as.InAuction() || m.matching.BidAndAskPresentAfterAuction() {
-		_, vBid, _ = m.getBestStaticBidPriceAndVolume()
-		_, vAsk, _ = m.getBestStaticAskPriceAndVolume()
-	}
-
-	return m.lMonitor.CheckLiquidity(
-		m.as, m.timeService.GetTimeNow(),
-		m.getSuppliedStake(),
-		trades,
-		*m.risk.GetRiskFactors(),
-		m.getReferencePrice(),
-		vBid, vAsk,
-		persistentOrder)
 }
 
 // command liquidity auction checks if liquidity auction should be entered and if it can end.

@@ -20,12 +20,12 @@ import (
 	"os"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/paths"
+
 	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 const metaDBName = "snapshot_meta"

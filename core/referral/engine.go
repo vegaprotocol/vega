@@ -22,14 +22,14 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -71,11 +71,17 @@ type Engine struct {
 	referralSetsNotionalVolumes *runningVolumes
 	factorsByReferee            map[types.PartyID]*types.RefereeStats
 
-	// referralProgramMinStakedVegaTokens is the minimum number of token a party
-	// must possess to become and stay a referrer.
+	// referralProgramMinStakedVegaTokens defines the minimum number of token a
+	// party must possess to become and stay a referrer.
 	referralProgramMinStakedVegaTokens *num.Uint
 
-	rewardProportionUpdate num.Decimal
+	// referralProgramMaxRewardProportion limits the proportion of referee taker
+	// fees which can be given to the referrer.
+	referralProgramMaxRewardProportion num.Decimal
+
+	// minBalanceToApplyCode defines the minimum balance a party should possess
+	// to apply a referral code.
+	minBalanceToApplyCode *num.Uint
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -100,19 +106,17 @@ type Engine struct {
 	sets      map[types.ReferralSetID]*types.ReferralSet
 	referrers map[types.PartyID]types.ReferralSetID
 	referees  map[types.PartyID]types.ReferralSetID
-
-	minBalanceForApplyCode *num.Uint
 }
 
 func (e *Engine) CheckSufficientBalanceForApplyReferralCode(party types.PartyID, balance *num.Uint) error {
-	if balance.LT(e.minBalanceForApplyCode) {
-		return fmt.Errorf("party %q does not have sufficient balance to apply referral code, required balance %s available balance %s", party, e.minBalanceForApplyCode.String(), balance.String())
+	if balance.LT(e.minBalanceToApplyCode) {
+		return fmt.Errorf("party %q does not have sufficient balance to apply referral code, required balance %s available balance %s", party, e.minBalanceToApplyCode.String(), balance.String())
 	}
 	return nil
 }
 
 func (e *Engine) OnMinBalanceForApplyReferralCodeUpdated(_ context.Context, min *num.Uint) error {
-	e.minBalanceForApplyCode = min
+	e.minBalanceToApplyCode = min
 	return nil
 }
 
@@ -136,6 +140,10 @@ func (e *Engine) CreateReferralSet(ctx context.Context, party types.PartyID, det
 	}
 	if _, ok := e.referees[party]; ok {
 		return ErrIsAlreadyAReferee(party)
+	}
+
+	if err := e.isPartyEligible(party); err != nil {
+		return err
 	}
 
 	now := e.timeSvc.GetTimeNow()
@@ -225,6 +233,9 @@ func (e *Engine) UpdateProgram(newProgram *types.ReferralProgram) {
 	e.newProgram = newProgram
 
 	sort.Slice(e.newProgram.BenefitTiers, func(i, j int) bool {
+		if e.newProgram.BenefitTiers[i].MinimumRunningNotionalTakerVolume.EQ(e.newProgram.BenefitTiers[j].MinimumRunningNotionalTakerVolume) {
+			return e.newProgram.BenefitTiers[i].MinimumEpochs.LT(e.newProgram.BenefitTiers[j].MinimumEpochs)
+		}
 		return e.newProgram.BenefitTiers[i].MinimumRunningNotionalTakerVolume.LT(e.newProgram.BenefitTiers[j].MinimumRunningNotionalTakerVolume)
 	})
 
@@ -284,7 +295,7 @@ func (e *Engine) RewardsMultiplierForParty(party types.PartyID) num.Decimal {
 }
 
 func (e *Engine) OnReferralProgramMaxReferralRewardProportionUpdate(_ context.Context, value num.Decimal) error {
-	e.rewardProportionUpdate = value
+	e.referralProgramMaxRewardProportion = value
 	return nil
 }
 
@@ -312,33 +323,6 @@ func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
 	if ep.Action == vegapb.EpochAction_EPOCH_ACTION_START {
 		e.currentEpoch = ep.Seq
 	}
-}
-
-func (e *Engine) calculateRewardsFactorMultiplierForParty(multiplierForParty, rewardsFactorForParty num.Decimal) num.Decimal {
-	return num.MinD(
-		rewardsFactorForParty.Mul(multiplierForParty),
-		e.rewardProportionUpdate,
-	)
-}
-
-func (e *Engine) calculateMultiplierForParty(setID types.ReferralSetID) num.Decimal {
-	if e.isSetEligible(setID) != nil {
-		return num.DecimalZero()
-	}
-
-	balance, _ := e.staking.GetAvailableBalance(
-		string(e.sets[setID].Referrer.PartyID),
-	)
-
-	multiplier := num.DecimalOne()
-	for _, v := range e.currentProgram.StakingTiers {
-		if balance.LTE(v.MinimumStakedTokens) {
-			break
-		}
-		multiplier = v.ReferralRewardMultiplier
-	}
-
-	return multiplier
 }
 
 func (e *Engine) applyProgramUpdate(ctx context.Context, startEpochTime time.Time, epoch uint64) {
@@ -479,100 +463,99 @@ func (e *Engine) computeReferralSetsStats(ctx context.Context, epoch types.Epoch
 	}
 	e.referralSetsNotionalVolumes.RemovePriorEpoch(priorEpoch)
 
+	referrersTakerVolume := map[types.PartyID]*num.Uint{}
+
 	for partyID, setID := range e.referrers {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
+		referrersTakerVolume[partyID] = volumeForEpoch
 	}
 
-	partiesTakerVolume := map[types.PartyID]*num.Uint{}
+	takerVolumePerReferee := map[types.PartyID]*num.Uint{}
 
 	for partyID, setID := range e.referees {
 		volumeForEpoch := e.marketActivityTracker.NotionalTakerVolumeForParty(string(partyID))
 		e.referralSetsNotionalVolumes.Add(epoch.Seq, setID, volumeForEpoch)
-		partiesTakerVolume[partyID] = volumeForEpoch
+		takerVolumePerReferee[partyID] = volumeForEpoch
 	}
 
 	if e.programHasEnded {
 		return
 	}
 
-	e.computeFactorsByReferee(ctx, epoch.Seq, partiesTakerVolume)
+	e.computeFactorsByReferee(ctx, epoch.Seq, takerVolumePerReferee, referrersTakerVolume)
 }
 
-func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerParty map[types.PartyID]*num.Uint) {
+func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, takerVolumePerReferee, referrersTakesVolume map[types.PartyID]*num.Uint) {
 	e.factorsByReferee = map[types.PartyID]*types.RefereeStats{}
 
 	allStats := map[types.ReferralSetID]*types.ReferralSetStats{}
-	tiersLen := len(e.currentProgram.BenefitTiers)
 
 	for setID, set := range e.sets {
+		referrerTakerVolume := num.UintZero()
+		if takerVolume := referrersTakesVolume[set.Referrer.PartyID]; takerVolume != nil {
+			referrerTakerVolume = takerVolume
+		}
 		setStats := &types.ReferralSetStats{
 			AtEpoch:                  epoch,
 			SetID:                    setID,
+			WasEligible:              false,
+			ReferralSetRunningVolume: num.UintZero(),
 			RefereesStats:            map[types.PartyID]*types.RefereeStats{},
-			ReferralSetRunningVolume: e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength),
+			ReferrerTakerVolume:      referrerTakerVolume,
 			RewardFactor:             num.DecimalZero(),
+			RewardsMultiplier:        num.DecimalOne(),
+			RewardsFactorMultiplier:  num.DecimalZero(),
 		}
 
-		for i := tiersLen - 1; i >= 0; i-- {
-			tier := e.currentProgram.BenefitTiers[i]
-			if setStats.RewardFactor.IsZero() && setStats.ReferralSetRunningVolume.GTE(tier.MinimumRunningNotionalTakerVolume) {
-				setStats.RewardFactor = tier.ReferralRewardFactor
-				break
-			}
+		setStats.ReferralSetRunningVolume = e.referralSetsNotionalVolumes.RunningSetVolumeForWindow(setID, e.currentProgram.WindowLength)
+
+		stakingBalance, _ := e.staking.GetAvailableBalance(set.Referrer.PartyID.String())
+		setStats.WasEligible = stakingBalance.GTE(e.referralProgramMinStakedVegaTokens)
+
+		if setStats.WasEligible {
+			setStats.RewardFactor = e.matchRewardFactor(setStats.ReferralSetRunningVolume)
+			setStats.RewardsMultiplier = e.matchRewardMultiplier(stakingBalance)
+			setStats.RewardsFactorMultiplier = num.MinD(
+				setStats.RewardFactor.Mul(setStats.RewardsMultiplier),
+				e.referralProgramMaxRewardProportion,
+			)
 		}
 
-		balance, _ := e.staking.GetAvailableBalance(set.Referrer.PartyID.String())
-
-		if balance.GTE(e.referralProgramMinStakedVegaTokens) {
-			setStats.WasEligible = true
-		}
-
-		setStats.RewardsMultiplier = e.calculateMultiplierForParty(setID)
-		setStats.RewardsFactorMultiplier = e.calculateRewardsFactorMultiplierForParty(setStats.RewardsMultiplier, setStats.RewardFactor)
-
-		e.sets[setID].CurrentRewardFactor = setStats.RewardFactor
-		e.sets[setID].CurrentRewardsMultiplier = setStats.RewardsMultiplier
-		e.sets[setID].CurrentRewardsFactorMultiplier = setStats.RewardsFactorMultiplier
+		set.CurrentRewardFactor = setStats.RewardFactor
+		set.CurrentRewardsMultiplier = setStats.RewardsMultiplier
+		set.CurrentRewardsFactorMultiplier = setStats.RewardsFactorMultiplier
 
 		allStats[setID] = setStats
 	}
 
-	for party, setID := range e.referees {
+	for referee, setID := range e.referees {
 		set := e.sets[setID]
-		epochCount := uint64(0)
 
-		for _, referee := range set.Referees {
-			if referee.PartyID == party {
-				epochCount = e.currentEpoch - referee.StartedAtEpoch + 1
+		epochCount := uint64(0)
+		for _, refereeMembership := range set.Referees {
+			if refereeMembership.PartyID == referee {
+				epochCount = e.currentEpoch - refereeMembership.StartedAtEpoch + 1
 				break
 			}
 		}
 
-		setStats := allStats[setID]
-		runningVolumeForSet := setStats.ReferralSetRunningVolume
-
 		partyTakerVolume := num.UintZero()
-		if takerVolume := takerVolumePerParty[party]; takerVolume != nil {
+		if takerVolume := takerVolumePerReferee[referee]; takerVolume != nil {
 			partyTakerVolume = takerVolume
 		}
+
 		refereeStats := &types.RefereeStats{
 			TakerVolume:    partyTakerVolume,
 			DiscountFactor: num.DecimalZero(),
 		}
-		e.factorsByReferee[party] = refereeStats
-		setStats.RefereesStats[party] = refereeStats
 
-		if !setStats.WasEligible {
-			continue
-		}
+		setStats := allStats[setID]
+		setStats.RefereesStats[referee] = refereeStats
+		e.factorsByReferee[referee] = refereeStats
 
-		for i := tiersLen - 1; i >= 0; i-- {
-			tier := e.currentProgram.BenefitTiers[i]
-			if refereeStats.DiscountFactor.IsZero() && epochCount >= tier.MinimumEpochs.Uint64() && runningVolumeForSet.GTE(tier.MinimumRunningNotionalTakerVolume) {
-				refereeStats.DiscountFactor = tier.ReferralDiscountFactor
-				break
-			}
+		if setStats.WasEligible {
+			refereeStats.DiscountFactor = e.matchDiscountFactor(epochCount, setStats.ReferralSetRunningVolume)
 		}
 	}
 
@@ -583,13 +566,52 @@ func (e *Engine) computeFactorsByReferee(ctx context.Context, epoch uint64, take
 	}
 }
 
+func (e *Engine) matchDiscountFactor(epochCount uint64, setRunningVolume *num.Uint) num.Decimal {
+	factor := num.DecimalZero()
+	for _, tier := range e.currentProgram.BenefitTiers {
+		if epochCount < tier.MinimumEpochs.Uint64() || setRunningVolume.LT(tier.MinimumRunningNotionalTakerVolume) {
+			break
+		}
+		factor = tier.ReferralDiscountFactor
+	}
+
+	return factor
+}
+
+func (e *Engine) matchRewardFactor(setRunningVolume *num.Uint) num.Decimal {
+	factor := num.DecimalZero()
+	for _, tier := range e.currentProgram.BenefitTiers {
+		// NB: intentionally only checking the running notional here ignoring the epochs.
+		// This way if there are multiple entries with identical running volume we'll choose the last one, i.e. having most epochs
+		if setRunningVolume.LT(tier.MinimumRunningNotionalTakerVolume) {
+			break
+		}
+		factor = tier.ReferralRewardFactor
+	}
+
+	return factor
+}
+
+func (e *Engine) matchRewardMultiplier(stakingBalance *num.Uint) num.Decimal {
+	// This is set to 1 as the minimum value of a reward multiplier is 1.
+	multiplier := num.DecimalOne()
+	for _, tier := range e.currentProgram.StakingTiers {
+		if stakingBalance.LT(tier.MinimumStakedTokens) {
+			break
+		}
+		multiplier = tier.ReferralRewardMultiplier
+	}
+
+	return multiplier
+}
+
 func (e *Engine) isSetEligible(setID types.ReferralSetID) error {
 	set, ok := e.sets[setID]
 	if !ok {
 		return ErrUnknownSetID
 	}
 
-	return e.isPartyEligible(string(set.Referrer.PartyID))
+	return e.isPartyEligible(set.Referrer.PartyID)
 }
 
 func (e *Engine) canSwitchReferralSet(party types.PartyID, newSet types.ReferralSetID) bool {
@@ -607,15 +629,16 @@ func (e *Engine) canSwitchReferralSet(party types.PartyID, newSet types.Referral
 	return false
 }
 
-func (e *Engine) isPartyEligible(party string) error {
+func (e *Engine) isPartyEligible(party types.PartyID) error {
+	partyStr := party.String()
 	// Ignore error, function returns zero balance anyway.
-	balance, _ := e.staking.GetAvailableBalance(party)
+	balance, _ := e.staking.GetAvailableBalance(partyStr)
 
 	if balance.GTE(e.referralProgramMinStakedVegaTokens) {
 		return nil
 	}
 
-	return ErrNotEligibleForReferralRewards(party, balance, e.referralProgramMinStakedVegaTokens)
+	return ErrNotEligibleForReferralRewards(partyStr, balance, e.referralProgramMinStakedVegaTokens)
 }
 
 func NewEngine(broker Broker, timeSvc TimeService, mat MarketActivityTracker, staking StakingBalances) *Engine {

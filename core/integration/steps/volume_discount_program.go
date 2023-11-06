@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/cucumber/godog"
 )
 

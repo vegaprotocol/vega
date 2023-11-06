@@ -27,6 +27,7 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/grpc"
 )
 

@@ -25,15 +25,13 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/errors"
-	"code.vegaprotocol.io/vega/core/events"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier Witness

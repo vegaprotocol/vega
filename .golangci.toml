@@ -56,7 +56,6 @@ disable = [
     "varnamelen",
     "wrapcheck",
     "wsl",
-
     ## New linters, disabled until we evaluate if we want them
     "wastedassign",
     "nakedret",
@@ -67,10 +66,8 @@ disable = [
     "dupword",
     "depguard",
     "revive",
-
     ## Disabled on-pupose.
     "exhaustruct", # We often make incomplete structs.
-    "gci", # Doesn't match our code style.
     "lll", # We don't have a line length.
     "nlreturn", # Doesn't match our code style.
     "nonamedreturns", # We don't mind named returns.
@@ -89,6 +86,16 @@ disable = [
 [linters-settings.govet]
 enable = [
     # "fieldalignment", to enable one day
+]
+
+[linters-settings.gci]
+custom-order = true
+sections = [
+    "standard", # Standard section: captures all standard packages.
+    "prefix(code.vegaprotocol.io/vega)", # Custom section: groups all imports with the specified Prefix.
+    "default", # Default section: contains all imports that could not be matched to another section type.
+    "blank", # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+    "dot",
 ]
 
 [[issues.exclude-rules]]

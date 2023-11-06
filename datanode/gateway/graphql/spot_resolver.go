@@ -119,3 +119,7 @@ func (r newSpotMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *v
 func (r newSpotMarketResolver) LiquiditySLAParams(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquiditySLAParameters, error) {
 	return obj.Changes.SlaParams, nil
 }
+
+func (r newSpotMarketResolver) LiquidityFeeSettings(ctx context.Context, obj *vega.NewSpotMarket) (*vega.LiquidityFeeSettings, error) {
+	return obj.Changes.LiquidityFeeSettings, nil
+}

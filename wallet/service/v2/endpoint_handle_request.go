@@ -29,6 +29,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet/api"
+
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
 )

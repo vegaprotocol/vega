@@ -30,10 +30,10 @@ import (
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -250,7 +250,7 @@ func testTransferRewardsEmptySlice(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	res, err := eng.TransferRewards(context.Background(), "reward", []*types.Transfer{})
+	res, err := eng.TransferRewards(context.Background(), "reward", []*types.Transfer{}, types.AccountTypeGlobalReward)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(res))
 }
@@ -272,7 +272,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 		},
 	}
 
-	res, err := eng.TransferRewards(context.Background(), "rewardAccID", transfers)
+	res, err := eng.TransferRewards(context.Background(), "rewardAccID", transfers, types.AccountTypeGlobalReward)
 	require.Error(t, errors.New("account does not exists"), err)
 	require.Nil(t, res)
 }
@@ -300,7 +300,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 		},
 	}
 
-	lm, err := eng.TransferRewards(context.Background(), rewardAcc.ID, transfers)
+	lm, err := eng.TransferRewards(context.Background(), rewardAcc.ID, transfers, types.AccountTypeGlobalReward)
 	require.Nil(t, err)
 	partyAccount, _ := eng.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)

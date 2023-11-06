@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/spec/adaptors"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

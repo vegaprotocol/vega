@@ -31,11 +31,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
+
+	"github.com/golang/mock/gomock"
 )
 
 func Test_MarketData_Push(t *testing.T) {

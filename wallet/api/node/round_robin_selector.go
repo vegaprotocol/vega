@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"go.uber.org/zap"
 )
 

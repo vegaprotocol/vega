@@ -23,9 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
-
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	lproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"

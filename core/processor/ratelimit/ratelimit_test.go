@@ -18,10 +18,10 @@ package ratelimit_test
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/processor/ratelimit"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 )
 
 // runN executes the given `fn` func, `n` times.

@@ -45,8 +45,10 @@ import (
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -485,6 +487,9 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 				InfrastructureFee: num.DecimalFromFloat(0.1),
 				LiquidityFee:      num.DecimalFromFloat(0.1),
 			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+			},
 		},
 		TradableInstrument: &types.TradableInstrument{
 			MarginCalculator: &types.MarginCalculator{
@@ -594,8 +599,9 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
 		Details: &types.AssetDetails{
-			Name:   "Ethereum/Ether",
-			Symbol: "Ethereum/Ether",
+			Name:    "Ethereum/Ether",
+			Symbol:  "Ethereum/Ether",
+			Quantum: num.DecimalFromInt64(1),
 		},
 	}
 	require.NoError(t, collateralEngine.EnableAsset(context.Background(), ethAsset))
@@ -657,8 +663,9 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
 		Details: &types.AssetDetails{
-			Name:   "Ethereum/Ether",
-			Symbol: "Ethereum/Ether",
+			Name:    "Ethereum/Ether",
+			Symbol:  "Ethereum/Ether",
+			Quantum: num.DecimalFromInt64(1),
 		},
 	}
 	collateralEngine.EnableAsset(context.Background(), ethAsset)

@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/libs/jsonrpc/mocks"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

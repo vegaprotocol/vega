@@ -24,6 +24,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/didip/tollbooth/v7"
 	"github.com/didip/tollbooth/v7/libstring"
 	"github.com/didip/tollbooth/v7/limiter"
@@ -32,9 +35,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-
-	"code.vegaprotocol.io/vega/datanode/contextutil"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

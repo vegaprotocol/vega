@@ -33,6 +33,7 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"github.com/shopspring/decimal"
 )
 

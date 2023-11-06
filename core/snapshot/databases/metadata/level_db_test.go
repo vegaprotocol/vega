@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"

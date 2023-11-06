@@ -33,12 +33,12 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/pkg/errors"
 )
 
 type SQLBrokerSubscriber interface {

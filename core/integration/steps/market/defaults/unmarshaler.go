@@ -18,9 +18,9 @@ package defaults
 import (
 	"io"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/golang/protobuf/jsonpb"
 )
 
 type Unmarshaler struct {

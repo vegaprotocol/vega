@@ -20,11 +20,10 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var (

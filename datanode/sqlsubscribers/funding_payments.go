@@ -31,11 +31,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/pkg/errors"
 )
 
 type FundingPaymentsEvent interface {

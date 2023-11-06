@@ -77,17 +77,6 @@ func (r *recurringTransferResolver) EndEpoch(ctx context.Context, obj *eventspb.
 	return nil, nil
 }
 
-func (r *recurringTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringTransfer) (*DispatchStrategy, error) {
-	if obj.DispatchStrategy != nil {
-		return &DispatchStrategy{
-			DispatchMetric:        obj.DispatchStrategy.Metric,
-			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
-			MarketIdsInScope:      obj.DispatchStrategy.Markets,
-		}, nil
-	}
-	return nil, nil
-}
-
 type recurringGovernanceTransferResolver VegaResolverRoot
 
 func (r *recurringGovernanceTransferResolver) StartEpoch(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (int, error) {
@@ -98,17 +87,6 @@ func (r *recurringGovernanceTransferResolver) EndEpoch(ctx context.Context, obj 
 	if obj.EndEpoch != nil {
 		i := int(*obj.EndEpoch)
 		return &i, nil
-	}
-	return nil, nil
-}
-
-func (r *recurringGovernanceTransferResolver) DispatchStrategy(ctx context.Context, obj *eventspb.RecurringGovernanceTransfer) (*DispatchStrategy, error) {
-	if obj.DispatchStrategy != nil {
-		return &DispatchStrategy{
-			DispatchMetric:        obj.DispatchStrategy.Metric,
-			DispatchMetricAssetID: obj.DispatchStrategy.AssetForMetric,
-			MarketIdsInScope:      obj.DispatchStrategy.Markets,
-		}, nil
 	}
 	return nil, nil
 }

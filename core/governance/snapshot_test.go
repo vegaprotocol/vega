@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

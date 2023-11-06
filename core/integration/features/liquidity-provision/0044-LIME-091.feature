@@ -66,11 +66,13 @@ Feature: Test change of SLA market parameter
   Scenario: 001: lp1 and lp2 on the market ETH/MAR22, 0044-LIME-091, 0044-LIME-093, 0044-LIME-029
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
-      | lp1 | USD | 200000 |
-      | lp2 | USD | 200000 |
+      | lp1    | USD   | 200000 |
+      | lp2    | USD   | 200000 |
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
+      | ptbuy  | USD   | 100000 |
+      | ptsell | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
@@ -125,39 +127,46 @@ Feature: Test change of SLA market parameter
       | lp2  | market | ACCOUNT_TYPE_BOND | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | 2400   | USD   |
     And the insurance pool balance should be "4800" for the market "ETH/MAR22"
 
-    And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 3556         | 3200           | 1             |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptbuy  | ETH/MAR22 | buy  | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptbuy  | ETH/MAR22 | sell | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10350        | 3200           | 1             | 3           |
 
-    And the parties submit the following liquidity provision:
+    When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type   |
       | lp_1 | lp1   | ETH/MAR22 | 4000              | 0.02  | amendment |
       | lp_2 | lp2   | ETH/MAR22 | 4000              | 0.015 | amendment |
 
 #0044-LIME-095:during auction the parties place orders within the price range: 0.1 which should count as SLA
-    Then the parties place the following orders:
+    And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | lp1   | ETH/MAR22 | buy  | 12     | 998   | 0                | TYPE_LIMIT | TIF_GTC |
       | lp1   | ETH/MAR22 | sell | 12     | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | lp2   | ETH/MAR22 | buy  | 12     | 998   | 0                | TYPE_LIMIT | TIF_GTC |
       | lp2   | ETH/MAR22 | sell | 12     | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "4" blocks
 
 #indicative price buy is (990*10+998*24)/34=995; (1010*10+1002*24)/34=1004,
 #last trade price is 1000, so the price range should be: (0.9*995, 1.1*1004)=(895, 1104)
 # (1.0-market.liquidity.priceRange) x min(last trade price, indicative uncrossing price) <=  price levels <= (1.0+market.liquidity.priceRange) x max(last trade price, indicative uncrossing price).
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 64153  | 129447  | 4000 |
-      | lp2   | USD   | ETH/MAR22 | 64153  | 129447  | 4000 |
+      | lp1   | USD   | ETH/MAR22 | 127281 | 66287   | 4000 |
+      | lp2   | USD   | ETH/MAR22 | 127281 | 66319   | 4000 |
     When the network moves ahead "11" blocks
-    And the insurance pool balance should be "4800" for the market "ETH/MAR22"
+    And the insurance pool balance should be "4860" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 3556         | 8000           | 1             |
+      | 994        | TRADING_MODE_CONTINUOUS | 14142        | 8000           | 4             |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 128049 | 65551   | 4000 |
-      | lp2   | USD   | ETH/MAR22 | 128049 | 65551   | 4000 |
+      | lp1   | USD   | ETH/MAR22 | 127281 | 66287   | 4000 |
+      | lp2   | USD   | ETH/MAR22 | 127281 | 66319   | 4000 |
 
 

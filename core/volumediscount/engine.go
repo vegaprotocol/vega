@@ -20,14 +20,14 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -155,7 +155,6 @@ func (e *Engine) notifyVolumeDiscountProgramEnded(ctx context.Context, epochTime
 }
 
 func (e *Engine) calculatePartiesVolumeForWindow(windowSize int) {
-	windowSizeAsDecimal := num.DecimalFromInt64(int64(windowSize))
 	for pi := range e.parties {
 		total := num.UintZero()
 		for i := 0; i < windowSize; i++ {
@@ -165,7 +164,7 @@ func (e *Engine) calculatePartiesVolumeForWindow(windowSize int) {
 			}
 			total.AddSum(valueForEpoch)
 		}
-		e.avgVolumePerParty[pi] = total.ToDecimal().Div(windowSizeAsDecimal)
+		e.avgVolumePerParty[pi] = total.ToDecimal()
 	}
 }
 

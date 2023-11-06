@@ -1,6 +1,30 @@
 # Changelog
 
-## Unreleased 0.73.0
+## Unreleased 0.74.0
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+
+- [9881](https://github.com/vegaprotocol/vega/issues/9881) - Liquidity monitoring auctions to be removed.
+
+### 🛠 Improvements
+
+- [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
+- [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
+
+### 🐛 Fixes
+
+- [9941](https://github.com/vegaprotocol/vega/issues/9941) - Add data node mapping for `WasEligible` field in referral set.
+- [9940](https://github.com/vegaprotocol/vega/issues/9940) - Truncate fee stats in quantum down to the 6 decimal.
+- [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
+- [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
+- [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
+
+
+## 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -17,9 +41,6 @@
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 - [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
 
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 
@@ -176,6 +197,8 @@
 - [9886](https://github.com/vegaprotocol/vega/issues/9886) - Add party vesting statistics endpoint.
 - [9770](https://github.com/vegaprotocol/vega/issues/9770) - Fix `PnL` flickering bug on an already open position.
 - [9827](https://github.com/vegaprotocol/vega/issues/9827) - Expose `was_eligible` in the referral set statistics.
+- [9918](https://github.com/vegaprotocol/vega/issues/9918) - Expose vesting quantum balance.
+- [9923](https://github.com/vegaprotocol/vega/issues/9923) - Add referrer volume to referral set stats.
 
 ### 🐛 Fixes
 
@@ -358,6 +381,12 @@
 - [9894](https://github.com/vegaprotocol/vega/issues/9894) - Reset distress party position in market activity tracker.
 - [9895](https://github.com/vegaprotocol/vega/issues/9895) - Expose discounts on trades fees.
 - [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9900](https://github.com/vegaprotocol/vega/issues/9900) - Fix for duplicate liquidity provisions in the `API`.
+- [9911](https://github.com/vegaprotocol/vega/issues/9911) - Bind correct property in `GraphQL` resolver.
+- [9913](https://github.com/vegaprotocol/vega/issues/9913) - Add missing properties in schema.
+- [9916](https://github.com/vegaprotocol/vega/issues/9916) - Fix activity streak locked account until epoch.
+- [9924](https://github.com/vegaprotocol/vega/issues/9924) - Referral set referees `API` should aggregate by number of epochs.
+- [9922](https://github.com/vegaprotocol/vega/issues/9922) - Ensure the factors in referral program account for set eligibility.
 
 ## 0.72.1
 
@@ -371,7 +400,7 @@
 - [8727](https://github.com/vegaprotocol/vega/issues/8727) - Clear parent market on checkpoint restore if the parent market was already succeeded.
 - [8835](https://github.com/vegaprotocol/vega/issues/8835) - Spot snapshot fixes
 - [9651](https://github.com/vegaprotocol/vega/issues/9651) - Park pegged orders if they lose their peg
-- [9666]()(https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
+- [9666](https://github.com/vegaprotocol/vega/issues/9666) - Fix balance cache refresh snapshot issue
 
 ## 0.72.0
 

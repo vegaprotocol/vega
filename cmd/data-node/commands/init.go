@@ -22,15 +22,13 @@ import (
 	"math"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
 	"code.vegaprotocol.io/vega/datanode/config"
+	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
-
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
 )
 
 type InitCmd struct {

@@ -23,14 +23,14 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func TestVolumeDiscountStats_AddVolumeDiscountStats(t *testing.T) {

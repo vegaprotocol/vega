@@ -20,10 +20,9 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -64,7 +63,7 @@ type Delegation interface {
 // Collateral engine provides access to account data and transferring rewards.
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
-	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer, rewardType types.AccountType) ([]*types.LedgerMovement, error)
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
 }
 
@@ -95,7 +94,7 @@ type Teams interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vesting_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Vesting
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
-	GetRewardBonusMultiplier(party string) num.Decimal
+	GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/activity_streak_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards ActivityStreak
@@ -343,7 +342,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 
 func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	asMultiplier := e.activityStreak.GetRewardsDistributionMultiplier(party)
-	vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
+	_, vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
 	return asMultiplier.Mul(vsMultiplier)
 }
 
@@ -441,7 +440,7 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		})
 	}
 
-	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
+	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers, po.rewardType)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return

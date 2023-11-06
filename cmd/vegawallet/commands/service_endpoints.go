@@ -22,11 +22,11 @@ import (
 	"text/template"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
-	svcStoreV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
-
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
+	svcStoreV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
+
 	"github.com/spf13/cobra"
 )
 

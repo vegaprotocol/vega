@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )

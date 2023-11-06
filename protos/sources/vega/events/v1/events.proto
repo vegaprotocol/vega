@@ -81,6 +81,8 @@ message PartyVestingStats {
   string party_id = 1;
   // The bonus multiplier applied on the reward.
   string reward_bonus_multiplier = 2;
+  // The balance of the party, in quantum.
+  string quantum_balance = 3;
 }
 
 // Fees rewards and discounts paid / received per parties during an epoch
@@ -127,6 +129,8 @@ message PartyAmount {
   string party = 1;
   // Amount received.
   string amount = 2;
+  // Amount value in quantum.
+  string quantum_amount = 3;
 }
 
 // The updated activity streak of a party at end of epoch
@@ -930,6 +934,8 @@ message ReferralSetStatsUpdated {
   string rewards_factor_multiplier = 7;
   // Indicates if the referral set was eligible to be part of the referral program.
   bool was_eligible = 8;
+  // Taker volume of the referrer
+  string referrer_taker_volume = 9;
 }
 
 message RefereeStats {

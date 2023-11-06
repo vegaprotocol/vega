@@ -25,16 +25,16 @@ import (
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/fs"
 	vio "code.vegaprotocol.io/vega/libs/io"
-	"github.com/georgysavva/scany/pgxscan"
-	"golang.org/x/exp/maps"
-
-	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
+	"golang.org/x/exp/maps"
 )
 
 var (

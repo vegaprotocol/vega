@@ -21,9 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
-
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 

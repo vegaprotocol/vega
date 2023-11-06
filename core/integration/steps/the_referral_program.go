@@ -21,10 +21,10 @@ import (
 
 	referralcfg "code.vegaprotocol.io/vega/core/integration/steps/referral"
 	"code.vegaprotocol.io/vega/core/referral"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/types"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
+	"github.com/cucumber/godog"
 )
 
 func TheReferralProgram(referralProgramConfig *referralcfg.Config, referralProgramEngine *referral.Engine, table *godog.Table) error {

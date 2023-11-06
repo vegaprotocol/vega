@@ -23,9 +23,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/shopspring/decimal"
-	"google.golang.org/grpc"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -38,6 +35,9 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/shopspring/decimal"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -583,6 +583,10 @@ func (r *VegaResolverRoot) TransferNode() TransferNodeResolver {
 
 func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
 	return (*partyVestingStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) DispatchStrategy() DispatchStrategyResolver {
+	return (*dispatchStrategyResolver)(r)
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot
@@ -1669,19 +1673,19 @@ func (r *myQueryResolver) ReferralSets(ctx context.Context, id, referrer, refere
 	return resp.ReferralSets, nil
 }
 
-func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination, daysToAggregate *int) (*v2.ReferralSetRefereeConnection, error) {
-	var aggregationDays uint32 = 30 // default to 30 days
+func (r *myQueryResolver) ReferralSetReferees(ctx context.Context, id, referrer, referee *string, pagination *v2.Pagination, epochsToAggregate *int) (*v2.ReferralSetRefereeConnection, error) {
+	var aggregationEpochs uint32 = 30 // default to 30 days
 
-	if daysToAggregate != nil {
-		aggregationDays = uint32(*daysToAggregate)
+	if epochsToAggregate != nil {
+		aggregationEpochs = uint32(*epochsToAggregate)
 	}
 
 	req := &v2.ListReferralSetRefereesRequest{
-		ReferralSetId:   id,
-		Pagination:      pagination,
-		Referrer:        referrer,
-		Referee:         referee,
-		AggregationDays: &aggregationDays,
+		ReferralSetId:     id,
+		Pagination:        pagination,
+		Referrer:          referrer,
+		Referee:           referee,
+		AggregationEpochs: &aggregationEpochs,
 	}
 
 	resp, err := r.tradingDataClientV2.ListReferralSetReferees(ctx, req)
@@ -2564,7 +2568,7 @@ func (r *myTradeResolver) BuyerFee(_ context.Context, obj *vegapb.Trade) (*Trade
 		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.BuyerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeReferrerDiscount)
-		fee.LiquidityFeeReferralDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
+		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.BuyerFee.LiquidityFeeVolumeDiscount)
 	}
 	return &fee, nil
 }
@@ -2589,8 +2593,9 @@ func (r *myTradeResolver) SellerFee(_ context.Context, obj *vegapb.Trade) (*Trad
 		fee.InfrastructureFeeVolumeDiscount = setIfExists(obj.SellerFee.InfrastructureFeeVolumeDiscount)
 		fee.LiquidityFee = obj.SellerFee.LiquidityFee
 		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeReferrerDiscount)
-		fee.LiquidityFeeReferralDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
+		fee.LiquidityFeeVolumeDiscount = setIfExists(obj.SellerFee.LiquidityFeeVolumeDiscount)
 	}
+
 	return &fee, nil
 }
 

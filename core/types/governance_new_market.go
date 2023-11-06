@@ -156,6 +156,7 @@ type NewMarketConfiguration struct {
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	LiquiditySLAParameters        *LiquiditySLAParams
+	LiquidityFeeSettings          *LiquidityFeeSettings
 
 	RiskParameters          newRiskParams
 	LinearSlippageFactor    num.Decimal
@@ -198,6 +199,11 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		liquiditySLAParameters = n.LiquiditySLAParameters.IntoProto()
 	}
 
+	var liquidityFeeSettings *vegapb.LiquidityFeeSettings
+	if n.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
+	}
+
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 n.DecimalPlaces,
@@ -208,6 +214,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
+		LiquidityFeeSettings:          liquidityFeeSettings,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -347,6 +354,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
+		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 	if p.RiskParameters != nil {

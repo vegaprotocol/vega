@@ -16,13 +16,14 @@
 package commands_test
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 
 	"code.vegaprotocol.io/vega/commands"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckProposalSubmissionForReferralProgramUpdate(t *testing.T) {
@@ -51,6 +52,8 @@ func TestCheckProposalSubmissionForReferralProgramUpdate(t *testing.T) {
 	t.Run("Submitting a referral program update without staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithoutStakingTierReferralRewardMultiplierFails)
 	t.Run("Submitting a referral program update with bad format for staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithBadFormatForStakingTierReferralRewardMultiplierFails)
 	t.Run("Submitting a referral program update with bad value for staking tier referral reward multiplier fails", testSubmissionForReferralProgramUpdateWithBadValueForStakingTierReferralRewardMultiplierFails)
+	t.Run("Submitting a referral program update with multiple identical staking tiers fails", testSubmissionForReferralProgramUpdateWithDuplicateStakingTierEntriesFails)
+	t.Run("Submitting a referral program update with multiple identical benefit tiers fails", testSubmissionForReferralProgramUpdateWithDuplicateBenefitTierEntriesFails)
 }
 
 func testSubmissionForReferralProgramUpdateWithoutUpdateFails(t *testing.T) {
@@ -177,6 +180,66 @@ func testSubmissionForReferralProgramUpdateWithoutTierMinimumRunningNotionalTake
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.0.minimum_running_notional_taker_volume"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1.minimum_running_notional_taker_volume"), commands.ErrIsRequired)
+}
+
+func testSubmissionForReferralProgramUpdateWithDuplicateBenefitTierEntriesFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgramChanges{
+						BenefitTiers: []*types.BenefitTier{
+							{
+								MinimumRunningNotionalTakerVolume: "100",
+								MinimumEpochs:                     "10",
+								ReferralRewardFactor:              "1.1",
+								ReferralDiscountFactor:            "1.2",
+							},
+							{
+								MinimumRunningNotionalTakerVolume: "100",
+								MinimumEpochs:                     "10",
+								ReferralRewardFactor:              "1.2",
+								ReferralDiscountFactor:            "1.3",
+							},
+							{
+								MinimumRunningNotionalTakerVolume: "100",
+								MinimumEpochs:                     "20",
+								ReferralRewardFactor:              "1.3",
+								ReferralDiscountFactor:            "1.4",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.1"), fmt.Errorf("duplicate benefit tier"))
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.2"), fmt.Errorf("duplicate benefit tier"))
+}
+
+func testSubmissionForReferralProgramUpdateWithDuplicateStakingTierEntriesFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateReferralProgram{
+				UpdateReferralProgram: &types.UpdateReferralProgram{
+					Changes: &types.ReferralProgramChanges{
+						StakingTiers: []*types.StakingTier{
+							{
+								MinimumStakedTokens:      "100",
+								ReferralRewardMultiplier: "1.2",
+							}, {
+								MinimumStakedTokens:      "100",
+								ReferralRewardMultiplier: "1.3",
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.1"), fmt.Errorf("duplicate staking tier"))
 }
 
 func testSubmissionForReferralProgramUpdateWithBadFormatForTierMinimumRunningNotionalTakerVolumeFails(t *testing.T) {

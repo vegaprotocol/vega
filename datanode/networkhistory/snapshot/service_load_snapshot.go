@@ -24,19 +24,16 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-
-	"go.uber.org/zap"
-
-	"github.com/jackc/pgtype"
-	"github.com/klauspost/compress/zip"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/klauspost/compress/zip"
+	"go.uber.org/zap"
 )
 
 type LoadResult struct {

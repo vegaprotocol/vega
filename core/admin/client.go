@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/rpc/json"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/gorilla/rpc/json"
 )
 
 // Client implement a socket client allowing to run simple RPC commands.

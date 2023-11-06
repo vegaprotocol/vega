@@ -18,10 +18,10 @@ package snapshot_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/core/snapshot"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestEngineConfig(t *testing.T) {

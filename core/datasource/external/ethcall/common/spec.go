@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/types/known/structpb"
 )
 

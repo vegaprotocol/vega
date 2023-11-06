@@ -26,6 +26,7 @@ import (
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"go.uber.org/zap"
 )
 

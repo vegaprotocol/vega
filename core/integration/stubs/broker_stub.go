@@ -21,10 +21,9 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/libs/broker"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/broker"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"

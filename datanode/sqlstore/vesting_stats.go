@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -40,12 +41,13 @@ func (vs *VestingStats) Add(ctx context.Context, stats *entities.VestingStatsUpd
 
 	for _, v := range stats.PartyVestingStats {
 		_, err := vs.Connection.Exec(ctx,
-			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, vega_time)
-         VALUES ($1, $2, $3, $4)
+			`INSERT INTO party_vesting_stats(party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time)
+         VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (vega_time, party_id) DO NOTHING`,
 			v.PartyID,
 			stats.AtEpoch,
 			v.RewardBonusMultiplier,
+			v.QuantumBalance,
 			stats.VegaTime,
 		)
 		if err != nil {
@@ -63,7 +65,7 @@ func (vs *VestingStats) GetByPartyID(
 
 	pvs := entities.PartyVestingStats{}
 	err := pgxscan.Get(ctx, vs.Connection, &pvs,
-		`SELECT party_id, at_epoch, reward_bonus_multiplier, vega_time
+		`SELECT party_id, at_epoch, reward_bonus_multiplier, quantum_balance, vega_time
 		 FROM party_vesting_stats_current WHERE party_id=$1`,
 		entities.PartyID(id))
 

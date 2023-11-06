@@ -31,6 +31,7 @@ import (
 	"fmt"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"github.com/99designs/gqlgen/graphql"
 )
 

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/service"
 	storeV1 "code.vegaprotocol.io/vega/wallet/service/store/v1"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

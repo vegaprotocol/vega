@@ -24,6 +24,7 @@ import (
 	"text/scanner"
 
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
+
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
 )

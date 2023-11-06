@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,12 +46,14 @@ func TestVestingStats(t *testing.T) {
 				{
 					PartyID:               entities.PartyID(party1),
 					RewardBonusMultiplier: num.MustDecimalFromString("0.5"),
+					QuantumBalance:        num.MustDecimalFromString("10001"),
 					VegaTime:              now,
 					AtEpoch:               1,
 				},
 				{
 					PartyID:               entities.PartyID(party2),
 					RewardBonusMultiplier: num.MustDecimalFromString("1.5"),
+					QuantumBalance:        num.MustDecimalFromString("20001"),
 					VegaTime:              now,
 					AtEpoch:               1,
 				},
@@ -77,12 +80,14 @@ func TestVestingStats(t *testing.T) {
 				{
 					PartyID:               entities.PartyID(party1),
 					RewardBonusMultiplier: num.MustDecimalFromString("1"),
+					QuantumBalance:        num.MustDecimalFromString("12001"),
 					VegaTime:              now,
 					AtEpoch:               2,
 				},
 				{
 					PartyID:               entities.PartyID(party2),
 					RewardBonusMultiplier: num.MustDecimalFromString("2"),
+					QuantumBalance:        num.MustDecimalFromString("30001"),
 					VegaTime:              now,
 					AtEpoch:               2,
 				},

@@ -18,9 +18,9 @@ package entities
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRewardSummaryFromProto(t *testing.T) {

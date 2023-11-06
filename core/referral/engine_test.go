@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,8 +54,10 @@ func TestReferralSet(t *testing.T) {
 	})
 
 	t.Run("can create a set for the first time", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer)).Return(num.NewUint(10001), nil).Times(1)
 		te.broker.EXPECT().Send(gomock.Any()).Times(1)
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
+
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer, setID))
 	})
 
@@ -83,6 +86,7 @@ func TestReferralSet(t *testing.T) {
 	})
 
 	t.Run("can create a second referrer", func(t *testing.T) {
+		te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Return(num.NewUint(10001), nil).Times(1)
 		te.broker.EXPECT().Send(gomock.Any()).Times(1)
 		te.timeSvc.EXPECT().GetTimeNow().Times(1)
 		assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))
@@ -226,12 +230,26 @@ func TestGettingRewardMultiplier(t *testing.T) {
 				MinimumRunningNotionalTakerVolume: num.UintFromUint64(1000),
 				ReferralRewardFactor:              num.DecimalFromFloat(0.001),
 				ReferralDiscountFactor:            num.DecimalFromFloat(0.002),
-			}, {
+			},
+			{
+				MinimumEpochs:                     num.UintFromUint64(1),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(1000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.0005),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.001),
+			},
+			{
+				MinimumEpochs:                     num.UintFromUint64(3),
+				MinimumRunningNotionalTakerVolume: num.UintFromUint64(1000),
+				ReferralRewardFactor:              num.DecimalFromFloat(0.0007),
+				ReferralDiscountFactor:            num.DecimalFromFloat(0.002),
+			},
+			{
 				MinimumEpochs:                     num.UintFromUint64(3),
 				MinimumRunningNotionalTakerVolume: num.UintFromUint64(3000),
 				ReferralRewardFactor:              num.DecimalFromFloat(0.01),
 				ReferralDiscountFactor:            num.DecimalFromFloat(0.02),
-			}, {
+			},
+			{
 				MinimumEpochs:                     num.UintFromUint64(4),
 				MinimumRunningNotionalTakerVolume: num.UintFromUint64(4000),
 				ReferralRewardFactor:              num.DecimalFromFloat(0.1),
@@ -269,13 +287,14 @@ func TestGettingRewardMultiplier(t *testing.T) {
 	te.broker.EXPECT().Send(gomock.Any()).Times(2)
 	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(2)
 
-	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Return(num.NewUint(10001), nil).Times(1)
 
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer1, setID1))
 	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID1))
 
 	// When the epoch ends, the running volume for set members should be
 	// computed.
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Return(num.NewUint(10001), nil).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(1500)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(2000)).Times(1)
 
@@ -285,14 +304,25 @@ func TestGettingRewardMultiplier(t *testing.T) {
 	nextEpoch(t, ctx, te, lastEpochStartTime)
 
 	assert.Equal(t, "0.01", te.engine.RewardsFactorForParty(referee1).String())
-
-	// test reward multiplier
-	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
 	assert.Equal(t, "2", te.engine.RewardsMultiplierForParty(referee1).String())
-
-	// test both
-	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(10001), nil)
 	assert.Equal(t, "0.02", te.engine.RewardsFactorMultiplierAppliedForParty(referee1).String())
+
+	// When the epoch ends, the running volume for set members should be
+	// computed.
+	// Makes the set not eligible for rewards anymore by simulating staking balance
+	// at 0.
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Return(num.NewUint(0), nil).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(1500)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(2000)).Times(1)
+
+	// When the epoch starts, the new program should start.
+	lastEpochStartTime = program1.EndOfProgramTimestamp.Add(-1 * time.Hour)
+	expectReferralSetStatsUpdatedEvent(t, te, 1)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
+
+	assert.Equal(t, "0", te.engine.RewardsFactorForParty(referee1).String())
+	assert.Equal(t, "1", te.engine.RewardsMultiplierForParty(referee1).String())
+	assert.Equal(t, "0", te.engine.RewardsFactorMultiplierAppliedForParty(referee1).String())
 }
 
 func TestGettingRewardAndDiscountFactors(t *testing.T) {
@@ -349,11 +379,12 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.broker.EXPECT().Send(gomock.Any()).Times(4)
 	te.timeSvc.EXPECT().GetTimeNow().Return(time.Now()).Times(4)
 
-	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).AnyTimes().Return(num.NewUint(100), nil)
-	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).AnyTimes().Return(num.NewUint(100), nil)
-
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer1, setID1))
+
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
 	assert.NoError(t, te.engine.CreateReferralSet(ctx, referrer2, setID2))
+
 	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee1, setID1))
 	assert.NoError(t, te.engine.ApplyReferralCode(ctx, referee3, setID2))
 
@@ -363,6 +394,8 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(10000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(100)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
 
 	expectReferralSetStatsUpdatedEvent(t, te, 2)
 	lastEpochStartTime = program1.EndOfProgramTimestamp.Add(-1*time.Hour - 50*time.Minute)
@@ -413,6 +446,8 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(1000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(1000)).Times(1)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
 
 	// When the epoch starts, the new program should start.
 	expectReferralSetStatsUpdatedEvent(t, te, 2)
@@ -450,6 +485,8 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(500)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(500)).Times(1)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
 
 	// When the epoch starts, the new program should start.
 	expectReferralSetStatsUpdatedEvent(t, te, 2)
@@ -490,8 +527,71 @@ func TestGettingRewardAndDiscountFactors(t *testing.T) {
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(10000)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
 	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(10000)).Times(1)
+	// But, the sets are not eligible anymore.
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(0), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(0), nil)
 
-	// When the epoch starts, the new program should start.
+	expectReferralSetStatsUpdatedEvent(t, te, 2)
+	lastEpochStartTime = program1.EndOfProgramTimestamp.Add(-45 * time.Minute)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
+
+	// The sets are not eligible anymore, no more reward and discount factors.
+	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer1).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee1).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.RewardsFactorForParty(referrer2).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee3).String())
+	assert.Equal(t, num.DecimalZero().String(), te.engine.ReferralDiscountFactorForParty(referee2).String())
+
+	// When the epoch ends, the running volume for set members should be
+	// computed.
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(10000)).Times(1)
+	// And the sets are eligible once again.
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
+
+	expectReferralSetStatsUpdatedEvent(t, te, 2)
+	lastEpochStartTime = program1.EndOfProgramTimestamp.Add(-30 * time.Minute)
+	nextEpoch(t, ctx, te, lastEpochStartTime)
+
+	// Looking for rewards factor for referee 1.
+	// His set has enough notional volume to reach tier 3.
+	// He is a member for long enough to reach tier 3.
+	// => Tier 3 reward factor.
+	// => Tier 3 discount factor.
+	assert.Equal(t, "0.1", te.engine.RewardsFactorForParty(referee1).String())
+	assert.Equal(t, "0.2", te.engine.ReferralDiscountFactorForParty(referee1).String())
+
+	// Looking for reward factor for referee 2.
+	// His set has enough notional volume to reach tier 3.
+	// He is a member for long enough to reach tier 3.
+	// => Tier 3 reward factor.
+	// => Tier 3 discount factor.
+	assert.Equal(t, "0.1", te.engine.RewardsFactorForParty(referee2).String())
+	assert.Equal(t, "0.2", te.engine.ReferralDiscountFactorForParty(referee2).String())
+
+	// Looking for reward factor for referee 3.
+	// His set has enough notional volume to reach tier 3.
+	// He is a member for long enough to reach tier 3.
+	// => Tier 3 reward factor.
+	// => Tier 3 discount factor.
+	assert.Equal(t, "0.1", te.engine.RewardsFactorForParty(referee3).String())
+	assert.Equal(t, "0.2", te.engine.ReferralDiscountFactorForParty(referee3).String())
+
+	// When the epoch ends, the running volume for set members should be
+	// computed.
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer1)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee1)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referrer2)).Return(num.UintFromUint64(10000)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee3)).Return(num.UintFromUint64(0)).Times(1)
+	te.marketActivityTracker.EXPECT().NotionalTakerVolumeForParty(string(referee2)).Return(num.UintFromUint64(10000)).Times(1)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer1)).Times(1).Return(num.NewUint(100), nil)
+	te.staking.EXPECT().GetAvailableBalance(string(referrer2)).Times(1).Return(num.NewUint(100), nil)
+
+	// When the epoch starts, the current program should end.
 	gomock.InOrder(
 		expectReferralSetStatsUpdatedEvent(t, te, 2),
 		expectReferralProgramEndedEvent(t, te),

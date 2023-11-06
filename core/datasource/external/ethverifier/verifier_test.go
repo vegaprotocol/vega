@@ -24,21 +24,18 @@ import (
 	"testing"
 	"time"
 
+	mocks2 "code.vegaprotocol.io/vega/core/broker/mocks"
+	"code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier/mocks"
 	omocks "code.vegaprotocol.io/vega/core/datasource/spec/mocks"
 	"code.vegaprotocol.io/vega/core/events"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-
-	mocks2 "code.vegaprotocol.io/vega/core/broker/mocks"
-
-	"code.vegaprotocol.io/vega/core/client/eth"
-	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

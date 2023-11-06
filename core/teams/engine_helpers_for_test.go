@@ -17,6 +17,7 @@ package teams
 
 import (
 	"code.vegaprotocol.io/vega/core/types"
+
 	"golang.org/x/exp/slices"
 )
 

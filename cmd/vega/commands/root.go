@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jessevdk/go-flags"
-
 	"code.vegaprotocol.io/vega/cmd/vega/commands/faucet"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/paths"
 	tools "code.vegaprotocol.io/vega/cmd/vegatools"
 	"code.vegaprotocol.io/vega/core/config"
+
+	"github.com/jessevdk/go-flags"
 )
 
 // Subcommand is the signature of a sub command that can be registered.

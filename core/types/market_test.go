@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -118,6 +119,9 @@ func TestMarketFromIntoProto(t *testing.T) {
 				MakerFee:          "0.002",
 				InfrastructureFee: "0.001",
 				LiquidityFee:      "0.003",
+			},
+			LiquidityFeeSettings: &vegapb.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
 			},
 		},
 		OpeningAuction: &vegapb.AuctionDuration{

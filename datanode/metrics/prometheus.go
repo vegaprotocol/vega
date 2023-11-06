@@ -35,9 +35,9 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/protos"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

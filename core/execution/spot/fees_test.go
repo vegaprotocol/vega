@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,7 +54,7 @@ func setupToLeaveOpeningAuction(t *testing.T) (*testMarket, context.Context) {
 	return tm, ctx
 }
 
-func TestNoFeesInOpenintAuction(t *testing.T) {
+func TestNoFeesInOpeningAuction(t *testing.T) {
 	tm, _ := setupToLeaveOpeningAuction(t)
 
 	// at this point party 1 bought 1 BTC and has one outstanding order at price 30k as we've left opening auction

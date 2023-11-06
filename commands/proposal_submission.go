@@ -327,11 +327,25 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	} else if changes.WindowLength > 100 {
 		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
 	}
+
+	tiers := map[string]struct{}{}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkBenefitTier(i, tier))
+		k := tier.MinimumEpochs + "_" + tier.MinimumRunningNotionalTakerVolume
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", i), fmt.Errorf("duplicate benefit tier"))
+		}
+		tiers[k] = struct{}{}
 	}
+
+	tiers = map[string]struct{}{}
 	for i, tier := range changes.StakingTiers {
 		errs.Merge(checkStakingTier(i, tier))
+		k := tier.MinimumStakedTokens
+		if _, ok := tiers[k]; ok {
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
+		}
+		tiers[k] = struct{}{}
 	}
 	return errs
 }
@@ -866,7 +880,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
-
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "proposal_submission.terms.change.new_market.changes.liquidity_fee_settings"))
 	return errs
 }
 
@@ -916,6 +930,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.update_market.changes.sla_params"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "proposal_submission.terms.change.update_market.changes.liquidity_fee_settings"))
 
 	return errs
 }
@@ -1627,6 +1642,41 @@ func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Er
 
 	if config.PerformanceHysteresisEpochs > 366 {
 		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBeLessThen366)
+	}
+
+	return errs
+}
+
+func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent string) Errors {
+	errs := NewErrors()
+	if config == nil {
+		return nil // no error, we'll default to margin-cost method
+	}
+
+	// check for valid enum range
+	if config.Method == protoTypes.LiquidityFeeSettings_METHOD_UNSPECIFIED {
+		errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsRequired)
+	}
+	if _, ok := protoTypes.LiquidityFeeSettings_Method_name[int32(config.Method)]; !ok {
+		errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsNotValid)
+	}
+
+	if config.FeeConstant == nil && config.Method == protoTypes.LiquidityFeeSettings_METHOD_CONSTANT {
+		errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrIsRequired)
+	}
+
+	if config.FeeConstant != nil {
+		if config.Method != protoTypes.LiquidityFeeSettings_METHOD_CONSTANT {
+			errs.AddForProperty(fmt.Sprintf("%s.method", parent), ErrIsNotValid)
+		}
+
+		fee, err := num.DecimalFromString(*config.FeeConstant)
+		switch {
+		case err != nil:
+			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrIsNotValidNumber)
+		case fee.IsNegative():
+			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrMustBePositiveOrZero)
+		}
 	}
 
 	return errs

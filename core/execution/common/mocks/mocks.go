@@ -1139,18 +1139,6 @@ func (mr *MockAuctionStateMockRecorder) ExtendAuction(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuction", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuction), arg0)
 }
 
-// ExtendAuctionLiquidityUnmetTarget mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidityUnmetTarget(arg0 types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidityUnmetTarget", arg0)
-}
-
-// ExtendAuctionLiquidityUnmetTarget indicates an expected call of ExtendAuctionLiquidityUnmetTarget.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityUnmetTarget(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityUnmetTarget", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityUnmetTarget), arg0)
-}
-
 // ExtendAuctionPrice mocks base method.
 func (m *MockAuctionState) ExtendAuctionPrice(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
@@ -1229,34 +1217,6 @@ func (m *MockAuctionState) IsFBA() bool {
 func (mr *MockAuctionStateMockRecorder) IsFBA() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFBA", reflect.TypeOf((*MockAuctionState)(nil).IsFBA))
-}
-
-// IsLiquidityAuction mocks base method.
-func (m *MockAuctionState) IsLiquidityAuction() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsLiquidityAuction")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsLiquidityAuction indicates an expected call of IsLiquidityAuction.
-func (mr *MockAuctionStateMockRecorder) IsLiquidityAuction() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityAuction))
-}
-
-// IsLiquidityExtension mocks base method.
-func (m *MockAuctionState) IsLiquidityExtension() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsLiquidityExtension")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsLiquidityExtension indicates an expected call of IsLiquidityExtension.
-func (mr *MockAuctionStateMockRecorder) IsLiquidityExtension() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityExtension", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityExtension))
 }
 
 // IsMonitorAuction mocks base method.
@@ -1379,18 +1339,6 @@ func (m *MockAuctionState) StartGovernanceSuspensionAuction(arg0 time.Time) {
 func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
-}
-
-// StartLiquidityAuctionUnmetTarget mocks base method.
-func (m *MockAuctionState) StartLiquidityAuctionUnmetTarget(arg0 time.Time, arg1 *types.AuctionDuration) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuctionUnmetTarget", arg0, arg1)
-}
-
-// StartLiquidityAuctionUnmetTarget indicates an expected call of StartLiquidityAuctionUnmetTarget.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionUnmetTarget(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionUnmetTarget", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionUnmetTarget), arg0, arg1)
 }
 
 // StartPriceAuction mocks base method.

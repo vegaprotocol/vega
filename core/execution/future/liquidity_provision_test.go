@@ -20,11 +20,10 @@ import (
 	"testing"
 	"time"
 
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 
@@ -87,12 +86,10 @@ func TestSubmit(t *testing.T) {
 		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
-		mktCfg.Fees = &types.Fees{
-			Factors: &types.FeeFactors{
-				LiquidityFee:      num.DecimalFromFloat(0.001),
-				InfrastructureFee: num.DecimalFromFloat(0.0005),
-				MakerFee:          num.DecimalFromFloat(0.00025),
-			},
+		mktCfg.Fees.Factors = &types.FeeFactors{
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
 		}
 		mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: &types.LogNormalRiskModel{
@@ -248,12 +245,11 @@ func TestSubmit(t *testing.T) {
 		mktCfg := getMarket(pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
-		mktCfg.Fees = &types.Fees{
-			Factors: &types.FeeFactors{
-				InfrastructureFee: num.DecimalFromFloat(0.0005),
-				MakerFee:          num.DecimalFromFloat(0.00025),
-			},
+		mktCfg.Fees.Factors = &types.FeeFactors{
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
 		}
+
 		mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: &types.LogNormalRiskModel{
 				RiskAversionParameter: num.DecimalFromFloat(0.001),
@@ -335,11 +331,9 @@ func TestAmend(t *testing.T) {
 		mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
-		mktCfg.Fees = &types.Fees{
-			Factors: &types.FeeFactors{
-				InfrastructureFee: num.DecimalFromFloat(0.0005),
-				MakerFee:          num.DecimalFromFloat(0.00025),
-			},
+		mktCfg.Fees.Factors = &types.FeeFactors{
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
 		}
 		mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: &types.LogNormalRiskModel{
