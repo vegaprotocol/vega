@@ -209,10 +209,18 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 	return nil
 }
 
-func (e *Engine) UpdateModel(stateVarEngine StateVarEngine, calculator *types.MarginCalculator, model Model) {
+func (e *Engine) UpdateModel(
+	stateVarEngine StateVarEngine,
+	calculator *types.MarginCalculator,
+	model Model,
+	linearSlippageFactor num.Decimal,
+	quadraticSlippageFactor num.Decimal,
+) {
 	e.scalingFactorsUint = scalingFactorsUintFromDecimals(calculator.ScalingFactors)
 	e.factors = model.DefaultRiskFactors()
 	e.model = model
+	e.linearSlippageFactor = linearSlippageFactor
+	e.quadraticSlippageFactor = quadraticSlippageFactor
 	stateVarEngine.NewEvent(e.asset, e.mktID, statevar.EventTypeMarketUpdated)
 }
 
