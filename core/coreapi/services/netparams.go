@@ -56,15 +56,11 @@ func (a *NetParams) consume() {
 		// if the Push is still in progress and the queue is full, we'll
 		// end up in a situation where we're waiting for the queue to empty, but
 		// no consumer.
-		for {
-			select {
-			case _, ok := <-a.ch:
-				if !ok {
-					close(a.ch)
-					return
-				}
-			}
+		for range a.ch {
+			// do nothing just let the sender finish what it's doing and empty the channel
 		}
+
+		close(a.ch)
 	}()
 
 	for {

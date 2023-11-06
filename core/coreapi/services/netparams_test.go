@@ -6,12 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
-	"code.vegaprotocol.io/vega/core/events"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/core/coreapi/services"
+	"code.vegaprotocol.io/vega/core/events"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNetParams(t *testing.T) {
