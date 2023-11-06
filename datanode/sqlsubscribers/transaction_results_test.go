@@ -36,9 +36,9 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/stretchr/testify/assert"
-
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransactionResults(t *testing.T) {
