@@ -21,11 +21,11 @@ import (
 	"net"
 	"net/http"
 
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/fullstorydev/grpcui/standalone"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type GRPCUIHandler struct {

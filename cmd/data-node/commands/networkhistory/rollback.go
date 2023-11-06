@@ -21,14 +21,12 @@ import (
 	"fmt"
 	"strconv"
 
-	vgterm "code.vegaprotocol.io/vega/libs/term"
-
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-
-	"code.vegaprotocol.io/vega/datanode/config"
 )
 
 type rollbackCmd struct {

@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

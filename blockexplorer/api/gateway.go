@@ -21,10 +21,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/rs/cors"
-
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/rs/cors"
 )
 
 type Gateway struct {

@@ -27,7 +27,6 @@ import (
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
-
 	"code.vegaprotocol.io/vega/wallet/network"
 )
 

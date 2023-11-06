@@ -21,14 +21,13 @@ import (
 	"strings"
 	"time"
 
-	tmTypes "github.com/tendermint/tendermint/abci/types"
-	"google.golang.org/protobuf/proto"
-
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+	tmTypes "github.com/tendermint/tendermint/abci/types"
+	"google.golang.org/protobuf/proto"
 )
 
 type TxResultRow struct {

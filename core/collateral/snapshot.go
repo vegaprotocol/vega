@@ -22,9 +22,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/pkg/errors"
 )
 

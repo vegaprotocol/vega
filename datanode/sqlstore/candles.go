@@ -35,15 +35,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
-	"github.com/shopspring/decimal"
-
 	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
+	"github.com/shopspring/decimal"
 )
 
 const (

@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"github.com/ethereum/go-ethereum/common/math"
 )
 

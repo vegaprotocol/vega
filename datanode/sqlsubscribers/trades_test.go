@@ -32,12 +32,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSubscriberSequenceNumber(t *testing.T) {

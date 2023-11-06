@@ -20,13 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/georgysavva/scany/pgxscan"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/metrics"
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 type ReferralSets struct {

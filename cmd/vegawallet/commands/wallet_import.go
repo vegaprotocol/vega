@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
+
 	"github.com/spf13/cobra"
 )
 

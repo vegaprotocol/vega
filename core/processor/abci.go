@@ -30,12 +30,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.uber.org/zap"
-
-	"code.vegaprotocol.io/vega/core/referral"
-	"code.vegaprotocol.io/vega/core/snapshot"
-	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -45,6 +39,8 @@ import (
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
+	"code.vegaprotocol.io/vega/core/referral"
+	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
@@ -57,12 +53,14 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypes1 "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
+	"go.uber.org/zap"
 )
 
 const AppVersion = 1

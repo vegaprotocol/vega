@@ -18,10 +18,10 @@ package steps
 import (
 	"context"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesUndelegateTheFollowingStake(

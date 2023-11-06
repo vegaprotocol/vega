@@ -19,12 +19,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
-	"code.vegaprotocol.io/vega/core/spam"
-
-	"github.com/blang/semver"
-
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -35,10 +29,14 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
+	"github.com/blang/semver"
 )
 
 var Version = semver.MustParse("0.1.0")

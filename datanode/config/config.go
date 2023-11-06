@@ -35,15 +35,13 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/datanode/admin"
-
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
-
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/config/encoding"
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"

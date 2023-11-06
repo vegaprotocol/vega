@@ -28,6 +28,7 @@ import (
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+
 	"github.com/dgrijalva/jwt-go/v4"
 	"go.uber.org/zap"
 )

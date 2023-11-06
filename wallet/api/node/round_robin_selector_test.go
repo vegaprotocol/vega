@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

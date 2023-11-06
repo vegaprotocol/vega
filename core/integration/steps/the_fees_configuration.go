@@ -16,10 +16,10 @@
 package steps
 
 import (
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheFeesConfiguration(config *market.Config, name string, table *godog.Table) error {

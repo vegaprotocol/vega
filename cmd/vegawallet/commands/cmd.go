@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

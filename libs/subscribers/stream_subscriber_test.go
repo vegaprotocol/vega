@@ -35,10 +35,9 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
 	"code.vegaprotocol.io/vega/core/events"
 	dtypes "code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 

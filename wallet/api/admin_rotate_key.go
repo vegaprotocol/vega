@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
 )

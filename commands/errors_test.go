@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+
 	"github.com/stretchr/testify/assert"
 )
 

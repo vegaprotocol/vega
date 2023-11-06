@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/datasource/spec/validation"
+
 	"github.com/stretchr/testify/require"
 )
 

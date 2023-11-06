@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
+
 	"github.com/golang/mock/gomock"
 )
 

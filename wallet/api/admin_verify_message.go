@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/crypto"
+
 	"github.com/mitchellh/mapstructure"
 )
 

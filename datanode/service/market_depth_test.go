@@ -38,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/service/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"

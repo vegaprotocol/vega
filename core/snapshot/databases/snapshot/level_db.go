@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/paths"
+
 	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"

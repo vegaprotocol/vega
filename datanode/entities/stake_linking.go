@@ -35,6 +35,7 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/shopspring/decimal"
 )
 

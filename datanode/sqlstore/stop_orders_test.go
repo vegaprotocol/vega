@@ -22,18 +22,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testStopOrderInputs struct {

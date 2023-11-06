@@ -32,12 +32,12 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type ProposalType v2.ListGovernanceDataRequest_Type

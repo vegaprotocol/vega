@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/cucumber/godog"
 )
 

@@ -21,16 +21,14 @@ import (
 	"fmt"
 	"strconv"
 
-	"google.golang.org/grpc/status"
-
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
-
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
+	"google.golang.org/grpc/status"
 )
 
 type fetchCmd struct {

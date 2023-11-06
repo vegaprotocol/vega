@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/cenkalti/backoff"
 )
 

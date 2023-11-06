@@ -19,16 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupReferralProgramTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.ReferralPrograms) {

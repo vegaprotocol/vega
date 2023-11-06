@@ -23,15 +23,15 @@ import (
 	"os"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/types"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	pb "github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"google.golang.org/protobuf/proto"
-
-	"code.vegaprotocol.io/vega/core/types"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 // Data is a representation of the information we scrape from the avl tree.

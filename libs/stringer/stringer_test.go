@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
+
 	"github.com/stretchr/testify/assert"
 )
 

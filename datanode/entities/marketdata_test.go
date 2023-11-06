@@ -33,6 +33,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )

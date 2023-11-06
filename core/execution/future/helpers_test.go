@@ -17,6 +17,7 @@ package future_test
 
 import (
 	"code.vegaprotocol.io/vega/core/types"
+
 	"github.com/imdario/mergo"
 )
 

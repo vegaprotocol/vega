@@ -28,10 +28,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/broker"
-
-	"code.vegaprotocol.io/vega/datanode/utils"
-
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 )
 

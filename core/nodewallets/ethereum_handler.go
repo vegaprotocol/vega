@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets/eth/keystore"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	"code.vegaprotocol.io/vega/paths"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
 )

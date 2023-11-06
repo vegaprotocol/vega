@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/genesis"
+
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 

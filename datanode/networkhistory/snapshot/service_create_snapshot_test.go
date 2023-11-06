@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/stretchr/testify/assert"
 )
 

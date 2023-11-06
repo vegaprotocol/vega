@@ -34,6 +34,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+
 	"github.com/georgysavva/scany/dbscan"
 )
 

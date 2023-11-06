@@ -18,11 +18,11 @@ package types_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestLiquidityFeeStats(t *testing.T) {

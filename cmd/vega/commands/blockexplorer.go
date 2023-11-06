@@ -20,6 +20,7 @@ import (
 	"os"
 
 	cmd "code.vegaprotocol.io/vega/cmd/blockexplorer/commands"
+
 	"github.com/jessevdk/go-flags"
 )
 

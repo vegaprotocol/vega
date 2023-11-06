@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 

@@ -32,8 +32,8 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	walletnode "code.vegaprotocol.io/vega/wallet/api/node"
 	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
-	"github.com/golang/protobuf/proto"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

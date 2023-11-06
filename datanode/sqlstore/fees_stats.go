@@ -22,16 +22,13 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/metrics"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
+	"golang.org/x/exp/maps"
 )
 
 var (

@@ -31,11 +31,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/pkg/errors"
 )
 
 type TradeEvent interface {

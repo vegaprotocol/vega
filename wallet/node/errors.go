@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	typespb "code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

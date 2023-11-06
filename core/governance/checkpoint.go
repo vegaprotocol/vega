@@ -24,12 +24,11 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-
-	"code.vegaprotocol.io/vega/libs/proto"
-	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 type enactmentTime struct {

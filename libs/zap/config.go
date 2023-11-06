@@ -22,6 +22,7 @@ import (
 	"time"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

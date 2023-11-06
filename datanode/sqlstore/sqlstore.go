@@ -37,21 +37,18 @@ import (
 	"io/fs"
 	"time"
 
-	"go.uber.org/zap"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
-
-	"github.com/jackc/pgx/v4/pgxpool"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
-
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
+	"go.uber.org/zap"
 )
 
 var ErrBadID = errors.New("bad id (must be hex string)")

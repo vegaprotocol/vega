@@ -22,6 +22,7 @@ import (
 	walletapi "code.vegaprotocol.io/vega/wallet/api"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/api/spam"
+
 	"github.com/stretchr/testify/require"
 )
 

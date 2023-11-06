@@ -17,6 +17,7 @@ package v1
 
 import (
 	"code.vegaprotocol.io/vega/wallet/network"
+
 	"go.uber.org/zap"
 )
 

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/stretchr/testify/assert"
 )
 

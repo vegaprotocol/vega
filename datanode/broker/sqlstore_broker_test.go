@@ -43,10 +43,10 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var logger = logging.NewTestLogger()

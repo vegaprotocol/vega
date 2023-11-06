@@ -19,9 +19,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Store struct {

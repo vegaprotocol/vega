@@ -35,10 +35,10 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"golang.org/x/exp/maps"
 
 	"github.com/ethereum/go-ethereum/common"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"golang.org/x/exp/maps"
 )
 
 var (

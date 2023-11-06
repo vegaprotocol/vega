@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"github.com/stretchr/testify/assert"
 )
 

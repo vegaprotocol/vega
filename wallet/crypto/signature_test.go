@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
+
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

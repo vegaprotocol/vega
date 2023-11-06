@@ -33,6 +33,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+
 	"github.com/99designs/gqlgen/graphql"
 )
 

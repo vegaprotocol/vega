@@ -28,9 +28,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway/server"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/jessevdk/go-flags"
+	"golang.org/x/sync/errgroup"
 )
 
 type gatewayCmd struct {

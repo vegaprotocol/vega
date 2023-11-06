@@ -21,13 +21,12 @@ import (
 	"net/http"
 	"os"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/rpc"
 	"github.com/gorilla/rpc/json"
-
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type Server struct {

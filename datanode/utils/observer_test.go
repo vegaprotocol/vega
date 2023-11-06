@@ -32,12 +32,12 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	logObserver "go.uber.org/zap/zaptest/observer"
-
-	"code.vegaprotocol.io/vega/datanode/utils"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 func newRecordedLogger() (*logging.Logger, *logObserver.ObservedLogs) {

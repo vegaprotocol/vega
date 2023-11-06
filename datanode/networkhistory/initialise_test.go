@@ -25,10 +25,9 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/golang/mock/gomock"
-
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/stretchr/testify/assert"
 )
 

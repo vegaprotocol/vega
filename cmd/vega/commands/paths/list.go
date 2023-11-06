@@ -21,9 +21,8 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"code.vegaprotocol.io/vega/paths"
-
 	"code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 type ListCmd struct {

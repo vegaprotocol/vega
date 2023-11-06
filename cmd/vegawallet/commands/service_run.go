@@ -49,12 +49,12 @@ import (
 	sessionStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
+
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/muesli/cancelreader"
-	"golang.org/x/term"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"golang.org/x/term"
 )
 
 const MaxConsentRequests = 100

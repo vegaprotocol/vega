@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/soheilhy/cmux"
-
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/soheilhy/cmux"
 )
 
 type Portal struct {

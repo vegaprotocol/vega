@@ -24,17 +24,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/multiformats/go-multiaddr"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/multiformats/go-multiaddr"
 )
 
 type Service struct {

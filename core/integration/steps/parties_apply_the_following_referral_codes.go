@@ -21,9 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
-	"github.com/cucumber/godog"
-
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teamsEngine *teams.Engine, table *godog.Table) error {

@@ -19,9 +19,9 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"github.com/emirpasic/gods/sets/treeset"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+
+	"github.com/emirpasic/gods/sets/treeset"
 )
 
 var (

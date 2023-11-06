@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/types"
+
 	"github.com/stretchr/testify/require"
 )
 

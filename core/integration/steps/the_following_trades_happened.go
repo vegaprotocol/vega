@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheFollowingTradesShouldBeExecuted(

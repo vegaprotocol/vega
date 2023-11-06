@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

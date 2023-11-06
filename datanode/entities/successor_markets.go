@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/protos/vega"
-
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type SuccessorMarket struct {

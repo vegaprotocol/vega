@@ -22,10 +22,10 @@ import (
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type GRPCAdapter struct {

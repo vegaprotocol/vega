@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"go.uber.org/zap"
 )
 

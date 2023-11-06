@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
 func setupPartyVestingBalanceTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.PartyVestingBalance) {
