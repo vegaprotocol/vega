@@ -1208,6 +1208,10 @@ type testPos struct {
 	buySumProduct, sellSumProduct uint64
 }
 
+func (t testPos) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}
+
 func (t testPos) Party() string {
 	return t.party
 }

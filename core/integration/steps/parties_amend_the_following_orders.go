@@ -52,16 +52,11 @@ func PartiesAmendTheFollowingOrders(
 		amend := types.OrderAmendment{
 			OrderID:     o.Id,
 			MarketID:    o.MarketId,
+			Price:       row.Price(),
 			SizeDelta:   row.SizeDelta(),
+			Size:        row.Size(),
+			ExpiresAt:   row.ExpirationDate(),
 			TimeInForce: row.TimeInForce(),
-		}
-
-		if p := row.Price(); p != nil {
-			amend.Price = p
-		}
-
-		if t := row.ExpirationDate(); t != nil {
-			amend.ExpiresAt = t
 		}
 
 		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)
@@ -81,10 +76,11 @@ func parseAmendOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"reference",
-		"price",
-		"size delta",
 		"tif",
 	}, []string{
+		"price",
+		"size delta",
+		"size",
 		"error",
 		"expiration date",
 	})
@@ -103,7 +99,14 @@ func (r amendOrderRow) Price() *num.Uint {
 }
 
 func (r amendOrderRow) SizeDelta() int64 {
+	if !r.row.HasColumn("size delta") {
+		return 0
+	}
 	return r.row.MustI64("size delta")
+}
+
+func (r amendOrderRow) Size() *uint64 {
+	return r.row.MaybeU64("size")
 }
 
 func (r amendOrderRow) TimeInForce() types.OrderTimeInForce {

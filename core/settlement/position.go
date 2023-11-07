@@ -114,3 +114,7 @@ func (npos) VWBuy() *num.Uint {
 func (npos) VWSell() *num.Uint {
 	return num.UintZero()
 }
+
+func (npos) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}

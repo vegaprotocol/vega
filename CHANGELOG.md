@@ -16,8 +16,10 @@
 - [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction. 
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
 - [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
+- [10004](https://github.com/vegaprotocol/vega/issues/10004) Track average entry price in position engine
 - [9825](https://github.com/vegaprotocol/vega/issues/9825) - Remove quadratic slippage.
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
+- [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 
 ### 🐛 Fixes
 

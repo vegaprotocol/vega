@@ -1,5 +1,7 @@
 Feature: Simple Spot Order Market fee and infrastructure fee calculation
+
   Scenario:  Simple Spot Order Market fee and infrastructure fee calculation
+
   Background:
     Given the following network parameters are set:
       | name                                    | value |
@@ -37,9 +39,9 @@ Feature: Simple Spot Order Market fee and infrastructure fee calculation
     Then "party1" should have holding account balance of "1000" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price  | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 100000 | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 1      | 100000 | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price  | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 100000 | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 1      | 1         | 100000 | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"

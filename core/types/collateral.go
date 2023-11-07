@@ -98,7 +98,7 @@ func (a Account) String() string {
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
-		stringer.UintPointerToString(a.Balance),
+		stringer.PtrToString(a.Balance),
 		a.Asset,
 		a.MarketID,
 		a.Type.String(),

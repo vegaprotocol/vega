@@ -1,4 +1,5 @@
 Feature: Amend the quantity down for a spot order
+
   Scenario: Amend the quantity down for a spot order
 
   Background:
@@ -28,9 +29,9 @@ Feature: Amend the quantity down for a spot order
     Then "party1" should have holding account balance of "200" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 2      | 100   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 2      | 100   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 2      | 2         | 100   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 2      | 2         | 100   | STATUS_ACTIVE |
 
     And the parties amend the following orders:
       | party  | reference | price | size delta | tif     |
@@ -38,9 +39,9 @@ Feature: Amend the quantity down for a spot order
       | party2 | t2-s-1    | 100   | -1         | TIF_GTC |
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 1      | 100   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 100   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 1      | 1         | 100   | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"

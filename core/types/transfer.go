@@ -86,7 +86,7 @@ func (f FinancialAmount) String() string {
 	return fmt.Sprintf(
 		"asset(%s) amount(%s)",
 		f.Asset,
-		stringer.UintPointerToString(f.Amount),
+		stringer.PtrToString(f.Amount),
 	)
 }
 
@@ -143,9 +143,9 @@ func (t *Transfer) String() string {
 	return fmt.Sprintf(
 		"owner(%s) amount(%s) type(%s) minAmount(%s)",
 		t.Owner,
-		stringer.ReflectPointerToString(t.Amount),
+		stringer.PtrToString(t.Amount),
 		t.Type.String(),
-		stringer.UintPointerToString(t.MinAmount),
+		stringer.PtrToString(t.MinAmount),
 	)
 }
 

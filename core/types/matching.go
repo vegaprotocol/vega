@@ -195,11 +195,11 @@ func (o Order) String() string {
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
-		stringer.UintPointerToString(o.OriginalPrice),
-		stringer.ReflectPointerToString(o.PeggedOrder),
+		stringer.PtrToString(o.OriginalPrice),
+		stringer.PtrToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
-		stringer.ReflectPointerToString(o.IcebergOrder),
+		stringer.PtrToString(o.IcebergOrder),
 	)
 }
 
@@ -378,8 +378,13 @@ func (o *Order) applyOrderAmendmentSizeIceberg(delta int64) {
 	o.IcebergOrder.ReservedRemaining = 0
 }
 
-// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
-func (o *Order) applyOrderAmendmentSizeDelta(delta int64) {
+func (o *Order) amendSize(size uint64) {
+	o.amendSizeWithDelta(int64(size) - int64(o.Size))
+}
+
+// amendSizeWithDelta update the orders size/remaining fields based on the size
+// an direction of the given delta.
+func (o *Order) amendSizeWithDelta(delta int64) {
 	if o.IcebergOrder != nil {
 		o.applyOrderAmendmentSizeIceberg(delta)
 		return
@@ -426,9 +431,12 @@ func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int
 		order.OriginalPrice = amendment.Price.Clone()
 	}
 
-	// apply size changes
+	if amendment.Size != nil {
+		order.amendSize(*amendment.Size)
+	}
+
 	if delta := amendment.SizeDelta; delta != 0 {
-		order.applyOrderAmendmentSizeDelta(delta)
+		order.amendSizeWithDelta(delta)
 	}
 
 	// apply tif
@@ -534,7 +542,7 @@ func (p PeggedOrder) String() string {
 	return fmt.Sprintf(
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
-		stringer.UintPointerToString(p.Offset),
+		stringer.PtrToString(p.Offset),
 	)
 }
 
@@ -672,8 +680,8 @@ func (t Trade) String() string {
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,
 		t.MarketID,
-		stringer.UintPointerToString(t.Price),
-		stringer.UintPointerToString(t.MarketPrice),
+		stringer.PtrToString(t.Price),
+		stringer.PtrToString(t.MarketPrice),
 		t.Size,
 		t.Buyer,
 		t.Seller,
@@ -684,8 +692,8 @@ func (t Trade) String() string {
 		t.Type.String(),
 		t.BuyerAuctionBatch,
 		t.SellerAuctionBatch,
-		stringer.ReflectPointerToString(t.SellerFee),
-		stringer.ReflectPointerToString(t.BuyerFee),
+		stringer.PtrToString(t.SellerFee),
+		stringer.PtrToString(t.BuyerFee),
 	)
 }
 

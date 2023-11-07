@@ -1926,6 +1926,10 @@ func getMarginCalculator() *types.MarginCalculator {
 	}
 }
 
+func (m testMargin) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}
+
 func (m testMargin) Party() string {
 	return m.party
 }
