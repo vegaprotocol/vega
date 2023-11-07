@@ -188,7 +188,7 @@ func (l LiquidityProvisionSubmission) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		l.MarketID,
 		l.Reference,
-		stringer.UintPointerToString(l.CommitmentAmount),
+		stringer.PtrToString(l.CommitmentAmount),
 		l.Fee.String(),
 	)
 }
@@ -226,7 +226,7 @@ func (l LiquidityProvision) String() string {
 		l.Party,
 		l.Status.String(),
 		l.Reference,
-		stringer.UintPointerToString(l.CommitmentAmount),
+		stringer.PtrToString(l.CommitmentAmount),
 		l.Fee.String(),
 		l.Version,
 		l.CreatedAt,
@@ -315,7 +315,7 @@ func (l LiquidityMonitoringParameters) String() string {
 		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
 		l.AuctionExtension,
 		l.TriggeringRatio.String(),
-		stringer.ReflectPointerToString(l.TargetStakeParameters),
+		stringer.PtrToString(l.TargetStakeParameters),
 	)
 }
 
@@ -388,7 +388,7 @@ func (a LiquidityProvisionAmendment) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		a.MarketID,
 		a.Reference,
-		stringer.UintPointerToString(a.CommitmentAmount),
+		stringer.PtrToString(a.CommitmentAmount),
 		a.Fee.String(),
 	)
 }

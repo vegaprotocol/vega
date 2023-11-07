@@ -34,7 +34,7 @@ type UpdateMarketState struct {
 func (a ProposalTermsUpdateMarketState) String() string {
 	return fmt.Sprintf(
 		"updateMarketState(%s)",
-		stringer.ReflectPointerToString(a.UpdateMarketState),
+		stringer.PtrToString(a.UpdateMarketState),
 	)
 }
 
@@ -105,7 +105,7 @@ func (c UpdateMarketState) IntoProto() *vegapb.UpdateMarketState {
 func (c UpdateMarketState) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(c.Changes),
+		stringer.PtrToString(c.Changes),
 	)
 }
 
@@ -139,5 +139,5 @@ type MarketStateUpdateConfiguration struct {
 }
 
 func (c MarketStateUpdateConfiguration) String() string {
-	return fmt.Sprintf("marketID(%s), updateType(%d), settlementPrice(%s)", c.MarketID, c.UpdateType, stringer.ReflectPointerToString(c.SettlementPrice))
+	return fmt.Sprintf("marketID(%s), updateType(%d), settlementPrice(%s)", c.MarketID, c.UpdateType, stringer.PtrToString(c.SettlementPrice))
 }

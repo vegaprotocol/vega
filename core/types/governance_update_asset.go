@@ -39,7 +39,7 @@ type ProposalTermsUpdateAsset struct {
 func (a ProposalTermsUpdateAsset) String() string {
 	return fmt.Sprintf(
 		"updateAsset(%v)",
-		stringer.ReflectPointerToString(a.UpdateAsset),
+		stringer.PtrToString(a.UpdateAsset),
 	)
 }
 
@@ -120,7 +120,7 @@ func (a UpdateAsset) String() string {
 	return fmt.Sprintf(
 		"assetID(%s) changes(%s)",
 		a.AssetID,
-		stringer.ReflectPointerToString(a.Changes),
+		stringer.PtrToString(a.Changes),
 	)
 }
 
@@ -158,7 +158,7 @@ func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
 		"quantum(%s) (%s)",
 		a.Quantum.String(),
-		stringer.ReflectPointerToString(a.Source),
+		stringer.ObjToString(a.Source),
 	)
 }
 
@@ -244,7 +244,7 @@ type AssetDetailsUpdateERC20 struct {
 func (a AssetDetailsUpdateERC20) String() string {
 	return fmt.Sprintf(
 		"erc20Update(%s)",
-		stringer.ReflectPointerToString(a.ERC20Update),
+		stringer.PtrToString(a.ERC20Update),
 	)
 }
 
@@ -350,7 +350,7 @@ func (e ERC20Update) DeepClone() *ERC20Update {
 func (e ERC20Update) String() string {
 	return fmt.Sprintf(
 		"lifetimeLimit(%s) withdrawThreshold(%s)",
-		stringer.UintPointerToString(e.LifetimeLimit),
-		stringer.UintPointerToString(e.WithdrawThreshold),
+		stringer.PtrToString(e.LifetimeLimit),
+		stringer.PtrToString(e.WithdrawThreshold),
 	)
 }

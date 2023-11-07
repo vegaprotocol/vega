@@ -30,7 +30,7 @@ type ProposalTermsUpdateSpotMarket struct {
 func (a ProposalTermsUpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"updateSpotMarket(%s)",
-		stringer.ReflectPointerToString(a.UpdateSpotMarket),
+		stringer.PtrToString(a.UpdateSpotMarket),
 	)
 }
 
@@ -86,7 +86,7 @@ func (n UpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -123,12 +123,12 @@ type UpdateSpotMarketConfiguration struct {
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
-		stringer.ReflectPointerToString(n.Instrument),
+		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.TargetStakeParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
-		stringer.ReflectPointerToString(n.SLAParams),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.TargetStakeParameters),
+		stringer.ObjToString(n.RiskParameters),
+		stringer.PtrToString(n.SLAParams),
 	)
 }
 
@@ -217,7 +217,7 @@ type UpdateSpotMarketConfigurationSimple struct {
 func (n UpdateSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -253,7 +253,7 @@ type UpdateSpotMarketConfigurationLogNormal struct {
 func (n UpdateSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 

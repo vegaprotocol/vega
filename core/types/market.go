@@ -345,9 +345,9 @@ func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 func (t TradableInstrument) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) marginCalculator(%s) riskModel(%s)",
-		stringer.ReflectPointerToString(t.Instrument),
-		stringer.ReflectPointerToString(t.MarginCalculator),
-		stringer.ReflectPointerToString(t.RiskModel),
+		stringer.PtrToString(t.Instrument),
+		stringer.PtrToString(t.MarginCalculator),
+		stringer.ObjToString(t.RiskModel),
 	)
 }
 
@@ -374,7 +374,7 @@ func (InstrumentSpot) Type() ProductType {
 func (i InstrumentSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		stringer.ReflectPointerToString(i.Spot),
+		stringer.PtrToString(i.Spot),
 	)
 }
 
@@ -419,7 +419,7 @@ func (InstrumentFuture) Type() ProductType {
 func (i InstrumentFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		stringer.ReflectPointerToString(i.Future),
+		stringer.PtrToString(i.Future),
 	)
 }
 
@@ -456,9 +456,9 @@ func (f Future) String() string {
 		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
-		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
+		stringer.PtrToString(f.DataSourceSpecForSettlementData),
+		stringer.PtrToString(f.DataSourceSpecForTradingTermination),
+		stringer.PtrToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -473,7 +473,7 @@ func (InstrumentPerps) Type() ProductType {
 func (i InstrumentPerps) String() string {
 	return fmt.Sprintf(
 		"perps(%s)",
-		stringer.ReflectPointerToString(i.Perps),
+		stringer.PtrToString(i.Perps),
 	)
 }
 
@@ -528,9 +528,9 @@ func (p Perps) String() string {
 		p.InterestRate.String(),
 		p.ClampLowerBound.String(),
 		p.ClampUpperBound.String(),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
-		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+		stringer.PtrToString(p.DataSourceSpecForSettlementData),
+		stringer.PtrToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.PtrToString(p.DataSourceSpecBinding),
 	)
 }
 
@@ -761,8 +761,8 @@ func (i Instrument) String() string {
 		i.ID,
 		i.Name,
 		i.Code,
-		stringer.ReflectPointerToString(i.Product),
-		stringer.ReflectPointerToString(i.Metadata),
+		stringer.ObjToString(i.Product),
+		stringer.PtrToString(i.Metadata),
 	)
 }
 
@@ -917,24 +917,24 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 func (m MarketData) String() string {
 	return fmt.Sprintf(
 		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v)",
-		stringer.UintPointerToString(m.MarkPrice),
-		stringer.UintPointerToString(m.LastTradedPrice),
+		stringer.PtrToString(m.MarkPrice),
+		stringer.PtrToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
 		m.BestBidVolume,
-		stringer.UintPointerToString(m.BestOfferPrice),
+		stringer.PtrToString(m.BestOfferPrice),
 		m.BestOfferVolume,
-		stringer.UintPointerToString(m.BestStaticBidPrice),
+		stringer.PtrToString(m.BestStaticBidPrice),
 		m.BestStaticBidVolume,
-		stringer.UintPointerToString(m.BestStaticOfferPrice),
+		stringer.PtrToString(m.BestStaticOfferPrice),
 		m.BestStaticOfferVolume,
-		stringer.UintPointerToString(m.MidPrice),
-		stringer.UintPointerToString(m.StaticMidPrice),
+		stringer.PtrToString(m.MidPrice),
+		stringer.PtrToString(m.StaticMidPrice),
 		m.Market,
 		m.Timestamp,
 		m.OpenInterest,
 		m.AuctionEnd,
 		m.AuctionStart,
-		stringer.UintPointerToString(m.IndicativePrice),
+		stringer.PtrToString(m.IndicativePrice),
 		m.IndicativeVolume,
 		m.MarketTradingMode.String(),
 		m.MarketState.String(),
@@ -1094,16 +1094,16 @@ func (m Market) String() string {
 	return fmt.Sprintf(
 		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s)",
 		m.ID,
-		stringer.ReflectPointerToString(m.TradableInstrument),
+		stringer.PtrToString(m.TradableInstrument),
 		m.DecimalPlaces,
 		m.PositionDecimalPlaces,
-		stringer.ReflectPointerToString(m.Fees),
-		stringer.ReflectPointerToString(m.OpeningAuction),
-		stringer.ReflectPointerToString(m.PriceMonitoringSettings),
-		stringer.ReflectPointerToString(m.LiquidityMonitoringParameters),
+		stringer.PtrToString(m.Fees),
+		stringer.PtrToString(m.OpeningAuction),
+		stringer.PtrToString(m.PriceMonitoringSettings),
+		stringer.PtrToString(m.LiquidityMonitoringParameters),
 		m.TradingMode.String(),
 		m.State.String(),
-		stringer.ReflectPointerToString(m.MarketTimestamps),
+		stringer.PtrToString(m.MarketTimestamps),
 	)
 }
 

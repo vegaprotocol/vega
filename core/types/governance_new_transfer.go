@@ -32,7 +32,7 @@ type ProposalTermsNewTransfer struct {
 func (a ProposalTermsNewTransfer) String() string {
 	return fmt.Sprintf(
 		"newTransfer(%s)",
-		stringer.ReflectPointerToString(a.NewTransfer),
+		stringer.PtrToString(a.NewTransfer),
 	)
 }
 
@@ -105,7 +105,7 @@ func (n NewTransfer) DeepClone() *NewTransfer {
 func (n NewTransfer) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 

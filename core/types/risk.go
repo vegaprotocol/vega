@@ -93,7 +93,7 @@ func (l LogNormalRiskModel) String() string {
 		"tau(%s) riskAversionParameter(%s) params(%s)",
 		l.Tau.String(),
 		l.RiskAversionParameter.String(),
-		stringer.ReflectPointerToString(l.Params),
+		stringer.PtrToString(l.Params),
 	)
 }
 
@@ -104,7 +104,7 @@ type TradableInstrumentLogNormalRiskModel struct {
 func (t TradableInstrumentLogNormalRiskModel) String() string {
 	return fmt.Sprintf(
 		"logNormalRiskModel(%s)",
-		stringer.ReflectPointerToString(t.LogNormalRiskModel),
+		stringer.PtrToString(t.LogNormalRiskModel),
 	)
 }
 
@@ -221,10 +221,10 @@ func (m MarginLevels) String() string {
 		m.MarketID,
 		m.Asset,
 		m.Party,
-		stringer.UintPointerToString(m.InitialMargin),
-		stringer.UintPointerToString(m.MaintenanceMargin),
-		stringer.UintPointerToString(m.CollateralReleaseLevel),
-		stringer.UintPointerToString(m.SearchLevel),
+		stringer.PtrToString(m.InitialMargin),
+		stringer.PtrToString(m.MaintenanceMargin),
+		stringer.PtrToString(m.CollateralReleaseLevel),
+		stringer.PtrToString(m.SearchLevel),
 		m.Timestamp,
 	)
 }
@@ -255,7 +255,7 @@ func (m MarginCalculator) IntoProto() *proto.MarginCalculator {
 func (m MarginCalculator) String() string {
 	return fmt.Sprintf(
 		"scalingFactors(%s)",
-		stringer.ReflectPointerToString(m.ScalingFactors),
+		stringer.PtrToString(m.ScalingFactors),
 	)
 }
 
@@ -343,7 +343,7 @@ type TradableInstrumentSimpleRiskModel struct {
 func (t TradableInstrumentSimpleRiskModel) String() string {
 	return fmt.Sprintf(
 		"simpleRiskModel(%s)",
-		stringer.ReflectPointerToString(t.SimpleRiskModel),
+		stringer.PtrToString(t.SimpleRiskModel),
 	)
 }
 
@@ -414,7 +414,7 @@ func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
 func (s SimpleRiskModel) String() string {
 	return fmt.Sprintf(
 		"params(%s)",
-		stringer.ReflectPointerToString(s.Params),
+		stringer.PtrToString(s.Params),
 	)
 }
 
