@@ -129,7 +129,7 @@ func addTestData(t *testing.T, chainID string, snapshotsDir string, s *store.Sto
 		err = zipWriter.Close()
 		require.NoError(t, err)
 
-		err = os.WriteFile(segment.ZipFilePath(), buf.Bytes(), fs.ModePerm)
+		err = os.WriteFile(segment.UnpublishedSnapshotDataDirectory(), buf.Bytes(), fs.ModePerm)
 		require.NoError(t, err)
 
 		err = s.AddSnapshotData(context.Background(), segment)

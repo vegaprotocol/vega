@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +40,6 @@ import (
 	config2 "code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
@@ -187,7 +188,7 @@ func TestMain(t *testing.M) {
 
 			snapshots = append(snapshots, ss)
 
-			md5Hash, err := fsutil.Md5Hash(ss.ZipFilePath())
+			md5Hash, err := Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 			if err != nil {
 				panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 			}
@@ -212,7 +213,7 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
+					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
@@ -269,7 +270,7 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
+					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
@@ -454,7 +455,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 
 				waitForSnapshotToComplete(ss)
 
-				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
 
 				fromEventHashes = append(fromEventHashes, md5Hash)
@@ -584,7 +585,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 
 				waitForSnapshotToComplete(ss)
 
-				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
 
 				fromEventHashes = append(fromEventHashes, md5Hash)
@@ -890,7 +891,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 				waitForSnapshotToComplete(ss)
 
 				if lastCommittedBlockHeight == 4000 {
-					newSnapshotFileHashAt4000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					newSnapshotFileHashAt4000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 				}
 
@@ -994,7 +995,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 					require.NoError(t, err)
 					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -1097,7 +1098,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 					require.NoError(t, err)
 					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -1548,7 +1549,7 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 	for {
 		time.Sleep(10 * time.Millisecond)
 		// wait for snapshot current  file
-		_, err := os.Stat(sf.ZipFilePath())
+		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -1729,4 +1730,32 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 		panic(err)
 	}
 	return evtSource
+}
+
+func Md5Hash(dir string) (string, error) {
+	hash := md5.New()
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(hash, file)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
