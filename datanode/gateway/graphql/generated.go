@@ -83,6 +83,7 @@ type ResolverRoot interface {
 	InstrumentConfiguration() InstrumentConfigurationResolver
 	KeyRotation() KeyRotationResolver
 	LedgerEntry() LedgerEntryResolver
+	LiquidationStrategy() LiquidationStrategyResolver
 	LiquidityOrderReference() LiquidityOrderReferenceResolver
 	LiquidityProvider() LiquidityProviderResolver
 	LiquidityProvision() LiquidityProvisionResolver
@@ -887,6 +888,13 @@ type ComplexityRoot struct {
 		OpenVolumeOnly      func(childComplexity int) int
 	}
 
+	LiquidationStrategy struct {
+		DisposalFraction    func(childComplexity int) int
+		DisposalTimeStep    func(childComplexity int) int
+		FullDisposalSize    func(childComplexity int) int
+		MaxFractionConsumed func(childComplexity int) int
+	}
+
 	LiquidityFeeSettings struct {
 		FeeConstant func(childComplexity int) int
 		Method      func(childComplexity int) int
@@ -1082,6 +1090,7 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		InsurancePoolFraction         func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
+		LiquidationStrategy           func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquidityProvisions           func(childComplexity int, partyID *string, live *bool, pagination *v2.Pagination) int
 		LiquidityProvisionsConnection func(childComplexity int, partyID *string, live *bool, pagination *v2.Pagination) int
@@ -1243,6 +1252,7 @@ type ComplexityRoot struct {
 		DecimalPlaces                 func(childComplexity int) int
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
+		LiquidationStrategy           func(childComplexity int) int
 		LiquidityFeeSettings          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquiditySLAParameters        func(childComplexity int) int
@@ -2505,6 +2515,7 @@ type ComplexityRoot struct {
 	UpdateMarketConfiguration struct {
 		Instrument                    func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
+		LiquidationStrategy           func(childComplexity int) int
 		LiquidityFeeSettings          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
 		LiquiditySlaParameters        func(childComplexity int) int
@@ -2829,6 +2840,9 @@ type LedgerEntryResolver interface {
 	FromAccountID(ctx context.Context, obj *vega.LedgerEntry) (*vega.AccountDetails, error)
 	ToAccountID(ctx context.Context, obj *vega.LedgerEntry) (*vega.AccountDetails, error)
 }
+type LiquidationStrategyResolver interface {
+	FullDisposalSize(ctx context.Context, obj *vega.LiquidationStrategy) (int, error)
+}
 type LiquidityOrderReferenceResolver interface {
 	Order(ctx context.Context, obj *vega.LiquidityOrderReference) (*vega.Order, error)
 }
@@ -2944,6 +2958,7 @@ type NewMarketResolver interface {
 	SuccessorConfiguration(ctx context.Context, obj *vega.NewMarket) (*vega.SuccessorConfiguration, error)
 	LiquiditySLAParameters(ctx context.Context, obj *vega.NewMarket) (*vega.LiquiditySLAParameters, error)
 	LiquidityFeeSettings(ctx context.Context, obj *vega.NewMarket) (*vega.LiquidityFeeSettings, error)
+	LiquidationStrategy(ctx context.Context, obj *vega.NewMarket) (*vega.LiquidationStrategy, error)
 }
 type NewSpotMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewSpotMarket) (*vega.InstrumentConfiguration, error)
@@ -6261,6 +6276,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LiquidationPrice.OpenVolumeOnly(childComplexity), true
 
+	case "LiquidationStrategy.disposalFraction":
+		if e.complexity.LiquidationStrategy.DisposalFraction == nil {
+			break
+		}
+
+		return e.complexity.LiquidationStrategy.DisposalFraction(childComplexity), true
+
+	case "LiquidationStrategy.disposalTimeStep":
+		if e.complexity.LiquidationStrategy.DisposalTimeStep == nil {
+			break
+		}
+
+		return e.complexity.LiquidationStrategy.DisposalTimeStep(childComplexity), true
+
+	case "LiquidationStrategy.fullDisposalSize":
+		if e.complexity.LiquidationStrategy.FullDisposalSize == nil {
+			break
+		}
+
+		return e.complexity.LiquidationStrategy.FullDisposalSize(childComplexity), true
+
+	case "LiquidationStrategy.maxFractionConsumed":
+		if e.complexity.LiquidationStrategy.MaxFractionConsumed == nil {
+			break
+		}
+
+		return e.complexity.LiquidationStrategy.MaxFractionConsumed(childComplexity), true
+
 	case "LiquidityFeeSettings.feeConstant":
 		if e.complexity.LiquidityFeeSettings.FeeConstant == nil {
 			break
@@ -7067,6 +7110,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.LinearSlippageFactor(childComplexity), true
 
+	case "Market.liquidationStrategy":
+		if e.complexity.Market.LiquidationStrategy == nil {
+			break
+		}
+
+		return e.complexity.Market.LiquidationStrategy(childComplexity), true
+
 	case "Market.liquidityMonitoringParameters":
 		if e.complexity.Market.LiquidityMonitoringParameters == nil {
 			break
@@ -7814,6 +7864,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.LinearSlippageFactor(childComplexity), true
+
+	case "NewMarket.liquidationStrategy":
+		if e.complexity.NewMarket.LiquidationStrategy == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.LiquidationStrategy(childComplexity), true
 
 	case "NewMarket.liquidityFeeSettings":
 		if e.complexity.NewMarket.LiquidityFeeSettings == nil {
@@ -13794,6 +13851,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.UpdateMarketConfiguration.LinearSlippageFactor(childComplexity), true
 
+	case "UpdateMarketConfiguration.liquidationStrategy":
+		if e.complexity.UpdateMarketConfiguration.LiquidationStrategy == nil {
+			break
+		}
+
+		return e.complexity.UpdateMarketConfiguration.LiquidationStrategy(childComplexity), true
+
 	case "UpdateMarketConfiguration.liquidityFeeSettings":
 		if e.complexity.UpdateMarketConfiguration.LiquidityFeeSettings == nil {
 			break
@@ -17680,6 +17744,8 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -18294,6 +18360,8 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -27887,6 +27955,8 @@ func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, f
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -36315,6 +36385,182 @@ func (ec *executionContext) fieldContext_LiquidationPrice_including_sell_orders(
 	return fc, nil
 }
 
+func (ec *executionContext) _LiquidationStrategy_disposalTimeStep(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidationStrategy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidationStrategy_disposalTimeStep(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisposalTimeStep, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidationStrategy_disposalTimeStep(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidationStrategy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidationStrategy_disposalFraction(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidationStrategy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidationStrategy_disposalFraction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisposalFraction, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidationStrategy_disposalFraction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidationStrategy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidationStrategy_fullDisposalSize(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidationStrategy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidationStrategy_fullDisposalSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.LiquidationStrategy().FullDisposalSize(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidationStrategy_fullDisposalSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidationStrategy",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidationStrategy_maxFractionConsumed(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidationStrategy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidationStrategy_maxFractionConsumed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxFractionConsumed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidationStrategy_maxFractionConsumed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidationStrategy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LiquidityFeeSettings_method(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityFeeSettings) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LiquidityFeeSettings_method(ctx, field)
 	if err != nil {
@@ -38215,6 +38461,8 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -40764,6 +41012,8 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -42937,6 +43187,57 @@ func (ec *executionContext) fieldContext_Market_liquiditySLAParameters(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Market_liquidationStrategy(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Market_liquidationStrategy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidationStrategy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidationStrategy)
+	fc.Result = res
+	return ec.marshalOLiquidationStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidationStrategy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Market_liquidationStrategy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disposalTimeStep":
+				return ec.fieldContext_LiquidationStrategy_disposalTimeStep(ctx, field)
+			case "disposalFraction":
+				return ec.fieldContext_LiquidationStrategy_disposalFraction(ctx, field)
+			case "fullDisposalSize":
+				return ec.fieldContext_LiquidationStrategy_fullDisposalSize(ctx, field)
+			case "maxFractionConsumed":
+				return ec.fieldContext_LiquidationStrategy_maxFractionConsumed(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidationStrategy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketConnection_edges(ctx, field)
 	if err != nil {
@@ -43134,6 +43435,8 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -45011,6 +45314,8 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -45458,6 +45763,8 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -45744,6 +46051,8 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -47551,6 +47860,57 @@ func (ec *executionContext) fieldContext_NewMarket_liquidityFeeSettings(ctx cont
 				return ec.fieldContext_LiquidityFeeSettings_feeConstant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityFeeSettings", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMarket_liquidationStrategy(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NewMarket_liquidationStrategy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().LiquidationStrategy(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidationStrategy)
+	fc.Result = res
+	return ec.marshalOLiquidationStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidationStrategy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NewMarket_liquidationStrategy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMarket",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disposalTimeStep":
+				return ec.fieldContext_LiquidationStrategy_disposalTimeStep(ctx, field)
+			case "disposalFraction":
+				return ec.fieldContext_LiquidationStrategy_disposalFraction(ctx, field)
+			case "fullDisposalSize":
+				return ec.fieldContext_LiquidationStrategy_fullDisposalSize(ctx, field)
+			case "maxFractionConsumed":
+				return ec.fieldContext_LiquidationStrategy_maxFractionConsumed(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidationStrategy", field.Name)
 		},
 	}
 	return fc, nil
@@ -54137,6 +54497,8 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -61058,6 +61420,8 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -67847,6 +68211,8 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -80292,6 +80658,8 @@ func (ec *executionContext) fieldContext_SuccessorMarket_market(ctx context.Cont
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -82254,6 +82622,8 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -86397,6 +86767,8 @@ func (ec *executionContext) fieldContext_UpdateMarket_updateMarketConfiguration(
 				return ec.fieldContext_UpdateMarketConfiguration_liquiditySLAParameters(ctx, field)
 			case "liquidityFeeSettings":
 				return ec.fieldContext_UpdateMarketConfiguration_liquidityFeeSettings(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_UpdateMarketConfiguration_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type UpdateMarketConfiguration", field.Name)
 		},
@@ -86825,6 +87197,57 @@ func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquidityFeeS
 	return fc, nil
 }
 
+func (ec *executionContext) _UpdateMarketConfiguration_liquidationStrategy(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdateMarketConfiguration_liquidationStrategy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidationStrategy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LiquidationStrategy)
+	fc.Result = res
+	return ec.marshalOLiquidationStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidationStrategy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdateMarketConfiguration_liquidationStrategy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdateMarketConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disposalTimeStep":
+				return ec.fieldContext_LiquidationStrategy_disposalTimeStep(ctx, field)
+			case "disposalFraction":
+				return ec.fieldContext_LiquidationStrategy_disposalFraction(ctx, field)
+			case "fullDisposalSize":
+				return ec.fieldContext_LiquidationStrategy_fullDisposalSize(ctx, field)
+			case "maxFractionConsumed":
+				return ec.fieldContext_LiquidationStrategy_maxFractionConsumed(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidationStrategy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UpdateMarketLogNormalRiskModel_logNormal(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateMarketConfiguration_LogNormal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdateMarketLogNormalRiskModel_logNormal(ctx, field)
 	if err != nil {
@@ -87014,6 +87437,8 @@ func (ec *executionContext) fieldContext_UpdateMarketState_market(ctx context.Co
 				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			case "liquiditySLAParameters":
 				return ec.fieldContext_Market_liquiditySLAParameters(ctx, field)
+			case "liquidationStrategy":
+				return ec.fieldContext_Market_liquidationStrategy(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -99074,6 +99499,68 @@ func (ec *executionContext) _LiquidationPrice(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var liquidationStrategyImplementors = []string{"LiquidationStrategy"}
+
+func (ec *executionContext) _LiquidationStrategy(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquidationStrategy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidationStrategyImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidationStrategy")
+		case "disposalTimeStep":
+
+			out.Values[i] = ec._LiquidationStrategy_disposalTimeStep(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "disposalFraction":
+
+			out.Values[i] = ec._LiquidationStrategy_disposalFraction(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fullDisposalSize":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._LiquidationStrategy_fullDisposalSize(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "maxFractionConsumed":
+
+			out.Values[i] = ec._LiquidationStrategy_maxFractionConsumed(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var liquidityFeeSettingsImplementors = []string{"LiquidityFeeSettings"}
 
 func (ec *executionContext) _LiquidityFeeSettings(ctx context.Context, sel ast.SelectionSet, obj *vega.LiquidityFeeSettings) graphql.Marshaler {
@@ -100871,6 +101358,10 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return innerFunc(ctx)
 
 			})
+		case "liquidationStrategy":
+
+			out.Values[i] = ec._Market_liquidationStrategy(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -102360,6 +102851,23 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._NewMarket_liquidityFeeSettings(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "liquidationStrategy":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_liquidationStrategy(ctx, field, obj)
 				return res
 			}
 
@@ -114558,6 +115066,10 @@ func (ec *executionContext) _UpdateMarketConfiguration(ctx context.Context, sel 
 
 			out.Values[i] = ec._UpdateMarketConfiguration_liquidityFeeSettings(ctx, field, obj)
 
+		case "liquidationStrategy":
+
+			out.Values[i] = ec._UpdateMarketConfiguration_liquidationStrategy(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -122513,6 +123025,13 @@ func (ec *executionContext) marshalOLiquidationEstimate2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._LiquidationEstimate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLiquidationStrategy2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidationStrategy(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidationStrategy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidationStrategy(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLiquidityFeeSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityFeeSettings(ctx context.Context, sel ast.SelectionSet, v *vega.LiquidityFeeSettings) graphql.Marshaler {

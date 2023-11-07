@@ -1311,6 +1311,12 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 				Successor:               successor,
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}
@@ -1394,6 +1400,12 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}
@@ -1541,6 +1553,12 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}

@@ -161,6 +161,12 @@ func TestNewMarketProposalMapping(t *testing.T) {
 							PerformanceHysteresisEpochs: 4,
 							SlaCompetitionFactor:        "0.5",
 						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    300,
+							DisposalFraction:    "0.1",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
+						},
 					},
 				},
 			},

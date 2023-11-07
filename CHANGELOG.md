@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
 
 ### 🗑️ Deprecation
 

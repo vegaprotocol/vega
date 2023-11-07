@@ -79,6 +79,7 @@ var (
 	ErrMustBeLessThen366                               = errors.New("must be less then 366")
 	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
 	ErrMustBeSetTo0IfSizeSet                           = errors.New("must be set to 0 if the property \"order_amendment.size\" is set")
+	ErrMustBeAtMost3600                                = errors.New("must be at most 3600")
 	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
 )
 

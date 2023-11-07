@@ -119,3 +119,7 @@ func (r *newMarketResolver) LiquiditySLAParameters(ctx context.Context, obj *typ
 func (r *newMarketResolver) LiquidityFeeSettings(ctx context.Context, obj *types.NewMarket) (*types.LiquidityFeeSettings, error) {
 	return obj.Changes.LiquidityFeeSettings, nil
 }
+
+func (r *newMarketResolver) LiquidationStrategy(ctx context.Context, obj *types.NewMarket) (*types.LiquidationStrategy, error) {
+	return obj.Changes.LiquidationStrategy, nil
+}
