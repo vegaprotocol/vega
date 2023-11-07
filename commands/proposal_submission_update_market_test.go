@@ -2801,18 +2801,6 @@ func tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "banana",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
@@ -2828,18 +2816,6 @@ func testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "-0.1",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
@@ -2855,18 +2831,6 @@ func testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "1000000.000001",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBeAtMost1M)
 }
 
 func testUpdateNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {

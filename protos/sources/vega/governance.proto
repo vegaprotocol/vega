@@ -127,7 +127,7 @@ message NewMarketConfiguration {
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 9;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
-  string quadratic_slippage_factor = 10;
+  string quadratic_slippage_factor = 10 [deprecated = true];
   // Successor configuration. If this proposal is meant to succeed a given market, then this should be set.
   optional SuccessorConfiguration successor = 11;
   // Liquidity SLA parameters
@@ -196,7 +196,7 @@ message UpdateMarketConfiguration {
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
-  string quadratic_slippage_factor = 7;
+  string quadratic_slippage_factor = 7 [deprecated = true];
   // Liquidity SLA parameters
   LiquiditySLAParameters liquidity_sla_parameters = 8;
   // Specifies how the liquidity fee for the market will be calculated.

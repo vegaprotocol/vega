@@ -213,7 +213,6 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
-		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
 	}
 	if n.Successor != nil {
@@ -333,14 +332,10 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		liquiditySLAParameters = LiquiditySLAParamsFromProto(p.LiquiditySlaParameters)
 	}
 
-	if len(p.LinearSlippageFactor) == 0 || len(p.QuadraticSlippageFactor) == 0 {
+	if len(p.LinearSlippageFactor) == 0 {
 		return nil, ErrMissingSlippageFactor
 	}
 	linearSlippageFactor, err := num.DecimalFromString(p.LinearSlippageFactor)
-	if err != nil {
-		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
-	}
-	quadraticSlippageFactor, err := num.DecimalFromString(p.QuadraticSlippageFactor)
 	if err != nil {
 		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
@@ -355,7 +350,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
-		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		QuadraticSlippageFactor:       num.DecimalZero(),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

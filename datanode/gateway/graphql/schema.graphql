@@ -2333,7 +2333,7 @@ type Market {
   linearSlippageFactor: String!
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
-  quadraticSlippageFactor: String!
+  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -4281,7 +4281,7 @@ type NewMarket {
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
-  quadraticSlippageFactor: String!
+  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4320,7 +4320,7 @@ type UpdateMarketConfiguration {
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume."
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
-  quadraticSlippageFactor: String!
+  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"

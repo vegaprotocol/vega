@@ -149,9 +149,8 @@ func TestNewMarketProposalMapping(t *testing.T) {
 								ProbabilityOfTrading: 0.96,
 							},
 						},
-						PositionDecimalPlaces:   1,
-						LinearSlippageFactor:    "0.1",
-						QuadraticSlippageFactor: "0.0001",
+						PositionDecimalPlaces: 1,
+						LinearSlippageFactor:  "0.1",
 						Successor: &vegapb.SuccessorConfiguration{
 							ParentMarketId:        parentID,
 							InsurancePoolFraction: insFraction.String(),

@@ -209,7 +209,6 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
-		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
 	}
 	switch rp := riskParams.(type) {
@@ -256,10 +255,6 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 	if err != nil {
 		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
-	quadraticSlippageFactor, err := num.DecimalFromString(p.QuadraticSlippageFactor)
-	if err != nil {
-		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
-	}
 
 	r := &UpdateMarketConfiguration{
 		Instrument:                    instrument,
@@ -268,8 +263,8 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
-		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
+		QuadraticSlippageFactor:       num.DecimalZero(),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

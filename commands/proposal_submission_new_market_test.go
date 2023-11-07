@@ -374,19 +374,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "banana",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
@@ -402,19 +389,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "-0.1",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
@@ -430,19 +404,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "1000000.000001",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrMustBeAtMost1M)
 }
 
 func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {

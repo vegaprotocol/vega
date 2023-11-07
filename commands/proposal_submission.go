@@ -853,16 +853,6 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		}
 	}
 
-	if len(changes.QuadraticSlippageFactor) > 0 {
-		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
-		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
-		} else if squaredSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
-		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
-		}
-	}
 	if successor := changes.Successor; successor != nil {
 		if len(successor.InsurancePoolFraction) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsRequired)
@@ -911,17 +901,6 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
 		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
 			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
-		}
-	}
-
-	if len(changes.QuadraticSlippageFactor) > 0 {
-		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
-		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
-		} else if squaredSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
-		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
 		}
 	}
 
