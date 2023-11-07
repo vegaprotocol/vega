@@ -2211,19 +2211,19 @@ func (x *MarketTimestamps) GetClose() int64 {
 	return 0
 }
 
-// The liquidation strategy used when the network holds a position resulting from position resolution.
+// Liquidation strategy used when the network holds a position resulting from position resolution.
 type LiquidationStrategy struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The period of time over which the network will attempt to close its position.
+	// Period of time over which the network will attempt to close its position.
 	DisposalTimeStep int64 `protobuf:"varint,1,opt,name=disposal_time_step,json=disposalTimeStep,proto3" json:"disposal_time_step,omitempty"`
-	// The fraction of the open position the market will attempt to close in a single attempt; range 0 through 1.
+	// Fraction of the open position the market will attempt to close in a single attempt; range 0 through 1.
 	DisposalFraction string `protobuf:"bytes,2,opt,name=disposal_fraction,json=disposalFraction,proto3" json:"disposal_fraction,omitempty"`
-	// The size of the position that the network will attempt to close in a single attempt.
+	// Size of the position that the network will attempt to close in a single attempt.
 	FullDisposalSize uint64 `protobuf:"varint,3,opt,name=full_disposal_size,json=fullDisposalSize,proto3" json:"full_disposal_size,omitempty"`
-	// The max fraction of the total volume of the orderbook (within liquidity bounds) the network can use to close its position; range 0 through 1.
+	// Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
 	MaxFractionConsumed string `protobuf:"bytes,4,opt,name=max_fraction_consumed,json=maxFractionConsumed,proto3" json:"max_fraction_consumed,omitempty"`
 }
 

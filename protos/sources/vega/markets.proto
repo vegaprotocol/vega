@@ -392,14 +392,14 @@ message MarketTimestamps {
   int64 close = 4;
 }
 
-// The liquidation strategy used when the network holds a position resulting from position resolution.
+// Liquidation strategy used when the network holds a position resulting from position resolution.
 message LiquidationStrategy {
-  // The period of time over which the network will attempt to close its position.
+  // Period of time over which the network will attempt to close its position.
   int64 disposal_time_step = 1;
-  // The fraction of the open position the market will attempt to close in a single attempt; range 0 through 1.
+  // Fraction of the open position the market will attempt to close in a single attempt; range 0 through 1.
   string disposal_fraction = 2;
-  // The size of the position that the network will attempt to close in a single attempt.
+  // Size of the position that the network will attempt to close in a single attempt.
   uint64 full_disposal_size = 3;
-  // The max fraction of the total volume of the orderbook (within liquidity bounds) the network can use to close its position; range 0 through 1.
+  // Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
   string max_fraction_consumed = 4;
 }
