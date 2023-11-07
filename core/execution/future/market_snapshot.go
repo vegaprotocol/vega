@@ -219,8 +219,6 @@ func NewMarketFromSnapshot(
 		positionFactor:                positionFactor,
 		stateVarEngine:                stateVarEngine,
 		settlementDataInMarket:        em.SettlementData,
-		linearSlippageFactor:          mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:       mkt.QuadraticSlippageFactor,
 		settlementAsset:               asset,
 		stopOrders:                    stopOrders,
 		expiringStopOrders:            expiringStopOrders,

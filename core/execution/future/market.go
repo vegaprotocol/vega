@@ -104,9 +104,6 @@ type Market struct {
 
 	pMonitor common.PriceMonitor
 
-	linearSlippageFactor    num.Decimal
-	quadraticSlippageFactor num.Decimal
-
 	tsCalc TargetStakeCalculator
 
 	as common.AuctionState
@@ -307,8 +304,6 @@ func NewMarket(
 		priceFactor:                   priceFactor,
 		positionFactor:                positionFactor,
 		nextMTM:                       time.Time{}, // default to zero time
-		linearSlippageFactor:          mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:       mkt.QuadraticSlippageFactor,
 		maxStopOrdersPerParties:       num.UintZero(),
 		stopOrders:                    stoporders.New(log),
 		expiringStopOrders:            common.NewExpiringOrders(),
@@ -554,12 +549,10 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	if err := m.tradableInstrument.UpdateInstrument(ctx, m.log, m.mkt.TradableInstrument, m.GetID(), oracleEngine, m.broker); err != nil {
 		return err
 	}
-	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel)
+	m.risk.UpdateModel(m.stateVarEngine, m.tradableInstrument.MarginCalculator, m.tradableInstrument.RiskModel, m.mkt.LinearSlippageFactor, m.mkt.QuadraticSlippageFactor)
 	m.settlement.UpdateProduct(m.tradableInstrument.Instrument.Product)
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
-	m.linearSlippageFactor = m.mkt.LinearSlippageFactor
-	m.quadraticSlippageFactor = m.mkt.QuadraticSlippageFactor
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
 
 	// we should not need to rebind a replacement oracle here, the m.tradableInstrument.UpdateInstrument
