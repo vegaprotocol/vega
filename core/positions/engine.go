@@ -282,6 +282,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 				logging.Trade(*trade))
 		}
 		pos.size += size
+		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, size, trade.Price)
 	} else {
 		pos, ok = e.positions[trade.Seller]
 		if !ok {
@@ -297,6 +298,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 		}
 		// size is negative in case of a sale
 		pos.size -= size
+		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, -size, trade.Price)
 	}
 
 	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
@@ -345,7 +347,10 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
+
+	buyer.averageEntryPrice = CalcVWAP(buyer.averageEntryPrice, buyer.size, int64(trade.Size), trade.Price)
 	buyer.size += int64(trade.Size)
+	seller.averageEntryPrice = CalcVWAP(seller.averageEntryPrice, -seller.size, int64(trade.Size), trade.Price)
 	seller.size -= int64(trade.Size)
 
 	aggressive := buyer
@@ -611,4 +616,47 @@ func (e *Engine) remove(p *MarketPosition) {
 			break
 		}
 	}
+}
+
+// CalcVWAP calculates the volume weighted average entry price.
+func CalcVWAP(vwap *num.Uint, pos int64, addVolume int64, addPrice *num.Uint) *num.Uint {
+	if pos+addVolume == 0 || addPrice == nil {
+		return num.UintZero()
+	}
+
+	newPos := pos + addVolume
+	if newPos*pos < 0 { // switching from short/long or long/short
+		if newPos < 0 {
+			newPos = -newPos
+		}
+		newAcquiredPositionUint := num.NewUint(uint64(newPos))
+		if pos < 0 {
+			pos = -pos
+		}
+		posUint := num.NewUint(uint64(pos))
+		// cost of closing the old position
+		closePositionCost := num.UintZero().Mul(posUint, vwap)
+		// cost of opening the new position
+		openNewPositionCost := num.UintZero().Mul(newAcquiredPositionUint, addPrice)
+		return num.UintZero().Div(num.Sum(closePositionCost, openNewPositionCost), num.Sum(posUint, newAcquiredPositionUint))
+	}
+	// only decreasing position
+	if (pos > 0 && addVolume < 0) || (pos < 0 && addVolume > 0) {
+		return vwap
+	}
+	// increasing position
+	if pos < 0 {
+		pos = -pos
+	}
+	posUint := num.NewUint(uint64(pos))
+	if addVolume < 0 {
+		addVolume = -addVolume
+	}
+	addVolumeUint := num.NewUint(uint64(addVolume))
+	if newPos < 0 {
+		newPos = -newPos
+	}
+	newPosUint := num.NewUint(uint64(newPos))
+	numerator := num.UintZero().Mul(vwap, posUint).AddSum(num.UintZero().Mul(addPrice, addVolumeUint))
+	return num.UintZero().Div(numerator, newPosUint)
 }

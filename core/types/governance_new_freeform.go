@@ -29,7 +29,7 @@ type ProposalTermsNewFreeform struct {
 func (f ProposalTermsNewFreeform) String() string {
 	return fmt.Sprintf(
 		"newFreeForm(%s)",
-		stringer.ReflectPointerToString(f.NewFreeform),
+		stringer.PtrToString(f.NewFreeform),
 	)
 }
 

@@ -40,14 +40,17 @@ type MarketPosition struct {
 	// yes, it's technically state, but the main reason for this field is to cut down on the number
 	// of events we send out.
 	distressed bool
+
+	averageEntryPrice *num.Uint
 }
 
 func NewMarketPosition(party string) *MarketPosition {
 	return &MarketPosition{
-		partyID:        party,
-		price:          num.UintZero(),
-		buySumProduct:  num.UintZero(),
-		sellSumProduct: num.UintZero(),
+		partyID:           party,
+		price:             num.UintZero(),
+		buySumProduct:     num.UintZero(),
+		sellSumProduct:    num.UintZero(),
+		averageEntryPrice: num.UintZero(),
 	}
 }
 
@@ -56,6 +59,7 @@ func (p MarketPosition) Clone() *MarketPosition {
 	cpy.price = p.price.Clone()
 	cpy.buySumProduct = p.buySumProduct.Clone()
 	cpy.sellSumProduct = p.sellSumProduct.Clone()
+	cpy.averageEntryPrice = p.averageEntryPrice.Clone()
 	return &cpy
 }
 
@@ -148,6 +152,11 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 func (p MarketPosition) String() string {
 	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
 		p.size, p.buy, p.sell, p.price, p.partyID)
+}
+
+// AverageEntryPrice returns the volume weighted average price.
+func (p MarketPosition) AverageEntryPrice() *num.Uint {
+	return p.averageEntryPrice
 }
 
 // Buy will returns the potential buys for a given position.

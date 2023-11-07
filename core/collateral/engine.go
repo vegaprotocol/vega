@@ -419,7 +419,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 		// see https://github.com/vegaprotocol/vega/pull/2745 for more information
 		e.addAccountToHashableSlice(externalAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *externalAcc))
-		e.log.Info("event emitted for new account", logging.String("accID", externalID))
 	}
 
 	// when an asset is enabled a staking reward account is created for it
@@ -438,7 +437,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 			e.accs[rewardID] = rewardAcc
 			e.addAccountToHashableSlice(rewardAcc)
 			e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
-			e.log.Info("event emitted for new account", logging.String("accID", rewardID))
 		}
 	}
 
@@ -456,7 +454,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 		e.accs[netTreasury] = ntAcc
 		e.addAccountToHashableSlice(ntAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *ntAcc))
-		e.log.Info("event emitted for new account", logging.String("accID", netTreasury))
 	}
 
 	// global insurance for the asset
@@ -473,7 +470,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 		e.accs[globalInsurance] = giAcc
 		e.addAccountToHashableSlice(giAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *giAcc))
-		e.log.Info("event emitted for new account", logging.String("accID", globalInsurance))
 	}
 
 	// pending transfers account
@@ -491,7 +487,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 		e.accs[pendingTransfersID] = pendingTransfersAcc
 		e.addAccountToHashableSlice(pendingTransfersAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *pendingTransfersAcc))
-		e.log.Info("event emitted for new account", logging.String("accID", pendingTransfersID))
 	}
 
 	pendingFeeReferrerRewardID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypePendingFeeReferralReward)
@@ -508,7 +503,6 @@ func (e *Engine) ensureAllAssetAccounts(ctx context.Context, asset types.Asset) 
 		e.accs[pendingFeeReferrerRewardID] = pendingFeeReferrerRewardAcc
 		e.addAccountToHashableSlice(pendingFeeReferrerRewardAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *pendingFeeReferrerRewardAcc))
-		e.log.Info("event emitted for new account", logging.String("accID", pendingFeeReferrerRewardID))
 	}
 }
 
@@ -1811,11 +1805,9 @@ func (e *Engine) TransferFunds(
 		switch allTransfers[i].Type {
 		case types.TransferTypeInfrastructureFeePay:
 			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
-
 		case types.TransferTypeTransferFundsDistribute,
 			types.TransferTypeTransferFundsSend:
 			req, err = e.getTransferFundsTransferRequest(ctx, transfer, accType)
-
 		default:
 			e.log.Panic("unsupported transfer type",
 				logging.String("types", accType.String()))
@@ -2580,6 +2572,7 @@ func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.T
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
@@ -2628,6 +2621,7 @@ func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *typ
 		MinAmount:   t.Amount.Amount.Clone(),
 		Asset:       t.Amount.Asset,
 		Type:        t.Type,
+		TransferID:  t.TransferID,
 	}, nil
 }
 
@@ -2859,6 +2853,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Timestamp:          now,
 					FromAccountBalance: acc.Balance.Clone(),
 					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
+					TransferID:         req.TransferID,
 				}
 				ret.Entries = append(ret.Entries, lm)
 				to.Balance.AddSum(parts)

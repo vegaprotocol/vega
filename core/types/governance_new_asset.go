@@ -29,7 +29,7 @@ type ProposalTermsNewAsset struct {
 func (a ProposalTermsNewAsset) String() string {
 	return fmt.Sprintf(
 		"newAsset(%v)",
-		stringer.ReflectPointerToString(a.NewAsset),
+		stringer.PtrToString(a.NewAsset),
 	)
 }
 
@@ -118,7 +118,7 @@ func (n NewAsset) IntoProto() *vegapb.NewAsset {
 func (n NewAsset) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 

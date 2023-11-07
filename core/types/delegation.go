@@ -66,7 +66,7 @@ func (d Delegate) String() string {
 	return fmt.Sprintf(
 		"nodeID(%s) amount(%s)",
 		d.NodeID,
-		stringer.UintPointerToString(d.Amount),
+		stringer.PtrToString(d.Amount),
 	)
 }
 
@@ -88,7 +88,7 @@ func (u Undelegate) String() string {
 	return fmt.Sprintf(
 		"nodeID(%s) amount(%s) method(%s)",
 		u.NodeID,
-		stringer.UintPointerToString(u.Amount),
+		stringer.PtrToString(u.Amount),
 		u.Method,
 	)
 }

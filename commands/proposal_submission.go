@@ -853,16 +853,6 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		}
 	}
 
-	if len(changes.QuadraticSlippageFactor) > 0 {
-		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
-		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
-		} else if squaredSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
-		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
-		}
-	}
 	if successor := changes.Successor; successor != nil {
 		if len(successor.InsurancePoolFraction) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsRequired)
@@ -875,6 +865,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		}
 	}
 
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
@@ -914,17 +905,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 		}
 	}
 
-	if len(changes.QuadraticSlippageFactor) > 0 {
-		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
-		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
-		} else if squaredSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
-		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
-		}
-	}
-
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
@@ -993,6 +974,29 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 		}
 	}
 
+	return errs
+}
+
+func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent string) Errors {
+	errs := NewErrors()
+	if params == nil {
+		// @TODO these will be required, in that case the check for nil should be removed
+		// or return an error.
+		return errs
+	}
+	dispFrac, err := num.DecimalFromString(params.DisposalFraction)
+	if err != nil || dispFrac.IsNegative() || dispFrac.IsZero() || dispFrac.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_fraction", parent), ErrMustBeBetween01)
+	}
+	maxFrac, err := num.DecimalFromString(params.MaxFractionConsumed)
+	if err != nil || maxFrac.IsNegative() || maxFrac.IsZero() || maxFrac.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.max_fraction_consumed", parent), ErrMustBeBetween01)
+	}
+	if params.DisposalTimeStep < 1 {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBePositive)
+	} else if params.DisposalTimeStep > 3600 {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBeAtMost3600)
+	}
 	return errs
 }
 

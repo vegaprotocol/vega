@@ -47,7 +47,7 @@ type ProposalTermsNewMarket struct {
 func (a ProposalTermsNewMarket) String() string {
 	return fmt.Sprintf(
 		"newMarket(%s)",
-		stringer.ReflectPointerToString(a.NewMarket),
+		stringer.PtrToString(a.NewMarket),
 	)
 }
 
@@ -139,7 +139,7 @@ func (n NewMarket) DeepClone() *NewMarket {
 func (n NewMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -174,6 +174,7 @@ type NewMarketConfiguration struct {
 	//	*NewMarketConfiguration_Continuous
 	//	*NewMarketConfiguration_Discrete
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
+	LiquidationStrategy *LiquidationStrategy
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -203,6 +204,10 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 	if n.LiquidityFeeSettings != nil {
 		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
 	}
+	var liqStrat *vegapb.LiquidationStrategy
+	if n.LiquidationStrategy != nil {
+		liqStrat = n.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
@@ -213,8 +218,8 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
-		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
+		LiquidationStrategy:           liqStrat,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -256,6 +261,9 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		cs := *n.Successor
 		cpy.Successor = &cs
 	}
+	if n.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
+	}
 	return cpy
 }
 
@@ -265,10 +273,10 @@ func (n NewMarketConfiguration) String() string {
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		stringer.ReflectPointerToString(n.Instrument),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.LiquidityMonitoringParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
+		stringer.PtrToString(n.Instrument),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.LiquidityMonitoringParameters),
+		stringer.ObjToString(n.RiskParameters),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 	)
@@ -333,16 +341,18 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		liquiditySLAParameters = LiquiditySLAParamsFromProto(p.LiquiditySlaParameters)
 	}
 
-	if len(p.LinearSlippageFactor) == 0 || len(p.QuadraticSlippageFactor) == 0 {
+	if len(p.LinearSlippageFactor) == 0 {
 		return nil, ErrMissingSlippageFactor
 	}
 	linearSlippageFactor, err := num.DecimalFromString(p.LinearSlippageFactor)
 	if err != nil {
 		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
-	quadraticSlippageFactor, err := num.DecimalFromString(p.QuadraticSlippageFactor)
-	if err != nil {
-		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+	var liqStrat *LiquidationStrategy
+	if p.LiquidationStrategy != nil {
+		if liqStrat, err = LiquidationStrategyFromProto(p.LiquidationStrategy); err != nil {
+			return nil, fmt.Errorf("error getting the liquidation strategy from proto: %w", err)
+		}
 	}
 
 	r := &NewMarketConfiguration{
@@ -355,7 +365,8 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquiditySLAParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          linearSlippageFactor,
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
-		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		QuadraticSlippageFactor:       num.DecimalZero(),
+		LiquidationStrategy:           liqStrat,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -410,7 +421,7 @@ type NewMarketConfigurationSimple struct {
 func (n NewMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -465,7 +476,7 @@ func (n NewMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{} {
 func (n NewMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 
@@ -495,7 +506,7 @@ type InstrumentConfigurationFuture struct {
 func (i InstrumentConfigurationFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		stringer.ReflectPointerToString(i.Future),
+		stringer.PtrToString(i.Future),
 	)
 }
 
@@ -535,7 +546,7 @@ type InstrumentConfigurationPerps struct {
 func (i InstrumentConfigurationPerps) String() string {
 	return fmt.Sprintf(
 		"perps(%s)",
-		stringer.ReflectPointerToString(i.Perps),
+		stringer.PtrToString(i.Perps),
 	)
 }
 
@@ -610,7 +621,7 @@ func (i InstrumentConfiguration) String() string {
 		"name(%s) code(%s) product(%s)",
 		i.Name,
 		i.Code,
-		stringer.ReflectPointerToString(i.Product),
+		stringer.ObjToString(i.Product),
 	)
 }
 
@@ -725,9 +736,9 @@ func (f FutureProduct) String() string {
 		"quote(%s) settlementAsset(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
 		f.SettlementAsset,
-		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
-		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
+		stringer.ObjToString(f.DataSourceSpecForSettlementData),
+		stringer.ObjToString(f.DataSourceSpecForTradingTermination),
+		stringer.PtrToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -786,9 +797,9 @@ func (p PerpsProduct) String() string {
 		p.InterestRate.String(),
 		p.ClampLowerBound.String(),
 		p.ClampUpperBound.String(),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
-		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+		stringer.ObjToString(p.DataSourceSpecForSettlementData),
+		stringer.ObjToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.PtrToString(p.DataSourceSpecBinding),
 	)
 }
 

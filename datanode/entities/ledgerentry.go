@@ -32,6 +32,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/jackc/pgtype"
@@ -49,6 +50,7 @@ type LedgerEntry struct {
 	Type               LedgerMovementType
 	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
 	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
+	TransferID         TransferID
 }
 
 var LedgerEntryColumns = []string{
@@ -57,6 +59,7 @@ var LedgerEntryColumns = []string{
 	"tx_hash", "vega_time", "transfer_time", "type",
 	"account_from_balance",
 	"account_to_balance",
+	"transfer_id",
 }
 
 func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
@@ -70,6 +73,11 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
 
+	var transferID *string
+	if le.TransferID != "" {
+		transferID = ptr.From(le.TransferID.String())
+	}
+
 	return &vega.LedgerEntry{
 		FromAccount:        fromAcc.ToAccountDetailsProto(),
 		ToAccount:          toAcc.ToAccountDetailsProto(),
@@ -77,6 +85,7 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		Type:               vega.TransferType(le.Type),
 		FromAccountBalance: le.FromAccountBalance.String(),
 		ToAccountBalance:   le.ToAccountBalance.String(),
+		TransferId:         transferID,
 	}, nil
 }
 
@@ -92,6 +101,7 @@ func (le LedgerEntry) ToRow() []any {
 		le.Type,
 		le.FromAccountBalance,
 		le.ToAccountBalance,
+		le.TransferID,
 	}
 }
 

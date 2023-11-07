@@ -69,7 +69,8 @@ type Market struct {
 	LiquiditySLAParameters        LiquiditySLAParameters
 	// Not saved in the market table, but used when retrieving data from the database.
 	// This will be populated when a market has a successor
-	SuccessorMarketID MarketID
+	SuccessorMarketID   MarketID
+	LiquidationStrategy *LiquidationStrategy
 }
 
 type MarketCursor struct {
@@ -94,12 +95,15 @@ func (mc *MarketCursor) Parse(cursorString string) error {
 }
 
 func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) (*Market, error) {
-	var err error
-	var liquidityMonitoringParameters LiquidityMonitoringParameters
-	var marketTimestamps MarketTimestamps
-	var priceMonitoringSettings PriceMonitoringSettings
-	var openingAuction AuctionDuration
-	var fees Fees
+	var (
+		err                           error
+		liquidityMonitoringParameters LiquidityMonitoringParameters
+		marketTimestamps              MarketTimestamps
+		priceMonitoringSettings       PriceMonitoringSettings
+		openingAuction                AuctionDuration
+		fees                          Fees
+		liqStrat                      *LiquidationStrategy
+	)
 
 	if fees, err = feesFromProto(market.Fees); err != nil {
 		return nil, err
@@ -173,6 +177,9 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 			return nil, err
 		}
 	}
+	if market.LiquidationStrategy != nil {
+		liqStrat = LiquidationStrategyFromProto(market.LiquidationStrategy)
+	}
 
 	return &Market{
 		ID:                            MarketID(market.Id),
@@ -195,6 +202,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		ParentMarketID:                parentMarketID,
 		InsurancePoolFraction:         insurancePoolFraction,
 		LiquiditySLAParameters:        sla,
+		LiquidationStrategy:           liqStrat,
 	}, nil
 }
 
@@ -316,6 +324,36 @@ type LiquiditySLAParameters struct {
 	CommitmentMinTimeFraction   num.Decimal `json:"commitmentMinTimeFraction,omitempty"`
 	PerformanceHysteresisEpochs uint64      `json:"performanceHysteresisEpochs,omitempty"`
 	SlaCompetitionFactor        num.Decimal `json:"slaCompetitionFactor,omitempty"`
+}
+
+type LiquidationStrategy struct {
+	DisposalTimeStep    time.Duration `json:"disposalTimeStep"`
+	DisposalFraction    num.Decimal   `json:"disposalFraction"`
+	FullDisposalSize    uint64        `json:"fullDisposalSize"`
+	MaxFractionConsumed num.Decimal   `json:"maxFractionConsumed"`
+}
+
+func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) *LiquidationStrategy {
+	if ls == nil {
+		return nil
+	}
+	df, _ := num.DecimalFromString(ls.DisposalFraction)
+	mfc, _ := num.DecimalFromString(ls.MaxFractionConsumed)
+	return &LiquidationStrategy{
+		DisposalTimeStep:    time.Duration(ls.DisposalTimeStep) * time.Second,
+		FullDisposalSize:    ls.FullDisposalSize,
+		DisposalFraction:    df,
+		MaxFractionConsumed: mfc,
+	}
+}
+
+func (l LiquidationStrategy) IntoProto() *vega.LiquidationStrategy {
+	return &vega.LiquidationStrategy{
+		DisposalTimeStep:    int64(l.DisposalTimeStep / time.Second),
+		DisposalFraction:    l.DisposalFraction.String(),
+		FullDisposalSize:    l.FullDisposalSize,
+		MaxFractionConsumed: l.MaxFractionConsumed.String(),
+	}
 }
 
 func (lsp LiquiditySLAParameters) IntoProto() *vega.LiquiditySLAParameters {

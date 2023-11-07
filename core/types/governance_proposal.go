@@ -373,7 +373,7 @@ func (p Proposal) String() string {
 		p.Party,
 		p.State.String(),
 		p.Timestamp,
-		stringer.ReflectPointerToString(p.Terms),
+		stringer.PtrToString(p.Terms),
 		p.Reason.String(),
 		p.ErrorDetails,
 		p.RequiredMajority.String(),
@@ -561,7 +561,7 @@ func (p ProposalTerms) String() string {
 		p.ValidationTimestamp,
 		p.ClosingTimestamp,
 		p.EnactmentTimestamp,
-		stringer.ReflectPointerToString(p.Change),
+		stringer.ObjToString(p.Change),
 	)
 }
 

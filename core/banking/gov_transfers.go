@@ -221,7 +221,7 @@ func (e *Engine) processGovernanceTransfer(
 				if amt.IsZero() {
 					continue
 				}
-				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt)
+				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt, &gTransfer.ID)
 				transfers := []*types.Transfer{fromTransfer, toTransfer}
 				accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 				references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -242,7 +242,7 @@ func (e *Engine) processGovernanceTransfer(
 			p, _ := proto.Marshal(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 			hash := hex.EncodeToString(crypto.Hash(p))
 
-			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount)
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount, &gTransfer.ID)
 			transfers := []*types.Transfer{fromTransfer, toTransfer}
 			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 			references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -262,7 +262,7 @@ func (e *Engine) processGovernanceTransfer(
 		return num.UintZero(), nil
 	}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount, &gTransfer.ID)
 	transfers := []*types.Transfer{fromTransfer, toTransfer}
 	accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 	references := []string{gTransfer.Reference, gTransfer.Reference}

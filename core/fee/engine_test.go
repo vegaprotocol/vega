@@ -1080,12 +1080,13 @@ type fakeMktPos struct {
 	size  int64
 }
 
-func (f fakeMktPos) Party() string             { return f.party }
-func (f fakeMktPos) Size() int64               { return f.size }
-func (f fakeMktPos) Buy() int64                { return 0 }
-func (f fakeMktPos) Sell() int64               { return 0 }
-func (f fakeMktPos) Price() *num.Uint          { return num.UintZero() }
-func (f fakeMktPos) BuySumProduct() *num.Uint  { return num.UintZero() }
-func (f fakeMktPos) SellSumProduct() *num.Uint { return num.UintZero() }
-func (f fakeMktPos) VWBuy() *num.Uint          { return num.UintZero() }
-func (f fakeMktPos) VWSell() *num.Uint         { return num.UintZero() }
+func (f fakeMktPos) AverageEntryPrice() *num.Uint { return num.UintZero() }
+func (f fakeMktPos) Party() string                { return f.party }
+func (f fakeMktPos) Size() int64                  { return f.size }
+func (f fakeMktPos) Buy() int64                   { return 0 }
+func (f fakeMktPos) Sell() int64                  { return 0 }
+func (f fakeMktPos) Price() *num.Uint             { return num.UintZero() }
+func (f fakeMktPos) BuySumProduct() *num.Uint     { return num.UintZero() }
+func (f fakeMktPos) SellSumProduct() *num.Uint    { return num.UintZero() }
+func (f fakeMktPos) VWBuy() *num.Uint             { return num.UintZero() }
+func (f fakeMktPos) VWSell() *num.Uint            { return num.UintZero() }

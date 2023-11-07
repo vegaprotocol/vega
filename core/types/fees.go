@@ -106,7 +106,7 @@ func (f Fees) DeepClone() *Fees {
 func (f Fees) String() string {
 	return fmt.Sprintf(
 		"factors(%s)",
-		stringer.ReflectPointerToString(f.Factors),
+		stringer.PtrToString(f.Factors),
 	)
 }
 
@@ -170,15 +170,15 @@ func (f Fee) Clone() *Fee {
 func (f *Fee) String() string {
 	return fmt.Sprintf(
 		"makerFee(%s) liquidityFee(%s) infrastructureFee(%s) makerFeeReferrerDiscount(%s) liquidityFeeReferrerDiscount(%s) infrastructureFeeReferrerDiscount(%s) makerFeeVolumeDiscount(%s) liquidityFeeVolumeDiscount(%s) infrastructureFeeVolumeDiscount(%s)",
-		stringer.UintPointerToString(f.MakerFee),
-		stringer.UintPointerToString(f.LiquidityFee),
-		stringer.UintPointerToString(f.InfrastructureFee),
-		stringer.UintPointerToString(f.MakerFeeReferrerDiscount),
-		stringer.UintPointerToString(f.LiquidityFeeReferrerDiscount),
-		stringer.UintPointerToString(f.InfrastructureFeeReferrerDiscount),
-		stringer.UintPointerToString(f.MakerFeeVolumeDiscount),
-		stringer.UintPointerToString(f.LiquidityFeeVolumeDiscount),
-		stringer.UintPointerToString(f.InfrastructureFeeVolumeDiscount),
+		stringer.PtrToString(f.MakerFee),
+		stringer.PtrToString(f.LiquidityFee),
+		stringer.PtrToString(f.InfrastructureFee),
+		stringer.PtrToString(f.MakerFeeReferrerDiscount),
+		stringer.PtrToString(f.LiquidityFeeReferrerDiscount),
+		stringer.PtrToString(f.InfrastructureFeeReferrerDiscount),
+		stringer.PtrToString(f.MakerFeeVolumeDiscount),
+		stringer.PtrToString(f.LiquidityFeeVolumeDiscount),
+		stringer.PtrToString(f.InfrastructureFeeVolumeDiscount),
 	)
 }
 
@@ -208,9 +208,9 @@ func (rf ReferrerReward) Clone() *ReferrerReward {
 func (rf *ReferrerReward) String() string {
 	return fmt.Sprintf(
 		"makerFeeReferrerReward(%s) liquidityFeeReferrerReward(%s) infrastructureFeeReferrerReward(%s)",
-		stringer.UintPointerToString(rf.MakerFeeReferrerReward),
-		stringer.UintPointerToString(rf.LiquidityFeeReferrerReward),
-		stringer.UintPointerToString(rf.InfrastructureFeeReferrerReward),
+		stringer.PtrToString(rf.MakerFeeReferrerReward),
+		stringer.PtrToString(rf.LiquidityFeeReferrerReward),
+		stringer.PtrToString(rf.InfrastructureFeeReferrerReward),
 	)
 }
 

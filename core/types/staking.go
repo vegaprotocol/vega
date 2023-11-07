@@ -61,7 +61,7 @@ func (s *StakeTotalSupply) String() string {
 	return fmt.Sprintf(
 		"tokenAddress(%s) totalSupply(%s)",
 		s.TokenAddress,
-		stringer.UintPointerToString(s.TotalSupply),
+		stringer.PtrToString(s.TotalSupply),
 	)
 }
 
@@ -111,7 +111,7 @@ func (s *StakeLinking) String() string {
 		s.Type.String(),
 		s.TS,
 		s.Party,
-		stringer.UintPointerToString(s.Amount),
+		stringer.PtrToString(s.Amount),
 		s.Status.String(),
 		s.FinalizedAt,
 		s.TxHash,
@@ -218,7 +218,7 @@ func (s StakeDeposited) String() string {
 		s.LogIndex,
 		s.VegaPubKey,
 		s.EthereumAddress,
-		stringer.UintPointerToString(s.Amount),
+		stringer.PtrToString(s.Amount),
 		s.BlockTime,
 	)
 }
@@ -269,7 +269,7 @@ func (s StakeRemoved) String() string {
 		s.LogIndex,
 		s.VegaPubKey,
 		s.EthereumAddress,
-		stringer.UintPointerToString(s.Amount),
+		stringer.PtrToString(s.Amount),
 		s.BlockTime,
 	)
 }

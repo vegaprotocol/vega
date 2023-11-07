@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	errors "code.vegaprotocol.io/vega/core/datasource/errors"
+	"code.vegaprotocol.io/vega/core/datasource/errors"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
@@ -58,7 +58,7 @@ type SignerPubKey struct {
 func (s SignerPubKey) String() string {
 	return fmt.Sprintf(
 		"signerPubKey(%s)",
-		stringer.ReflectPointerToString(s.PubKey),
+		stringer.PtrToString(s.PubKey),
 	)
 }
 
@@ -202,7 +202,7 @@ type SignerETHAddress struct {
 func (s SignerETHAddress) String() string {
 	return fmt.Sprintf(
 		"signerETHAddress(%s)",
-		stringer.ReflectPointerToString(s.ETHAddress),
+		stringer.PtrToString(s.ETHAddress),
 	)
 }
 
@@ -355,7 +355,7 @@ func (s Signer) DeepClone() *Signer {
 }
 
 func (s Signer) String() string {
-	return stringer.ReflectPointerToString(s.Signer)
+	return stringer.ObjToString(s.Signer)
 }
 
 func (s Signer) IsEmpty() bool {

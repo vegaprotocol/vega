@@ -3061,14 +3061,15 @@ type marketPositionFake struct {
 	buySumProduct, sellSumProduct *num.Uint
 }
 
-func (m marketPositionFake) Party() string             { return m.party }
-func (m marketPositionFake) Size() int64               { return m.size }
-func (m marketPositionFake) Buy() int64                { return m.buy }
-func (m marketPositionFake) Sell() int64               { return m.sell }
-func (m marketPositionFake) Price() *num.Uint          { return m.price }
-func (m marketPositionFake) BuySumProduct() *num.Uint  { return m.buySumProduct }
-func (m marketPositionFake) SellSumProduct() *num.Uint { return m.sellSumProduct }
-func (m marketPositionFake) ClearPotentials()          {}
+func (m marketPositionFake) AverageEntryPrice() *num.Uint { return num.UintZero() }
+func (m marketPositionFake) Party() string                { return m.party }
+func (m marketPositionFake) Size() int64                  { return m.size }
+func (m marketPositionFake) Buy() int64                   { return m.buy }
+func (m marketPositionFake) Sell() int64                  { return m.sell }
+func (m marketPositionFake) Price() *num.Uint             { return m.price }
+func (m marketPositionFake) BuySumProduct() *num.Uint     { return m.buySumProduct }
+func (m marketPositionFake) SellSumProduct() *num.Uint    { return m.sellSumProduct }
+func (m marketPositionFake) ClearPotentials()             {}
 
 func (m marketPositionFake) VWBuy() *num.Uint {
 	if m.buy == 0 {
@@ -3089,17 +3090,18 @@ type mtmFake struct {
 	party string
 }
 
-func (m mtmFake) Party() string             { return m.party }
-func (m mtmFake) Size() int64               { return 0 }
-func (m mtmFake) Price() *num.Uint          { return num.UintZero() }
-func (m mtmFake) BuySumProduct() *num.Uint  { return num.UintZero() }
-func (m mtmFake) SellSumProduct() *num.Uint { return num.UintZero() }
-func (m mtmFake) VWBuy() *num.Uint          { return num.UintZero() }
-func (m mtmFake) VWSell() *num.Uint         { return num.UintZero() }
-func (m mtmFake) Buy() int64                { return 0 }
-func (m mtmFake) Sell() int64               { return 0 }
-func (m mtmFake) ClearPotentials()          {}
-func (m mtmFake) Transfer() *types.Transfer { return m.t }
+func (m mtmFake) AverageEntryPrice() *num.Uint { return num.UintZero() }
+func (m mtmFake) Party() string                { return m.party }
+func (m mtmFake) Size() int64                  { return 0 }
+func (m mtmFake) Price() *num.Uint             { return num.UintZero() }
+func (m mtmFake) BuySumProduct() *num.Uint     { return num.UintZero() }
+func (m mtmFake) SellSumProduct() *num.Uint    { return num.UintZero() }
+func (m mtmFake) VWBuy() *num.Uint             { return num.UintZero() }
+func (m mtmFake) VWSell() *num.Uint            { return num.UintZero() }
+func (m mtmFake) Buy() int64                   { return 0 }
+func (m mtmFake) Sell() int64                  { return 0 }
+func (m mtmFake) ClearPotentials()             {}
+func (m mtmFake) Transfer() *types.Transfer    { return m.t }
 
 func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 	r := make([]events.Transfer, 0, len(transfers))
@@ -3125,6 +3127,7 @@ type riskFake struct {
 	marginShortFall               *num.Uint
 }
 
+func (m riskFake) AverageEntryPrice() *num.Uint      { return num.UintZero() }
 func (m riskFake) Party() string                     { return m.party }
 func (m riskFake) Size() int64                       { return m.size }
 func (m riskFake) Buy() int64                        { return m.buy }
