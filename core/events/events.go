@@ -31,6 +31,7 @@ type MarketPosition interface {
 	SellSumProduct() *num.Uint
 	VWBuy() *num.Uint
 	VWSell() *num.Uint
+	AverageEntryPrice() *num.Uint
 }
 
 // TradeSettlement Part of the SettlePosition interface -> traces trades as they happened.

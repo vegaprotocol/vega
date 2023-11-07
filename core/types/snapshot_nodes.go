@@ -707,6 +707,7 @@ type MarketPosition struct {
 	Price                         *num.Uint
 	BuySumProduct, SellSumProduct *num.Uint
 	Distressed                    bool
+	AverageEntryPrice             *num.Uint
 }
 
 type StakingAccounts struct {
@@ -2967,28 +2968,39 @@ func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
 	buySumProduct, _ := num.UintFromString(p.BuySumProduct, 10)
 	sellSumProduct, _ := num.UintFromString(p.SellSumProduct, 10)
+	var averageEntryPrice *num.Uint
+	if p.AverageEntryPrice != nil {
+		averageEntryPrice = num.UintFromBytes(p.AverageEntryPrice)
+	}
 	return &MarketPosition{
-		PartyID:        p.PartyId,
-		Size:           p.Size,
-		Buy:            p.Buy,
-		Sell:           p.Sell,
-		Price:          price,
-		BuySumProduct:  buySumProduct,
-		SellSumProduct: sellSumProduct,
-		Distressed:     p.Distressed,
+		PartyID:           p.PartyId,
+		Size:              p.Size,
+		Buy:               p.Buy,
+		Sell:              p.Sell,
+		Price:             price,
+		BuySumProduct:     buySumProduct,
+		SellSumProduct:    sellSumProduct,
+		Distressed:        p.Distressed,
+		AverageEntryPrice: averageEntryPrice,
 	}
 }
 
 func (p MarketPosition) IntoProto() *snapshot.Position {
+	var aep []byte
+	if p.AverageEntryPrice != nil {
+		b := p.AverageEntryPrice.Bytes()
+		aep = b[:]
+	}
 	return &snapshot.Position{
-		PartyId:        p.PartyID,
-		Size:           p.Size,
-		Buy:            p.Buy,
-		Sell:           p.Sell,
-		Price:          p.Price.String(),
-		BuySumProduct:  p.BuySumProduct.String(),
-		SellSumProduct: p.SellSumProduct.String(),
-		Distressed:     p.Distressed,
+		PartyId:           p.PartyID,
+		Size:              p.Size,
+		Buy:               p.Buy,
+		Sell:              p.Sell,
+		Price:             p.Price.String(),
+		BuySumProduct:     p.BuySumProduct.String(),
+		SellSumProduct:    p.SellSumProduct.String(),
+		Distressed:        p.Distressed,
+		AverageEntryPrice: aep,
 	}
 }
 

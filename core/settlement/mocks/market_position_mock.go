@@ -34,6 +34,20 @@ func (m *MockMarketPosition) EXPECT() *MockMarketPositionMockRecorder {
 	return m.recorder
 }
 
+// AverageEntryPrice mocks base method.
+func (m *MockMarketPosition) AverageEntryPrice() *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AverageEntryPrice")
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// AverageEntryPrice indicates an expected call of AverageEntryPrice.
+func (mr *MockMarketPositionMockRecorder) AverageEntryPrice() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AverageEntryPrice", reflect.TypeOf((*MockMarketPosition)(nil).AverageEntryPrice))
+}
+
 // Buy mocks base method.
 func (m *MockMarketPosition) Buy() int64 {
 	m.ctrl.T.Helper()
