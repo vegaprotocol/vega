@@ -205,6 +205,10 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 	if n.LiquidityFeeSettings != nil {
 		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
 	}
+	var liqStrat *vegapb.LiquidationStrategy
+	if n.LiquidationStrategy != nil {
+		liqStrat = n.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.UpdateMarketConfiguration{
 		Instrument:                    instrument,
@@ -214,7 +218,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
-		LiquidationStrategy:           n.LiquidationStrategy.IntoProto(),
+		LiquidationStrategy:           liqStrat,
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:

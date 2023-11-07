@@ -204,6 +204,10 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 	if n.LiquidityFeeSettings != nil {
 		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
 	}
+	var liqStrat *vegapb.LiquidationStrategy
+	if n.LiquidationStrategy != nil {
+		liqStrat = n.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
@@ -215,7 +219,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
-		LiquidationStrategy:           n.LiquidationStrategy.IntoProto(),
+		LiquidationStrategy:           liqStrat,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
