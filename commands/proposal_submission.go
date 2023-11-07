@@ -865,7 +865,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		}
 	}
 
-	errs.Merge(checkLiquidationStrategy, changes.LiquidationStrategy, "proposal_submission.terms.change.new_market.changes")
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
@@ -905,7 +905,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 		}
 	}
 
-	errs.Merge(checkLiquidationStrategy, changes.LiquidationStrategy, "proposal_submission.terms.change.update_market.changes")
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
