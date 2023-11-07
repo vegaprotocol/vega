@@ -378,8 +378,13 @@ func (o *Order) applyOrderAmendmentSizeIceberg(delta int64) {
 	o.IcebergOrder.ReservedRemaining = 0
 }
 
-// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
-func (o *Order) applyOrderAmendmentSizeDelta(delta int64) {
+func (o *Order) amendSize(size uint64) {
+	o.amendSizeWithDelta(int64(size) - int64(o.Size))
+}
+
+// amendSizeWithDelta update the orders size/remaining fields based on the size
+// an direction of the given delta.
+func (o *Order) amendSizeWithDelta(delta int64) {
 	if o.IcebergOrder != nil {
 		o.applyOrderAmendmentSizeIceberg(delta)
 		return
@@ -426,9 +431,12 @@ func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int
 		order.OriginalPrice = amendment.Price.Clone()
 	}
 
-	// apply size changes
+	if amendment.Size != nil {
+		order.amendSize(*amendment.Size)
+	}
+
 	if delta := amendment.SizeDelta; delta != 0 {
-		order.applyOrderAmendmentSizeDelta(delta)
+		order.amendSizeWithDelta(delta)
 	}
 
 	// apply tif

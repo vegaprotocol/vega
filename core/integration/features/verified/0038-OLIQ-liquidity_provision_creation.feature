@@ -23,9 +23,9 @@ Feature: Test LP orders
       | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | submission |
       | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500        | 10     |
-      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500        | 10     |
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party1 | ETH/DEC19 | 2         | 1                    | buy  | BID              | 500    | 10     |
+      | party1 | ETH/DEC19 | 2         | 1                    | sell | ASK              | 500    | 10     |
     And the parties place the following orders:
       | party     | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | auxiliary | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
@@ -50,11 +50,11 @@ Feature: Test LP orders
     And the mark price should be "100" for the market "ETH/DEC19"
 
     Then the orders should have the following states:
-      | party     | market id | side | volume | price | status        |
-      | auxiliary | ETH/DEC19 | buy  | 1      | 80    | STATUS_ACTIVE |
-      | auxiliary | ETH/DEC19 | sell | 1      | 120   | STATUS_ACTIVE |
-      | aux2      | ETH/DEC19 | buy  | 1      | 100   | STATUS_ACTIVE |
-      | auxiliary | ETH/DEC19 | sell | 1      | 100   | STATUS_ACTIVE |
+      | party     | market id | side | volume | remaining | price | status        |
+      | auxiliary | ETH/DEC19 | buy  | 1      | 1         | 80    | STATUS_ACTIVE |
+      | auxiliary | ETH/DEC19 | sell | 1      | 1         | 120   | STATUS_ACTIVE |
+      | aux2      | ETH/DEC19 | buy  | 1      | 1         | 100   | STATUS_ACTIVE |
+      | auxiliary | ETH/DEC19 | sell | 1      | 1         | 100   | STATUS_ACTIVE |
 
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -63,17 +63,17 @@ Feature: Test LP orders
       | party1           | ETH/DEC19 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
       | party1           | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
     Then the orders should have the following states:
-      | party            | market id | side | volume | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
+      | party            | market id | side | volume | remaining | price | status        |
+      | sellSideProvider | ETH/DEC19 | sell | 1000   | 1000      | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 1000      | 80    | STATUS_ACTIVE |
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 500 | 100 | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 500 | 130 | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | ETH/DEC19 | buy  | 500    | 2         | 100   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500    | 2         | 130   | STATUS_ACTIVE |
 
   Scenario: 002, create liquidity provisions (0038-OLIQ-additional-tests); test decimal; asset 3; market 1; position:2 AC: 0070-MKTD-004;0070-MKTD-005; 0070-MKTD-006; 0070-MKTD-007;0070-MKTD-008
     Given the following assets are registered:
@@ -123,10 +123,10 @@ Feature: Test LP orders
       | aux2  | 1000  | 100  | auxiliary |
     And the mark price should be "1000" for the market "ETH/DEC19"
     Then the orders should have the following states:
-      | party     | market id | side | volume | price | status        |
-      | auxiliary | ETH/DEC19 | buy  | 100    | 800   | STATUS_ACTIVE |
-      | auxiliary | ETH/DEC19 | sell | 100    | 1200  | STATUS_ACTIVE |
-      | aux2      | ETH/DEC19 | buy  | 100    | 1000  | STATUS_ACTIVE |
+      | party     | market id | side | volume | remaining | price | status        |
+      | auxiliary | ETH/DEC19 | buy  | 100    | 100       | 800   | STATUS_ACTIVE |
+      | auxiliary | ETH/DEC19 | sell | 100    | 100       | 1200  | STATUS_ACTIVE |
+      | aux2      | ETH/DEC19 | buy  | 100    | 100       | 1000  | STATUS_ACTIVE |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -135,14 +135,15 @@ Feature: Test LP orders
       | party1           | ETH/DEC19 | buy  | 5000   | 1100  | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
       | party1           | ETH/DEC19 | sell | 5000   | 1200  | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
     Then the orders should have the following states:
-      | party            | market id | side | volume | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 100000 | 1200  | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 100000 | 800   | STATUS_ACTIVE |
+      | party            | market id | side | volume | remaining | price | status        |
+      | sellSideProvider | ETH/DEC19 | sell | 100000 | 100000    | 1200  | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | buy  | 100000 | 100000    | 800   | STATUS_ACTIVE |
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp1 | party1 | ETH/DEC19 | 50000000          | STATUS_ACTIVE |
 
     Then the orders should have the following states:
-      | party | market id | side | volume | price | status |
-      | party1 | ETH/DEC19 | buy  | 500 | 1000 | STATUS_ACTIVE |
-      | party1 | ETH/DEC19 | sell | 500 | 1300 | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | ETH/DEC19 | buy  | 500    | 2         | 1000  | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 500    | 2         | 1300  | STATUS_ACTIVE |
+
