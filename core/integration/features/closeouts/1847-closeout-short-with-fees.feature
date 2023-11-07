@@ -14,6 +14,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -60,6 +61,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
 
     And the mark price should be "20" for the market "ETH/DEC19"
 
+    When the network moves ahead "3" blocks
     # checking margins
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |

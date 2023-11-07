@@ -18,7 +18,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 2     |
 
-  @Perpetual
+  @Perpetual @Liquidation
   Scenario: (0053-PERP-024) Funding payment triggering loss soccialization
     Given the following network parameters are set:
       | name                                    | value |
@@ -102,6 +102,8 @@ Feature: Test funding payment triggering closeout for Perps market
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
+    # Allow network close-outs to kick in
+    Then the network moves ahead "1" blocks
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |
@@ -129,6 +131,6 @@ Feature: Test funding payment triggering closeout for Perps market
       | party | market id | maintenance | initial |
       | aux2  | ETH/DEC19 | 0           | 0       |
     #loss socialisaton happened
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1563199" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 

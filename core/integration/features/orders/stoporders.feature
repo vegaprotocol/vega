@@ -444,8 +444,8 @@ Feature: stop orders
       | party  | market id | side | volume | remaining | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0         | 0     | STATUS_FILLED | stop1     |
 
+  @Liquidation
   Scenario: With a last traded price at 50, a stop order placed with any trigger price which does not trigger immediately will trigger as soon as a trade occurs at a trigger price, and will not wait until the next mark price update to trigger. (0014-ORDT-051)
-
     # setup network parameters
     Given the following network parameters are set:
       | name                                    | value |
@@ -508,7 +508,7 @@ Feature: stop orders
       | party1 | ETH/DEC19 | sell | 10     | 0         | 0     | STATUS_FILLED | stop1     |
 
     # check the mark price is later updated correctly
-    Given the network moves ahead "2" blocks
+    When the network moves ahead "2" blocks
     Then the mark price should be "20" for the market "ETH/DEC19"
 
   Scenario: A stop order with expiration time T set to expire at that time will expire at time T if reached without being triggered. (0014-ORDT-052)
@@ -632,6 +632,7 @@ Feature: stop orders
       | party  | market id | side | volume | remaining | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0         | 0     | STATUS_FILLED | stop1     |
 
+  @NoPerp
   Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
 
     # setup accounts
@@ -840,18 +841,18 @@ Feature: stop orders
       | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1-1   |
       | party1 | ETH/DEC19 | STATUS_STOPPED   | stop1-2   |
 
+  @Liquidation
   Scenario: If a pair of stop orders are specified as OCO and one triggers but is invalid at time of triggering (e.g. a buy when the trader is already long) the other will still be cancelled. (0014-ORDT-058)
-
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000000 |
-      | party2 | BTC   | 10000000 |
-      | party3 | BTC   | 10000000 |
-      | aux    | BTC   | 10000000 |
-      | aux2   | BTC   | 10000000 |
-      | aux3   | BTC   | 10000000 |
-      | lpprov | BTC   | 90000000 |
+      | party  | asset | amount    |
+      | party1 | BTC   | 10000000  |
+      | party2 | BTC   | 10000000  |
+      | party3 | BTC   | 900000000 |
+      | aux    | BTC   | 10000000  |
+      | aux2   | BTC   | 10000000  |
+      | aux3   | BTC   | 10000000  |
+      | lpprov | BTC   | 90000000  |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -910,9 +911,9 @@ Feature: stop orders
 
     # now we trade at 25, this will breach the trigger
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party3 | ETH/DEC19 | sell | 1      | 25    | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC19 | buy  | 1      | 25    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC19 | sell | 1      | 25    | 0                | TYPE_LIMIT | TIF_GTC | p3-ord    |
+      | party2 | ETH/DEC19 | buy  | 1      | 25    | 1                | TYPE_LIMIT | TIF_GTC | p2-ord    |
 
 
     # check that the order got submitted and stopped as would not reduce the position
@@ -1234,6 +1235,7 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
 
+  @Liquidation @NoPerp
   Scenario: A stop order placed either prior to or during an auction will not execute during an auction, nor will it participate in the uncrossing. (0014-ORDT-065)
 
     # setup accounts
@@ -1279,7 +1281,7 @@ Feature: stop orders
     # trade with party 1
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
     # volume for the stop trade
     When the parties place the following orders:
@@ -1291,11 +1293,6 @@ Feature: stop orders
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 1      | 25    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | buy  | 1      | 25    | 1                | TYPE_LIMIT | TIF_GTC |
-
-    # check that the order got submitted
-    Then the orders should have the following states:
-      | party  | market id | side | volume | remaining | price | status        | reference |
-      | party1 | ETH/DEC19 | sell | 1      | 0         | 0     | STATUS_FILLED | stop1     |
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
@@ -1774,6 +1771,7 @@ Feature: stop orders
       | party1 | 1      | 10             | 0            |
 
 
+  @NoPerp
   Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
 
     # setup accounts

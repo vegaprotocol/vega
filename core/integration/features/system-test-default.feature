@@ -122,7 +122,7 @@ Feature: Basic feature-file matching the system-test setup like for like
 
 
 
-@SystemTestBase
+@SystemTestBase @NoPerp
   Scenario: 003 Funding insurance pool 
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount       |

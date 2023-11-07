@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 type LiquidationStrategy struct {
@@ -12,6 +13,68 @@ type LiquidationStrategy struct {
 	DisposalFraction    num.Decimal
 	FullDisposalSize    uint64
 	MaxFractionConsumed num.Decimal
+}
+
+type LiquidationNode struct {
+	MarketID   string
+	NetworkPos int64
+	NextStep   time.Time
+	Config     *LiquidationStrategy
+}
+
+func (l *LiquidationNode) isPayload() {}
+
+func (l *LiquidationNode) plToProto() interface{} {
+	return &snapshot.Payload_Liquidation{
+		Liquidation: l.IntoProto(),
+	}
+}
+
+func (l *LiquidationNode) Namespace() SnapshotNamespace {
+	return LiquidationSnapshot
+}
+
+func (l *LiquidationNode) Key() string {
+	return l.MarketID
+}
+
+func (l *LiquidationNode) IntoProto() *snapshot.Liquidation {
+	var cfg *vegapb.LiquidationStrategy
+	if l.Config != nil {
+		cfg = l.Config.IntoProto()
+	}
+	return &snapshot.Liquidation{
+		MarketId:   l.MarketID,
+		NetworkPos: l.NetworkPos,
+		NextStep:   l.NextStep.UnixNano(),
+		Config:     cfg,
+	}
+}
+
+func PayloadLiquidationNodeFromProto(p *snapshot.Payload_Liquidation) *LiquidationNode {
+	node, err := LiquidationSnapshotFromProto(p.Liquidation)
+	if err != nil {
+		// @TODO figure out what to do with this error
+		panic("invalid liquidation snapshot payload: " + err.Error())
+	}
+	return node
+}
+
+func LiquidationSnapshotFromProto(p *snapshot.Liquidation) (*LiquidationNode, error) {
+	var s *LiquidationStrategy
+	if p.Config != nil {
+		st, err := LiquidationStrategyFromProto(p.Config)
+		if err != nil {
+			return nil, err
+		}
+		s = st
+	}
+	return &LiquidationNode{
+		MarketID:   p.MarketId,
+		NetworkPos: p.NetworkPos,
+		NextStep:   time.Unix(0, p.NextStep),
+		Config:     s,
+	}, nil
 }
 
 func LiquidationStrategyFromProto(p *vegapb.LiquidationStrategy) (*LiquidationStrategy, error) {

@@ -19,7 +19,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | market.auction.minimumDuration | 1     |
       | limits.markets.maxPeggedOrders | 2     |
 
-  @Perpetual
+  @Perpetual @Liquidation
   Scenario: (0053-PERP-024) Funding payment triggering closeout but no loss soccialization
     Given the following network parameters are set:
       | name                                    | value |
@@ -117,13 +117,15 @@ Feature: Test funding payment triggering closeout for Perps market
       | party2 | 1      | 1000000        | 0            |
       | party3 | 1      | 0              | 0            |
       | lpprov | 0      | 0              | 0            |
+    ## allow close-outs to happen
+    When the network moves ahead "1" blocks
     #1 year has 8760 hours,so 0.002 year would be: 8760*0.002*3600 = 63072second, so next funding time (with delta_t = 0.002) would be 1612998252+63072=1613061324
-    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
 
     #funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(0.1*1600)=560
-    And the following transfers should happen:
+    Then the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset |
       | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120000 | USD   |
       | party2 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 560000  | USD   |
@@ -131,23 +133,23 @@ Feature: Test funding payment triggering closeout for Perps market
       | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1120000 | USD   |
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
       | party1 | USD   | ETH/DEC19 | 8802400 | 1317600 |
       | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
       | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
       | aux2   | USD   | ETH/DEC19 | 0       | 0       |
 
-    Then the parties should have the following profit and loss:
+    And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | aux    | -1     | -499500        | 1754710      |
+      | aux    | -1     | -1000000       | 1120000      |
       | aux2   | 0      | 0              | -2388999     |
       | party1 | -2     | -1000000       | 1120000      |
       | party2 | 1      | 1000000        | -560000      |
       | party3 | 1      | 0              | -560000      |
-      | lpprov | 1      | 1952000        | -817208      |
+      | lpprov | 0      | 0              | 0            |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2269099" for the market "ETH/DEC19"
 
 
 

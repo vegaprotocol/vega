@@ -4613,7 +4613,7 @@ type LiquiditySLAParameters {
 }
 
 type LiquidationStrategy {
-  "Specifies the period over which the network will try to unload its position, in seconds"
+  "Specifies the interval, in seconds, at which point the network will try to unload its position."
   disposalTimeStep: Int!
   "Specifies the fraction of its position the network will try to reduce its position by in a single disposal attempt."
   disposalFraction: String!

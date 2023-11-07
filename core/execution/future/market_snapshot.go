@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/liquidity/target"
@@ -184,6 +185,7 @@ func NewMarketFromSnapshot(
 	if em.ExpiringStopOrders != nil {
 		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
+	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity)
 
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
@@ -228,6 +230,7 @@ func NewMarketFromSnapshot(
 		stopOrders:                    stopOrders,
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
+		liquidation:                   le,
 	}
 
 	for _, p := range em.Parties {
@@ -271,7 +274,7 @@ func (m *Market) GetNewStateProviders() []types.StateProvider {
 	return []types.StateProvider{
 		m.position, m.matching, m.tsCalc,
 		m.liquidityEngine.V1StateProvider(), m.liquidityEngine.V2StateProvider(),
-		m.settlement,
+		m.settlement, m.liquidation,
 	}
 }
 

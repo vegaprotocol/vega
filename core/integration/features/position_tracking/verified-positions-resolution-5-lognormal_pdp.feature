@@ -24,8 +24,8 @@ Feature: Position resolution case 5 lognormal risk model
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book
-
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -115,17 +115,19 @@ Feature: Position resolution case 5 lognormal risk model
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -27650       |
 
+    When the network moves ahead "1" blocks
+    #Then debug transfers
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
       | from            | to              | from account            | to account                       | market id | amount | asset |
-      | designatedLoser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | market          |                 | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 24750  | USD   |
       | buySideProvider | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 1      | USD   |
-      | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
       | market          | lpprov          | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 24721  | USD   |
       | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 24721  | USD   |
       | market          | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 23869  | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

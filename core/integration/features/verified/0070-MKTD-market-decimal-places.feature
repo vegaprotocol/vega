@@ -117,6 +117,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party1 | ETH   | USD/DEC19 | 1102   | 0       |      |
             | party2 | ETH   | USD/DEC19 | 4268   | 0       |      |
 
+    @Liquidation
     Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
             | id  | party  | market id | commitment amount | fee   | lp type    |
@@ -137,16 +138,17 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
 
         When the opening auction period ends for market "ETH/MAR22"
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
-        And the auction ends with a traded volume of "10" at a price of "10"
-#there is not enough vol on the order book to closeout praty1, party1's distressed and waiting to be closeout
+
         And the parties should have the following account balances:
-            | party  | asset | market id | margin | general  | bond  |
-            | party0 | USD | ETH/MAR22 | 2134142   | 2830289  | 35569 |
-            | party1 | USD | ETH/MAR22 | 100000000 | 0        |       |
-            | party2 | USD | ETH/MAR22 | 70539     | 99929461 |       |
+            | party  | asset | market id | margin  | general  | bond  |
+            | party0 | USD   | ETH/MAR22 | 2134142 | 2830289  | 35569 |
+            | party1 | USD   | ETH/MAR22 | 0       | 0        |       |
+            | party2 | USD   | ETH/MAR22 | 70539   | 99929461 |       |
+        # party1 is closed out
         And the following trades should be executed:
-            | buyer  | price | size | seller |
-            | party1 | 10    | 10   | party2 |
+            | buyer   | price | size | seller |
+            | party1  | 10    | 10   | party2 |
+            | network | 0     | 10   | party1 |
 
     Scenario: 003: Users engage in an ETH market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:

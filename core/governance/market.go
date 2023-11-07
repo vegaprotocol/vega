@@ -25,6 +25,7 @@ import (
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
+	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -235,6 +236,7 @@ func buildMarketFromProposal(
 		}
 	}
 
+	// this can be nil for market updates.
 	var lstrat *types.LiquidationStrategy
 	if definition.Changes.LiquidationStrategy != nil {
 		lstrat = definition.Changes.LiquidationStrategy.DeepClone()
@@ -786,7 +788,10 @@ func validateNewMarketChange(
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
 		return perr, err
 	}
-	if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
+	if terms.Changes.LiquidationStrategy == nil {
+		// @TODO At this stage, we don't require the liquidation strategy to be specified, treating nil as an implied legacy strategy.
+		terms.Changes.LiquidationStrategy = liquidation.GetLegacyStrat()
+	} else if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil

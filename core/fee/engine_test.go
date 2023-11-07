@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/types"
@@ -77,7 +76,6 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
 	t.Run("calculate batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calculate batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
-	t.Run("calculate position resolution", testCalcPositionResolution)
 
 	t.Run("Build liquidity fee transfers with remainder", testBuildLiquidityFeesRemainder)
 }
@@ -999,94 +997,3 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	assert.Equal(t, recv, 1)
 	assert.Equal(t, pay, 1)
 }
-
-func testCalcPositionResolution(t *testing.T) {
-	eng := getTestFee(t)
-	trades := []*types.Trade{
-		{
-			Aggressor: types.SideSell,
-			Seller:    "party1",
-			Buyer:     "network",
-			Size:      3,
-			Price:     num.NewUint(1000),
-		},
-		{
-			Aggressor: types.SideSell,
-			Seller:    "party2",
-			Buyer:     "network",
-			Size:      2,
-			Price:     num.NewUint(1100),
-		},
-	}
-
-	positions := []events.MarketPosition{
-		fakeMktPos{party: "bad-party1", size: -10},
-		fakeMktPos{party: "bad-party2", size: 7},
-		fakeMktPos{party: "bad-party3", size: -2},
-		fakeMktPos{party: "bad-party4", size: 10},
-	}
-
-	ft, partiesFee := eng.CalculateFeeForPositionResolution(trades, positions)
-	assert.NotNil(t, ft)
-	assert.NotNil(t, partiesFee)
-
-	// get the amounts map
-	feeAmounts := ft.TotalFeesAmountPerParty()
-	party1Amount, ok := feeAmounts["bad-party1"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(307), party1Amount)
-	party2Amount, ok := feeAmounts["bad-party2"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(217), party2Amount)
-	party3Amount, ok := feeAmounts["bad-party3"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(65), party3Amount)
-	party4Amount, ok := feeAmounts["bad-party4"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(307), party4Amount)
-
-	// check the details of the parties
-	// 307 as expected
-	assert.Equal(t, num.NewUint(90), partiesFee["bad-party1"].InfrastructureFee)
-	assert.Equal(t, num.NewUint(37), partiesFee["bad-party1"].MakerFee)
-	assert.Equal(t, num.NewUint(180), partiesFee["bad-party1"].LiquidityFee)
-
-	// get the transfer and check we have enough of each types
-	transfers := ft.Transfers()
-	var pay, recv, infra, liquidity int
-	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity++
-		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra++
-		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv++
-		}
-		if v.Type == types.TransferTypeMakerFeePay {
-			pay++
-		}
-	}
-
-	assert.Equal(t, liquidity, len(trades)*len(positions))
-	assert.Equal(t, infra, len(trades)*len(positions))
-	assert.Equal(t, recv, len(trades))
-	assert.Equal(t, pay, len(trades)*len(positions))
-}
-
-type fakeMktPos struct {
-	party string
-	size  int64
-}
-
-func (f fakeMktPos) AverageEntryPrice() *num.Uint { return num.UintZero() }
-func (f fakeMktPos) Party() string                { return f.party }
-func (f fakeMktPos) Size() int64                  { return f.size }
-func (f fakeMktPos) Buy() int64                   { return 0 }
-func (f fakeMktPos) Sell() int64                  { return 0 }
-func (f fakeMktPos) Price() *num.Uint             { return num.UintZero() }
-func (f fakeMktPos) BuySumProduct() *num.Uint     { return num.UintZero() }
-func (f fakeMktPos) SellSumProduct() *num.Uint    { return num.UintZero() }
-func (f fakeMktPos) VWBuy() *num.Uint             { return num.UintZero() }
-func (f fakeMktPos) VWSell() *num.Uint            { return num.UintZero() }

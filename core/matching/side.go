@@ -341,10 +341,10 @@ func (s *OrderBookSide) getPriceLevelIfExists(price *num.Uint) *PriceLevel {
 func (s *OrderBookSide) getPriceLevel(price *num.Uint) *PriceLevel {
 	var i int
 	if s.side == types.SideBuy {
-		// buy side levels should be ordered in descending
+		// buy side levels should be ordered in ascending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(price) })
 	} else {
-		// sell side levels should be ordered in ascending
+		// sell side levels should be ordered in descending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.LTE(price) })
 	}
 
@@ -362,6 +362,26 @@ func (s *OrderBookSide) getPriceLevel(price *num.Uint) *PriceLevel {
 	copy(s.levels[i+1:], s.levels[i:])
 	s.levels[i] = level
 	return level
+}
+
+func (s *OrderBookSide) getLevelsForPrice(price *num.Uint) []*PriceLevel {
+	ret := make([]*PriceLevel, 0, len(s.levels))
+	// buy is ASCENDING, start at the highest buy price until we find a buy order that will not trade
+	// at the given price (ie given price is > buy order price).
+	cmpF := price.GT
+	if s.side == types.SideSell {
+		// sell is DESCENDING, start at the lowest sell order price, until we find a sell order that won't trade
+		// at the given price (ie given price < sell order price).
+		cmpF = price.LT
+	}
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		if cmpF(s.levels[i].price) {
+			fmt.Printf(">>> DEBUG Price %s <> levels[%d]%s\n", price.String(), i, s.levels[i].price.String())
+			return ret
+		}
+		ret = append(ret, s.levels[i])
+	}
+	return ret
 }
 
 // GetVolume returns the volume at the given pricelevel.

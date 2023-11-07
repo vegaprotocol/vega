@@ -479,7 +479,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
-  @FeeRound
+  @FeeRound @Liquidation @NoPerp
   Scenario: 004 2 LPs joining at start, 1 LP forcibly closed out (0042-LIQF-008)
 
     Given the average block duration is "601"
@@ -571,16 +571,16 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
 # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1300 * 30 * 0.002) = ceil(78) = 78
 
-    And the accumulated liquidity fees should be "79" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "85" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 4756   | 0       | 0    |
+      | lp1   | USD   | ETH/MAR22 | 0      | 0       | 0    |
     When the network moves ahead "1" blocks:
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp2 | 0.9324492333195193 | 10000 |
+      | party | equity like share  | average entry valuation |
+      | lp2   | 0.9324492333195193 | 10000                   |
 
     # Trigger liquidity distribution
     When the network moves ahead "1" blocks:

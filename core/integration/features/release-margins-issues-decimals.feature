@@ -199,7 +199,7 @@ Feature: Test margin release on order cancel
       | party    | asset | market id | margin | general |
       | partyGuy | ETH   | ETH/DEC19 | 60000  | 60000   |
 
-  @MarginRelease
+  @MarginRelease @NoPerp
   Scenario: a party place a new order in the system, party is closing position via closeout of other parties
     Given the parties deposit on asset's general account the following amount:
       | party        | asset | amount          |

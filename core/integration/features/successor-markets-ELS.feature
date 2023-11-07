@@ -63,7 +63,7 @@ Feature: Simple example of successor markets
       | trader4 | USD   | 2000000     |
       | trader5 | USD   | 22000       |
 
-  @SuccessorMarketActive @NoPerp
+  @SuccessorMarketActive @NoPerp @Liquidation
   Scenario: 001 Enact a successor market when the parent market is still active; Two proposals that name the same parent can be submitted; 0081-SUCM-005, 0081-SUCM-006, 0081-SUCM-020, 0081-SUCM-021, 0081-SUCM-022
     Given the markets:
       | id        | quote name | asset | liquidity monitoring | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
@@ -104,21 +104,18 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
+      | trader5 | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the parties cancel the following orders:
-      | party   | reference      |
-      | trader3 | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
-    When the parties place the following orders with ticks:
+    And the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    Then the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
@@ -143,7 +140,7 @@ Feature: Simple example of successor markets
       | lpprov3 | USD   | ETH/DEC21 | 0      | 19999992000 | 8000 |
 
 # market ETH/DEC19 is not settled yet, it still active
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
 
@@ -168,8 +165,8 @@ Feature: Simple example of successor markets
     #check assets held to support trader1's orders in market ETH/DEC21 is released
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader1 | USD   | ETH/DEC20 | 122    | 1998780 |
-      | trader1 | USD   | ETH/DEC21 | 0      | 1998780 |
+      | trader1 | USD   | ETH/DEC20 | 122    | 2000288 |
+      | trader1 | USD   | ETH/DEC21 | 0      | 2000288 |
 
     #check all the orders in market ETH/DEC21 is canceled
     And the orders should have the following status:
@@ -177,8 +174,8 @@ Feature: Simple example of successor markets
       | trader1 | order1-DEC21 | STATUS_STOPPED |
       | trader1 | order2-DEC21 | STATUS_STOPPED |
 
-    And the insurance pool balance should be "2031" for the market "ETH/DEC19"
-    And the insurance pool balance should be "3046" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1611" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2416" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the global insurance pool balance should be "0" for the asset "USD"
 
@@ -224,10 +221,10 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4938" for the asset "USD"
+    And the insurance pool balance should be "7085" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "4669" for the asset "USD"
 
-  @SuccessorMarketSimple
+  @SuccessorMarketSimple @Liquidation
   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
@@ -267,11 +264,8 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
+      | trader5 | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the parties cancel the following orders:
-      | party   | reference      |
-      | trader3 | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -281,7 +275,7 @@ Feature: Simple example of successor markets
       | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    Then the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
@@ -324,8 +318,8 @@ Feature: Simple example of successor markets
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "10336" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "2585" for the asset "USD"
+    And the insurance pool balance should be "9403" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "2351" for the asset "USD"
 
 #this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -347,7 +341,7 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 11750                   |
 
 
-  @SuccessorMarketActive @NoPerp
+  @SuccessorMarketActive @NoPerp @Liquidation
   Scenario: 003 Enact a successor market while the parent is still active. Pending successors get rejected
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
@@ -388,11 +382,8 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
+      | trader5 | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the parties cancel the following orders:
-      | party   | reference      |
-      | trader3 | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -402,7 +393,7 @@ Feature: Simple example of successor markets
       | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
       | party   | equity like share | average entry valuation |
@@ -419,7 +410,7 @@ Feature: Simple example of successor markets
 
 #market ETH/DEC19 is not settled yet, it still active
 
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
     When the successor market "ETH/DEC20" is enacted
@@ -435,8 +426,8 @@ Feature: Simple example of successor markets
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
-    And the insurance pool balance should be "2031" for the market "ETH/DEC19"
-    And the insurance pool balance should be "3046" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1611" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2416" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
 
     # this is from ETH/DEC19 market
@@ -481,11 +472,11 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.8               | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7983" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4938" for the asset "USD"
+    And the insurance pool balance should be "7085" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "4669" for the asset "USD"
 
 
-  @SuccessorMarketExpires2
+  @SuccessorMarketExpires2 @Liquidation
   Scenario: 004 Enact a successor market while the parent is still active. Pending successors get rejected
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
@@ -527,11 +518,8 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader5 | USD   | ETH/DEC19 | 17432  | 0       |
+      | trader5 | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the parties cancel the following orders:
-      | party   | reference      |
-      | trader3 | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -541,7 +529,7 @@ Feature: Simple example of successor markets
       | trader4 | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3 | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    Then the insurance pool balance should be "4027" for the market "ETH/DEC19"
     Then the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
     And the liquidity provider fee shares for the market "ETH/DEC19" should be:
@@ -549,7 +537,7 @@ Feature: Simple example of successor markets
       | lpprov1 | 0.9               | 9000                    |
       | lpprov2 | 0.1               | 10000                   |
 
-    And the insurance pool balance should be "5077" for the market "ETH/DEC19"
+    And the insurance pool balance should be "4027" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the global insurance pool balance should be "0" for the asset "USD"
 
@@ -561,8 +549,8 @@ Feature: Simple example of successor markets
     And the successor market "ETH/DEC20" is enacted
     When the network moves ahead "5" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    Then the insurance pool balance should be "6460" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "6461" for the asset "USD"
+    Then the insurance pool balance should be "5877" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "5877" for the asset "USD"
 
 # make LP commitment while market is still pending
     Then the parties submit the following liquidity provision:
@@ -583,8 +571,8 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "6460" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "6461" for the asset "USD"
+    And the insurance pool balance should be "5877" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "5877" for the asset "USD"
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -606,5 +594,5 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "6460" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "6461" for the asset "USD"
+    And the insurance pool balance should be "5877" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "5877" for the asset "USD"

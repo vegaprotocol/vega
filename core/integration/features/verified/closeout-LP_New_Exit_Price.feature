@@ -26,9 +26,11 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
-      | market.liquidity.stakeToCcyVolume     | 1     |
+      | market.liquidity.stakeToCcyVolume       | 1     |
       | limits.markets.maxPeggedOrders          | 2     |
     And the average block duration is "1"
+
+  @Liquidation @NoPerp
   Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
@@ -96,8 +98,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | side | price | volume |
       | buy  | 29    | 5173   |
       | buy  | 49    | 1      |
-      | sell | 2000 | 2  |
-      | sell | 2020 | 75 |
+      | sell | 2000  | 2      |
+      | sell | 2020  | 75     |
       | sell | 3000  | 1      |
 
     When the parties place the following orders with ticks:
@@ -108,7 +110,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
       | buy  | 49    | 1      |
-      | sell | 2000 | 2 |
+      | sell | 2000  | 0      |
 
 # traderB has both LP pegged orders, limit order, and positions
 # margin for pegged orders long: 5173*0.801225765*50=207237.0441
@@ -118,21 +120,21 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 # margin_short= 632,800,019,918.66
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond |
-      | traderB | USD   | ETH/DEC20 | 3100294 | 0       | 0    |
+      | party   | asset | market id | margin | general | bond |
+      | traderB | USD   | ETH/DEC20 | 0      | 0       | 0    |
     Then the network moves ahead "1" blocks
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance  | search       | initial       | release       |
-      | traderB | ETH/DEC20 | 632800019919 | 949200029878 | 1265600039838 | 1898400059757 |
+      | party   | market id | maintenance | search | initial | release |
+      | traderB | ETH/DEC20 | 0           | 0      | 0       | 0       |
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the insurance pool balance should be "3096390" for the market "ETH/DEC20"
 
-  @SLABug
+  @SLABug @Liquidation
   Scenario: 002 Replicate a scenario from Lewis, linear slippage factor = 1e0, quadratic slippage factor = 1e2
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
@@ -184,8 +186,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | ETH/DEC21 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond |
-      | traderB | USD   | ETH/DEC21 | 3100294 | 0       | 0    |
+      | party   | asset | market id | margin | general | bond |
+      | traderB | USD   | ETH/DEC21 | 0      | 0       | 0    |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
@@ -202,16 +204,17 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | USD   | ETH/DEC21 | 125460250 | 9999874539450 |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search   | initial   | release   |
-      | traderB | ETH/DEC21 | 62745519    | 94118278 | 125491038 | 188236557 |
+      | party   | market id | maintenance | search | initial | release |
+      | traderB | ETH/DEC21 | 0           | 0      | 0       | 0       |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | 199186       | 150000         | 112           |
 #supplied stake is only updated with bond account at the end of epoch
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+    And the insurance pool balance should be "3100294" for the market "ETH/DEC21"
 
+  @Liquidation
   Scenario: 003 Replicate a scenario from Lewis, linear slippage factor = 1e1, quadratic slippage factor = 1e3
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
@@ -271,14 +274,14 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
 # margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond |
-      | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0    |
+      | party   | asset | market id | margin | general | bond |
+      | traderB | USD   | ETH/DEC22 | 0      | 0       | 0    |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search    | initial    | release    |
-      | traderB | ETH/DEC22 | 627275919   | 940913878 | 1254551838 | 1881827757 |
+      | party   | market id | maintenance | search | initial | release |
+      | traderB | ETH/DEC22 | 0           | 0      | 0       | 0       |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC22"
+    And the insurance pool balance should be "3100294" for the market "ETH/DEC22"
 
   Scenario: 004 Replicate a scenario from Lewis, linear slippage factor = 1e2, quadratic slippage factor = 1e0, 0019-MCAL-003
     Given the parties deposit on asset's general account the following amount:

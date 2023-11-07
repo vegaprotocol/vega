@@ -28,6 +28,7 @@ type Config struct {
 	MarginCalculators   *marginCalculators
 	LiquidityMonitoring *liquidityMonitoring
 	LiquiditySLAParams  *slaParams
+	LiquidationStrat    *liquidationConfig
 }
 
 type SuccessorConfig struct {
@@ -41,6 +42,7 @@ type SuccessorConfig struct {
 	PriceRange          num.Decimal
 	LinSlip             num.Decimal
 	QuadSlip            num.Decimal
+	LiquidationStrat    *liquidationConfig
 }
 
 func NewMarketConfig() *Config {
@@ -53,6 +55,7 @@ func NewMarketConfig() *Config {
 		MarginCalculators:   newMarginCalculators(unmarshaler),
 		LiquidityMonitoring: newLiquidityMonitoring(unmarshaler),
 		LiquiditySLAParams:  newLiquiditySLAParams(unmarshaler),
+		LiquidationStrat:    newLiquidationConfig(unmarshaler),
 	}
 }
 
@@ -67,5 +70,6 @@ func NewSuccessorConfig() *SuccessorConfig {
 		PriceRange:          zero,
 		LinSlip:             zero,
 		QuadSlip:            zero,
+		LiquidationStrat:    newLiquidationConfig(u),
 	}
 }

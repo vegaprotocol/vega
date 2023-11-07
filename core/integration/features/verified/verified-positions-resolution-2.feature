@@ -9,6 +9,7 @@ Feature: Position resolution case 2
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Liquidation @NoPerp
   Scenario: close out when there is not enough orders on the orderbook to cover the position (0008-TRAD-003, 0008-TRAD-004)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -45,16 +46,12 @@ Feature: Position resolution case 2
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 23273       | 74473  | 93092   | 116365  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
-    # insurance pool generation - modify order book
-    Then the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
 
     When the parties place the following orders with ticks:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -63,7 +60,7 @@ Feature: Position resolution case 2
     # check the party accounts
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders with ticks:
@@ -76,22 +73,22 @@ Feature: Position resolution case 2
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 3300   | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 18618       | 59577  | 74472   | 93090  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | -8700          | 0            |
+      | designatedLooser | 0      | 0              | -12000       |
 
     # checking margins
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 3300   | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     # then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "11731" for the market "ETH/DEC19"
 

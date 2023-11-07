@@ -394,7 +394,7 @@ message MarketTimestamps {
 
 // Liquidation strategy used when the network holds a position resulting from position resolution.
 message LiquidationStrategy {
-  // Period of time over which the network will attempt to close its position, in seconds.
+  // Interval, in seconds, at which the network will attempt to close its position.
   int64 disposal_time_step = 1;
   // Fraction of the open position the market will try to close in a single attempt; range 0 through 1.
   string disposal_fraction = 2;

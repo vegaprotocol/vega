@@ -1,0 +1,283 @@
+package liquidation
+
+import (
+	"context"
+	"fmt"
+	"math"
+	"time"
+
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/types"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
+)
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen
+
+type Book interface {
+	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
+}
+
+type MarketLiquidity interface {
+	ValidOrdersPriceRange() (*num.Uint, *num.Uint, error)
+}
+
+type IDGen interface {
+	NextID() string
+}
+
+type Engine struct {
+	// settings, orderbook, network pos data
+	cfg      *types.LiquidationStrategy
+	broker   common.Broker
+	mID      string
+	pos      Pos
+	book     Book
+	as       common.AuctionState
+	nextStep time.Time
+	tSvc     common.TimeService
+	ml       MarketLiquidity
+	stopped  bool
+}
+
+// protocol upgrade - default values for existing markets/proposals.
+var (
+	defaultStrat = &types.LiquidationStrategy{
+		DisposalTimeStep:    10 * time.Second,
+		DisposalFraction:    num.DecimalFromFloat(0.1),
+		FullDisposalSize:    20,
+		MaxFractionConsumed: num.DecimalFromFloat(0.05),
+	}
+
+	// this comes closest to the existing behaviour (trying to close the network position in full in one go).
+	legacyStrat = &types.LiquidationStrategy{
+		DisposalTimeStep:    0 * time.Second,
+		DisposalFraction:    num.DecimalOne(),
+		FullDisposalSize:    math.MaxUint64,
+		MaxFractionConsumed: num.DecimalOne(),
+	}
+)
+
+// GetDefaultStrategy is exporeted, expected to be used to update existing proposals on protocol upgrade
+// once that's happened, this code can be removed.
+func GetDefaultStrategy() *types.LiquidationStrategy {
+	return defaultStrat.DeepClone()
+}
+
+// GetLegacyStrat is exported, same as defaul. This can be used for protocol upgrade
+// it most closely resebles the old behaviour (network attempts to close out fully, in one go)
+// this can be removed once protocol upgrade has completed.
+func GetLegacyStrat() *types.LiquidationStrategy {
+	return legacyStrat.DeepClone()
+}
+
+func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity) *Engine {
+	// NOTE: This can be removed after protocol upgrade
+	if cfg == nil {
+		cfg = legacyStrat.DeepClone()
+	}
+	return &Engine{
+		cfg:    cfg,
+		broker: broker,
+		mID:    mktID,
+		book:   book,
+		as:     as,
+		tSvc:   tSvc,
+		ml:     ml,
+	}
+}
+
+func (e *Engine) Update(cfg *types.LiquidationStrategy) {
+	if !e.nextStep.IsZero() {
+		since := e.nextStep.Add(-e.cfg.DisposalTimeStep) // work out when the network position was last updated
+		e.nextStep = since.Add(cfg.DisposalTimeStep)
+	}
+	// now update the config
+	e.cfg = cfg
+}
+
+func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error) {
+	if e.pos.open == 0 || e.as.InAuction() || e.nextStep.After(now) {
+		return nil, nil
+	}
+	minP, maxP, err := e.ml.ValidOrdersPriceRange()
+	if err != nil {
+		return nil, err
+	}
+	vol := e.pos.open
+	bookSide := types.SideBuy
+	side := types.SideSell
+	bound := minP
+	price := minP
+	if vol < 0 {
+		vol *= -1
+		side, bookSide = bookSide, side
+		price, bound = maxP, maxP
+	}
+	size := uint64(vol)
+	if size > e.cfg.FullDisposalSize {
+		// absolute size of network position * disposal fraction -> rounded
+		size = uint64(num.DecimalFromFloat(float64(size)).Mul(e.cfg.DisposalFraction).Round(0).IntPart())
+	}
+	available := e.book.GetVolumeAtPrice(bound, bookSide)
+	fmt.Printf(">>> Debug network position %v - available: %d - side: %s (bound: %s-%s)\n", e.pos.open, available, bookSide.String(), minP.String(), bound.String())
+	if available == 0 {
+		return nil, nil
+	}
+	// round up, avoid a value like 0.1 to be floored, favour closing out a position of 1 at least
+	maxCons := uint64(num.DecimalFromFloat(float64(available)).Mul(e.cfg.MaxFractionConsumed).Ceil().IntPart())
+	if maxCons < size {
+		size = maxCons
+	}
+	// get the block hash
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	idgen := idgeneration.New(blockHash + crypto.HashStrToHex("networkLS"+e.mID))
+	// set time for next order, if the position ends up closed out, then that's fine
+	// we'll remove this time when the position is updated
+	if size == 0 {
+		return nil, nil
+	}
+	e.nextStep = now.Add(e.cfg.DisposalTimeStep)
+	// place order using size
+	return &types.Order{
+		ID:          idgen.NextID(),
+		MarketID:    e.mID,
+		Party:       types.NetworkParty,
+		Side:        side,
+		Price:       price,
+		Size:        size,
+		Remaining:   size,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeLimit,
+		CreatedAt:   now.UnixNano(),
+		Status:      types.OrderStatusActive,
+		Reference:   "LS", // Liquidity sourcing
+	}, nil
+}
+
+// ClearDistressedParties transfers the open positions to the network, returns the market position events and party ID's
+// for the market to remove the parties from things like positions engine and collateral.
+func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed []events.Margin) ([]events.MarketPosition, []string, error) {
+	if len(closed) == 0 {
+		return nil, nil, nil
+	}
+	// netork is most likely going to hold an actual position now, let's set up the time step when we attempt to dispose
+	// of (some) of the volume
+	if e.pos.open == 0 || e.nextStep.IsZero() {
+		e.nextStep = e.tSvc.GetTimeNow().Add(e.cfg.DisposalTimeStep)
+	}
+	mps := make([]events.MarketPosition, 0, len(closed))
+	parties := make([]string, 0, len(closed))
+	// order events here
+	orders := make([]events.Event, 0, len(closed)*2)
+	// trade events here
+	trades := make([]events.Event, 0, len(closed))
+	now := e.tSvc.GetTimeNow()
+	for _, cp := range closed {
+		e.pos.open += cp.Size()
+		// get the orders and trades so we can send events to update the datanode
+		o1, o2, t := e.getOrdersAndTrade(cp, idgen, now)
+		orders = append(orders, events.NewOrderEvent(ctx, o1), events.NewOrderEvent(ctx, o2))
+		trades = append(trades, events.NewTradeEvent(ctx, *t))
+		// add the confiscated balance to the fee pool that can be taken from the insurance pool to pay fees to
+		// the good parties when the network closes itself out.
+		mps = append(mps, cp)
+		parties = append(parties, cp.Party())
+	}
+	// send order events
+	e.broker.SendBatch(orders)
+	// send trade events
+	e.broker.SendBatch(trades)
+	// the network has no (more) remaining open position -> no need for the e.nextStep to be set
+	if e.pos.open == 0 {
+		e.nextStep = time.Time{}
+	}
+	return mps, parties, nil
+}
+
+func (e *Engine) UpdateNetworkPosition(trades []*types.Trade) {
+	sign := int64(1)
+	if e.pos.open < 0 {
+		sign *= -1
+	}
+	for _, t := range trades {
+		delta := int64(t.Size) * sign
+		e.pos.open -= delta
+	}
+	if e.pos.open == 0 {
+		e.nextStep = time.Time{}
+	} else if e.nextStep.IsZero() {
+		e.nextStep = e.tSvc.GetTimeNow().Add(e.cfg.DisposalTimeStep)
+	}
+}
+
+func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time) (*types.Order, *types.Order, *types.Trade) {
+	tSide, nSide := types.SideSell, types.SideBuy // one of them will have to sell
+	s := pos.Size()
+	size := uint64(s)
+	if s < 0 {
+		size = uint64(-s)
+		// swap sides
+		nSide, tSide = tSide, nSide
+	}
+	var buyID, sellID, buyParty, sellParty string
+	price := num.UintZero()
+	order := types.Order{
+		ID:            idgen.NextID(),
+		MarketID:      e.mID,
+		Status:        types.OrderStatusFilled,
+		Party:         types.NetworkParty,
+		Price:         price,
+		OriginalPrice: price, // technically, we don't need to clone this, these orders and trades are just for show
+		CreatedAt:     now.UnixNano(),
+		Reference:     "close-out distressed",
+		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
+		Type:          types.OrderTypeNetwork,
+		Size:          size,
+		Remaining:     0,
+		Side:          nSide,
+	}
+	partyOrder := types.Order{
+		ID:            idgen.NextID(),
+		MarketID:      e.mID,
+		Size:          size,
+		Remaining:     0,
+		Status:        types.OrderStatusFilled,
+		Party:         pos.Party(),
+		Side:          tSide, // assume sell, price is zero in that case anyway
+		Price:         price, // average price
+		OriginalPrice: price,
+		CreatedAt:     now.UnixNano(),
+		Reference:     fmt.Sprintf("distressed-%s", pos.Party()),
+		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
+		Type:          types.OrderTypeNetwork,
+	}
+	buyParty = order.Party
+	sellParty = partyOrder.Party
+	sellID = partyOrder.ID
+	buyID = order.ID
+	if tSide == types.SideBuy {
+		sellID, buyID = buyID, sellID
+		buyParty, sellParty = sellParty, buyParty
+	}
+	trade := types.Trade{
+		ID:          idgen.NextID(),
+		MarketID:    e.mID,
+		Price:       price,
+		MarketPrice: price,
+		Size:        size,
+		Aggressor:   order.Side, // we consider network to be aggressor
+		BuyOrder:    buyID,
+		SellOrder:   sellID,
+		Buyer:       buyParty,
+		Seller:      sellParty,
+		Timestamp:   now.UnixNano(),
+		Type:        types.TradeTypeNetworkCloseOutBad,
+		SellerFee:   types.NewFee(),
+		BuyerFee:    types.NewFee(),
+	}
+	return &order, &partyOrder, &trade
+}

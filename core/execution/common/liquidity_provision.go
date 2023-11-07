@@ -342,7 +342,7 @@ func (m *MarketLiquidity) EndBlock(markPrice, midPrice *num.Uint, positionFactor
 }
 
 func (m *MarketLiquidity) updateLiquidityScores() {
-	minLpPrice, maxLpPrice, err := m.validOrdersPriceRange()
+	minLpPrice, maxLpPrice, err := m.ValidOrdersPriceRange()
 	if err != nil {
 		m.log.Debug("liquidity score update error", logging.Error(err))
 		return
@@ -762,8 +762,8 @@ func (m *MarketLiquidity) ensureMinCommitmentAmount(amount *num.Uint) error {
 	return nil
 }
 
-// validOrdersPriceRange returns min and max valid prices range for LP orders.
-func (m *MarketLiquidity) validOrdersPriceRange() (*num.Uint, *num.Uint, error) {
+// ValidOrdersPriceRange returns min and max valid prices range for LP orders.
+func (m *MarketLiquidity) ValidOrdersPriceRange() (*num.Uint, *num.Uint, error) {
 	bestBid, err := m.orderBook.GetBestStaticBidPrice()
 	if err != nil {
 		return num.UintOne(), num.MaxUint(), err

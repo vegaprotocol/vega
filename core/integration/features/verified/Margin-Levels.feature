@@ -194,6 +194,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | USD   | ETH/DEC19 | 7114   | 2886    |
       | trader20 | USD   | ETH/DEC20 | 6835   | 3165    |
 
+  @Liquidation
   Scenario: Assure initial margin requirement must be met
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
@@ -252,7 +253,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     When the parties deposit on asset's general account the following amount:
       | party   | asset | amount |
-      | trader3 | USD   | 2      |
+      | trader3 | USD   | 41     |
     And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 20     | 15    | 3                | TYPE_LIMIT | TIF_FOK |
@@ -267,9 +268,10 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | party   | asset | market id | margin | general |
       | trader1 | USD   | ETH/DEC19 | 712    | 0       |
       | trader2 | USD   | ETH/DEC19 | 712    | 0       |
-      | trader3 | USD   | ETH/DEC19 | 322    | 1       |
+      | trader3 | USD   | ETH/DEC19 | 322    | 40      |
 
     When the network moves ahead "1" blocks
+    Then debug trades
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
       | trader1 | -10    | 0              | 0            |
@@ -281,12 +283,12 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | party   | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
       | trader2 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
-      | trader3 | ETH/DEC19 | 361 | 541 | 722 | 1083 |
+      | trader3 | ETH/DEC19 | 361         | 541    | 722     | 1083    |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader1 | USD   | ETH/DEC19 | 712    | 0       |
       | trader2 | USD   | ETH/DEC19 | 712    | 0       |
-      | trader3 | USD   | ETH/DEC19 | 323    | 0       |
+      | trader3 | USD   | ETH/DEC19 | 362    | 0       |
 
     # party places a limit order that would reduce its exposure once it fills
     When the parties place the following orders with ticks:
@@ -294,7 +296,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader3 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader3 | ETH/DEC19 | 361 | 722 |
+      | trader3 | ETH/DEC19 | 361         | 722     |
 
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
@@ -304,7 +306,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader3 | 19     | 0              | 0            |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader3 | ETH/DEC19 | 343 | 686 |
+      | trader3 | ETH/DEC19 | 343         | 686     |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -314,7 +316,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader3 | 18     | 0              | 0            |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader3 | ETH/DEC19 | 325 | 650 |
+      | trader3 | ETH/DEC19 | 325         | 650     |
 
     # position is long so extra buy order not allowed to skip margin check
     When the parties place the following orders with ticks:
@@ -334,7 +336,7 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader3 | 17     | -85            | -5           |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader3 | ETH/DEC19 | 154 | 308 |
+      | trader3 | ETH/DEC19 | 154         | 308     |
 
     And the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -343,17 +345,17 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type        | tif     |
-      | auxiliary2 | ETH/DEC19 | buy  | 20     | 10    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | trader3    | ETH/DEC19 | sell | 17     | 0     | 1                | TYPE_MARKET | TIF_FOK |
+      | trader3    | ETH/DEC19 | sell | 17     | 0     | 0                | TYPE_MARKET | TIF_FOK |
+      | auxiliary2 | ETH/DEC19 | buy  | 20     | 10    | 1                | TYPE_LIMIT  | TIF_GTC |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader3 | 0 | 0 | -5 |
+      | trader3 | 0      | 0              | -5           |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader3 | ETH/DEC19 | 0 | 0 |
+      | trader3 | ETH/DEC19 | 0           | 0       |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | USD | ETH/DEC19 | 0 | 318 |
+      | trader3 | USD   | ETH/DEC19 | 0      | 357     |
 
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |

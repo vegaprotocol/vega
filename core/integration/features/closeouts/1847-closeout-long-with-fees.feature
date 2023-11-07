@@ -14,6 +14,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -60,10 +61,17 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
 
     And the mark price should be "100" for the market "ETH/DEC19"
 
+    # Ensure the network position is closed out
+    When the network moves ahead "2" blocks
     # checking margins
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | tt_5  | BTC   | ETH/DEC19 | 0      | 0       |
+    And debug trades
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | network | 0     | 4    | tt_5    |
+      | tt_10   | 100   | 4    | network |
 
     # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
