@@ -260,9 +260,11 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 	if err != nil {
 		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
-	liqStrat, err := LiquidationStrategyFromProto(p.LiquidationStrategy)
-	if err != nil {
-		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+	var liqStrat *LiquidationStrategy
+	if p.LiquidationStrategy != nil {
+		if liqStrat, err = LiquidationStrategyFromProto(p.LiquidationStrategy); err != nil {
+			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+		}
 	}
 
 	r := &UpdateMarketConfiguration{
