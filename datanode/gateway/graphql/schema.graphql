@@ -2353,6 +2353,9 @@ type Market {
 
   "Optional: Liquidity SLA parameters for the market"
   liquiditySLAParameters: LiquiditySLAParameters
+
+  "Optional: Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 """
@@ -4290,6 +4293,8 @@ type NewMarket {
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 type SuccessorConfiguration {
@@ -4327,6 +4332,8 @@ type UpdateMarketConfiguration {
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 type UpdateInstrumentConfiguration {
@@ -4583,6 +4590,17 @@ type LiquiditySLAParameters {
   lose to liquidity providers that achieved a higher SLA performance than them.
   """
   slaCompetitionFactor: String!
+}
+
+type LiquidationStrategy {
+  "Specifies the time in which the network will try to unload its position"
+  disposalTimeStep: Int!
+  "Specifies the fraction of its position the network will try to reduce its position by in a single disposal attempt."
+  disposalFraction: String!
+  "Specifies the size of the position held by the network that it will attempt to dispose of in one go."
+  fullDisposalSize: Int!
+  "Specifies the maximum size by which the network can reduce its position as a fraction of the volume on the book."
+  maxFractionConsumed: String!
 }
 
 "Representation of a network parameter"

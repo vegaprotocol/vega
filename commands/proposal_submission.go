@@ -992,8 +992,10 @@ func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent str
 	if err != nil || maxFrac.IsNegative() || maxFrac.IsZero() || maxFrac.GreaterThan(num.DecimalZero()) {
 		errs.AddForProperty(fmt.Sprintf("%s.max_fraction_consumed", parent), ErrMustBeBetween01)
 	}
-	if params.DisposalTimeStep < 0 {
+	if params.DisposalTimeStep < 1 {
 		errs.AddForProperty(fmt.Sprintf("%s.disposal_time_step", parent), ErrMustBePositiveOrZero)
+	} else if params.DisposalTimeStep > 3600 {
+		errs.AddForProperty(fmt.Sprintf("%s.disposal_time_step", parent), ErrMustBeAtMost3600)
 	}
 	return errs
 }

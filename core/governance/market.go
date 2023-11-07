@@ -661,8 +661,10 @@ func validateLiquidationStrategy(ls *types.LiquidationStrategy) (types.ProposalE
 	if ls.MaxFractionConsumed.IsZero() || ls.DisposalFraction.IsNegative() || ls.DisposalFraction.GreaterThan(num.DecimalOne()) {
 		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation max fraction must be in the 0-1 range and non-zero")
 	}
-	if ls.DisposalTimeStep < 0 {
-		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation time can't be negative")
+	if ls.DisposalTimeStep < time.Second {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy time step has to be 1s or more")
+	} else if ls.DisposalTimeStep > time.Hour {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy time step can't be more than 1h")
 	}
 	return types.ProposalErrorUnspecified, nil
 }

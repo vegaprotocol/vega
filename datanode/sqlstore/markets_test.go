@@ -261,6 +261,26 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	var block entities.Block
 	var marketProto *vega.Market
 
+	t.Run("should insert a valid market record to the database with liquidation strategy", func(t *testing.T) {
+		block = addTestBlock(t, ctx, bs)
+		marketProto = getTestFutureMarketWithLiquidationStrategy(false)
+
+		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+		require.NoError(t, err, "Converting market proto to database entity")
+
+		err = md.Upsert(ctx, market)
+		require.NoError(t, err, "Saving market entity to database")
+
+		var got entities.Market
+		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		assert.NoError(t, err)
+		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
+		assert.NotNil(t, got.LiquidationStrategy)
+
+		assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto())
+		assert.Equal(t, marketProto.LiquidationStrategy, got.LiquidationStrategy.IntoProto())
+	})
+
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
 		marketProto = getTestFutureMarket(false)
@@ -311,7 +331,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 		require.NoError(t, err)
-		assert.Equal(t, 2, rowCount)
+		assert.Equal(t, 3, rowCount)
 
 		var gotFirstBlock, gotSecondBlock entities.Market
 
@@ -543,6 +563,17 @@ func getTestMarket() *vega.Market {
 		LinearSlippageFactor:    "1.23",
 		QuadraticSlippageFactor: "5.67",
 	}
+}
+
+func getTestFutureMarketWithLiquidationStrategy(termInt bool) *vega.Market {
+	mkt := getTestFutureMarket(termInt)
+	mkt.LiquidationStrategy = &vega.LiquidationStrategy{
+		DisposalTimeStep:    10,
+		DisposalFraction:    "0.1",
+		FullDisposalSize:    20,
+		MaxFractionConsumed: "0.01",
+	}
+	return mkt
 }
 
 func getTestFutureMarket(termInt bool) *vega.Market {
