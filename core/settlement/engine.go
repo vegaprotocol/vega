@@ -43,6 +43,7 @@ type MarketPosition interface {
 	VWBuy() *num.Uint
 	VWSell() *num.Uint
 	ClearPotentials()
+	AverageEntryPrice() *num.Uint
 }
 
 // Product ...

@@ -596,6 +596,10 @@ type mp struct {
 	price           *num.Uint
 }
 
+func (m mp) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}
+
 func (m mp) Party() string {
 	return m.party
 }
@@ -716,4 +720,36 @@ func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, p
 	}
 	e.RegisterOrder(context.TODO(), order)
 	return order
+}
+
+func TestCalcVWAP(t *testing.T) {
+	// no previous size, new long position acquired at 100
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.UintZero(), 0, 10, num.NewUint(100)))
+
+	// position decreased, not flipping sides
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.NewUint(100), 10, -5, num.NewUint(25)))
+
+	// position closed
+	require.Equal(t, num.UintZero(), positions.CalcVWAP(num.NewUint(100), 10, -10, num.NewUint(25)))
+
+	// no previous size, new short position acquired at 100
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.UintZero(), 0, -10, num.NewUint(100)))
+
+	// position decreased, not flipping sides
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.NewUint(100), -10, 5, num.NewUint(25)))
+
+	// position closed
+	require.Equal(t, num.UintZero(), positions.CalcVWAP(num.NewUint(100), -10, 10, num.NewUint(25)))
+
+	// long position increased => (100 * 10 + 25 * 5) / 15
+	require.Equal(t, num.NewUint(75), positions.CalcVWAP(num.NewUint(100), 10, 5, num.NewUint(25)))
+
+	// short position increased => (100 * -10 + 25 * -5) / 15
+	require.Equal(t, num.NewUint(75), positions.CalcVWAP(num.NewUint(100), -10, -5, num.NewUint(25)))
+
+	// flipping from long to short => (100 * 10 + 15 * 15)/25
+	require.Equal(t, num.NewUint(49), positions.CalcVWAP(num.NewUint(100), -10, 25, num.NewUint(15)))
+
+	// flipping from short to long => (100 * 10 + 15 * 15)/25
+	require.Equal(t, num.NewUint(49), positions.CalcVWAP(num.NewUint(100), 10, -25, num.NewUint(15)))
 }

@@ -601,6 +601,7 @@ message Position {
   string buy_sum_product = 6;
   string sell_sum_product = 7;
   bool distressed = 8;
+  bytes average_entry_price = 9;
 }
 
 message MarketPositions {

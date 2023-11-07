@@ -729,6 +729,10 @@ type MarketPos struct {
 	buySumProduct, sellSumProduct *num.Uint
 }
 
+func (m MarketPos) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}
+
 func (m MarketPos) Party() string {
 	return m.party
 }
