@@ -509,7 +509,7 @@ type InputData_UpdateMarginMode struct {
 }
 
 type InputData_JoinTeam struct {
-	// Command to join a team
+	// Command to join a team.
 	JoinTeam *JoinTeam `protobuf:"bytes,1022,opt,name=join_team,json=joinTeam,proto3,oneof"`
 }
 

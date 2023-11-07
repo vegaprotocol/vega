@@ -2015,7 +2015,7 @@ type JoinTeam struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Referral code, this is normally the referral set ID of the team, for the party to join.
+	// ID of the team to join, this is the same as the referral code used to generate the team.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 

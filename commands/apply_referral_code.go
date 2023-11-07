@@ -34,3 +34,12 @@ func checkApplyReferralCode(cmd *commandspb.ApplyReferralCode) Errors {
 
 	return errs
 }
+
+func CheckJoinTeamReferralCode(cmd *commandspb.JoinTeam) error {
+	applyReferralCode := &commandspb.ApplyReferralCode{
+		Id: cmd.Id,
+	}
+	// This is not to be lazy, but the team ID is the same as the referral code used to create the referral set/team, so we need to ensure we
+	// always follow the same logic for checking the referral code
+	return checkApplyReferralCode(applyReferralCode).ErrorOrNil()
+}

@@ -1130,7 +1130,6 @@ func TestTransferFunds(t *testing.T) {
 				Amount:    "1",
 				Reference: "testing",
 			},
-			errString: "transfer.kind.dispatch_strategy.team_scope (is not supported)",
 		},
 	}
 
