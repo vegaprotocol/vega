@@ -75,15 +75,15 @@ Feature: Team Rewards
       | ref2-0002 | ETH/USD-1-10 | buy  | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
       | aux1      | ETH/USD-1-10 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | ref3-0001 | ETH/USD-1-10 | buy  | 10     | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1      | ETH/USD-1-10 | sell | 12 | 1000 | 0 | TYPE_LIMIT | TIF_GTC |
-      | ref3-0002 | ETH/USD-1-10 | buy  | 12 | 1000 | 2 | TYPE_LIMIT | TIF_GTC |
+      | aux1      | ETH/USD-1-10 | sell | 12     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | ref3-0002 | ETH/USD-1-10 | buy  | 12     | 1000  | 2                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" epochs
     Then parties should have the following vesting account balances:
       | party     | asset    | balance |
-      | ref1-0001 | USD-1-10 | 1724 |
-      | ref1-0002 | USD-1-10 | 1724 |
+      | ref1-0001 | USD-1-10 | 1724    |
+      | ref1-0002 | USD-1-10 | 1724    |
       | ref3-0001 | USD-1-10 | 0       |
-      | ref3-0002 | USD-1-10 | 2068 |
-      | ref2-0001 | USD-1-10 | 2241 |
-      | ref2-0002 | USD-1-10 | 2241 |
+      | ref3-0002 | USD-1-10 | 2068    |
+      | ref2-0001 | USD-1-10 | 2241    |
+      | ref2-0002 | USD-1-10 | 2241    |
 
