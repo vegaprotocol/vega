@@ -60,8 +60,8 @@ Feature: Team Rewards
   Scenario: 001 0056-REWA-108 If a team member has a zero reward metric, they should receive no share of the rewards allocated to the team
 
     Given the parties submit the following recurring transfers:
-      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
-      | 1 | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS | team1,team2,team3 | 1 | USD-1-10 | 10000 | 1 |  | 1 | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10 | ETH/USD-1-10 |
+      | id | from                                                             | from_account_type    | to                                                               | to_account_type                     | entity_scope | teams             | ntop | asset    | amount | start_epoch | end_epoch | factor | metric                          | metric_asset | markets      |
+      | 1  | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | ACCOUNT_TYPE_GENERAL | 0000000000000000000000000000000000000000000000000000000000000000 | ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES | TEAMS        | team1,team2,team3 | 1    | USD-1-10 | 10000  | 1           |           | 1      | DISPATCH_METRIC_MAKER_FEES_PAID | USD-1-10     | ETH/USD-1-10 |
     # ntop is set to 1, and only 1 team receives the rewards, so no numbers to crunch here
     And the parties place the following orders:
       | party     | market id    | side | volume | price | resulting trades | type       | tif     |
