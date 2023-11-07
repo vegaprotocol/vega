@@ -173,6 +173,9 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	if n.LiquidityFeeSettings != nil {
 		cpy.LiquidityFeeSettings = n.LiquidityFeeSettings.DeepClone()
 	}
+	if n.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
+	}
 	return cpy
 }
 

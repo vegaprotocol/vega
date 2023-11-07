@@ -649,6 +649,24 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	}
 }
 
+func validateLiquidationStrategy(ls *types.LiquidationStrategy) (types.ProposalError, error) {
+	if ls == nil {
+		// @TODO this will become a required parameter, but for now leave it as is
+		// this will be implemented in at a later stage
+		return types.ProposalErrorUnspecified, nil
+	}
+	if ls.DisposalFraction.IsZero() || ls.DisposalFraction.IsNegative() || ls.DisposalFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy disposal fraction must be in the 0-1 range and non-zero")
+	}
+	if ls.MaxFractionConsumed.IsZero() || ls.DisposalFraction.IsNegative() || ls.DisposalFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation max fraction must be in the 0-1 range and non-zero")
+	}
+	if ls.DisposalTimeStep < 0 {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation time can't be negative")
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalError, error) {
 	if slaParams == nil {
 		return types.ProposalErrorMissingSLAParams, fmt.Errorf("liquidity provision SLA must be provided")
@@ -766,6 +784,9 @@ func validateNewMarketChange(
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
 		return perr, err
 	}
+	if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -834,6 +855,9 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil

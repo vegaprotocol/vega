@@ -257,6 +257,9 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		cs := *n.Successor
 		cpy.Successor = &cs
 	}
+	if n.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
+	}
 	return cpy
 }
 
