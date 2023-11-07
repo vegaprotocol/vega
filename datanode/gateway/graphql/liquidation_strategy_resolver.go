@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -13,29 +13,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package stringer
+package gql
 
 import (
-	"fmt"
-	"reflect"
+	"context"
+
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
-type Stringer interface {
-	String() string
-}
+type liquidationStrategyResolver VegaResolverRoot
 
-func ObjToString(v Stringer) string {
-	if v == nil || reflect.ValueOf(v).Kind() == reflect.Ptr && reflect.ValueOf(v).IsNil() {
-		return "nil"
-	}
-
-	return v.String()
-}
-
-func PtrToString[T any](v *T) string {
-	if v == nil {
-		return "nil"
-	}
-
-	return fmt.Sprintf("%v", *v)
+func (r liquidationStrategyResolver) FullDisposalSize(ctx context.Context, obj *vega.LiquidationStrategy) (int, error) {
+	return int(obj.FullDisposalSize), nil
 }

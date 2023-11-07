@@ -1,5 +1,7 @@
 Feature: Simple Spot Order between two parties do not match successfully
+
   Scenario: Simple Spot Order does not match with counter party
+
   Background:
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -20,16 +22,16 @@ Feature: Simple Spot Order between two parties do not match successfully
       | party2 | BTC   | 100    |
     # place orders and generate trades
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
-      | party2 | BTC/ETH   | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | party  | market id | side | volume | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | BTC/ETH   | buy  | 1      | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | party2 | BTC/ETH   | sell | 1      | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
     Then "party2" should have holding account balance of "1" for asset "BTC"
     Then "party1" should have holding account balance of "100" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 1      | 200   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 100   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 1      | 1         | 200   | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "BTC/ETH"

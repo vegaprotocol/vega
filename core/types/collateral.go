@@ -98,7 +98,7 @@ func (a Account) String() string {
 		"ID(%s) owner(%s) balance(%s) asset(%s) marketID(%s) type(%s)",
 		a.ID,
 		a.Owner,
-		stringer.UintPointerToString(a.Balance),
+		stringer.PtrToString(a.Balance),
 		a.Asset,
 		a.MarketID,
 		a.Type.String(),
@@ -151,7 +151,8 @@ type TransferRequest struct {
 	MinAmount   *num.Uint
 	Asset       string
 	// Reference   string
-	Type TransferType
+	Type       TransferType
+	TransferID *string
 }
 
 func (t *TransferRequest) IntoProto() *proto.TransferRequest {
@@ -221,6 +222,7 @@ type LedgerEntry struct {
 	Timestamp          int64
 	FromAccountBalance *num.Uint
 	ToAccountBalance   *num.Uint
+	TransferID         *string
 }
 
 func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
@@ -232,6 +234,7 @@ func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 		Timestamp:          l.Timestamp,
 		FromAccountBalance: num.UintToString(l.FromAccountBalance),
 		ToAccountBalance:   num.UintToString(l.ToAccountBalance),
+		TransferId:         l.TransferID,
 	}
 }
 

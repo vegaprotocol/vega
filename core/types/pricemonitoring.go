@@ -56,9 +56,9 @@ type PriceMonitoringBounds struct {
 func (p PriceMonitoringBounds) String() string {
 	return fmt.Sprintf(
 		"minValidPrice(%s) maxValidPrice(%s) trigger(%s) referencePrice(%s)",
-		stringer.UintPointerToString(p.MinValidPrice),
-		stringer.UintPointerToString(p.MaxValidPrice),
-		stringer.ReflectPointerToString(p.Trigger),
+		stringer.PtrToString(p.MinValidPrice),
+		stringer.PtrToString(p.MaxValidPrice),
+		stringer.PtrToString(p.Trigger),
 		p.ReferencePrice.String(),
 	)
 }
@@ -80,7 +80,7 @@ func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
 }
 
 func (p PriceMonitoringSettings) String() string {
-	return fmt.Sprintf("parameters(%s)", stringer.ReflectPointerToString(p.Parameters))
+	return fmt.Sprintf("parameters(%s)", stringer.PtrToString(p.Parameters))
 }
 
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {

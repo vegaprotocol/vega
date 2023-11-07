@@ -235,6 +235,10 @@ func buildMarketFromProposal(
 		}
 	}
 
+	var lstrat *types.LiquidationStrategy
+	if definition.Changes.LiquidationStrategy != nil {
+		lstrat = definition.Changes.LiquidationStrategy.DeepClone()
+	}
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
@@ -264,6 +268,7 @@ func buildMarketFromProposal(
 		LiquiditySLAParams:            definition.Changes.LiquiditySLAParameters,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
+		LiquidationStrategy:           lstrat,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
@@ -644,6 +649,26 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	}
 }
 
+func validateLiquidationStrategy(ls *types.LiquidationStrategy) (types.ProposalError, error) {
+	if ls == nil {
+		// @TODO this will become a required parameter, but for now leave it as is
+		// this will be implemented in at a later stage
+		return types.ProposalErrorUnspecified, nil
+	}
+	if ls.DisposalFraction.IsZero() || ls.DisposalFraction.IsNegative() || ls.DisposalFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy disposal fraction must be in the 0-1 range and non-zero")
+	}
+	if ls.MaxFractionConsumed.IsZero() || ls.DisposalFraction.IsNegative() || ls.DisposalFraction.GreaterThan(num.DecimalOne()) {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation max fraction must be in the 0-1 range and non-zero")
+	}
+	if ls.DisposalTimeStep < time.Second {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy time step has to be 1s or more")
+	} else if ls.DisposalTimeStep > time.Hour {
+		return types.ProposalErrorInvalidMarket, fmt.Errorf("liquidation strategy time step can't be more than 1h")
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateLPSLAParams(slaParams *types.LiquiditySLAParams) (types.ProposalError, error) {
 	if slaParams == nil {
 		return types.ProposalErrorMissingSLAParams, fmt.Errorf("liquidity provision SLA must be provided")
@@ -761,6 +786,9 @@ func validateNewMarketChange(
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
 		return perr, err
 	}
+	if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -829,6 +857,9 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
+	if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil

@@ -30,7 +30,7 @@ type ProposalTermsNewSpotMarket struct {
 func (a ProposalTermsNewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"newSpotMarket(%s)",
-		stringer.ReflectPointerToString(a.NewSpotMarket),
+		stringer.PtrToString(a.NewSpotMarket),
 	)
 }
 
@@ -103,7 +103,7 @@ func (n NewSpotMarket) DeepClone() *NewSpotMarket {
 func (n NewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -201,11 +201,11 @@ func (n NewSpotMarketConfiguration) String() string {
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		stringer.ReflectPointerToString(n.Instrument),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.TargetStakeParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
-		stringer.ReflectPointerToString(n.SLAParams),
+		stringer.PtrToString(n.Instrument),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.TargetStakeParameters),
+		stringer.ObjToString(n.RiskParameters),
+		stringer.PtrToString(n.SLAParams),
 	)
 }
 
@@ -266,7 +266,7 @@ type NewSpotMarketConfigurationSimple struct {
 func (n NewSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -321,7 +321,7 @@ func (n NewSpotMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{
 func (n NewSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 
@@ -342,7 +342,7 @@ type InstrumentConfigurationSpot struct {
 func (i InstrumentConfigurationSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		stringer.ReflectPointerToString(i.Spot),
+		stringer.PtrToString(i.Spot),
 	)
 }
 

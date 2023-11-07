@@ -36,11 +36,12 @@ func (f *FinancialAmount) Clone() *FinancialAmount {
 }
 
 type Transfer struct {
-	Owner     string
-	Amount    *FinancialAmount
-	Type      TransferType
-	MinAmount *num.Uint
-	Market    string
+	Owner      string
+	Amount     *FinancialAmount
+	Type       TransferType
+	MinAmount  *num.Uint
+	Market     string
+	TransferID *string
 }
 
 func (t *Transfer) Clone() *Transfer {
@@ -74,9 +75,10 @@ func (t *Transfer) Merge(oth *Transfer) *Transfer {
 			Asset:  t.Amount.Asset,
 			Amount: num.Sum(t.Amount.Amount, oth.Amount.Amount),
 		},
-		Type:      t.Type,
-		MinAmount: num.Sum(t.MinAmount, t.MinAmount),
-		Market:    t.Market,
+		Type:       t.Type,
+		MinAmount:  num.Sum(t.MinAmount, t.MinAmount),
+		Market:     t.Market,
+		TransferID: t.TransferID,
 	}
 }
 
@@ -84,7 +86,7 @@ func (f FinancialAmount) String() string {
 	return fmt.Sprintf(
 		"asset(%s) amount(%s)",
 		f.Asset,
-		stringer.UintPointerToString(f.Amount),
+		stringer.PtrToString(f.Amount),
 	)
 }
 
@@ -141,9 +143,9 @@ func (t *Transfer) String() string {
 	return fmt.Sprintf(
 		"owner(%s) amount(%s) type(%s) minAmount(%s)",
 		t.Owner,
-		stringer.ReflectPointerToString(t.Amount),
+		stringer.PtrToString(t.Amount),
 		t.Type.String(),
-		stringer.UintPointerToString(t.MinAmount),
+		stringer.PtrToString(t.MinAmount),
 	)
 }
 

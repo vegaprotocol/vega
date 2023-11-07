@@ -31,7 +31,7 @@ type ProposalTermsUpdateReferralProgram struct {
 func (a ProposalTermsUpdateReferralProgram) String() string {
 	return fmt.Sprintf(
 		"updateReferralProgram(%s)",
-		stringer.ReflectPointerToString(a.UpdateReferralProgram),
+		stringer.PtrToString(a.UpdateReferralProgram),
 	)
 }
 
@@ -79,7 +79,7 @@ func (p UpdateReferralProgram) IntoProto() *vegapb.UpdateReferralProgram {
 func (p UpdateReferralProgram) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(p.Changes),
+		stringer.PtrToString(p.Changes),
 	)
 }
 

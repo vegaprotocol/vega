@@ -6,10 +6,10 @@ Feature: Distressed parties should not have general balance left
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
     And the following network parameters are set:
-      | name                                               | value |
-      | market.auction.minimumDuration                     | 1     |
-      | network.markPriceUpdateMaximumFrequency            | 0s    |
-      | limits.markets.maxPeggedOrders                     | 4     |
+      | name                                             | value |
+      | market.auction.minimumDuration                   | 1     |
+      | network.markPriceUpdateMaximumFrequency          | 0s    |
+      | limits.markets.maxPeggedOrders                   | 4     |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
 
   Scenario: Upper bound breached
@@ -71,11 +71,11 @@ Feature: Distressed parties should not have general balance left
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:    
+    And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset | reference    |
       | party3 | ETH/DEC20 | 189       | 1                    | buy  | BID              | 189    | 10     | lp2-ice-buy  |
       | party3 | ETH/DEC20 | 117       | 1                    | sell | ASK              | 117    | 10     | lp2-ice-sell |
-    
+
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status         |
       | lp2 | party3 | ETH/DEC20 | 20000             | STATUS_PENDING |
@@ -84,11 +84,11 @@ Feature: Distressed parties should not have general balance left
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status        |
       | lp2 | party3 | ETH/DEC20 | 20000             | STATUS_ACTIVE |
-    
+
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party3 | ETH/DEC20 | buy  | 189    | 100   | STATUS_ACTIVE |
-      | party3 | ETH/DEC20 | sell | 117    | 130   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party3 | ETH/DEC20 | buy  | 189    | 189       | 100   | STATUS_ACTIVE |
+      | party3 | ETH/DEC20 | sell | 117    | 117       | 130   | STATUS_ACTIVE |
     ## The sum of the margin + general account == 24000 - 10000 (commitment amount)
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -101,28 +101,28 @@ Feature: Distressed parties should not have general balance left
       | party1 | ETH/DEC20 | sell | 20     | 1850  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
     Then the mark price should be "120" for the market "ETH/DEC20"
     Then the liquidity provider fee shares for the market "ETH/DEC20" should be:
-      | party   | equity like share  | average entry valuation |
-      | lpprov  | 0.6428571428571429 | 10000                  |
-      | party3  | 0.3571428571428571 | 60000.0000000000000556 |
+      | party  | equity like share  | average entry valuation |
+      | lpprov | 0.6428571428571429 | 10000                   |
+      | party3 | 0.3571428571428571 | 60000.0000000000000556  |
 
     And the following trades should be executed:
       | buyer  | price | size | seller |
-      | party5 | 120   | 20    | party1 |
-      | party5 | 120   | 20    | party3 |
-   Then the parties should have the following account balances:
+      | party5 | 120   | 20   | party1 |
+      | party5 | 120   | 20   | party3 |
+    Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party3 | ETH   | ETH/DEC20 | 3152   | 1040    |
     Then the parties cancel the following orders:
-       | party  | reference    |
-       | party3 | lp2-ice-sell | 
-       | party3 | lp2-ice-buy  | 
+      | party  | reference    |
+      | party3 | lp2-ice-sell |
+      | party3 | lp2-ice-buy  |
 
     And the parties place the following pegged iceberg orders:
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
       | party3 | ETH/DEC20 | 189       | 1                    | buy  | BID              | 189    | 10     |
       | party3 | ETH/DEC20 | 136       | 1                    | sell | ASK              | 136    | 10     |
-    
-  Then the network moves ahead "10" blocks
+
+    Then the network moves ahead "10" blocks
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
