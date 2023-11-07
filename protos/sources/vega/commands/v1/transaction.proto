@@ -63,6 +63,8 @@ message InputData {
     ApplyReferralCode apply_referral_code = 1020;
     // Command to update the margin mode of a party in a market.
     UpdateMarginMode update_margin_mode = 1021;
+    // Command to join a team
+    JoinTeam join_team = 1022;
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
     // Validator command sent automatically to provide signatures for the Ethereum bridge.

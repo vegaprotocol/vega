@@ -82,6 +82,8 @@ const (
 	ApplyReferralCodeCommand Command = 0x5F
 	// UpdateMarginMode ...
 	UpdateMarginModeCommand Command = 0x60
+	// JoinTeamCommand ...
+	JoinTeamCommand Command = 0x61
 )
 
 var commandName = map[Command]string{
@@ -116,6 +118,7 @@ var commandName = map[Command]string{
 	UpdateReferralSetCommand:           "Update Referral Set",
 	ApplyReferralCodeCommand:           "Apply Referral Code",
 	UpdateMarginModeCommand:            "Update Margin Mode",
+	JoinTeamCommand:                    "Join Team",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

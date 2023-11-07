@@ -2009,6 +2009,55 @@ func (x *ApplyReferralCode) GetId() string {
 	return ""
 }
 
+// Command that allows the submitter to join a team or change teams if they are already a member of a team.
+type JoinTeam struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Referral code, this is normally the referral set ID of the team, for the party to join.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (x *JoinTeam) Reset() {
+	*x = JoinTeam{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_commands_v1_commands_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *JoinTeam) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinTeam) ProtoMessage() {}
+
+func (x *JoinTeam) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_commands_v1_commands_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinTeam.ProtoReflect.Descriptor instead.
+func (*JoinTeam) Descriptor() ([]byte, []int) {
+	return file_vega_commands_v1_commands_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *JoinTeam) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 type CreateReferralSet_Team struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2027,7 +2076,7 @@ type CreateReferralSet_Team struct {
 func (x *CreateReferralSet_Team) Reset() {
 	*x = CreateReferralSet_Team{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_commands_v1_commands_proto_msgTypes[25]
+		mi := &file_vega_commands_v1_commands_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2040,7 +2089,7 @@ func (x *CreateReferralSet_Team) String() string {
 func (*CreateReferralSet_Team) ProtoMessage() {}
 
 func (x *CreateReferralSet_Team) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_commands_v1_commands_proto_msgTypes[25]
+	mi := &file_vega_commands_v1_commands_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2102,7 +2151,7 @@ type UpdateReferralSet_Team struct {
 func (x *UpdateReferralSet_Team) Reset() {
 	*x = UpdateReferralSet_Team{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_commands_v1_commands_proto_msgTypes[26]
+		mi := &file_vega_commands_v1_commands_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2115,7 +2164,7 @@ func (x *UpdateReferralSet_Team) String() string {
 func (*UpdateReferralSet_Team) ProtoMessage() {}
 
 func (x *UpdateReferralSet_Team) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_commands_v1_commands_proto_msgTypes[26]
+	mi := &file_vega_commands_v1_commands_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2476,11 +2525,12 @@ var file_vega_commands_v1_commands_proto_rawDesc = []byte{
 	0x63, 0x6c, 0x6f, 0x73, 0x65, 0x64, 0x42, 0x07, 0x0a, 0x05, 0x5f, 0x74, 0x65, 0x61, 0x6d, 0x22,
 	0x23, 0x0a, 0x11, 0x41, 0x70, 0x70, 0x6c, 0x79, 0x52, 0x65, 0x66, 0x65, 0x72, 0x72, 0x61, 0x6c,
 	0x43, 0x6f, 0x64, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x02, 0x69, 0x64, 0x42, 0x33, 0x5a, 0x31, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67,
-	0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67,
-	0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x63, 0x6f,
-	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x52, 0x02, 0x69, 0x64, 0x22, 0x1a, 0x0a, 0x08, 0x4a, 0x6f, 0x69, 0x6e, 0x54, 0x65, 0x61, 0x6d,
+	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64,
+	0x42, 0x33, 0x5a, 0x31, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x73, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2496,7 +2546,7 @@ func file_vega_commands_v1_commands_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_commands_v1_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_vega_commands_v1_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_vega_commands_v1_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_vega_commands_v1_commands_proto_goTypes = []interface{}{
 	(UpdateMarginMode_Mode)(0),             // 0: vega.commands.v1.UpdateMarginMode.Mode
 	(UndelegateSubmission_Method)(0),       // 1: vega.commands.v1.UndelegateSubmission.Method
@@ -2525,21 +2575,22 @@ var file_vega_commands_v1_commands_proto_goTypes = []interface{}{
 	(*CreateReferralSet)(nil),              // 24: vega.commands.v1.CreateReferralSet
 	(*UpdateReferralSet)(nil),              // 25: vega.commands.v1.UpdateReferralSet
 	(*ApplyReferralCode)(nil),              // 26: vega.commands.v1.ApplyReferralCode
-	(*CreateReferralSet_Team)(nil),         // 27: vega.commands.v1.CreateReferralSet.Team
-	(*UpdateReferralSet_Team)(nil),         // 28: vega.commands.v1.UpdateReferralSet.Team
-	(vega.StopOrder_ExpiryStrategy)(0),     // 29: vega.StopOrder.ExpiryStrategy
-	(vega.Side)(0),                         // 30: vega.Side
-	(vega.Order_TimeInForce)(0),            // 31: vega.Order.TimeInForce
-	(vega.Order_Type)(0),                   // 32: vega.Order.Type
-	(*vega.PeggedOrder)(nil),               // 33: vega.PeggedOrder
-	(vega.PeggedReference)(0),              // 34: vega.PeggedReference
-	(*vega.WithdrawExt)(nil),               // 35: vega.WithdrawExt
-	(*vega.ProposalTerms)(nil),             // 36: vega.ProposalTerms
-	(*vega.ProposalRationale)(nil),         // 37: vega.ProposalRationale
-	(vega.Vote_Value)(0),                   // 38: vega.Vote.Value
-	(vega.AccountType)(0),                  // 39: vega.AccountType
-	(*vega.DispatchStrategy)(nil),          // 40: vega.DispatchStrategy
-	(NodeSignatureKind)(0),                 // 41: vega.commands.v1.NodeSignatureKind
+	(*JoinTeam)(nil),                       // 27: vega.commands.v1.JoinTeam
+	(*CreateReferralSet_Team)(nil),         // 28: vega.commands.v1.CreateReferralSet.Team
+	(*UpdateReferralSet_Team)(nil),         // 29: vega.commands.v1.UpdateReferralSet.Team
+	(vega.StopOrder_ExpiryStrategy)(0),     // 30: vega.StopOrder.ExpiryStrategy
+	(vega.Side)(0),                         // 31: vega.Side
+	(vega.Order_TimeInForce)(0),            // 32: vega.Order.TimeInForce
+	(vega.Order_Type)(0),                   // 33: vega.Order.Type
+	(*vega.PeggedOrder)(nil),               // 34: vega.PeggedOrder
+	(vega.PeggedReference)(0),              // 35: vega.PeggedReference
+	(*vega.WithdrawExt)(nil),               // 36: vega.WithdrawExt
+	(*vega.ProposalTerms)(nil),             // 37: vega.ProposalTerms
+	(*vega.ProposalRationale)(nil),         // 38: vega.ProposalRationale
+	(vega.Vote_Value)(0),                   // 39: vega.Vote.Value
+	(vega.AccountType)(0),                  // 40: vega.AccountType
+	(*vega.DispatchStrategy)(nil),          // 41: vega.DispatchStrategy
+	(NodeSignatureKind)(0),                 // 42: vega.commands.v1.NodeSignatureKind
 }
 var file_vega_commands_v1_commands_proto_depIdxs = []int32{
 	9,  // 0: vega.commands.v1.BatchMarketInstructions.cancellations:type_name -> vega.commands.v1.OrderCancellation
@@ -2550,28 +2601,28 @@ var file_vega_commands_v1_commands_proto_depIdxs = []int32{
 	4,  // 5: vega.commands.v1.StopOrdersSubmission.rises_above:type_name -> vega.commands.v1.StopOrderSetup
 	4,  // 6: vega.commands.v1.StopOrdersSubmission.falls_below:type_name -> vega.commands.v1.StopOrderSetup
 	6,  // 7: vega.commands.v1.StopOrderSetup.order_submission:type_name -> vega.commands.v1.OrderSubmission
-	29, // 8: vega.commands.v1.StopOrderSetup.expiry_strategy:type_name -> vega.StopOrder.ExpiryStrategy
-	30, // 9: vega.commands.v1.OrderSubmission.side:type_name -> vega.Side
-	31, // 10: vega.commands.v1.OrderSubmission.time_in_force:type_name -> vega.Order.TimeInForce
-	32, // 11: vega.commands.v1.OrderSubmission.type:type_name -> vega.Order.Type
-	33, // 12: vega.commands.v1.OrderSubmission.pegged_order:type_name -> vega.PeggedOrder
+	30, // 8: vega.commands.v1.StopOrderSetup.expiry_strategy:type_name -> vega.StopOrder.ExpiryStrategy
+	31, // 9: vega.commands.v1.OrderSubmission.side:type_name -> vega.Side
+	32, // 10: vega.commands.v1.OrderSubmission.time_in_force:type_name -> vega.Order.TimeInForce
+	33, // 11: vega.commands.v1.OrderSubmission.type:type_name -> vega.Order.Type
+	34, // 12: vega.commands.v1.OrderSubmission.pegged_order:type_name -> vega.PeggedOrder
 	7,  // 13: vega.commands.v1.OrderSubmission.iceberg_opts:type_name -> vega.commands.v1.IcebergOpts
 	0,  // 14: vega.commands.v1.UpdateMarginMode.mode:type_name -> vega.commands.v1.UpdateMarginMode.Mode
-	31, // 15: vega.commands.v1.OrderAmendment.time_in_force:type_name -> vega.Order.TimeInForce
-	34, // 16: vega.commands.v1.OrderAmendment.pegged_reference:type_name -> vega.PeggedReference
-	35, // 17: vega.commands.v1.WithdrawSubmission.ext:type_name -> vega.WithdrawExt
-	36, // 18: vega.commands.v1.ProposalSubmission.terms:type_name -> vega.ProposalTerms
-	37, // 19: vega.commands.v1.ProposalSubmission.rationale:type_name -> vega.ProposalRationale
-	38, // 20: vega.commands.v1.VoteSubmission.value:type_name -> vega.Vote.Value
+	32, // 15: vega.commands.v1.OrderAmendment.time_in_force:type_name -> vega.Order.TimeInForce
+	35, // 16: vega.commands.v1.OrderAmendment.pegged_reference:type_name -> vega.PeggedReference
+	36, // 17: vega.commands.v1.WithdrawSubmission.ext:type_name -> vega.WithdrawExt
+	37, // 18: vega.commands.v1.ProposalSubmission.terms:type_name -> vega.ProposalTerms
+	38, // 19: vega.commands.v1.ProposalSubmission.rationale:type_name -> vega.ProposalRationale
+	39, // 20: vega.commands.v1.VoteSubmission.value:type_name -> vega.Vote.Value
 	1,  // 21: vega.commands.v1.UndelegateSubmission.method:type_name -> vega.commands.v1.UndelegateSubmission.Method
-	39, // 22: vega.commands.v1.Transfer.from_account_type:type_name -> vega.AccountType
-	39, // 23: vega.commands.v1.Transfer.to_account_type:type_name -> vega.AccountType
+	40, // 22: vega.commands.v1.Transfer.from_account_type:type_name -> vega.AccountType
+	40, // 23: vega.commands.v1.Transfer.to_account_type:type_name -> vega.AccountType
 	20, // 24: vega.commands.v1.Transfer.one_off:type_name -> vega.commands.v1.OneOffTransfer
 	21, // 25: vega.commands.v1.Transfer.recurring:type_name -> vega.commands.v1.RecurringTransfer
-	40, // 26: vega.commands.v1.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
-	41, // 27: vega.commands.v1.IssueSignatures.kind:type_name -> vega.commands.v1.NodeSignatureKind
-	27, // 28: vega.commands.v1.CreateReferralSet.team:type_name -> vega.commands.v1.CreateReferralSet.Team
-	28, // 29: vega.commands.v1.UpdateReferralSet.team:type_name -> vega.commands.v1.UpdateReferralSet.Team
+	41, // 26: vega.commands.v1.RecurringTransfer.dispatch_strategy:type_name -> vega.DispatchStrategy
+	42, // 27: vega.commands.v1.IssueSignatures.kind:type_name -> vega.commands.v1.NodeSignatureKind
+	28, // 28: vega.commands.v1.CreateReferralSet.team:type_name -> vega.commands.v1.CreateReferralSet.Team
+	29, // 29: vega.commands.v1.UpdateReferralSet.team:type_name -> vega.commands.v1.UpdateReferralSet.Team
 	30, // [30:30] is the sub-list for method output_type
 	30, // [30:30] is the sub-list for method input_type
 	30, // [30:30] is the sub-list for extension type_name
@@ -2887,7 +2938,7 @@ func file_vega_commands_v1_commands_proto_init() {
 			}
 		}
 		file_vega_commands_v1_commands_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CreateReferralSet_Team); i {
+			switch v := v.(*JoinTeam); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2899,6 +2950,18 @@ func file_vega_commands_v1_commands_proto_init() {
 			}
 		}
 		file_vega_commands_v1_commands_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CreateReferralSet_Team); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_commands_v1_commands_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateReferralSet_Team); i {
 			case 0:
 				return &v.state
@@ -2927,15 +2990,15 @@ func file_vega_commands_v1_commands_proto_init() {
 	file_vega_commands_v1_commands_proto_msgTypes[19].OneofWrappers = []interface{}{}
 	file_vega_commands_v1_commands_proto_msgTypes[22].OneofWrappers = []interface{}{}
 	file_vega_commands_v1_commands_proto_msgTypes[23].OneofWrappers = []interface{}{}
-	file_vega_commands_v1_commands_proto_msgTypes[25].OneofWrappers = []interface{}{}
 	file_vega_commands_v1_commands_proto_msgTypes[26].OneofWrappers = []interface{}{}
+	file_vega_commands_v1_commands_proto_msgTypes[27].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_commands_v1_commands_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

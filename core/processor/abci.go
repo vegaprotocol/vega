@@ -41,8 +41,8 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
-	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
@@ -140,7 +140,7 @@ type TeamsEngine interface {
 	TeamExists(team types.TeamID) bool
 	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet_Team) error
 	UpdateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.UpdateReferralSet_Team) error
-	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
 }
 
 type ReferralProgram interface {
@@ -480,9 +480,13 @@ func NewApp(
 		).
 		HandleDeliverTx(txn.ApplyReferralCodeCommand,
 			app.SendTransactionResult(app.ApplyReferralCode),
-		).HandleDeliverTx(txn.UpdateMarginModeCommand,
-		app.SendTransactionResult(app.UpdateMarginMode),
-	)
+		).
+		HandleDeliverTx(txn.UpdateMarginModeCommand,
+			app.SendTransactionResult(app.UpdateMarginMode),
+		).
+		HandleDeliverTx(txn.JoinTeamCommand,
+			app.SendTransactionResult(app.JoinTeam),
+		)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -2409,19 +2413,34 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 
 	partyID := types.PartyID(tx.Party())
 	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
-
-	// It's OK to switch team if the party was already a referee.
-	if err != nil && err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() {
+	if err != nil {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	// temporarily disable team support
-	// teamID := types.TeamID(params.Id)
-	// err = app.teamsEngine.JoinTeam(ctx, partyID, params)
-	// // This is ok as well, as not all referral sets are teams as well.
-	// if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
-	// 	return fmt.Errorf("couldn't join team: %w", err)
-	// }
+	teamID := types.TeamID(params.Id)
+	joinTeam := &commandspb.JoinTeam{
+		Id: params.Id,
+	}
+	err = app.teamsEngine.JoinTeam(ctx, partyID, joinTeam)
+	// This is ok as well, as not all referral sets are teams as well.
+	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
+		return fmt.Errorf("couldn't join team: %w", err)
+	}
+
+	return nil
+}
+
+func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.JoinTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+	}
+
+	partyID := types.PartyID(tx.Party())
+	err := app.teamsEngine.JoinTeam(ctx, partyID, params)
+	if err != nil {
+		return fmt.Errorf("couldn't join team: %w", err)
+	}
 
 	return nil
 }

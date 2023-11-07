@@ -37,7 +37,7 @@ func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teams
 		}
 		// If we have team details, submit a new team
 		if row.IsTeam() {
-			team := &commandspb.ApplyReferralCode{
+			team := &commandspb.JoinTeam{
 				Id: row.Team(),
 			}
 			err = teamsEngine.JoinTeam(ctx, row.Party(), team)
