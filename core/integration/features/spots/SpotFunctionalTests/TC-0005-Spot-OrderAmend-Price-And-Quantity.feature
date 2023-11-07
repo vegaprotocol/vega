@@ -1,4 +1,5 @@
 Feature: Amend the price and quantity amend to match and fill the order with counter party
+
   Scenario: Amend the price and quantity match and fill the order with counter party
 
   Background:
@@ -28,9 +29,9 @@ Feature: Amend the price and quantity amend to match and fill the order with cou
     Then "party1" should have holding account balance of "600" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 2      | 300   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 2      | 400   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 2      | 2         | 300   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 2      | 2         | 400   | STATUS_ACTIVE |
 
     And the parties amend the following orders:
       | party  | reference | price | size delta | tif     |
@@ -38,9 +39,9 @@ Feature: Amend the price and quantity amend to match and fill the order with cou
       | party1 | t1-b-1    | 350   | -1         | TIF_GTC |
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 350   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 1      | 350   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 350   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 1      | 1         | 350   | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"

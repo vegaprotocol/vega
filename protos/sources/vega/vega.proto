@@ -1107,6 +1107,8 @@ message LedgerEntry {
   string from_account_balance = 6;
   // Receiver account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string to_account_balance = 7;
+  // Transfer ID the ledger entry relates to.
+  optional string transfer_id = 8;
 }
 
 // Represents the balance for an account during a transfer

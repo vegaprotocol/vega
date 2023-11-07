@@ -481,6 +481,10 @@ func (r *VegaResolverRoot) LiquiditySLAParameters() LiquiditySLAParametersResolv
 	return (*liquiditySLAParametersResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidationStrategy() LiquidationStrategyResolver {
+	return (*liquidationStrategyResolver)(r)
+}
+
 func (r *VegaResolverRoot) NewSpotMarket() NewSpotMarketResolver {
 	return (*newSpotMarketResolver)(r)
 }

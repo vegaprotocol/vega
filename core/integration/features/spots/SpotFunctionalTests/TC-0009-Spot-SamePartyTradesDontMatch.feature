@@ -1,5 +1,7 @@
 Feature: Simple Spot Order between two parties do not match successfully
+
   Scenario: Simple Spot Order does not match with counter party
+
   Background:
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -27,9 +29,9 @@ Feature: Simple Spot Order between two parties do not match successfully
     Then "party1" should have holding account balance of "100" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | STATUS_ACTIVE |
-      | party1 | BTC/ETH   | sell | 1      | 100   | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 100   | STATUS_ACTIVE |
+      | party1 | BTC/ETH   | sell | 1      | 1         | 100   | STATUS_ACTIVE |
 
     Then the opening auction period ends for market "BTC/ETH"
 
@@ -40,9 +42,9 @@ Feature: Simple Spot Order between two parties do not match successfully
     # see https://github.com/vegaprotocol/specs/blob/95afe22b7807b47e6231b3cdab21f6196b7dab91/protocol/0024-OSTA-order_status.md#wash-trading
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | STATUS_FILLED |
-      | party1 | BTC/ETH   | sell | 1      | 100   | STATUS_FILLED |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 0         | 100   | STATUS_FILLED |
+      | party1 | BTC/ETH   | sell | 1      | 0         | 100   | STATUS_FILLED |
 
 
     # now that we're in continuous trading, lets try to do a wash trade by part
@@ -55,7 +57,7 @@ Feature: Simple Spot Order between two parties do not match successfully
     Then "party1" should have holding account balance of "0" for asset "BTC"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status         | reference |
-      | party1 | BTC/ETH   | buy  | 1      | 100   | STATUS_ACTIVE  | t1-b-111  |
-      | party1 | BTC/ETH   | sell | 1      | 100   | STATUS_STOPPED | t2-s-112  |
+      | party  | market id | side | volume | remaining | price | status         | reference |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 100   | STATUS_ACTIVE  | t1-b-111  |
+      | party1 | BTC/ETH   | sell | 1      | 1         | 100   | STATUS_STOPPED | t2-s-112  |
 
