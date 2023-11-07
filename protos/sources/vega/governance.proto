@@ -134,6 +134,8 @@ message NewMarketConfiguration {
   LiquiditySLAParameters liquidity_sla_parameters = 12;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 13;
+  // Liquidation strategy for this market.
+  LiquidationStrategy liquidation_strategy = 14;
 }
 
 // New spot market on Vega
@@ -201,6 +203,8 @@ message UpdateMarketConfiguration {
   LiquiditySLAParameters liquidity_sla_parameters = 8;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 9;
+  // Liquidation strategy parameters
+  LiquidationStrategy liquidation_strategy = 10;
 }
 
 // Configuration to update a spot market on Vega
