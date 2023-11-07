@@ -985,17 +985,17 @@ func checkLiquidationStrategy(params *protoTypes.LiquidationStrategy, parent str
 		return errs
 	}
 	dispFrac, err := num.DecimalFromString(params.DisposalFraction)
-	if err != nil || dispFrac.IsNegative() || dispFrac.IsZero() || dispFrac.GreaterThan(num.DecimalZero()) {
-		errs.AddForProperty(fmt.Sprintf("%s.disposal_fraction", parent), ErrMustBeBetween01)
+	if err != nil || dispFrac.IsNegative() || dispFrac.IsZero() || dispFrac.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_fraction", parent), ErrMustBeBetween01)
 	}
 	maxFrac, err := num.DecimalFromString(params.MaxFractionConsumed)
-	if err != nil || maxFrac.IsNegative() || maxFrac.IsZero() || maxFrac.GreaterThan(num.DecimalZero()) {
-		errs.AddForProperty(fmt.Sprintf("%s.max_fraction_consumed", parent), ErrMustBeBetween01)
+	if err != nil || maxFrac.IsNegative() || maxFrac.IsZero() || maxFrac.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.max_fraction_consumed", parent), ErrMustBeBetween01)
 	}
 	if params.DisposalTimeStep < 1 {
-		errs.AddForProperty(fmt.Sprintf("%s.disposal_time_step", parent), ErrMustBePositiveOrZero)
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBePositive)
 	} else if params.DisposalTimeStep > 3600 {
-		errs.AddForProperty(fmt.Sprintf("%s.disposal_time_step", parent), ErrMustBeAtMost3600)
+		errs.AddForProperty(fmt.Sprintf("%s.liquidation_strategy.disposal_time_step", parent), ErrMustBeAtMost3600)
 	}
 	return errs
 }
