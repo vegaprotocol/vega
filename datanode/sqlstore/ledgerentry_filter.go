@@ -31,35 +31,40 @@ var (
 
 // Return an SQL query string and corresponding bind arguments to return
 // ledger entries rows resulting from different filter options.
-func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([3]string, []interface{}, error) {
+func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([4]string, []interface{}, error) {
 	err := handlePartiesFiltering(filter)
 	if err != nil {
-		return [3]string{}, nil, err
+		return [4]string{}, nil, err
 	}
 
 	var args []interface{}
-	filterQueries := [3]string{}
+	filterQueries := [4]string{}
 
 	// FromAccount filter
 	fromAccountDBQuery, nargs, err := accountFilterToDBQuery(filter.FromAccountFilter, &args, "account_from_")
 	if err != nil {
-		return [3]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
+		return [4]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
 	}
 	args = *nargs
 
 	// ToAccount filter
 	toAccountDBQuery, nargs, err := accountFilterToDBQuery(filter.ToAccountFilter, &args, "account_to_")
 	if err != nil {
-		return [3]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
+		return [4]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
 	}
 	args = *nargs
 
 	// TransferTypeFilters
 	accountTransferTypeDBQuery := transferTypeFilterToDBQuery(filter.TransferTypes, &args)
 
+	transfersDBQuery, nargs := transfersFilterToDBQuery(filter.TransferID, &args)
+
+	args = *nargs
+
 	filterQueries[0] = fromAccountDBQuery
 	filterQueries[1] = toAccountDBQuery
 	filterQueries[2] = accountTransferTypeDBQuery
+	filterQueries[3] = transfersDBQuery
 
 	return filterQueries, args, nil
 }
@@ -169,6 +174,15 @@ func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementTyp
 	return transferTypeFilterString
 }
 
+func transfersFilterToDBQuery(transfersFilter entities.TransferID, args *[]interface{}) (string, *[]interface{}) {
+	if transfersFilter == "" {
+		return "", args
+	}
+
+	transfersFilterString := fmt.Sprintf(`transfer_id=%s`, nextBindVar(args, transfersFilter))
+	return transfersFilterString, args
+}
+
 func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {
 	var partyIDFrom entities.PartyID
 	var partyIDTo entities.PartyID
@@ -185,7 +199,7 @@ func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {
 		partyIDTo = filter.ToAccountFilter.PartyIDs[0]
 	}
 
-	if partyIDFrom == "" && partyIDTo == "" {
+	if partyIDFrom == "" && partyIDTo == "" && filter.TransferID == "" {
 		return ErrLedgerEntryFilterForParty
 	}
 

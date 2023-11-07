@@ -40,6 +40,9 @@ type LedgerEntryFilter struct {
 
 	// Filter on LedgerMovementType
 	TransferTypes []LedgerMovementType
+
+	// Transfer ID to filter by
+	TransferID TransferID
 }
 
 func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFilter, error) {
@@ -65,6 +68,10 @@ func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFil
 					filter.TransferTypes[i] = LedgerMovementType(t)
 				}
 			}
+		}
+
+		if pbFilter.TransferId != nil {
+			filter.TransferID = TransferID(*pbFilter.TransferId)
 		}
 	}
 

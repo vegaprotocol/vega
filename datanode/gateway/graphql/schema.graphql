@@ -464,6 +464,8 @@ input LedgerEntryFilter {
   ToAccountFilter: AccountFilter
   "List of transfer types that is used for filtering sender and receiver accounts."
   TransferTypes: [TransferType]
+  "Optional transfer ID to filter by. If provided, all other filters are ignored."
+  TransferId: ID
 }
 
 "Filter for historical reward summary queries"

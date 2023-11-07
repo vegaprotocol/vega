@@ -92110,7 +92110,7 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"CloseOnAccountFilters", "FromAccountFilter", "ToAccountFilter", "TransferTypes"}
+	fieldsInOrder := [...]string{"CloseOnAccountFilters", "FromAccountFilter", "ToAccountFilter", "TransferTypes", "TransferId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -92146,6 +92146,14 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("TransferTypes"))
 			it.TransferTypes, err = ec.unmarshalOTransferType2ᚕcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTransferType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "TransferId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("TransferId"))
+			it.TransferId, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

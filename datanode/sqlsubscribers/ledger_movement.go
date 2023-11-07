@@ -122,6 +122,11 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		return errors.Wrap(err, "parsing ToAccountBalance string")
 	}
 
+	var transferID entities.TransferID
+	if vle.TransferId != nil {
+		transferID = entities.TransferID(*vle.TransferId)
+	}
+
 	le := entities.LedgerEntry{
 		FromAccountID:      fromAcc.ID,
 		ToAccountID:        toAcc.ID,
@@ -132,6 +137,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		Type:               entities.LedgerMovementType(vle.Type),
 		FromAccountBalance: fromAccountBalance,
 		ToAccountBalance:   toAccountBalance,
+		TransferID:         transferID,
 	}
 
 	err = t.ledger.AddLedgerEntry(le)
