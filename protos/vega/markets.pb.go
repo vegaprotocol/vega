@@ -2217,11 +2217,11 @@ type LiquidationStrategy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Period of time over which the network will attempt to close its position.
+	// Period of time over which the network will attempt to close its position, in seconds.
 	DisposalTimeStep int64 `protobuf:"varint,1,opt,name=disposal_time_step,json=disposalTimeStep,proto3" json:"disposal_time_step,omitempty"`
-	// Fraction of the open position the market will attempt to close in a single attempt; range 0 through 1.
+	// Fraction of the open position the market will try to close in a single attempt; range 0 through 1.
 	DisposalFraction string `protobuf:"bytes,2,opt,name=disposal_fraction,json=disposalFraction,proto3" json:"disposal_fraction,omitempty"`
-	// Size of the position that the network will attempt to close in a single attempt.
+	// Size of the position that the network will try to close in a single attempt.
 	FullDisposalSize uint64 `protobuf:"varint,3,opt,name=full_disposal_size,json=fullDisposalSize,proto3" json:"full_disposal_size,omitempty"`
 	// Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
 	MaxFractionConsumed string `protobuf:"bytes,4,opt,name=max_fraction_consumed,json=maxFractionConsumed,proto3" json:"max_fraction_consumed,omitempty"`
