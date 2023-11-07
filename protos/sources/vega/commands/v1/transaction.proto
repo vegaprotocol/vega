@@ -61,6 +61,8 @@ message InputData {
     UpdateReferralSet update_referral_set = 1019;
     // Command to apply a referral code.
     ApplyReferralCode apply_referral_code = 1020;
+    // Command to update the margin mode of a party in a market.
+    UpdateMarginMode update_margin_mode = 1021;
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
     // Validator command sent automatically to provide signatures for the Ethereum bridge.

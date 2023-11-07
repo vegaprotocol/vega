@@ -224,3 +224,5 @@ http:
       get: "/api/v2/stream/ledger/movements"
     - selector: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions
       get: "/api/v2/stream/liquidity-provisions"
+    - selector: datanode.api.v2.TradingDataService.ObserveTransactionResults
+      get: "/api/v2/stream/transaction-results"

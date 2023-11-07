@@ -13,16 +13,18 @@
 ### 🛠 Improvements
 
 - [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
+- [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction. 
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
+- [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
 
 ### 🐛 Fixes
 
 - [9941](https://github.com/vegaprotocol/vega/issues/9941) - Add data node mapping for `WasEligible` field in referral set.
 - [9940](https://github.com/vegaprotocol/vega/issues/9940) - Truncate fee stats in quantum down to the 6 decimal.
+- [9998](https://github.com/vegaprotocol/vega/issues/9998) - Slippage factors can now me updated in a market.
 - [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
 - [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
 - [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
-
 
 ## 0.73.0
 
@@ -41,9 +43,9 @@
 - [9408](https://github.com/vegaprotocol/vega/issues/9408) - Enforce pagination range.
 - [9757](https://github.com/vegaprotocol/vega/issues/9757) - Liquidity provisions `API` shows the pending `LP` instead of the current when an update is accepted by the network.
 
-
 ### 🛠 Improvements
 
+- [8051](https://github.com/vegaprotocol/vega/issues/8051) - Upgrade to comet `0.38.0`
 - [9484](https://github.com/vegaprotocol/vega/issues/9484) - Remove network parameters that only provide defaults for market liquidity settings.
 - [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
 - [8590](https://github.com/vegaprotocol/vega/issues/8590) - Improved Ethereum oracle support.

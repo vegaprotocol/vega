@@ -29,6 +29,7 @@ package service
 
 import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 )
 
 type (
@@ -71,6 +72,9 @@ type (
 	}
 	PartyVestingBalances struct {
 		*sqlstore.PartyVestingBalance
+	}
+	TransactionResults struct {
+		*sqlsubscribers.TransactionResults
 	}
 )
 
@@ -205,4 +209,8 @@ func NewPartyLockedBalances(store *sqlstore.PartyLockedBalance) *PartyLockedBala
 
 func NewPartyVestingBalances(store *sqlstore.PartyVestingBalance) *PartyVestingBalances {
 	return &PartyVestingBalances{PartyVestingBalance: store}
+}
+
+func NewTransactionResults(subscriber *sqlsubscribers.TransactionResults) *TransactionResults {
+	return &TransactionResults{TransactionResults: subscriber}
 }

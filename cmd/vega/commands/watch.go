@@ -23,8 +23,8 @@ import (
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/jessevdk/go-flags"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type watch struct {

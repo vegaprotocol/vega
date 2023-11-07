@@ -25,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/cometbft/cometbft/crypto/tmhash"
 )
 
 type Tx struct {
@@ -143,6 +143,10 @@ func (t Tx) Command() txn.Command {
 	}
 }
 
+func (t Tx) GetLength() int {
+	return len(t.originalTx)
+}
+
 func (t Tx) GetNonce() uint64 {
 	return t.inputData.Nonce
 }
@@ -229,6 +233,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.UpdateReferralSet
 	case *commandspb.InputData_ApplyReferralCode:
 		return cmd.ApplyReferralCode
+	case *commandspb.InputData_UpdateMarginMode:
+		return cmd.UpdateMarginMode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -416,6 +422,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to JoinTeam")
 		}
 		*underlyingCmd = *cmd.ApplyReferralCode
+	case *commandspb.InputData_UpdateMarginMode:
+		underlyingCmd, ok := i.(*commandspb.UpdateMarginMode)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdateMarginMode")
+		}
+		*underlyingCmd = *cmd.UpdateMarginMode
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

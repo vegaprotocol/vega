@@ -28,6 +28,18 @@ type TransactionResult struct {
 	evt *eventspb.TransactionResult
 }
 
+func (tr *TransactionResult) PartyID() string {
+	return tr.evt.PartyId
+}
+
+func (tr *TransactionResult) Status() bool {
+	return tr.evt.Status
+}
+
+func (tr *TransactionResult) Hash() string {
+	return tr.evt.Hash
+}
+
 func NewTransactionResultEventSuccess(
 	ctx context.Context,
 	hash, party string,
@@ -170,6 +182,10 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_ApplyReferralCode{
 			ApplyReferralCode: tv,
 		}
+	case *commandspb.UpdateMarginMode:
+		t.evt.Transaction = &eventspb.TransactionResult_UpdateMarginMode{
+			UpdateMarginMode: tv,
+		}
 
 	default:
 		panic(fmt.Sprintf("unsupported command: %v", tv))
@@ -184,6 +200,10 @@ func (t TransactionResult) IsParty(id string) bool {
 
 func (t TransactionResult) Proto() eventspb.TransactionResult {
 	return *t.evt
+}
+
+func (t TransactionResult) TransactionResult() TransactionResult {
+	return t
 }
 
 func (t TransactionResult) StreamMessage() *eventspb.BusEvent {

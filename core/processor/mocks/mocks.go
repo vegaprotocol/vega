@@ -18,8 +18,9 @@ import (
 	num "code.vegaprotocol.io/vega/libs/num"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	types0 "github.com/cometbft/cometbft/abci/types"
 	gomock "github.com/golang/mock/gomock"
-	types0 "github.com/tendermint/tendermint/abci/types"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockTimeService is a mock of TimeService interface.
@@ -486,6 +487,20 @@ func (m *MockExecutionEngine) SucceedMarket(arg0 context.Context, arg1, arg2 str
 func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2)
+}
+
+// UpdateMarginMode mocks base method.
+func (m *MockExecutionEngine) UpdateMarginMode(arg0 context.Context, arg1, arg2 string, arg3 vega.MarginMode, arg4 decimal.Decimal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarginMode", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarginMode indicates an expected call of UpdateMarginMode.
+func (mr *MockExecutionEngineMockRecorder) UpdateMarginMode(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarginMode", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarginMode), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateMarket mocks base method.
@@ -1209,15 +1224,15 @@ func (mr *MockValidatorTopologyMockRecorder) AllVegaPubKeys() *gomock.Call {
 }
 
 // BeginBlock mocks base method.
-func (m *MockValidatorTopology) BeginBlock(arg0 context.Context, arg1 types0.RequestBeginBlock) {
+func (m *MockValidatorTopology) BeginBlock(arg0 context.Context, arg1 uint64, arg2 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "BeginBlock", arg0, arg1)
+	m.ctrl.Call(m, "BeginBlock", arg0, arg1, arg2)
 }
 
 // BeginBlock indicates an expected call of BeginBlock.
-func (mr *MockValidatorTopologyMockRecorder) BeginBlock(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockValidatorTopologyMockRecorder) BeginBlock(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockValidatorTopology)(nil).BeginBlock), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginBlock", reflect.TypeOf((*MockValidatorTopology)(nil).BeginBlock), arg0, arg1, arg2)
 }
 
 // GetValidatorPowerUpdates mocks base method.

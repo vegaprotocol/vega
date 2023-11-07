@@ -542,9 +542,7 @@ func getDummyData() *types.Chunk {
 		},
 	}, &types.Payload{
 		Data: &types.PayloadVoteSpamPolicy{
-			VoteSpamPolicy: &types.VoteSpamPolicy{
-				MinVotingTokensFactor: num.UintZero(),
-			},
+			VoteSpamPolicy: &types.VoteSpamPolicy{},
 		},
 	}, &types.Payload{
 		Data: &types.PayloadSimpleSpamPolicy{
@@ -717,9 +715,7 @@ func TestPayloadConversion(t *testing.T) {
 		},
 	}, &types.Payload{
 		Data: &types.PayloadVoteSpamPolicy{
-			VoteSpamPolicy: &types.VoteSpamPolicy{
-				MinVotingTokensFactor: num.UintZero(),
-			},
+			VoteSpamPolicy: &types.VoteSpamPolicy{},
 		},
 	}, &types.Payload{
 		Data: &types.PayloadSimpleSpamPolicy{

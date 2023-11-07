@@ -981,9 +981,12 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 			CollateralRelease: num.DecimalFromFloat(1.4),
 		},
 	}
+
+	// updating the slippage should change the margin too
+	updatedSlippage := num.DecimalFromFloat(0.1).Mul(DefaultSlippageFactor)
 	model.EXPECT().DefaultRiskFactors().Return(updatedRF).Times(1)
 	statevarEngine.EXPECT().NewEvent(asset, marketID, statevar.EventTypeMarketUpdated)
-	testE.UpdateModel(statevarEngine, updatedMC, model)
+	testE.UpdateModel(statevarEngine, updatedMC, model, updatedSlippage, updatedSlippage)
 
 	evt = testMargin{
 		party:   "tx",
@@ -1004,10 +1007,10 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	searchLevel, _ = updatedMC.ScalingFactors.SearchLevel.Float64()
 	initialMargin, _ = updatedMC.ScalingFactors.InitialMargin.Float64()
 	colRelease, _ = updatedMC.ScalingFactors.CollateralRelease.Float64()
-	assert.EqualValues(t, 562, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(562*searchLevel), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(562*initialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(562*colRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.EqualValues(t, 381, margins.MaintenanceMargin.Uint64())
+	assert.Equal(t, uint64(381*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(381*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(381*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 func testInitialMarginRequirement(t *testing.T) {
