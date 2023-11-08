@@ -127,7 +127,7 @@ func TestOrders(t *testing.T) {
 		}
 
 		order := addTestOrder(t, os,
-			entities.OrderID(helpers.GenerateID()),
+			entities.OrderID(GenerateID()),
 			block,
 			parties[i%3],
 			markets[i%2],
@@ -230,7 +230,7 @@ func TestOrders(t *testing.T) {
 	})
 
 	t.Run("GetOrderNotFound", func(t *testing.T) {
-		notAnOrderID := entities.OrderID(helpers.GenerateID())
+		notAnOrderID := entities.OrderID(GenerateID())
 		fetchedOrder, err := os.GetOrder(ctx, notAnOrderID.String(), nil)
 		require.Error(t, err)
 		assert.Equal(t, entities.ErrNotFound, err)
@@ -287,7 +287,7 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	t.Helper()
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
-		orderIDs[i] = entities.OrderID(helpers.GenerateID())
+		orderIDs[i] = entities.OrderID(GenerateID())
 	}
 
 	return orderIDs

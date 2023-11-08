@@ -781,9 +781,9 @@ func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFil
 }
 
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
-	pagination *v2.Pagination, isReward *bool,
+	pagination *v2.Pagination, isReward *bool, fromEpoch, toEpoch *int,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
@@ -1907,8 +1907,9 @@ func (r *myPartyResolver) TransfersConnection(
 	direction *TransferDirection,
 	pagination *v2.Pagination,
 	isReward *bool,
+	fromEpoch, toEpoch *int,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {

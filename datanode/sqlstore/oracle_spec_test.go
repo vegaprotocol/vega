@@ -24,7 +24,6 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -428,7 +427,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, ctx, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey := dstypes.CreateSignerFromString(helpers.GenerateID(), dstypes.SignerTypePubKey)
+		pubKey := dstypes.CreateSignerFromString(GenerateID(), dstypes.SignerTypePubKey)
 
 		spec := entities.OracleSpec{
 			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{

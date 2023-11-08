@@ -1732,6 +1732,10 @@ message ListTransfersRequest {
   optional Pagination pagination = 3;
   // Restrict transfers to those related to reward transfers.
   optional bool is_reward = 4;
+  // Epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`.
+  optional uint64 from_epoch = 5;
+  // Epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch.
+  optional uint64 to_epoch = 6;
 }
 
 // Response that is received when listing  transfers

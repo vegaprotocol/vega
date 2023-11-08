@@ -25,7 +25,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	types "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
@@ -356,15 +355,15 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 	t.Helper()
 	proto := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        helpers.GenerateID(),
+		Id:        GenerateID(),
 		Price:     strconv.Itoa(price),
 		Size:      uint64(size),
 		MarketId:  testMarket,
-		Buyer:     helpers.GenerateID(),
-		Seller:    helpers.GenerateID(),
+		Buyer:     GenerateID(),
+		Seller:    GenerateID(),
 		Aggressor: types.Side_SIDE_SELL,
-		BuyOrder:  helpers.GenerateID(),
-		SellOrder: helpers.GenerateID(),
+		BuyOrder:  GenerateID(),
+		SellOrder: GenerateID(),
 	}
 
 	trade, err := entities.TradeFromProto(proto, generateTxHash(), block.VegaTime, uint64(seqNum))

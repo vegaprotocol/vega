@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testBlockSource struct {
@@ -50,22 +51,20 @@ func addTestBlockForTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks,
 
 func addTestBlockForHeightAndTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, height int64, vegaTime time.Time) entities.Block {
 	t.Helper()
-	// Make a block
+
 	hash, err := hex.DecodeString("deadbeef")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Postgres only stores timestamps in microsecond resolution
-	block1 := entities.Block{
+	block := entities.Block{
 		VegaTime: vegaTime.Truncate(time.Microsecond),
 		Height:   height,
 		Hash:     hash,
 	}
 
-	// Add it to the database
-	err = bs.Add(ctx, block1)
-	assert.NoError(t, err)
+	require.NoError(t, bs.Add(ctx, block))
 
-	return block1
+	return block
 }
 
 func TestBlock(t *testing.T) {

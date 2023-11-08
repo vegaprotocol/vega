@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -39,7 +38,7 @@ func TestTeams_AddTeams(t *testing.T) {
 	referrer := addTestParty(t, ctx, ps, block)
 
 	team := entities.Team{
-		ID:             entities.TeamID(helpers.GenerateID()),
+		ID:             entities.TeamID(GenerateID()),
 		Referrer:       referrer.ID,
 		Name:           "Test Team",
 		TeamURL:        nil,
@@ -76,7 +75,7 @@ func TestTeams_UpdateTeam(t *testing.T) {
 	referrer := addTestParty(t, ctx, ps, block)
 
 	team := entities.Team{
-		ID:        entities.TeamID(helpers.GenerateID()),
+		ID:        entities.TeamID(GenerateID()),
 		Referrer:  referrer.ID,
 		Name:      "Test Team",
 		TeamURL:   nil,
@@ -126,7 +125,7 @@ func TestTeams_UpdateTeam(t *testing.T) {
 		nextBlock := addTestBlock(t, ctx, bs)
 
 		updateTeam := entities.TeamUpdated{
-			ID:        entities.TeamID(helpers.GenerateID()),
+			ID:        entities.TeamID(GenerateID()),
 			Name:      team.Name,
 			TeamURL:   ptr.From("https://surely-you-cant-be-serio.us"),
 			AvatarURL: ptr.From("https://dont-call-me-shirl.ee"),
@@ -152,7 +151,7 @@ func testTeamsShouldAddReferee(t *testing.T) {
 	referrer := addTestParty(t, ctx, ps, block)
 
 	team := entities.Team{
-		ID:        entities.TeamID(helpers.GenerateID()),
+		ID:        entities.TeamID(GenerateID()),
 		Referrer:  referrer.ID,
 		Name:      "Test Team",
 		TeamURL:   nil,
@@ -188,7 +187,7 @@ func testTeamsShouldShowJoinedTeamAsCurrentTeam(t *testing.T) {
 	referrer2 := addTestParty(t, ctx, ps, block)
 
 	team1 := entities.Team{
-		ID:             entities.TeamID(helpers.GenerateID()),
+		ID:             entities.TeamID(GenerateID()),
 		Referrer:       referrer1.ID,
 		Name:           "Test Team 1",
 		TeamURL:        nil,
@@ -200,7 +199,7 @@ func testTeamsShouldShowJoinedTeamAsCurrentTeam(t *testing.T) {
 	require.NoError(t, ts.AddTeam(ctx, &team1))
 
 	team2 := entities.Team{
-		ID:             entities.TeamID(helpers.GenerateID()),
+		ID:             entities.TeamID(GenerateID()),
 		Referrer:       referrer2.ID,
 		Name:           "Test Team 2",
 		TeamURL:        nil,
@@ -253,7 +252,7 @@ func testTeamsShouldShowLastJoinedTeamAsCurrentTeam(t *testing.T) {
 	referrer2 := addTestParty(t, ctx, ps, block)
 
 	team1 := entities.Team{
-		ID:             entities.TeamID(helpers.GenerateID()),
+		ID:             entities.TeamID(GenerateID()),
 		Referrer:       referrer1.ID,
 		Name:           "Test Team 1",
 		TeamURL:        nil,
@@ -265,7 +264,7 @@ func testTeamsShouldShowLastJoinedTeamAsCurrentTeam(t *testing.T) {
 	require.NoError(t, ts.AddTeam(ctx, &team1))
 
 	team2 := entities.Team{
-		ID:             entities.TeamID(helpers.GenerateID()),
+		ID:             entities.TeamID(GenerateID()),
 		Referrer:       referrer2.ID,
 		Name:           "Test Team 2",
 		TeamURL:        nil,

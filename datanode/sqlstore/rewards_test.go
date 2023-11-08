@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -738,16 +739,16 @@ func Test_FilterRewardsQuery(t *testing.T) {
 				inFilter: entities.RewardSummaryFilter{
 					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
 					MarketIDs: []entities.MarketID{"deadbeef"},
-					FromEpoch: toPtr(uint64(123)),
-					ToEpoch:   toPtr(uint64(124)),
+					FromEpoch: ptr.From(uint64(123)),
+					ToEpoch:   ptr.From(uint64(124)),
 				},
 			},
 			wantQuery: ` WHERE asset_id = ANY($1) AND market_id = ANY($2) AND epoch_id >= $3 AND epoch_id <= $4`,
 			wantArgs: []any{
 				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
 				"deadbeef",
-				toPtr(uint64(123)),
-				toPtr(uint64(124)),
+				ptr.From(uint64(123)),
+				ptr.From(uint64(124)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -790,12 +791,12 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					FromEpoch: toPtr(uint64(123)),
+					FromEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id >= $1`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -803,12 +804,12 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					ToEpoch: toPtr(uint64(123)),
+					ToEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id <= $1`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -816,14 +817,14 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					FromEpoch: toPtr(uint64(123)),
-					ToEpoch:   toPtr(uint64(124)),
+					FromEpoch: ptr.From(uint64(123)),
+					ToEpoch:   ptr.From(uint64(124)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id >= $1 AND epoch_id <= $2`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
-				toPtr(uint64(124)),
+				ptr.From(uint64(123)),
+				ptr.From(uint64(124)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -832,13 +833,13 @@ func Test_FilterRewardsQuery(t *testing.T) {
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
 					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
-					FromEpoch: toPtr(uint64(123)),
+					FromEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE asset_id = ANY($1) AND epoch_id >= $2`,
 			wantArgs: []any{
 				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		},

@@ -109,7 +109,7 @@ func TestStopOrders_Add(t *testing.T) {
 		for _, p := range parties {
 			for _, m := range markets {
 				inputs = append(inputs, testStopOrderInputs{
-					orderID:        helpers.GenerateID(),
+					orderID:        GenerateID(),
 					vegaTime:       b.VegaTime,
 					createdAt:      b.VegaTime,
 					triggerPrice:   "100",
@@ -163,7 +163,7 @@ func TestStopOrders_Get(t *testing.T) {
 
 	markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
 
-	orderID := helpers.GenerateID()
+	orderID := GenerateID()
 	stopOrders := generateTestStopOrders(t, []testStopOrderInputs{
 		{
 			orderID:        orderID,

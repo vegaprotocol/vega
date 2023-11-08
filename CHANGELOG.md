@@ -22,6 +22,7 @@
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
+- [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
 
 ### 🐛 Fixes
 

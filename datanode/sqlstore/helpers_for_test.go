@@ -13,13 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package helpers
+package sqlstore_test
 
 import (
+	"code.vegaprotocol.io/vega/datanode/entities"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 )
 
-// GenerateID generates a 256 bit pseudo-random hash ID.
 func GenerateID() string {
 	return vgcrypto.RandomHash()
+}
+
+func generateTxHash() entities.TxHash {
+	return entities.TxHash(GenerateID())
 }

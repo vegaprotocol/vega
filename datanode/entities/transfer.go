@@ -157,12 +157,11 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	if t.From == "0000000000000000000000000000000000000000000000000000000000000000" {
-		fromAcc.PartyID = PartyID("network")
+		fromAcc.PartyID = "network"
 	}
 
-	err := accountSource.Obtain(ctx, &fromAcc)
-	if err != nil {
-		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
+	if err := accountSource.Obtain(ctx, &fromAcc); err != nil {
+		return nil, fmt.Errorf("could not obtain source account for transfer: %w", err)
 	}
 
 	toAcc := Account{
@@ -175,18 +174,16 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	if t.To == "0000000000000000000000000000000000000000000000000000000000000000" {
-		toAcc.PartyID = PartyID("network")
+		toAcc.PartyID = "network"
 	}
 
-	err = accountSource.Obtain(ctx, &toAcc)
-
-	if err != nil {
-		return nil, fmt.Errorf("obtaining to account id for transfer:%w", err)
+	if err := accountSource.Obtain(ctx, &toAcc); err != nil {
+		return nil, fmt.Errorf("could not obtain destination account for transfer: %w", err)
 	}
 
 	amount, err := decimal.NewFromString(t.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("getting amount for transfer:%w", err)
+		return nil, fmt.Errorf("invalid transfer amount: %w", err)
 	}
 
 	transfer := Transfer{
@@ -223,26 +220,18 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	case *eventspb.Transfer_RecurringGovernance:
 		transfer.TransferType = GovernanceRecurring
 		transfer.StartEpoch = &v.RecurringGovernance.StartEpoch
-		if v.RecurringGovernance.EndEpoch != nil {
-			endEpoch := *v.RecurringGovernance.EndEpoch
-			transfer.EndEpoch = &endEpoch
-		}
+		transfer.DispatchStrategy = v.RecurringGovernance.DispatchStrategy
+		transfer.EndEpoch = v.RecurringGovernance.EndEpoch
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
-		if v.Recurring.DispatchStrategy != nil {
-			transfer.DispatchStrategy = v.Recurring.DispatchStrategy
-		}
+		transfer.DispatchStrategy = v.Recurring.DispatchStrategy
+		transfer.EndEpoch = v.Recurring.EndEpoch
 
-		if v.Recurring.EndEpoch != nil {
-			endEpoch := *v.Recurring.EndEpoch
-			transfer.EndEpoch = &endEpoch
-		}
 		factor, err := decimal.NewFromString(v.Recurring.Factor)
 		if err != nil {
-			return nil, fmt.Errorf("getting factor for transfer:%w", err)
+			return nil, fmt.Errorf("invalid factor for recurring transfer:%w", err)
 		}
-
 		transfer.Factor = &factor
 	default:
 		transfer.TransferType = Unknown
