@@ -456,6 +456,17 @@ message TransferFees {
   string amount = 2;
   // Epoch when the transfer was dispatched, and fees were paid.
   uint64 epoch = 3;
+  // Epoch when the transfer was dispatched, and fees were paid.
+  string discount_applied = 4;
+}
+
+message TransferFeesDiscount {
+  string party = 1;
+  string asset = 2;
+  // Amount of availible fee discount.
+  string amount = 3;
+  // Epoch where the discount was availible.
+  uint64 epoch = 4;
 }
 
 message TransactionResult {
@@ -1232,6 +1243,9 @@ enum BusEventType {
   // Event used to link ledger entries to the transfer that triggered the fees being collected.
   BUS_EVENT_TYPE_TRANSFER_FEES_PAID = 83;
 
+  // Event that updates on state of availible transfers fee discount amount;
+  BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED = 84;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1407,6 +1421,8 @@ message BusEvent {
     VestingBalancesSummary vesting_balances_summary = 180;
     // Event notifying of fees related to a transfer being paid.
     TransferFees transfer_fees = 181;
+    // Event notifying of discounts availible for transfer fees.
+    TransferFeesDiscount transfer_fees_discount = 182;
 
     // Market tick events
     MarketEvent market = 1001;

@@ -28,13 +28,14 @@ type TransferFees struct {
 	pb *eventspb.TransferFees
 }
 
-func NewTransferFeesEvent(ctx context.Context, transferID string, amount *num.Uint, epoch uint64) *TransferFees {
+func NewTransferFeesEvent(ctx context.Context, transferID string, amount *num.Uint, discount *num.Uint, epoch uint64) *TransferFees {
 	return &TransferFees{
 		Base: newBase(ctx, TransferFeesEvent),
 		pb: &eventspb.TransferFees{
-			TransferId: transferID,
-			Amount:     amount.String(),
-			Epoch:      epoch,
+			TransferId:      transferID,
+			Amount:          amount.String(),
+			DiscountApplied: discount.String(),
+			Epoch:           epoch,
 		},
 	}
 }
@@ -64,6 +65,53 @@ func TransferFeesEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Tr
 
 	return &TransferFees{
 		Base: newBaseFromBusEvent(ctx, TransferFeesEvent, be),
+		pb:   event,
+	}
+}
+
+// TransferFeesDiscountUpdated ...
+type TransferFeesDiscountUpdated struct {
+	*Base
+	pb *eventspb.TransferFeesDiscount
+}
+
+func NewTransferFeesDiscountUpdated(ctx context.Context, party, asset string, amount *num.Uint, epoch uint64) *TransferFeesDiscountUpdated {
+	return &TransferFeesDiscountUpdated{
+		Base: newBase(ctx, TransferFeesEvent),
+		pb: &eventspb.TransferFeesDiscount{
+			Party:  party,
+			Asset:  asset,
+			Amount: amount.String(),
+			Epoch:  epoch,
+		},
+	}
+}
+
+func (t TransferFeesDiscountUpdated) Proto() eventspb.TransferFeesDiscount {
+	return *t.pb
+}
+
+func (t TransferFeesDiscountUpdated) StreamMessage() *eventspb.BusEvent {
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_TransferFeesDiscount{
+		TransferFeesDiscount: t.pb,
+	}
+
+	return busEvent
+}
+
+func (t TransferFeesDiscountUpdated) TransferFees() eventspb.TransferFeesDiscount {
+	return t.Proto()
+}
+
+func TransferFeesDiscountUpdatedFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferFeesDiscountUpdated {
+	event := be.GetTransferFeesDiscount()
+	if event == nil {
+		return nil
+	}
+
+	return &TransferFeesDiscountUpdated{
+		Base: newBaseFromBusEvent(ctx, TransferFeesDiscountUpdatedEvent, be),
 		pb:   event,
 	}
 }

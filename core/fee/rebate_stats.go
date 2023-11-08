@@ -161,6 +161,23 @@ func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 	total.Add(total, amount)
 }
 
+// TotalMakerFeesGenerated returns per party sum of all maker fees paid by taker (aggressor) to the all makers.
+func (f *FeesStats) TotalMakerFeesGenerated() map[string]*num.Uint {
+	generatedFeesPerParty := make(map[string]*num.Uint, len(f.MakerFeesGenerated))
+
+	for party, makers := range f.MakerFeesGenerated {
+		sum := num.UintZero()
+
+		for _, amount := range makers {
+			sum = sum.Add(sum, amount)
+		}
+
+		generatedFeesPerParty[party] = sum
+	}
+
+	return generatedFeesPerParty
+}
+
 func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.FeesStats {
 	fs := &eventspb.FeesStats{
 		Asset:                    asset,

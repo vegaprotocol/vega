@@ -96,6 +96,7 @@ type Market struct {
 
 	// deps engines
 	collateral common.Collateral
+	banking    common.Banking
 
 	broker               common.Broker
 	closed               bool
@@ -178,6 +179,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -321,6 +323,7 @@ func NewMarket(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		liquidation:                   le,
+		banking:                       banking,
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -362,6 +365,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		feesStats := m.fee.GetFeesStatsOnEpochEnd(assetQuantum)
 		feesStats.Market = m.GetID()
 		feesStats.EpochSeq = epoch.Seq
+
+		m.banking.RegisterTakerFees(ctx, feesStats.Asset, m.fee.TotalMakerFeesGenerated())
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 

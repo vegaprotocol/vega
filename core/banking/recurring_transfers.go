@@ -256,7 +256,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
-			if _, err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.To); err == nil {
+			if err = e.ensureFeeForTransferFunds(a, amount, v.From, v.FromAccountType, v.To); err == nil {
 				// NB: if the metric is market value we're going to transfer the bonus if any directly
 				// to the market account of the asset/reward type - this is similar to previous behaviour and
 				// different to how all other metric based rewards behave. The reason is that we need the context of the funder

@@ -418,6 +418,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.banking.OnMaxQuantumAmountUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountNumOfEpoch,
+			Watcher: execsetup.banking.OnFeeDiscountNumOfEpochUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.MaxPeggedOrders,
 			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
 		},

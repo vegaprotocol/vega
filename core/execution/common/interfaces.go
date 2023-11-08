@@ -33,7 +33,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -206,6 +206,10 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 			changes&PriceMoveBestBid > 0) ||
 		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
 			changes&PriceMoveBestAsk > 0)
+}
+
+type Banking interface {
+	RegisterTakerFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
 }
 
 type LiquidityEngine interface {
