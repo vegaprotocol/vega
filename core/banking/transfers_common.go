@@ -147,7 +147,7 @@ func (e *Engine) processTransfer(
 
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, discount, err := e.makeFeeTransferForTransferFunds(assetType, amount, from, fromAcc, to)
+	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(assetType, amount, from, fromAcc, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
@@ -248,7 +248,7 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	return feeAmount, discountAmount
 }
 
-func (e *Engine) makeFeeTransferForTransferFunds(
+func (e *Engine) makeFeeTransferForFundsTransfer(
 	asset *types.Asset,
 	amount *num.Uint,
 	from string,
