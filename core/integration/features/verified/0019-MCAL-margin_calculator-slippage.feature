@@ -20,7 +20,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
 
     @SLABug
-    Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-011)(0019-MCAL-012)
+    Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-024)(0019-MCAL-025)
 
         # Create position, order book, and mark price conditions matching the spec
         Given the parties deposit on asset's general account the following amount:
@@ -46,7 +46,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | sellSideProvider| ETH/MAR23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |
 
 
-        # Checks for 0019-MCAL-012
+# Checks for 0019-MCAL-025
         When the network moves ahead "2" blocks
         # Check mark-price matches the specification
         Then the mark price should be "15900" for the market "ETH/FEB23"
@@ -61,6 +61,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         And the parties should have the following margin levels:
             | party | market id | maintenance | search | initial | release |
             | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   |
+#margin = min((100000-15900), 15900*(0.25+0.25))+0.1*15900=9450
 
 
         # Checks for 0019-MCAL-013
@@ -79,6 +80,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         And the parties should have the following margin levels:
             | party | market id | maintenance | search | initial | release |
             | party | ETH/MAR23 | 85690       | 94259  | 102828  | 119966  |
+#margin = min((100000-15900), 15900*(100+100))+0.1*15900=85690
 
     Scenario: Check margin is calculated correctly using capped slippage depending on the volume of orders on the book (0019-MCAL-014)(0019-MCAL-015)(0019-MCAL-016)(0019-MCAL-017)(0019-MCAL-018)
 
