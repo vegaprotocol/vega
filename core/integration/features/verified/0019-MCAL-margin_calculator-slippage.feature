@@ -15,8 +15,8 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
 
         And the markets:
             | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config           | linear slippage factor | quadratic slippage factor | sla params      |
-            | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 0.25                   | 0.25                      | default-futures |
-            | ETH/MAR23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       | default-futures |
+            | ETH/FEB23 | ETH | USD | lqm-params | simple-risk-model | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 0.25 | 0 | default-futures |
+            | ETH/MAR23 | ETH | USD | lqm-params | simple-risk-model | default-margin-calculator | 1 | default-none | default-none | default-eth-for-future | 100  | 0 | default-futures |
 
 
     @SLABug
@@ -60,9 +60,8 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         # Check party margin levels match the specification
         And the parties should have the following margin levels:
             | party | market id | maintenance | search | initial | release |
-            | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   |
-#margin = min((100000-15900), 15900*(0.25+0.25))+0.1*15900=9450
-
+            | party | ETH/FEB23 | 5565 | 6121 | 6678 | 7791 |
+#margin = min((100000-15900), 15900*(0.25))+0.1*15900=5565
 
         # Checks for 0019-MCAL-013
         # Network has moved ahead to leave ETH/FEB23 opening auction, ends this opening auction, too
@@ -80,7 +79,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         And the parties should have the following margin levels:
             | party | market id | maintenance | search | initial | release |
             | party | ETH/MAR23 | 85690       | 94259  | 102828  | 119966  |
-#margin = min((100000-15900), 15900*(100+100))+0.1*15900=85690
+#margin = min((100000-15900), 15900*(100))+0.1*15900=85690
 
     Scenario: Check margin is calculated correctly using capped slippage depending on the volume of orders on the book (0019-MCAL-014)(0019-MCAL-015)(0019-MCAL-016)(0019-MCAL-017)(0019-MCAL-018)
 
@@ -101,7 +100,6 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | sellSideProvider | ETH/FEB23 | sell | 5      | 502   | 0                | TYPE_LIMIT | TIF_GTC | ssp-2     |
             | sellSideProvider | ETH/FEB23 | sell | 10     | 504   | 0                | TYPE_LIMIT | TIF_GTC | ssp-1     |
 
-
         # Case for 0019-MCAL-017 and 0019-MCAL-018:
         #   - For the party 'longTrader'; riskiest long > 0 && abs(riskiest long) < sum of volume of order book bids
         #   - For the party 'shortTrader'; riskiest short < 0 && abs(riskiest long) < sum of volume of order book bids
@@ -117,7 +115,6 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | party       | market id | maintenance | search | initial | release |
             | longTrader  | ETH/FEB23 | 530         | 583    | 636     | 742     |
             | shortTrader | ETH/FEB23 | 530         | 583    | 636     | 742     |
-
 
         # Case for 0019-MCAL-015:
         #   - For the party 'longTrader'; riskiest long > 0 && abs(riskiest long) > sum of volume of order book bids
@@ -141,8 +138,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         Then the mark price should be "500" for the market "ETH/FEB23"
         And the parties should have the following margin levels:
             | party       | market id | maintenance | search | initial | release |
-            | longTrader  | ETH/FEB23 | 14250       | 15675  | 17100   | 19950   |
-
+            | longTrader | ETH/FEB23 | 1750 | 1925 | 2100 | 2450 |
 
         # Case for 0019-MCAL-016:
         #   - For the party 'shortTrader'; riskiest short < 0 && abs(riskiest short) > sum of volume of order book asks
@@ -166,9 +162,8 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         Then the mark price should be "500" for the market "ETH/FEB23"
         And the parties should have the following margin levels:
             | party       | market id | maintenance | search | initial | release |
-            | shortTrader | ETH/FEB23 | 14250       | 15675  | 17100   | 19950   |
+            | shortTrader | ETH/FEB23 | 1750 | 1925 | 2100 | 2450 |
 
-        
         # Case for 0019-MCAL-014:
         #   - For the party 'longTrader'; riskiest long > 0 && no bids on the book
         #   - For the party 'shortTrader'; riskiest short < 0 && no asks on the book
@@ -186,5 +181,5 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
         Then the mark price should be "498" for the market "ETH/FEB23"
         And the parties should have the following margin levels:
             | party       | market id | maintenance | search | initial | release |
-            | longTrader  | ETH/FEB23 | 14193       | 15612  | 17031   | 19870   |
-            | shortTrader | ETH/FEB23 | 14193       | 15612  | 17031   | 19870   |
+            | longTrader  | ETH/FEB23 | 1743 | 1917 | 2091 | 2440 |
+            | shortTrader | ETH/FEB23 | 1743 | 1917 | 2091 | 2440 |
