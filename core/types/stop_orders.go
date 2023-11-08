@@ -98,6 +98,10 @@ func (s *StopOrderExpiry) Expires() bool {
 	return s.ExpiresAt != nil
 }
 
+type StopOrderSizeOverride struct {
+	OrderID string
+}
+
 type StopOrderTrigger struct {
 	Direction             StopOrderTriggerDirection
 	price                 *num.Uint
@@ -302,6 +306,7 @@ type StopOrder struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	RejectionReason *StopOrderRejectionReason
+	SizeOverride    *StopOrderSizeOverride
 }
 
 func (s *StopOrder) String() string {
@@ -357,6 +362,11 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		expiry.ExpiryStrategy = p.StopOrder.ExpiryStrategy
 	}
 
+	var sizeOverride *StopOrderSizeOverride
+	if p.StopOrder.SizeOverride != nil {
+		sizeOverride = &StopOrderSizeOverride{OrderID: p.StopOrder.SizeOverride.GetOrderId()}
+	}
+
 	return &StopOrder{
 		ID:              p.StopOrder.Id,
 		Party:           p.StopOrder.PartyId,
@@ -370,6 +380,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		Trigger:         trigger,
 		Expiry:          expiry,
 		RejectionReason: p.StopOrder.RejectionReason,
+		SizeOverride:    sizeOverride,
 	}
 }
 

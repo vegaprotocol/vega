@@ -3581,10 +3581,32 @@ func (m *Market) submitStopOrders(
 ) []*types.OrderConfirmation {
 	confirmations := []*types.OrderConfirmation{}
 	evts := make([]events.Event, 0, len(stopOrders))
+	toDelete := []*types.Order{}
 
-	// might contains both the triggered orders and the expired OCO
+	// might contain both the triggered orders and the expired OCO
 	for _, v := range stopOrders {
 		if v.Status == status {
+			// If we have an order size override, handle that here
+			if v.SizeOverride != nil {
+				if len(v.SizeOverride.OrderID) > 0 {
+					// Update the order size to match that of the referenced order
+					order, _, err := m.getOrderByID(v.SizeOverride.OrderID)
+					if err != nil {
+						m.log.Error("could not get order to override size with",
+							logging.StopOrderSubmission(v),
+							logging.Error(err))
+					}
+					v.OrderSubmission.Size = order.Size - order.TrueRemaining()
+
+					// Need to cancel the referenced order
+					toDelete = append(toDelete, order)
+				} else {
+					// Update the order size to match that of the party's position
+					pos, _ := m.position.GetPositionByPartyID(v.Party)
+					v.OrderSubmission.Size = uint64(pos.Size())
+				}
+			}
+
 			conf, err := m.SubmitOrderWithIDGeneratorAndOrderID(
 				ctx, v.OrderSubmission, v.Party, idgen, idgen.NextID(), false,
 			)
@@ -3599,8 +3621,12 @@ func (m *Market) submitStopOrders(
 				confirmations = append(confirmations, conf)
 			}
 		}
-
 		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+
+		// Remove any referenced orders
+		for _, order := range toDelete {
+			m.CancelOrder(ctx, v.Party, order.ID, order.ID)
+		}
 	}
 
 	m.broker.SendBatch(evts)
