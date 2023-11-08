@@ -24,17 +24,15 @@ assignees: ''
 - [ ] Create an API that... (specific details about the API's functionality and what it should provide)
 - [ ] 
 
+### Filtering requirements (inputs)
+  - [ ] 
+  - [ ] 
+
 ### Sample API output (optional)
 
 ```
 
 ```
-
-
-### Filtering requirements (inputs)
-  - [ ] 
-  - [ ] 
-  - [ ] 
 
 ## Questions 
 Open questions about the feature implementation, what can be done with the APIs, or currently unresolved questions around the feature.
