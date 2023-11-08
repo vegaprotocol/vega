@@ -24,14 +24,14 @@ assignees: ''
 - [ ] Create an API that... (specific details about the API's functionality and what it should provide)
 - [ ] 
 
-### Sample API shape (optional)
+### Sample API output (optional)
 
 ```
 
 ```
 
 
-### Filtering requirements
+### Filtering requirements (inputs)
   - [ ] 
   - [ ] 
   - [ ] 
