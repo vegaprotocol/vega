@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package banking
 
 import (
@@ -160,17 +175,33 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 	e.broker.SendBatch(updateDiscountEvents)
 }
 
-func (e *Engine) ApplyFeeDiscount(asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
+func (e *Engine) ApplyFeeDiscount(ctx context.Context, asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
+	if fee.IsZero() {
+		return fee, num.UintZero()
+	}
+
 	key := e.feeDiscountKey(asset, party)
 
 	if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
 		return fee, num.UintZero()
 	}
 
+	defer e.broker.Send(
+		events.NewTransferFeesDiscountUpdated(ctx,
+			party, asset,
+			e.feeDiscountPerPartyAndAsset[key].AccumulatedDiscount(),
+			e.currentEpoch,
+		),
+	)
+
 	return e.feeDiscountPerPartyAndAsset[key].ApplyDiscount(fee)
 }
 
 func (e *Engine) EstimateFeeDiscount(asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
+	if fee.IsZero() {
+		return fee, num.UintZero()
+	}
+
 	key := e.feeDiscountKey(asset, party)
 
 	if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {

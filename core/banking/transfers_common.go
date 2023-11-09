@@ -147,7 +147,7 @@ func (e *Engine) processTransfer(
 
 	// ensure the party have enough funds for both the
 	// amount and the fee for the transfer
-	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(assetType, amount, from, fromAcc, to)
+	feeTransfer, discount, err := e.makeFeeTransferForFundsTransfer(ctx, assetType, amount, from, fromAcc, to)
 	if err != nil {
 		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
@@ -224,38 +224,34 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	from string,
 	fromAccountType types.AccountType,
 	to string,
-	estimate bool,
-) (*num.Uint, *num.Uint) {
-	// no fee for Vested account
+) *num.Uint {
 	feeAmount := num.UintZero()
-	discountAmount := num.UintZero()
 
-	// first we calculate the fee
-	if !(fromAccountType == types.AccountTypeVestedRewards && from == to) {
-		// min(transfer amount * transfer.fee.factor, transfer.fee.maxQuantumAmount * quantum)
-		feeAmount, _ = num.UintFromDecimal(num.MinD(
-			amount.ToDecimal().Mul(e.transferFeeFactor),
-			e.maxQuantumAmount.Mul(asset.Details.Quantum),
-		))
-
-		if estimate {
-			return e.EstimateFeeDiscount(asset.ID, from, feeAmount)
-		} else {
-			return e.ApplyFeeDiscount(asset.ID, from, feeAmount)
-		}
+	// no fee for Vested account
+	if fromAccountType == types.AccountTypeVestedRewards && from == to {
+		return feeAmount
 	}
 
-	return feeAmount, discountAmount
+	// now we calculate the fee
+	// min(transfer amount * transfer.fee.factor, transfer.fee.maxQuantumAmount * quantum)
+	feeAmount, _ = num.UintFromDecimal(num.MinD(
+		amount.ToDecimal().Mul(e.transferFeeFactor),
+		e.maxQuantumAmount.Mul(asset.Details.Quantum),
+	))
+
+	return feeAmount
 }
 
 func (e *Engine) makeFeeTransferForFundsTransfer(
+	ctx context.Context,
 	asset *types.Asset,
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
 	to string,
 ) (*types.Transfer, *num.Uint, error) {
-	feeAmount, discountAmount := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, to, false)
+	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, to)
+	feeAmount, discountAmount := e.ApplyFeeDiscount(ctx, asset.ID, from, theoreticalFee)
 
 	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, to, feeAmount); err != nil {
 		return nil, nil, err
@@ -290,7 +286,8 @@ func (e *Engine) ensureFeeForTransferFunds(
 	to string,
 ) error {
 	assetType := asset.ToAssetType()
-	feeAmount, _ := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, to, true)
+	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, to)
+	feeAmount, _ := e.EstimateFeeDiscount(assetType.ID, from, theoreticalFee)
 	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, to, feeAmount)
 }
 

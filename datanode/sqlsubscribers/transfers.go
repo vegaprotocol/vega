@@ -96,12 +96,7 @@ func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 func (rf *Transfer) handleFees(ctx context.Context, e TransferFeesEvent) error {
 	tf := e.TransferFees()
 	rec := entities.TransferFeesFromProto(&tf, rf.vegaTime)
-	if err := rf.store.UpsertFees(ctx, rec); err != nil {
-		return errors.Wrap(err, "inserting transfer fee into SQL store failed")
-	}
-
-	// TODO karel - update the discount table by adding a new version with de-ducted fees
-	return nil
+	return errors.Wrap(rf.store.UpsertFees(ctx, rec), "inserting transfer fee into SQL store failed")
 }
 
 func (rf *Transfer) handleDiscount(ctx context.Context, e TransferFeesDiscountUpdateEvent) error {
