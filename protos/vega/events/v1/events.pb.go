@@ -252,7 +252,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY BusEventType = 82
 	// Event used to link ledger entries to the transfer that triggered the fees being collected.
 	BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID BusEventType = 83
-	// Event that updates on state of availible transfers fee discount amount;
+	// Event indicating that a party's available transfer fee discount has changed, per asset.
 	BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED BusEventType = 84
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
@@ -3547,7 +3547,7 @@ type TransferFees struct {
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Epoch when the transfer was dispatched, and fees were paid.
 	Epoch uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	// Epoch when the transfer was dispatched, and fees were paid.
+	// Amount that was subtracted from the transfer fee based on available discounts.
 	DiscountApplied string `protobuf:"bytes,4,opt,name=discount_applied,json=discountApplied,proto3" json:"discount_applied,omitempty"`
 }
 
@@ -3616,11 +3616,13 @@ type TransferFeesDiscount struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Party that the transfer fee discount applies to.
 	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	// Asset that the transfer fee discount is relevant to.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Amount of availible fee discount.
+	// Amount that the transfer fee was discounted by.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Epoch where the discount was availible.
+	// Epoch in which the discount was first available.
 	Epoch uint64 `protobuf:"varint,4,opt,name=epoch,proto3" json:"epoch,omitempty"`
 }
 
@@ -8788,7 +8790,7 @@ type BusEvent_TransferFees struct {
 }
 
 type BusEvent_TransferFeesDiscount struct {
-	// Event notifying of discounts availible for transfer fees.
+	// Event notifying of a party's available discounts for transfer fees, per asset.
 	TransferFeesDiscount *TransferFeesDiscount `protobuf:"bytes,182,opt,name=transfer_fees_discount,json=transferFeesDiscount,proto3,oneof"`
 }
 

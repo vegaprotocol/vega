@@ -414,7 +414,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
 		},
 		netparams.WatchParam{
-			Param:   netparams.TransferMaxQuantumAmount,
+			Param:   netparams.TransferFeeMaxQuantumAmount,
 			Watcher: execsetup.banking.OnMaxQuantumAmountUpdate,
 		},
 		netparams.WatchParam{

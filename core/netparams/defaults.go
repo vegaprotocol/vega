@@ -260,7 +260,7 @@ func defaultNetParams() map[string]value {
 		TransferFeeFactor:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
 		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
-		TransferMaxQuantumAmount:           NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
+		TransferFeeMaxQuantumAmount:        NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
 		TransferFeeDiscountNumOfEpoch:      NewUint(gteU0, lteU1000).Mutable(true).MustUpdate("30"),
 
 		// pow
