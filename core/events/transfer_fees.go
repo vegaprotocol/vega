@@ -100,7 +100,7 @@ func (t TransferFeesDiscountUpdated) StreamMessage() *eventspb.BusEvent {
 	return busEvent
 }
 
-func (t TransferFeesDiscountUpdated) TransferFees() eventspb.TransferFeesDiscount {
+func (t TransferFeesDiscountUpdated) TransferFeesDiscount() eventspb.TransferFeesDiscount {
 	return t.Proto()
 }
 

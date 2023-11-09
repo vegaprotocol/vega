@@ -35,9 +35,15 @@ type TransferFeesEvent interface {
 	TransferFees() eventspb.TransferFees
 }
 
+type TransferFeesDiscountUpdateEvent interface {
+	events.Event
+	TransferFeesDiscount() eventspb.TransferFeesDiscount
+}
+
 type TransferStore interface {
 	Upsert(ctx context.Context, transfer *entities.Transfer) error
 	UpsertFees(ctx context.Context, tf *entities.TransferFees) error
+	UpsertFeesDiscount(ctx context.Context, tfd *entities.TransferFeesDiscount) error
 }
 
 type AccountSource interface {
@@ -71,6 +77,8 @@ func (rf *Transfer) Push(ctx context.Context, evt events.Event) error {
 		return rf.consume(ctx, te)
 	case TransferFeesEvent:
 		return rf.handleFees(ctx, te)
+	case TransferFeesDiscountUpdateEvent:
+		return rf.handleDiscount(ctx, te)
 	}
 	return errors.New("unsupported event")
 }
@@ -88,5 +96,16 @@ func (rf *Transfer) consume(ctx context.Context, event TransferEvent) error {
 func (rf *Transfer) handleFees(ctx context.Context, e TransferFeesEvent) error {
 	tf := e.TransferFees()
 	rec := entities.TransferFeesFromProto(&tf, rf.vegaTime)
-	return errors.Wrap(rf.store.UpsertFees(ctx, rec), "inserting transfer fee into SQL store failed")
+	if err := rf.store.UpsertFees(ctx, rec); err != nil {
+		return errors.Wrap(err, "inserting transfer fee into SQL store failed")
+	}
+
+	// TODO karel - update the discount table by adding a new version with de-ducted fees
+	return nil
+}
+
+func (rf *Transfer) handleDiscount(ctx context.Context, e TransferFeesDiscountUpdateEvent) error {
+	tf := e.TransferFeesDiscount()
+	discount := entities.TransferFeesDiscountFromProto(&tf, rf.vegaTime)
+	return errors.Wrap(rf.store.UpsertFeesDiscount(ctx, discount), "inserting transfer fee into SQL store failed")
 }
