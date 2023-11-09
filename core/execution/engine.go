@@ -79,6 +79,7 @@ type Engine struct {
 	assets                        common.Assets
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
+	banking                       common.Banking
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -180,6 +181,7 @@ func NewEngine(
 	assets common.Assets,
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -205,6 +207,7 @@ func NewEngine(
 		skipRestoreSuccessors:         map[string]struct{}{},
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		banking:                       banking,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -682,6 +685,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.banking,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -761,6 +765,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.banking,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

@@ -163,7 +163,7 @@ type Engine struct {
 	maxQuantumAmount           num.Decimal
 
 	feeDiscountNumOfEpoch       int
-	feeDiscountPerPartyAndAsset map[string]*feeDiscount
+	feeDiscountPerPartyAndAsset map[partyAssetKey]*feeDiscount
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer
@@ -206,9 +206,6 @@ func New(
 	bridgeView ERC20BridgeView,
 	ethEventSource EthereumEventSource,
 ) (e *Engine) {
-	defer func() {
-		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
-	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -243,7 +240,7 @@ func New(
 		bridgeState: &bridgeState{
 			active: true,
 		},
-		feeDiscountPerPartyAndAsset: map[string]*feeDiscount{},
+		feeDiscountPerPartyAndAsset: map[partyAssetKey]*feeDiscount{},
 		bridgeView:                  bridgeView,
 	}
 }

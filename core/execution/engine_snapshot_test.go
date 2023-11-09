@@ -94,9 +94,10 @@ func getMockedEngine(t *testing.T) *engineFake {
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return &engineFake{
 		Engine:     exec,
@@ -158,7 +159,9 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
-	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount)
+	banking := mocks.NewMockBanking(ctrl)
+
+	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return e, ctrl
 }

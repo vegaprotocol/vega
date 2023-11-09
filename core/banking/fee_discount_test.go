@@ -25,7 +25,7 @@ func TestBankingApplyFeeDiscount(t *testing.T) {
 	party := "party-1"
 
 	// set 2 epochs discount window
-	eng.OnFeeDiscountNumOfEpochUpdate(context.Background(), 2)
+	eng.OnFeeDiscountNumOfEpochUpdate(context.Background(), num.NewUint(2))
 
 	// expect the whole fee to be paid
 	discountedFee, discount := eng.ApplyFeeDiscount(asset, party, num.NewUint(5))

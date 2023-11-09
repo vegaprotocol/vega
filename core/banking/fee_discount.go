@@ -2,12 +2,15 @@ package banking
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
 )
+
+type partyAssetKey struct {
+	party string
+	asset string
+}
 
 type feeDiscount struct {
 	paidTakerFees       []*num.Uint
@@ -57,8 +60,6 @@ func (r *feeDiscount) accumulateDiscount() {
 // ApplyDiscount applies a portion of the accumulated discount to the fee and return the discounted fee amount.
 func (r *feeDiscount) ApplyDiscount(theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
 	discountedFee, discount = r.CalculateDiscount(theoreticalFee)
-
-	fmt.Println(discountedFee, discount)
 
 	r.usedDiscount.AddSum(discount)
 	r.accumulatedDiscount.Sub(r.accumulatedDiscount, r.usedDiscount)
@@ -111,19 +112,14 @@ func (e *Engine) updateDiscountsWindows() {
 	}
 }
 
-func (e *Engine) feeDiscountKey(asset, party string) string {
-	return fmt.Sprintf("%s-%s", asset, party)
-}
-
-// TODO kare - make this robust
-func (e *Engine) partyFromDiscountKey(key string) string {
-	return strings.Split(key, "-")[0]
+func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
+	return partyAssetKey{party: party, asset: asset}
 }
 
 func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint) {
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
 
-	updatedKeys := map[string]struct{}{}
+	updatedKeys := map[partyAssetKey]struct{}{}
 
 	zero := num.UintZero()
 	for party, fee := range feesPerParty {
@@ -136,7 +132,6 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 
 		e.feeDiscountPerPartyAndAsset[key].AddTakerFee(fee)
 
-		// TODO karel - use real context
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			party,
@@ -155,7 +150,7 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
-			e.partyFromDiscountKey(key),
+			key.party,
 			asset,
 			e.feeDiscountPerPartyAndAsset[key].AccumulatedDiscount(),
 			e.currentEpoch,

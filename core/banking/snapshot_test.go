@@ -437,7 +437,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -458,7 +458,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -493,7 +493,7 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -673,7 +673,7 @@ func TestAssetListRoundTrip(t *testing.T) {
 	key := (&types.PayloadBankingAssetActions{}).Key()
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	require.NoError(t, eng.EnableERC20(ctx, &types.ERC20AssetList{}, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", 1000, 1000, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"))
 
 	state, _, err := eng.GetState(key)
@@ -684,7 +684,7 @@ func TestAssetListRoundTrip(t *testing.T) {
 	payload := types.PayloadFromProto(&pp)
 
 	snap := getTestEngine(t)
-	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	_, err = snap.LoadState(ctx, payload)
 	require.Nil(t, err)
 
