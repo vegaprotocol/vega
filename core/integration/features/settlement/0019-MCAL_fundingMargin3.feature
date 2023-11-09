@@ -11,7 +11,7 @@ Feature: Test funding margin for Perps market
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH | USD | default-simple-risk-model-3 | default-margin-calculator | 1 | default-none | default-none | perp-oracle | 1e6 | 0 | -3 | perp | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 0                         | -3                      | perp        | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -187,4 +187,3 @@ Feature: Test funding margin for Perps market
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-# Then debug transfers
