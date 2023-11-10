@@ -438,6 +438,66 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 0, len(*entries))
 		})
 
+		t.Run("by toAccount filter with cursor", func(t *testing.T) {
+			// Set filters for FromAccount and AcountTo IDs
+			filter := &entities.LedgerEntryFilter{
+				FromAccountFilter: entities.AccountFilter{},
+				ToAccountFilter: entities.AccountFilter{
+					AssetID:  asset2.ID,
+					PartyIDs: []entities.PartyID{parties[3].ID},
+				},
+			}
+
+			first := int32(2)
+
+			cursor, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+			require.NoError(t, err)
+
+			entries, _, err := ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				cursor,
+			)
+
+			assert.NoError(t, err)
+			// Output entries for accounts positions:
+			// 6->7, 6->7, 6->7
+			assert.NotNil(t, entries)
+			assert.Equal(t, 2, len(*entries))
+			for _, e := range *entries {
+				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				if e.Quantity.Abs().String() == strconv.Itoa(80) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
+				}
+
+				if e.Quantity.Abs().String() == strconv.Itoa(9) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
+				}
+
+				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
+			}
+
+			filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+
+			entries, _, err = ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.NoError(t, err)
+			// Output entries for accounts positions:
+			// None
+			assert.NotNil(t, entries)
+			assert.Equal(t, 0, len(*entries))
+		})
+
 		t.Run("by fromAccount+toAccount filters", func(t *testing.T) {
 			t.Run("open", func(t *testing.T) {
 				// Set filters for FromAccount and AcountTo IDs

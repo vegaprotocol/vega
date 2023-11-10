@@ -4,6 +4,7 @@
 
 ### 🐛 Fixes
 - [10036](https://github.com/vegaprotocol/vega/issues/10036) - Average entry price no longer flickers after a trade.
+- [10041](https://github.com/vegaprotocol/vega/issues/10041) List ledger entries `API` errors when using pagination.
 
 ## 0.73.3
 
