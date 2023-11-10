@@ -113,18 +113,22 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	if seller {
 		size *= -1
 	}
-	marketPrice, _ := num.DecimalFromString(trade.AssetPrice) // this is market price
+	assetPrice, _ := num.DecimalFromString(trade.AssetPrice)
+	marketPrice, _ := num.DecimalFromString(trade.Price)
+
 	// Scale the trade to the correct size
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
-	realisedPnlDelta := marketPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
+	realisedPnlDelta := assetPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
 	p.PendingOpenVolume -= closed
 
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
-	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, marketPriceUint)
+	assetPriceUint, _ := num.UintFromDecimal(assetPrice)
+
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, assetPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(marketPrice, pf)
+	p.pendingMTM(assetPrice, pf)
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
