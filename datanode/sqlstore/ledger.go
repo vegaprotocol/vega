@@ -45,7 +45,7 @@ import (
 )
 
 var aggregateLedgerEntriesOrdering = TableOrdering{
-	ColumnOrdering{Name: "ledger_entry_time", Sorting: ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 const (
@@ -355,7 +355,7 @@ func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entiti
 	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
 
 	whereQuery := fmt.Sprintf(`SELECT
-			vega_time, quantity, transfer_type, asset_id,
+			ledger_entry_time as vega_time, quantity, transfer_type, asset_id,
 			account_from_market_id, account_from_party_id, account_from_account_type,
 			account_to_market_id, account_to_party_id, account_to_account_type,
 			account_from_balance, account_to_balance
