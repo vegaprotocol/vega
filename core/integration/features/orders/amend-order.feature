@@ -9,27 +9,47 @@ Feature: Amend orders
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: Amend rejected for non existing order
+  Scenario: Amend rejected for non existing order, amend the order to cancel 0004-AMND-058
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party | asset | amount |
       | myboi | BTC   | 10000  |
       | aux   | BTC   | 100000 |
+      | aux1  | BTC   | 100000 |
       | aux2  | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |reference |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |      |
+      | aux   | ETH/DEC19 | sell | 3      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |aux_s |
+      | aux1  | ETH/DEC19 | sell | 3      | 10002 | 0                | TYPE_LIMIT | TIF_GTC |aux_s1|
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |      |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |      |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+
+    #0004-AMND-058: Size change amends which would result in the remaining part of the order being reduced below zero should instead cancel the order
+    Then the parties amend the following orders:
+      | party | reference | price | size delta | tif    |  
+      | aux   | aux_s     | 10001 | -4        | TIF_GTC | 
+
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | aux    |aux_s      | STATUS_CANCELLED |
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 10001 | 0      |
+
+    #0004-AMND-059:A transaction specifying both a `sizeDelta` and `size` field should be rejected as invalid
+    Then the parties amend the following orders:
+      | party | reference | price | size delta | tif     | size | 
+      | aux1  | aux_s1    | 10002 | -1         | TIF_GTC | 1    |
 
     # cancel the order, so we cannot edit it.
     And the parties cancel the following orders:
@@ -88,7 +108,7 @@ Feature: Amend orders
       | party | market id | reference   | side | volume | remaining | price | status        |
       | myboi | ETH/DEC19 | myboi-ref-1 | sell | 8      | 5         | 2     | STATUS_ACTIVE |
 
-     # reducing size with target
+    # reducing size with target
     When the parties amend the following orders:
       | party | reference   | price | size | tif     |
       | myboi | myboi-ref-1 | 0     | 6    | TIF_GTC |
