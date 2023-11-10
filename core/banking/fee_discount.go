@@ -83,17 +83,7 @@ func (r *feeDiscount) ApplyDiscount(theoreticalFee *num.Uint) (discountedFee, di
 }
 
 func (r *feeDiscount) CalculateDiscount(theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
-	theoreticalFeeD := theoreticalFee.ToDecimal()
-	// min(accumulatedDiscount-theoreticalFee,0)
-	feeD := num.MinD(
-		r.accumulatedDiscount.ToDecimal().Sub(theoreticalFee.ToDecimal()),
-		num.DecimalZero(),
-	).Neg()
-
-	appliedDiscount, _ := num.UintFromDecimal(theoreticalFeeD.Sub(feeD))
-	// -fee
-	discountedFee, _ = num.UintFromDecimal(feeD)
-	return discountedFee, appliedDiscount
+	return calculateDiscount(r.accumulatedDiscount, theoreticalFee)
 }
 
 func (r *feeDiscount) UpdateDiscountWindow(window int) {
@@ -209,4 +199,18 @@ func (e *Engine) EstimateFeeDiscount(asset string, party string, fee *num.Uint) 
 	}
 
 	return e.feeDiscountPerPartyAndAsset[key].CalculateDiscount(fee)
+}
+
+func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
+	theoreticalFeeD := theoreticalFee.ToDecimal()
+	// min(accumulatedDiscount-theoreticalFee,0)
+	feeD := num.MinD(
+		accumulatedDiscount.ToDecimal().Sub(theoreticalFee.ToDecimal()),
+		num.DecimalZero(),
+	).Neg()
+
+	appliedDiscount, _ := num.UintFromDecimal(theoreticalFeeD.Sub(feeD))
+	// -fee
+	discountedFee, _ = num.UintFromDecimal(feeD)
+	return discountedFee, appliedDiscount
 }

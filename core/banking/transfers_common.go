@@ -225,21 +225,15 @@ func (e *Engine) calculateFeeTransferForTransfer(
 	fromAccountType types.AccountType,
 	to string,
 ) *num.Uint {
-	feeAmount := num.UintZero()
-
-	// no fee for Vested account
-	if fromAccountType == types.AccountTypeVestedRewards && from == to {
-		return feeAmount
-	}
-
-	// now we calculate the fee
-	// min(transfer amount * transfer.fee.factor, transfer.fee.maxQuantumAmount * quantum)
-	feeAmount, _ = num.UintFromDecimal(num.MinD(
-		amount.ToDecimal().Mul(e.transferFeeFactor),
-		e.maxQuantumAmount.Mul(asset.Details.Quantum),
-	))
-
-	return feeAmount
+	return calculateFeeForTransfer(
+		asset.Details.Quantum,
+		e.maxQuantumAmount,
+		e.transferFeeFactor,
+		amount,
+		from,
+		fromAccountType,
+		to,
+	)
 }
 
 func (e *Engine) makeFeeTransferForFundsTransfer(

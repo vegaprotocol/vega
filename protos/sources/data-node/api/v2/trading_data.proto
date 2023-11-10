@@ -7,6 +7,7 @@ import "google/api/httpbody.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "vega/assets.proto";
 import "vega/commands/v1/validator_commands.proto";
+import "vega/commands/v1/commands.proto";
 import "vega/events/v1/events.proto";
 import "vega/governance.proto";
 import "vega/markets.proto";
@@ -874,6 +875,14 @@ service TradingDataService {
   rpc ObserveTransactionResults(ObserveTransactionResultsRequest) returns (stream ObserveTransactionResultsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransactionResults"};
   }
+
+  // Estimate transfer fee costs
+  //
+  // Estimate transfer fee costs with potential discount applied
+  rpc EstimateTransferFee(EstimateTransferFeeRequest) returns (EstimateTransferFeeResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "EstimateTransferFee"};
+  }
+
 
   // Export network history as CSV
   //
@@ -4320,4 +4329,17 @@ message ObserveTransactionResultsRequest {
 message ObserveTransactionResultsResponse {
   // List of 0 or more transaction results.
   repeated vega.events.v1.TransactionResult transaction_results = 1;
+}
+
+message EstimateTransferFeeRequest {
+  string from_account = 1;
+	vega.AccountType from_account_type = 2;
+	string to_account = 3;
+	string amount = 4;
+  string asset_id = 5;
+}
+
+message EstimateTransferFeeResponse {
+  string fee = 1;
+  string discount = 2;
 }

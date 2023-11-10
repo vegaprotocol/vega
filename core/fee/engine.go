@@ -103,8 +103,8 @@ func (e *Engine) GetState(assetQuantum num.Decimal) *eventspb.FeesStats {
 	return e.feesStats.ToProto(e.asset, assetQuantum)
 }
 
-func (e *Engine) TotalMakerFeesGenerated() map[string]*num.Uint {
-	return e.feesStats.TotalMakerFeesGenerated()
+func (e *Engine) TotalMakerFeesPerParty() map[string]*num.Uint {
+	return e.feesStats.TotalMakerFeesPerParty()
 }
 
 func (e *Engine) GetFeesStatsOnEpochEnd(assetQuantum num.Decimal) (FeesStats *eventspb.FeesStats) {

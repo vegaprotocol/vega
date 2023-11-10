@@ -2898,7 +2898,7 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		feesStats.EpochSeq = epoch.Seq
 		feesStats.Market = m.GetID()
 
-		m.banking.RegisterTakerFees(ctx, feesStats.Asset, m.fee.TotalMakerFeesGenerated())
+		m.banking.RegisterTakerFees(ctx, feesStats.Asset, m.fee.TotalMakerFeesPerParty())
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 }

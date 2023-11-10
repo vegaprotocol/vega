@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS transfer_fees_discount (
       PRIMARY KEY (party_id, asset_id, vega_time)
 );
 
-CREATE INDEX transfer_fees_discount_party_id_idx ON transfer_fees(party_id);
-CREATE INDEX transfer_fees_discount_asset_id_idx ON transfer_fees(asset_id);
+CREATE INDEX transfer_fees_discount_party_id_idx ON transfer_fees_discount(party_id);
+CREATE INDEX transfer_fees_discount_asset_id_idx ON transfer_fees_discount(asset_id);
 
 -- +goose Down
 ALTER TABLE transfer_fees DROP COLUMN discount_applied;

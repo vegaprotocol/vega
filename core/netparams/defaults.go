@@ -41,12 +41,12 @@ var (
 	lteD1000 = DecimalLTE(num.DecimalFromInt64(1000))
 
 	// Uints.
-	gteU0    = UintGTE(num.UintZero())
-	lteU1    = UintLTE(num.NewUint(1))
-	gteU1    = UintGTE(num.NewUint(1))
-	gteU5    = UintGTE(num.NewUint(5))
-	ltMaxU   = UintLT(num.MaxUint())
-	lteU1000 = UintLTE(num.NewUint(1000))
+	gteU0  = UintGTE(num.UintZero())
+	lteU1  = UintLTE(num.NewUint(1))
+	gteU1  = UintGTE(num.NewUint(1))
+	gteU5  = UintGTE(num.NewUint(5))
+	ltMaxU = UintLT(num.MaxUint())
+	lteU60 = UintLTE(num.NewUint(60))
 
 	// Ints.
 	gteI0    = IntGTE(0)
@@ -261,7 +261,7 @@ func defaultNetParams() map[string]value {
 		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
 		TransferFeeMaxQuantumAmount:        NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
-		TransferFeeDiscountNumOfEpoch:      NewUint(gteU0, lteU1000).Mutable(true).MustUpdate("30"),
+		TransferFeeDiscountNumOfEpoch:      NewUint(gteU0, lteU60).Mutable(true).MustUpdate("30"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
