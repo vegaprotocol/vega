@@ -13,7 +13,7 @@
 ### 🛠 Improvements
 
 - [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
-- [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction. 
+- [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction.
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
 - [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
 - [10004](https://github.com/vegaprotocol/vega/issues/10004) Track average entry price in position engine
@@ -29,6 +29,7 @@
 - [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
 - [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
 - [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
+- [10041](https://github.com/vegaprotocol/vega/issues/10041) List ledger entries `API` errors when using pagination.
 
 ## 0.73.0
 
@@ -65,7 +66,7 @@
 - [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
 - [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
-- [9483](https://github.com/vegaprotocol/vega/issues/9483) - Zip history segments only once 
+- [9483](https://github.com/vegaprotocol/vega/issues/9483) - Zip history segments only once
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
 - [9678](https://github.com/vegaprotocol/vega/issues/9678) - Cache and forward referral rewards multiplier and factor multiplier
