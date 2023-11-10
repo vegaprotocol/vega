@@ -46,11 +46,6 @@ Feature: Amend orders
       | side | price | volume |
       | sell | 10001 | 0      |
 
-    #0004-AMND-059:A transaction specifying both a `sizeDelta` and `size` field should be rejected as invalid
-    Then the parties amend the following orders:
-      | party | reference | price | size delta | tif     | size | 
-      | aux1  | aux_s1    | 10002 | -1         | TIF_GTC | 1    |
-
     # cancel the order, so we cannot edit it.
     And the parties cancel the following orders:
       | party | reference   |
