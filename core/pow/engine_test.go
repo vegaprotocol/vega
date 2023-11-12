@@ -173,6 +173,7 @@ func TestMempoolTidRejection(t *testing.T) {
 	res, d := e.CheckBlockTx(tx1)
 	e.rollback([]ValidationEntry{{Tx: tx1, Difficulty: d, ValResult: res}})
 	e.BeginBlock(101, crypto.RandomHash(), []abci.Tx{tx1})
+	e.OnCommit()
 	require.Equal(t, 1, len(e.seenTid))
 	_, ok := e.seenTid["2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4"]
 	require.True(t, ok)

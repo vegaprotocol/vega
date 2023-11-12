@@ -30,7 +30,8 @@
 - [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
 - [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
 - [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
-- [10041](https://github.com/vegaprotocol/vega/issues/10041) List ledger entries `API` errors when using pagination.
+- [10041](https://github.com/vegaprotocol/vega/issues/10041) - List ledger entries `API` errors when using pagination.
+- [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit. 
 
 ## 0.73.0
 
