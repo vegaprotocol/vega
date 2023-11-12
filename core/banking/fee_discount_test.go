@@ -24,12 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// | Epoch                    | 1  | 2  |  3 |  4 |
-// | ------------------------ |---------|----|----|
-// | taker fee paid           | 10 | 20 | 5  | 8  |
-// | accumulated discount     | 0  | 10 | 20 | 22 |
-// | transfer fee theoretical | 5  | 15 | 3  | 4  |
-// | transfer fee paid        | 5  | 5  | 0  | 0  |
 func TestBankingApplyFeeDiscount(t *testing.T) {
 	eng := getTestEngine(t)
 
@@ -40,8 +34,9 @@ func TestBankingApplyFeeDiscount(t *testing.T) {
 	asset := "vega"
 	party := "party-1"
 
-	// set 2 epochs discount window
-	eng.OnFeeDiscountNumOfEpochUpdate(context.Background(), num.NewUint(2))
+	eng.OnTransferFeeDiscountDecayFractionUpdate(context.Background(), num.DecimalFromFloat(0.5))
+
+	assert.Equal(t, "0", eng.AvailableFeeDiscount(asset, party).String())
 
 	// expect the whole fee to be paid
 	discountedFee, discount := eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(5))
@@ -50,6 +45,8 @@ func TestBankingApplyFeeDiscount(t *testing.T) {
 	// move to another epoch
 	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(10)})
 
+	assert.Equal(t, "10", eng.AvailableFeeDiscount(asset, party).String())
+
 	// expect discount of 10 to be applied
 	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(15))
 	assert.Equal(t, "5", discountedFee.String())
@@ -57,13 +54,21 @@ func TestBankingApplyFeeDiscount(t *testing.T) {
 	// move to another epoch
 	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(20)})
 
+	assert.Equal(t, "20", eng.AvailableFeeDiscount(asset, party).String())
+
 	// expect discount of 3 to be applied
 	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(3))
 	assert.Equal(t, "0", discountedFee.String())
 	assert.Equal(t, "3", discount.String())
 
+	assert.Equal(t, "17", eng.AvailableFeeDiscount(asset, party).String())
+
 	// move to another epoch
 	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(5)})
+
+	// it's 13 because 9 was decayed and extra 5 added = 17-8+5
+	assert.Equal(t, "13", eng.AvailableFeeDiscount(asset, party).String())
+
 	// expect discount of 4 to be applied
 	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(4))
 	assert.Equal(t, "0", discountedFee.String())

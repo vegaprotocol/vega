@@ -27,96 +27,6 @@ type partyAssetKey struct {
 	asset string
 }
 
-type feeDiscount struct {
-	paidTakerFees       []*num.Uint
-	pos                 int
-	accumulatedDiscount *num.Uint
-	usedDiscount        *num.Uint
-}
-
-func newFeeDiscount(window int) *feeDiscount {
-	return &feeDiscount{
-		paidTakerFees:       make([]*num.Uint, window),
-		pos:                 0,
-		usedDiscount:        num.UintZero(),
-		accumulatedDiscount: num.UintZero(),
-	}
-}
-
-// AddTakerFee adds a new taker fee to the slice and accumulates all fees into discount.
-func (r *feeDiscount) AddTakerFee(val *num.Uint) {
-	r.paidTakerFees[r.pos] = val
-	r.accumulateDiscount()
-
-	if r.pos == cap(r.paidTakerFees)-1 {
-		r.pos = 0
-		return
-	}
-	r.pos++
-}
-
-func (r *feeDiscount) AccumulatedDiscount() *num.Uint {
-	return r.accumulatedDiscount.Clone()
-}
-
-func (r *feeDiscount) accumulateDiscount() {
-	r.accumulatedDiscount = num.UintZero()
-
-	for _, v := range r.paidTakerFees {
-		if v != nil {
-			r.accumulatedDiscount.AddSum(v)
-		}
-	}
-
-	r.accumulatedDiscount.Sub(r.accumulatedDiscount, r.usedDiscount)
-	r.usedDiscount = num.UintZero()
-}
-
-// ApplyDiscount applies a portion of the accumulated discount to the fee and return the discounted fee amount.
-func (r *feeDiscount) ApplyDiscount(theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
-	discountedFee, discount = r.CalculateDiscount(theoreticalFee)
-
-	r.usedDiscount.AddSum(discount)
-	r.accumulatedDiscount.Sub(r.accumulatedDiscount, r.usedDiscount)
-
-	return discountedFee, discount
-}
-
-func (r *feeDiscount) CalculateDiscount(theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
-	return calculateDiscount(r.accumulatedDiscount, theoreticalFee)
-}
-
-func (r *feeDiscount) UpdateDiscountWindow(window int) {
-	currentCap := cap(r.paidTakerFees)
-	if currentCap == window {
-		return
-	}
-
-	new := make([]*num.Uint, window)
-
-	// decrease
-	if window < currentCap {
-		new = r.paidTakerFees[currentCap-window:]
-		r.paidTakerFees = new
-		r.pos = 0
-		return
-	}
-
-	// increase
-	for i := 0; i < currentCap; i++ {
-		new[i] = r.paidTakerFees[i]
-	}
-
-	r.paidTakerFees = new
-	r.pos = currentCap
-}
-
-func (e *Engine) updateDiscountsWindows() {
-	for key := range e.feeDiscountPerPartyAndAsset {
-		e.feeDiscountPerPartyAndAsset[key].UpdateDiscountWindow(e.feeDiscountNumOfEpoch)
-	}
-}
-
 func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
 	return partyAssetKey{party: party, asset: asset}
 }
@@ -125,39 +35,47 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
 
 	updatedKeys := map[partyAssetKey]struct{}{}
-
-	zero := num.UintZero()
 	for party, fee := range feesPerParty {
 		key := e.feeDiscountKey(asset, party)
 		updatedKeys[key] = struct{}{}
 
 		if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
-			e.feeDiscountPerPartyAndAsset[key] = newFeeDiscount(e.feeDiscountNumOfEpoch)
+			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
 		}
 
-		e.feeDiscountPerPartyAndAsset[key].AddTakerFee(fee)
+		// apply decay if not zero
+		if !e.feeDiscountPerPartyAndAsset[key].IsZero() {
+			decayedDiscount, _ := num.UintFromDecimal(e.feeDiscountPerPartyAndAsset[key].ToDecimal().Mul(e.feeDiscountDecayFraction))
+			e.feeDiscountPerPartyAndAsset[key] = decayedDiscount
+		}
+
+		// add fees
+		e.feeDiscountPerPartyAndAsset[key].Add(e.feeDiscountPerPartyAndAsset[key], fee)
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			party,
 			asset,
-			e.feeDiscountPerPartyAndAsset[key].AccumulatedDiscount(),
+			e.feeDiscountPerPartyAndAsset[key].Clone(),
 			e.currentEpoch,
 		))
 	}
-
 	for key := range e.feeDiscountPerPartyAndAsset {
 		if _, ok := updatedKeys[key]; ok {
 			continue
 		}
 
-		e.feeDiscountPerPartyAndAsset[key].AddTakerFee(zero)
+		// apply decay if not zero
+		if !e.feeDiscountPerPartyAndAsset[key].IsZero() {
+			decayedDiscount, _ := num.UintFromDecimal(e.feeDiscountPerPartyAndAsset[key].ToDecimal().Mul(e.feeDiscountDecayFraction))
+			e.feeDiscountPerPartyAndAsset[key] = decayedDiscount
+		}
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			key.party,
 			asset,
-			e.feeDiscountPerPartyAndAsset[key].AccumulatedDiscount(),
+			e.feeDiscountPerPartyAndAsset[key].Clone(),
 			e.currentEpoch,
 		))
 	}
@@ -166,25 +84,23 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 }
 
 func (e *Engine) ApplyFeeDiscount(ctx context.Context, asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
-	if fee.IsZero() {
-		return fee, num.UintZero()
+	discountedFee, discount = e.EstimateFeeDiscount(asset, party, fee)
+	if discount.IsZero() {
+		return discountedFee, discount
 	}
 
 	key := e.feeDiscountKey(asset, party)
-
-	if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
-		return fee, num.UintZero()
-	}
-
 	defer e.broker.Send(
 		events.NewTransferFeesDiscountUpdated(ctx,
 			party, asset,
-			e.feeDiscountPerPartyAndAsset[key].AccumulatedDiscount(),
+			e.feeDiscountPerPartyAndAsset[key].Clone(),
 			e.currentEpoch,
 		),
 	)
 
-	return e.feeDiscountPerPartyAndAsset[key].ApplyDiscount(fee)
+	e.feeDiscountPerPartyAndAsset[key].Sub(e.feeDiscountPerPartyAndAsset[key], discount)
+
+	return discountedFee, discount
 }
 
 func (e *Engine) EstimateFeeDiscount(asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
@@ -193,12 +109,22 @@ func (e *Engine) EstimateFeeDiscount(asset string, party string, fee *num.Uint) 
 	}
 
 	key := e.feeDiscountKey(asset, party)
-
-	if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
+	accumulatedDiscount, ok := e.feeDiscountPerPartyAndAsset[key]
+	if !ok {
 		return fee, num.UintZero()
 	}
 
-	return e.feeDiscountPerPartyAndAsset[key].CalculateDiscount(fee)
+	return calculateDiscount(accumulatedDiscount, fee)
+}
+
+func (e *Engine) AvailableFeeDiscount(asset string, party string) *num.Uint {
+	key := e.feeDiscountKey(asset, party)
+
+	if discount, ok := e.feeDiscountPerPartyAndAsset[key]; ok {
+		return discount.Clone()
+	}
+
+	return num.UintZero()
 }
 
 func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {

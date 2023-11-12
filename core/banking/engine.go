@@ -162,8 +162,8 @@ type Engine struct {
 	minTransferQuantumMultiple num.Decimal
 	maxQuantumAmount           num.Decimal
 
-	feeDiscountNumOfEpoch       int
-	feeDiscountPerPartyAndAsset map[partyAssetKey]*feeDiscount
+	feeDiscountDecayFraction    num.Decimal
+	feeDiscountPerPartyAndAsset map[partyAssetKey]*num.Uint
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer
@@ -240,7 +240,7 @@ func New(
 		bridgeState: &bridgeState{
 			active: true,
 		},
-		feeDiscountPerPartyAndAsset: map[partyAssetKey]*feeDiscount{},
+		feeDiscountPerPartyAndAsset: map[partyAssetKey]*num.Uint{},
 		bridgeView:                  bridgeView,
 	}
 }

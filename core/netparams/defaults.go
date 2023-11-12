@@ -261,7 +261,7 @@ func defaultNetParams() map[string]value {
 		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
 		TransferFeeMaxQuantumAmount:        NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
-		TransferFeeDiscountNumOfEpoch:      NewUint(gteU0, lteU60).Mutable(true).MustUpdate("30"),
+		TransferFeeDiscountDecayFraction:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),

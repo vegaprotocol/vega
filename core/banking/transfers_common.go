@@ -41,10 +41,8 @@ func (e *Engine) OnMaxQuantumAmountUpdate(ctx context.Context, f num.Decimal) er
 	return nil
 }
 
-func (e *Engine) OnFeeDiscountNumOfEpochUpdate(ctx context.Context, v *num.Uint) error {
-	e.feeDiscountNumOfEpoch = int(v.Uint64())
-	e.updateDiscountsWindows()
-
+func (e *Engine) OnTransferFeeDiscountDecayFractionUpdate(ctx context.Context, v num.Decimal) error {
+	e.feeDiscountDecayFraction = v
 	return nil
 }
 
