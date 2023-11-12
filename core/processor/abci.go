@@ -111,7 +111,7 @@ type PoWEngine interface {
 	EndPrepareProposal([]pow.ValidationEntry)
 	CheckTx(tx abci.Tx) error
 	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
-	OnFinalize()
+	OnCommit()
 }
 
 //nolint:interfacebloat
@@ -1091,9 +1091,6 @@ func (app *App) Finalize() []byte {
 	// Update response and save the apphash incase we lose connection with tendermint and need to verify our
 	// current state
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(appHash)))
-	if !app.nilPow {
-		app.pow.OnFinalize()
-	}
 	return appHash
 }
 
@@ -1102,6 +1099,9 @@ func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 	app.updateStats()
 	app.setBatchStats()
+	if !app.nilPow {
+		app.pow.OnCommit()
+	}
 	app.broker.Send(
 		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
 			Height: app.stats.Height(),

@@ -178,7 +178,6 @@ func (e *Engine) EndPrepareProposal(txs []ValidationEntry) {
 
 // updatePowState updates the pow state given the block transaction and cleans up out of scope states and param sets.
 func (e *Engine) updatePowState(txs []abci.Tx) {
-	e.mempoolSeenTid = map[string]struct{}{}
 	// run this once for migration cleanup
 	// this is going to clean up blocks that belong to inactive states which are unreachable by the latter loop.
 	if e.lastPruningBlock == 0 {
@@ -289,10 +288,13 @@ func (e *Engine) updatePowState(txs []abci.Tx) {
 	}
 }
 
-// OnFinalize is called when the finalizeBlock is completed to clenup the mempool cache.
-func (e *Engine) OnFinalize() {
-	e.log.Info("mempool seen cleared")
-	e.log.Debug("OnFinalize")
+// OnCommit is called when the finalizeBlock is completed to clenup the mempool cache.
+func (e *Engine) OnCommit() {
+	e.log.Debug("OnCommit")
+	e.log.Debug("mempool seen cleared")
+	e.lock.Lock()
+	e.mempoolSeenTid = map[string]struct{}{}
+	e.lock.Unlock()
 }
 
 func (e *Engine) DisableVerification() {
