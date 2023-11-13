@@ -91,6 +91,7 @@ var (
 	ErrIsLimitedTo255Characters                        = errors.New("is limited to 255 characters")
 	ErrCannotBeBlank                                   = errors.New("cannot be blank")
 	ErrIsDuplicated                                    = errors.New("is duplicated")
+	ErrNoUpdatesProvided                               = errors.New("no updates provided")
 )
 
 type Errors map[string][]error
