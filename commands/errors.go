@@ -93,6 +93,7 @@ var (
 	ErrIsDuplicated                                    = errors.New("is duplicated")
 	ErrIsDisabled                                      = errors.New("is disabled")
 	ErrMustBeAtMost250                                 = errors.New("must be at most 250")
+	ErrNoUpdatesProvided                               = errors.New("no updates provided")
 )
 
 type Errors map[string][]error
