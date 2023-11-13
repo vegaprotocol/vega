@@ -911,6 +911,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.limits.OnLimitsProposePerpsMarketEnabledFromUpdate,
 		},
 		{
+			Param:   netparams.AMMMarketTradingEnabled,
+			Watcher: svcs.limits.OnLimitsProposeAMMEnabledUpdate,
+		},
+		{
 			Param:   netparams.LimitsProposeAssetEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeAssetEnabledFromUpdate,
 		},
