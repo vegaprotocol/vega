@@ -576,6 +576,7 @@ type LimitState struct {
 	ProposeSpotMarketEnabled  bool
 	ProposePerpsMarketEnabled bool
 	ProposeAssetEnabled       bool
+	CanUseAMMEnabled          bool
 	ProposeMarketEnabledFrom  time.Time
 	ProposeAssetEnabledFrom   time.Time
 }
@@ -2523,6 +2524,7 @@ func LimitFromProto(l *snapshot.LimitState) *LimitState {
 		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
 		ProposeAssetEnabledFrom:   time.Time{},
 		ProposeMarketEnabledFrom:  time.Time{},
+		CanUseAMMEnabled:          l.CanUseAmmEnabled,
 	}
 
 	if l.ProposeAssetEnabledFrom != -1 {
@@ -3339,6 +3341,7 @@ func (l *LimitState) IntoProto() *snapshot.LimitState {
 		ProposeAssetEnabled:       l.ProposeAssetEnabled,
 		ProposeMarketEnabledFrom:  l.ProposeMarketEnabledFrom.UnixNano(),
 		ProposeAssetEnabledFrom:   l.ProposeAssetEnabledFrom.UnixNano(),
+		CanUseAmmEnabled:          l.CanUseAMMEnabled,
 	}
 
 	// Use -1 to mean it hasn't been set
