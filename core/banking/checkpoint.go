@@ -340,20 +340,6 @@ func (e *Engine) getScheduledGovernanceTransfers() []*checkpoint.ScheduledGovern
 	return out
 }
 
-func (e *Engine) getTransferFeeDiscounts() []*checkpoint.ScheduledGovernanceTransferAtTime {
-	out := make([]*checkpoint.ScheduledGovernanceTransferAtTime, 0, len(e.scheduledGovernanceTransfers))
-
-	for k, v := range e.scheduledGovernanceTransfers {
-		transfers := make([]*checkpoint.GovernanceTransfer, 0, len(v))
-		for _, v := range v {
-			transfers = append(transfers, v.IntoProto())
-		}
-		out = append(out, &checkpoint.ScheduledGovernanceTransferAtTime{DeliverOn: k, Transfers: transfers})
-	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
-	return out
-}
-
 func (e *Engine) getAssetActions() []*types.AssetAction {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
