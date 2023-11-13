@@ -147,4 +147,3 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "1500" for the market "ETH/DEC20"
     And the global insurance pool balance should be "500" for the asset "ETH"
-
