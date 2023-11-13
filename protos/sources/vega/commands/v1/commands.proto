@@ -426,3 +426,51 @@ message UpdatePartyProfile {
   // Support a maximum of 10 entries.
   repeated vega.Metadata metadata = 2;
 }
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message SubmitAMM {
+  // The market for which to create an AMM pool.
+  string market_id = 1;
+  // The amount to be committed to the pool.
+  string commitment_amount = 2;
+  // Wsed for rebasing position when creating/updating AMM
+  string slippage_tolerance = 3;
+  // The concentrated liquidity parameters.
+  ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+
+  message ConcentratedLiquidityParameters {
+    // The upper price bound configuration for the pool.
+    string upper_bound = 1;
+    // The lower price bound configuration for the pool.
+    string lower_bound = 2;
+    // The base price bound configuration for the pool.
+    string base = 3;
+  }
+}
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message AmendAMM {
+  // The id of the market we want to amend the AMM pool.
+  string market_id = 1;
+  // The amount to be committed to the pool.
+  optional string commitment_amount = 2;
+  // Wsed for rebasing position when creating/updating AMM
+  string slippage_tolerance = 3;
+  // The concentrated liquidity parameters.
+  optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+
+  message ConcentratedLiquidityParameters {
+    // The upper price bound configuration for the pool.
+    optional string upper_bound = 3;
+    // The lower price bound configuration for the pool.
+    optional string lower_bound = 4;
+    // The base price bound configuration for the pool.
+    optional string base = 5;
+  }
+}
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message CancelAMM {
+  // The market ID.
+  string market_id = 1;
+}
