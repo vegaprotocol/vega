@@ -320,6 +320,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimatePosition(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimatePosition", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimatePosition), varargs...)
 }
 
+// EstimateTransferFee mocks base method.
+func (m *MockTradingDataServiceClientV2) EstimateTransferFee(arg0 context.Context, arg1 *v2.EstimateTransferFeeRequest, arg2 ...grpc.CallOption) (*v2.EstimateTransferFeeResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "EstimateTransferFee", varargs...)
+	ret0, _ := ret[0].(*v2.EstimateTransferFeeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EstimateTransferFee indicates an expected call of EstimateTransferFee.
+func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateTransferFee(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateTransferFee", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimateTransferFee), varargs...)
+}
+
 // ExportLedgerEntries mocks base method.
 func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ExportLedgerEntriesClient, error) {
 	m.ctrl.T.Helper()
@@ -1038,6 +1058,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetStopOrder(arg0, arg1 in
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStopOrder", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetStopOrder), varargs...)
+}
+
+// GetTotalTransferFeeDiscount mocks base method.
+func (m *MockTradingDataServiceClientV2) GetTotalTransferFeeDiscount(arg0 context.Context, arg1 *v2.GetTotalTransferFeeDiscountRequest, arg2 ...grpc.CallOption) (*v2.GetTotalTransferFeeDiscountResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetTotalTransferFeeDiscount", varargs...)
+	ret0, _ := ret[0].(*v2.GetTotalTransferFeeDiscountResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalTransferFeeDiscount indicates an expected call of GetTotalTransferFeeDiscount.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetTotalTransferFeeDiscount(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalTransferFeeDiscount", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetTotalTransferFeeDiscount), varargs...)
 }
 
 // GetTransfer mocks base method.

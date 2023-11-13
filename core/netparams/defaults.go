@@ -257,11 +257,12 @@ func defaultNetParams() map[string]value {
 		MinimumEthereumEventsForNewValidator:       NewUint(gteU0).Mutable(true).MustUpdate("3"),
 
 		// transfers
-		TransferFeeFactor:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
-		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
-		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
-		TransferFeeMaxQuantumAmount:        NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
-		TransferFeeDiscountDecayFraction:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		TransferFeeFactor:                       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
+		TransferMinTransferQuantumMultiple:      NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
+		TransferMaxCommandsPerEpoch:             NewInt(gteI0).Mutable(true).MustUpdate("20"),
+		TransferFeeMaxQuantumAmount:             NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
+		TransferFeeDiscountDecayFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		TransferFeeDiscountMinimumTrackedAmount: NewDecimal(gteD0).Mutable(true).MustUpdate("0.001"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),

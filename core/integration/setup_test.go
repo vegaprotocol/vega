@@ -424,6 +424,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.banking.OnTransferFeeDiscountDecayFractionUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: execsetup.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.MaxPeggedOrders,
 			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
 		},

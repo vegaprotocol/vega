@@ -46,6 +46,11 @@ func (e *Engine) OnTransferFeeDiscountDecayFractionUpdate(ctx context.Context, v
 	return nil
 }
 
+func (e *Engine) OnTransferFeeDiscountMinimumTrackedAmountUpdate(ctx context.Context, v num.Decimal) error {
+	e.feeDiscountMinimumTrackedAmount = v
+	return nil
+}
+
 func (e *Engine) TransferFunds(
 	ctx context.Context,
 	transfer *types.TransferFunds,

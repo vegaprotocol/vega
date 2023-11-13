@@ -740,3 +740,7 @@ models:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EntityScope
   DistributionStrategy:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DistributionStrategy
+  TotalTransferFeeDiscount:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetTotalTransferFeeDiscountResponse
+  EstimatedTransferFee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateTransferFeeResponse

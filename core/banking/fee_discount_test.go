@@ -19,59 +19,96 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/assets/builtin"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBankingApplyFeeDiscount(t *testing.T) {
-	eng := getTestEngine(t)
-
-	ctx := context.Background()
-	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	asset := "vega"
+func TestBankingTransactionFeeDiscount(t *testing.T) {
 	party := "party-1"
+	asset := assets.NewAsset(builtin.New("vega", &types.AssetDetails{
+		Name:    "vega",
+		Symbol:  "vega",
+		Quantum: num.DecimalFromFloat(10),
+	}))
+	assetID := asset.Type().ID
 
-	eng.OnTransferFeeDiscountDecayFractionUpdate(context.Background(), num.DecimalFromFloat(0.5))
+	t.Run("decay amount", func(t *testing.T) {
+		eng := getTestEngine(t)
 
-	assert.Equal(t, "0", eng.AvailableFeeDiscount(asset, party).String())
+		ctx := context.Background()
+		eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+		eng.assets.EXPECT().Get(gomock.Any()).Return(asset, nil).AnyTimes()
 
-	// expect the whole fee to be paid
-	discountedFee, discount := eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(5))
-	assert.Equal(t, "5", discountedFee.String())
-	assert.Equal(t, "0", discount.String())
-	// move to another epoch
-	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(10)})
+		eng.OnTransferFeeDiscountDecayFractionUpdate(context.Background(), num.DecimalFromFloat(0.5))
+		eng.OnTransferFeeDiscountMinimumTrackedAmountUpdate(context.Background(), num.DecimalFromFloat(1))
 
-	assert.Equal(t, "10", eng.AvailableFeeDiscount(asset, party).String())
+		assert.Equal(t, "0", eng.AvailableFeeDiscount(assetID, party).String())
+		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(50)})
+		assert.Equal(t, "50", eng.AvailableFeeDiscount(assetID, party).String())
+		eng.RegisterTakerFees(ctx, assetID, nil)
+		// decay by half
+		assert.Equal(t, "25", eng.AvailableFeeDiscount(assetID, party).String())
+		eng.RegisterTakerFees(ctx, assetID, nil)
+		// decay by half
+		assert.Equal(t, "12", eng.AvailableFeeDiscount(assetID, party).String())
+		eng.RegisterTakerFees(ctx, assetID, nil)
 
-	// expect discount of 10 to be applied
-	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(15))
-	assert.Equal(t, "5", discountedFee.String())
-	assert.Equal(t, "10", discount.String())
-	// move to another epoch
-	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(20)})
+		// decay by half but it's 0 because decayed amount (6) is less then
+		// asset quantum x TransferFeeDiscountMinimumTrackedAmount (10 x 1)
+		assert.Equal(t, "0", eng.AvailableFeeDiscount(assetID, party).String())
+	})
 
-	assert.Equal(t, "20", eng.AvailableFeeDiscount(asset, party).String())
+	t.Run("apply fee discount", func(t *testing.T) {
+		eng := getTestEngine(t)
 
-	// expect discount of 3 to be applied
-	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(3))
-	assert.Equal(t, "0", discountedFee.String())
-	assert.Equal(t, "3", discount.String())
+		ctx := context.Background()
+		eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+		eng.assets.EXPECT().Get(gomock.Any()).Return(asset, nil).AnyTimes()
 
-	assert.Equal(t, "17", eng.AvailableFeeDiscount(asset, party).String())
+		eng.OnTransferFeeDiscountDecayFractionUpdate(context.Background(), num.DecimalFromFloat(0.5))
 
-	// move to another epoch
-	eng.RegisterTakerFees(ctx, asset, map[string]*num.Uint{party: num.NewUint(5)})
+		assert.Equal(t, "0", eng.AvailableFeeDiscount(assetID, party).String())
 
-	// it's 13 because 9 was decayed and extra 5 added = 17-8+5
-	assert.Equal(t, "13", eng.AvailableFeeDiscount(asset, party).String())
+		// expect the whole fee to be paid
+		discountedFee, discount := eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(5))
+		assert.Equal(t, "5", discountedFee.String())
+		assert.Equal(t, "0", discount.String())
+		// move to another epoch
+		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(10)})
 
-	// expect discount of 4 to be applied
-	discountedFee, discount = eng.ApplyFeeDiscount(ctx, asset, party, num.NewUint(4))
-	assert.Equal(t, "0", discountedFee.String())
-	assert.Equal(t, "4", discount.String())
+		assert.Equal(t, "10", eng.AvailableFeeDiscount(assetID, party).String())
 
+		// expect discount of 10 to be applied
+		discountedFee, discount = eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(15))
+		assert.Equal(t, "5", discountedFee.String())
+		assert.Equal(t, "10", discount.String())
+		// move to another epoch
+		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(20)})
+
+		assert.Equal(t, "20", eng.AvailableFeeDiscount(assetID, party).String())
+
+		// expect discount of 3 to be applied
+		discountedFee, discount = eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(3))
+		assert.Equal(t, "0", discountedFee.String())
+		assert.Equal(t, "3", discount.String())
+
+		assert.Equal(t, "17", eng.AvailableFeeDiscount(assetID, party).String())
+
+		// move to another epoch
+		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(5)})
+
+		// it's 13 because 9 was decayed and extra 5 added = 17-8+5
+		assert.Equal(t, "13", eng.AvailableFeeDiscount(assetID, party).String())
+
+		// expect discount of 4 to be applied
+		discountedFee, discount = eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(4))
+		assert.Equal(t, "0", discountedFee.String())
+		assert.Equal(t, "4", discount.String())
+	})
 }

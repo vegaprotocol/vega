@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type partyAssetKey struct {
@@ -31,23 +32,28 @@ func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
 	return partyAssetKey{party: party, asset: asset}
 }
 
-func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint) {
+func (e *Engine) RegisterTakerFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
+
+	// ensure asset exists
+	asset, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Panic("could not register taker fees, invalid asset", logging.Error(err))
+	}
+
+	assetQuantum := asset.Type().Details.Quantum
 
 	updatedKeys := map[partyAssetKey]struct{}{}
 	for party, fee := range feesPerParty {
-		key := e.feeDiscountKey(asset, party)
+		key := e.feeDiscountKey(assetID, party)
 		updatedKeys[key] = struct{}{}
 
 		if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
 			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
 		}
 
-		// apply decay if not zero
-		if !e.feeDiscountPerPartyAndAsset[key].IsZero() {
-			decayedDiscount, _ := num.UintFromDecimal(e.feeDiscountPerPartyAndAsset[key].ToDecimal().Mul(e.feeDiscountDecayFraction))
-			e.feeDiscountPerPartyAndAsset[key] = decayedDiscount
-		}
+		// apply decay discount amount
+		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
 
 		// add fees
 		e.feeDiscountPerPartyAndAsset[key].Add(e.feeDiscountPerPartyAndAsset[key], fee)
@@ -55,7 +61,7 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			party,
-			asset,
+			assetID,
 			e.feeDiscountPerPartyAndAsset[key].Clone(),
 			e.currentEpoch,
 		))
@@ -65,16 +71,13 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, asset string, feesPerPar
 			continue
 		}
 
-		// apply decay if not zero
-		if !e.feeDiscountPerPartyAndAsset[key].IsZero() {
-			decayedDiscount, _ := num.UintFromDecimal(e.feeDiscountPerPartyAndAsset[key].ToDecimal().Mul(e.feeDiscountDecayFraction))
-			e.feeDiscountPerPartyAndAsset[key] = decayedDiscount
-		}
+		// apply decay discount amount
+		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			key.party,
-			asset,
+			assetID,
 			e.feeDiscountPerPartyAndAsset[key].Clone(),
 			e.currentEpoch,
 		))
@@ -125,6 +128,23 @@ func (e *Engine) AvailableFeeDiscount(asset string, party string) *num.Uint {
 	}
 
 	return num.UintZero()
+}
+
+// decayFeeDiscountAmount update current discount with: discount x e.feeDiscountDecayFraction
+// or 0 if discount is less than e.feeDiscountMinimumTrackedAmount x quantum (where quantum is the asset quantum)
+func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum num.Decimal) *num.Uint {
+	if currentDiscount.IsZero() {
+		return currentDiscount
+	}
+
+	decayedAmount := currentDiscount.ToDecimal().Mul(e.feeDiscountDecayFraction)
+
+	if decayedAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
+		return num.UintZero()
+	}
+
+	decayedAmountUint, _ := num.UintFromDecimal(decayedAmount)
+	return decayedAmountUint
 }
 
 func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {

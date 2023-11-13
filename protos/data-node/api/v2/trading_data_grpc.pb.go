@@ -528,6 +528,10 @@ type TradingDataServiceClient interface {
 	//
 	// Estimate transfer fee costs with potential discount applied
 	EstimateTransferFee(ctx context.Context, in *EstimateTransferFeeRequest, opts ...grpc.CallOption) (*EstimateTransferFeeResponse, error)
+	// Availible transfer fee dicount
+	//
+	// Returns availible per party per asset transfer discount
+	GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1981,6 +1985,15 @@ func (c *tradingDataServiceClient) EstimateTransferFee(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error) {
+	out := new(GetTotalTransferFeeDiscountResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTotalTransferFeeDiscount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2531,6 +2544,10 @@ type TradingDataServiceServer interface {
 	//
 	// Estimate transfer fee costs with potential discount applied
 	EstimateTransferFee(context.Context, *EstimateTransferFeeRequest) (*EstimateTransferFeeResponse, error)
+	// Availible transfer fee dicount
+	//
+	// Returns availible per party per asset transfer discount
+	GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2939,6 +2956,9 @@ func (UnimplementedTradingDataServiceServer) ObserveTransactionResults(*ObserveT
 }
 func (UnimplementedTradingDataServiceServer) EstimateTransferFee(context.Context, *EstimateTransferFeeRequest) (*EstimateTransferFeeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateTransferFee not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTotalTransferFeeDiscount not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5028,6 +5048,24 @@ func _TradingDataService_EstimateTransferFee_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetTotalTransferFeeDiscount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTotalTransferFeeDiscountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetTotalTransferFeeDiscount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetTotalTransferFeeDiscount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetTotalTransferFeeDiscount(ctx, req.(*GetTotalTransferFeeDiscountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5457,6 +5495,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EstimateTransferFee",
 			Handler:    _TradingDataService_EstimateTransferFee_Handler,
+		},
+		{
+			MethodName: "GetTotalTransferFeeDiscount",
+			Handler:    _TradingDataService_GetTotalTransferFeeDiscount_Handler,
 		},
 		{
 			MethodName: "Ping",

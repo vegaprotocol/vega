@@ -162,8 +162,9 @@ type Engine struct {
 	minTransferQuantumMultiple num.Decimal
 	maxQuantumAmount           num.Decimal
 
-	feeDiscountDecayFraction    num.Decimal
-	feeDiscountPerPartyAndAsset map[partyAssetKey]*num.Uint
+	feeDiscountDecayFraction        num.Decimal
+	feeDiscountMinimumTrackedAmount num.Decimal
+	feeDiscountPerPartyAndAsset     map[partyAssetKey]*num.Uint
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer

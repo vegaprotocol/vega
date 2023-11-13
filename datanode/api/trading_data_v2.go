@@ -4837,3 +4837,23 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		Discount: discount.String(),
 	}, nil
 }
+
+func (t *TradingDataServiceV2) GetTotalTransferFeeDiscount(ctx context.Context, req *v2.GetTotalTransferFeeDiscountRequest) (
+	*v2.GetTotalTransferFeeDiscountResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTotalTransferFeeDiscount")()
+
+	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
+		ctx,
+		entities.PartyID(req.PartyId),
+		entities.AssetID(req.AssetId),
+	)
+	if err != nil {
+		return nil, formatE(ErrTransferServiceGetFeeDiscount, err)
+	}
+
+	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
+	return &v2.GetTotalTransferFeeDiscountResponse{
+		TotalDiscount: accumulatedDiscount.String(),
+	}, nil
+}

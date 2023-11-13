@@ -461,7 +461,7 @@ message TransferFees {
 }
 
 message TransferFeesDiscount {
-   // Party that the transfer fee discount applies to.
+  // Party that the transfer fee discount applies to.
   string party = 1;
   // Asset that the transfer fee discount is relevant to.
   string asset = 2;

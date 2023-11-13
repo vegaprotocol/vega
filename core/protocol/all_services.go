@@ -780,8 +780,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
 		},
 		{
-			Param:   netparams.TransferFeeMaxQuantumAmount,
-			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
+			Param:   netparams.TransferFeeDiscountDecayFraction,
+			Watcher: svcs.banking.OnTransferFeeDiscountDecayFractionUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: svcs.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
 		},
 		{
 			Param:   netparams.GovernanceTransferMaxFraction,

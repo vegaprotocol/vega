@@ -200,11 +200,12 @@ const (
 	MultipleOfTendermintValidatorsForEtsatzSet = "network.validators.ersatz.multipleOfTendermintValidators"
 	MinimumEthereumEventsForNewValidator       = "network.validators.minimumEthereumEventsForNewValidator"
 
-	TransferFeeFactor                  = "transfer.fee.factor"
-	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
-	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
-	TransferFeeMaxQuantumAmount        = "transfer.fee.maxQuantumAmount"
-	TransferFeeDiscountDecayFraction   = "transfer.feeDiscountDecayFraction"
+	TransferFeeFactor                       = "transfer.fee.factor"
+	TransferMinTransferQuantumMultiple      = "transfer.minTransferQuantumMultiple"
+	TransferMaxCommandsPerEpoch             = "spam.protection.maxUserTransfersPerEpoch"
+	TransferFeeMaxQuantumAmount             = "transfer.fee.maxQuantumAmount"
+	TransferFeeDiscountDecayFraction        = "transfer.feeDiscountDecayFraction"
+	TransferFeeDiscountMinimumTrackedAmount = "transfer.feeDiscountMinimumTrackedAmount"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -399,6 +400,7 @@ var AllKeys = map[string]struct{}{
 	TransferMinTransferQuantumMultiple:                           {},
 	TransferFeeMaxQuantumAmount:                                  {},
 	TransferFeeDiscountDecayFraction:                             {},
+	TransferFeeDiscountMinimumTrackedAmount:                      {},
 	TransferMaxCommandsPerEpoch:                                  {},
 	SpamPoWNumberOfPastBlocks:                                    {},
 	SpamPoWDifficulty:                                            {},
