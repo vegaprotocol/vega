@@ -1,4 +1,4 @@
-Feature: Tests impact from change of tau.scaling parameter on probability of trading, 0038-OLIQ-006
+Feature: Tests impact from change of tau.scaling parameter on probability of trading
 
   Scenario: 001: set tau.scaling to 1
     Given the following network parameters are set:

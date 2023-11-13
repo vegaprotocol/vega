@@ -54,8 +54,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | market.liquidity.successorLaunchWindowLength | 1s    |
       | limits.markets.maxPeggedOrders               | 4     |
 
-  @Liquidation
-  Scenario: using lognormal risk model, set "designatedLoser" closeout while the position of "designatedLoser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
