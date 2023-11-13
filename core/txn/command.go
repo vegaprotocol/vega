@@ -88,6 +88,12 @@ const (
 	BatchProposeCommand Command = 0x62
 	// UpdatePartyProfileCommand ...
 	UpdatePartyProfileCommand Command = 0x63
+	// SubmitAMMCommand ...
+	SubmitAMMCommand Command = 0x64
+	// AmendAMMCommand ...
+	AmendAMMCommand Command = 0x65
+	// CancelAMMCommand ...
+	CancelAMMCommand Command = 0x66
 )
 
 var commandName = map[Command]string{
@@ -125,6 +131,9 @@ var commandName = map[Command]string{
 	JoinTeamCommand:                    "Join Team",
 	BatchProposeCommand:                "Batch Proposal",
 	UpdatePartyProfileCommand:          "Update Party Profile",
+	SubmitAMMCommand:                   "Submit AMM",
+	AmendAMMCommand:                    "Amend AMM",
+	CancelAMMCommand:                   "Cancel AMM",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

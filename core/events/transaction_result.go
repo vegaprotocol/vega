@@ -198,6 +198,18 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_UpdatePartyProfile{
 			UpdatePartyProfile: tv,
 		}
+	case *commandspb.SubmitAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_SubmitAmm{
+			SubmitAmm: tv,
+		}
+	case *commandspb.AmendAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_AmendAmm{
+			AmendAmm: tv,
+		}
+	case *commandspb.CancelAMM:
+		t.evt.Transaction = &eventspb.TransactionResult_CancelAmm{
+			CancelAmm: tv,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported command %T", tv))
 	}
