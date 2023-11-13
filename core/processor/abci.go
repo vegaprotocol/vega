@@ -442,6 +442,21 @@ func NewApp(
 				addDeterministicID(app.DeliverAmendOrder),
 			),
 		).
+		HandleDeliverTx(txn.SubmitAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverSubmitAMM),
+			),
+		).
+		HandleDeliverTx(txn.AmendAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendAMM),
+			),
+		).
+		HandleDeliverTx(txn.CancelAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverCancelAMM),
+			),
+		).
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverWithdraw))).
@@ -2589,6 +2604,36 @@ func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 		}
 	}
 	return app.exec.UpdateMarginMode(ctx, tx.Party(), params.MarketId, types.MarginMode(params.Mode), marginFactor)
+}
+
+func (app *App) DeliverSubmitAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	var err error
+	params := &commandspb.SubmitAMM{}
+	if err = tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize SubmitAMM command: %w", err)
+	}
+
+	return errors.New("not implemented")
+}
+
+func (app *App) DeliverAmendAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	var err error
+	params := &commandspb.AmendAMM{}
+	if err = tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize AmendAMM command: %w", err)
+	}
+
+	return errors.New("not implemented")
+}
+
+func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	var err error
+	params := &commandspb.CancelAMM{}
+	if err = tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CancelAMM command: %w", err)
+	}
+
+	return errors.New("not implemented")
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create
