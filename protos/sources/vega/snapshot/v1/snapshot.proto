@@ -746,6 +746,7 @@ message LimitState {
   int64 propose_asset_enabled_from = 8;
   bool propose_spot_market_enabled = 9;
   bool propose_perps_market_enabled = 10;
+  bool can_use_amm_enabled = 11;
 }
 
 message VoteSpamPolicy {

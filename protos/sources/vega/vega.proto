@@ -1442,6 +1442,8 @@ message NetworkLimits {
   bool can_propose_spot_market = 10;
   // Are perpetual market proposals allowed at this point in time.
   bool can_propose_perpetual_market = 11;
+  // Can parties use AMM related transactions.
+  bool can_use_amm = 12;
 }
 
 // Represents a liquidity order
