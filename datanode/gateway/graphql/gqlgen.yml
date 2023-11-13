@@ -799,3 +799,15 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Metadata
   MarginMode:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarginMode
+  AMMPoolStatus:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AMMPoolStatus
+  AMMPoolStatusReason:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AMMPoolStatusReason
+  ConcentratedLiquidityParameters:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.AMMPool_ConcentratedLiquidityParameters
+  AMMPool:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.AMMPool
+  AMMPoolEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMPoolEdge
+  AMMPoolsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AMMPoolsConnection

@@ -27,12 +27,27 @@ import (
 
 func TheFollowingTransfersShouldHappen(
 	broker *stubs.BrokerStub,
+	exec Execution,
 	table *godog.Table,
 ) error {
 	transfers := broker.GetTransfers(true)
 
 	for _, r := range parseTransferTable(table) {
 		row := transferRow{row: r}
+		if row.IsAMM() {
+			found := false
+			if id, ok := exec.GetAMMSubAccountID(row.From()); ok {
+				row.row.values["from"] = id
+				found = true
+			}
+			if id, ok := exec.GetAMMSubAccountID(row.To()); ok {
+				row.row.values["to"] = id
+				found = true
+			}
+			if !found {
+				return fmt.Errorf("no AMM aliases found for from (%s) or to (%s)", row.From(), row.To())
+			}
+		}
 
 		matched, divergingAmounts := matchTransfers(transfers, row)
 
@@ -96,6 +111,7 @@ func parseTransferTable(table *godog.Table) []RowWrapper {
 		"asset",
 	}, []string{
 		"type",
+		"is amm",
 	})
 }
 
@@ -141,4 +157,11 @@ func (r transferRow) Amount() uint64 {
 
 func (r transferRow) Asset() string {
 	return r.row.MustStr("asset")
+}
+
+func (r transferRow) IsAMM() bool {
+	if !r.row.HasColumn("is amm") {
+		return false
+	}
+	return r.row.MustBool("is amm")
 }

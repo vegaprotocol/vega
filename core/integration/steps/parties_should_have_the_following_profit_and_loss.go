@@ -28,19 +28,20 @@ import (
 )
 
 func PartiesHaveTheFollowingProfitAndLoss(
+	exec Execution,
 	positionService *plugins.Positions,
 	table *godog.Table,
 ) error {
 	for _, r := range parseProfitAndLossTable(table) {
 		row := pnlRow{row: r}
-		if err := positionAPIProduceTheFollowingRow(positionService, row); err != nil {
+		if err := positionAPIProduceTheFollowingRow(exec, positionService, row); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row pnlRow) (err error) {
+func positionAPIProduceTheFollowingRow(exec Execution, positionService *plugins.Positions, row pnlRow) (err error) {
 	retries := 2
 	sleepTimeMs := 100
 
@@ -48,19 +49,27 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 	// check position status if needed
 	ps, checkPS := row.positionState()
 	party := row.party()
+	readableParty := party
+	if row.isAMM() {
+		id, ok := exec.GetAMMSubAccountID(party)
+		if !ok {
+			return errCannotGetPositionForParty(party, fmt.Errorf("vAMM alias %s not found", party))
+		}
+		party = id
+	}
 	for retries > 0 {
 		if len(row.market()) > 0 {
 			p, err := positionService.GetPositionsByMarketAndParty(row.market(), party)
 			pos = []*types.Position{p}
 			if err != nil {
-				return errCannotGetPositionForParty(party, err)
+				return errCannotGetPositionForParty(readableParty, err)
 			}
 		} else {
 			pos, err = positionService.GetPositionsByParty(party)
 		}
 
 		if err != nil {
-			return errCannotGetPositionForParty(party, err)
+			return errCannotGetPositionForParty(readableParty, err)
 		}
 
 		if areSamePosition(pos, row) {
@@ -86,6 +95,9 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 }
 
 func errProfitAndLossValuesForParty(pos []*types.Position, row pnlRow) error {
+	if pos[0] == nil {
+		pos[0] = &types.Position{}
+	}
 	return formatDiff(
 		fmt.Sprintf("invalid positions values for party(%v)", row.party()),
 		map[string]string{
@@ -125,6 +137,7 @@ func parseProfitAndLossTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"status",
 		"market id",
+		"is amm",
 	})
 }
 
@@ -161,4 +174,11 @@ func (r pnlRow) positionState() (vega.PositionStatus, bool) {
 		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, false
 	}
 	return r.row.MustPositionStatus("status"), true
+}
+
+func (r pnlRow) isAMM() bool {
+	if !r.row.HasColumn("is amm") {
+		return false
+	}
+	return r.row.MustBool("is amm")
 }

@@ -87,6 +87,7 @@ var (
 	ErrOracleNoSubscribers         = errors.New("there are no subscribes to the oracle data")
 	ErrSpotMarketProposalDisabled  = errors.New("spot market proposal disabled")
 	ErrPerpsMarketProposalDisabled = errors.New("perps market proposal disabled")
+	ErrAMMPoolDisabled             = errors.New("amm pool disabled")
 	ErrOracleDataNormalization     = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -443,6 +444,21 @@ func NewApp(
 		HandleDeliverTx(txn.AmendOrderCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverAmendOrder),
+			),
+		).
+		HandleDeliverTx(txn.SubmitAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverSubmitAMM),
+			),
+		).
+		HandleDeliverTx(txn.AmendAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendAMM),
+			),
+		).
+		HandleDeliverTx(txn.CancelAMMCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverCancelAMM),
 			),
 		).
 		HandleDeliverTx(txn.WithdrawCommand,
@@ -1338,6 +1354,10 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
+		}
+	case txn.SubmitAMMCommand, txn.AmendAMMCommand, txn.CancelAMMCommand:
+		if !app.limits.CanUseAMMPool() {
+			return ErrAMMPoolDisabled
 		}
 	case txn.ProposeCommand:
 		praw := &commandspb.ProposalSubmission{}
@@ -2599,6 +2619,36 @@ func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 		}
 	}
 	return app.exec.UpdateMarginMode(ctx, tx.Party(), params.MarketId, types.MarginMode(params.Mode), marginFactor)
+}
+
+func (app *App) DeliverSubmitAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.SubmitAMM{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize SubmitAMM command: %w", err)
+	}
+
+	submit := types.NewSubmitAMMFromProto(params, tx.Party())
+	return app.exec.SubmitAMM(ctx, submit, deterministicID)
+}
+
+func (app *App) DeliverAmendAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.AmendAMM{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize AmendAMM command: %w", err)
+	}
+
+	amend := types.NewAmendAMMFromProto(params, tx.Party())
+	return app.exec.AmendAMM(ctx, amend, deterministicID)
+}
+
+func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	params := &commandspb.CancelAMM{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize CancelAMM command: %w", err)
+	}
+
+	cancel := types.NewCancelAMMFromProto(params, tx.Party())
+	return app.exec.CancelAMM(ctx, cancel, deterministicID)
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create

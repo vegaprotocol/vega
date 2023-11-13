@@ -109,6 +109,10 @@ type ExecutionEngine interface {
 	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
 	// default chain ID, can be removed once we've upgraded to v0.74
 	OnChainIDUpdate(uint64) error
+
+	SubmitAMM(ctx context.Context, sub *types.SubmitAMM, deterministicID string) error
+	AmendAMM(ctx context.Context, sub *types.AmendAMM, deterministicID string) error
+	CancelAMM(ctx context.Context, sub *types.CancelAMM, deterministicID string) error
 }
 
 type GovernanceEngine interface {
@@ -267,6 +271,7 @@ type Limits interface {
 	CanProposeAsset() bool
 	CanProposeSpotMarket() bool
 	CanProposePerpsMarket() bool
+	CanUseAMMPool() bool
 	CanTrade() bool
 }
 

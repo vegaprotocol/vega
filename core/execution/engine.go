@@ -42,6 +42,9 @@ var (
 	// ErrMarketDoesNotExist is returned when the market does not exist.
 	ErrMarketDoesNotExist = errors.New("market does not exist")
 
+	// ErrNotAFutureMarket is returned when the market isn't a future market.
+	ErrNotAFutureMarket = errors.New("not a future market")
+
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation.
 	ErrNoMarketID = errors.New("no valid market id was supplied")
 
@@ -139,9 +142,12 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
 	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
+	liquidityELSFeeFraction                      num.Decimal
 
 	// only used for protocol upgrade to v0.74
 	chainID uint64
+
+	ammCommitmentQuantum *num.Uint
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -172,6 +178,8 @@ func defaultNetParamsValues() netParamsValues {
 		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
 		liquidityV2StakeToCCYVolume:                  num.DecimalFromInt64(-1),
 		liquidityV2ProvidersFeeCalculationTimeStep:   time.Second * 5,
+
+		ammCommitmentQuantum: num.UintZero(),
 	}
 }
 
@@ -286,6 +294,54 @@ func (e *Engine) Hash() []byte {
 	}
 
 	return crypto.Hash(bytes)
+}
+
+func (e *Engine) ensureIsFutureMarket(market string) error {
+	if _, exist := e.allMarkets[market]; !exist {
+		return ErrMarketDoesNotExist
+	}
+
+	if _, isFuture := e.futureMarkets[market]; !isFuture {
+		return ErrNotAFutureMarket
+	}
+
+	return nil
+}
+
+func (e *Engine) SubmitAMM(
+	ctx context.Context,
+	submit *types.SubmitAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[submit.MarketID].SubmitAMM(ctx, submit, deterministicID)
+}
+
+func (e *Engine) AmendAMM(
+	ctx context.Context,
+	submit *types.AmendAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[submit.MarketID].AmendAMM(ctx, submit, deterministicID)
+}
+
+func (e *Engine) CancelAMM(
+	ctx context.Context,
+	cancel *types.CancelAMM,
+	deterministicID string,
+) error {
+	if err := e.ensureIsFutureMarket(cancel.MarketID); err != nil {
+		return err
+	}
+
+	return e.allMarkets[cancel.MarketID].CancelAMM(ctx, cancel, deterministicID)
 }
 
 // RejectMarket will stop the execution of the market
@@ -842,6 +898,9 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
+	if !e.npv.liquidityELSFeeFraction.IsZero() {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(e.npv.liquidityELSFeeFraction)
+	}
 	return nil
 }
 
@@ -889,8 +948,13 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	if e.npv.internalCompositePriceUpdateFrequency > 0 {
 		mkt.OnInternalCompositePriceUpdateFrequency(ctx, e.npv.internalCompositePriceUpdateFrequency)
 	}
+	if !e.npv.liquidityELSFeeFraction.IsZero() {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(e.npv.liquidityELSFeeFraction)
+	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
+
+	mkt.OnAMMMinCommitmentQuantumUpdate(ctx, e.npv.ammCommitmentQuantum)
 
 	e.propagateSLANetParams(ctx, mkt, isRestore)
 
@@ -1771,6 +1835,19 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(_ context
 	return nil
 }
 
+func (e *Engine) OnMarketLiquidityEquityLikeShareFeeFractionUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity equityLikeShareFeeFraction",
+			logging.Decimal("market.liquidity.equityLikeShareFeeFraction", d),
+		)
+	}
+	for _, mkt := range e.allMarketsCpy {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d)
+	}
+	e.npv.liquidityELSFeeFraction = d
+	return nil
+}
+
 func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update probability of trading tau scaling",
@@ -1841,6 +1918,16 @@ func (e *Engine) OnMaxPeggedOrderUpdate(ctx context.Context, max *num.Uint) erro
 		)
 	}
 	e.maxPeggedOrders = max.Uint64()
+	return nil
+}
+
+func (e *Engine) OnMarketAMMMinCommitmentQuantum(ctx context.Context, c *num.Uint) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update amm min commitment quantum",
+			logging.BigUint("commitment-quantum", c),
+		)
+	}
+	e.npv.ammCommitmentQuantum = c
 	return nil
 }
 

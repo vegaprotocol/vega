@@ -426,3 +426,68 @@ message UpdatePartyProfile {
   // Support a maximum of 10 entries.
   repeated vega.Metadata metadata = 2;
 }
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message SubmitAMM {
+  // The market for which to create an AMM pool.
+  string market_id = 1;
+  // The amount to be committed to the pool.
+  string commitment_amount = 2;
+  // Wsed for rebasing position when creating/updating AMM
+  string slippage_tolerance = 3;
+  // The concentrated liquidity parameters.
+  ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+
+  message ConcentratedLiquidityParameters {
+    // The upper price bound configuration for the pool. If unset the AMM will never hold a short position.
+    optional string upper_bound = 1;
+    // Lower price bound configuration for the pool. If unset the AMM will never hold a long position.
+    optional string lower_bound = 2;
+    // Base price bound configuration for the pool.
+    string base = 3;
+    // Margin ratio at upper bounds. Must be set if an upper bound is provided.
+    optional string margin_ratio_at_upper_bound = 4;
+    // Margin ratio at lower bounds. Must be set if a lower bound is provided.
+    optional string margin_ratio_at_lower_bound = 5;
+  }
+}
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message AmendAMM {
+  // The id of the market we want to amend the AMM pool.
+  string market_id = 1;
+  // The amount to be committed to the pool.
+  optional string commitment_amount = 2;
+  // Wsed for rebasing position when creating/updating AMM
+  string slippage_tolerance = 3;
+  // The concentrated liquidity parameters.
+  optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
+
+  message ConcentratedLiquidityParameters {
+    // The upper price bound configuration for the pool.
+    optional string upper_bound = 1;
+    // The lower price bound configuration for the pool.
+    optional string lower_bound = 2;
+    // The base price bound configuration for the pool.
+    optional string base = 3;
+    // The margin ration at bounds.
+    optional string margin_ratio_at_upper_bound = 4;
+    // The margin ration at bounds.
+    optional string margin_ratio_at_lower_bound = 5;
+  }
+}
+
+// Command that allow the submitter to create an AMM pool for a given market.
+message CancelAMM {
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    // Cancellation will be immediate and any open positions will be transferred to the network for liquidation.
+    METHOD_IMMEDIATE = 1;
+    // AMM will only trade to reduce its position, and will be cancelled once its position reaches zero.
+    METHOD_REDUCE_ONLY = 2;
+  }
+  // Market ID to cancel an AMM for.
+  string market_id = 1;
+  // Method to use to cancel the AMM.
+  Method method = 2;
+}

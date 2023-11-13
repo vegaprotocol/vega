@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -176,10 +177,15 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	// @TODO pass in AMM
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
 	)
+	if err := marketLiquidity.SetState(em.MarketLiquidity); err != nil {
+		return nil, fmt.Errorf("unable to restore the market liquidity state: %w", err)
+	}
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -264,6 +270,20 @@ func NewMarketFromSnapshot(
 		market.internalCompositePriceCalculator = common.NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	}
+
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	if em.Amm == nil {
+		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor)
+	} else {
+		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor)
+	}
+	// now we can set the AMM on the market liquidity engine.
+	market.liquidity.SetAMM(market.amm)
+
+	book.SetOffbookSource(market.amm)
+
+	// now set AMM engine on liquidity market.
+	market.liquidity.SetAMM(market.amm)
 
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
@@ -366,6 +386,8 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		Amm:                            m.amm.IntoProto(),
+		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {
 		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()

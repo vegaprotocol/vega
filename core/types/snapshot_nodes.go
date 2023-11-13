@@ -461,6 +461,8 @@ type ExecMarket struct {
 	PartyMarginFactors               []*snapshot.PartyMarginFactor
 	MarkPriceCalculator              *snapshot.CompositePriceCalculator
 	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
+	Amm                              *snapshot.AmmState
+	MarketLiquidity                  *snapshot.MarketLiquidity
 }
 
 type ExecSpotMarket struct {
@@ -576,6 +578,7 @@ type LimitState struct {
 	ProposeSpotMarketEnabled  bool
 	ProposePerpsMarketEnabled bool
 	ProposeAssetEnabled       bool
+	CanUseAMMEnabled          bool
 	ProposeMarketEnabledFrom  time.Time
 	ProposeAssetEnabledFrom   time.Time
 }
@@ -2523,6 +2526,7 @@ func LimitFromProto(l *snapshot.LimitState) *LimitState {
 		ProposePerpsMarketEnabled: l.ProposePerpsMarketEnabled,
 		ProposeAssetEnabledFrom:   time.Time{},
 		ProposeMarketEnabledFrom:  time.Time{},
+		CanUseAMMEnabled:          l.CanUseAmmEnabled,
 	}
 
 	if l.ProposeAssetEnabledFrom != -1 {
@@ -3339,6 +3343,7 @@ func (l *LimitState) IntoProto() *snapshot.LimitState {
 		ProposeAssetEnabled:       l.ProposeAssetEnabled,
 		ProposeMarketEnabledFrom:  l.ProposeMarketEnabledFrom.UnixNano(),
 		ProposeAssetEnabledFrom:   l.ProposeAssetEnabledFrom.UnixNano(),
+		CanUseAmmEnabled:          l.CanUseAMMEnabled,
 	}
 
 	// Use -1 to mean it hasn't been set
@@ -3717,6 +3722,8 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		PartyMarginFactors:               em.PartyMarginFactor,
 		MarkPriceCalculator:              em.MarkPriceCalculator,
 		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
+		Amm:                              em.Amm,
+		MarketLiquidity:                  em.MarketLiquidity,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3760,6 +3767,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		PartyMarginFactor:                e.PartyMarginFactors,
 		MarkPriceCalculator:              e.MarkPriceCalculator,
 		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
+		Amm:                              e.Amm,
 	}
 
 	if e.CurrentMarkPrice != nil {

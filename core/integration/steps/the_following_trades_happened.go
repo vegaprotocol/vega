@@ -27,6 +27,7 @@ import (
 )
 
 func TheFollowingTradesShouldBeExecuted(
+	exec Execution,
 	broker *stubs.BrokerStub,
 	table *godog.Table,
 ) error {
@@ -34,13 +35,30 @@ func TheFollowingTradesShouldBeExecuted(
 
 	for _, row := range parseExecutedTradesTable(table) {
 		buyer := row.MustStr("buyer")
+		buyerIn := buyer
 		seller := row.MustStr("seller")
+		sellerIn := seller
 		price := row.MustU64("price")
 		size := row.MustU64("size")
 		aggressorRaw := row.Str("aggressor side")
 		aggressor, aerr := Side(aggressorRaw)
 		if aggressorRaw != "" && aerr != nil {
 			return aerr
+		}
+		// remap buyer/seller to AMM IDs
+		if row.HasColumn("is amm") && row.MustBool("is amm") {
+			found := false
+			if id, ok := exec.GetAMMSubAccountID(buyer); ok {
+				buyer = id
+				found = true
+			}
+			if id, ok := exec.GetAMMSubAccountID(seller); ok {
+				seller = id
+				found = true
+			}
+			if !found {
+				return fmt.Errorf("could not find pool ID for buyer (%s) or seller (%s)", buyer, seller)
+			}
 		}
 
 		buyerFee, hasBuyerFee := row.U64B("buyer fee")
@@ -97,7 +115,7 @@ func TheFollowingTradesShouldBeExecuted(
 			}
 		}
 		if !found {
-			return errMissingTrade(buyer, seller, price, size)
+			return errMissingTrade(buyerIn, sellerIn, price, size)
 		}
 	}
 	return err
@@ -140,6 +158,7 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"seller infrastructure fee referrer discount",
 		"seller liquidity fee referrer discount",
 		"seller maker fee referrer discount",
+		"is amm",
 	})
 }
 
