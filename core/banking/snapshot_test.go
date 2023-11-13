@@ -692,3 +692,41 @@ func TestAssetListRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state, state2))
 }
+
+func TestTransferFeeDiscountsSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingTransferFeeDiscounts{}).Key()
+	e := getTestEngine(t)
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).AnyTimes()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	// let's do a massive fee, easy to test.
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	e.OnTick(context.Background(), time.Unix(10, 0))
+
+	assetName := "asset-1"
+	feeDiscounts := map[string]*num.Uint{"party-1": num.NewUint(5), "party-2": num.NewUint(10)}
+	e.RegisterTakerFees(ctx, assetName, feeDiscounts)
+
+	// test the new transfer prompts a change
+	state, _, err := e.GetState(key)
+	require.NoError(t, err)
+
+	// reload the state
+	var transfers snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state, &transfers)
+	payload := types.PayloadFromProto(&transfers)
+
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	statePostReload, _, _ := snap.GetState(key)
+	require.True(t, bytes.Equal(state, statePostReload))
+
+	require.Equal(t, feeDiscounts["party-1"].String(), snap.AvailableFeeDiscount(assetName, "party-1").String())
+	require.Equal(t, feeDiscounts["party-2"].String(), snap.AvailableFeeDiscount(assetName, "party-2").String())
+}

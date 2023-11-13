@@ -239,8 +239,9 @@ func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Contr
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	return future.NewMarketFromSnapshot(ctx, log, em, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, timeService, broker, stubs.NewStateVar(), cfgAsset, marketActivityTracker,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
 }

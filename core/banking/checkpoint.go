@@ -45,6 +45,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		RecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
 		BridgeState:                  e.getBridgeState(),
 		LastSeenEthBlock:             e.lastSeenEthBlock,
+		TransferFeeDiscounts:         e.getPartyAssetDiscounts(),
 	}
 
 	msg.SeenRefs = make([]string, 0, e.seen.Size())
@@ -82,6 +83,8 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	evts = append(evts, e.loadRecurringGovernanceTransfers(ctx, b.RecurringGovernanceTransfers)...)
 
 	e.loadBridgeState(b.BridgeState)
+
+	evts = append(evts, e.loadTransferFeeDiscounts(ctx, b.TransferFeeDiscounts)...)
 
 	e.seen = treeset.NewWithStringComparator()
 	for _, v := range b.SeenRefs {
@@ -222,6 +225,21 @@ func (e *Engine) loadScheduledTransfers(
 	return evts, nil
 }
 
+func (e *Engine) loadTransferFeeDiscounts(
+	ctx context.Context,
+	partyAssetDiscounts []*checkpoint.PartyAssetAmount,
+) []events.Event {
+	evts := []events.Event{}
+	e.feeDiscountPerPartyAndAsset = make(map[partyAssetKey]*num.Uint, len(partyAssetDiscounts))
+	for _, v := range partyAssetDiscounts {
+		discount, _ := num.UintFromString(v.Amount, 10)
+		e.feeDiscountPerPartyAndAsset[e.feeDiscountKey(v.Asset, v.Party)] = discount
+		evts = append(evts, events.NewTransferFeesDiscountUpdated(ctx, v.Party, v.Asset, discount, e.currentEpoch))
+	}
+
+	return evts
+}
+
 func (e *Engine) loadRecurringTransfers(
 	ctx context.Context, r *checkpoint.RecurringTransfers,
 ) []events.Event {
@@ -322,6 +340,20 @@ func (e *Engine) getScheduledGovernanceTransfers() []*checkpoint.ScheduledGovern
 	return out
 }
 
+func (e *Engine) getTransferFeeDiscounts() []*checkpoint.ScheduledGovernanceTransferAtTime {
+	out := make([]*checkpoint.ScheduledGovernanceTransferAtTime, 0, len(e.scheduledGovernanceTransfers))
+
+	for k, v := range e.scheduledGovernanceTransfers {
+		transfers := make([]*checkpoint.GovernanceTransfer, 0, len(v))
+		for _, v := range v {
+			transfers = append(transfers, v.IntoProto())
+		}
+		out = append(out, &checkpoint.ScheduledGovernanceTransferAtTime{DeliverOn: k, Transfers: transfers})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
+	return out
+}
+
 func (e *Engine) getAssetActions() []*types.AssetAction {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
@@ -359,4 +391,23 @@ func (e *Engine) getAssetActions() []*types.AssetAction {
 
 	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
 	return aa
+}
+
+func (e *Engine) getPartyAssetDiscounts() []*checkpoint.PartyAssetAmount {
+	out := make([]*checkpoint.PartyAssetAmount, 0, len(e.feeDiscountPerPartyAndAsset))
+
+	for k, v := range e.feeDiscountPerPartyAndAsset {
+		out = append(out, &checkpoint.PartyAssetAmount{
+			Party:  k.party,
+			Asset:  k.asset,
+			Amount: v.String(),
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Party == out[j].Party {
+			return out[i].Asset == out[j].Asset
+		}
+		return out[i].Party < out[j].Party
+	})
+	return out
 }

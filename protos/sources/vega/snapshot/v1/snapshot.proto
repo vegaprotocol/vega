@@ -141,6 +141,7 @@ message Payload {
     LiquidityV2Parameters liquidity_v2_parameters = 78;
     LiquidityV2PaidFeesStats liquidity_v2_paid_fees_stats = 79;
     Liquidation liquidation = 80;
+    BankingTransferFeeDiscounts banking_transfer_fee_discounts = 81;
   }
 }
 
@@ -1258,4 +1259,8 @@ message Liquidation {
   int64 network_pos = 2;
   int64 next_step = 3;
   vega.LiquidationStrategy config = 4;
+}
+
+message BankingTransferFeeDiscounts {
+  repeated vega.checkpoint.v1.PartyAssetAmount party_asset_discount = 1;
 }

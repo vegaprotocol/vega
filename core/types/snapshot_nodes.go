@@ -141,6 +141,10 @@ type PayloadBankingScheduledGovernanceTransfers struct {
 	BankingScheduledGovernanceTransfers []*checkpointpb.ScheduledGovernanceTransferAtTime
 }
 
+type PayloadBankingTransferFeeDiscounts struct {
+	BankingTransferFeeDiscounts *snapshot.BankingTransferFeeDiscounts
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -928,6 +932,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingRecurringGovernanceTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
 		ret.Data = PayloadBankingScheduledGovernanceTransfersFromProto(dt)
+	case *snapshot.Payload_BankingTransferFeeDiscounts:
+		ret.Data = PayloadBankingTransferFeeDiscountsFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -1102,6 +1108,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_BankingRecurringGovernanceTransfers:
 		ret.Data = dt
 	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingTransferFeeDiscounts:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
@@ -1764,6 +1772,34 @@ func (*PayloadBankingScheduledGovernanceTransfers) Key() string {
 }
 
 func (*PayloadBankingScheduledGovernanceTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingTransferFeeDiscountsFromProto(pbd *snapshot.Payload_BankingTransferFeeDiscounts) *PayloadBankingTransferFeeDiscounts {
+	return &PayloadBankingTransferFeeDiscounts{
+		BankingTransferFeeDiscounts: pbd.BankingTransferFeeDiscounts,
+	}
+}
+
+func (p PayloadBankingTransferFeeDiscounts) IntoProto() *snapshot.Payload_BankingTransferFeeDiscounts {
+	return &snapshot.Payload_BankingTransferFeeDiscounts{
+		BankingTransferFeeDiscounts: &snapshot.BankingTransferFeeDiscounts{
+			PartyAssetDiscount: p.BankingTransferFeeDiscounts.PartyAssetDiscount,
+		},
+	}
+}
+
+func (*PayloadBankingTransferFeeDiscounts) isPayload() {}
+
+func (p *PayloadBankingTransferFeeDiscounts) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingTransferFeeDiscounts) Key() string {
+	return "transferFeeDiscounts"
+}
+
+func (*PayloadBankingTransferFeeDiscounts) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 

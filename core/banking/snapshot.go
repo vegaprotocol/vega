@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
 )
@@ -38,6 +39,7 @@ var (
 	bridgeStateKey           = (&types.PayloadBankingBridgeState{}).Key()
 	recurringGovTransfersKey = (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	scheduledGovTransfersKey = (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
+	transferFeeDiscountsKey  = (&types.PayloadBankingTransferFeeDiscounts{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
@@ -49,6 +51,7 @@ var (
 		bridgeStateKey,
 		recurringGovTransfersKey,
 		scheduledGovTransfersKey,
+		transferFeeDiscountsKey,
 	}
 )
 
@@ -62,6 +65,7 @@ type bankingSnapshotState struct {
 	serialisedBridgeState           []byte
 	serialisedGovRecurringTransfers []byte
 	serialisedGovScheduledTransfers []byte
+	serialisedTransferFeeDiscounts  []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -124,6 +128,18 @@ func (e *Engine) serialiseScheduledGovernanceTransfers() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadBankingScheduledGovernanceTransfers{
 			BankingScheduledGovernanceTransfers: e.getScheduledGovernanceTransfers(),
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (e *Engine) serialisedTransferFeeDiscounts() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingTransferFeeDiscounts{
+			BankingTransferFeeDiscounts: &snapshot.BankingTransferFeeDiscounts{
+				PartyAssetDiscount: e.getPartyAssetDiscounts(),
+			},
 		},
 	}
 
@@ -228,6 +244,8 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return e.serialiseK(e.serialiseRecurringGovernanceTransfers, &e.bss.serialisedGovRecurringTransfers)
 	case scheduledGovTransfersKey:
 		return e.serialiseK(e.serialiseScheduledGovernanceTransfers, &e.bss.serialisedGovScheduledTransfers)
+	case transferFeeDiscountsKey:
+		return e.serialiseK(e.serialisedTransferFeeDiscounts, &e.bss.serialisedTransferFeeDiscounts)
 	case bridgeStateKey:
 		return e.serialiseK(e.serialiseBridgeState, &e.bss.serialisedBridgeState)
 	default:
@@ -264,6 +282,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreScheduledGovernanceTransfers(ctx, pl.BankingScheduledGovernanceTransfers, p)
 	case *types.PayloadBankingBridgeState:
 		return nil, e.restoreBridgeState(pl.BankingBridgeState, p)
+	case *types.PayloadBankingTransferFeeDiscounts:
+		return nil, e.restoreTransferFeeDiscounts(ctx, pl.BankingTransferFeeDiscounts, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -369,6 +389,20 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 
 	e.bss.serialisedAssetActions, err = proto.Marshal(p.IntoProto())
 	return err
+}
+
+func (e *Engine) restoreTransferFeeDiscounts(
+	ctx context.Context,
+	state *snapshot.BankingTransferFeeDiscounts,
+	p *types.Payload,
+) (err error) {
+	if state == nil {
+		return nil
+	}
+
+	e.loadTransferFeeDiscounts(ctx, state.PartyAssetDiscount)
+	e.bss.serialisedTransferFeeDiscounts, err = proto.Marshal(p.IntoProto())
+	return
 }
 
 func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {
