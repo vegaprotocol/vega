@@ -96,6 +96,10 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 	}, err
 }
 
+func (i *Instrument) UpdateAuctionState(ctx context.Context, enter bool) {
+	i.Product.UpdateAuctionState(ctx, enter)
+}
+
 func (i *Instrument) UnsubscribeTradingTerminated(ctx context.Context) {
 	i.Product.UnsubscribeTradingTerminated(ctx)
 }

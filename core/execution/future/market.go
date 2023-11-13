@@ -1245,6 +1245,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 			}
 		} else {
 			m.as.StartGovernanceSuspensionAuction(m.timeService.GetTimeNow())
+			m.tradableInstrument.Instrument.UpdateAuctionState(ctx, true)
 			m.enterAuction(ctx)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
@@ -1296,6 +1297,7 @@ func (m *Market) enterAuction(ctx context.Context) {
 	if m.as.InAuction() && m.as.IsPriceAuction() {
 		m.mkt.State = types.MarketStateSuspended
 		m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
+		m.tradableInstrument.Instrument.UpdateAuctionState(ctx, true)
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
 }
@@ -1357,6 +1359,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 			m.mkt.State = types.MarketStateActive
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
+			m.tradableInstrument.Instrument.UpdateAuctionState(ctx, false)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 			m.updateLiquidityFee(ctx)
