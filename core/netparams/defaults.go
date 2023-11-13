@@ -46,7 +46,6 @@ var (
 	gteU1  = UintGTE(num.NewUint(1))
 	gteU5  = UintGTE(num.NewUint(5))
 	ltMaxU = UintLT(num.MaxUint())
-	lteU60 = UintLTE(num.NewUint(60))
 
 	// Ints.
 	gteI0    = IntGTE(0)

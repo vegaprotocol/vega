@@ -250,7 +250,7 @@ func (e *Engine) makeFeeTransferForFundsTransfer(
 	theoreticalFee := e.calculateFeeTransferForTransfer(asset, amount, from, fromAccountType, to)
 	feeAmount, discountAmount := e.ApplyFeeDiscount(ctx, asset.ID, from, theoreticalFee)
 
-	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, to, feeAmount); err != nil {
+	if err := e.ensureEnoughFundsForTransfer(asset, amount, from, fromAccountType, feeAmount); err != nil {
 		return nil, nil, err
 	}
 
@@ -285,7 +285,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	assetType := asset.ToAssetType()
 	theoreticalFee := e.calculateFeeTransferForTransfer(assetType, amount, from, fromAccountType, to)
 	feeAmount, _ := e.EstimateFeeDiscount(assetType.ID, from, theoreticalFee)
-	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, to, feeAmount)
+	return e.ensureEnoughFundsForTransfer(assetType, amount, from, fromAccountType, feeAmount)
 }
 
 func (e *Engine) ensureEnoughFundsForTransfer(
@@ -293,7 +293,6 @@ func (e *Engine) ensureEnoughFundsForTransfer(
 	amount *num.Uint,
 	from string,
 	fromAccountType types.AccountType,
-	to string,
 	feeAmount *num.Uint,
 ) error {
 	var (
