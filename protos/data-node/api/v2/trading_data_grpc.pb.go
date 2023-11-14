@@ -528,9 +528,9 @@ type TradingDataServiceClient interface {
 	//
 	// Estimate transfer fee costs with potential discount applied
 	EstimateTransferFee(ctx context.Context, in *EstimateTransferFeeRequest, opts ...grpc.CallOption) (*EstimateTransferFeeResponse, error)
-	// Availible transfer fee dicount
+	// Available transfer fee discount
 	//
-	// Returns availible per party per asset transfer discount
+	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error)
 	// Export network history as CSV
 	//
@@ -2544,9 +2544,9 @@ type TradingDataServiceServer interface {
 	//
 	// Estimate transfer fee costs with potential discount applied
 	EstimateTransferFee(context.Context, *EstimateTransferFeeRequest) (*EstimateTransferFeeResponse, error)
-	// Availible transfer fee dicount
+	// Available transfer fee discount
 	//
-	// Returns availible per party per asset transfer discount
+	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error)
 	// Export network history as CSV
 	//
