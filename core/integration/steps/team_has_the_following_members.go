@@ -103,7 +103,7 @@ func TheFollowingTeamsWithRefereesAreCreated(
 			return err
 		}
 		// 4. All parties apply the referral code, skip the first in parties slice, they are the referrer
-		refCode := &commandspb.ApplyReferralCode{
+		joinTeam := &commandspb.JoinTeam{
 			Id: team,
 		}
 		// 5. Join team
@@ -111,7 +111,7 @@ func TheFollowingTeamsWithRefereesAreCreated(
 			if err := referralEngine.ApplyReferralCode(ctx, types.PartyID(pid), code); err != nil {
 				return err
 			}
-			if err := teamsEngine.JoinTeam(ctx, types.PartyID(pid), refCode); err != nil {
+			if err := teamsEngine.JoinTeam(ctx, types.PartyID(pid), joinTeam); err != nil {
 				return err
 			}
 		}

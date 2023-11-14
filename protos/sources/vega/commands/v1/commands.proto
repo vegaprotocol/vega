@@ -375,3 +375,9 @@ message ApplyReferralCode {
   // Referral code, normally the referral set ID, for the party to join.
   string id = 1;
 }
+
+// Command that allows the submitter to join a team or change teams if they are already a member of a team.
+message JoinTeam {
+  // ID of the team to join, this is the same as the referral code used to generate the team.
+  string id = 1;
+}

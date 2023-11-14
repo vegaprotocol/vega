@@ -229,10 +229,10 @@ func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *
 	}
 }
 
-func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.ApplyReferralCode {
+func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.JoinTeam {
 	t.Helper()
 
-	return &commandspb.ApplyReferralCode{
+	return &commandspb.JoinTeam{
 		Id: string(teamID),
 	}
 }
