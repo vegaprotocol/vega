@@ -2471,14 +2471,14 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 	return m.recorder
 }
 
-// RegisterTakerFees mocks base method.
-func (m *MockBanking) RegisterTakerFees(arg0 context.Context, arg1 string, arg2 map[string]*num.Uint) {
+// RegisterTradingFees mocks base method.
+func (m *MockBanking) RegisterTradingFees(arg0 context.Context, arg1 string, arg2 map[string]*num.Uint) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RegisterTakerFees", arg0, arg1, arg2)
+	m.ctrl.Call(m, "RegisterTradingFees", arg0, arg1, arg2)
 }
 
-// RegisterTakerFees indicates an expected call of RegisterTakerFees.
-func (mr *MockBankingMockRecorder) RegisterTakerFees(arg0, arg1, arg2 interface{}) *gomock.Call {
+// RegisterTradingFees indicates an expected call of RegisterTradingFees.
+func (mr *MockBankingMockRecorder) RegisterTradingFees(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterTakerFees", reflect.TypeOf((*MockBanking)(nil).RegisterTakerFees), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterTradingFees", reflect.TypeOf((*MockBanking)(nil).RegisterTradingFees), arg0, arg1, arg2)
 }

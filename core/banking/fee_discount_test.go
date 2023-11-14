@@ -49,15 +49,15 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		eng.OnTransferFeeDiscountMinimumTrackedAmountUpdate(context.Background(), num.DecimalFromFloat(1))
 
 		assert.Equal(t, "0", eng.AvailableFeeDiscount(assetID, party).String())
-		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(50)})
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(50)})
 		assert.Equal(t, "50", eng.AvailableFeeDiscount(assetID, party).String())
-		eng.RegisterTakerFees(ctx, assetID, nil)
+		eng.RegisterTradingFees(ctx, assetID, nil)
 		// decay by half
 		assert.Equal(t, "25", eng.AvailableFeeDiscount(assetID, party).String())
-		eng.RegisterTakerFees(ctx, assetID, nil)
+		eng.RegisterTradingFees(ctx, assetID, nil)
 		// decay by half
 		assert.Equal(t, "12", eng.AvailableFeeDiscount(assetID, party).String())
-		eng.RegisterTakerFees(ctx, assetID, nil)
+		eng.RegisterTradingFees(ctx, assetID, nil)
 
 		// decay by half but it's 0 because decayed amount (6) is less then
 		// asset quantum x TransferFeeDiscountMinimumTrackedAmount (10 x 1)
@@ -81,7 +81,7 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		assert.Equal(t, "5", discountedFee.String())
 		assert.Equal(t, "0", discount.String())
 		// move to another epoch
-		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(10)})
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(10)})
 
 		assert.Equal(t, "10", eng.AvailableFeeDiscount(assetID, party).String())
 
@@ -90,7 +90,7 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		assert.Equal(t, "5", discountedFee.String())
 		assert.Equal(t, "10", discount.String())
 		// move to another epoch
-		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(20)})
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(20)})
 
 		assert.Equal(t, "20", eng.AvailableFeeDiscount(assetID, party).String())
 
@@ -102,7 +102,7 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		assert.Equal(t, "17", eng.AvailableFeeDiscount(assetID, party).String())
 
 		// move to another epoch
-		eng.RegisterTakerFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(5)})
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(5)})
 
 		// it's 13 because 9 was decayed and extra 5 added = 17-8+5
 		assert.Equal(t, "13", eng.AvailableFeeDiscount(assetID, party).String())

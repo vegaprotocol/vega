@@ -17,12 +17,15 @@ package broker
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
+	fmt.Printf("========== toEvent: %s, %+v, ", be.Type, be)
+
 	switch be.Type {
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return events.TimeEventFromStream(ctx, be)

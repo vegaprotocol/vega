@@ -710,7 +710,7 @@ func TestTransferFeeDiscountsSnapshotRoundTrip(t *testing.T) {
 
 	assetName := "asset-1"
 	feeDiscounts := map[string]*num.Uint{"party-1": num.NewUint(5), "party-2": num.NewUint(10)}
-	e.RegisterTakerFees(ctx, assetName, feeDiscounts)
+	e.RegisterTradingFees(ctx, assetName, feeDiscounts)
 
 	// test the new transfer prompts a change
 	state, _, err := e.GetState(key)

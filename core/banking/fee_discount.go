@@ -17,10 +17,12 @@ package banking
 
 import (
 	"context"
+	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 type partyAssetKey struct {
@@ -32,7 +34,7 @@ func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
 	return partyAssetKey{party: party, asset: asset}
 }
 
-func (e *Engine) RegisterTakerFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
+func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
 
 	// ensure asset exists
@@ -43,8 +45,13 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, assetID string, feesPerP
 
 	assetQuantum := asset.Type().Details.Quantum
 
+	feesPerPartyKeys := maps.Keys(feesPerParty)
+	sort.Strings(feesPerPartyKeys)
+
 	updatedKeys := map[partyAssetKey]struct{}{}
-	for party, fee := range feesPerParty {
+	for _, party := range feesPerPartyKeys {
+		fee := feesPerParty[party]
+
 		key := e.feeDiscountKey(assetID, party)
 		updatedKeys[key] = struct{}{}
 
@@ -66,7 +73,17 @@ func (e *Engine) RegisterTakerFees(ctx context.Context, assetID string, feesPerP
 			e.currentEpoch,
 		))
 	}
-	for key := range e.feeDiscountPerPartyAndAsset {
+
+	feeDiscountPerPartyAndAssetKeys := maps.Keys(e.feeDiscountPerPartyAndAsset)
+	sort.SliceStable(feeDiscountPerPartyAndAssetKeys, func(i, j int) bool {
+		if feeDiscountPerPartyAndAssetKeys[i].party == feeDiscountPerPartyAndAssetKeys[j].party {
+			return feeDiscountPerPartyAndAssetKeys[i].asset < feeDiscountPerPartyAndAssetKeys[j].asset
+		}
+
+		return feeDiscountPerPartyAndAssetKeys[i].party < feeDiscountPerPartyAndAssetKeys[j].party
+	})
+
+	for _, key := range feeDiscountPerPartyAndAssetKeys {
 		if _, ok := updatedKeys[key]; ok {
 			continue
 		}

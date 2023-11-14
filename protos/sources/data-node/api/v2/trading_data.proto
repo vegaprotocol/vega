@@ -880,14 +880,14 @@ service TradingDataService {
   //
   // Estimate transfer fee costs with potential discount applied
   rpc EstimateTransferFee(EstimateTransferFeeRequest) returns (EstimateTransferFeeResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransferFee"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
   }
 
-  // Availible transfer fee dicount
+  // Available transfer fee discount
   //
-  // Returns availible per party per asset transfer discount
+  // Returns available per party per asset transfer discount
   rpc GetTotalTransferFeeDiscount(GetTotalTransferFeeDiscountRequest) returns (GetTotalTransferFeeDiscountResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransferFee"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
   }
 
   // Export network history as CSV
@@ -4353,7 +4353,7 @@ message EstimateTransferFeeRequest {
 
 // Results of estimation of transfer fee and the fee discount
 message EstimateTransferFeeResponse {
-  // Estimated fee for transaction.
+  // Estimated fee for the transfer.
   string fee = 1;
   // Discount applied to the fee.
   string discount = 2;

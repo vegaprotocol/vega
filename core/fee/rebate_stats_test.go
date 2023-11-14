@@ -25,16 +25,16 @@ import (
 )
 
 func TestFeesStats(t *testing.T) {
-	t.Run("test TotalMakerFeesPerParty", testFeesStatsTotalMakerFeesPerParty)
+	t.Run("test TotalTradingFeesPerParty", testFeesStatsTotalTradingFeesPerParty)
 }
 
-func testFeesStatsTotalMakerFeesPerParty(t *testing.T) {
+func testFeesStatsTotalTradingFeesPerParty(t *testing.T) {
 	stats := fee.NewFeesStats()
 
-	stats.RegisterMakerFee("maker-1", "taker-1", num.NewUint(10))
-	stats.RegisterMakerFee("maker-1", "taker-2", num.NewUint(20))
-	stats.RegisterMakerFee("taker-1", "maker-1", num.NewUint(5))
+	stats.RegisterTradingFees("maker-1", "taker-1", num.NewUint(10))
+	stats.RegisterTradingFees("maker-1", "taker-2", num.NewUint(20))
+	stats.RegisterTradingFees("taker-1", "maker-1", num.NewUint(5))
 
 	expected := map[string]*num.Uint{"maker-1": num.NewUint(35), "taker-1": num.NewUint(15), "taker-2": num.NewUint(20)}
-	assert.Equal(t, expected, stats.TotalMakerFeesPerParty())
+	assert.Equal(t, expected, stats.TotalTradingFeesPerParty())
 }

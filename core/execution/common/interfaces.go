@@ -209,7 +209,7 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 }
 
 type Banking interface {
-	RegisterTakerFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
+	RegisterTradingFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
 }
 
 type LiquidityEngine interface {

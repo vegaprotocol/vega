@@ -6625,7 +6625,7 @@ type TotalTransferFeeDiscount {
 
 "EstimatedTransferFee Results of estimation of transfer fee and the fee discount"
 type EstimatedTransferFee {
-  "Estimated fee for transaction."
+  "Estimated fee for the transfer."
   fee: String!
   "Discount applied to the fee."
   discount: String!

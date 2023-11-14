@@ -17,6 +17,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -77,7 +78,7 @@ type TransferFeesDiscountUpdated struct {
 
 func NewTransferFeesDiscountUpdated(ctx context.Context, party, asset string, amount *num.Uint, epoch uint64) *TransferFeesDiscountUpdated {
 	return &TransferFeesDiscountUpdated{
-		Base: newBase(ctx, TransferFeesEvent),
+		Base: newBase(ctx, TransferFeesDiscountUpdatedEvent),
 		pb: &eventspb.TransferFeesDiscount{
 			Party:  party,
 			Asset:  asset,
@@ -96,6 +97,8 @@ func (t TransferFeesDiscountUpdated) StreamMessage() *eventspb.BusEvent {
 	busEvent.Event = &eventspb.BusEvent_TransferFeesDiscount{
 		TransferFeesDiscount: t.pb,
 	}
+
+	fmt.Printf("-------- stream message jare: %+v \n", busEvent)
 
 	return busEvent
 }

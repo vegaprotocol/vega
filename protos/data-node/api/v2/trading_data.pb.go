@@ -23037,7 +23037,7 @@ type EstimateTransferFeeResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Estimated fee for transaction.
+	// Estimated fee for the transfer.
 	Fee string `protobuf:"bytes,1,opt,name=fee,proto3" json:"fee,omitempty"`
 	// Discount applied to the fee.
 	Discount string `protobuf:"bytes,2,opt,name=discount,proto3" json:"discount,omitempty"`

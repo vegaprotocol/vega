@@ -24,10 +24,17 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+type tradeFee struct {
+	amount *num.Uint
+}
+
 type FeesStats struct {
 	// TotalMakerFeesReceived is the total of maker fees received by the maker side.
 	// maker -> amount
 	TotalMakerFeesReceived map[string]*num.Uint
+	// TradingFeesGenerated tracks all trading fees paid by taker (aggressor) to the maker.
+	// taker -> maker -> amount
+	TradingFeesGenerated map[string]map[string]*num.Uint
 	// MakerFeesGenerated tracks maker fees paid by taker (aggressor) to the maker.
 	// taker -> maker -> amount
 	MakerFeesGenerated map[string]map[string]*num.Uint
@@ -43,6 +50,7 @@ func NewFeesStats() *FeesStats {
 	return &FeesStats{
 		TotalMakerFeesReceived:   map[string]*num.Uint{},
 		MakerFeesGenerated:       map[string]map[string]*num.Uint{},
+		TradingFeesGenerated:     map[string]map[string]*num.Uint{},
 		TotalRewardsReceived:     map[string]*num.Uint{},
 		ReferrerRewardsGenerated: map[string]map[string]*num.Uint{},
 		RefereeDiscountApplied:   map[string]*num.Uint{},
@@ -114,6 +122,22 @@ func (f *FeesStats) RegisterMakerFee(makerID, takerID string, amount *num.Uint) 
 	makerTally.Add(makerTally, amount)
 }
 
+func (f *FeesStats) RegisterTradingFees(makerID, takerID string, amount *num.Uint) {
+	tradingFeesGenerated, ok := f.TradingFeesGenerated[takerID]
+	if !ok {
+		tradingFeesGenerated = map[string]*num.Uint{}
+		f.TradingFeesGenerated[takerID] = tradingFeesGenerated
+	}
+
+	makerTally, ok := tradingFeesGenerated[makerID]
+	if !ok {
+		makerTally = num.NewUint(0)
+		tradingFeesGenerated[makerID] = makerTally
+	}
+
+	makerTally.Add(makerTally, amount)
+}
+
 func (f *FeesStats) RegisterReferrerReward(
 	referrer, referee string,
 	amount *num.Uint,
@@ -161,11 +185,11 @@ func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 	total.Add(total, amount)
 }
 
-// TotalMakerFeesPerParty returns per party sum of all paid and received fees maker fees.
-func (f *FeesStats) TotalMakerFeesPerParty() map[string]*num.Uint {
-	generatedFeesPerParty := make(map[string]*num.Uint, len(f.MakerFeesGenerated))
+// TotalTradingFeesPerParty returns per party sum of all paid and received trading fees.
+func (f *FeesStats) TotalTradingFeesPerParty() map[string]*num.Uint {
+	generatedFeesPerParty := make(map[string]*num.Uint, len(f.TradingFeesGenerated))
 
-	for payer, makers := range f.MakerFeesGenerated {
+	for payer, makers := range f.TradingFeesGenerated {
 		if _, ok := generatedFeesPerParty[payer]; !ok {
 			generatedFeesPerParty[payer] = num.UintZero()
 		}
