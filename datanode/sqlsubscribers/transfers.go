@@ -68,6 +68,7 @@ func (rf *Transfer) Types() []events.Type {
 	return []events.Type{
 		events.TransferEvent,
 		events.TransferFeesEvent,
+		events.TransferFeesDiscountUpdatedEvent,
 	}
 }
 
@@ -102,5 +103,5 @@ func (rf *Transfer) handleFees(ctx context.Context, e TransferFeesEvent) error {
 func (rf *Transfer) handleDiscount(ctx context.Context, e TransferFeesDiscountUpdateEvent) error {
 	tf := e.TransferFeesDiscount()
 	discount := entities.TransferFeesDiscountFromProto(&tf, rf.vegaTime)
-	return errors.Wrap(rf.store.UpsertFeesDiscount(ctx, discount), "inserting transfer fee into SQL store failed")
+	return errors.Wrap(rf.store.UpsertFeesDiscount(ctx, discount), "inserting transfer fee discount update into SQL store failed")
 }

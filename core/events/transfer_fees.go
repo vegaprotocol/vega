@@ -17,7 +17,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -97,8 +96,6 @@ func (t TransferFeesDiscountUpdated) StreamMessage() *eventspb.BusEvent {
 	busEvent.Event = &eventspb.BusEvent_TransferFeesDiscount{
 		TransferFeesDiscount: t.pb,
 	}
-
-	fmt.Printf("-------- stream message jare: %+v \n", busEvent)
 
 	return busEvent
 }

@@ -95,6 +95,15 @@ func NewFeesStatsFromProto(fsp *eventspb.FeesStats) *FeesStats {
 		fs.MakerFeesGenerated[f.Taker] = rg
 	}
 
+	for _, f := range fsp.TradingFeesGenerated {
+		rg := map[string]*num.Uint{}
+		for _, pa := range f.TradingFeesPaid {
+			rg[pa.Party] = num.MustUintFromString(pa.Amount, 10)
+		}
+
+		fs.TradingFeesGenerated[f.Taker] = rg
+	}
+
 	return fs
 }
 
@@ -216,6 +225,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		VolumeDiscountApplied:    make([]*eventspb.PartyAmount, 0, len(f.VolumeDiscountApplied)),
 		TotalMakerFeesReceived:   make([]*eventspb.PartyAmount, 0, len(f.TotalMakerFeesReceived)),
 		MakerFeesGenerated:       make([]*eventspb.MakerFeesGenerated, 0, len(f.MakerFeesGenerated)),
+		TradingFeesGenerated:     make([]*eventspb.TradingFeesGenerated, 0, len(f.TradingFeesGenerated)),
 	}
 
 	totalRewardsReceivedParties := maps.Keys(f.TotalRewardsReceived)
@@ -314,6 +324,33 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		}
 
 		fs.MakerFeesGenerated = append(fs.MakerFeesGenerated, rewardsGenerated)
+	}
+
+	tradingFeesGeneratedParties := maps.Keys(f.TradingFeesGenerated)
+	sort.Strings(tradingFeesGeneratedParties)
+	for _, taker := range tradingFeesGeneratedParties {
+		makersAmounts := f.TradingFeesGenerated[taker]
+
+		rewardsGenerated := &eventspb.TradingFeesGenerated{
+			Taker:           taker,
+			TradingFeesPaid: make([]*eventspb.PartyAmount, 0, len(makersAmounts)),
+		}
+
+		makersAmountsParties := maps.Keys(makersAmounts)
+		sort.Strings(makersAmountsParties)
+		for _, maker := range makersAmountsParties {
+			amount := makersAmounts[maker]
+			rewardsGenerated.TradingFeesPaid = append(
+				rewardsGenerated.TradingFeesPaid,
+				&eventspb.PartyAmount{
+					Party:         maker,
+					Amount:        amount.String(),
+					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
+				},
+			)
+		}
+
+		fs.TradingFeesGenerated = append(fs.TradingFeesGenerated, rewardsGenerated)
 	}
 
 	return fs
