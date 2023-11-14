@@ -110,7 +110,6 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 			if !ok {
 				return
 			}
-			fmt.Printf("============= received na event: %+v \n", event)
 			// Check that the sequence of events is sane:
 			//  - First event can be at any height; but event must have sequence number 1
 			//  - Subsequent events must either increase sequence number by 1 OR
