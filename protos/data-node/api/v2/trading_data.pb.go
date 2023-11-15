@@ -22050,7 +22050,7 @@ type GetFeesStatsForPartyRequest struct {
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Restrict fees statistics to those related to the given asset.
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
-	// Epoch to filter from (included). If omitted, `to epoch` must not be set. If both omitted, the most recent epoch's data is returned.
+	// Epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`.
 	FromEpoch *uint64 `protobuf:"varint,3,opt,name=from_epoch,json=fromEpoch,proto3,oneof" json:"from_epoch,omitempty"`
 	// Epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch.
 	ToEpoch *uint64 `protobuf:"varint,4,opt,name=to_epoch,json=toEpoch,proto3,oneof" json:"to_epoch,omitempty"`
