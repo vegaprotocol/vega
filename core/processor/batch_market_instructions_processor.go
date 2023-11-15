@@ -124,20 +124,12 @@ func (p *BMIProcessor) ProcessBatch(
 	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
 
-	// we will need an ID for every stop orders
-	// not all StopsOrderSubmission have 2 StopOrder
-	stopOrderSize := 0
-	for _, v := range batch.StopOrdersSubmission {
-		if v.FallsBelow != nil {
-			stopOrderSize++
-		}
-		if v.RisesAbove != nil {
-			stopOrderSize++
-		}
-	}
+	// each order will need a new ID, and each stop order can contain up to two orders (rises above, falls below)
+	// but a stop order could also be invalid and have neither, so we pre-generate the maximum ids we might need
+	nIDs := len(batch.Submissions) + (2 * len(batch.StopOrdersSubmission))
 
-	submissionsIDs := make([]string, 0, len(batch.Submissions)+stopOrderSize)
-	for i := 0; i < len(batch.Submissions)+stopOrderSize; i++ {
+	submissionsIDs := make([]string, 0, nIDs)
+	for i := 0; i < nIDs; i++ {
 		submissionsIDs = append(submissionsIDs, idgen.NextID())
 	}
 
