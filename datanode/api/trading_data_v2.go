@@ -4667,10 +4667,6 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 }
 
 func (t *TradingDataServiceV2) GetFeesStatsForParty(ctx context.Context, req *v2.GetFeesStatsForPartyRequest) (*v2.GetFeesStatsForPartyResponse, error) {
-	if req.ToEpoch != nil && req.FromEpoch == nil {
-		return nil, formatE(ErrFeesStatsForPartyRequest)
-	}
-
 	var assetID *entities.AssetID
 	if req.AssetId != nil {
 		assetID = ptr.From(entities.AssetID(*req.AssetId))

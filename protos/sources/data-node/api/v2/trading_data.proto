@@ -4180,7 +4180,7 @@ message GetFeesStatsForPartyRequest {
   string party_id = 1;
   // Restrict fees statistics to those related to the given asset.
   optional string asset_id = 2;
-  // Epoch to filter from (included). If omitted, `to epoch` must not be set. If both omitted, the most recent epoch's data is returned.
+  // Epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`.
   optional uint64 from_epoch = 3;
   // Epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch.
   optional uint64 to_epoch = 4;

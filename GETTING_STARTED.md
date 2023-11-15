@@ -9,7 +9,7 @@ steps needed to build and test vega.
 
 Almost all of vega (including tools not in this repo) are written in Go, so you will need it installed locally. The version targeted can be found in the `go.mod` at the root of this repo, but realistically there is not much harm in having a slightly newer version.
 
-The Go tool-chain can be installed via an OS package manager, or directly from from https://golang.org/dl/. Use whichever you are most comfortable with. See also the [Golang installation guide](https://golang.org/doc/install) for more information.
+The Go tool-chain can be installed via an OS package manager, or directly from https://golang.org/dl/. Use whichever you are most comfortable with. See also the [Golang installation guide](https://golang.org/doc/install) for more information.
 
 After installation set the following environment variables:
 
