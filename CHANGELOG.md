@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.5
+
+### 🐛 Fixes
+
+- [9940](https://github.com/vegaprotocol/vega/issues/9940) - Do not assume stop order is valid when generating ids up front.
+
 ## 0.73.4
 
 ### 🐛 Fixes

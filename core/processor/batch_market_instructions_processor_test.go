@@ -294,3 +294,53 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 	assert.True(t, ok)
 	assert.False(t, perr.IsPartial())
 }
+
+func TestBatchMarketInstructionInvalidStopOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	exec := mocks.NewMockExecutionEngine(ctrl)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
+
+	batch := commandspb.BatchMarketInstructions{
+		StopOrdersSubmission: []*commandspb.StopOrdersSubmission{
+			{}, // this one is invalid
+			{
+				RisesAbove: &commandspb.StopOrderSetup{
+					Trigger: &commandspb.StopOrderSetup_Price{Price: "1000"},
+					OrderSubmission: &commandspb.OrderSubmission{
+						MarketId:    "92eea9006eaa51154cb9110b9fe982f37d3bd50f62ee9d0a7709d9c74de329aa",
+						Size:        1,
+						Side:        vega.Side_SIDE_SELL,
+						Type:        vega.Order_TYPE_MARKET,
+						TimeInForce: types.OrderTimeInForceFOK,
+						ReduceOnly:  true,
+					},
+				},
+			},
+		},
+	}
+	stopCnt := 0
+	exec.EXPECT().SubmitStopOrders(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context, stop *types.StopOrdersSubmission, party string, idgen common.IDGenerator, id1, id2 *string) ([]*types.OrderConfirmation, error) {
+			stopCnt++
+			return nil, nil
+		},
+	)
+
+	err := proc.ProcessBatch(
+		context.Background(),
+		&batch,
+		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
+		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
+	)
+
+	assert.EqualError(t, err, "0 (* (must have at least one of rises above or falls below))")
+
+	// ensure the errors is reported as partial
+	perr, ok := err.(abci.MaybePartialError)
+	assert.True(t, ok)
+	assert.True(t, perr.IsPartial())
+	assert.Equal(t, 1, stopCnt)
+}
