@@ -102,6 +102,20 @@ func (mr *MockTransferStoreMockRecorder) UpsertFees(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertFees", reflect.TypeOf((*MockTransferStore)(nil).UpsertFees), arg0, arg1)
 }
 
+// UpsertFeesDiscount mocks base method.
+func (m *MockTransferStore) UpsertFeesDiscount(arg0 context.Context, arg1 *entities.TransferFeesDiscount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertFeesDiscount", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertFeesDiscount indicates an expected call of UpsertFeesDiscount.
+func (mr *MockTransferStoreMockRecorder) UpsertFeesDiscount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertFeesDiscount", reflect.TypeOf((*MockTransferStore)(nil).UpsertFeesDiscount), arg0, arg1)
+}
+
 // MockWithdrawalStore is a mock of WithdrawalStore interface.
 type MockWithdrawalStore struct {
 	ctrl     *gomock.Controller

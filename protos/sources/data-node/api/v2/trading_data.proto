@@ -6,7 +6,6 @@ import "google/api/field_behavior.proto";
 import "google/api/httpbody.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "vega/assets.proto";
-import "vega/commands/v1/commands.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "vega/events/v1/events.proto";
 import "vega/governance.proto";
