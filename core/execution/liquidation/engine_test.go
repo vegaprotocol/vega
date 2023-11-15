@@ -2,6 +2,7 @@ package liquidation_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -43,6 +44,156 @@ func TestOrderbookPriceLimits(t *testing.T) {
 	t.Run("orderbook has no volume", testOrderbookHasNoVolume)
 	t.Run("orderbook has a volume of one (consumed fraction rounding)", testOrderbookFractionRounding)
 	t.Run("orderbook has plenty of volume (should not increase order size)", testOrderbookExceedsVolume)
+}
+
+func TestNetworkReducesOverTime(t *testing.T) {
+	// basic setup can be shared across these tests
+	mID := "intervalMkt"
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	config := &types.LiquidationStrategy{
+		DisposalTimeStep:    5 * time.Second,           // decrease volume every 5 seconds
+		DisposalFraction:    num.DecimalFromFloat(0.1), // remove 10% each step
+		FullDisposalSize:    10,                        //  a volume of 10 or less can be removed in one go
+		MaxFractionConsumed: num.DecimalFromFloat(0.2), // never use more than 20% of the available volume
+	}
+	eng := getTestEngine(t, mID, config.DeepClone())
+	defer eng.Finish()
+	// setup: create a party with volume of 10 long as the distressed party
+	closed := []events.Margin{
+		createMarginEvent("party1", mID, 10),
+		createMarginEvent("party2", mID, 10),
+		createMarginEvent("party3", mID, 10),
+		createMarginEvent("party4", mID, 10),
+		createMarginEvent("party5", mID, 10),
+	}
+	totalSize := uint64(50)
+	now := time.Now()
+	eng.tSvc.EXPECT().GetTimeNow().Times(2).Return(now)
+	idCount := len(closed) * 3
+	eng.idgen.EXPECT().NextID().Times(idCount).Return("nextID")
+	// 2 orders per closed position
+	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
+	// 1 trade per closed position
+	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
+	require.Equal(t, len(closed), len(pos))
+	require.Equal(t, len(closed), len(parties))
+	require.Equal(t, closed[0].Party(), parties[0])
+
+	t.Run("call to ontick within the time step does nothing", func(t *testing.T) {
+		now = now.Add(2 * time.Second)
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		order, err := eng.OnTick(ctx, now)
+		require.Nil(t, order)
+		require.NoError(t, err)
+	})
+
+	t.Run("after the time step passes, the first batch is disposed of", func(t *testing.T) {
+		now = now.Add(3 * time.Second)
+		minP, maxP := num.UintZero(), num.UintOne()
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+		// return a large volume so the full step is disposed
+		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
+		order, err := eng.OnTick(ctx, now)
+		require.NoError(t, err)
+		require.NotNil(t, order)
+		require.Equal(t, uint64(5), order.Size)
+	})
+
+	t.Run("ensure the next time step is set", func(t *testing.T) {
+		now = now.Add(2 * time.Second)
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		order, err := eng.OnTick(ctx, now)
+		require.Nil(t, order)
+		require.NoError(t, err)
+	})
+
+	// ready to dispose again from here on
+	t.Run("while in auction, the position is not reduced", func(t *testing.T) {
+		// pass another step
+		now = now.Add(3 * time.Second)
+		eng.as.EXPECT().InAuction().Times(1).Return(true)
+		order, err := eng.OnTick(ctx, now)
+		require.Nil(t, order)
+		require.NoError(t, err)
+	})
+
+	t.Run("when not in auction, if there is no price range, there is no trade", func(t *testing.T) {
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		mlErr := errors.New("some error")
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(nil, nil, mlErr)
+		order, err := eng.OnTick(ctx, now)
+		require.Nil(t, order)
+		require.Error(t, err)
+		require.Equal(t, mlErr, err)
+	})
+
+	t.Run("No longer in auction and we have a price range finally generates the order", func(t *testing.T) {
+		minP, maxP := num.UintZero(), num.UintOne()
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+		// return a large volume so the full step is disposed
+		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
+		order, err := eng.OnTick(ctx, now)
+		require.NoError(t, err)
+		require.NotNil(t, order)
+		require.Equal(t, uint64(5), order.Size)
+	})
+
+	t.Run("increasing the position of the network does not change the time step", func(t *testing.T) {
+		now = now.Add(time.Second)
+		closed := []events.Margin{
+			createMarginEvent("party", mID, 1),
+		}
+		eng.tSvc.EXPECT().GetTimeNow().Times(1).Return(now)
+		idCount := len(closed) * 3
+		eng.idgen.EXPECT().NextID().Times(idCount).Return("nextID")
+		// 2 orders per closed position
+		eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
+		// 1 trade per closed position
+		eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+		pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+		require.Equal(t, len(closed), len(trades))
+		require.Equal(t, len(closed), len(pos))
+		require.Equal(t, len(closed), len(parties))
+		require.Equal(t, closed[0].Party(), parties[0])
+		totalSize++
+		// now increase time by 4 seconds should dispose 5.1 -> 5
+		now = now.Add(4 * time.Second)
+		minP, maxP := num.UintZero(), num.UintOne()
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+		// return a large volume so the full step is disposed
+		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
+		order, err := eng.OnTick(ctx, now)
+		require.NoError(t, err)
+		require.NotNil(t, order)
+		require.Equal(t, totalSize/10, order.Size)
+	})
+
+	t.Run("Updating the config changes the time left until the next step", func(t *testing.T) {
+		now = now.Add(time.Second)
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		order, err := eng.OnTick(ctx, now)
+		require.Nil(t, order)
+		require.NoError(t, err)
+		// 4s to go, but...
+		config.DisposalTimeStep = 3 * time.Second
+		eng.Update(config.DeepClone())
+		now = now.Add(2 * time.Second)
+		// only 3 seconds later and we dispose of the next batch
+		minP, maxP := num.UintZero(), num.UintOne()
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+		// return a large volume so the full step is disposed
+		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
+		order, err = eng.OnTick(ctx, now)
+		require.NoError(t, err)
+		require.NotNil(t, order)
+		require.Equal(t, totalSize/10, order.Size)
+	})
 }
 
 func testOrderbookHasNoVolume(t *testing.T) {
