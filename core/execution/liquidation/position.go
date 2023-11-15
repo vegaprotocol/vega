@@ -6,7 +6,8 @@ import (
 )
 
 type Pos struct {
-	open int64
+	open  int64
+	price *num.Uint
 }
 
 func (p *Pos) Party() string {
@@ -26,7 +27,10 @@ func (p *Pos) Sell() int64 {
 }
 
 func (p *Pos) Price() *num.Uint {
-	return num.UintZero() // shouldn't be used
+	if p.price == nil {
+		return num.UintZero()
+	}
+	return p.price.Clone()
 }
 
 func (p *Pos) BuySumProduct() *num.Uint {
@@ -46,5 +50,8 @@ func (p *Pos) VWSell() *num.Uint {
 }
 
 func (p *Pos) AverageEntryPrice() *num.Uint {
+	if p.price != nil {
+		return p.price.Clone() // not sure
+	}
 	return num.UintZero() // shouldn't be used
 }

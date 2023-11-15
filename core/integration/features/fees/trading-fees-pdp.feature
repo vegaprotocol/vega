@@ -1120,7 +1120,7 @@ Feature: Fees calculations
       | buyer    | price | size | seller   |
       | trader3a | 1002  | 100  | trader4  |
       | trader3a | 900   | 200  | trader4  |
-      | network  | 0     | 300  | trader3a |
+      | network  | 900   | 300  | trader3a |
       | aux1     | 500   | 100  | network  |
       | aux1     | 490   | 200  | network  |
 
@@ -1326,7 +1326,7 @@ Feature: Fees calculations
     Then debug trades
     Then the following trades should be executed:
       | buyer    | price | size  | seller  |
-      | trader3b | 0     | 30000 | network |
+      | trader3b | 180   | 30000 | network |
       | network  | 200   | 15000 | aux1    |
       | network  | 1000  | 100   | aux1    |
       | network  | 350   | 14900 | aux1    |

@@ -62,8 +62,8 @@ func testOrderbookHasNoVolume(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err := eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
@@ -78,7 +78,7 @@ func testOrderbookHasNoVolume(t *testing.T) {
 }
 
 func testOrderbookFractionRounding(t *testing.T) {
-	mID := "market"
+	mID := "smallMkt"
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	config := types.LiquidationStrategy{
 		DisposalTimeStep:    0,
@@ -103,8 +103,8 @@ func testOrderbookFractionRounding(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err := eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
@@ -145,8 +145,8 @@ func testOrderbookExceedsVolume(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err := eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
@@ -183,8 +183,8 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err := eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
@@ -202,8 +202,8 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err = eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades = eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
@@ -223,6 +223,7 @@ func TestLegacySupport(t *testing.T) {
 		netVol += c.Size()
 	}
 	require.Equal(t, int64(0), netVol)
+	// just check the margin position event we return, too
 	eng.tSvc.EXPECT().GetTimeNow().Times(1).Return(now)
 	idCount = len(closed) * 3
 	eng.idgen.EXPECT().NextID().Times(idCount).Return("nextID")
@@ -230,11 +231,12 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
-	pos, parties, err = eng.ClearDistressedParties(ctx, eng.idgen, closed)
-	require.NoError(t, err)
+	pos, parties, trades = eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
 	require.Equal(t, len(closed), len(parties))
 	require.Equal(t, closed[0].Party(), parties[0])
+	require.Equal(t, netVol, eng.GetNetworkPosition().Size())
 	// now we should see no error, and no order returned
 	order, err = eng.OnTick(ctx, now)
 	require.NoError(t, err)

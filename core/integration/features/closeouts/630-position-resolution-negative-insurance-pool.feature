@@ -67,9 +67,10 @@ Feature: Regression test for issue 630
       | closeout | ETH/DEC19 | buy  | 100    | 105   | 0                | TYPE_LIMIT | TIF_GTC |
     And the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And debug trades
     And the following trades should be executed:
       | buyer           | price | size | seller   |
-      | network         | 0     | 100  | partyGuy |
+      | network         | 10000 | 100  | partyGuy |
       | buySideProvider | 1     | 99   | network  |
       | aux             | 1     | 1    | network  |
     And the cumulated balance for all accounts should be worth "16340000"

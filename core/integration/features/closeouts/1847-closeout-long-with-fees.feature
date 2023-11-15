@@ -70,7 +70,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     And debug trades
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | network | 0     | 4    | tt_5    |
+      | network | 100   | 4    | tt_5    |
       | tt_10   | 100   | 4    | network |
 
     # then we make sure the insurance pool collected the funds

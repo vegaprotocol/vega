@@ -84,13 +84,13 @@ Feature: Calculation of average position during closeout trades
         # Trades should result in all parties having no open position
         Then the following trades should be executed:
             | buyer   | price | size | seller  | aggressor side |
-            | party1  | 0     | 1    | network | sell           |
+            | party1  | 1099  | 1    | network | sell           |
             | network | 1100  | 1    | aux2    | buy            |
         And the parties should have the following profit and loss:
             | party  | volume | unrealised pnl | realised pnl |
             | party1 | 0      | 0              | -890         |
             | aux1   | 0      | 0              | 890          |
-            | aux2   | 0      | 0              | 0            |
+            | aux2   | 0      | 0              | -9891        |
             | lpprov | 0      | 0              | 0            |
         # Expect to see rewards as positions open at the start of the epoch
         Then parties should have the following vesting account balances:

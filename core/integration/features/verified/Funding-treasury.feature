@@ -148,7 +148,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
-      | network         | 0     | 290  | designatedLoser  |
+      | network         | 150   | 290  | designatedLoser  |
       | buySideProvider | 140   | 1    | network          |
       | lpprov          | 40    | 225  | network          |
       | aux             | 1     | 10   | network          |

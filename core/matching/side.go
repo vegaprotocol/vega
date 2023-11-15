@@ -376,7 +376,6 @@ func (s *OrderBookSide) getLevelsForPrice(price *num.Uint) []*PriceLevel {
 	}
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		if cmpF(s.levels[i].price) {
-			fmt.Printf(">>> DEBUG Price %s <> levels[%d]%s\n", price.String(), i, s.levels[i].price.String())
 			return ret
 		}
 		ret = append(ret, s.levels[i])

@@ -1162,7 +1162,7 @@ Feature: Fees calculations
       | buyer    | price | size | seller   |
       | trader3a | 1002  | 1    | trader4  |
       | trader3a | 900   | 2    | trader4  |
-      | network  | 0     | 3    | trader3a |
+      | network  | 900   | 3    | trader3a |
       | aux1     | 500   | 1    | network  |
       | aux1     | 490   | 2    | network  |
 

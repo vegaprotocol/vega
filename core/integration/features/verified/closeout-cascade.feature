@@ -84,7 +84,7 @@ Feature: Closeout-cascades
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1055 | 100 |
+      | sell | 1055  | 100    |
       | sell | 1000  | 10     |
       | buy  | 50    | 50     |
       | buy  | 10    | 50     |
@@ -99,9 +99,9 @@ Feature: Closeout-cascades
       | buyer      | price | size | seller     |
       | auxiliary2 | 10    | 10   | auxiliary1 |
       | trader3    | 100   | 50   | auxiliary1 |
-      | network    | 0     | 50   | trader3    |
+      | network    | 100   | 50   | trader3    |
       | trader2    | 50    | 50   | network    |
-      | network    | 0     | 50   | trader2    |
+      | network    | 100   | 50   | trader2    |
       | auxiliary2 | 10    | 50   | network    |
 
     And the cumulated balance for all accounts should be worth "3000000002100"

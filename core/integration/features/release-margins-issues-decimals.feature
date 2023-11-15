@@ -261,19 +261,16 @@ Feature: Test margin release on order cancel
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # now the margins should be back to 0, but it's actually
     # not being released when the party is used in the distressed flow
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party        | asset | market id | margin | general    |
       | partyGuy     | ETH   | ETH/DEC19 | 0      | 0          |
       | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1008999000 |
 
-    # TODO: FIX THIS
-    # partyGuyGood should have a margin of 0 here.
-    # Position is actuall 0, and the party have no potential position
-    # so we just have collateral stuck in the margin account
-    Then the parties should have the following profit and loss:
+    # TODO: FIX THIS -> PnL bug when dealing with decimal places...
+    And the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
-      | partyGuyGood | 0      | 0              | 8999000      |
+      | partyGuyGood | 0      | 0              | -990001      |

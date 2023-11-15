@@ -2,7 +2,6 @@ package future
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -18,7 +17,6 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 	if order == nil {
 		return nil
 	}
-	fmt.Printf(">>> DEBUG ORDER: %#v\n", order)
 	order.OriginalPrice = num.UintZero().Div(order.Price, m.priceFactor)
 	conf, err := m.matching.SubmitOrder(order)
 	if err != nil {

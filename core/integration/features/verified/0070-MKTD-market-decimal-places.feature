@@ -148,7 +148,7 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         And the following trades should be executed:
             | buyer   | price | size | seller |
             | party1  | 10    | 10   | party2 |
-            | network | 0     | 10   | party1 |
+            | network | 10    | 10   | party1 |
 
     Scenario: 003: Users engage in an ETH market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:

@@ -53,7 +53,7 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | party1  | 10000 | 3    | party2a |
       | party1  | 10000 | 2    | party2a |
       | party1  | 10000 | 3    | party2c |
-      | network | 0     | 8    | party1  |
+      | network | 10000 | 8    | party1  |
       | lp      | 5900  | 8    | network |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |

@@ -2273,6 +2273,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	// now let's get the transfers for MTM settlement
 	mp := m.getCurrentMarkPrice()
+	m.liquidation.UpdateMarkPrice(mp.Clone())
 	evts := m.position.UpdateMarkPrice(mp)
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
@@ -2493,10 +2494,12 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		return orderUpdates
 	}
 
-	closedMPs, closedParties, err := m.liquidation.ClearDistressedParties(ctx, m.idgen, closed)
-	if err != nil {
-		// NOTE: currently, the call to ClearDistressedParties CANNOT fail
-		m.log.Panic("Error while transferring distressed positions to network", logging.Error(err))
+	currentMP := m.getCurrentMarkPrice()
+	mCmp := m.priceToMarketPrecision(currentMP)
+	closedMPs, closedParties, netTrades := m.liquidation.ClearDistressedParties(ctx, m.idgen, closed, currentMP, mCmp)
+	// @TODO support AddTrades in settlement engine
+	for _, t := range netTrades {
+		m.settlement.AddTrade(t)
 	}
 	dp, sp := m.position.MarkDistressed(closedParties)
 	if len(dp) > 0 || len(sp) > 0 {

@@ -34,7 +34,7 @@ type Engine struct {
 	cfg      *types.LiquidationStrategy
 	broker   common.Broker
 	mID      string
-	pos      Pos
+	pos      *Pos
 	book     Book
 	as       common.AuctionState
 	nextStep time.Time
@@ -87,6 +87,7 @@ func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, boo
 		as:     as,
 		tSvc:   tSvc,
 		ml:     ml,
+		pos:    &Pos{},
 	}
 }
 
@@ -123,7 +124,6 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error
 		size = uint64(num.DecimalFromFloat(float64(size)).Mul(e.cfg.DisposalFraction).Round(0).IntPart())
 	}
 	available := e.book.GetVolumeAtPrice(bound, bookSide)
-	fmt.Printf(">>> Debug network position %v - available: %d - side: %s (bound: %s-%s)\n", e.pos.open, available, bookSide.String(), minP.String(), bound.String())
 	if available == 0 {
 		return nil, nil
 	}
@@ -160,7 +160,7 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error
 
 // ClearDistressedParties transfers the open positions to the network, returns the market position events and party ID's
 // for the market to remove the parties from things like positions engine and collateral.
-func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed []events.Margin) ([]events.MarketPosition, []string, error) {
+func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed []events.Margin, mp, mmp *num.Uint) ([]events.MarketPosition, []string, []*types.Trade) {
 	if len(closed) == 0 {
 		return nil, nil, nil
 	}
@@ -175,13 +175,15 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	orders := make([]events.Event, 0, len(closed)*2)
 	// trade events here
 	trades := make([]events.Event, 0, len(closed))
+	netTrades := make([]*types.Trade, 0, len(closed))
 	now := e.tSvc.GetTimeNow()
 	for _, cp := range closed {
 		e.pos.open += cp.Size()
 		// get the orders and trades so we can send events to update the datanode
-		o1, o2, t := e.getOrdersAndTrade(cp, idgen, now)
+		o1, o2, t := e.getOrdersAndTrade(cp, idgen, now, mp, mmp)
 		orders = append(orders, events.NewOrderEvent(ctx, o1), events.NewOrderEvent(ctx, o2))
 		trades = append(trades, events.NewTradeEvent(ctx, *t))
+		netTrades = append(netTrades, t)
 		// add the confiscated balance to the fee pool that can be taken from the insurance pool to pay fees to
 		// the good parties when the network closes itself out.
 		mps = append(mps, cp)
@@ -195,7 +197,15 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	if e.pos.open == 0 {
 		e.nextStep = time.Time{}
 	}
-	return mps, parties, nil
+	return mps, parties, netTrades
+}
+
+func (e *Engine) UpdateMarkPrice(mp *num.Uint) {
+	e.pos.price = mp
+}
+
+func (e *Engine) GetNetworkPosition() events.MarketPosition {
+	return e.pos
 }
 
 func (e *Engine) UpdateNetworkPosition(trades []*types.Trade) {
@@ -214,7 +224,7 @@ func (e *Engine) UpdateNetworkPosition(trades []*types.Trade) {
 	}
 }
 
-func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time) (*types.Order, *types.Order, *types.Trade) {
+func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time, price, dpPrice *num.Uint) (*types.Order, *types.Order, *types.Trade) {
 	tSide, nSide := types.SideSell, types.SideBuy // one of them will have to sell
 	s := pos.Size()
 	size := uint64(s)
@@ -224,14 +234,13 @@ func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time
 		nSide, tSide = tSide, nSide
 	}
 	var buyID, sellID, buyParty, sellParty string
-	price := num.UintZero()
 	order := types.Order{
 		ID:            idgen.NextID(),
 		MarketID:      e.mID,
 		Status:        types.OrderStatusFilled,
 		Party:         types.NetworkParty,
 		Price:         price,
-		OriginalPrice: price, // technically, we don't need to clone this, these orders and trades are just for show
+		OriginalPrice: dpPrice,
 		CreatedAt:     now.UnixNano(),
 		Reference:     "close-out distressed",
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
@@ -249,7 +258,7 @@ func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time
 		Party:         pos.Party(),
 		Side:          tSide, // assume sell, price is zero in that case anyway
 		Price:         price, // average price
-		OriginalPrice: price,
+		OriginalPrice: dpPrice,
 		CreatedAt:     now.UnixNano(),
 		Reference:     fmt.Sprintf("distressed-%s", pos.Party()),
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
@@ -267,7 +276,7 @@ func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time
 		ID:          idgen.NextID(),
 		MarketID:    e.mID,
 		Price:       price,
-		MarketPrice: price,
+		MarketPrice: dpPrice,
 		Size:        size,
 		Aggressor:   order.Side, // we consider network to be aggressor
 		BuyOrder:    buyID,
