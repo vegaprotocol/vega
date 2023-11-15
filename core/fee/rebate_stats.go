@@ -24,10 +24,6 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type tradeFee struct {
-	amount *num.Uint
-}
-
 type FeesStats struct {
 	// TotalMakerFeesReceived is the total of maker fees received by the maker side.
 	// maker -> amount
