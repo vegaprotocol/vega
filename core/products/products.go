@@ -64,7 +64,7 @@ type Product interface {
 	UnsubscribeTradingTerminated(ctx context.Context)
 	UnsubscribeSettlementData(ctx context.Context)
 	RestoreSettlementData(*num.Numeric)
-	OnLeaveOpeningAuction(context.Context, int64)
+	UpdateAuctionState(context.Context, bool)
 
 	// tell the product about an internal data-point such as a the current mark-price
 	SubmitDataPoint(context.Context, *num.Uint, int64) error

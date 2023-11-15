@@ -524,12 +524,27 @@ message DataPoint {
   int64 timestamp = 2;
 }
 
+message AuctionIntervals {
+  repeated int64 t = 1;
+  int64 auction_start = 2;
+  int64 total = 3;
+}
+
+message TWAPData {
+  int64 start = 1;
+  int64 end = 2;
+  string sum_product = 3;
+}
+
 message Perps {
   string id = 1;
   repeated DataPoint external_data_point = 2;
   repeated DataPoint internal_data_point = 3;
   uint64 seq = 4;
   int64 started_at = 5;
+  TWAPData external_twap_data = 6;
+  TWAPData internal_twap_data = 7;
+  AuctionIntervals auction_intervals = 8;
 }
 
 message OrdersAtPrice {
