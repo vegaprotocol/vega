@@ -208,6 +208,11 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		if err := s.UpdateOptionalValidation(ctx, k, string(b), false, false); err != nil {
 			return nil, err
 		}
+
+		// add it to parameter list so that we'll emit an event
+		s.protocolUpgradeNewParameters = append(
+			s.protocolUpgradeNewParameters, k,
+		)
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up
