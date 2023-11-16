@@ -1535,6 +1535,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	ps := sqlstore.NewProposals(connectionSource)
 	ts := sqlstore.NewParties(connectionSource)
 
+	emptyLS := &vega.LiquidationStrategy{
+		DisposalTimeStep:    0,
+		DisposalFraction:    "0",
+		FullDisposalSize:    0,
+		MaxFractionConsumed: "0",
+	}
+	liquidationStrat := entities.LiquidationStrategyFromProto(emptyLS)
 	parentMarket := entities.Market{
 		ID:           entities.MarketID("deadbeef01"),
 		InstrumentID: "deadbeef01",
@@ -1547,6 +1554,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	successorMarketA := entities.Market{
@@ -1562,6 +1570,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	parentMarket.SuccessorMarketID = successorMarketA.ID
@@ -1579,6 +1588,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	parentMarket2 := entities.Market{
@@ -1593,6 +1603,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	successorMarketA.SuccessorMarketID = successorMarketB.ID
@@ -1621,8 +1632,12 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			block:     source.getNextBlock(t, ctx),
 			state:     entities.ProposalStateEnacted,
 			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
-			terms:     entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
-			reason:    entities.ProposalErrorUnspecified,
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					LiquidationStrategy: emptyLS,
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
 		},
 		{
 			id:        "deadbeef02",
@@ -1637,6 +1652,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef01",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorUnspecified,
@@ -1654,6 +1670,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef01",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorParticipationThresholdNotReached,
@@ -1671,6 +1688,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef02",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorUnspecified,
@@ -1688,6 +1706,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef02",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorParticipationThresholdNotReached,
