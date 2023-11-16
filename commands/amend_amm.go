@@ -83,6 +83,25 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.upper_bound", ErrMustBePositive)
 			}
 		}
+
+		if cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound != nil {
+			hasUpdate = true
+			if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound); err != nil {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrIsNotValidNumber)
+			} else if marginRatio.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound", ErrMustBePositive)
+			}
+		}
+
+		if cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound != nil {
+			hasUpdate = true
+			if marginRatio, err := num.DecimalFromString(*cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound); err != nil {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrIsNotValidNumber)
+			} else if marginRatio.LessThan(num.DecimalZero()) {
+				errs.AddForProperty("amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound", ErrMustBePositive)
+			}
+		}
+
 	}
 
 	// no update, but also no error, invalid
