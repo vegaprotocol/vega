@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -164,6 +165,8 @@ type Market struct {
 	partyMarginFactor                map[string]num.Decimal
 	markPriceCalculator              *common.CompositePriceCalculator
 	internalCompositePriceCalculator *common.CompositePriceCalculator
+
+	amm *amm.Engine
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -4959,4 +4962,16 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 
 func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
 	return m.matching.GetFillPrice(volume, side)
+}
+
+func (m *Market) SubmitAMM(context.Context, *types.SubmitAMM, string) error {
+	return nil
+}
+
+func (m *Market) AmendAMM(context.Context, *types.AmendAMM) error {
+	return nil
+}
+
+func (m *Market) CancelAMM(context.Context, *types.CancelAMM) error {
+	return nil
 }

@@ -171,6 +171,7 @@ const (
 	PartyProfileUpdatedEvent
 	TeamsStatsUpdatedEvent
 	TimeWeightedNotionalPositionUpdatedEvent
+	AMMPoolEvent
 )
 
 var (
@@ -271,6 +272,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:                   PartyProfileUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:                     TeamsStatsUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED: TimeWeightedNotionalPositionUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL:                                AMMPoolEvent,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -362,6 +364,7 @@ var (
 		PartyProfileUpdatedEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED,
 		TeamsStatsUpdatedEvent:                   eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED,
 		TimeWeightedNotionalPositionUpdatedEvent: eventspb.BusEventType_BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED,
+		AMMPoolEvent:                             eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL,
 		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
@@ -452,6 +455,7 @@ var (
 		PartyProfileUpdatedEvent:                 "PartyProfileUpdatedEvent",
 		TeamsStatsUpdatedEvent:                   "TeamsStatsUpdatedEvent",
 		TimeWeightedNotionalPositionUpdatedEvent: "TimeWeightedNotionalPositionUpdatedEvent",
+		AMMPoolEvent:                             "AMMPoolEvent",
 	}
 )
 
