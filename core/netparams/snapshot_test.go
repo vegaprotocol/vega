@@ -16,6 +16,7 @@
 package netparams_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -23,9 +24,15 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
+	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/proto"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -115,4 +122,38 @@ func TestSnapshotRestoreDependentNetParams(t *testing.T) {
 	for key := range state1 {
 		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
 	}
+}
+
+func TestPatchConfirmationsTo64(t *testing.T) {
+	//ctx := vgtest.VegaContext("chainid", 100)
+
+	engine1 := getTestNetParams(t)
+	engine1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	v := vega.EthereumConfig{}
+	err := engine1.GetJSONStruct(netparams.BlockchainsEthereumConfig, &v)
+	require.NoError(t, err)
+	assert.NotEqual(t, uint32(64), v.Confirmations)
+
+	// get a snapshot
+	b, _, err := engine1.GetState("all")
+	require.NoError(t, err)
+
+	// new engine
+	engine2 := getTestNetParams(t)
+	engine2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.73.4", true)
+
+	snap := &snapshotpb.Payload{}
+	err = proto.Unmarshal(b, snap)
+	require.Nil(t, err)
+
+	_, err = engine2.LoadState(ctx, types.PayloadFromProto(snap))
+	require.NoError(t, err)
+
+	v = vega.EthereumConfig{}
+	err = engine2.GetJSONStruct(netparams.BlockchainsEthereumConfig, &v)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(64), v.Confirmations)
+
 }
