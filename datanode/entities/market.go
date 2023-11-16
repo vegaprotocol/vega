@@ -219,6 +219,10 @@ func (m Market) ToProto() *vega.Market {
 	if m.SuccessorMarketID != "" {
 		successorMarketID = ptr.From(m.SuccessorMarketID.String())
 	}
+	var liqStrat *vega.LiquidationStrategy
+	if m.LiquidationStrategy != nil {
+		liqStrat = m.LiquidationStrategy.IntoProto()
+	}
 
 	return &vega.Market{
 		Id:                 m.ID.String(),
@@ -242,6 +246,7 @@ func (m Market) ToProto() *vega.Market {
 		InsurancePoolFraction:         insurancePoolFraction,
 		SuccessorMarketId:             successorMarketID,
 		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
+		LiquidationStrategy:           liqStrat,
 	}
 }
 
