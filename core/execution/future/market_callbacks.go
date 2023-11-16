@@ -24,6 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+func (m *Market) OnAMMMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {
+	m.amm.OnMinCommitmentQuantumUpdate(ctx, c)
+}
+
 func (m *Market) OnMarketMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) {
 	m.liquidity.OnMinLPStakeQuantumMultiple(d)
 }

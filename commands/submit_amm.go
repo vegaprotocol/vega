@@ -85,7 +85,23 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.upper_bound", ErrMustBePositive)
 		}
 
-		// base is <= to lower bound == error
+		if len(cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound) <= 0 {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bounds", ErrIsRequired)
+		} else if marginRatio, err := num.DecimalFromString(cmd.ConcentratedLiquidityParameters.MarginRatioAtUpperBound); err != nil {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bounds", ErrIsNotValidNumber)
+		} else if marginRatio.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bounds", ErrMustBePositive)
+		}
+
+		if len(cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound) <= 0 {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bounds", ErrIsRequired)
+		} else if slippageTolerance, err := num.DecimalFromString(cmd.ConcentratedLiquidityParameters.MarginRatioAtLowerBound); err != nil {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bounds", ErrIsNotValidNumber)
+		} else if slippageTolerance.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bounds", ErrMustBePositive)
+		}
+
+		// Base is <= to lower bound == error
 		if base != nil && lowerBound != nil && base.Cmp(lowerBound) <= 0 {
 			errs.AddForProperty("submit_amm.concentrated_liquidity_parameters.base", errors.New("should be a bigger value than lower_bound"))
 		}
