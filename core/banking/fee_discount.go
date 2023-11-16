@@ -170,10 +170,10 @@ func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum 
 func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
 	theoreticalFeeD := theoreticalFee.ToDecimal()
 	// min(accumulatedDiscount-theoreticalFee,0)
-	feeD := num.MinD(
-		accumulatedDiscount.ToDecimal().Sub(theoreticalFee.ToDecimal()),
-		num.DecimalZero(),
-	).Neg()
+	feeD := num.Min(
+		num.UintZero().Sub(accumulatedDiscount, theoreticalFee),
+		num.UintZero(),
+	).ToDecimal().Neg()
 
 	appliedDiscount, _ := num.UintFromDecimal(theoreticalFeeD.Sub(feeD))
 	// -fee
