@@ -174,6 +174,7 @@ type NewMarketConfiguration struct {
 	//	*NewMarketConfiguration_Continuous
 	//	*NewMarketConfiguration_Discrete
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
+	LiquidationStrategy *LiquidationStrategy
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -203,6 +204,10 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 	if n.LiquidityFeeSettings != nil {
 		liquidityFeeSettings = n.LiquidityFeeSettings.IntoProto()
 	}
+	var liqStrat *vegapb.LiquidationStrategy
+	if n.LiquidationStrategy != nil {
+		liqStrat = n.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.NewMarketConfiguration{
 		Instrument:                    instrument,
@@ -214,6 +219,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquiditySlaParameters:        liquiditySLAParameters,
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
+		LiquidationStrategy:           liqStrat,
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -254,6 +260,9 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	if n.Successor != nil {
 		cs := *n.Successor
 		cpy.Successor = &cs
+	}
+	if n.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
 	}
 	return cpy
 }
@@ -339,6 +348,12 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 	if err != nil {
 		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
+	var liqStrat *LiquidationStrategy
+	if p.LiquidationStrategy != nil {
+		if liqStrat, err = LiquidationStrategyFromProto(p.LiquidationStrategy); err != nil {
+			return nil, fmt.Errorf("error getting the liquidation strategy from proto: %w", err)
+		}
+	}
 
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
@@ -351,6 +366,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LinearSlippageFactor:          linearSlippageFactor,
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
 		QuadraticSlippageFactor:       num.DecimalZero(),
+		LiquidationStrategy:           liqStrat,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

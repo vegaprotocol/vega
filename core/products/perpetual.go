@@ -56,6 +56,71 @@ type fundingData struct {
 	externalTWAP   *num.Uint
 }
 
+type auctionIntervals struct {
+	auctions     []int64 // complete auction intervals as pairs of enter/leave time values, always of even length
+	total        int64   // the sum of all the complete auction intervals giving the total time spent in auction
+	auctionStart int64   // if we are currently in an auction, this is the time we entered it
+}
+
+// restart resets the auction interval tracking, remembering the current "in-auction" state by carrying over `auctionStart`.
+func (a *auctionIntervals) restart() {
+	a.total = 0
+	a.auctions = []int64{}
+}
+
+// update adds a new aution enter/leave boundary to the auction intervals being tracked.
+func (a *auctionIntervals) update(t int64, enter bool) {
+	if (a.auctionStart != 0) == enter {
+		panic("flags out of sync - double entry or double leave auction detected")
+	}
+
+	if enter {
+		a.auctionStart = t
+		return
+	}
+
+	// we've left an auction period, add the new st/nd to the completed auction periods
+	a.auctions = append(a.auctions, a.auctionStart, t)
+
+	// update our running total
+	a.total += t - a.auctionStart
+	a.auctionStart = 0
+}
+
+// timeSpent returns how long the time interval [st, nd] was spent in auction in the current funding period.
+func (a *auctionIntervals) timeSpent(st, nd int64) int64 {
+	if nd < st {
+		panic("cannot process backwards interval")
+	}
+
+	var sum int64
+	if a.auctionStart != 0 && a.auctionStart < nd {
+		if st > a.auctionStart {
+			return nd - st
+		}
+		// we want to include the in-progress auction period, so add on how much into it we are
+		sum = nd - a.auctionStart
+	}
+
+	// if [st, nd] contains all the auction intervals we can just return the running total
+	if len(a.auctions) != 0 && st <= a.auctions[0] && a.auctions[len(a.auctions)-1] <= nd {
+		return a.total + sum
+	}
+
+	// iterare over the completed auction periods in pairs and add regions of the auction intervals
+	// that overlap with [st, nd]
+	for i := len(a.auctions) - 2; i >= 0; i = i - 2 {
+		// [st, nd] is entirely after this auction period, we can stop now
+		if a.auctions[i+1] < st {
+			break
+		}
+		// calculate
+		sum += num.MaxV(0, num.MinV(nd, a.auctions[i+1])-num.MaxV(st, a.auctions[i]))
+	}
+
+	return sum
+}
+
 type cachedTWAP struct {
 	log *logging.Logger
 
@@ -64,15 +129,18 @@ type cachedTWAP struct {
 	end         int64        // time of the last calculated sub-product that was >= the last added data-point
 	sumProduct  *num.Uint    // the sum-product of all the intervals between the data-points from `start` -> `end`
 	points      []*dataPoint // the data-points used to calculate the twap
+
+	auctions *auctionIntervals
 }
 
-func NewCachedTWAP(log *logging.Logger, t int64) *cachedTWAP {
+func NewCachedTWAP(log *logging.Logger, t int64, auctions *auctionIntervals) *cachedTWAP {
 	return &cachedTWAP{
 		log:         log,
 		start:       t,
 		periodStart: t,
 		end:         t,
 		sumProduct:  num.UintZero(),
+		auctions:    auctions,
 	}
 }
 
@@ -103,6 +171,9 @@ func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
 
 		// now we need to remove the contribution from this interval
 		delta := point.t - num.MaxV(prev.t, c.start)
+
+		// minus time in auction
+		delta -= c.auctions.timeSpent(num.MaxV(prev.t, c.start), point.t)
 		sub := num.UintZero().Mul(prev.price, num.NewUint(uint64(delta)))
 
 		// before we subtract, lets sanity check some things
@@ -131,10 +202,15 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 	if t < c.start || len(c.points) == 0 {
 		return num.UintZero()
 	}
+	if t == c.start {
+		return c.points[0].price.Clone()
+	}
 
 	if t == c.end {
 		// already have the sum product here, just twap-it
-		return num.UintZero().Div(c.sumProduct, num.NewUint(uint64(c.end-c.start)))
+		period := c.end - c.start
+		period -= c.auctions.timeSpent(c.start, c.end)
+		return num.UintZero().Div(c.sumProduct, num.NewUint(uint64(period)))
 	}
 
 	// if the time we want the twap from is before the last data-point we need to unwind the intervals
@@ -142,22 +218,33 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 	if t < point.t {
 		sumProduct, idx := c.unwind(t)
 		p := c.points[idx]
+
 		delta := t - p.t
+		delta -= c.auctions.timeSpent(p.t, t)
+
+		period := t - c.start
+		period -= c.auctions.timeSpent(c.start, t)
+
 		sumProduct.Add(sumProduct, num.UintZero().Mul(p.price, num.NewUint(uint64(delta))))
-		return num.UintZero().Div(sumProduct, num.NewUint(uint64(t-c.start)))
+		return num.UintZero().Div(sumProduct, num.NewUint(uint64(period)))
 	}
 
 	// the twap we want is after the final data-point so we can just extend the calculation (or shortern if we've already extended)
 	delta := t - c.end
+	period := t - c.start
+	period -= c.auctions.timeSpent(c.start, t)
+
 	sumProduct := c.sumProduct.Clone()
-	newPeriod := num.NewUint(uint64(t - c.start))
+	newPeriod := num.NewUint(uint64(period))
 	lastPrice := point.price.Clone()
 
 	// add or subtract from the sum-product based on if we are extending/shortening the interval
 	switch {
 	case delta < 0:
+		delta += c.auctions.timeSpent(t, c.end)
 		sumProduct.Sub(sumProduct, lastPrice.Mul(lastPrice, num.NewUint(uint64(-delta))))
 	case delta > 0:
+		delta -= c.auctions.timeSpent(c.end, t)
 		sumProduct.Add(sumProduct, lastPrice.Mul(lastPrice, num.NewUint(uint64(delta))))
 	}
 	// store these as the last calculated as its likely to be asked again
@@ -207,7 +294,7 @@ func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
 		c.points = []*dataPoint{point}
 		c.setPeriod(point.t, point.t)
 		c.sumProduct = num.UintZero()
-		return num.UintZero(), nil
+		return point.price.Clone(), nil
 	}
 
 	// point to add is before the very first point we added, a little weird but ok
@@ -220,7 +307,7 @@ func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
 			c.calculate(p.t)
 			c.points = append(c.points, p)
 		}
-		return num.UintZero(), nil
+		return point.price.Clone(), nil
 	}
 
 	// new point is after the last point, just calculate the TWAP at point.t and append
@@ -276,6 +363,7 @@ type Perpetual struct {
 	// twap calculators
 	internalTWAP *cachedTWAP
 	externalTWAP *cachedTWAP
+	auctions     *auctionIntervals
 }
 
 func (p Perpetual) GetCurrentPeriod() uint64 {
@@ -330,6 +418,7 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 		return nil, err
 	}
 	// check decimal places for settlement data
+	auctions := &auctionIntervals{}
 	perp := &Perpetual{
 		p:            p,
 		id:           marketID,
@@ -337,8 +426,9 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 		timeService:  ts,
 		broker:       broker,
 		assetDP:      assetDP,
-		externalTWAP: NewCachedTWAP(log, 0),
-		internalTWAP: NewCachedTWAP(log, 0),
+		auctions:     auctions,
+		externalTWAP: NewCachedTWAP(log, 0, auctions),
+		internalTWAP: NewCachedTWAP(log, 0, auctions),
 	}
 	// create specs from source
 	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
@@ -431,10 +521,30 @@ func (p *Perpetual) UnsubscribeSettlementData(ctx context.Context) {
 	p.oracle.unsubAll(ctx)
 }
 
-func (p *Perpetual) OnLeaveOpeningAuction(ctx context.Context, t int64) {
+func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
+	t := p.timeService.GetTimeNow().Truncate(time.Second).UnixNano()
+	if p.log.GetLevel() == logging.DebugLevel {
+		p.log.Debug(
+			"perpetual auction period start/end",
+			logging.String("id", p.id),
+			logging.Bool("enter", enter),
+			logging.Int64("t", t),
+		)
+	}
+
+	if p.readyForData() {
+		p.auctions.update(t, enter)
+		return
+	}
+
+	if enter {
+		return
+	}
+
+	// left first auction, we can start the first funding-period
 	p.startedAt = t
-	p.internalTWAP = NewCachedTWAP(p.log, t)
-	p.externalTWAP = NewCachedTWAP(p.log, t)
+	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
+	p.externalTWAP = NewCachedTWAP(p.log, t, p.auctions)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
 }
 
@@ -444,6 +554,9 @@ func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int6
 		return ErrInitialPeriodNotStarted
 	}
 
+	// since all external data and funding period triggers are to seconds-precision we also want to truncate
+	// internal times to seconds to avoid sub-second backwards intervals that are dependent on the order data arrives
+	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
 	twap, err := p.internalTWAP.addPoint(&dataPoint{price: price.Clone(), t: t})
 	if err != nil {
 		return err
@@ -592,6 +705,7 @@ func (p *Perpetual) GetData(t int64) *types.ProductData {
 		return nil
 	}
 
+	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
 	r := p.calculateFundingPayment(t)
 	return &types.ProductData{
 		Data: &types.PerpetualData{
@@ -633,9 +747,12 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 	external := carryOver(p.externalTWAP.points)
 	internal := carryOver(p.internalTWAP.points)
 
+	// refresh the auction tracker
+	p.auctions.restart()
+
 	// new period new life
-	p.externalTWAP = NewCachedTWAP(p.log, endAt)
-	p.internalTWAP = NewCachedTWAP(p.log, endAt)
+	p.externalTWAP = NewCachedTWAP(p.log, endAt, p.auctions)
+	p.internalTWAP = NewCachedTWAP(p.log, endAt, p.auctions)
 
 	// send events for all the data-points that were carried over
 	evts := make([]events.Event, 0, len(external)+len(internal))

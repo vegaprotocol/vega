@@ -39,15 +39,19 @@ func (m Base) ZipFileName() string {
 	return fmt.Sprintf("%s-%d-%d-%d.zip", m.ChainID, m.DatabaseVersion, m.HeightFrom, m.HeightTo)
 }
 
-func NewFromZipFileName(fileName string) (Base, error) {
-	re, err := regexp.Compile(`(.*)-(\d+)-(\d+)-(\d+).zip`)
+func (m Base) SnapshotDataDirectory() string {
+	return fmt.Sprintf("%s-%d-%d-%d", m.ChainID, m.DatabaseVersion, m.HeightFrom, m.HeightTo)
+}
+
+func NewFromSnapshotDataDirectory(dirName string) (Base, error) {
+	re, err := regexp.Compile(`(.*)-(\d+)-(\d+)-(\d+)`)
 	if err != nil {
 		return Base{}, fmt.Errorf("failed to compile reg exp:%w", err)
 	}
 
-	matches := re.FindStringSubmatch(fileName)
+	matches := re.FindStringSubmatch(dirName)
 	if len(matches) != 5 {
-		return Base{}, fmt.Errorf("failed to find matches in zip file name:%s", fileName)
+		return Base{}, fmt.Errorf("failed to find matches in zip file name:%s", dirName)
 	}
 
 	dbVersion, err := strconv.ParseInt(matches[2], 10, 64)
@@ -128,8 +132,8 @@ type Unpublished struct {
 	Directory string
 }
 
-func (s Unpublished) ZipFilePath() string {
-	return path.Join(s.Directory, s.ZipFileName())
+func (s Unpublished) UnpublishedSnapshotDataDirectory() string {
+	return path.Join(s.Directory, s.SnapshotDataDirectory())
 }
 
 func (s Unpublished) InProgressFilePath() string {

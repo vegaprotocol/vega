@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -36,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
@@ -64,8 +53,15 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 	transferType entities.LedgerMovementType,
 	fromAccountBalance, toAccountBalance int64,
 	txHash entities.TxHash,
+	transferID *string,
 ) entities.LedgerEntry {
 	t.Helper()
+
+	var tID entities.TransferID
+	if transferID != nil {
+		tID = entities.TransferID(*transferID)
+	}
+
 	ledgerEntry := entities.LedgerEntry{
 		FromAccountID:      fromAccount.ID,
 		ToAccountID:        toAccount.ID,
@@ -76,6 +72,7 @@ func addTestLedgerEntry(t *testing.T, ledger *sqlstore.Ledger,
 		FromAccountBalance: decimal.NewFromInt(fromAccountBalance),
 		ToAccountBalance:   decimal.NewFromInt(toAccountBalance),
 		TxHash:             txHash,
+		TransferID:         tID,
 	}
 
 	err := ledger.Add(ledgerEntry)
@@ -221,20 +218,20 @@ func TestLedger(t *testing.T) {
 
 	*/
 	var ledgerEntries []entities.LedgerEntry
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[0], accounts[1], blocks[1], int64(15), entities.LedgerMovementTypeBondSlashing, int64(500), int64(115), txHashFromString("ledger_entry_1")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[2], accounts[3], blocks[2], int64(10), entities.LedgerMovementTypeBondSlashing, int64(170), int64(17890), txHashFromString("ledger_entry_2")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[5], blocks[3], int64(25), entities.LedgerMovementTypeBondSlashing, int64(1700), int64(2590), txHashFromString("ledger_entry_3")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[4], int64(80), entities.LedgerMovementTypeBondSlashing, int64(2310), int64(17000), txHashFromString("ledger_entry_4")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[8], accounts[9], blocks[5], int64(1), entities.LedgerMovementTypeDeposit, int64(120), int64(900), txHashFromString("ledger_entry_5")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[10], accounts[11], blocks[6], int64(40), entities.LedgerMovementTypeDeposit, int64(1500), int64(5680), txHashFromString("ledger_entry_6")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[14], accounts[16], blocks[7], int64(12), entities.LedgerMovementTypeDeposit, int64(5000), int64(9100), txHashFromString("ledger_entry_7")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[17], accounts[15], blocks[8], int64(14), entities.LedgerMovementTypeDeposit, int64(180), int64(1410), txHashFromString("ledger_entry_8")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[21], accounts[15], blocks[9], int64(28), entities.LedgerMovementTypeDeposit, int64(2180), int64(1438), txHashFromString("ledger_entry_9")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[11], blocks[10], int64(3), entities.LedgerMovementTypeRewardPayout, int64(2587), int64(5683), txHashFromString("ledger_entry_10")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[10], blocks[11], int64(5), entities.LedgerMovementTypeRewardPayout, int64(2582), int64(1510), txHashFromString("ledger_entry_11")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[12], int64(9), entities.LedgerMovementTypeRewardPayout, int64(2301), int64(17009), txHashFromString("ledger_entry_12")))
-	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout, int64(2260), int64(17050), txHashFromString("ledger_entry_13")))
-	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[11], blocks[13], int64(72), entities.LedgerMovementTypeRewardPayout, int64(2188), int64(17122), txHashFromString("ledger_entry_14")))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[0], accounts[1], blocks[1], int64(15), entities.LedgerMovementTypeBondSlashing, int64(500), int64(115), txHashFromString("ledger_entry_1"), ptr.From("deadbeef01")))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[2], accounts[3], blocks[2], int64(10), entities.LedgerMovementTypeBondSlashing, int64(170), int64(17890), txHashFromString("ledger_entry_2"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[5], blocks[3], int64(25), entities.LedgerMovementTypeBondSlashing, int64(1700), int64(2590), txHashFromString("ledger_entry_3"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[4], int64(80), entities.LedgerMovementTypeBondSlashing, int64(2310), int64(17000), txHashFromString("ledger_entry_4"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[8], accounts[9], blocks[5], int64(1), entities.LedgerMovementTypeDeposit, int64(120), int64(900), txHashFromString("ledger_entry_5"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[10], accounts[11], blocks[6], int64(40), entities.LedgerMovementTypeDeposit, int64(1500), int64(5680), txHashFromString("ledger_entry_6"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[14], accounts[16], blocks[7], int64(12), entities.LedgerMovementTypeDeposit, int64(5000), int64(9100), txHashFromString("ledger_entry_7"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[17], accounts[15], blocks[8], int64(14), entities.LedgerMovementTypeDeposit, int64(180), int64(1410), txHashFromString("ledger_entry_8"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[21], accounts[15], blocks[9], int64(28), entities.LedgerMovementTypeDeposit, int64(2180), int64(1438), txHashFromString("ledger_entry_9"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[11], blocks[10], int64(3), entities.LedgerMovementTypeRewardPayout, int64(2587), int64(5683), txHashFromString("ledger_entry_10"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[5], accounts[10], blocks[11], int64(5), entities.LedgerMovementTypeRewardPayout, int64(2582), int64(1510), txHashFromString("ledger_entry_11"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[12], int64(9), entities.LedgerMovementTypeRewardPayout, int64(2301), int64(17009), txHashFromString("ledger_entry_12"), nil))
+	ledgerEntries = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[6], accounts[7], blocks[13], int64(41), entities.LedgerMovementTypeRewardPayout, int64(2260), int64(17050), txHashFromString("ledger_entry_13"), nil))
+	_ = append(ledgerEntries, addTestLedgerEntry(t, ledgerStore, accounts[4], accounts[11], blocks[13], int64(72), entities.LedgerMovementTypeRewardPayout, int64(2188), int64(17122), txHashFromString("ledger_entry_14"), nil))
 
 	tStart := time.Now().Add(-5 * 24 * time.Hour)
 	tEnd := time.Now()
@@ -418,6 +415,66 @@ func TestLedger(t *testing.T) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2260), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17050), e.ToAccountBalance.Abs().String())
+				}
+
+				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
+			}
+
+			filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
+
+			entries, _, err = ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.NoError(t, err)
+			// Output entries for accounts positions:
+			// None
+			assert.NotNil(t, entries)
+			assert.Equal(t, 0, len(*entries))
+		})
+
+		t.Run("by toAccount filter with cursor", func(t *testing.T) {
+			// Set filters for FromAccount and AcountTo IDs
+			filter := &entities.LedgerEntryFilter{
+				FromAccountFilter: entities.AccountFilter{},
+				ToAccountFilter: entities.AccountFilter{
+					AssetID:  asset2.ID,
+					PartyIDs: []entities.PartyID{parties[3].ID},
+				},
+			}
+
+			first := int32(2)
+
+			cursor, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+			require.NoError(t, err)
+
+			entries, _, err := ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				cursor,
+			)
+
+			assert.NoError(t, err)
+			// Output entries for accounts positions:
+			// 6->7, 6->7, 6->7
+			assert.NotNil(t, entries)
+			assert.Equal(t, 2, len(*entries))
+			for _, e := range *entries {
+				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				if e.Quantity.Abs().String() == strconv.Itoa(80) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
+				}
+
+				if e.Quantity.Abs().String() == strconv.Itoa(9) {
+					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
+					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
 				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
@@ -1145,6 +1202,28 @@ func TestLedger(t *testing.T) {
 					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 			}
+		})
+
+		t.Run("by transfer id filter", func(t *testing.T) {
+			filter := &entities.LedgerEntryFilter{
+				TransferID: "deadbeef01",
+			}
+
+			entries, _, err := ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+			require.NoError(t, err)
+			assert.NotNil(t, entries)
+
+			got := *entries
+			want := ledgerEntries[0]
+			assert.Len(t, got, 1)
+
+			assert.Equal(t, want.VegaTime, got[0].VegaTime)
+			assert.Equal(t, want.FromAccountBalance, got[0].FromAccountBalance)
+			assert.Equal(t, want.ToAccountBalance, got[0].ToAccountBalance)
 		})
 	})
 }

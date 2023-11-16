@@ -55,7 +55,13 @@ func TheMarketsUpdated(
 		if !ok {
 			return nil, fmt.Errorf("unknown market id %s", upd.id())
 		}
-		updates = append(updates, marketUpdate(config, current, upd))
+
+		mUpdate, err := marketUpdate(config, current, upd)
+		if err != nil {
+			return existing, err
+		}
+
+		updates = append(updates, mUpdate)
 		updated = append(updated, current)
 	}
 	if err := updateMarkets(updated, updates, executionEngine); err != nil {
@@ -182,7 +188,7 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 }
 
 // marketUpdate return the UpdateMarket type just for clear error reporting and sanity checks ATM.
-func marketUpdate(config *market.Config, existing *types.Market, row marketUpdateRow) types.UpdateMarket {
+func marketUpdate(config *market.Config, existing *types.Market, row marketUpdateRow) (types.UpdateMarket, error) {
 	update := types.UpdateMarket{
 		MarketID: existing.ID,
 		Changes:  &types.UpdateMarketConfiguration{},
@@ -336,7 +342,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
 		sla, err := config.LiquiditySLAParams.Get(liquiditySla)
 		if err != nil {
-			panic(err)
+			return update, err
 		}
 		slaParams := types.LiquiditySLAParamsFromProto(sla)
 		// update existing
@@ -344,7 +350,18 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LiquiditySLAParameters = slaParams
 	}
 
-	return update
+	update.Changes.LiquidityFeeSettings = existing.Fees.LiquidityFeeSettings
+	if liquidityFeeSettings, ok := row.tryLiquidityFeeSettings(); ok {
+		settings, err := config.FeesConfig.Get(liquidityFeeSettings)
+		if err != nil {
+			return update, err
+		}
+		s := types.LiquidityFeeSettingsFromProto(settings.LiquidityFeeSettings)
+		existing.Fees.LiquidityFeeSettings = s
+		update.Changes.LiquidityFeeSettings = s
+	}
+
+	return update, nil
 }
 
 func newPerpMarket(config *market.Config, row marketRow) types.Market {
@@ -586,6 +603,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
 		"sla params",
+		"liquidity fee settings",
 	})
 }
 
@@ -698,6 +716,14 @@ func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
 	if r.row.HasColumn("sla params") {
 		sla := r.row.MustStr("sla params")
 		return sla, true
+	}
+	return "", false
+}
+
+func (r marketUpdateRow) tryLiquidityFeeSettings() (string, bool) {
+	if r.row.HasColumn("liquidity fee settings") {
+		s := r.row.MustStr("liquidity fee settings")
+		return s, true
 	}
 	return "", false
 }

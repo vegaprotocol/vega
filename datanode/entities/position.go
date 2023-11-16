@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -113,18 +101,22 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	if seller {
 		size *= -1
 	}
-	marketPrice, _ := num.DecimalFromString(trade.AssetPrice) // this is market price
+	assetPrice, _ := num.DecimalFromString(trade.AssetPrice)
+	marketPrice, _ := num.DecimalFromString(trade.Price)
+
 	// Scale the trade to the correct size
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
-	realisedPnlDelta := marketPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
+	realisedPnlDelta := assetPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
 	p.PendingOpenVolume -= closed
 
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
-	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, marketPriceUint)
+	assetPriceUint, _ := num.UintFromDecimal(assetPrice)
+
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, assetPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(marketPrice, pf)
+	p.pendingMTM(assetPrice, pf)
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {

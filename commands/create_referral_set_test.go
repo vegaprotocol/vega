@@ -92,11 +92,7 @@ func testCreatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			if !tc.cmd.IsTeam {
-				require.Empty(tt, checkCreateReferralSet(tt, tc.cmd), tc.name)
-			} else {
-				require.Contains(tt, checkCreateReferralSet(tt, tc.cmd).Get("create_referral_set.team"), commands.ErrIsNotSupported, tc.name)
-			}
+			require.Empty(tt, checkCreateReferralSet(tt, tc.cmd), tc.name)
 		})
 	}
 }

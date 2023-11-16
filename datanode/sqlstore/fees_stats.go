@@ -31,21 +31,17 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-var (
-	ErrFromEpochIsRequiredWhenToEpochSpecified = errors.New("filter from-epoch is required when to-epoch is specified")
-
-	feesStatsByPartyColumn = []string{
-		"market_id",
-		"asset_id",
-		"party_id",
-		"epoch_seq",
-		"total_rewards_received",
-		"referees_discount_applied",
-		"volume_discount_applied",
-		"total_maker_fees_received",
-		"vega_time",
-	}
-)
+var feesStatsByPartyColumn = []string{
+	"market_id",
+	"asset_id",
+	"party_id",
+	"epoch_seq",
+	"total_rewards_received",
+	"referees_discount_applied",
+	"volume_discount_applied",
+	"total_maker_fees_received",
+	"vega_time",
+}
 
 type FeesStats struct {
 	*ConnectionSource
@@ -126,9 +122,6 @@ func (rfs *FeesStats) StatsForParty(ctx context.Context, partyID entities.PartyI
 		where = append(where, fmt.Sprintf("asset_id = %s", nextBindVar(&args, *assetID)))
 	}
 
-	if fromEpoch == nil && toEpoch != nil {
-		return nil, ErrFromEpochIsRequiredWhenToEpochSpecified
-	}
 	if fromEpoch == nil && toEpoch == nil {
 		where = append(where, "epoch_seq = (SELECT MAX(epoch_seq) FROM fees_stats)")
 	}

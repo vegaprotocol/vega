@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -32,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/jackc/pgtype"
@@ -49,6 +38,7 @@ type LedgerEntry struct {
 	Type               LedgerMovementType
 	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
 	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
+	TransferID         TransferID
 }
 
 var LedgerEntryColumns = []string{
@@ -57,6 +47,7 @@ var LedgerEntryColumns = []string{
 	"tx_hash", "vega_time", "transfer_time", "type",
 	"account_from_balance",
 	"account_to_balance",
+	"transfer_id",
 }
 
 func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
@@ -70,6 +61,11 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
 
+	var transferID *string
+	if le.TransferID != "" {
+		transferID = ptr.From(le.TransferID.String())
+	}
+
 	return &vega.LedgerEntry{
 		FromAccount:        fromAcc.ToAccountDetailsProto(),
 		ToAccount:          toAcc.ToAccountDetailsProto(),
@@ -77,6 +73,7 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		Type:               vega.TransferType(le.Type),
 		FromAccountBalance: le.FromAccountBalance.String(),
 		ToAccountBalance:   le.ToAccountBalance.String(),
+		TransferId:         transferID,
 	}, nil
 }
 
@@ -92,6 +89,7 @@ func (le LedgerEntry) ToRow() []any {
 		le.Type,
 		le.FromAccountBalance,
 		le.ToAccountBalance,
+		le.TransferID,
 	}
 }
 

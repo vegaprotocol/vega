@@ -981,6 +981,7 @@ type Market struct {
 	MarketTimestamps      *MarketTimestamps
 	ParentMarketID        string
 	InsurancePoolFraction num.Decimal
+	LiquidationStrategy   *LiquidationStrategy
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -998,6 +999,12 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 	parent := ""
 	if mkt.ParentMarketId != nil {
 		parent = *mkt.ParentMarketId
+	}
+	var ls *LiquidationStrategy
+	if mkt.LiquidationStrategy != nil {
+		if ls, err = LiquidationStrategyFromProto(mkt.LiquidationStrategy); err != nil {
+			return nil, err
+		}
 	}
 
 	m := &Market{
@@ -1017,6 +1024,7 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parent,
 		InsurancePoolFraction:         insFraction,
+		LiquidationStrategy:           ls,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1064,6 +1072,10 @@ func (m Market) IntoProto() *vegapb.Market {
 	if m.LiquiditySLAParams != nil {
 		lpSLA = m.LiquiditySLAParams.IntoProto()
 	}
+	var lstrat *vegapb.LiquidationStrategy
+	if m.LiquidationStrategy != nil {
+		lstrat = m.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.Market{
 		Id:                            m.ID,
@@ -1082,6 +1094,7 @@ func (m Market) IntoProto() *vegapb.Market {
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
 		InsurancePoolFraction:         insPoolFrac,
 		ParentMarketId:                parent,
+		LiquidationStrategy:           lstrat,
 	}
 	return r
 }
@@ -1164,6 +1177,9 @@ func (m Market) DeepClone() *Market {
 
 	if m.MarketTimestamps != nil {
 		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
+	}
+	if m.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = m.LiquidationStrategy.DeepClone()
 	}
 	return cpy
 }

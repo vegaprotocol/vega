@@ -197,7 +197,6 @@ func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock
 	)
 
 	hash := app.OnFinalize()
-	println("finished processing block", blockHeight, "with block hash", hex.EncodeToString(hash), "with", len(txs), "transactions")
 	return &types.ResponseFinalizeBlock{
 		TxResults:             results,
 		ValidatorUpdates:      valUpdates,

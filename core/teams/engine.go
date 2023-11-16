@@ -139,7 +139,7 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, teamID 
 	return nil
 }
 
-func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.ApplyReferralCode) error {
+func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.JoinTeam) error {
 	for _, team := range e.teams {
 		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam

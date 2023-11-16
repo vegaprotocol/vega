@@ -464,6 +464,8 @@ input LedgerEntryFilter {
   ToAccountFilter: AccountFilter
   "List of transfer types that is used for filtering sender and receiver accounts."
   TransferTypes: [TransferType]
+  "Optional transfer ID to filter by. If provided, all other filters are ignored."
+  TransferId: ID
 }
 
 "Filter for historical reward summary queries"
@@ -880,9 +882,9 @@ type Query {
     partyId: ID!
     "Optional asset ID to filter for. If omitted, statistics for each asset are returned."
     assetId: ID
-    "Optional epoch to filter from (included). If omitted, `toEpoch` must not be set. If both omitted, the most recent epoch's data is returned."
+    "Optional epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`."
     fromEpoch: Int
-    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to the most recent epoch."
+    "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
     toEpoch: Int
   ): [FeesStatsForParty]
 
@@ -2351,6 +2353,9 @@ type Market {
 
   "Optional: Liquidity SLA parameters for the market"
   liquiditySLAParameters: LiquiditySLAParameters
+
+  "Optional: Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 """
@@ -4288,6 +4293,8 @@ type NewMarket {
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 type SuccessorConfiguration {
@@ -4325,6 +4332,8 @@ type UpdateMarketConfiguration {
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
 }
 
 type UpdateInstrumentConfiguration {
@@ -4581,6 +4590,17 @@ type LiquiditySLAParameters {
   lose to liquidity providers that achieved a higher SLA performance than them.
   """
   slaCompetitionFactor: String!
+}
+
+type LiquidationStrategy {
+  "Specifies the period over which the network will try to unload its position, in seconds"
+  disposalTimeStep: Int!
+  "Specifies the fraction of its position the network will try to reduce its position by in a single disposal attempt."
+  disposalFraction: String!
+  "Specifies the size of the position held by the network that it will try to dispose of in one attempt."
+  fullDisposalSize: Int!
+  "Specifies the maximum size by which the network can reduce its position as a fraction of the volume on the book."
+  maxFractionConsumed: String!
 }
 
 "Representation of a network parameter"

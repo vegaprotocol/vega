@@ -139,7 +139,7 @@ func (e *Engine) processTransfer(
 	}
 	feeTransferAccountType := []types.AccountType{fromAcc}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, "", toMarket, amount)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, "", toMarket, amount, &transferID)
 	transfers := []*types.Transfer{fromTransfer}
 	accountTypes := []types.AccountType{fromAcc}
 	references := []string{reference}
@@ -178,6 +178,7 @@ func (e *Engine) processTransfer(
 func (e *Engine) makeTransfers(
 	from, to, asset, fromMarket, toMarket string,
 	amount *num.Uint,
+	transferID *string,
 ) (*types.Transfer, *types.Transfer) {
 	return &types.Transfer{
 			Owner: from,
@@ -185,18 +186,20 @@ func (e *Engine) makeTransfers(
 				Amount: amount.Clone(),
 				Asset:  asset,
 			},
-			Type:      types.TransferTypeTransferFundsSend,
-			MinAmount: amount.Clone(),
-			Market:    fromMarket,
+			Type:       types.TransferTypeTransferFundsSend,
+			MinAmount:  amount.Clone(),
+			Market:     fromMarket,
+			TransferID: transferID,
 		}, &types.Transfer{
 			Owner: to,
 			Amount: &types.FinancialAmount{
 				Amount: amount.Clone(),
 				Asset:  asset,
 			},
-			Type:      types.TransferTypeTransferFundsDistribute,
-			MinAmount: amount.Clone(),
-			Market:    toMarket,
+			Type:       types.TransferTypeTransferFundsDistribute,
+			MinAmount:  amount.Clone(),
+			Market:     toMarket,
+			TransferID: transferID,
 		}
 }
 

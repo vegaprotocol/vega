@@ -4922,6 +4922,8 @@ type LedgerEntry struct {
 	FromAccountBalance string `protobuf:"bytes,6,opt,name=from_account_balance,json=fromAccountBalance,proto3" json:"from_account_balance,omitempty"`
 	// Receiver account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
 	ToAccountBalance string `protobuf:"bytes,7,opt,name=to_account_balance,json=toAccountBalance,proto3" json:"to_account_balance,omitempty"`
+	// Transfer ID the ledger entry relates to.
+	TransferId *string `protobuf:"bytes,8,opt,name=transfer_id,json=transferId,proto3,oneof" json:"transfer_id,omitempty"`
 }
 
 func (x *LedgerEntry) Reset() {
@@ -5001,6 +5003,13 @@ func (x *LedgerEntry) GetFromAccountBalance() string {
 func (x *LedgerEntry) GetToAccountBalance() string {
 	if x != nil {
 		return x.ToAccountBalance
+	}
+	return ""
+}
+
+func (x *LedgerEntry) GetTransferId() string {
+	if x != nil && x.TransferId != nil {
+		return *x.TransferId
 	}
 	return ""
 }
@@ -11704,6 +11713,7 @@ func file_vega_vega_proto_init() {
 		(*WithdrawExt_Erc20)(nil),
 	}
 	file_vega_vega_proto_msgTypes[28].OneofWrappers = []interface{}{}
+	file_vega_vega_proto_msgTypes[29].OneofWrappers = []interface{}{}
 	file_vega_vega_proto_msgTypes[34].OneofWrappers = []interface{}{
 		(*ProductData_PerpetualData)(nil),
 	}

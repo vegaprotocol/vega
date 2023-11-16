@@ -21,10 +21,46 @@ import (
 
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
+
+func NewCachedTWAPFromSnapshot(
+	log *logging.Logger,
+	t int64,
+	auctions *auctionIntervals,
+	state *snapshotpb.TWAPData,
+	points []*snapshotpb.DataPoint,
+) *cachedTWAP {
+	sum, _ := num.UintFromString(state.SumProduct, 10)
+	c := &cachedTWAP{
+		log:         log,
+		periodStart: t,
+		start:       state.Start,
+		end:         state.End,
+		sumProduct:  sum,
+		auctions:    auctions,
+	}
+	c.points = make([]*dataPoint, 0, len(points))
+	for _, v := range points {
+		price, overflow := num.UintFromString(v.Price, 10)
+		if overflow {
+			log.Panic("invalid snapshot state in external data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
+		}
+		c.points = append(c.points, &dataPoint{price: price, t: v.Timestamp})
+	}
+	return c
+}
+
+func (c *cachedTWAP) serialise() *snapshotpb.TWAPData {
+	return &snapshotpb.TWAPData{
+		Start:      c.start,
+		End:        c.end,
+		SumProduct: c.sumProduct.String(),
+	}
+}
 
 func NewPerpetualFromSnapshot(
 	ctx context.Context,
@@ -46,28 +82,39 @@ func NewPerpetualFromSnapshot(
 		return nil, err
 	}
 
-	perps.externalTWAP = NewCachedTWAP(log, state.StartedAt)
-	perps.internalTWAP = NewCachedTWAP(log, state.StartedAt)
-
-	for _, v := range state.ExternalDataPoint {
-		price, overflow := num.UintFromString(v.Price, 10)
-		if overflow {
-			log.Panic("invalid snapshot state in external data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
-		}
-		perps.externalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
-	}
-
-	for _, v := range state.InternalDataPoint {
-		price, overflow := num.UintFromString(v.Price, 10)
-		if overflow {
-			log.Panic("invalid snapshot state in internal data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
-		}
-		perps.internalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
+	perps.auctions = &auctionIntervals{
+		auctionStart: state.AuctionIntervals.AuctionStart,
+		auctions:     state.AuctionIntervals.T,
+		total:        state.AuctionIntervals.Total,
 	}
 
 	perps.startedAt = state.StartedAt
 	perps.seq = state.Seq
 
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.4") {
+		// do it the old way where we'd regenerate the cached values by adding the points again
+		perps.externalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
+		perps.internalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
+
+		for _, v := range state.ExternalDataPoint {
+			price, overflow := num.UintFromString(v.Price, 10)
+			if overflow {
+				log.Panic("invalid snapshot state in external data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
+			}
+			perps.externalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
+		}
+
+		for _, v := range state.InternalDataPoint {
+			price, overflow := num.UintFromString(v.Price, 10)
+			if overflow {
+				log.Panic("invalid snapshot state in internal data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
+			}
+			perps.internalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
+		}
+	}
+	// do it the new way where we restore state exactly, because its become more complicated now
+	perps.externalTWAP = NewCachedTWAPFromSnapshot(log, state.StartedAt, perps.auctions, state.ExternalTwapData, state.ExternalDataPoint)
+	perps.internalTWAP = NewCachedTWAPFromSnapshot(log, state.StartedAt, perps.auctions, state.InternalTwapData, state.InternalDataPoint)
 	return perps, nil
 }
 
@@ -78,6 +125,13 @@ func (p *Perpetual) Serialize() *snapshotpb.Product {
 		StartedAt:         p.startedAt,
 		ExternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.internalTWAP.points)),
 		InternalDataPoint: make([]*snapshotpb.DataPoint, 0, len(p.externalTWAP.points)),
+		AuctionIntervals: &snapshotpb.AuctionIntervals{
+			AuctionStart: p.auctions.auctionStart,
+			T:            p.auctions.auctions,
+			Total:        p.auctions.total,
+		},
+		ExternalTwapData: p.externalTWAP.serialise(),
+		InternalTwapData: p.internalTWAP.serialise(),
 	}
 
 	for _, v := range p.externalTWAP.points {

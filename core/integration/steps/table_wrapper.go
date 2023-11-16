@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
@@ -238,6 +239,13 @@ func (r RowWrapper) MaybeUint(name string) *num.Uint {
 		return nil
 	}
 	return u
+}
+
+func (r RowWrapper) MaybeU64(name string) *uint64 {
+	if !r.HasColumn(name) {
+		return nil
+	}
+	return ptr.From(r.MustU64(name))
 }
 
 func (r RowWrapper) Uint(name string) *num.Uint {

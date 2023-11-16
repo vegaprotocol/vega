@@ -315,6 +315,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
   LiquiditySLAParameters:
     model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
+  LiquidationStrategy:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquidationStrategy
   LiquidityFeeSettings:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityFeeSettings
   Asset:

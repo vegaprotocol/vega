@@ -292,9 +292,4 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 			}
 		}
 	}
-
-	// temporarily disable teams scope
-	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_TEAMS {
-		errs.AddForProperty(prefix+".team_scope", ErrIsNotSupported)
-	}
 }

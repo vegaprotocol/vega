@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
 
 ### 🗑️ Deprecation
 
@@ -13,20 +13,29 @@
 ### 🛠 Improvements
 
 - [9930](https://github.com/vegaprotocol/vega/issues/9930) - `LiquidityFeeSettings` can now be used in market proposals to choose how liquidity fees are calculated.
-- [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction. 
+- [9985](https://github.com/vegaprotocol/vega/issues/9985) - Add update margin mode transaction.
+- [9936](https://github.com/vegaprotocol/vega/issues/9936) - Time spent in auction no longer contributes to a perpetual market's funding payment.
 - [9982](https://github.com/vegaprotocol/vega/issues/9982) - Remove fees and minimal transfer amount from vested account
 - [9955](https://github.com/vegaprotocol/vega/issues/9955) - Add data node subscription for transaction results.
 - [10004](https://github.com/vegaprotocol/vega/issues/10004) Track average entry price in position engine
 - [9825](https://github.com/vegaprotocol/vega/issues/9825) - Remove quadratic slippage.
+- [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
+- [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
+- [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
 
 ### 🐛 Fixes
 
 - [9941](https://github.com/vegaprotocol/vega/issues/9941) - Add data node mapping for `WasEligible` field in referral set.
 - [9940](https://github.com/vegaprotocol/vega/issues/9940) - Truncate fee stats in quantum down to the 6 decimal.
+- [9940](https://github.com/vegaprotocol/vega/issues/9940) - Do not assume stop order is valid when generating ids up front.
 - [9998](https://github.com/vegaprotocol/vega/issues/9998) - Slippage factors can now me updated in a market.
+- [10036](https://github.com/vegaprotocol/vega/issues/10036) - Average entry price no longer flickers after a trade.
 - [9956](https://github.com/vegaprotocol/vega/issues/9956) - Prevent validator node from starting if they do not have a Ethereum `RPCAddress` set.
 - [9952](https://github.com/vegaprotocol/vega/issues/9952) - `PnL` flickering fix.
 - [9977](https://github.com/vegaprotocol/vega/issues/9977) - Transfer infra fees directly to general account without going through vesting.
+- [10041](https://github.com/vegaprotocol/vega/issues/10041) - List ledger entries `API` errors when using pagination.
+- [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
+- [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
 
 ## 0.73.0
 
@@ -63,6 +72,7 @@
 - [8846](https://github.com/vegaprotocol/vega/issues/8846) - Add support to transfer recurring transfers to metric based reward
 - [9549](https://github.com/vegaprotocol/vega/issues/9549) - Update config defaults to better support archive nodes
 - [8857](https://github.com/vegaprotocol/vega/issues/8857) - Add a step for getting the balance of the liquidity provider liquidity fee account
+- [9483](https://github.com/vegaprotocol/vega/issues/9483) - Zip history segments only once
 - [8847](https://github.com/vegaprotocol/vega/issues/8847) - Implement internal time trigger data source.
 - [8895](https://github.com/vegaprotocol/vega/issues/8895) - Allow to set runtime parameters in the SQL Store connection structure
 - [9678](https://github.com/vegaprotocol/vega/issues/9678) - Cache and forward referral rewards multiplier and factor multiplier

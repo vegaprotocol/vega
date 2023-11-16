@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
@@ -45,7 +33,7 @@ import (
 )
 
 var aggregateLedgerEntriesOrdering = TableOrdering{
-	ColumnOrdering{Name: "ledger_entry_time", Sorting: ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
 const (
@@ -337,12 +325,13 @@ func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entiti
 		return "", "", nil, fmt.Errorf("filtering ledger entries: %w", err)
 	}
 
+	// We shouldn't limit the date range if we're querying for a specific transfer ID
 	whereDate := ""
-	if dateRange.Start != nil {
+	if dateRange.Start != nil && filter.TransferID == "" {
 		whereDate = fmt.Sprintf("WHERE ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
 	}
 
-	if dateRange.End != nil {
+	if dateRange.End != nil && filter.TransferID == "" {
 		if whereDate != "" {
 			whereDate = fmt.Sprintf("%s AND", whereDate)
 		} else {
@@ -354,7 +343,7 @@ func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entiti
 	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
 
 	whereQuery := fmt.Sprintf(`SELECT
-			vega_time, quantity, transfer_type, asset_id,
+			ledger_entry_time as vega_time, quantity, transfer_type, asset_id,
 			account_from_market_id, account_from_party_id, account_from_account_type,
 			account_to_market_id, account_to_party_id, account_to_account_type,
 			account_from_balance, account_to_balance
@@ -415,7 +404,8 @@ func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEnt
 //   - listing ledger entries with filtering on the receiving account
 //   - listing ledger entries with filtering on the sending AND receiving account
 //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
-func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.CloseOnLimitOperation) string {
+//   - listing ledger entries with filtering on the transfer id
+func createDynamicQuery(filterQueries [4]string, closeOnAccountFilters entities.CloseOnLimitOperation) string {
 	whereClause := ""
 
 	tableNameFromAccountQuery := "ledger_entries_from_account_filter"
@@ -432,18 +422,20 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 				account_to.party_id AS account_to_party_id,
 				account_to.market_id AS account_to_market_id,
 				account_to.type AS account_to_account_type,
-				ledger.ledger_entry_time
+				ledger.ledger_entry_time,
+				ledger.transfer_id
 			FROM ledger
 			INNER JOIN accounts AS account_from
 			ON ledger.account_from_id=account_from.id
 			INNER JOIN accounts AS account_to
-			ON ledger.account_to_id=account_to.id),
-
+			ON ledger.account_to_id=account_to.id
+		),
 		entries AS (
 			SELECT vega_time, quantity, transfer_type, asset_id,
 				account_from_market_id, account_from_party_id, account_from_account_type,
 				account_to_market_id, account_to_party_id, account_to_account_type,
-				account_from_balance, account_to_balance, ledger_entry_time
+				account_from_balance, account_to_balance, ledger_entry_time,
+				transfer_id
 			FROM %s
 			%s
 		)
@@ -453,6 +445,7 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 	tableNameCloseOnFilterQuery := "ledger_entries_closed_on_account_filters"
 	tableNameOpenOnFilterQuery := "ledger_entries_open_on_account_filters"
 	tableNameTransferType := "ledger_entries_transfer_type_filter"
+	tableNameTransferID := "ledger_entries_transfer_id_filter"
 
 	tableName := ""
 
@@ -483,6 +476,12 @@ func createDynamicQuery(filterQueries [3]string, closeOnAccountFilters entities.
 		} else {
 			whereClause = fmt.Sprintf("WHERE %s", filterQueries[2])
 		}
+	}
+
+	// We only want to filter by the transfer id, regardless of any other filter parameters
+	if filterQueries[3] != "" {
+		tableName = tableNameTransferID
+		whereClause = fmt.Sprintf("WHERE %s", filterQueries[3])
 	}
 
 	query = fmt.Sprintf(query, tableName, tableName, whereClause)

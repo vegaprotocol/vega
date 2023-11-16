@@ -26,13 +26,16 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckOrderAmendment(t *testing.T) {
 	t.Run("Submitting a nil command fails", testNilOrderAmendmentFails)
 	t.Run("amend order price - success", testAmendOrderJustPriceSuccess)
-	t.Run("amend order reduce - success", testAmendOrderJustReduceSuccess)
-	t.Run("amend order increase - success", testAmendOrderJustIncreaseSuccess)
+	t.Run("amend order reduce size delta - success", testAmendOrderJustReduceSizeDeltaSuccess)
+	t.Run("amend order increase size delta - success", testAmendOrderJustIncreaseSizeDeltaSuccess)
+	t.Run("amend order setting size delta and size - fails", testAmendOrderSettingSizeDeltaAndSizeFails)
+	t.Run("amend order update size - success", testAmendOrderJustUpdateSizeSuccess)
 	t.Run("amend order expiry - success", testAmendOrderJustExpirySuccess)
 	t.Run("amend order tif - success", testAmendOrderJustTIFSuccess)
 	t.Run("amend order expiry before creation time - success", testAmendOrderPastExpiry)
@@ -61,7 +64,7 @@ func testAmendOrderJustPriceSuccess(t *testing.T) {
 	assert.NoError(t, err.ErrorOrNil())
 }
 
-func testAmendOrderJustReduceSuccess(t *testing.T) {
+func testAmendOrderJustReduceSizeDeltaSuccess(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:   "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		MarketId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
@@ -71,11 +74,34 @@ func testAmendOrderJustReduceSuccess(t *testing.T) {
 	assert.NoError(t, err.ErrorOrNil())
 }
 
-func testAmendOrderJustIncreaseSuccess(t *testing.T) {
+func testAmendOrderJustIncreaseSizeDeltaSuccess(t *testing.T) {
 	arg := &commandspb.OrderAmendment{
 		OrderId:   "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		MarketId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
 		SizeDelta: 10,
+	}
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
+}
+
+func testAmendOrderSettingSizeDeltaAndSizeFails(t *testing.T) {
+	arg := &commandspb.OrderAmendment{
+		OrderId:   "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		MarketId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		SizeDelta: 10,
+		Size:      ptr.From(uint64(10)),
+	}
+	err := checkOrderAmendment(arg)
+	foundErrors := err.Get("order_amendment.size_delta")
+	require.Len(t, foundErrors, 1, "expected 1 error on size_delta")
+	assert.ErrorIs(t, foundErrors[0], commands.ErrMustBeSetTo0IfSizeSet)
+}
+
+func testAmendOrderJustUpdateSizeSuccess(t *testing.T) {
+	arg := &commandspb.OrderAmendment{
+		OrderId:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		MarketId: "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		Size:     ptr.From(uint64(10)),
 	}
 	err := checkOrderAmendment(arg)
 	assert.NoError(t, err.ErrorOrNil())

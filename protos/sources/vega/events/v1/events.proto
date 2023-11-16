@@ -494,6 +494,7 @@ message TransactionResult {
     commands.v1.UpdateReferralSet update_referral_set = 125;
     commands.v1.ApplyReferralCode apply_referral_code = 126;
     commands.v1.UpdateMarginMode update_margin_mode = 127;
+    commands.v1.JoinTeam join_team = 128;
   }
 
   // extra details about the transaction processing

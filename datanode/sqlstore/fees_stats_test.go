@@ -302,7 +302,21 @@ func testGetFeesStatsForParty(t *testing.T) {
 	ctx := tempTransaction(t)
 	_ = setupFeesStats(t, ctx, stores.fs)
 
-	want := []entities.FeesStatsForParty{
+	got, err := stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), ptr.From(uint64(1)), ptr.From(uint64(2)))
+	require.NoError(t, err)
+	assert.Equal(t, []entities.FeesStatsForParty{
+		{
+			AssetID:                 entities.AssetID("deadbaad01"),
+			TotalRewardsReceived:    "4200000",
+			RefereesDiscountApplied: "0",
+			VolumeDiscountApplied:   "0",
+			TotalMakerFeesReceived:  "0",
+		},
+	}, got)
+
+	got, err = stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), ptr.From(uint64(2)), nil)
+	require.NoError(t, err)
+	assert.Equal(t, []entities.FeesStatsForParty{
 		{
 			AssetID:                 entities.AssetID("deadbaad01"),
 			TotalRewardsReceived:    "4600000",
@@ -310,10 +324,31 @@ func testGetFeesStatsForParty(t *testing.T) {
 			VolumeDiscountApplied:   "0",
 			TotalMakerFeesReceived:  "0",
 		},
-	}
-	got, err := stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), ptr.From(uint64(2)), ptr.From(uint64(3)))
+	}, got)
+
+	got, err = stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), nil, ptr.From(uint64(2)))
 	require.NoError(t, err)
-	assert.Equal(t, want, got)
+	assert.Equal(t, []entities.FeesStatsForParty{
+		{
+			AssetID:                 entities.AssetID("deadbaad01"),
+			TotalRewardsReceived:    "4200000",
+			RefereesDiscountApplied: "0",
+			VolumeDiscountApplied:   "0",
+			TotalMakerFeesReceived:  "0",
+		},
+	}, got)
+
+	got, err = stores.fs.StatsForParty(ctx, "cafedaad01", ptr.From(entities.AssetID("deadbaad01")), nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, []entities.FeesStatsForParty{
+		{
+			AssetID:                 entities.AssetID("deadbaad01"),
+			TotalRewardsReceived:    "2400000",
+			RefereesDiscountApplied: "0",
+			VolumeDiscountApplied:   "0",
+			TotalMakerFeesReceived:  "0",
+		},
+	}, got)
 }
 
 func setupFeesStats(t *testing.T, ctx context.Context, fs *sqlstore.FeesStats) []entities.FeesStats {

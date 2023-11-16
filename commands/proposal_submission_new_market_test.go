@@ -149,6 +149,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with external data sources for settlement and termination with no signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails)
 	t.Run("Submitting a future market with internal time trigger termination data fails", testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails)
 	t.Run("Submitting a future market with internal time trigger settlement data fails", testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails)
+	t.Run("Submitting a future market with valid liquidation strategy succeeds", testFutureMarketSubmissionWithValidLiquidationStrategySucceeds)
+	t.Run("Submitting a future market with invalid liquidation strategy fails", testFutureMarketSubmissionWithInvalidLiquidationStrategyFails)
 
 	t.Run("Submitting a perps market change without perps fails", testNewPerpsMarketChangeSubmissionWithoutPerpsFails)
 	t.Run("Submitting a perps market change with perps succeeds", testNewPerpsMarketChangeSubmissionWithPerpsSucceeds)
@@ -5914,5 +5916,260 @@ func testLiquidityFeeSettings(t *testing.T) {
 			},
 		})
 		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_fee_settings."+c.field), c.err)
+	}
+}
+
+func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T) {
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
+	}
+
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.timestamp",
+															Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+																Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    20,
+							DisposalFraction:    "0.05",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
+}
+
+func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T) {
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
+	}
+
+	submission := &commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.timestamp",
+															Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+																Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    20,
+							DisposalFraction:    "0.05",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	data := map[string]struct {
+		ls  *vegapb.LiquidationStrategy
+		err error
+	}{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "123",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.01",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "-0.1",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    0,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.1",
+			},
+			err: commands.ErrMustBePositive,
+		},
+	}
+	checks := []string{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step",
+	}
+	for ec, exp := range data {
+		nm := submission.Terms.GetNewMarket()
+		nm.Changes.LiquidationStrategy = exp.ls
+		submission.Terms.Change = &vegapb.ProposalTerms_NewMarket{
+			NewMarket: nm,
+		}
+		err := checkProposalSubmission(submission)
+		for _, k := range checks {
+			if k != ec {
+				assert.Empty(t, err.Get(k))
+			} else {
+				assert.Contains(t, err.Get(k), exp.err)
+			}
+		}
+	}
+	// pretty much the same as above, only this time set the disposal fraction to a negative value
+	// and max fraction consumed to a large positive
+	// finally set the disposal time step to a large int value, this changes the error
+	data = map[string]struct {
+		ls  *vegapb.LiquidationStrategy
+		err error
+	}{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "-2",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.01",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "2",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    3601,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.1",
+			},
+			err: commands.ErrMustBeAtMost3600,
+		},
+	}
+	for ec, exp := range data {
+		nm := submission.Terms.GetNewMarket()
+		nm.Changes.LiquidationStrategy = exp.ls
+		submission.Terms.Change = &vegapb.ProposalTerms_NewMarket{
+			NewMarket: nm,
+		}
+		err := checkProposalSubmission(submission)
+		for _, k := range checks {
+			if k != ec {
+				assert.Empty(t, err.Get(k))
+			} else {
+				assert.Contains(t, err.Get(k), exp.err)
+			}
+		}
 	}
 }
