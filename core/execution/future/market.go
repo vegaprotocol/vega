@@ -272,6 +272,13 @@ func NewMarket(
 	}
 
 	mkt.MarketTimestamps = ts
+	// @TODO remove this once liquidation strategy is no longer optional
+	// consider mkt.LiquidationStrategy is currently still treated as optional, but we use
+	// mkt in the events we're sending to data-node, let's set the default strategy here
+	// and update the mkt object so the events will accurately reflect what this is being set to
+	if mkt.LiquidationStrategy == nil {
+		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
+	}
 	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity)
 
 	marketType := mkt.MarketType()
