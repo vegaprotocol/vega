@@ -555,11 +555,8 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 	recalcMargins := !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel)
 	// update the liquidation strategy if required.
-	if config.LiquidationStrategy != nil {
+	if !m.mkt.LiquidationStrategy.EQ(config.LiquidationStrategy) {
 		m.liquidation.Update(config.LiquidationStrategy)
-	} else {
-		// no update, liquidation strategy was not provided -> make sure we don't lose the old one
-		config.LiquidationStrategy = m.mkt.LiquidationStrategy
 	}
 	m.mkt = config
 	assets, _ := config.GetAssets()

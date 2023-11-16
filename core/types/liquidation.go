@@ -107,3 +107,18 @@ func (l *LiquidationStrategy) DeepClone() *LiquidationStrategy {
 	cpy := *l
 	return &cpy
 }
+
+func (l *LiquidationStrategy) EQ(l2 *LiquidationStrategy) bool {
+	// if the memory address is the same, then they are obviously the same
+	if l == l2 {
+		return true
+	}
+	if l2 == nil {
+		return false
+	}
+	// this should be fine, there's no pointer fields to think about
+	// but just in case we end up switching the decimal types out
+	// return *l == *l2
+	return l.DisposalTimeStep == l2.DisposalTimeStep && l.FullDisposalSize == l2.FullDisposalSize &&
+		l.DisposalFraction.Equals(l2.DisposalFraction) && l.MaxFractionConsumed.Equals(l2.MaxFractionConsumed)
+}
