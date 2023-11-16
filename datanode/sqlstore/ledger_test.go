@@ -778,6 +778,34 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 0, len(*entries))
 		})
 
+		t.Run("by transferType only", func(t *testing.T) {
+			// open on account filters
+			// Set filters for FromAccount and AcountTo IDs
+			filter := &entities.LedgerEntryFilter{
+				TransferTypes: []entities.LedgerMovementType{
+					entities.LedgerMovementTypeDeposit,
+				},
+			}
+
+			_, _, err := ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.Error(t, err)
+
+			// closed on account filters
+			filter.CloseOnAccountFilters = true
+			_, _, err = ledgerStore.Query(ctx,
+				filter,
+				entities.DateRange{Start: &tStart, End: &tEnd},
+				entities.CursorPagination{},
+			)
+
+			assert.Error(t, err)
+		})
+
 		t.Run("test open/closing with different account and transfer types", func(t *testing.T) {
 			filter := &entities.LedgerEntryFilter{
 				FromAccountFilter: entities.AccountFilter{

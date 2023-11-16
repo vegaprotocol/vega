@@ -36,6 +36,7 @@
 - [10041](https://github.com/vegaprotocol/vega/issues/10041) - List ledger entries `API` errors when using pagination.
 - [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
 - [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
+- [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
 
 ## 0.73.0
 
