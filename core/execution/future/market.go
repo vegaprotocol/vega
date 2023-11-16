@@ -554,6 +554,13 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 	recalcMargins := !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel)
+	// update the liquidation strategy if required.
+	if config.LiquidationStrategy != nil {
+		m.liquidation.Update(config.LiquidationStrategy)
+	} else {
+		// no update, liquidation strategy was not provided -> make sure we don't lose the old one
+		config.LiquidationStrategy = m.mkt.LiquidationStrategy
+	}
 	m.mkt = config
 	assets, _ := config.GetAssets()
 	m.settlementAsset = assets[0]
@@ -566,10 +573,6 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
-	// update the liquidation strategy if required.
-	if config.LiquidationStrategy != nil {
-		m.liquidation.Update(config.LiquidationStrategy)
-	}
 
 	// we should not need to rebind a replacement oracle here, the m.tradableInstrument.UpdateInstrument
 	// call handles the callbacks for us. We only need to check the market state and unbind if needed
