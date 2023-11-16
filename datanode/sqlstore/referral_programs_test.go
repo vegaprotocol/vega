@@ -21,7 +21,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -54,7 +53,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 			{
 				Program: &vega.ReferralProgram{
 					Version: 1,
-					Id:      helpers.GenerateID(),
+					Id:      GenerateID(),
 					BenefitTiers: []*vega.BenefitTier{
 						{
 							MinimumRunningNotionalTakerVolume: "1000",
@@ -86,7 +85,7 @@ func TestReferralPrograms_AddReferralProgram(t *testing.T) {
 			{
 				Program: &vega.ReferralProgram{
 					Version: 1,
-					Id:      helpers.GenerateID(),
+					Id:      GenerateID(),
 					BenefitTiers: []*vega.BenefitTier{
 						{
 							MinimumRunningNotionalTakerVolume: "2000",
@@ -147,7 +146,7 @@ func getReferralEvents(t *testing.T, endTime time.Time) (*eventspb.ReferralProgr
 	started := eventspb.ReferralProgramStarted{
 		Program: &vega.ReferralProgram{
 			Version: 1,
-			Id:      helpers.GenerateID(),
+			Id:      GenerateID(),
 			BenefitTiers: []*vega.BenefitTier{
 				{
 					MinimumRunningNotionalTakerVolume: "1000",

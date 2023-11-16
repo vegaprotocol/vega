@@ -25,7 +25,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -337,7 +336,7 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 	for i := 0; i < 10; i++ {
 		source.getNextBlock(t, ctx)
 		depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
-			strconv.FormatInt(amount, 10), helpers.GenerateID(), vegaTime.UnixNano())
+			strconv.FormatInt(amount, 10), GenerateID(), vegaTime.UnixNano())
 		deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), vegaTime)
 		require.NoError(t, err, "Converting deposit proto to database entity")
 		err = ds.Upsert(ctx, deposit)

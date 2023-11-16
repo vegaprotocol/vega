@@ -23,7 +23,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -1089,7 +1088,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			addTestBlockForTime(t, ctx, bs, vegaTime)
 
 			lp := &vega.LiquidityProvision{
-				Id:               helpers.GenerateID(),
+				Id:               GenerateID(),
 				PartyId:          provider.PartyID,
 				CreatedAt:        vegaTime.UnixNano(),
 				UpdatedAt:        vegaTime.UnixNano(),

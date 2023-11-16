@@ -24,7 +24,6 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -107,11 +106,11 @@ func TestProposals(t *testing.T) {
 	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
 	terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 	terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
-	id1 := helpers.GenerateID()
-	id2 := helpers.GenerateID()
+	id1 := GenerateID()
+	id2 := GenerateID()
 
-	reference1 := helpers.GenerateID()
-	reference2 := helpers.GenerateID()
+	reference1 := GenerateID()
+	reference2 := GenerateID()
 	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
 	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified)
 
@@ -169,7 +168,7 @@ func TestProposals(t *testing.T) {
 
 	t.Run("Add with proposal error", func(t *testing.T) {
 		propError := entities.ProposalInvalidPerpetualProduct
-		expected := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
+		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
 		actual, err := propStore.GetByID(ctx, string(expected.ID))
 		require.NoError(t, err)
 		assert.Equal(t, expected.Reason, actual.Reason)
@@ -991,11 +990,11 @@ func TestProposeSuccessorMarket(t *testing.T) {
 			},
 		},
 	}}}}
-	id1 := helpers.GenerateID()
-	id2 := helpers.GenerateID()
+	id1 := GenerateID()
+	id2 := GenerateID()
 
-	reference1 := helpers.GenerateID()
-	reference2 := helpers.GenerateID()
+	reference1 := GenerateID()
+	reference2 := GenerateID()
 	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
 	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket)
 
@@ -1014,8 +1013,8 @@ func TestProposeSuccessorMarket(t *testing.T) {
 
 func getNewProposal(partyID string) *vega.Proposal {
 	return &vega.Proposal{
-		Id:        helpers.GenerateID(),
-		Reference: helpers.GenerateID(),
+		Id:        GenerateID(),
+		Reference: GenerateID(),
 		PartyId:   partyID,
 		State:     vega.Proposal_STATE_OPEN,
 		Timestamp: time.Now().UnixNano(),

@@ -696,10 +696,10 @@ type Query {
   At least one party ID must be specified in the from or to account filter.
 
   Entries can be filtered by:
-    - the sending account (market ID, asset ID, account type)
-    - receiving account (market ID, asset ID, account type)
-    - sending AND receiving account
-    - transfer type either in addition to the above filters or as a standalone option
+  - the sending account (market ID, asset ID, account type)
+  - receiving account (market ID, asset ID, account type)
+  - sending AND receiving account
+  - transfer type either in addition to the above filters or as a standalone option
 
   Note: The date range is restricted to any 5 days.
   If no start or end date is provided, only ledger entries from the last 5 days will be returned.
@@ -1004,6 +1004,10 @@ type Query {
     pagination: Pagination
     "Filter for reward transfers only. Direction must be 'From' if a public key is used"
     isReward: Boolean
+    "Optional epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`."
+    fromEpoch: Int
+    "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
+    toEpoch: Int
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2643,6 +2647,10 @@ type Party {
     pagination: Pagination
     "Filter for reward transfers only. Direction must be 'From'"
     isReward: Boolean
+    "Optional epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`."
+    fromEpoch: Int
+    "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
+    toEpoch: Int
   ): TransferConnection
 
   "The activity streak"

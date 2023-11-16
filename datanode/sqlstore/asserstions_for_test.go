@@ -13,13 +13,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package helpers
+package sqlstore_test
 
 import (
-	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-// GenerateID generates a 256 bit pseudo-random hash ID.
-func GenerateID() string {
-	return vgcrypto.RandomHash()
+// RequireAllDifferent requires that none of the objects are equal.
+// This is useful to ensure the objects used in tests are actually different
+// when expecting one or another.
+// It's mainly made to ensure the tests are dealing with meaningful setup.
+func RequireAllDifferent(t *testing.T, objs ...any) {
+	t.Helper()
+
+	for i := range objs {
+		for j := i + 1; j < len(objs); j++ {
+			require.NotEqual(t, objs[i], objs[j])
+		}
+	}
 }

@@ -23,7 +23,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -50,7 +49,7 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		block := addTestBlock(t, ctx, bs)
 		referrer := addTestParty(t, ctx, ps, block)
 		team := entities.Team{
-			ID:             entities.TeamID(helpers.GenerateID()),
+			ID:             entities.TeamID(GenerateID()),
 			Referrer:       referrer.ID,
 			Name:           fmt.Sprintf("Test Team %02d", i+1),
 			CreatedAt:      block.VegaTime,

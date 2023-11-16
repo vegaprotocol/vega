@@ -26,7 +26,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -54,7 +53,7 @@ func TestReferralSets_AddReferralSet(t *testing.T) {
 	referrer := addTestParty(t, ctx, ps, block)
 
 	set := entities.ReferralSet{
-		ID:        entities.ReferralSetID(helpers.GenerateID()),
+		ID:        entities.ReferralSetID(GenerateID()),
 		Referrer:  referrer.ID,
 		CreatedAt: block.VegaTime,
 		UpdatedAt: block.VegaTime,
@@ -87,7 +86,7 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 	referee := addTestParty(t, ctx, ps, block)
 
 	set := entities.ReferralSet{
-		ID:        entities.ReferralSetID(helpers.GenerateID()),
+		ID:        entities.ReferralSetID(GenerateID()),
 		Referrer:  referrer.ID,
 		CreatedAt: block.VegaTime,
 		UpdatedAt: block.VegaTime,
@@ -134,7 +133,7 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
 		referrer := addTestParty(t, ctx, ps, block)
 		set := entities.ReferralSet{
-			ID:        entities.ReferralSetID(helpers.GenerateID()),
+			ID:        entities.ReferralSetID(GenerateID()),
 			Referrer:  referrer.ID,
 			CreatedAt: block.VegaTime,
 			UpdatedAt: block.VegaTime,
@@ -191,7 +190,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
 
 	t.Run("Should return all referral sets", func(t *testing.T) {
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, entities.DefaultCursorPagination(true))
 		require.NoError(t, err)
 		want := sets[:]
 		assert.Equal(t, want, got)
@@ -338,7 +337,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -351,7 +350,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set by referrer if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -365,7 +364,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	t.Run("Should return referee in a set", func(t *testing.T) {
 		want := []entities.ReferralSetRefereeStats{refs[r.Intn(len(refs))]}
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
