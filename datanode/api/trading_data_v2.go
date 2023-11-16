@@ -434,6 +434,9 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 
 	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
+		if errors.Is(err, sqlstore.ErrLedgerEntryFilterForParty) {
+			return nil, formatE(ErrInvalidFilter, err)
+		}
 		return nil, formatE(ErrLedgerServiceGet, err)
 	}
 
