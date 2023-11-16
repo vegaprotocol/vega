@@ -391,7 +391,7 @@ func (e *Engine) getPartyAssetDiscounts() []*checkpoint.PartyAssetAmount {
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Party == out[j].Party {
-			return out[i].Asset == out[j].Asset
+			return out[i].Asset < out[j].Asset
 		}
 		return out[i].Party < out[j].Party
 	})

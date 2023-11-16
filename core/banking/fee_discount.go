@@ -64,7 +64,7 @@ func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPe
 		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
 
 		// add fees
-		e.feeDiscountPerPartyAndAsset[key].Add(e.feeDiscountPerPartyAndAsset[key], fee)
+		e.feeDiscountPerPartyAndAsset[key].AddSum(fee)
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
