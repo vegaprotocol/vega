@@ -185,6 +185,11 @@ func NewMarketFromSnapshot(
 	if em.ExpiringStopOrders != nil {
 		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
+	// @TODO same as in the non-snapshot market constructor: default to legacy liquidation strategy for the time being
+	// this can be removed once this parameter is no longer optional
+	if mkt.LiquidationStrategy == nil {
+		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
+	}
 	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity)
 
 	now := timeService.GetTimeNow()
