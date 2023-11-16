@@ -5,6 +5,7 @@
 ### 🐛 Fixes
 
 - [9940](https://github.com/vegaprotocol/vega/issues/9940) - Do not assume stop order is valid when generating ids up front.
+- [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
 
 ## 0.73.4
 
