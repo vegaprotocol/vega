@@ -194,6 +194,30 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		require.NotNil(t, order)
 		require.Equal(t, totalSize/10, order.Size)
 	})
+
+	t.Run("Once the remaining volume of the network is LTE full disposal position, the network creates an order for its full position", func(t *testing.T) {
+		// use trades to reduce its position
+		size := uint64(eng.GetNetworkPosition().Size()) - config.FullDisposalSize
+		eng.UpdateNetworkPosition([]*types.Trade{
+			{
+				ID:       "someTrade",
+				MarketID: mID,
+				Size:     size,
+			},
+		})
+		require.True(t, uint64(eng.GetNetworkPosition().Size()) <= config.FullDisposalSize)
+		now = now.Add(3 * time.Second)
+		// only 3 seconds later and we dispose of the next batch
+		minP, maxP := num.UintZero(), num.UintOne()
+		eng.as.EXPECT().InAuction().Times(1).Return(false)
+		eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+		// return a large volume so the full step is disposed
+		eng.book.EXPECT().GetVolumeAtPrice(gomock.Any(), gomock.Any()).Times(1).Return(uint64(1000))
+		order, err := eng.OnTick(ctx, now)
+		require.NoError(t, err)
+		require.NotNil(t, order)
+		require.Equal(t, config.FullDisposalSize, order.Size)
+	})
 }
 
 func testOrderbookHasNoVolume(t *testing.T) {
