@@ -38,6 +38,8 @@
 - [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
 - [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
 - [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
+- [10120](https://github.com/vegaprotocol/vega/issues/10120) - Assure theoretical and actual funding payment calculations are consistent.
+- [10121](https://github.com/vegaprotocol/vega/issues/10121) - Assure `EstimatePosition` API works correctly with sparse perps data
 
 ## 0.73.0
 
