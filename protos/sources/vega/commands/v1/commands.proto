@@ -445,6 +445,10 @@ message SubmitAMM {
     string lower_bound = 2;
     // The base price bound configuration for the pool.
     string base = 3;
+    // The margin ration at bounds.
+    string margin_ratio_at_upper_bound = 4;
+    // The margin ration at bounds.
+    string margin_ratio_at_lower_bound = 5;
   }
 }
 
@@ -461,11 +465,15 @@ message AmendAMM {
 
   message ConcentratedLiquidityParameters {
     // The upper price bound configuration for the pool.
-    optional string upper_bound = 3;
+    optional string upper_bound = 1;
     // The lower price bound configuration for the pool.
-    optional string lower_bound = 4;
+    optional string lower_bound = 2;
     // The base price bound configuration for the pool.
-    optional string base = 5;
+    optional string base = 3;
+    // The margin ration at bounds.
+    optional string margin_ratio_at_upper_bound = 4;
+    // The margin ration at bounds.
+    optional string margin_ratio_at_lower_bound = 5;
   }
 }
 
