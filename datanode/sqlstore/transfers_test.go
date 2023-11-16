@@ -520,6 +520,7 @@ func TestGetAllTransfers(t *testing.T) {
 	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
+		TransferWithStatus(entities.TransferStatusDone),
 		TransferAsRecurring(eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   ptr.From(uint64(20)),
@@ -529,6 +530,7 @@ func TestGetAllTransfers(t *testing.T) {
 	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account3),
+		TransferWithStatus(entities.TransferStatusCancelled),
 		TransferAsRecurring(eventspb.RecurringTransfer{
 			StartEpoch: 25,
 			EndEpoch:   nil,
@@ -586,6 +588,24 @@ func TestGetAllTransfers(t *testing.T) {
 			[]entities.Transfer{*transfer1, *transfer2},
 			TransferDetailsAsTransfers(t, retrieved),
 		)
+	})
+
+	t.Run("Retrieve transfers by status", func(t *testing.T) {
+		matrix := map[entities.TransferStatus][]entities.Transfer{
+			entities.TransferStatusPending:   {*transfer1},
+			entities.TransferStatusCancelled: {*transfer3},
+			entities.TransferStatusRejected:  {},
+		}
+
+		for status, expected := range matrix {
+			filters := sqlstore.ListTransfersFilters{
+				Status: ptr.From(status),
+			}
+
+			retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+			require.NoError(t, err)
+			assert.Equal(t, expected, TransferDetailsAsTransfers(t, retrieved))
+		}
 	})
 }
 
@@ -751,6 +771,7 @@ func TestGetAllRewardTransfers(t *testing.T) {
 		block := addTestBlockForTime(t, ctx, blocksStore, vegaTime)
 
 		var kindOption TransferOption
+		var statusOption TransferOption
 		if i%2 == 0 {
 			kindOption = TransferAsRecurringGovernance(eventspb.RecurringGovernanceTransfer{
 				StartEpoch: 15,
@@ -760,6 +781,7 @@ func TestGetAllRewardTransfers(t *testing.T) {
 					LockPeriod: uint64((i % 7) + 1),
 				},
 			})
+			statusOption = TransferWithStatus(entities.TransferStatusDone)
 		} else {
 			kindOption = TransferAsRecurring(eventspb.RecurringTransfer{
 				StartEpoch: 15,
@@ -770,12 +792,14 @@ func TestGetAllRewardTransfers(t *testing.T) {
 					LockPeriod: uint64((i % 7) + 1),
 				},
 			})
+			statusOption = TransferWithStatus(entities.TransferStatusPending)
 		}
 
 		transfer := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 			TransferWithAsset(asset),
 			TransferFromToAccounts(account1, account2),
 			kindOption,
+			statusOption,
 		)
 		rewardTransfers = append(rewardTransfers, *transfer)
 		allTransfers = append(allTransfers, *transfer)
@@ -793,5 +817,17 @@ func TestGetAllRewardTransfers(t *testing.T) {
 		retrieved, _, err := transfersStore.GetAllRewards(ctx, entities.DefaultCursorPagination(false), noFilters)
 		require.NoError(t, err)
 		assert.Equal(t, rewardTransfers, TransferDetailsAsTransfers(t, retrieved))
+	})
+
+	t.Run("Retrieve transfers by status pending", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			Status: ptr.From(entities.TransferStatusDone),
+		}
+
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(false), filters)
+		require.NoError(t, err)
+		assert.Equal(t,
+			[]entities.Transfer{rewardTransfers[0], rewardTransfers[2], rewardTransfers[4], rewardTransfers[6], rewardTransfers[8]},
+			TransferDetailsAsTransfers(t, retrieved))
 	})
 }

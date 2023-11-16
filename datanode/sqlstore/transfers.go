@@ -42,6 +42,7 @@ type ListTransfersFilters struct {
 	FromEpoch *uint64
 	ToEpoch   *uint64
 	Scope     *string
+	Status    *entities.TransferStatus
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -280,6 +281,10 @@ FROM recurring_transfers
 }
 
 func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []string, args []any) (string, []any) {
+	if filters.Status != nil {
+		where = append(where, fmt.Sprintf("status = %s", nextBindVar(&args, *filters.Status)))
+	}
+
 	if filters.FromEpoch != nil {
 		where = append(where, fmt.Sprintf("(start_epoch >= %s or end_epoch >= %s)",
 			nextBindVar(&args, *filters.FromEpoch),

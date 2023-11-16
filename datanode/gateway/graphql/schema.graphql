@@ -1008,6 +1008,8 @@ type Query {
     fromEpoch: Int
     "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
     toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2651,6 +2653,8 @@ type Party {
     fromEpoch: Int
     "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
     toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
   ): TransferConnection
 
   "The activity streak"
