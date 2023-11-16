@@ -193,6 +193,30 @@ func TestCheckAmendAMM(t *testing.T) {
 		},
 		{
 			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: ptr.From(""),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: ptr.From("abc"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: ptr.From("-10"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (must be positive)",
+		},
+		{
+			submission: commandspb.AmendAMM{
 				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
 				SlippageTolerance: "0.09",
 			},

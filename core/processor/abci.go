@@ -2622,33 +2622,33 @@ func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	var err error
 	params := &commandspb.SubmitAMM{}
-	if err = tx.Unmarshal(params); err != nil {
+	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize SubmitAMM command: %w", err)
 	}
 
-	return errors.New("not implemented")
+	submit := types.NewSubmitAMMFromProto(params, tx.Party())
+	return app.exec.SubmitAMM(ctx, submit, deterministicID)
 }
 
 func (app *App) DeliverAmendAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	var err error
 	params := &commandspb.AmendAMM{}
-	if err = tx.Unmarshal(params); err != nil {
+	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize AmendAMM command: %w", err)
 	}
 
-	return errors.New("not implemented")
+	amend := types.NewAmendAMMFromProto(params, tx.Party())
+	return app.exec.AmendAMM(ctx, amend)
 }
 
 func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
-	var err error
 	params := &commandspb.CancelAMM{}
-	if err = tx.Unmarshal(params); err != nil {
+	if err := tx.Unmarshal(params); err != nil {
 		return fmt.Errorf("could not deserialize CancelAMM command: %w", err)
 	}
 
-	return errors.New("not implemented")
+	cancel := types.NewCancelAMMFromProto(params, tx.Party())
+	return app.exec.CancelAMM(ctx, cancel)
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create
