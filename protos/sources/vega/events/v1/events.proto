@@ -13,6 +13,43 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+message AMMPool {
+  string party_id = 1;
+  string market_id = 2;
+  string pool_id = 3;
+  string sub_account = 4;
+  string commitment = 5;
+  ConcentratedLiquidityParameters parameters = 6;
+  Status status = 7;
+  StatusReason status_reason = 8;
+
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_ACTIVE = 1;
+    STATUS_REJECTED = 2;
+    STATUS_CANCELLED = 3;
+    STATUS_STOPPED = 4;
+  }
+
+  enum StatusReason {
+    STATUS_REASON_UNSPECIFIED = 0;
+    STATUS_REASON_CANCELLED_BY_PARTY = 1;
+    STATUS_REASON_CANNOT_FILL_COMMITMENT = 2;
+    STATUS_REASON_PARTY_ALREADY_OWN_A_POOL = 3;
+    STATUS_REASON_PARTY_CLOSED_OUT = 4;
+    STATUS_REASON_MARKET_CLOSED = 5;
+    STATUS_REASON_COMMITMENT_TOO_LOW = 6;
+  }
+
+  message ConcentratedLiquidityParameters {
+    string base = 1;
+    string lower_bound = 2;
+    string upper_bound = 3;
+    string margin_ratio_at_upper_bound = 4;
+    string margin_ratio_at_lower_bound = 5;
+  }
+}
+
 // Summary of the vesting and locked balances for an epoch
 message VestingBalancesSummary {
   // Epoch for which these balances are valid.
@@ -1315,9 +1352,12 @@ enum BusEventType {
 
   // Event indicating that a party updated their profile.
   BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
+  
+  // Event use to notify for a amm pool update.
+  BUS_EVENT_TYPE_AMM_POOL = 87;
 
   // Event indicating that teams' statistics have been updated.
-  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 87;
+  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 88;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -1502,6 +1542,8 @@ message BusEvent {
     PartyProfileUpdated party_profile_updated = 184;
     // Event notifying of an update of teams' statistics.
     TeamsStatsUpdated teams_stats_updated = 185;
+    // Event notifying of an amm pool update.
+    AMMPool amm_pool = 186;
 
     // Market tick events
     MarketEvent market = 1001;

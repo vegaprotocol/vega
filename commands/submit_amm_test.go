@@ -199,6 +199,30 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: "",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is required)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: "abc",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtBounds: "-10",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (must be positive)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 					Base:       "1000",
 					UpperBound: "900",
 				},
@@ -220,9 +244,10 @@ func TestCheckSubmitAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  "10000",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					Base:       "20000",
-					UpperBound: "30000",
-					LowerBound: "10000",
+					Base:                "20000",
+					UpperBound:          "30000",
+					LowerBound:          "10000",
+					MarginRatioAtBounds: "0.1",
 				},
 			},
 		},

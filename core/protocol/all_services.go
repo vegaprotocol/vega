@@ -990,6 +990,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.RewardsActivityStreakInactivityLimit,
 			Watcher: svcs.activityStreak.OnRewardsActivityStreakInactivityLimit,
 		},
+		{
+			Param:   netparams.MarketAMMMinCommitmentQuantum,
+			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)

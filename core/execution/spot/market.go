@@ -3039,6 +3039,18 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 	}
 }
 
+func (m *Market) SubmitAMM(context.Context, *types.SubmitAMM, string) error {
+	return errors.New("unimplemented")
+}
+
+func (m *Market) AmendAMM(context.Context, *types.AmendAMM) error {
+	return errors.New("unimplemented")
+}
+
+func (m *Market) CancelAMM(context.Context, *types.CancelAMM) error {
+	return errors.New("unimplemented")
+}
+
 // IDGen is an id generator for orders.
 type IDGen interface {
 	NextID() string

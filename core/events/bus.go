@@ -170,6 +170,7 @@ const (
 	PartyMarginModeUpdatedEvent
 	PartyProfileUpdatedEvent
 	TeamsStatsUpdatedEvent
+	AMMPoolEvent
 )
 
 var (
@@ -269,7 +270,8 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED:         PartyMarginModeUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:             PartyProfileUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:               TeamsStatsUpdatedEvent,
-		// If adding a type here, please also add it to datanode/broker/convert.go
+		eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL:                          AMMPoolEvent,
+		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -359,7 +361,8 @@ var (
 		PartyMarginModeUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED,
 		PartyProfileUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED,
 		TeamsStatsUpdatedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED,
-		// If adding a type here, please also add it to datanode/broker/convert.go
+		AMMPoolEvent:                      eventspb.BusEventType_BUS_EVENT_TYPE_AMM_POOL,
+		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
 	eventStrings = map[Type]string{
@@ -448,6 +451,7 @@ var (
 		PartyMarginModeUpdatedEvent:       "PartyMarginModeUpdatedEvent",
 		PartyProfileUpdatedEvent:          "PartyProfileUpdatedEvent",
 		TeamsStatsUpdatedEvent:            "TeamsStatsUpdatedEvent",
+		AMMPoolEvent:                      "AMMPoolEvent",
 	}
 )
 
