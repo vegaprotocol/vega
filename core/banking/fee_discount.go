@@ -111,13 +111,15 @@ func (e *Engine) ApplyFeeDiscount(ctx context.Context, asset string, party strin
 	}
 
 	key := e.feeDiscountKey(asset, party)
-	defer e.broker.Send(
-		events.NewTransferFeesDiscountUpdated(ctx,
-			party, asset,
-			e.feeDiscountPerPartyAndAsset[key].Clone(),
-			e.currentEpoch,
-		),
-	)
+	defer func() {
+		e.broker.Send(
+			events.NewTransferFeesDiscountUpdated(ctx,
+				party, asset,
+				e.feeDiscountPerPartyAndAsset[key].Clone(),
+				e.currentEpoch,
+			),
+		)
+	}()
 
 	e.feeDiscountPerPartyAndAsset[key].Sub(e.feeDiscountPerPartyAndAsset[key], discount)
 
