@@ -257,6 +257,8 @@ const (
 	RewardsActivityStreakInactivityLimit       = "rewards.activityStreak.inactivityLimit"
 	RewardsActivityStreakMinQuantumOpenVolume  = "rewards.activityStreak.minQuantumOpenVolume"
 	RewardsActivityStreakMinQuantumTradeVolume = "rewards.activityStreak.minQuantumTradeVolume"
+
+	MarketAMMMinCommitmentQuantum = "market.amm.minCommitmentQuantum"
 )
 
 var Deprecated = map[string]struct{}{
@@ -271,6 +273,7 @@ var Deprecated = map[string]struct{}{
 var AllKeys = map[string]struct{}{
 	SpamProtectionMaxUpdatePartyProfile:                          {},
 	SpamProtectionUpdateProfileMinFunds:                          {},
+	MarketAMMMinCommitmentQuantum:                                {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
