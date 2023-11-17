@@ -45,6 +45,8 @@ var onlyTypes = map[string]Only{
 	"reduce": Reduce,
 }
 
+var refToOrderId = map[string]string{}
+
 func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
 	// ensure time is set + idgen is not nil
 	now := time.GetTimeNow()
@@ -244,6 +246,12 @@ func PartiesPlaceTheFollowingOrders(
 		if resp == nil {
 			continue
 		}
+
+		// If we have a reference, add a reference -> orderID lookup
+		if len(resp.Order.Reference) > 0 {
+			refToOrderId[resp.Order.Reference] = resp.Order.ID
+		}
+
 		actualTradeCount := int64(len(resp.Trades))
 		if actualTradeCount != row.ResultingTrades() {
 			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
@@ -304,8 +312,8 @@ func buildStopOrder(
 	now time.Time,
 ) (*types.StopOrdersSubmission, error) {
 	var (
-		fbPriced, raPriced     = row.FallsBellowPriceTrigger(), row.RisesAbovePriceTrigger()
-		fbTrailing, raTrailing = row.FallsBellowTrailing(), row.RisesAboveTrailing()
+		fbPriced, raPriced     = row.FallsBelowPriceTrigger(), row.RisesAbovePriceTrigger()
+		fbTrailing, raTrailing = row.FallsBelowTrailing(), row.RisesAboveTrailing()
 	)
 
 	if fbPriced == nil && fbTrailing.IsZero() && raPriced == nil && raTrailing.IsZero() {
@@ -385,6 +393,39 @@ func buildStopOrder(
 		sub.RisesAbove.OrderSubmission.Reference += "-2"
 	}
 
+	if row.row.HasColumn("ra size override setting") {
+		value := row.RisesAboveSizeOverrideSetting()
+		if value == types.StopOrderSizeOverrideSettingOrder {
+			sub.RisesAbove.SizeOverrideSetting = value
+			if value == types.StopOrderSizeOverrideSettingOrder {
+
+				// We need to convert the reference into an order ID
+				orderId, OK := refToOrderId[row.RisesAboveSizeOverrideReference()]
+				if OK {
+					sub.RisesAbove.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
+				} else {
+					return nil, errors.New("reference doesn't match to existing order")
+				}
+			}
+		}
+	}
+
+	if row.row.HasColumn("fb size override setting") {
+		value := row.FallsBelowSizeOverrideSetting()
+		if value == types.StopOrderSizeOverrideSettingOrder {
+			sub.FallsBelow.SizeOverrideSetting = value
+			if value == types.StopOrderSizeOverrideSettingOrder {
+				// We need to convert the reference into an order ID
+				orderId, OK := refToOrderId[row.FallsBelowSizeOverrideReference()]
+				if OK {
+					sub.FallsBelow.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
+				} else {
+					return nil, errors.New("reference doesn't match to existing order")
+				}
+			}
+		}
+	}
+
 	return sub, nil
 }
 
@@ -411,6 +452,10 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"so expiry strategy",
 		"pegged reference",
 		"pegged offset",
+		"ra size override setting",
+		"ra size override reference",
+		"fb size override setting",
+		"fb size override reference",
 	})
 }
 
@@ -518,7 +563,7 @@ func (r submitOrderRow) Only() Only {
 	return t
 }
 
-func (r submitOrderRow) FallsBellowPriceTrigger() *num.Uint {
+func (r submitOrderRow) FallsBelowPriceTrigger() *num.Uint {
 	if !r.row.HasColumn("fb price trigger") {
 		return nil
 	}
@@ -532,7 +577,7 @@ func (r submitOrderRow) RisesAbovePriceTrigger() *num.Uint {
 	return r.row.MustUint("ra price trigger")
 }
 
-func (r submitOrderRow) FallsBellowTrailing() num.Decimal {
+func (r submitOrderRow) FallsBelowTrailing() num.Decimal {
 	if !r.row.HasColumn("fb trailing") {
 		return num.DecimalZero()
 	}
@@ -572,4 +617,26 @@ func (r submitOrderRow) PeggedOffset() *num.Uint {
 		return nil
 	}
 	return r.row.MustUint("pegged offset")
+}
+
+func (r submitOrderRow) RisesAboveSizeOverrideSetting() types.StopOrderSizeOverrideSetting {
+	if !r.row.HasColumn("ra size override setting") {
+		return types.StopOrderSizeOverrideSettingUnspecified
+	}
+	return r.row.MustSizeOverrideSetting("ra size override setting")
+}
+
+func (r submitOrderRow) RisesAboveSizeOverrideReference() string {
+	return r.row.MustStr("ra size override reference")
+}
+
+func (r submitOrderRow) FallsBelowSizeOverrideSetting() types.StopOrderSizeOverrideSetting {
+	if !r.row.HasColumn("fb size override setting") {
+		return types.StopOrderSizeOverrideSettingUnspecified
+	}
+	return r.row.MustSizeOverrideSetting("fb size override setting")
+}
+
+func (r submitOrderRow) FallsBelowSizeOverrideReference() string {
+	return r.row.MustStr("fb size override reference")
 }

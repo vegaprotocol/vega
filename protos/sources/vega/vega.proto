@@ -7,8 +7,19 @@ import "vega/markets.proto";
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 message StopOrder {
-  message SizeOverride {
+  message SizeOverrideValue {
     optional string order_id = 1;
+  }
+
+  enum SizeOverrideSetting {
+    // Never valid
+    SIZE_OVERRIDE_UNSPECIFIED = 0;
+    // No override
+    SIZE_OVERRIDE_NONE = 1;
+    // Use the filled value from an existing order
+    SIZE_OVERRIDE_ORDER = 2;
+    // Use the total position of the trader
+    SIZE_OVERRIDE_POSITION = 3;
   }
 
   enum ExpiryStrategy {
@@ -89,7 +100,9 @@ message StopOrder {
   // An optional reason for why a stop order was rejected
   optional RejectionReason rejection_reason = 12;
   // Size override setting
-  optional SizeOverride size_override = 13;
+  SizeOverrideSetting size_override_setting = 13;
+  // Size override value
+  optional SizeOverrideValue size_override_value = 14;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.

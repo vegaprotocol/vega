@@ -1170,7 +1170,7 @@ func (m *Market) poolStopOrders(
 func (m *Market) stopOrderWouldTriggerAtSubmission(
 	stopOrder *types.StopOrder,
 ) bool {
-	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercenOffset() {
+	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercentOffset() {
 		return false
 	}
 

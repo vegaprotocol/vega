@@ -1775,7 +1775,7 @@ func (m *Market) poolStopOrders(
 func (m *Market) stopOrderWouldTriggerAtSubmission(
 	stopOrder *types.StopOrder,
 ) bool {
-	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercenOffset() {
+	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercentOffset() {
 		return false
 	}
 
@@ -3590,24 +3590,23 @@ func (m *Market) submitStopOrders(
 	for _, v := range stopOrders {
 		if v.Status == status {
 			// If we have an order size override, handle that here
-			if v.SizeOverride != nil {
-				if len(v.SizeOverride.OrderID) > 0 {
-					// Update the order size to match that of the referenced order
-					order, _, err := m.getOrderByID(v.SizeOverride.OrderID)
-					if err != nil {
-						m.log.Error("could not get order to override size with",
-							logging.StopOrderSubmission(v),
-							logging.Error(err))
-					}
-					v.OrderSubmission.Size = order.Size - order.TrueRemaining()
-
-					// Need to cancel the referenced order
-					toDelete = append(toDelete, order)
-				} else {
-					// Update the order size to match that of the party's position
-					pos, _ := m.position.GetPositionByPartyID(v.Party)
-					v.OrderSubmission.Size = uint64(pos.Size())
+			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
+				// Update the order size to match that of the referenced order
+				order, _, err := m.getOrderByID(v.SizeOverrideValue.OrderID)
+				if err != nil {
+					m.log.Error("could not get order to override size with",
+						logging.StopOrderSubmission(v),
+						logging.Error(err))
 				}
+				v.OrderSubmission.Size = order.Size - order.TrueRemaining()
+
+				// Need to cancel the referenced order
+				toDelete = append(toDelete, order)
+			}
+			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+				// Update the order size to match that of the party's position
+				pos, _ := m.position.GetPositionByPartyID(v.Party)
+				v.OrderSubmission.Size = uint64(pos.Size())
 			}
 
 			conf, err := m.SubmitOrderWithIDGeneratorAndOrderID(
