@@ -398,7 +398,6 @@ func buildStopOrder(
 		if value == types.StopOrderSizeOverrideSettingOrder {
 			sub.RisesAbove.SizeOverrideSetting = value
 			if value == types.StopOrderSizeOverrideSettingOrder {
-
 				// We need to convert the reference into an order ID
 				orderId, OK := refToOrderId[row.RisesAboveSizeOverrideReference()]
 				if OK {
