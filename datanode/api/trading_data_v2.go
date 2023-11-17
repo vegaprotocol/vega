@@ -3243,7 +3243,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 				if err != nil {
 					return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
 				}
-				if !fundingPayment.IsZero() {
+				fundingRate, err := num.DecimalFromString(perpData.FundingRate)
+				if err != nil {
+					return nil, formatE(fmt.Errorf("can't parse funding rate from perpetual product data: %s", perpData.FundingRate), err)
+				}
+				if !fundingPayment.IsZero() && !fundingRate.IsZero() {
 					marginFactorScaledFundingPaymentPerUnitPosition = factor.Mul(fundingPayment)
 				}
 			}
