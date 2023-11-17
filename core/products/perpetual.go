@@ -563,7 +563,7 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 		return
 	}
 
-	if !p.haveData(t) || t == p.startedAt {
+	if !p.haveDataBeforeGivenTime(t) || t == p.startedAt {
 		// we have no points, or the interval is zero length so we just start a new interval
 		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
 		p.startNewFundingPeriod(ctx, t)
@@ -588,7 +588,7 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 }
 
 func (p *Perpetual) GetData(t int64) *types.ProductData {
-	if !p.readyForData() {
+	if !p.readyForData() || !p.haveData() {
 		return nil
 	}
 
@@ -660,13 +660,13 @@ func (p *Perpetual) readyForData() bool {
 	return p.startedAt > 0
 }
 
-// haveData returns whether we have any data points before the given time.
-func (p *Perpetual) haveData(endAt int64) bool {
+// haveDataBeforeGivenTime returns whether we have at least one data point from each of the internal and external price series before the given time.
+func (p *Perpetual) haveDataBeforeGivenTime(endAt int64) bool {
 	if !p.readyForData() {
 		return false
 	}
 
-	if len(p.internalTWAP.points) == 0 || len(p.externalTWAP.points) == 0 {
+	if !p.haveData() {
 		return false
 	}
 
@@ -675,6 +675,11 @@ func (p *Perpetual) haveData(endAt int64) bool {
 	}
 
 	return true
+}
+
+// haveData returns whether we have at least one data point from each of the internal and external price series.
+func (p *Perpetual) haveData() bool {
+	return len(p.internalTWAP.points) > 0 && len(p.externalTWAP.points) > 0
 }
 
 // calculateFundingPayment returns the funding payment and funding rate for the interval between when the current funding period
@@ -759,7 +764,7 @@ func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, 
 // for a party with a position of +1.
 func (p *Perpetual) GetMarginIncrease(t int64) num.Decimal {
 	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
-	if !p.haveData(t) || p.p.MarginFundingFactor.IsZero() {
+	if !p.haveDataBeforeGivenTime(t) || p.p.MarginFundingFactor.IsZero() {
 		return num.DecimalZero()
 	}
 
