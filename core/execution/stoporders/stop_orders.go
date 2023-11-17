@@ -188,7 +188,7 @@ func (p *Pool) Insert(order *types.StopOrder) {
 	switch {
 	case order.Trigger.IsPrice():
 		p.priced.Insert(order.ID, order.Trigger.Price().Clone(), order.Trigger.Direction)
-	case order.Trigger.IsTrailingPercenOffset():
+	case order.Trigger.IsTrailingPercentOffset():
 		p.trailing.Insert(order.ID, order.Trigger.TrailingPercentOffset(), order.Trigger.Direction)
 	}
 }
@@ -260,7 +260,7 @@ func (p *Pool) remove(orders []*types.StopOrder) {
 		switch {
 		case order.Trigger.IsPrice():
 			p.priced.Remove(order.ID)
-		case order.Trigger.IsTrailingPercenOffset():
+		case order.Trigger.IsTrailingPercentOffset():
 			p.trailing.Remove(order.ID)
 		}
 	}

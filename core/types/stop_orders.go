@@ -68,6 +68,19 @@ const (
 	StopOrderStatusRejected = vega.StopOrder_STATUS_REJECTED
 )
 
+type StopOrderSizeOverrideSetting = vega.StopOrder_SizeOverrideSetting
+
+const (
+	// Never valid.
+	StopOrderSizeOverrideSettingUnspecified StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_UNSPECIFIED
+	// No size override is used
+	StopOrderSizeOverrideSettingNone = vega.StopOrder_SIZE_OVERRIDE_NONE
+	// No size override is used
+	StopOrderSizeOverrideSettingOrder = vega.StopOrder_SIZE_OVERRIDE_ORDER
+	// No size override is used
+	StopOrderSizeOverrideSettingPosition = vega.StopOrder_SIZE_OVERRIDE_POSITION
+)
+
 type StopOrderRejectionReason = vega.StopOrder_RejectionReason
 
 const (
@@ -98,7 +111,7 @@ func (s *StopOrderExpiry) Expires() bool {
 	return s.ExpiresAt != nil
 }
 
-type StopOrderSizeOverride struct {
+type StopOrderSizeOverrideValue struct {
 	OrderID string
 }
 
@@ -140,7 +153,7 @@ func (s *StopOrderTrigger) IsPrice() bool {
 	return s.price != nil
 }
 
-func (s *StopOrderTrigger) IsTrailingPercenOffset() bool {
+func (s *StopOrderTrigger) IsTrailingPercentOffset() bool {
 	return s.price == nil
 }
 
@@ -159,9 +172,11 @@ func (s *StopOrderTrigger) TrailingPercentOffset() num.Decimal {
 }
 
 type StopOrderSetup struct {
-	OrderSubmission *OrderSubmission
-	Expiry          *StopOrderExpiry
-	Trigger         *StopOrderTrigger
+	OrderSubmission     *OrderSubmission
+	Expiry              *StopOrderExpiry
+	Trigger             *StopOrderTrigger
+	SizeOverrideSetting StopOrderSizeOverrideSetting
+	SizeOverrideValue   *StopOrderSizeOverrideValue
 }
 
 func (s StopOrderSetup) String() string {
@@ -247,31 +262,35 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 ) (fallsBelow, risesAbove *StopOrder) {
 	if s.RisesAbove != nil {
 		risesAbove = &StopOrder{
-			ID:              risesAboveID,
-			Party:           party,
-			Market:          s.RisesAbove.OrderSubmission.MarketID,
-			OrderSubmission: s.RisesAbove.OrderSubmission,
-			OCOLinkID:       fallsBelowID,
-			Expiry:          s.RisesAbove.Expiry,
-			Trigger:         s.RisesAbove.Trigger,
-			Status:          StopOrderStatusPending,
-			CreatedAt:       now,
-			UpdatedAt:       now,
+			ID:                  risesAboveID,
+			Party:               party,
+			Market:              s.RisesAbove.OrderSubmission.MarketID,
+			OrderSubmission:     s.RisesAbove.OrderSubmission,
+			OCOLinkID:           fallsBelowID,
+			Expiry:              s.RisesAbove.Expiry,
+			Trigger:             s.RisesAbove.Trigger,
+			Status:              StopOrderStatusPending,
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			SizeOverrideSetting: s.RisesAbove.SizeOverrideSetting,
+			SizeOverrideValue:   s.RisesAbove.SizeOverrideValue,
 		}
 	}
 
 	if s.FallsBelow != nil {
 		fallsBelow = &StopOrder{
-			ID:              fallsBelowID,
-			Party:           party,
-			Market:          s.FallsBelow.OrderSubmission.MarketID,
-			OrderSubmission: s.FallsBelow.OrderSubmission,
-			OCOLinkID:       risesAboveID,
-			Expiry:          s.FallsBelow.Expiry,
-			Trigger:         s.FallsBelow.Trigger,
-			Status:          StopOrderStatusPending,
-			CreatedAt:       now,
-			UpdatedAt:       now,
+			ID:                  fallsBelowID,
+			Party:               party,
+			Market:              s.FallsBelow.OrderSubmission.MarketID,
+			OrderSubmission:     s.FallsBelow.OrderSubmission,
+			OCOLinkID:           risesAboveID,
+			Expiry:              s.FallsBelow.Expiry,
+			Trigger:             s.FallsBelow.Trigger,
+			Status:              StopOrderStatusPending,
+			CreatedAt:           now,
+			UpdatedAt:           now,
+			SizeOverrideSetting: s.FallsBelow.SizeOverrideSetting,
+			SizeOverrideValue:   s.FallsBelow.SizeOverrideValue,
 		}
 	}
 
@@ -294,19 +313,20 @@ func (s StopOrdersSubmission) String() string {
 }
 
 type StopOrder struct {
-	ID              string
-	Party           string
-	Market          string
-	OrderSubmission *OrderSubmission
-	OrderID         string
-	OCOLinkID       string
-	Expiry          *StopOrderExpiry
-	Trigger         *StopOrderTrigger
-	Status          StopOrderStatus
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	RejectionReason *StopOrderRejectionReason
-	SizeOverride    *StopOrderSizeOverride
+	ID                  string
+	Party               string
+	Market              string
+	OrderSubmission     *OrderSubmission
+	OrderID             string
+	OCOLinkID           string
+	Expiry              *StopOrderExpiry
+	Trigger             *StopOrderTrigger
+	Status              StopOrderStatus
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	RejectionReason     *StopOrderRejectionReason
+	SizeOverrideSetting StopOrderSizeOverrideSetting
+	SizeOverrideValue   *StopOrderSizeOverrideValue
 }
 
 func (s *StopOrder) String() string {
@@ -362,25 +382,26 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		expiry.ExpiryStrategy = p.StopOrder.ExpiryStrategy
 	}
 
-	var sizeOverride *StopOrderSizeOverride
-	if p.StopOrder.SizeOverride != nil {
-		sizeOverride = &StopOrderSizeOverride{OrderID: p.StopOrder.SizeOverride.GetOrderId()}
+	var sizeOverride *StopOrderSizeOverrideValue
+	if p.StopOrder.SizeOverrideSetting == StopOrderSizeOverrideSettingOrder {
+		sizeOverride = &StopOrderSizeOverrideValue{OrderID: p.StopOrder.SizeOverrideValue.GetOrderId()}
 	}
 
 	return &StopOrder{
-		ID:              p.StopOrder.Id,
-		Party:           p.StopOrder.PartyId,
-		Market:          p.StopOrder.MarketId,
-		OrderID:         p.StopOrder.OrderId,
-		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
-		Status:          p.StopOrder.Status,
-		CreatedAt:       time.Unix(0, p.StopOrder.CreatedAt),
-		UpdatedAt:       time.Unix(0, ptr.UnBox(p.StopOrder.UpdatedAt)),
-		OrderSubmission: sub,
-		Trigger:         trigger,
-		Expiry:          expiry,
-		RejectionReason: p.StopOrder.RejectionReason,
-		SizeOverride:    sizeOverride,
+		ID:                  p.StopOrder.Id,
+		Party:               p.StopOrder.PartyId,
+		Market:              p.StopOrder.MarketId,
+		OrderID:             p.StopOrder.OrderId,
+		OCOLinkID:           ptr.UnBox(p.StopOrder.OcoLinkId),
+		Status:              p.StopOrder.Status,
+		CreatedAt:           time.Unix(0, p.StopOrder.CreatedAt),
+		UpdatedAt:           time.Unix(0, ptr.UnBox(p.StopOrder.UpdatedAt)),
+		OrderSubmission:     sub,
+		Trigger:             trigger,
+		Expiry:              expiry,
+		RejectionReason:     p.StopOrder.RejectionReason,
+		SizeOverrideSetting: p.StopOrder.SizeOverrideSetting,
+		SizeOverrideValue:   sizeOverride,
 	}
 }
 
@@ -421,7 +442,7 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 		ev.StopOrder.Trigger = &vega.StopOrder_Price{
 			Price: s.Trigger.Price().String(),
 		}
-	case s.Trigger.IsTrailingPercenOffset():
+	case s.Trigger.IsTrailingPercentOffset():
 		ev.StopOrder.Trigger = &vega.StopOrder_TrailingPercentOffset{
 			TrailingPercentOffset: s.Trigger.TrailingPercentOffset().String(),
 		}
