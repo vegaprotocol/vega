@@ -3254,8 +3254,6 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		}
 	}
 
-	marginFactorScaledFundingPaymentPerUnitPosition = t.scaleDecimalFromMarketToAssetPrice(marginFactorScaledFundingPaymentPerUnitPosition, dPriceFactor)
-
 	marginEstimate := t.computeMarginRange(
 		req.MarketId,
 		req.OpenVolume,
