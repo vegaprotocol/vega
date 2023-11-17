@@ -43,10 +43,14 @@ func (l *LiquidationNode) IntoProto() *snapshot.Liquidation {
 	if l.Config != nil {
 		cfg = l.Config.IntoProto()
 	}
+	var ns int64
+	if !l.NextStep.IsZero() {
+		ns = l.NextStep.UnixNano()
+	}
 	return &snapshot.Liquidation{
 		MarketId:   l.MarketID,
 		NetworkPos: l.NetworkPos,
-		NextStep:   l.NextStep.UnixNano(),
+		NextStep:   ns,
 		Config:     cfg,
 	}
 }
@@ -69,10 +73,14 @@ func LiquidationSnapshotFromProto(p *snapshot.Liquidation) (*LiquidationNode, er
 		}
 		s = st
 	}
+	var ns time.Time
+	if p.NextStep > 0 {
+		ns = time.Unix(0, p.NextStep)
+	}
 	return &LiquidationNode{
 		MarketID:   p.MarketId,
 		NetworkPos: p.NetworkPos,
-		NextStep:   time.Unix(0, p.NextStep),
+		NextStep:   ns,
 		Config:     s,
 	}, nil
 }

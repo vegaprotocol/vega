@@ -25,26 +25,21 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 			logging.Error(err),
 		)
 	}
-	// no order was submitted
-	if conf == nil {
-		return nil
-	}
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	m.handleConfirmationPassiveOrders(ctx, conf)
 
 	// no trades...
 	if len(conf.Trades) == 0 {
-		m.checkForReferenceMoves(ctx, conf.PassiveOrdersAffected, false)
 		return nil
 	}
 	// transfer fees to the good party -> fees are now taken from the insurance pool
 	fees, _ := m.fee.GetFeeForPositionResolution(conf.Trades)
 	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, fees)
 	if err != nil {
-		// this is the current behaviour, even if this fails, we need to check for reference moves
-		// FIXME(): we may figure a better error handling in here
-		m.checkForReferenceMoves(ctx, conf.PassiveOrdersAffected, false)
-		m.log.Error("unable to transfer fees for positions resolutions",
+		// if we get an eror transfer fees, we are missing accounts, and something is terribly wrong.
+		// the fees we get from the fee engine result in transfers with the minimum amount set to 0,
+		// so the only thing that could go wrong is missing accounts.
+		m.log.Panic("unable to transfer fees for positions resolution",
 			logging.Error(err),
 			logging.String("market-id", m.GetID()))
 		return err

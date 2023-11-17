@@ -76,9 +76,9 @@ var (
 	}
 )
 
-// GetDefaultStrategy is exporeted, expected to be used to update existing proposals on protocol upgrade
+// GetDefaultStrat is exporeted, expected to be used to update existing proposals on protocol upgrade
 // once that's happened, this code can be removed.
-func GetDefaultStrategy() *types.LiquidationStrategy {
+func GetDefaultStrat() *types.LiquidationStrategy {
 	return defaultStrat.DeepClone()
 }
 
