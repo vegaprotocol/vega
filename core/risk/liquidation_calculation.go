@@ -28,7 +28,7 @@ type OrderInfo struct {
 	IsMarketOrder bool
 }
 
-func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders num.Decimal, err error) {
+func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, fundingPaymentPerUnitPosition num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithBuyOrders, liquidationPriceWithSellOrders num.Decimal, err error) {
 	openVolume := num.DecimalFromInt64(sizePosition).Div(positionFactor)
 
 	if sizePosition != 0 {
