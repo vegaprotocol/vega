@@ -246,6 +246,13 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) ClearTradeEvents() {
+	b.mu.Lock()
+	te := make([]events.Event, 0, len(b.data[events.TradeEvent]))
+	b.data[events.TradeEvent] = te
+	b.mu.Unlock()
+}
+
 // GetTransfers returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user.
 func (b *BrokerStub) GetTransfers(mutable bool) []*vegapb.LedgerEntry {
 	transferEvents := b.GetLedgerMovements(mutable)

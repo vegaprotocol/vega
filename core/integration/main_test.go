@@ -658,6 +658,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^create the network treasury account for asset "([^"]*)"$`, func(asset string) error {
 		return steps.CreateNetworkTreasuryAccount(execsetup.collateralEngine, asset)
 	})
+
+	s.Step(`the liquidation strategies:$`, func(table *godog.Table) error {
+		return steps.TheLiquidationStrategies(marketConfig, table)
+	})
+
+	s.Step(`^clear trade events$`, func() error {
+		return steps.ClearTradeEvents(execsetup.broker)
+	})
 }
 
 func reconcileAccounts() error {
