@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +32,7 @@ func addTestNode(t *testing.T, ctx context.Context, ps *sqlstore.Node, block ent
 	t.Helper()
 	node := entities.Node{
 		ID:              entities.NodeID(id),
-		PubKey:          entities.VegaPublicKey(helpers.GenerateID()),
+		PubKey:          entities.VegaPublicKey(GenerateID()),
 		TmPubKey:        entities.TendermintPublicKey(generateTendermintPublicKey()),
 		EthereumAddress: entities.EthereumAddress(generateEthereumAddress()),
 		VegaTime:        block.VegaTime,
@@ -76,13 +75,13 @@ func TestUpdateNodePubKey(t *testing.T) {
 	block := addTestBlock(t, ctx, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
 	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
 
 	kr := entities.KeyRotation{
 		NodeID:    node1.ID,
 		OldPubKey: node1.PubKey,
-		NewPubKey: entities.VegaPublicKey(helpers.GenerateID()),
+		NewPubKey: entities.VegaPublicKey(GenerateID()),
 		VegaTime:  block.VegaTime,
 	}
 
@@ -101,7 +100,7 @@ func TestGetNodes(t *testing.T) {
 	block := addTestBlock(t, ctx, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
 	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
 	addNodeAnnounced(t, ctx, ns, node1.ID, false, 7, now)
 	addRankingScore(t, ctx, ns, node1,
@@ -150,8 +149,8 @@ func TestNodeGetByTxHash(t *testing.T) {
 	block := addTestBlock(t, ctx, bs)
 
 	now := time.Now()
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, GenerateID())
 	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
 	addNodeAnnounced(t, ctx, ns, node2.ID, false, 7, now)
 	addNodeAnnounced(t, ctx, ns, node2.ID, false, 9, now)
@@ -174,8 +173,8 @@ func TestGetNodesJoiningAndLeaving(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, GenerateID())
 
 	// The node1 will exist int the epochs [2,3] and [6,7]
 	exists := map[int]bool{2: true, 3: true, 6: true, 7: true}
@@ -209,8 +208,8 @@ func TestGetNodeData(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 	party1 := addTestParty(t, ctx, ps, block)
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, GenerateID())
 
 	addTestDelegation(t, ctx, ds, party1, node1, 3, block, 0)
 	addTestDelegation(t, ctx, ds, party1, node1, 4, block, 1)
@@ -528,7 +527,7 @@ func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 
 	block := addTestBlock(t, ctx, bs)
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
 
 	// node1 goes from pending -> ersatz -> tendermint
 	// then gets demoted straight to pending with a zero perf score

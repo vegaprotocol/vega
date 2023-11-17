@@ -23,7 +23,6 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-// Transfer ...
 type TransferFunds struct {
 	*Base
 	transfer *eventspb.Transfer

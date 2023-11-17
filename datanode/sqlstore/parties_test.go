@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +30,7 @@ import (
 func addTestParty(t *testing.T, ctx context.Context, ps *sqlstore.Parties, block entities.Block) entities.Party {
 	t.Helper()
 	party := entities.Party{
-		ID:       entities.PartyID(helpers.GenerateID()),
+		ID:       entities.PartyID(GenerateID()),
 		VegaTime: &block.VegaTime,
 		TxHash:   generateTxHash(),
 	}

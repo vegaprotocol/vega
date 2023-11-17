@@ -22,6 +22,7 @@
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
+- [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
 
 ### 🐛 Fixes
 
@@ -36,6 +37,8 @@
 - [10041](https://github.com/vegaprotocol/vega/issues/10041) - List ledger entries `API` errors when using pagination.
 - [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
 - [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
+- [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
+- [10121](https://github.com/vegaprotocol/vega/issues/10121) - Assure `EstimatePosition` API works correctly with sparse perps data
 
 ## 0.73.0
 

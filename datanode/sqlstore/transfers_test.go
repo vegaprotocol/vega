@@ -16,871 +16,782 @@
 package sqlstore_test
 
 import (
-	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
-	"code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTransfers(t *testing.T) {
-	t.Run("Retrieve transfers to or from a party", testTransfersGetTransferToOrFromParty)
-	t.Run("Retrieve transfer to and from a party ", testTransfersGetTransfersByParty)
-	t.Run("Retrieve transfer to and from an account", testTransfersGetFromAccountAndGetToAccount)
-	t.Run("Retrieves latest transfer version after updates in different block", testTransfersUpdatesInDifferentBlocks)
-	t.Run("Retrieves latest transfer version after updates in different block", testTransfersUpdateInSameBlock)
-	t.Run("Test add and retrieve of one off transfer", testTransfersAddAndRetrieveOneOffTransfer)
-	t.Run("Test add and retrieve of recurring transfer", testTransfersAddAndRetrieveRecurringTransfer)
-	t.Run("Test get by tx hash", testGetByTxHash)
-}
-
-func TestTransfersPagination(t *testing.T) {
-	t.Run("should return all transfers if no pagination is specified", testTransferPaginationNoPagination)
-	t.Run("should return the first page of results if first is provided", testTransferPaginationFirst)
-	t.Run("should return the last page of results if last is provided", testTransferPaginationLast)
-	t.Run("should return the specified page of results if first and after are provided", testTransferPaginationFirstAfter)
-	t.Run("should return the specified page of results if last and before are provided", testTransferPaginationLastBefore)
-}
-
-func TestRewardTransfers(t *testing.T) {
-	t.Run("Retrieve all reward transfers", testGetAllRewardTransfers)
-}
-
-func TestTrasferByID(t *testing.T) {
+func TestGetTransferByID(t *testing.T) {
 	ctx := tempTransaction(t)
 
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
 
-	transfers := sqlstore.NewTransfers(connectionSource)
-	id := "deadd0d0"
+	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	reason := "test by id"
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              id,
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+
+	transfer := NewTransfer(t, ctx, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
-			DispatchStrategy: &vega.DispatchStrategy{
+		}),
+	)
+
+	transferUpdateFromSameTx := NewTransfer(t, ctx, accountsStore, block,
+		TransferWithID(transfer.ID),
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 15,
+			EndEpoch:   nil,
+			Factor:     "0.15",
+		}),
+	)
+	transferUpdateFromSameTx.TxHash = transfer.TxHash
+
+	transferUpdateFromDifferentTx := NewTransfer(t, ctx, accountsStore, block,
+		TransferWithID(transfer.ID),
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 20,
+			EndEpoch:   ptr.From(uint64(25)),
+			Factor:     "0.2",
+		}),
+	)
+
+	// Ensure we have different transfers so the test is meaningful.
+	RequireAllDifferent(t, transfer, transferUpdateFromSameTx, transferUpdateFromDifferentTx)
+
+	t.Run("Save transfers", func(t *testing.T) {
+		require.NoError(t, transfersStore.Upsert(ctx, transfer))
+		require.NoError(t, transfersStore.Upsert(ctx, transferUpdateFromSameTx))
+		require.NoError(t, transfersStore.Upsert(ctx, transferUpdateFromDifferentTx))
+	})
+
+	t.Run("Retrieve the transfer by ID returns the latest version", func(t *testing.T) {
+		retrieved, err := transfersStore.GetByID(ctx, transfer.ID.String())
+		require.NoError(t, err)
+		assert.Equal(t, *transferUpdateFromDifferentTx, retrieved.Transfer)
+	})
+}
+
+func TestGetTransfersByHash(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
+
+	block1 := addTestBlockForTime(t, ctx, blocksStore, time.Now().Add(-2*time.Minute))
+	block2 := addTestBlockForTime(t, ctx, blocksStore, time.Now().Add(-1*time.Minute))
+
+	asset := CreateAssert(t, ctx, assetsStore, block1)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block1,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block1,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+
+	transfer1 := NewTransfer(t, ctx, accountsStore, block1,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+		}),
+	)
+
+	transfer2 := NewTransfer(t, ctx, accountsStore, block1,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+		}),
+	)
+	transfer2.TxHash = transfer1.TxHash
+
+	transfer1UpdateFromSameTx := NewTransfer(t, ctx, accountsStore, block1,
+		TransferWithID(transfer1.ID),
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 15,
+			EndEpoch:   nil,
+			Factor:     "0.15",
+		}),
+	)
+	transfer1UpdateFromSameTx.TxHash = transfer1.TxHash
+
+	transfer1UpdateFromDifferentTx := NewTransfer(t, ctx, accountsStore, block2,
+		TransferWithID(transfer1.ID),
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 20,
+			EndEpoch:   ptr.From(uint64(25)),
+			Factor:     "0.2",
+		}),
+	)
+
+	// Ensure we have different transfers so the test is meaningful.
+	RequireAllDifferent(t, transfer1, transfer2, transfer1UpdateFromSameTx, transfer1UpdateFromDifferentTx)
+
+	t.Run("Save transfers", func(t *testing.T) {
+		require.NoError(t, transfersStore.Upsert(ctx, transfer1))
+		require.NoError(t, transfersStore.Upsert(ctx, transfer2))
+		require.NoError(t, transfersStore.Upsert(ctx, transfer1UpdateFromSameTx))
+		require.NoError(t, transfersStore.Upsert(ctx, transfer1UpdateFromDifferentTx))
+	})
+
+	t.Run("Retrieve the transfer by hash returns all matching the hash", func(t *testing.T) {
+		retrieved, err := transfersStore.GetByTxHash(ctx, transfer1.TxHash)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer1UpdateFromSameTx},
+			retrieved,
+		)
+	})
+}
+
+func TestGetTransfersToOrFromParty(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
+
+	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
+
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+	account3 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+
+	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account2, account1),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 5,
+			EndEpoch:   ptr.From(uint64(15)),
+			Factor:     "0.1",
+			DispatchStrategy: &vegapb.DispatchStrategy{
 				AssetForMetric: "deadd0d0",
 				Markets:        []string{"beefdead", "feebaad"},
-				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+				Metric:         vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 			},
-		}},
-		Reason: &reason,
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	sourceTransferProto2 := &eventspb.Transfer{
-		Id:              id,
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_DONE,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+		}),
+	)
+	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
 			StartEpoch: 10,
+			EndEpoch:   ptr.From(uint64(20)),
+			Factor:     "0.1",
+		}),
+	)
+	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account3),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 25,
 			EndEpoch:   nil,
 			Factor:     "0.1",
-		}},
-	}
+		}),
+	)
+	transfer4 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account3, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 15,
+			EndEpoch:   ptr.From(uint64(20)),
+			Factor:     "0.1",
+		}),
+	)
 
-	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
+	t.Run("Retrieve all transfers from/to party", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), sqlstore.ListTransfersFilters{}, account2.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer2, *transfer4},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
 
-	retrieved, err := transfers.GetByID(ctx, id)
-	if err != nil {
-		t.Fatalf("f%s", err)
-	}
-	retrievedTransferProto, _ := retrieved.Transfer.ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+	t.Run("Retrieve transfers from/to party with epoch range", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(16)),
+			ToEpoch:   ptr.From(uint64(20)),
+		}
 
-	retrievedByParty, _, err := transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
-	if err != nil {
-		t.Fatalf("f%s", err)
-	}
-	assert.Equal(t, 1, len(retrievedByParty))
-	retrievedTransferProto, _ = retrievedByParty[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+		retrievedFromAccount1, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2},
+			TransferDetailsAsTransfers(t, retrievedFromAccount1),
+		)
+
+		retrievedFromAccount3, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account3.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer4},
+			TransferDetailsAsTransfers(t, retrievedFromAccount3),
+		)
+	})
+
+	t.Run("Retrieve transfers from/to party from epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(20)),
+		}
+
+		retrievedFromAccount1, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrievedFromAccount1),
+		)
+
+		retrievedFromAccount3, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account3.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer3, *transfer4},
+			TransferDetailsAsTransfers(t, retrievedFromAccount3),
+		)
+	})
+
+	t.Run("Retrieve transfers from/to party to epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToEpoch: ptr.From(uint64(10)),
+		}
+
+		retrievedFromAccount1, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer2},
+			TransferDetailsAsTransfers(t, retrievedFromAccount1),
+		)
+
+		retrievedFromAccount3, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account3.PartyID)
+		require.NoError(t, err)
+		assert.Empty(t, retrievedFromAccount3)
+	})
 }
 
-func testTransfersGetTransferToOrFromParty(t *testing.T) {
+func TestGetTransfersByParty(t *testing.T) {
 	ctx := tempTransaction(t)
 
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
 
-	transfers := sqlstore.NewTransfers(connectionSource)
+	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountTo.PartyID.String(),
-		FromAccountType: accountTo.Type,
-		To:              accountFrom.PartyID.String(),
-		ToAccountType:   accountFrom.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+
+	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 5,
+			EndEpoch:   ptr.From(uint64(15)),
 			Factor:     "0.1",
-			DispatchStrategy: &vega.DispatchStrategy{
+		}),
+	)
+	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account2, account1),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   ptr.From(uint64(17)),
+			Factor:     "0.1",
+		}),
+	)
+	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account2, account1),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 15,
+			EndEpoch:   ptr.From(uint64(20)),
+			Factor:     "0.1",
+		}),
+	)
+	transfer4 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 15,
+			EndEpoch:   ptr.From(uint64(20)),
+			Factor:     "0.1",
+		}),
+	)
+
+	t.Run("Retrieve transfers from party", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetTransfersFromParty(ctx, entities.DefaultCursorPagination(true), sqlstore.ListTransfersFilters{}, account1.PartyID)
+
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer4},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers from party with epoch range", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(5)),
+			ToEpoch:   ptr.From(uint64(10)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers from party from epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(17)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer4},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers from party to epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToEpoch: ptr.From(uint64(13)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersFromParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers to party", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetTransfersToParty(ctx, entities.DefaultCursorPagination(true), sqlstore.ListTransfersFilters{}, account1.PartyID)
+
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers to party with epoch range", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(5)),
+			ToEpoch:   ptr.From(uint64(10)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers to party from epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(18)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers to party to epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToEpoch: ptr.From(uint64(13)),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToParty(ctx, entities.DefaultCursorPagination(true), filters, account1.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+}
+
+func TestGetAllTransfers(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
+
+	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
+
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+	account3 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+
+	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account2, account1),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 5,
+			EndEpoch:   ptr.From(uint64(15)),
+			Factor:     "0.1",
+			DispatchStrategy: &vegapb.DispatchStrategy{
 				AssetForMetric: "deadd0d0",
 				Markets:        []string{"beefdead", "feebaad"},
-				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+				Metric:         vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
 			},
-		}},
-	}
-
-	transfer, err := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	assert.NoError(t, err)
-	err = transfers.Upsert(ctx, transfer)
-	assert.NoError(t, err)
-
-	sourceTransferProto2 := &eventspb.Transfer{
-		Id:              "deadd0d1",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref2",
-		Status:          eventspb.Transfer_STATUS_DONE,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+		}),
+	)
+	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account2),
+		TransferAsRecurring(eventspb.RecurringTransfer{
 			StartEpoch: 10,
+			EndEpoch:   ptr.From(uint64(20)),
+			Factor:     "0.1",
+		}),
+	)
+	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+		TransferWithAsset(asset),
+		TransferFromToAccounts(account1, account3),
+		TransferAsRecurring(eventspb.RecurringTransfer{
+			StartEpoch: 25,
 			EndEpoch:   nil,
 			Factor:     "0.1",
-		}},
-	}
+		}),
+	)
 
-	transfer, err = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	assert.NoError(t, err)
-	err = transfers.Upsert(ctx, transfer)
-	assert.NoError(t, err)
+	t.Run("Retrieve all transfers", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), sqlstore.ListTransfersFilters{})
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
 
-	retrieved, _, err := transfers.GetTransfersToOrFromParty(ctx, accountTo.PartyID, entities.CursorPagination{})
-	if err != nil {
-		t.Fatalf("f%s", err)
-	}
-	assert.Equal(t, 2, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
+	t.Run("Retrieve transfers with epoch range", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(16)),
+			ToEpoch:   ptr.From(uint64(28)),
+		}
 
-	retrievedTransferProto, _ = retrieved[1].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve all transfers from epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromEpoch: ptr.From(uint64(20)),
+		}
+
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers to epoch", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToEpoch: ptr.From(uint64(10)),
+		}
+
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer2},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
 }
 
-func testTransfersGetTransfersByParty(t *testing.T) {
+func TestGetAllTransfersWithPagination(t *testing.T) {
 	ctx := tempTransaction(t)
 
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
 
-	transfers := sqlstore.NewTransfers(connectionSource)
+	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	reason := "some terrible reason"
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
-			Factor:     "0.1",
-			DispatchStrategy: &vega.DispatchStrategy{
-				AssetForMetric: "deadd0d0",
-				Markets:        []string{"beefdead", "feebaad"},
-				Metric:         vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
-			},
-		}},
-		Reason: &reason,
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+
+	transfers := make([]entities.Transfer, 0, 10)
+	for i := 0; i < 10; i++ {
+		block := addTestBlockForTime(t, ctx, blocksStore, time.Now().Add(time.Duration(i)*time.Second))
+		transfer := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+			TransferWithAsset(asset),
+			TransferFromToAccounts(account1, account2),
+			TransferAsRecurring(eventspb.RecurringTransfer{
+				StartEpoch: 5,
+				EndEpoch:   ptr.From(uint64(15)),
+				Factor:     "0.1",
+			}),
+		)
+		transfers = append(transfers, *transfer)
 	}
 
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
+	noFilters := sqlstore.ListTransfersFilters{}
 
-	sourceTransferProto2 := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_DONE,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
-			Factor:     "0.1",
-		}},
-	}
+	t.Run("Paginate with oldest first", func(t *testing.T) {
+		pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
+		require.NoError(t, err)
 
-	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
+		retrieved, pageInfo, err := transfersStore.GetAll(ctx, pagination, noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, transfers, TransferDetailsAsTransfers(t, retrieved))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: false,
+			StartCursor:     transfers[0].Cursor().Encode(),
+			EndCursor:       transfers[9].Cursor().Encode(),
+		}, pageInfo)
+	})
 
-	retrieved, _, err := transfers.GetTransfersFromParty(ctx, accountFrom.PartyID, entities.CursorPagination{})
-	if err != nil {
-		t.Fatalf("f%s", err)
-	}
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+	t.Run("Paginate first 3 transfers", func(t *testing.T) {
+		first := int32(3)
+		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+		require.NoError(t, err)
 
-	retrieved, _, err = transfers.GetTransfersToParty(ctx, accountTo.PartyID, entities.CursorPagination{})
-	if err != nil {
-		t.Fatalf("f%s", err)
-	}
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
+		retrieved, pageInfo, err := transfersStore.GetAll(ctx, pagination, noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, transfers[:3], TransferDetailsAsTransfers(t, retrieved))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: false,
+			StartCursor:     transfers[0].Cursor().Encode(),
+			EndCursor:       transfers[2].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Paginate last 3 transfers", func(t *testing.T) {
+		last := int32(3)
+		pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
+		require.NoError(t, err)
+
+		retrieved, pageInfo, err := transfersStore.GetAll(ctx, pagination, noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, transfers[7:], TransferDetailsAsTransfers(t, retrieved))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: true,
+			StartCursor:     transfers[7].Cursor().Encode(),
+			EndCursor:       transfers[9].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Paginate first 3 transfers after third one", func(t *testing.T) {
+		first := int32(3)
+		after := transfers[2].Cursor().Encode()
+		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+		require.NoError(t, err)
+
+		retrieved, pageInfo, err := transfersStore.GetAll(ctx, pagination, noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, transfers[3:6], TransferDetailsAsTransfers(t, retrieved))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: true,
+			StartCursor:     transfers[3].Cursor().Encode(),
+			EndCursor:       transfers[5].Cursor().Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("Paginate last 3 transfers before seventh one", func(t *testing.T) {
+		last := int32(3)
+		before := transfers[7].Cursor().Encode()
+		pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
+		require.NoError(t, err)
+
+		retrieved, pageInfo, err := transfersStore.GetAll(ctx, pagination, noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, transfers[4:7], TransferDetailsAsTransfers(t, retrieved))
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: true,
+			StartCursor:     transfers[4].Cursor().Encode(),
+			EndCursor:       transfers[6].Cursor().Encode(),
+		}, pageInfo)
+	})
 }
 
-func testTransfersGetFromAccountAndGetToAccount(t *testing.T) {
+func TestGetAllRewardTransfers(t *testing.T) {
 	ctx := tempTransaction(t)
 
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
 
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	sourceTransferProto1 := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
-			Factor:     "0.1",
-		}},
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto1, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	sourceTransferProto2 := &eventspb.Transfer{
-		Id:              "deadd0d1",
-		From:            accountTo.PartyID.String(),
-		FromAccountType: accountTo.Type,
-		To:              accountFrom.PartyID.String(),
-		ToAccountType:   accountFrom.Type,
-		Asset:           accountTo.AssetID.String(),
-		Amount:          "50",
-		Reference:       "Ref2",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 45,
-			EndEpoch:   toPtr(uint64(56)),
-			Factor:     "3.12",
-		}},
-	}
-
-	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto2, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
-	assert.Equal(t, 2, len(retrieved))
-
-	retrieved, _, _ = transfers.GetTransfersFromAccount(ctx, accountFrom.ID, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto1, retrievedTransferProto)
-
-	retrieved, _, _ = transfers.GetTransfersToAccount(ctx, accountTo.ID, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto1, retrievedTransferProto)
-
-	retrieved, _, _ = transfers.GetTransfersFromAccount(ctx, accountTo.ID, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
-
-	retrieved, _, _ = transfers.GetTransfersToAccount(ctx, accountFrom.ID, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ = retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto2, retrievedTransferProto)
-}
-
-func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	deliverOn := block.VegaTime.Add(1 * time.Hour)
-
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	block = getTestBlock(t, ctx, block.VegaTime.Add(1*time.Microsecond))
-	deliverOn = deliverOn.Add(1 * time.Minute)
-	sourceTransferProto = &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "40",
-		Reference:       "Ref2",
-		Status:          eventspb.Transfer_STATUS_DONE,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
-	}
-	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-}
-
-func testTransfersUpdateInSameBlock(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	deliverOn := block.VegaTime.Add(1 * time.Hour)
-
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	deliverOn = deliverOn.Add(1 * time.Minute)
-	sourceTransferProto = &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "40",
-		Reference:       "Ref2",
-		Status:          eventspb.Transfer_STATUS_DONE,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
-	}
-	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-}
-
-func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	deliverOn := block.VegaTime.Add(1 * time.Hour)
-
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-}
-
-func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd0d0",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "30",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
-			Factor:     "0.1",
-			DispatchStrategy: &vega.DispatchStrategy{
-				AssetForMetric:     "asset",
-				Metric:             vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION,
-				Markets:            []string{"m1", "m2"},
-				EntityScope:        vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
-				IndividualScope:    vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
-				StakingRequirement: "1000",
-				NotionalTimeWeightedAveragePositionRequirement: "2000",
-				WindowLength:         2,
-				LockPeriod:           3,
-				DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
-			},
-		}},
-	}
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-}
-
-func testGetByTxHash(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	now := time.Now()
-	block := getTestBlock(t, ctx, now)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	sourceTransferProto := &eventspb.Transfer{
-		Id:              "deadd1d1",
-		From:            accountFrom.PartyID.String(),
-		FromAccountType: accountFrom.Type,
-		To:              accountTo.PartyID.String(),
-		ToAccountType:   accountTo.Type,
-		Asset:           accountFrom.AssetID.String(),
-		Amount:          "25",
-		Reference:       "Ref1",
-		Status:          eventspb.Transfer_STATUS_PENDING,
-		Timestamp:       block.VegaTime.UnixNano(),
-		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
-			StartEpoch: 10,
-			EndEpoch:   nil,
-			Factor:     "0.1",
-		}},
-	}
-
-	txHash := txHashFromString("transfer_hash")
-
-	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, txHash, block.VegaTime, accounts)
-	transfers.Upsert(ctx, transfer)
-
-	retrieved, err := transfers.GetByTxHash(ctx, txHash)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(retrieved))
-	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
-	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
-}
-
-func getTestBlock(t *testing.T, ctx context.Context, testTime time.Time) entities.Block {
-	t.Helper()
-	blocks := sqlstore.NewBlocks(connectionSource)
-	vegaTime := time.UnixMicro(testTime.UnixMicro())
-	block := addTestBlockForTime(t, ctx, blocks, vegaTime)
-	return block
-}
-
-func getTestAccounts(t *testing.T, ctx context.Context, accounts *sqlstore.Accounts, block entities.Block) (accountFrom entities.Account,
-	accountTo entities.Account,
-) {
-	t.Helper()
-	assets := sqlstore.NewAssets(connectionSource)
-
-	testAssetID := entities.AssetID(helpers.GenerateID())
-	testAsset := entities.Asset{
-		ID:            testAssetID,
-		Name:          "testAssetName",
-		Symbol:        "tan",
-		Decimals:      1,
-		Quantum:       decimal.NewFromInt(1),
-		Source:        "TS",
-		ERC20Contract: "ET",
-		VegaTime:      block.VegaTime,
-	}
-
-	err := assets.Add(ctx, testAsset)
-	if err != nil {
-		t.Fatalf("failed to add test asset:%s", err)
-	}
-
-	accountFrom = entities.Account{
-		PartyID:  entities.PartyID(helpers.GenerateID()),
-		AssetID:  testAssetID,
-		Type:     vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
-		VegaTime: block.VegaTime,
-	}
-	err = accounts.Obtain(ctx, &accountFrom)
-	if err != nil {
-		t.Fatalf("failed to obtain from account:%s", err)
-	}
-
-	accountTo = entities.Account{
-		PartyID: entities.PartyID(helpers.GenerateID()),
-		AssetID: testAssetID,
-
-		Type:     vega.AccountType_ACCOUNT_TYPE_GENERAL,
-		VegaTime: block.VegaTime,
-	}
-	err = accounts.Obtain(ctx, &accountTo)
-	if err != nil {
-		t.Fatalf("failed to obtain to account:%s", err)
-	}
-
-	return accountFrom, accountTo
-}
-
-func testTransferPaginationNoPagination(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-
-	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
-	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(ctx, pagination)
-
-	require.NoError(t, err)
-	assert.Equal(t, testTransfers, got)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[0].VegaTime,
-		ID:       testTransfers[0].ID,
-	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[9].VegaTime,
-		ID:       testTransfers[9].ID,
-	}.String()).Encode(), pageInfo.EndCursor)
-}
-
-func testTransferPaginationFirst(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-
-	first := int32(3)
-	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
-	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(ctx, pagination)
-
-	require.NoError(t, err)
-	want := testTransfers[:3]
-	assert.Equal(t, want, got)
-	assert.False(t, pageInfo.HasPreviousPage)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[0].VegaTime,
-		ID:       testTransfers[0].ID,
-	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[2].VegaTime,
-		ID:       testTransfers[2].ID,
-	}.String()).Encode(), pageInfo.EndCursor)
-}
-
-func testTransferPaginationLast(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-
-	last := int32(3)
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
-	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(ctx, pagination)
-
-	require.NoError(t, err)
-	want := testTransfers[7:]
-	assert.Equal(t, want, got)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.False(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[7].VegaTime,
-		ID:       testTransfers[7].ID,
-	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[9].VegaTime,
-		ID:       testTransfers[9].ID,
-	}.String()).Encode(), pageInfo.EndCursor)
-}
-
-func testTransferPaginationFirstAfter(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-
-	first := int32(3)
-	after := testTransfers[2].Cursor().Encode()
-	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
-	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(ctx, pagination)
-
-	require.NoError(t, err)
-	want := testTransfers[3:6]
-	assert.Equal(t, want, got)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[3].VegaTime,
-		ID:       testTransfers[3].ID,
-	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[5].VegaTime,
-		ID:       testTransfers[5].ID,
-	}.String()).Encode(), pageInfo.EndCursor)
-}
-
-func testTransferPaginationLastBefore(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-
-	last := int32(3)
-	before := entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[7].VegaTime,
-		ID:       testTransfers[7].ID,
-	}.String()).Encode()
-	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
-	require.NoError(t, err)
-	got, pageInfo, err := transfers.GetAll(ctx, pagination)
-
-	require.NoError(t, err)
-	want := testTransfers[4:7]
-	assert.Equal(t, want, got)
-	assert.True(t, pageInfo.HasPreviousPage)
-	assert.True(t, pageInfo.HasNextPage)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[4].VegaTime,
-		ID:       testTransfers[4].ID,
-	}.String()).Encode(), pageInfo.StartCursor)
-	assert.Equal(t, entities.NewCursor(entities.TransferCursor{
-		VegaTime: testTransfers[6].VegaTime,
-		ID:       testTransfers[6].ID,
-	}.String()).Encode(), pageInfo.EndCursor)
-}
-
-func testGetAllRewardTransfers(t *testing.T) {
-	ctx := tempTransaction(t)
-
-	bs := sqlstore.NewBlocks(connectionSource)
-	transfers := sqlstore.NewTransfers(connectionSource)
-	testTransfers := addTransfers(ctx, t, bs, transfers)
-	rewardTransfers := addRewardTransfers(ctx, t, bs, transfers)
-	// all, including reward transfers
-	got, _, err := transfers.GetAll(ctx, entities.DefaultCursorPagination(true))
-	require.NoError(t, err)
-	require.Equal(t, len(testTransfers)+len(rewardTransfers), len(got))
-	// now only get reward transfers
-	got, _, err = transfers.GetAllRewards(ctx, entities.DefaultCursorPagination(true))
-	require.NoError(t, err)
-	require.Equal(t, len(rewardTransfers), len(got))
-}
-
-func addTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
-	t.Helper()
 	vegaTime := time.Now().Truncate(time.Microsecond)
-	block := addTestBlockForTime(t, ctx, bs, vegaTime)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
 
-	transfers := make([]entities.TransferDetails, 0, 10)
+	block := addTestBlockForTime(t, ctx, blocksStore, vegaTime)
+
+	asset := CreateAssert(t, ctx, assetsStore, block)
+
+	account1 := CreateAccount(t, ctx, accountsStore, block,
+		AccountForAsset(asset),
+	)
+	account2 := CreateAccount(t, ctx, accountsStore, block,
+		AccountWithType(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		AccountForAsset(asset),
+	)
+
+	allTransfers := make([]entities.Transfer, 0, 20)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
-		addTestBlockForTime(t, ctx, bs, vegaTime)
+		block := addTestBlockForTime(t, ctx, blocksStore, vegaTime)
 
-		amount, _ := decimal.NewFromString("10")
-		transfer := entities.Transfer{
-			ID:               entities.TransferID(fmt.Sprintf("deadbeef%02d", i+1)),
-			VegaTime:         vegaTime,
-			FromAccountID:    accountFrom.ID,
-			ToAccountID:      accountTo.ID,
-			AssetID:          entities.AssetID(""),
-			Amount:           amount,
-			Reference:        "",
-			Status:           0,
-			TransferType:     0,
-			DeliverOn:        nil,
-			StartEpoch:       nil,
-			EndEpoch:         nil,
-			Factor:           nil,
-			DispatchStrategy: nil,
-		}
-
-		err := transferStore.Upsert(ctx, &transfer)
-		require.NoError(t, err)
-		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
+		transfer := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+			TransferWithAsset(asset),
+			TransferFromToAccounts(account1, account2),
+			TransferAsOneOff(eventspb.OneOffTransfer{
+				DeliverOn: vegaTime.UnixNano(),
+			}),
+		)
+		allTransfers = append(allTransfers, *transfer)
 	}
 
-	return transfers
-}
-
-func addRewardTransfers(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, transferStore *sqlstore.Transfers) []entities.TransferDetails {
-	t.Helper()
-	vegaTime := time.Now().Truncate(time.Microsecond)
-	block := addTestBlockForTime(t, ctx, bs, vegaTime)
-	accounts := sqlstore.NewAccounts(connectionSource)
-	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
-
-	transfers := make([]entities.TransferDetails, 0, 10)
+	rewardTransfers := make([]entities.Transfer, 0, 10)
 	for i := 0; i < 10; i++ {
 		vegaTime = vegaTime.Add(time.Second)
-		addTestBlockForTime(t, ctx, bs, vegaTime)
+		block := addTestBlockForTime(t, ctx, blocksStore, vegaTime)
 
-		amount, _ := decimal.NewFromString("10")
-		transfer := entities.Transfer{
-			ID:            entities.TransferID(fmt.Sprintf("abadcafe%02d", i+1)),
-			VegaTime:      vegaTime,
-			FromAccountID: accountFrom.ID,
-			ToAccountID:   accountTo.ID,
-			AssetID:       entities.AssetID(""),
-			Amount:        amount,
-			Reference:     "",
-			Status:        entities.TransferStatusPending,
-			TransferType:  entities.Recurring,
-			DeliverOn:     nil,
-			StartEpoch:    ptr.From(uint64(i + 1)),
-			EndEpoch:      nil,
-			Factor:        nil,
-			DispatchStrategy: &vega.DispatchStrategy{
-				Metric:     vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
-				LockPeriod: uint64((i % 7) + 1),
-			},
-		}
-		if (i % 2) == 0 {
-			transfer.TransferType = entities.GovernanceRecurring
+		var kindOption TransferOption
+		if i%2 == 0 {
+			kindOption = TransferAsRecurringGovernance(eventspb.RecurringGovernanceTransfer{
+				StartEpoch: 15,
+				EndEpoch:   nil,
+				DispatchStrategy: &vegapb.DispatchStrategy{
+					Metric:     vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+					LockPeriod: uint64((i % 7) + 1),
+				},
+			})
+		} else {
+			kindOption = TransferAsRecurring(eventspb.RecurringTransfer{
+				StartEpoch: 15,
+				EndEpoch:   nil,
+				Factor:     "0.15",
+				DispatchStrategy: &vegapb.DispatchStrategy{
+					Metric:     vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
+					LockPeriod: uint64((i % 7) + 1),
+				},
+			})
 		}
 
-		err := transferStore.Upsert(ctx, &transfer)
-		require.NoError(t, err)
-		transfers = append(transfers, entities.TransferDetails{Transfer: transfer})
+		transfer := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
+			TransferWithAsset(asset),
+			TransferFromToAccounts(account1, account2),
+			kindOption,
+		)
+		rewardTransfers = append(rewardTransfers, *transfer)
+		allTransfers = append(allTransfers, *transfer)
 	}
 
-	return transfers
-}
+	noFilters := sqlstore.ListTransfersFilters{}
 
-func toPtr[T any](t T) *T {
-	return &t
+	t.Run("Get all transfers", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(false), noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, allTransfers, TransferDetailsAsTransfers(t, retrieved))
+	})
+
+	t.Run("Get only reward transfers", func(t *testing.T) {
+		retrieved, _, err := transfersStore.GetAllRewards(ctx, entities.DefaultCursorPagination(false), noFilters)
+		require.NoError(t, err)
+		assert.Equal(t, rewardTransfers, TransferDetailsAsTransfers(t, retrieved))
+	})
 }

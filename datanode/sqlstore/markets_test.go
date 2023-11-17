@@ -35,7 +35,6 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -485,7 +484,7 @@ func getTestPerpetualMarket() *vega.Market {
 
 func getTestMarket() *vega.Market {
 	return &vega.Market{
-		Id: helpers.GenerateID(),
+		Id: GenerateID(),
 		TradableInstrument: &vega.TradableInstrument{
 			Instrument: &vega.Instrument{
 				Id:   "Crypto/BTCUSD/Futures/Dec19",

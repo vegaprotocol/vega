@@ -18,6 +18,7 @@ package gql
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -95,13 +96,7 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 	return res.Market, nil
 }
 
-func (r *allResolver) transfersConnection(
-	ctx context.Context,
-	partyID *string,
-	direction *TransferDirection,
-	pagination *v2.Pagination,
-	isReward *bool,
-) (*v2.TransferConnection, error) {
+func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int) (*v2.TransferConnection, error) {
 	// if direction is nil just default to ToOrFrom
 	if direction == nil {
 		d := TransferDirectionToOrFrom
@@ -118,11 +113,21 @@ func (r *allResolver) transfersConnection(
 		transferDirection = v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM
 	}
 
+	var fromEpochU, toEpochU *uint64
+	if fromEpoch != nil {
+		fromEpochU = ptr.From(uint64(*fromEpoch))
+	}
+	if toEpoch != nil {
+		toEpochU = ptr.From(uint64(*toEpoch))
+	}
+
 	res, err := r.clt2.ListTransfers(ctx, &v2.ListTransfersRequest{
 		Pubkey:     partyID,
 		Direction:  transferDirection,
 		Pagination: pagination,
 		IsReward:   isReward,
+		FromEpoch:  fromEpochU,
+		ToEpoch:    toEpochU,
 	})
 	if err != nil {
 		return nil, err

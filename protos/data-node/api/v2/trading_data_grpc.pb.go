@@ -91,6 +91,13 @@ type TradingDataServiceClient interface {
 	//   - receiving account (market ID, asset ID, account type)
 	//   - sending AND receiving account
 	//   - transfer type either in addition to the above filters or as a standalone option
+	//
+	// Note: The date range is restricted to any 5 days.
+	//
+	//	If no start or end date is provided, only ledger entries from the last 5 days will be returned.
+	//	If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
+	//	If a start date is provided but no end date, the end date will be set to 5 days after the start date.
+	//	If no start date is provided, but the end date is, the start date will be set to 5 days before the end date.
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -2074,6 +2081,13 @@ type TradingDataServiceServer interface {
 	//   - receiving account (market ID, asset ID, account type)
 	//   - sending AND receiving account
 	//   - transfer type either in addition to the above filters or as a standalone option
+	//
+	// Note: The date range is restricted to any 5 days.
+	//
+	//	If no start or end date is provided, only ledger entries from the last 5 days will be returned.
+	//	If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
+	//	If a start date is provided but no end date, the end date will be set to 5 days after the start date.
+	//	If no start date is provided, but the end date is, the start date will be set to 5 days before the end date.
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//

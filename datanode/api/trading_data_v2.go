@@ -434,6 +434,9 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 
 	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
+		if errors.Is(err, sqlstore.ErrLedgerEntryFilterForParty) {
+			return nil, formatE(ErrInvalidFilter, err)
+		}
 		return nil, formatE(ErrLedgerServiceGet, err)
 	}
 
@@ -2405,11 +2408,17 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	if req.IsReward != nil {
 		isReward = *req.IsReward
 	}
+
+	filters := sqlstore.ListTransfersFilters{
+		FromEpoch: req.FromEpoch,
+		ToEpoch:   req.ToEpoch,
+	}
+
 	if req.Pubkey == nil {
 		if !isReward {
-			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination, filters)
 		} else {
-			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination)
+			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination, filters)
 		}
 	} else {
 		if isReward && req.Direction != v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM {
@@ -2419,14 +2428,14 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		switch req.Direction {
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
 			if isReward {
-				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 			} else {
-				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 			}
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 		default:
 			err = errors.Errorf("unknown transfer direction: %v", req.Direction)
 		}
@@ -3239,7 +3248,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 				if err != nil {
 					return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
 				}
-				if !fundingPayment.IsZero() {
+				fundingRate, err := num.DecimalFromString(perpData.FundingRate)
+				if err != nil {
+					return nil, formatE(fmt.Errorf("can't parse funding rate from perpetual product data: %s", perpData.FundingRate), err)
+				}
+				if !fundingPayment.IsZero() && !fundingRate.IsZero() {
 					marginFactorScaledFundingPaymentPerUnitPosition = factor.Mul(fundingPayment)
 				}
 			}

@@ -27,19 +27,15 @@ import (
 	"strconv"
 	"testing"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	config           sqlstore.Config
 	connectionSource *sqlstore.ConnectionSource
 	testDBPort       int
-	testDBSocketDir  string
 )
 
 func TestMain(m *testing.M) {
@@ -54,14 +50,8 @@ func TestMain(m *testing.M) {
 		postgresLog *bytes.Buffer,
 	) {
 		testDBPort = cfg.ConnectionConfig.Port
-		testDBSocketDir = cfg.ConnectionConfig.SocketDir
 		connectionSource = source
-		config = cfg
 	}, postgresRuntimePath, sqlstore.EmbedMigrations)
-}
-
-func generateTxHash() entities.TxHash {
-	return entities.TxHash(helpers.GenerateID())
 }
 
 func generateEthereumAddress() string {
