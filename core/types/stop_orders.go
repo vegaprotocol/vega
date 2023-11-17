@@ -73,11 +73,11 @@ type StopOrderSizeOverrideSetting = vega.StopOrder_SizeOverrideSetting
 const (
 	// Never valid.
 	StopOrderSizeOverrideSettingUnspecified StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_UNSPECIFIED
-	// No size override is used
+	// No size override is used.
 	StopOrderSizeOverrideSettingNone = vega.StopOrder_SIZE_OVERRIDE_NONE
-	// No size override is used
+	// Use the total traded size of an existing order to override the order size.
 	StopOrderSizeOverrideSettingOrder = vega.StopOrder_SIZE_OVERRIDE_ORDER
-	// No size override is used
+	// Use the position size of the trader to override the order size.
 	StopOrderSizeOverrideSettingPosition = vega.StopOrder_SIZE_OVERRIDE_POSITION
 )
 

@@ -334,7 +334,8 @@ func newPricedStopOrderWithOverride(
 			TimeInForce: types.OrderTimeInForceIOC,
 			Side:        types.SideBuy,
 		},
-		SizeOverride: &types.StopOrderSizeOverride{OrderID: sizeOverride},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingOrder,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{OrderID: sizeOverride},
 	}
 }
 
@@ -387,6 +388,7 @@ func newTrailingStopOrderWithOverride(
 			TimeInForce: types.OrderTimeInForceIOC,
 			Side:        types.SideBuy,
 		},
-		SizeOverride: &types.StopOrderSizeOverride{OrderID: sizeOverride},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingOrder,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{OrderID: sizeOverride},
 	}
 }
