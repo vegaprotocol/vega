@@ -958,6 +958,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityV2ParamsFromProto(dt)
 	case *snapshot.Payload_LiquidityV2PaidFeesStats:
 		ret.Data = PayloadLiquidityV2PaidFeesStatsFromProto(dt)
+	case *snapshot.Payload_Liquidation:
+		ret.Data = PayloadLiquidationNodeFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1134,6 +1136,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityV2Parameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityV2PaidFeesStats:
+		ret.Data = dt
+	case *snapshot.Payload_Liquidation:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))

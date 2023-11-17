@@ -2217,7 +2217,7 @@ type LiquidationStrategy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Period of time over which the network will attempt to close its position, in seconds.
+	// Interval, in seconds, at which the network will attempt to close its position.
 	DisposalTimeStep int64 `protobuf:"varint,1,opt,name=disposal_time_step,json=disposalTimeStep,proto3" json:"disposal_time_step,omitempty"`
 	// Fraction of the open position the market will try to close in a single attempt; range 0 through 1.
 	DisposalFraction string `protobuf:"bytes,2,opt,name=disposal_fraction,json=disposalFraction,proto3" json:"disposal_fraction,omitempty"`

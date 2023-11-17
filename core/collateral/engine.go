@@ -2016,6 +2016,9 @@ func (e *Engine) getFeeTransferRequest(
 	marketID, assetID string,
 ) (*types.TransferRequest, error) {
 	getAccountLogError := func(marketID, owner string, accountType vega.AccountType) (*types.Account, error) {
+		if owner == types.NetworkParty {
+			return e.GetMarketInsurancePoolAccount(marketID, assetID)
+		}
 		acc, err := e.GetAccountByID(e.accountID(marketID, owner, assetID, accountType))
 		if err != nil {
 			e.log.Error(
@@ -2031,6 +2034,9 @@ func (e *Engine) getFeeTransferRequest(
 	}
 
 	partyLiquidityFeeAccount := func() (*types.Account, error) {
+		if t.Owner == types.NetworkParty {
+			return e.GetMarketInsurancePoolAccount(marketID, assetID)
+		}
 		return e.GetOrCreatePartyLiquidityFeeAccount(ctx, t.Owner, marketID, assetID)
 	}
 
@@ -2046,15 +2052,26 @@ func (e *Engine) getFeeTransferRequest(
 		return getAccountLogError(noMarket, systemOwner, types.AccountTypePendingFeeReferralReward)
 	}
 
-	general, err := e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountTypeGeneral))
-	if err != nil {
-		generalID, err := e.CreatePartyGeneralAccount(ctx, t.Owner, assetID)
+	var (
+		general *types.Account
+		err     error
+	)
+	if t.Owner == types.NetworkParty {
+		general, err = e.GetMarketInsurancePoolAccount(marketID, assetID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("no insurance pool for the market %w", err)
 		}
-		general, err = e.GetAccountByID(generalID)
+	} else {
+		general, err = e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountTypeGeneral))
 		if err != nil {
-			return nil, err
+			generalID, err := e.CreatePartyGeneralAccount(ctx, t.Owner, assetID)
+			if err != nil {
+				return nil, err
+			}
+			general, err = e.GetAccountByID(generalID)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -2077,7 +2094,6 @@ func (e *Engine) getFeeTransferRequest(
 		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{pendingRewardAccount}
-		return treq, nil
 	case types.TransferTypeFeeReferrerRewardDistribute:
 		pendingRewardAccount, err := referralPendingRewardAccount()
 		if err != nil {
@@ -2085,7 +2101,6 @@ func (e *Engine) getFeeTransferRequest(
 		}
 		treq.FromAccount = []*types.Account{pendingRewardAccount}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeInfrastructureFeePay:
 		margin, err := marginAccount()
 		if err != nil {
@@ -2094,11 +2109,9 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{infraFee}
-		return treq, nil
 	case types.TransferTypeInfrastructureFeeDistribute:
 		treq.FromAccount = []*types.Account{infraFee}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeLiquidityFeePay:
 		margin, err := marginAccount()
 		if err != nil {
@@ -2106,11 +2119,9 @@ func (e *Engine) getFeeTransferRequest(
 		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{liquiFee}
-		return treq, nil
 	case types.TransferTypeLiquidityFeeDistribute:
 		treq.FromAccount = []*types.Account{liquiFee}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeMakerFeePay:
 		margin, err := marginAccount()
 		if err != nil {
@@ -2118,11 +2129,9 @@ func (e *Engine) getFeeTransferRequest(
 		}
 		treq.FromAccount = []*types.Account{general, margin}
 		treq.ToAccount = []*types.Account{makerFee}
-		return treq, nil
 	case types.TransferTypeMakerFeeReceive:
 		treq.FromAccount = []*types.Account{makerFee}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeLiquidityFeeAllocate:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
 		if err != nil {
@@ -2131,7 +2140,6 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{liquiFee}
 		treq.ToAccount = []*types.Account{partyLiquidityFee}
-		return treq, nil
 	case types.TransferTypeLiquidityFeeNetDistribute:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
 		if err != nil {
@@ -2140,7 +2148,6 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{partyLiquidityFee}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeLiquidityFeeUnpaidCollect:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
 		if err != nil {
@@ -2153,7 +2160,6 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{partyLiquidityFee}
 		treq.ToAccount = []*types.Account{bonusDistribution}
-		return treq, nil
 	case types.TransferTypeSlaPerformanceBonusDistribute:
 		bonusDistribution, err := bonusDistributionAccount()
 		if err != nil {
@@ -2162,7 +2168,6 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{bonusDistribution}
 		treq.ToAccount = []*types.Account{general}
-		return treq, nil
 	case types.TransferTypeSLAPenaltyLpFeeApply:
 		partyLiquidityFee, err := partyLiquidityFeeAccount()
 		if err != nil {
@@ -2176,11 +2181,16 @@ func (e *Engine) getFeeTransferRequest(
 
 		treq.FromAccount = []*types.Account{partyLiquidityFee}
 		treq.ToAccount = []*types.Account{insurancePool}
-		return treq, nil
-
 	default:
 		return nil, ErrInvalidTransferTypeForFeeRequest
 	}
+	// we may be moving funds from the insurance pool, we cannot have more than 1 from account in that case
+	// because once the insurance pool is drained, and a copy of the same account without the updated balance
+	// sits in the FromAccount slice, we are magically doubling the available insurance pool funds.
+	if len(treq.FromAccount) > 0 && treq.FromAccount[0].Type == types.AccountTypeInsurance {
+		treq.FromAccount = treq.FromAccount[:1] // only the first account should be present
+	}
+	return treq, nil
 }
 
 func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*types.TransferRequest, error) {

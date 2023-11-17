@@ -1113,6 +1113,15 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	return pegged
 }
 
+func (b *OrderBook) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
+	lvls := b.getSide(side).getLevelsForPrice(price)
+	vol := uint64(0)
+	for _, lvl := range lvls {
+		vol += lvl.volume
+	}
+	return vol
+}
+
 // icebergRefresh will restore the peaks of an iceberg order if they have drifted below the minimum value
 // if not the order remains unchanged.
 func (b *OrderBook) icebergRefresh(o *types.Order) {

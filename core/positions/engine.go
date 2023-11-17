@@ -268,7 +268,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveO
 		pos *MarketPosition
 	)
 	size := int64(trade.Size)
-	if trade.Buyer != "network" {
+	if trade.Buyer != types.NetworkParty {
 		pos, ok = e.positions[trade.Buyer]
 		if !ok {
 			e.log.Panic("could not find buyer position",

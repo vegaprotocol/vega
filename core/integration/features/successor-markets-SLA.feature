@@ -71,7 +71,7 @@ Feature: Simple example of successor markets
       | trader4 | USD   | 2000000     |
       | trader5 | USD   | 22000       |
 
-  @SuccessorMarketActive
+  @SuccessorMarketActive @Liquidation
   Scenario: 001 Enact a successor market when the parent market is still active; Two proposals that name the same parent can be submitted; 0081-SUCM-005, 0081-SUCM-006, 0081-SUCM-020, 0081-SUCM-021, 0081-SUCM-022
     Given the markets:
       | id        | quote name | asset | liquidity monitoring | risk model                | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params |
@@ -192,13 +192,11 @@ Feature: Simple example of successor markets
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general     |
-      | lpprov1 | USD | ETH/DEC19 | 0 | 1999996905  |
-      | lpprov2 | USD | ETH/DEC19 | 0 | 19999999657 |
+      | lpprov1 | USD   | ETH/DEC19 | 0      | 1999996905  |
+      | lpprov2 | USD   | ETH/DEC19 | 0      | 19999999657 |
       | trader1 | USD   | ETH/DEC19 | 0      | 1999990     |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000010     |
       | trader3 | USD   | ETH/DEC19 | 0      | 2005924     |
       | trader4 | USD   | ETH/DEC19 | 0      | 2003075     |
       | trader5 | USD   | ETH/DEC19 | 0      | 0           |
-
-
 

@@ -18,6 +18,7 @@ package matching_test
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -80,6 +81,82 @@ func TestOrderBook_CancelBulk(t *testing.T) {
 	t.Run("Cancel all order for a party", cancelAllOrderForAParty)
 	t.Run("Get all order for a party", getAllOrderForAParty)
 	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
+}
+
+func TestGetVolumeAtPrice(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	buyPrices := []uint64{
+		90,
+		85,
+		80,
+		75,
+		70,
+		65,
+		50,
+	}
+	sellPrices := []uint64{
+		100,
+		105,
+		110,
+		120,
+		125,
+		130,
+		150,
+	}
+	// populate a book with buy orders ranging between 50 and 90
+	// sell orders starting at 100, up to 150. All orders have a size of 2
+	orders := getTestOrders(t, market, 2, buyPrices, sellPrices, nil)
+	for _, o := range orders {
+		_, err := book.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+	t.Run("Getting volume at price with a single price level returns the volume for that price level", func(t *testing.T) {
+		// check the buy side
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]), types.SideBuy)
+		require.Equal(t, uint64(2), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]), types.SideSell)
+		require.Equal(t, uint64(2), v)
+	})
+	t.Run("Getting volume at price containing all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]), types.SideBuy)
+		exp := uint64(len(buyPrices) * 2)
+		require.Equal(t, exp, v)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]), types.SideSell)
+		exp = uint64(len(sellPrices) * 2)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is out of range returns zero volume", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]+1), types.SideBuy)
+		require.Equal(t, uint64(0), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]-1), types.SideSell)
+		require.Equal(t, uint64(0), v)
+	})
+	t.Run("Getting volume at price allowing for more than all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		// lowest buy order -1
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]-1), types.SideBuy)
+		exp := uint64(len(buyPrices) * 2)
+		require.Equal(t, exp, v)
+		// highest sell order on the book +1
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]+1), types.SideSell)
+		exp = uint64(len(sellPrices) * 2)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is somewhere in the middle returns the correct volume", func(t *testing.T) {
+		idx := len(buyPrices) / 2
+		// remember: includes 0 idx
+		exp := uint64(idx*2 + 2)
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[idx]), types.SideBuy)
+		require.Equal(t, exp, v)
+		idx = len(sellPrices) / 2
+		exp = uint64(idx*2 + 2)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[idx]), types.SideSell)
+		require.Equal(t, exp, v)
+	})
 }
 
 func TestHash(t *testing.T) {
@@ -3593,4 +3670,54 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 		require.Equal(t, c.Trades[0].Size, indicativeTrades[i].Size)
 		require.Equal(t, c.Trades[0].Price, indicativeTrades[i].Price)
 	}
+}
+
+// just generates random orders with the given prices. Uses parties provided by accessing
+// parties[i%len(parties)], where i is the current index in the buy/sell prices slice.
+// if parties is empty, []string{"A", "B"} is used.
+func getTestOrders(t *testing.T, market string, fixedSize uint64, buyPrices, sellPrices []uint64, parties []string) []*types.Order {
+	t.Helper()
+	if len(parties) == 0 {
+		parties = []string{"A", "B"}
+	}
+	orders := make([]*types.Order, 0, len(buyPrices)+len(sellPrices))
+	for i, p := range buyPrices {
+		size := fixedSize
+		if size == 0 {
+			size = uint64(rand.Int63n(10-1) + 1)
+		}
+		orders = append(orders, &types.Order{
+			ID:            vgcrypto.RandomHash(),
+			Status:        types.OrderStatusActive,
+			Type:          types.OrderTypeLimit,
+			MarketID:      market,
+			Party:         parties[i%len(parties)],
+			Side:          types.SideBuy,
+			Price:         num.NewUint(p),
+			OriginalPrice: num.NewUint(p),
+			Size:          size,
+			Remaining:     size,
+			TimeInForce:   types.OrderTimeInForceGTC,
+		})
+	}
+	for i, p := range sellPrices {
+		size := fixedSize
+		if size == 0 {
+			size = uint64(rand.Int63n(10-1) + 1)
+		}
+		orders = append(orders, &types.Order{
+			ID:            vgcrypto.RandomHash(),
+			Status:        types.OrderStatusActive,
+			Type:          types.OrderTypeLimit,
+			MarketID:      market,
+			Party:         parties[i%len(parties)],
+			Side:          types.SideSell,
+			Price:         num.NewUint(p),
+			OriginalPrice: num.NewUint(p),
+			Size:          size,
+			Remaining:     size,
+			TimeInForce:   types.OrderTimeInForceGTC,
+		})
+	}
+	return orders
 }

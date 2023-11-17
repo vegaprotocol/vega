@@ -58,7 +58,7 @@ type Market struct {
 	// Not saved in the market table, but used when retrieving data from the database.
 	// This will be populated when a market has a successor
 	SuccessorMarketID   MarketID
-	LiquidationStrategy *LiquidationStrategy
+	LiquidationStrategy LiquidationStrategy
 }
 
 type MarketCursor struct {
@@ -90,7 +90,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		priceMonitoringSettings       PriceMonitoringSettings
 		openingAuction                AuctionDuration
 		fees                          Fees
-		liqStrat                      *LiquidationStrategy
+		liqStrat                      LiquidationStrategy
 	)
 
 	if fees, err = feesFromProto(market.Fees); err != nil {
@@ -242,6 +242,7 @@ func (m Market) ToProto() *vega.Market {
 		InsurancePoolFraction:         insurancePoolFraction,
 		SuccessorMarketId:             successorMarketID,
 		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
+		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
 	}
 }
 
@@ -321,13 +322,13 @@ type LiquidationStrategy struct {
 	MaxFractionConsumed num.Decimal   `json:"maxFractionConsumed"`
 }
 
-func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) *LiquidationStrategy {
+func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) LiquidationStrategy {
 	if ls == nil {
-		return nil
+		return LiquidationStrategy{}
 	}
 	df, _ := num.DecimalFromString(ls.DisposalFraction)
 	mfc, _ := num.DecimalFromString(ls.MaxFractionConsumed)
-	return &LiquidationStrategy{
+	return LiquidationStrategy{
 		DisposalTimeStep:    time.Duration(ls.DisposalTimeStep) * time.Second,
 		FullDisposalSize:    ls.FullDisposalSize,
 		DisposalFraction:    df,

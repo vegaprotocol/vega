@@ -193,6 +193,18 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		MarketID: existing.ID,
 		Changes:  &types.UpdateMarketConfiguration{},
 	}
+	var liqStrat *types.LiquidationStrategy
+	if ls, ok := row.liquidationStrat(); ok {
+		lqs, err := config.LiquidationStrat.Get(ls)
+		if err != nil {
+			panic(err)
+		}
+		if liqStrat, err = types.LiquidationStrategyFromProto(lqs); err != nil {
+			panic(err)
+		}
+	}
+
+	update.Changes.LiquidationStrategy = liqStrat
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
 		// update product -> use type switch even though currently only futures exist
@@ -493,6 +505,15 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	lqs, err := config.LiquidationStrat.Get(row.liquidationStrat())
+	if err != nil {
+		panic(err)
+	}
+	liqStrat, err := types.LiquidationStrategyFromProto(lqs)
+	if err != nil {
+		panic(err)
+	}
+
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
@@ -507,6 +528,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		DecimalPlaces:         row.decimalPlaces(),
 		PositionDecimalPlaces: row.positionDecimalPlaces(),
 		Fees:                  types.FeesFromProto(fees),
+		LiquidationStrategy:   liqStrat,
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
@@ -589,6 +611,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"successor auction",
 		"is passed",
 		"market type",
+		"liquidation strategy",
 	})
 }
 
@@ -604,6 +627,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"liquidity monitoring", // liquidity monitoring update
 		"sla params",
 		"liquidity fee settings",
+		"liquidation strategy",
 	})
 }
 
@@ -651,8 +675,24 @@ func (r marketUpdateRow) liquidityMonitoring() (string, bool) {
 	return "", false
 }
 
+func (r marketUpdateRow) liquidationStrat() (string, bool) {
+	if r.row.HasColumn("liquidation strategy") {
+		ls := r.row.MustStr("liquidation strategy")
+		return ls, true
+	}
+	return "", false
+}
+
 func (r marketRow) id() string {
 	return r.row.MustStr("id")
+}
+
+func (r marketRow) liquidationStrat() string {
+	if r.row.HasColumn("liquidation strategy") {
+		ls := r.row.MustStr("liquidation strategy")
+		return ls
+	}
+	return ""
 }
 
 func (r marketRow) decimalPlaces() uint64 {

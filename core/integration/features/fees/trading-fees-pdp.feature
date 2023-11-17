@@ -654,6 +654,7 @@ Feature: Fees calculations
       | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
       | trader4 | ETH   | ETH/DEC21 | 104    | 0       |
 
+  @NoPerp
   Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
     # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
     # <PC> - Also need to confirm if all 4 internal levels of margin should be 0, as in another case where the trade shouldn't be going through it's non-zero
@@ -729,13 +730,14 @@ Feature: Fees calculations
       | buyer   | price | size | seller  |
       | trader3 | 1002  | 100  | trader4 |
 
+      #And debug transfers
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
-      | trader4 | market  | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
       | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
+      | market  |         | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -744,8 +746,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
-      #| trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
-      | trader4 | ETH | ETH/DEC21 | 0 | 0 |
+      | trader4 | ETH   | ETH/DEC21 | 0      | 0       |
 
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "4" for the market "ETH/DEC21"
@@ -1041,7 +1042,7 @@ Feature: Fees calculations
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
 
-
+  @NoPerp
   Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -1113,14 +1114,15 @@ Feature: Fees calculations
       | trading mode                    | auction trigger       |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
-    Then the network moves ahead "301" blocks
+    Then the network moves ahead "302" blocks
+    And debug trades
     Then the following trades should be executed:
       | buyer    | price | size | seller   |
       | trader3a | 1002  | 100  | trader4  |
       | trader3a | 900   | 200  | trader4  |
+      | network  | 900   | 300  | trader3a |
       | aux1     | 500   | 100  | network  |
       | aux1     | 490   | 200  | network  |
-      | network  | 493   | 300  | trader3a |
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
@@ -1259,6 +1261,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+  @NoPerp
   Scenario: Testing fees in continuous trading during position resolution
 
     Given the fees configuration named "fees-config-1":
@@ -1307,12 +1310,9 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
-
-    Then the parties cancel the following orders:
-      | party | reference       |
-      | aux1  | sell-provider-1 |
+      | trader3a | ETH/DEC21 | 18000       | 57600  | 72000   | 90000   |
+      | trader3b | ETH/DEC21 | 0           | 0      | 0       | 0       |
+      #| trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -1322,6 +1322,15 @@ Feature: Fees calculations
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1  | ETH/DEC21 | sell | 100    | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2  | ETH/DEC21 | buy  | 100    | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    Then debug trades
+    Then the following trades should be executed:
+      | buyer    | price | size  | seller  |
+      | trader3b | 180   | 30000 | network |
+      | network  | 200   | 15000 | aux1    |
+      | network  | 1000  | 100   | aux1    |
+      | network  | 350   | 14900 | aux1    |
+      | network  | 350   | 10000 | aux1    |
 
     And the mark price should be "300" for the market "ETH/DEC21"
 
@@ -1356,6 +1365,7 @@ Feature: Fees calculations
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
+  @NoPerp
   Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
 
     # Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
@@ -1407,12 +1417,8 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
-
-    Then the parties cancel the following orders:
-      | party | reference       |
-      | aux1  | sell-provider-1 |
+      | trader3a | ETH/DEC21 | 18000       | 57600  | 72000   | 90000   |
+      | trader3b | ETH/DEC21 | 0           | 0      | 0       | 0       |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |

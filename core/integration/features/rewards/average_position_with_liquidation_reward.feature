@@ -33,7 +33,6 @@ Feature: Calculation of average position during closeout trades
             | a3c024b4e23230c89884a54a813b1ecb4cb0f827a38641c66eeca466da6b2ddf | USD-1-10 | 10000000000 |
             | party1                                                           | USD-1-10 | 1000        |
 
-
         # Exit opening auctions
         Given the parties submit the following liquidity provision:
             | id  | party  | market id    | commitment amount | fee  | lp type    |
@@ -52,6 +51,7 @@ Feature: Calculation of average position during closeout trades
         When the network moves ahead "1" blocks
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/USD-1-10"
 
+    @Liquidation @NoPerp
     Scenario: Bug time-weighted average position not updated correctly during closeout trades
         # Setup such that distributed rewards are all vested the following epoch, i,e. the balance in the vested account is equal to the rewards distributed that epocha
 
@@ -84,13 +84,13 @@ Feature: Calculation of average position during closeout trades
         # Trades should result in all parties having no open position
         Then the following trades should be executed:
             | buyer   | price | size | seller  | aggressor side |
-            | party1  | 1100  | 1    | network | sell           |
+            | party1  | 1099  | 1    | network | sell           |
             | network | 1100  | 1    | aux2    | buy            |
         And the parties should have the following profit and loss:
             | party  | volume | unrealised pnl | realised pnl |
             | party1 | 0      | 0              | -890         |
             | aux1   | 0      | 0              | 890          |
-            | aux2   | 0      | 0              | 0            |
+            | aux2   | 0      | 0              | -9891        |
             | lpprov | 0      | 0              | 0            |
         # Expect to see rewards as positions open at the start of the epoch
         Then parties should have the following vesting account balances:
@@ -101,9 +101,9 @@ Feature: Calculation of average position during closeout trades
         # At the beginning of the epoch the party had some position so they still get some reward at this epoch
         Then parties should have the following vesting account balances:
             | party  | asset    | balance |
-            | party1 | USD-1-10 | 5000    |
-            | aux1   | USD-1-10 | 5000    |
-            | aux2   | USD-1-10 | 0       |
+            | party1 | USD-1-10 | 4000    |
+            | aux1   | USD-1-10 | 4000    |
+            | aux2   | USD-1-10 | 2000    |
 
         Given the network moves ahead "1" epochs
         # Expect to see no rewards as no positions open at the start of the epoch
@@ -111,5 +111,6 @@ Feature: Calculation of average position during closeout trades
             | party  | asset    | balance |
             | party1 | USD-1-10 | 0       |
             | aux2   | USD-1-10 | 0       |
+            | aux1   | USD-1-10 | 0       |
 
 

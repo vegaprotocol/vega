@@ -104,3 +104,11 @@ func (u *Unmarshaler) UnmarshalFeesConfig(r io.Reader) (*vegapb.Fees, error) {
 	}
 	return proto, nil
 }
+
+func (u *Unmarshaler) UnmarshalLiquidationConfig(r io.Reader) (*vegapb.LiquidationStrategy, error) {
+	proto := &vegapb.LiquidationStrategy{}
+	if err := u.unmarshaler.Unmarshal(r, proto); err != nil {
+		return nil, err
+	}
+	return proto, nil
+}

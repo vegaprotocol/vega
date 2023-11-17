@@ -607,6 +607,7 @@ Feature: Fees calculations
       | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
       | trader4 | ETH | ETH/DEC21 | 0 | 0 |
 
+  @NoPerp
   Scenario: S008, Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute (0029-FEES-007，0029-FEES-008)
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
@@ -1001,6 +1002,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+  @Liquidation
   Scenario: S014, Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, (0029-FEES-008)
 
     Given the average block duration is "1"
@@ -1081,7 +1083,7 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader4 | ETH/DEC21 | 4409        | 5290    |
+      | trader4 | ETH/DEC21 | 0           | 0       |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1092,6 +1094,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+  @Liquidation @NoPerp
   Scenario:S016,  Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead (0029-FEES-008)
 
     And the average block duration is "1"
@@ -1151,14 +1154,17 @@ Feature: Fees calculations
       | trading mode                    | auction trigger       |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
 
+    # Leave auction + close network position
     Then the network moves ahead "301" blocks
 
+    Then debug trades
     Then the following trades should be executed:
       | buyer    | price | size | seller   |
       | trader3a | 1002  | 1    | trader4  |
       | trader3a | 900   | 2    | trader4  |
-      | aux1 | 500 | 1 | network |
-      | network | 493 | 3 | trader3a |
+      | network  | 900   | 3    | trader3a |
+      | aux1     | 500   | 1    | network  |
+      | aux1     | 490   | 2    | network  |
 
 # For trader3a & 4- Sharing IF and LP
 # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
@@ -1279,7 +1285,7 @@ Feature: Fees calculations
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-  @now
+  @now @Liquidation @NoPerp
   Scenario: S018, Testing fees in continuous trading during position resolution (0029-FEES-001)
 
     Given the fees configuration named "fees-config-1":
@@ -1327,12 +1333,8 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
-
-    Then the parties cancel the following orders:
-      | party | reference       |
-      | aux1  | sell-provider-1 |
+      | trader3a | ETH/DEC21 | 18000       | 57600  | 72000   | 90000   |
+      | trader3b | ETH/DEC21 | 0           | 0      | 0       | 0       |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -1340,8 +1342,8 @@ Feature: Fees calculations
 
     And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2  | ETH/DEC21 | buy  | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | sell | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     And the mark price should be "300" for the market "ETH/DEC21"
 
@@ -1376,6 +1378,7 @@ Feature: Fees calculations
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
+  @Liquidation @NoPerp
   Scenario: S019, Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid (0029-FEES-008)
 
     Given the fees configuration named "fees-config-1":
@@ -1423,12 +1426,8 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
-
-    Then the parties cancel the following orders:
-      | party | reference       |
-      | aux1  | sell-provider-1 |
+      | trader3a | ETH/DEC21 | 18000       | 57600  | 72000   | 90000   |
+      | trader3b | ETH/DEC21 | 0           | 0      | 0       | 0       |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -1436,8 +1435,8 @@ Feature: Fees calculations
 
     And the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2  | ETH/DEC21 | buy  | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC21 | sell | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     And the mark price should be "300" for the market "ETH/DEC21"
 
