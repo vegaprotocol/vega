@@ -45,7 +45,7 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 	}
 	protoInstrument := obj.Instrument
 
-	var product *vega.UpdateFutureProduct
+	var product UpdateProductConfiguration
 
 	switch p := protoInstrument.Product.(type) {
 	case *vega.UpdateInstrumentConfiguration_Future:
@@ -54,6 +54,17 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 			DataSourceSpecForSettlementData:     p.Future.DataSourceSpecForSettlementData,
 			DataSourceSpecForTradingTermination: p.Future.DataSourceSpecForTradingTermination,
 			DataSourceSpecBinding:               p.Future.DataSourceSpecBinding,
+		}
+	case *vega.UpdateInstrumentConfiguration_Perpetual:
+		product = &vega.UpdatePerpetualProduct{
+			QuoteName:                           p.Perpetual.QuoteName,
+			MarginFundingFactor:                 p.Perpetual.MarginFundingFactor,
+			InterestRate:                        p.Perpetual.InterestRate,
+			ClampLowerBound:                     p.Perpetual.ClampLowerBound,
+			ClampUpperBound:                     p.Perpetual.ClampUpperBound,
+			DataSourceSpecForSettlementSchedule: p.Perpetual.DataSourceSpecForSettlementSchedule,
+			DataSourceSpecForSettlementData:     p.Perpetual.DataSourceSpecForSettlementData,
+			DataSourceSpecBinding:               p.Perpetual.DataSourceSpecBinding,
 		}
 	default:
 		return nil, ErrUnsupportedProduct

@@ -10,6 +10,7 @@
 - [10120](https://github.com/vegaprotocol/vega/issues/10120) - Assure theoretical and actual funding payment calculations are consistent.
 - [10126](https://github.com/vegaprotocol/vega/issues/10126) - Account for invalid stop orders in batch, charge default gas.
 - [10123](https://github.com/vegaprotocol/vega/issues/10123) - Ledger exports contain account types of "UNKNOWN" type
+- [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 
 ## 0.73.4
 
