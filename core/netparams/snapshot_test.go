@@ -125,7 +125,7 @@ func TestSnapshotRestoreDependentNetParams(t *testing.T) {
 }
 
 func TestPatchConfirmationsTo64(t *testing.T) {
-	//ctx := vgtest.VegaContext("chainid", 100)
+	// ctx := vgtest.VegaContext("chainid", 100)
 
 	engine1 := getTestNetParams(t)
 	engine1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -155,5 +155,4 @@ func TestPatchConfirmationsTo64(t *testing.T) {
 	err = engine2.GetJSONStruct(netparams.BlockchainsEthereumConfig, &v)
 	require.NoError(t, err)
 	assert.Equal(t, uint32(64), v.Confirmations)
-
 }
