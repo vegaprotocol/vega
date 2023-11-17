@@ -209,9 +209,11 @@ func (g *Gastimator) batchGastimate(batch *commandspb.BatchMarketInstructions) u
 			factor = 1.0
 		}
 		var marketId string
+		// if both are nil, marketId will be empty string, yielding default gas
+		// the order is invalid, but validation is applied later.
 		if os.FallsBelow != nil {
 			marketId = os.FallsBelow.OrderSubmission.MarketId
-		} else {
+		} else if os.RisesAbove != nil {
 			marketId = os.RisesAbove.OrderSubmission.MarketId
 		}
 		orderGas := g.orderGastimate(marketId)
