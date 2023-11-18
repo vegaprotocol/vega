@@ -511,9 +511,10 @@ func TestGetAllTransfers(t *testing.T) {
 			EndEpoch:   ptr.From(uint64(15)),
 			Factor:     "0.1",
 			DispatchStrategy: &vegapb.DispatchStrategy{
-				AssetForMetric: "deadd0d0",
-				Markets:        []string{"beefdead", "feebaad"},
-				Metric:         vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+				AssetForMetric:  "deadd0d0",
+				Metric:          vegapb.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+				Markets:         []string{"beefdead", "feebaad"},
+				IndividualScope: vegapb.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
 			},
 		}),
 	)
@@ -535,6 +536,11 @@ func TestGetAllTransfers(t *testing.T) {
 			StartEpoch: 25,
 			EndEpoch:   nil,
 			Factor:     "0.1",
+			DispatchStrategy: &vegapb.DispatchStrategy{
+				TeamScope: []string{
+					"beefdeadfeebaad",
+				},
+			},
 		}),
 	)
 
@@ -600,6 +606,23 @@ func TestGetAllTransfers(t *testing.T) {
 		for status, expected := range matrix {
 			filters := sqlstore.ListTransfersFilters{
 				Status: ptr.From(status),
+			}
+
+			retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+			require.NoError(t, err)
+			assert.Equal(t, expected, TransferDetailsAsTransfers(t, retrieved))
+		}
+	})
+
+	t.Run("Retrieve transfers by scope", func(t *testing.T) {
+		matrix := map[entities.TransferScope][]entities.Transfer{
+			entities.TransferScopeIndividual: {*transfer1},
+			entities.TransferScopeTeam:       {*transfer3},
+		}
+
+		for scope, expected := range matrix {
+			filters := sqlstore.ListTransfersFilters{
+				Scope: ptr.From(scope),
 			}
 
 			retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
@@ -777,8 +800,9 @@ func TestGetAllRewardTransfers(t *testing.T) {
 				StartEpoch: 15,
 				EndEpoch:   nil,
 				DispatchStrategy: &vegapb.DispatchStrategy{
-					Metric:     vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
-					LockPeriod: uint64((i % 7) + 1),
+					Metric:          vegapb.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN,
+					LockPeriod:      uint64((i % 7) + 1),
+					IndividualScope: vegapb.IndividualScope_INDIVIDUAL_SCOPE_ALL,
 				},
 			})
 			statusOption = TransferWithStatus(entities.TransferStatusDone)
@@ -790,8 +814,10 @@ func TestGetAllRewardTransfers(t *testing.T) {
 				DispatchStrategy: &vegapb.DispatchStrategy{
 					Metric:     vegapb.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING,
 					LockPeriod: uint64((i % 7) + 1),
+					TeamScope:  []string{"deadfbeefc0ffeed00d"},
 				},
 			})
+
 			statusOption = TransferWithStatus(entities.TransferStatusPending)
 		}
 
@@ -824,10 +850,27 @@ func TestGetAllRewardTransfers(t *testing.T) {
 			Status: ptr.From(entities.TransferStatusDone),
 		}
 
-		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(false), filters)
+		retrieved, _, err := transfersStore.GetAllRewards(ctx, entities.DefaultCursorPagination(false), filters)
 		require.NoError(t, err)
 		assert.Equal(t,
 			[]entities.Transfer{rewardTransfers[0], rewardTransfers[2], rewardTransfers[4], rewardTransfers[6], rewardTransfers[8]},
 			TransferDetailsAsTransfers(t, retrieved))
+	})
+
+	t.Run("Retrieve transfers by scope", func(t *testing.T) {
+		matrix := map[entities.TransferScope][]entities.Transfer{
+			entities.TransferScopeIndividual: {rewardTransfers[0], rewardTransfers[2], rewardTransfers[4], rewardTransfers[6], rewardTransfers[8]},
+			entities.TransferScopeTeam:       {rewardTransfers[1], rewardTransfers[3], rewardTransfers[5], rewardTransfers[7], rewardTransfers[9]},
+		}
+
+		for scope, expected := range matrix {
+			filters := sqlstore.ListTransfersFilters{
+				Scope: ptr.From(scope),
+			}
+
+			retrieved, _, err := transfersStore.GetAllRewards(ctx, entities.DefaultCursorPagination(false), filters)
+			require.NoError(t, err)
+			assert.Equal(t, expected, TransferDetailsAsTransfers(t, retrieved))
+		}
 	})
 }

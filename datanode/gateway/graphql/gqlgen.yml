@@ -80,6 +80,9 @@ models:
   TransferStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus
+  TransferScope:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferScope
   TransferType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferType

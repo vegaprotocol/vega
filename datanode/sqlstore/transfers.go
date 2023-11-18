@@ -41,7 +41,7 @@ type Transfers struct {
 type ListTransfersFilters struct {
 	FromEpoch *uint64
 	ToEpoch   *uint64
-	Scope     *string
+	Scope     *entities.TransferScope
 	Status    *entities.TransferStatus
 }
 
@@ -281,6 +281,16 @@ FROM recurring_transfers
 }
 
 func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []string, args []any) (string, []any) {
+	if filters.Scope != nil {
+		where = append(where, "jsonb_typeof(dispatch_strategy) != 'null'")
+		switch *filters.Scope {
+		case entities.TransferScopeIndividual:
+			where = append(where, "dispatch_strategy ? 'individual_scope'")
+		case entities.TransferScopeTeam:
+			where = append(where, "dispatch_strategy ? 'team_scope'")
+		}
+	}
+
 	if filters.Status != nil {
 		where = append(where, fmt.Sprintf("status = %s", nextBindVar(&args, *filters.Status)))
 	}

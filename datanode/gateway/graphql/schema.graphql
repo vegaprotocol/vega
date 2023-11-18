@@ -1010,6 +1010,8 @@ type Query {
     toEpoch: Int
     "Optional status to filter on."
     status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -1047,6 +1049,14 @@ type Query {
     "Optional party IDs to filter for"
     partyIDs: [String!]
   ): PaidLiquidityFeesConnection
+}
+
+"Defines the types of a dispatch strategy's scope the API can filter on."
+enum TransferScope {
+  "Matches transfers that have dispatch strategy scope of individual set."
+  SCOPE_INDIVIDUAL
+  "Matches transfers that have dispatch strategy scope of team set."
+  SCOPE_TEAM
 }
 
 "All the states a transfer can transition between"
@@ -2655,6 +2665,8 @@ type Party {
     toEpoch: Int
     "Optional status to filter on."
     status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "The activity streak"
