@@ -5,25 +5,28 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
-
-  Scenario: 001, check PnL when traders partially close positions, 0007-POSN-011, 0007-POSN-012
-    Given the log normal risk model named "log-normal-risk-model-1":
+    And the following network parameters are set:
+      | name                                    | value |
+      | market.liquidity.bondPenaltyParameter   | 0.2   |
+    And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r | sigma |
       | 0.000001      | 0.1 | 0  | 0 | 1.0   |
-    #risk factor short: 3.5569036
-    #risk factor long: 0.801225765
+      #risk factor short: 3.5569036
+      #risk factor long: 0.801225765
+    And the price monitoring named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 1000    | 0.99        | 300               |
+    And the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | lqm-params         | 0.10             | 24h         | 1.0            |
+    And the average block duration is "1"
+  Scenario: 001, check PnL when traders partially close positions, 0007-POSN-011, 0007-POSN-012
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1000    | 0.99        | 300               |
-    And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter       | 0.2   |
-    Given the liquidity monitoring parameters:
-            | name               | triggering ratio | time window | scaling factor |
-            | lqm-params         | 0.10             | 24h         | 1.0            |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
@@ -33,8 +36,6 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
-
-    And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | lp type    |
@@ -109,12 +110,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party2 | -38    | -342           | -18          |
 
   Scenario: 002, check PnL at the settlement
-
-    Given time is updated to "2020-11-30T00:00:00Z"
-
-    Given the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau | mu | r | sigma |
-      | 0.000001      | 0.1 | 0  | 0 | 1.0   |
+    And time is updated to "2020-11-30T00:00:00Z"
     And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding         |
       | prices.ETH.value | TYPE_INTEGER | settlement data |
@@ -125,12 +121,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0         | 0                  |
-    And the price monitoring named "price-monitoring-1":
-      | horizon | probability | auction extension |
-      | 1000    | 0.99        | 300               |
-    And the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter       | 0.2   |
+
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
@@ -140,8 +131,6 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
-
-    And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -270,3 +259,113 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | party1 | USD   | ETH/MAR22 | 0      | 100001375 |
       | party2 | USD   | ETH/MAR22 | 0      | 99998625  |
 
+  Scenario: 003, check PnL when traders partially close positions with non-continuous mark price update
+    Given the following network parameters are set:
+      | name                                    | value  |
+      | network.markPriceUpdateMaximumFrequency | 10s    |
+    And the markets:
+      | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.1                    | 0                         | default-futures |
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party0 | USD   | 500000000 |
+      | party1 | USD   | 100000000 |
+      | party2 | USD   | 100000000 |
+      | party3 | USD   | 100000    |
+      | party4 | USD   | 100000    |
+      | party5 | USD   | 100000    |
+      | party9 | USD   | 100000    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | lp type    |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0.0   | submission |
+      | lp1 | party0 | ETH/MAR22 | 5000000           | 0.0   | amendment  |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | party0 | ETH/MAR22 | 4855      | 1                    | sell | ASK              | 6000   | 20     |
+      | party0 | ETH/MAR22 | 5155      | 1                    | buy  | BID              | 6000   | 20     |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/MAR22 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/MAR22"
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 1             |
+
+    Then the network moves ahead "3" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/MAR22 | buy  | 3      | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 1      | 1004  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/MAR22 | buy  | 2      | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party9 | ETH/MAR22 | sell | 6      | 1002  | 3                | TYPE_LIMIT | TIF_FOK |
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party5 | 1003  | 2    | party9 |
+      | party4 | 1004  | 1    | party9 |
+      | party3 | 1005  | 3    | party9 |
+
+    Then the network moves ahead "3" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | sell | 1      | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/MAR22 | sell | 1      | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party9 | ETH/MAR22 | buy  | 2      | 1005  | 2                | TYPE_LIMIT | TIF_FOK |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party9 | 1003  | 1    | party4 |
+      | party9 | 1005  | 1    | party5 |
+
+    Then the network moves ahead "4" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/MAR22 | sell | 1      | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party9 | ETH/MAR22 | buy  | 1      | 1004  | 1                | TYPE_LIMIT | TIF_FOK |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party9 | 1003  | 1    | party3 |
+    
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 4             |
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | open interest |
+      | 1003       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 4             |
+
+    Then the network moves ahead "4" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5 | ETH/MAR22 | sell | 1      | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/MAR22 | sell | 2      | 1004  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party9 | ETH/MAR22 | buy  | 3      | 1005  | 2                | TYPE_LIMIT | TIF_FOK |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party9 | 1005  | 1    | party5 |
+      | party9 | 1004  | 2    | party3 |
+    
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | open interest |
+      | 1003       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 1             |
+    Then the network moves ahead "10" blocks
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | open interest |
+      | 1005       | TRADING_MODE_CONTINUOUS | 1000    | 986       | 1014      | 1             |
+
+    # party3: -3*1005+1*1003+2*1004 = -4
+    # party4: -1*1004+1*1003        = -1
+    # party5: -2*1003+1*1005+1*1005 =  4
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party3 | 0      | 0              | -4           |
+      | party4 | 0      | 0              | -1           |
+      | party5 | 0      | 0              |  4           |
+      | party9 | 0      | 0              |  1           |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party3 | USD   | ETH/MAR22 | 0      |  99996  |
+      | party4 | USD   | ETH/MAR22 | 0      |  99999  |
+      | party5 | USD   | ETH/MAR22 | 0      | 100004  |
+      | party9 | USD   | ETH/MAR22 | 0      | 100001  |
