@@ -13,17 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2023 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by vers
-
 package entities_test
 
 import (
@@ -37,7 +26,7 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/stretchr/testify/assert"
-	structpb "google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestExternalDataSourceSpecFromProto(t *testing.T) {
