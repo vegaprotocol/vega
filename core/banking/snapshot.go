@@ -300,7 +300,7 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	case *types.PayloadBankingBridgeState:
 		return nil, e.restoreBridgeState(pl.BankingBridgeState, p)
 	case *types.PayloadBankingTransferFeeDiscounts:
-		return nil, e.restoreTransferFeeDiscounts(ctx, pl.BankingTransferFeeDiscounts, p)
+		return nil, e.restoreTransferFeeDiscounts(pl.BankingTransferFeeDiscounts, p)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -409,7 +409,6 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 }
 
 func (e *Engine) restoreTransferFeeDiscounts(
-	ctx context.Context,
 	state *snapshot.BankingTransferFeeDiscounts,
 	p *types.Payload,
 ) (err error) {
