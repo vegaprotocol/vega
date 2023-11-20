@@ -342,6 +342,13 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
 	}
+	if largestShare == nil {
+		largestShare = &mtmTransfer{
+			MarketPosition: &npos{
+				price: markPrice.Clone(),
+			},
+		}
+	}
 	// no need for this lock anymore
 	e.mu.Unlock()
 	delta := num.UintZero().Sub(lossTotal, winTotal)

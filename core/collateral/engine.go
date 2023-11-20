@@ -1598,6 +1598,19 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 
 // GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
+	if pos.Party() == types.NetworkParty {
+		ins, err := e.GetMarketInsurancePoolAccount(marketID, asset)
+		if err != nil {
+			return nil, ErrAccountDoesNotExist
+		}
+		return marginUpdate{
+			MarketPosition:  pos,
+			margin:          ins,
+			asset:           asset,
+			marketID:        marketID,
+			marginShortFall: num.UintZero(),
+		}, nil
+	}
 	genID := e.accountID(noMarket, pos.Party(), asset, types.AccountTypeGeneral)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeMargin)
 	bondID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeBond)
@@ -1644,6 +1657,10 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	)
 	// create "fake" settle account for market ID
 	for _, update := range updates {
+		if update.Party() == types.NetworkParty {
+			// network party is ignored here
+			continue
+		}
 		transfer := update.Transfer()
 		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 		mevt := &marginUpdate{
@@ -1951,6 +1968,10 @@ func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error) {
+	// network party is ignored for margin stuff.
+	if update.Party() == types.NetworkParty {
+		return nil, nil, nil
+	}
 	// create "fake" settle account for market ID
 	settle := &types.Account{
 		MarketID: marketID,
