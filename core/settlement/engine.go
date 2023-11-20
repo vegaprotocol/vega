@@ -241,9 +241,18 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 	}
 }
 
-func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt *num.Uint) {
+func (e *Engine) winSocialisationUpdate(transfer *mtmTransfer, amt, markPrice *num.Uint) {
 	if amt.IsZero() {
 		return
+	}
+	// default to the network party
+	if transfer == nil {
+		netMPos := &npos{
+			price: markPrice.Clone(),
+		}
+		transfer = &mtmTransfer{
+			MarketPosition: netMPos,
+		}
 	}
 	if transfer.transfer == nil {
 		transfer.transfer = &types.Transfer{
@@ -401,7 +410,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			// start distributing the delta
 			one := num.NewUint(1)
 			for _, transfer := range zeroShares {
-				e.winSocialisationUpdate(transfer, one)
+				e.winSocialisationUpdate(transfer, one, markPrice)
 				delta.Sub(delta, one)
 				if delta.IsZero() {
 					break // all done
@@ -410,7 +419,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		}
 		// delta is whatever amount the largest share win party gets, this shouldn't be too much
 		// delta can be zero at this stage, which is fine
-		e.winSocialisationUpdate(largestShare, delta)
+		e.winSocialisationUpdate(largestShare, delta, markPrice)
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)

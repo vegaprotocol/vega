@@ -2282,6 +2282,9 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	mp := m.getCurrentMarkPrice()
 	m.liquidation.UpdateMarkPrice(mp.Clone())
 	evts := m.position.UpdateMarkPrice(mp)
+	if npos := m.liquidation.GetNetworkPosition(); npos.Size() != 0 {
+		evts = append(evts, npos)
+	}
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
 	for _, t := range settle {
@@ -2305,6 +2308,11 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
+}
+
+// closeoutMTM is similar to confirmMTM, but only applies to the parties who have traded with the network
+// to reduce the position held by the network.
+func (m *Market) closeoutMTM(ctx context.Context) {
 }
 
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*types.Order {
