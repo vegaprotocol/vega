@@ -2,7 +2,7 @@ Feature: Position resolution case 1
 
   Background:
 
-    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+    Given the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding         |
       | prices.BTC.value | TYPE_INTEGER | settlement data |
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
@@ -81,7 +81,7 @@ Feature: Position resolution case 1
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0            |
-      | sellSideProvider | BTC   | ETH/DEC19 | 159484 | 999999840876 |
+      | sellSideProvider | BTC   | ETH/DEC19 | 127740 | 999999880960 |
       | buySideProvider  | BTC   | ETH/DEC19 | 1320   | 999999998740 |
       | aux              | BTC   | ETH/DEC19 | 5706   | 999999995454 |
       | aux2             | BTC   | ETH/DEC19 | 440    | 999999999590 |
@@ -105,7 +105,7 @@ Feature: Position resolution case 1
       | party            | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
-    And the insurance pool balance should be "9990" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1650" for the market "ETH/DEC19"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -127,3 +127,4 @@ Feature: Position resolution case 1
       | buySideProvider  | 3      | 60           | 0              |
       | aux              | 11     | 1160         | 0              |
       | aux2             | -1     | 30           | 0              |
+      | network          | 278    | -9950        | 0              |

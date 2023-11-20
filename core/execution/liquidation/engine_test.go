@@ -45,6 +45,8 @@ type tstEngine struct {
 	as     *cmocks.MockAuctionState
 	broker *bmocks.MockBroker
 	tSvc   *cmocks.MockTimeService
+	pos    *mocks.MockPositions
+	set    *mocks.MockSettlement
 }
 
 type marginStub struct {
@@ -90,6 +92,9 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(2 * len(closed))
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -169,6 +174,9 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 		// 1 trade per closed position
 		eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+		eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+		eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+		eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 		pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 		require.Equal(t, len(closed), len(trades))
 		require.Equal(t, len(closed), len(pos))
@@ -252,6 +260,9 @@ func testOrderbookHasNoVolume(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -293,6 +304,9 @@ func testOrderbookFractionRounding(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -335,6 +349,9 @@ func testOrderbookExceedsVolume(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -373,6 +390,9 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -392,6 +412,9 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades = eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -421,6 +444,9 @@ func TestLegacySupport(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
 	// 1 trade per closed position
 	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	eng.set.EXPECT().AddTrade(gomock.Any()).Times(len(closed))
 	pos, parties, trades = eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
 	require.Equal(t, len(closed), len(trades))
 	require.Equal(t, len(closed), len(pos))
@@ -517,7 +543,9 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 	as := cmocks.NewMockAuctionState(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	tSvc := cmocks.NewMockTimeService(ctrl)
-	engine := liquidation.New(config, marketID, broker, book, as, tSvc, ml)
+	pe := mocks.NewMockPositions(ctrl)
+	se := mocks.NewMockSettlement(ctrl)
+	engine := liquidation.New(config, marketID, broker, book, as, tSvc, ml, pe, se)
 	return &tstEngine{
 		Engine: engine,
 		ctrl:   ctrl,
@@ -527,6 +555,8 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 		as:     as,
 		broker: broker,
 		tSvc:   tSvc,
+		pos:    pe,
+		set:    se,
 	}
 }
 

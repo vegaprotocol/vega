@@ -34,8 +34,6 @@ import (
 
 func TestUpdatePosition(t *testing.T) {
 	t.Run("Update position regular", testUpdatePositionRegular)
-	t.Run("Update position network trade as buyer", testUpdatePositionNetworkBuy)
-	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
 }
 
 func TestGetOpenInterest(t *testing.T) {
@@ -153,60 +151,6 @@ func testUpdatePositionRegular(t *testing.T) {
 			assert.Equal(t, num.UintZero(), p.VWSell())
 		}
 	}
-}
-
-func testUpdatePositionNetworkBuy(t *testing.T) {
-	engine := getTestEngine(t)
-	assert.Empty(t, engine.Positions())
-	buyer := "network"
-	seller := "seller_id"
-	size := int64(10)
-	trade := types.Trade{
-		Type:      types.TradeTypeDefault,
-		ID:        "trade_id",
-		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(size),
-		Buyer:     buyer,
-		Seller:    seller,
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
-		Timestamp: time.Now().Unix(),
-	}
-	passiveOrder := registerOrder(engine, types.SideSell, seller, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
-	pos := engine.Positions()
-	assert.Equal(t, 1, len(pos))
-	assert.Equal(t, 1, len(positions))
-	assert.Equal(t, seller, pos[0].Party())
-	assert.Equal(t, -size, pos[0].Size())
-}
-
-func testUpdatePositionNetworkSell(t *testing.T) {
-	engine := getTestEngine(t)
-	assert.Empty(t, engine.Positions())
-	buyer := "buyer_id"
-	seller := "network"
-	size := int64(10)
-	trade := types.Trade{
-		Type:      types.TradeTypeDefault,
-		ID:        "trade_id",
-		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(size),
-		Buyer:     buyer,
-		Seller:    seller,
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
-		Timestamp: time.Now().Unix(),
-	}
-	passiveOrder := registerOrder(engine, types.SideBuy, buyer, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
-	pos := engine.Positions()
-	assert.Equal(t, 1, len(pos))
-	assert.Equal(t, 1, len(positions))
-	assert.Equal(t, buyer, pos[0].Party())
-	assert.Equal(t, size, pos[0].Size())
 }
 
 func TestRemoveDistressedEmpty(t *testing.T) {

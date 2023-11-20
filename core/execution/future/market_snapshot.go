@@ -190,7 +190,7 @@ func NewMarketFromSnapshot(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity)
+	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
 
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()

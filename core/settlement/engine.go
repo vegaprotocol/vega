@@ -280,47 +280,11 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		winTotalDec  = num.NewDecimalFromFloat(0)
 	)
 
-	// Process any network trades first
-	traded, hasTraded := trades[types.NetworkParty]
-	if hasTraded {
-		// don't create an event for the network. Its position is irrelevant
-
-		mtmShare, mtmDShare, neg := calcMTM(markPrice, markPrice, 0, traded, e.positionFactor)
-		// MarketPosition stub for network
-		netMPos := &npos{
-			price: markPrice.Clone(),
-		}
-
-		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, netMPos, types.NetworkParty)
-
-		if !neg {
-			wins = append(wins, mtmTransfer)
-			winTotal.AddSum(mtmShare)
-			winTotalDec = winTotalDec.Add(mtmDShare)
-			mtmDec = mtmDShare
-			largestShare = mtmTransfer
-			// mtmDec is zero at this point, this will always be the largest winning party at this point
-			if mtmShare.IsZero() {
-				zeroShares = append(zeroShares, mtmTransfer)
-				zeroAmts = true
-			}
-		} else if mtmShare.IsZero() {
-			// This would be a zero-value loss, so not sure why this would be at the end of the slice
-			// shouldn't really matter if this is in the wins or losses part of the slice, but
-			// this was the previous behaviour, so let's keep it
-			wins = append(wins, mtmTransfer)
-			lossTotalDec = lossTotalDec.Add(mtmDShare)
-		} else {
-			transfers = append(transfers, mtmTransfer)
-			lossTotal.AddSum(mtmShare)
-			lossTotalDec = lossTotalDec.Add(mtmDShare)
-		}
-	}
-
+	// network is treated as a regular party
 	for _, evt := range positions {
 		party := evt.Party()
 		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size())
-		traded, hasTraded = trades[party]
+		traded, hasTraded := trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		// empty position
 		skip := current == 0 && lastSettledPrice.IsZero() && evt.Buy() == 0 && evt.Sell() == 0
@@ -376,6 +340,13 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			transfers = append(transfers, mtmTransfer)
 			lossTotal.AddSum(mtmShare)
 			lossTotalDec = lossTotalDec.Add(mtmDShare)
+		}
+	}
+	if largestShare == nil {
+		largestShare = &mtmTransfer{
+			MarketPosition: &npos{
+				price: markPrice.Clone(),
+			},
 		}
 	}
 	// no need for this lock anymore

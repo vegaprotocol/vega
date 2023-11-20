@@ -90,5 +90,5 @@ Feature: Position resolution case 2
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     # then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "11731" for the market "ETH/DEC19"
+    And the insurance pool balance should be "3121" for the market "ETH/DEC19"
 

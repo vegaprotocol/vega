@@ -257,60 +257,6 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	return pos
 }
 
-// UpdateNetwork - functionally the same as the Update func, except for ignoring the network
-// party in the trade (whether it be buyer or seller). This could be incorporated into the Update
-// function, but we know when we're adding network trades, and having this check every time is
-// wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
-	// there's only 1 position
-	var (
-		ok  bool
-		pos *MarketPosition
-	)
-	size := int64(trade.Size)
-	if trade.Buyer != types.NetworkParty {
-		pos, ok = e.positions[trade.Buyer]
-		if !ok {
-			e.log.Panic("could not find buyer position",
-				logging.Trade(*trade))
-		}
-
-		if pos.buy < int64(trade.Size) {
-			e.log.Panic("network trade with a potential buy position < to the trade size",
-				logging.PartyID(trade.Buyer),
-				logging.Int64("potential-buy", pos.buy),
-				logging.Trade(*trade))
-		}
-		pos.size += size
-		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, size, trade.Price)
-	} else {
-		pos, ok = e.positions[trade.Seller]
-		if !ok {
-			e.log.Panic("could not find seller position",
-				logging.Trade(*trade))
-		}
-
-		if pos.sell < int64(trade.Size) {
-			e.log.Panic("network trade with a potential sell position < to the trade size",
-				logging.PartyID(trade.Seller),
-				logging.Int64("potential-sell", pos.sell),
-				logging.Trade(*trade))
-		}
-		// size is negative in case of a sale
-		pos.size -= size
-		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, -size, trade.Price)
-	}
-
-	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.size)
-	e.updatePartiesTradedSize(pos.partyID, trade.Size)
-
-	e.positionUpdated(ctx, pos)
-
-	cpy := pos.Clone()
-	return []events.MarketPosition{*cpy}
-}
-
 func (e *Engine) updatePartiesTradedSize(party string, size uint64) {
 	e.partiesTradedSize[party] = e.partiesTradedSize[party] + size
 }
