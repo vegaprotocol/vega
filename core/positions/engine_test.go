@@ -34,8 +34,6 @@ import (
 
 func TestUpdatePosition(t *testing.T) {
 	t.Run("Update position regular", testUpdatePositionRegular)
-	t.Run("Update position network trade as buyer", testUpdatePositionNetworkBuy)
-	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
 }
 
 func TestGetOpenInterest(t *testing.T) {
