@@ -45,7 +45,6 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		RecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
 		BridgeState:                  e.getBridgeState(),
 		LastSeenEthBlock:             e.lastSeenEthBlock,
-		TransferFeeDiscounts:         e.getPartyAssetDiscounts(),
 	}
 
 	msg.SeenRefs = make([]string, 0, e.seen.Size())
@@ -83,8 +82,6 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	evts = append(evts, e.loadRecurringGovernanceTransfers(ctx, b.RecurringGovernanceTransfers)...)
 
 	e.loadBridgeState(b.BridgeState)
-
-	evts = append(evts, e.loadTransferFeeDiscounts(ctx, b.TransferFeeDiscounts)...)
 
 	e.seen = treeset.NewWithStringComparator()
 	for _, v := range b.SeenRefs {
@@ -225,21 +222,6 @@ func (e *Engine) loadScheduledTransfers(
 	return evts, nil
 }
 
-func (e *Engine) loadTransferFeeDiscounts(
-	ctx context.Context,
-	partyAssetDiscounts []*checkpoint.PartyAssetAmount,
-) []events.Event {
-	evts := []events.Event{}
-	e.feeDiscountPerPartyAndAsset = make(map[partyAssetKey]*num.Uint, len(partyAssetDiscounts))
-	for _, v := range partyAssetDiscounts {
-		discount, _ := num.UintFromString(v.Amount, 10)
-		e.feeDiscountPerPartyAndAsset[e.feeDiscountKey(v.Asset, v.Party)] = discount
-		evts = append(evts, events.NewTransferFeesDiscountUpdated(ctx, v.Party, v.Asset, discount, e.currentEpoch))
-	}
-
-	return evts
-}
-
 func (e *Engine) loadRecurringTransfers(
 	ctx context.Context, r *checkpoint.RecurringTransfers,
 ) []events.Event {
@@ -377,23 +359,4 @@ func (e *Engine) getAssetActions() []*types.AssetAction {
 
 	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
 	return aa
-}
-
-func (e *Engine) getPartyAssetDiscounts() []*checkpoint.PartyAssetAmount {
-	out := make([]*checkpoint.PartyAssetAmount, 0, len(e.feeDiscountPerPartyAndAsset))
-
-	for k, v := range e.feeDiscountPerPartyAndAsset {
-		out = append(out, &checkpoint.PartyAssetAmount{
-			Party:  k.party,
-			Asset:  k.asset,
-			Amount: v.String(),
-		})
-	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Party == out[j].Party {
-			return out[i].Asset < out[j].Asset
-		}
-		return out[i].Party < out[j].Party
-	})
-	return out
 }

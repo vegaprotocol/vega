@@ -156,11 +156,6 @@ message GovernanceTransfer {
   vega.NewTransferConfiguration config = 5;
 }
 
-message PartyAssetAmount {
-  string party = 1;
-  string asset = 2;
-  string amount = 3;
-}
 message ScheduledGovernanceTransferAtTime {
   int64 deliver_on = 1;
   repeated GovernanceTransfer transfers = 2;
@@ -175,7 +170,6 @@ message Banking {
   repeated string seen_refs = 6;
   repeated ScheduledGovernanceTransferAtTime governance_transfers_at_time = 7;
   repeated GovernanceTransfer recurring_governance_transfers = 8;
-  repeated PartyAssetAmount transfer_fee_discounts = 9;
 }
 
 message BridgeState {

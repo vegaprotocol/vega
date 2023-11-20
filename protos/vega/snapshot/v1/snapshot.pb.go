@@ -12630,18 +12630,81 @@ func (x *Liquidation) GetConfig() *vega.LiquidationStrategy {
 	return nil
 }
 
+type PartyAssetAmount struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Party  string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
+	Asset  string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
+	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
+}
+
+func (x *PartyAssetAmount) Reset() {
+	*x = PartyAssetAmount{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[172]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PartyAssetAmount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PartyAssetAmount) ProtoMessage() {}
+
+func (x *PartyAssetAmount) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[172]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PartyAssetAmount.ProtoReflect.Descriptor instead.
+func (*PartyAssetAmount) Descriptor() ([]byte, []int) {
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{172}
+}
+
+func (x *PartyAssetAmount) GetParty() string {
+	if x != nil {
+		return x.Party
+	}
+	return ""
+}
+
+func (x *PartyAssetAmount) GetAsset() string {
+	if x != nil {
+		return x.Asset
+	}
+	return ""
+}
+
+func (x *PartyAssetAmount) GetAmount() string {
+	if x != nil {
+		return x.Amount
+	}
+	return ""
+}
+
 type BankingTransferFeeDiscounts struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PartyAssetDiscount []*v11.PartyAssetAmount `protobuf:"bytes,1,rep,name=party_asset_discount,json=partyAssetDiscount,proto3" json:"party_asset_discount,omitempty"`
+	PartyAssetDiscount []*PartyAssetAmount `protobuf:"bytes,1,rep,name=party_asset_discount,json=partyAssetDiscount,proto3" json:"party_asset_discount,omitempty"`
 }
 
 func (x *BankingTransferFeeDiscounts) Reset() {
 	*x = BankingTransferFeeDiscounts{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[172]
+		mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[173]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12654,7 +12717,7 @@ func (x *BankingTransferFeeDiscounts) String() string {
 func (*BankingTransferFeeDiscounts) ProtoMessage() {}
 
 func (x *BankingTransferFeeDiscounts) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[172]
+	mi := &file_vega_snapshot_v1_snapshot_proto_msgTypes[173]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12667,10 +12730,10 @@ func (x *BankingTransferFeeDiscounts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BankingTransferFeeDiscounts.ProtoReflect.Descriptor instead.
 func (*BankingTransferFeeDiscounts) Descriptor() ([]byte, []int) {
-	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{172}
+	return file_vega_snapshot_v1_snapshot_proto_rawDescGZIP(), []int{173}
 }
 
-func (x *BankingTransferFeeDiscounts) GetPartyAssetDiscount() []*v11.PartyAssetAmount {
+func (x *BankingTransferFeeDiscounts) GetPartyAssetDiscount() []*PartyAssetAmount {
 	if x != nil {
 		return x.PartyAssetDiscount
 	}
@@ -14992,24 +15055,29 @@ var file_vega_snapshot_v1_snapshot_proto_rawDesc = []byte{
 	0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
 	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f,
 	0x6e, 0x53, 0x74, 0x72, 0x61, 0x74, 0x65, 0x67, 0x79, 0x52, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x22, 0x75, 0x0a, 0x1b, 0x42, 0x61, 0x6e, 0x6b, 0x69, 0x6e, 0x67, 0x54, 0x72, 0x61, 0x6e,
-	0x73, 0x66, 0x65, 0x72, 0x46, 0x65, 0x65, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73,
-	0x12, 0x56, 0x0a, 0x14, 0x70, 0x61, 0x72, 0x74, 0x79, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x5f,
-	0x64, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x24,
-	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x70, 0x6f, 0x69, 0x6e, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x74, 0x79, 0x41, 0x73, 0x73, 0x65, 0x74, 0x41, 0x6d,
-	0x6f, 0x75, 0x6e, 0x74, 0x52, 0x12, 0x70, 0x61, 0x72, 0x74, 0x79, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x44, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x2a, 0x60, 0x0a, 0x06, 0x46, 0x6f, 0x72, 0x6d,
-	0x61, 0x74, 0x12, 0x16, 0x0a, 0x12, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x55, 0x4e, 0x53,
-	0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x10, 0x0a, 0x0c, 0x46, 0x4f,
-	0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f, 0x54, 0x4f, 0x10, 0x01, 0x12, 0x1b, 0x0a, 0x17,
-	0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f, 0x54, 0x4f, 0x5f, 0x43, 0x4f, 0x4d,
-	0x50, 0x52, 0x45, 0x53, 0x53, 0x45, 0x44, 0x10, 0x02, 0x12, 0x0f, 0x0a, 0x0b, 0x46, 0x4f, 0x52,
-	0x4d, 0x41, 0x54, 0x5f, 0x4a, 0x53, 0x4f, 0x4e, 0x10, 0x03, 0x42, 0x33, 0x5a, 0x31, 0x63, 0x6f,
-	0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e,
-	0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76,
-	0x65, 0x67, 0x61, 0x2f, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2f, 0x76, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x67, 0x22, 0x56, 0x0a, 0x10, 0x50, 0x61, 0x72, 0x74, 0x79, 0x41, 0x73, 0x73, 0x65, 0x74, 0x41,
+	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x61, 0x72, 0x74, 0x79, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x70, 0x61, 0x72, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x61,
+	0x73, 0x73, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x61, 0x73, 0x73, 0x65,
+	0x74, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x73, 0x0a, 0x1b, 0x42, 0x61, 0x6e,
+	0x6b, 0x69, 0x6e, 0x67, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x46, 0x65, 0x65, 0x44,
+	0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x73, 0x12, 0x54, 0x0a, 0x14, 0x70, 0x61, 0x72, 0x74,
+	0x79, 0x5f, 0x61, 0x73, 0x73, 0x65, 0x74, 0x5f, 0x64, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x73, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x74, 0x79, 0x41,
+	0x73, 0x73, 0x65, 0x74, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x52, 0x12, 0x70, 0x61, 0x72, 0x74,
+	0x79, 0x41, 0x73, 0x73, 0x65, 0x74, 0x44, 0x69, 0x73, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x2a, 0x60,
+	0x0a, 0x06, 0x46, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x12, 0x16, 0x0a, 0x12, 0x46, 0x4f, 0x52, 0x4d,
+	0x41, 0x54, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00,
+	0x12, 0x10, 0x0a, 0x0c, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f, 0x54, 0x4f,
+	0x10, 0x01, 0x12, 0x1b, 0x0a, 0x17, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x50, 0x52, 0x4f,
+	0x54, 0x4f, 0x5f, 0x43, 0x4f, 0x4d, 0x50, 0x52, 0x45, 0x53, 0x53, 0x45, 0x44, 0x10, 0x02, 0x12,
+	0x0f, 0x0a, 0x0b, 0x46, 0x4f, 0x52, 0x4d, 0x41, 0x54, 0x5f, 0x4a, 0x53, 0x4f, 0x4e, 0x10, 0x03,
+	0x42, 0x33, 0x5a, 0x31, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68,
+	0x6f, 0x74, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -15025,7 +15093,7 @@ func file_vega_snapshot_v1_snapshot_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_snapshot_v1_snapshot_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 173)
+var file_vega_snapshot_v1_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 174)
 var file_vega_snapshot_v1_snapshot_proto_goTypes = []interface{}{
 	(Format)(0),                                   // 0: vega.snapshot.v1.Format
 	(*Snapshot)(nil),                              // 1: vega.snapshot.v1.Snapshot
@@ -15200,49 +15268,49 @@ var file_vega_snapshot_v1_snapshot_proto_goTypes = []interface{}{
 	(*EpochPartyVolumes)(nil),                     // 170: vega.snapshot.v1.EpochPartyVolumes
 	(*PartyVolume)(nil),                           // 171: vega.snapshot.v1.PartyVolume
 	(*Liquidation)(nil),                           // 172: vega.snapshot.v1.Liquidation
-	(*BankingTransferFeeDiscounts)(nil),           // 173: vega.snapshot.v1.BankingTransferFeeDiscounts
-	(*v1.Signer)(nil),                             // 174: vega.data.v1.Signer
-	(*v1.Property)(nil),                           // 175: vega.data.v1.Property
-	(*vega.Account)(nil),                          // 176: vega.Account
-	(*vega.Asset)(nil),                            // 177: vega.Asset
-	(*vega.Withdrawal)(nil),                       // 178: vega.Withdrawal
-	(*vega.Deposit)(nil),                          // 179: vega.Deposit
-	(*v11.AssetAction)(nil),                       // 180: vega.checkpoint.v1.AssetAction
-	(*v11.RecurringTransfers)(nil),                // 181: vega.checkpoint.v1.RecurringTransfers
-	(*v11.ScheduledTransferAtTime)(nil),           // 182: vega.checkpoint.v1.ScheduledTransferAtTime
-	(*v11.GovernanceTransfer)(nil),                // 183: vega.checkpoint.v1.GovernanceTransfer
-	(*v11.ScheduledGovernanceTransferAtTime)(nil), // 184: vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
-	(*v11.BridgeState)(nil),                       // 185: vega.checkpoint.v1.BridgeState
-	(*vega.Delegation)(nil),                       // 186: vega.Delegation
-	(*vega.Proposal)(nil),                         // 187: vega.Proposal
-	(*vega.Vote)(nil),                             // 188: vega.Vote
-	(*v12.StakeLinking)(nil),                      // 189: vega.events.v1.StakeLinking
-	(*vega.StakeTotalSupply)(nil),                 // 190: vega.StakeTotalSupply
-	(*vega.Order)(nil),                            // 191: vega.Order
-	(*vega.NetworkParameter)(nil),                 // 192: vega.NetworkParameter
-	(*vega.PriceMonitoringTrigger)(nil),           // 193: vega.PriceMonitoringTrigger
-	(vega.Market_TradingMode)(0),                  // 194: vega.Market.TradingMode
-	(vega.AuctionTrigger)(0),                      // 195: vega.AuctionTrigger
-	(*vega.AuctionDuration)(nil),                  // 196: vega.AuctionDuration
-	(*vega.Market)(nil),                           // 197: vega.Market
-	(*v12.FeesStats)(nil),                         // 198: vega.events.v1.FeesStats
-	(*v12.StopOrderEvent)(nil),                    // 199: vega.events.v1.StopOrderEvent
-	(*v11.MarketState)(nil),                       // 200: vega.checkpoint.v1.MarketState
-	(*v12.ValidatorUpdate)(nil),                   // 201: vega.events.v1.ValidatorUpdate
-	(*vega.RankingScore)(nil),                     // 202: vega.RankingScore
-	(*vega.LiquidityProvision)(nil),               // 203: vega.LiquidityProvision
-	(*vega.LiquiditySLAParameters)(nil),           // 204: vega.LiquiditySLAParameters
-	(*v12.PaidLiquidityFeesStats)(nil),            // 205: vega.events.v1.PaidLiquidityFeesStats
-	(*vega.KeyValueBundle)(nil),                   // 206: vega.KeyValueBundle
-	(*v11.MarketActivityTracker)(nil),             // 207: vega.checkpoint.v1.MarketActivityTracker
-	(*v11.TakerNotionalVolume)(nil),               // 208: vega.checkpoint.v1.TakerNotionalVolume
-	(*v12.ERC20MultiSigSignerEvent)(nil),          // 209: vega.events.v1.ERC20MultiSigSignerEvent
-	(*v12.ERC20MultiSigThresholdSetEvent)(nil),    // 210: vega.events.v1.ERC20MultiSigThresholdSetEvent
-	(*v12.ProtocolUpgradeEvent)(nil),              // 211: vega.events.v1.ProtocolUpgradeEvent
-	(*vega.ReferralProgram)(nil),                  // 212: vega.ReferralProgram
-	(*vega.VolumeDiscountProgram)(nil),            // 213: vega.VolumeDiscountProgram
-	(*vega.LiquidationStrategy)(nil),              // 214: vega.LiquidationStrategy
-	(*v11.PartyAssetAmount)(nil),                  // 215: vega.checkpoint.v1.PartyAssetAmount
+	(*PartyAssetAmount)(nil),                      // 173: vega.snapshot.v1.PartyAssetAmount
+	(*BankingTransferFeeDiscounts)(nil),           // 174: vega.snapshot.v1.BankingTransferFeeDiscounts
+	(*v1.Signer)(nil),                             // 175: vega.data.v1.Signer
+	(*v1.Property)(nil),                           // 176: vega.data.v1.Property
+	(*vega.Account)(nil),                          // 177: vega.Account
+	(*vega.Asset)(nil),                            // 178: vega.Asset
+	(*vega.Withdrawal)(nil),                       // 179: vega.Withdrawal
+	(*vega.Deposit)(nil),                          // 180: vega.Deposit
+	(*v11.AssetAction)(nil),                       // 181: vega.checkpoint.v1.AssetAction
+	(*v11.RecurringTransfers)(nil),                // 182: vega.checkpoint.v1.RecurringTransfers
+	(*v11.ScheduledTransferAtTime)(nil),           // 183: vega.checkpoint.v1.ScheduledTransferAtTime
+	(*v11.GovernanceTransfer)(nil),                // 184: vega.checkpoint.v1.GovernanceTransfer
+	(*v11.ScheduledGovernanceTransferAtTime)(nil), // 185: vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
+	(*v11.BridgeState)(nil),                       // 186: vega.checkpoint.v1.BridgeState
+	(*vega.Delegation)(nil),                       // 187: vega.Delegation
+	(*vega.Proposal)(nil),                         // 188: vega.Proposal
+	(*vega.Vote)(nil),                             // 189: vega.Vote
+	(*v12.StakeLinking)(nil),                      // 190: vega.events.v1.StakeLinking
+	(*vega.StakeTotalSupply)(nil),                 // 191: vega.StakeTotalSupply
+	(*vega.Order)(nil),                            // 192: vega.Order
+	(*vega.NetworkParameter)(nil),                 // 193: vega.NetworkParameter
+	(*vega.PriceMonitoringTrigger)(nil),           // 194: vega.PriceMonitoringTrigger
+	(vega.Market_TradingMode)(0),                  // 195: vega.Market.TradingMode
+	(vega.AuctionTrigger)(0),                      // 196: vega.AuctionTrigger
+	(*vega.AuctionDuration)(nil),                  // 197: vega.AuctionDuration
+	(*vega.Market)(nil),                           // 198: vega.Market
+	(*v12.FeesStats)(nil),                         // 199: vega.events.v1.FeesStats
+	(*v12.StopOrderEvent)(nil),                    // 200: vega.events.v1.StopOrderEvent
+	(*v11.MarketState)(nil),                       // 201: vega.checkpoint.v1.MarketState
+	(*v12.ValidatorUpdate)(nil),                   // 202: vega.events.v1.ValidatorUpdate
+	(*vega.RankingScore)(nil),                     // 203: vega.RankingScore
+	(*vega.LiquidityProvision)(nil),               // 204: vega.LiquidityProvision
+	(*vega.LiquiditySLAParameters)(nil),           // 205: vega.LiquiditySLAParameters
+	(*v12.PaidLiquidityFeesStats)(nil),            // 206: vega.events.v1.PaidLiquidityFeesStats
+	(*vega.KeyValueBundle)(nil),                   // 207: vega.KeyValueBundle
+	(*v11.MarketActivityTracker)(nil),             // 208: vega.checkpoint.v1.MarketActivityTracker
+	(*v11.TakerNotionalVolume)(nil),               // 209: vega.checkpoint.v1.TakerNotionalVolume
+	(*v12.ERC20MultiSigSignerEvent)(nil),          // 210: vega.events.v1.ERC20MultiSigSignerEvent
+	(*v12.ERC20MultiSigThresholdSetEvent)(nil),    // 211: vega.events.v1.ERC20MultiSigThresholdSetEvent
+	(*v12.ProtocolUpgradeEvent)(nil),              // 212: vega.events.v1.ProtocolUpgradeEvent
+	(*vega.ReferralProgram)(nil),                  // 213: vega.ReferralProgram
+	(*vega.VolumeDiscountProgram)(nil),            // 214: vega.VolumeDiscountProgram
+	(*vega.LiquidationStrategy)(nil),              // 215: vega.LiquidationStrategy
 }
 var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	0,   // 0: vega.snapshot.v1.Snapshot.format:type_name -> vega.snapshot.v1.Format
@@ -15321,7 +15389,7 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	125, // 73: vega.snapshot.v1.Payload.liquidity_v2_parameters:type_name -> vega.snapshot.v1.LiquidityV2Parameters
 	126, // 74: vega.snapshot.v1.Payload.liquidity_v2_paid_fees_stats:type_name -> vega.snapshot.v1.LiquidityV2PaidFeesStats
 	172, // 75: vega.snapshot.v1.Payload.liquidation:type_name -> vega.snapshot.v1.Liquidation
-	173, // 76: vega.snapshot.v1.Payload.banking_transfer_fee_discounts:type_name -> vega.snapshot.v1.BankingTransferFeeDiscounts
+	174, // 76: vega.snapshot.v1.Payload.banking_transfer_fee_discounts:type_name -> vega.snapshot.v1.BankingTransferFeeDiscounts
 	6,   // 77: vega.snapshot.v1.HoldingAccountTracker.order_holding:type_name -> vega.snapshot.v1.OrderHoldingQuantities
 	9,   // 78: vega.snapshot.v1.LiquidityTarget.previous_open_interests:type_name -> vega.snapshot.v1.TimestampedOpenInterest
 	9,   // 79: vega.snapshot.v1.LiquidityTarget.max_open_interests:type_name -> vega.snapshot.v1.TimestampedOpenInterest
@@ -15330,42 +15398,42 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	12,  // 82: vega.snapshot.v1.LiquiditySupplied.bid_cache:type_name -> vega.snapshot.v1.LiquidityOffsetProbabilityPair
 	12,  // 83: vega.snapshot.v1.LiquiditySupplied.ask_cache:type_name -> vega.snapshot.v1.LiquidityOffsetProbabilityPair
 	15,  // 84: vega.snapshot.v1.OracleDataBatch.oracle_data:type_name -> vega.snapshot.v1.OracleData
-	174, // 85: vega.snapshot.v1.OracleData.signers:type_name -> vega.data.v1.Signer
+	175, // 85: vega.snapshot.v1.OracleData.signers:type_name -> vega.data.v1.Signer
 	16,  // 86: vega.snapshot.v1.OracleData.data:type_name -> vega.snapshot.v1.OracleDataPair
-	175, // 87: vega.snapshot.v1.OracleData.meta_data:type_name -> vega.data.v1.Property
+	176, // 87: vega.snapshot.v1.OracleData.meta_data:type_name -> vega.data.v1.Property
 	18,  // 88: vega.snapshot.v1.Witness.resources:type_name -> vega.snapshot.v1.Resource
-	176, // 89: vega.snapshot.v1.CollateralAccounts.accounts:type_name -> vega.Account
-	177, // 90: vega.snapshot.v1.CollateralAssets.assets:type_name -> vega.Asset
-	177, // 91: vega.snapshot.v1.ActiveAssets.assets:type_name -> vega.Asset
-	177, // 92: vega.snapshot.v1.PendingAssets.assets:type_name -> vega.Asset
-	177, // 93: vega.snapshot.v1.PendingAssetUpdates.assets:type_name -> vega.Asset
-	178, // 94: vega.snapshot.v1.Withdrawal.withdrawal:type_name -> vega.Withdrawal
-	179, // 95: vega.snapshot.v1.Deposit.deposit:type_name -> vega.Deposit
+	177, // 89: vega.snapshot.v1.CollateralAccounts.accounts:type_name -> vega.Account
+	178, // 90: vega.snapshot.v1.CollateralAssets.assets:type_name -> vega.Asset
+	178, // 91: vega.snapshot.v1.ActiveAssets.assets:type_name -> vega.Asset
+	178, // 92: vega.snapshot.v1.PendingAssets.assets:type_name -> vega.Asset
+	178, // 93: vega.snapshot.v1.PendingAssetUpdates.assets:type_name -> vega.Asset
+	179, // 94: vega.snapshot.v1.Withdrawal.withdrawal:type_name -> vega.Withdrawal
+	180, // 95: vega.snapshot.v1.Deposit.deposit:type_name -> vega.Deposit
 	25,  // 96: vega.snapshot.v1.BankingWithdrawals.withdrawals:type_name -> vega.snapshot.v1.Withdrawal
 	26,  // 97: vega.snapshot.v1.BankingDeposits.deposit:type_name -> vega.snapshot.v1.Deposit
-	180, // 98: vega.snapshot.v1.BankingAssetActions.asset_action:type_name -> vega.checkpoint.v1.AssetAction
-	181, // 99: vega.snapshot.v1.BankingRecurringTransfers.recurring_transfers:type_name -> vega.checkpoint.v1.RecurringTransfers
-	182, // 100: vega.snapshot.v1.BankingScheduledTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledTransferAtTime
-	183, // 101: vega.snapshot.v1.BankingRecurringGovernanceTransfers.recurring_transfers:type_name -> vega.checkpoint.v1.GovernanceTransfer
-	184, // 102: vega.snapshot.v1.BankingScheduledGovernanceTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
-	185, // 103: vega.snapshot.v1.BankingBridgeState.bridge_state:type_name -> vega.checkpoint.v1.BridgeState
-	186, // 104: vega.snapshot.v1.DelegationActive.delegations:type_name -> vega.Delegation
-	186, // 105: vega.snapshot.v1.DelegationPending.delegations:type_name -> vega.Delegation
-	186, // 106: vega.snapshot.v1.DelegationPending.undelegation:type_name -> vega.Delegation
-	187, // 107: vega.snapshot.v1.ProposalData.proposal:type_name -> vega.Proposal
-	188, // 108: vega.snapshot.v1.ProposalData.yes:type_name -> vega.Vote
-	188, // 109: vega.snapshot.v1.ProposalData.no:type_name -> vega.Vote
-	188, // 110: vega.snapshot.v1.ProposalData.invalid:type_name -> vega.Vote
+	181, // 98: vega.snapshot.v1.BankingAssetActions.asset_action:type_name -> vega.checkpoint.v1.AssetAction
+	182, // 99: vega.snapshot.v1.BankingRecurringTransfers.recurring_transfers:type_name -> vega.checkpoint.v1.RecurringTransfers
+	183, // 100: vega.snapshot.v1.BankingScheduledTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledTransferAtTime
+	184, // 101: vega.snapshot.v1.BankingRecurringGovernanceTransfers.recurring_transfers:type_name -> vega.checkpoint.v1.GovernanceTransfer
+	185, // 102: vega.snapshot.v1.BankingScheduledGovernanceTransfers.transfers_at_time:type_name -> vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
+	186, // 103: vega.snapshot.v1.BankingBridgeState.bridge_state:type_name -> vega.checkpoint.v1.BridgeState
+	187, // 104: vega.snapshot.v1.DelegationActive.delegations:type_name -> vega.Delegation
+	187, // 105: vega.snapshot.v1.DelegationPending.delegations:type_name -> vega.Delegation
+	187, // 106: vega.snapshot.v1.DelegationPending.undelegation:type_name -> vega.Delegation
+	188, // 107: vega.snapshot.v1.ProposalData.proposal:type_name -> vega.Proposal
+	189, // 108: vega.snapshot.v1.ProposalData.yes:type_name -> vega.Vote
+	189, // 109: vega.snapshot.v1.ProposalData.no:type_name -> vega.Vote
+	189, // 110: vega.snapshot.v1.ProposalData.invalid:type_name -> vega.Vote
 	42,  // 111: vega.snapshot.v1.GovernanceEnacted.proposals:type_name -> vega.snapshot.v1.ProposalData
 	42,  // 112: vega.snapshot.v1.GovernanceActive.proposals:type_name -> vega.snapshot.v1.ProposalData
-	187, // 113: vega.snapshot.v1.GovernanceNode.proposals:type_name -> vega.Proposal
-	189, // 114: vega.snapshot.v1.StakingAccount.events:type_name -> vega.events.v1.StakeLinking
+	188, // 113: vega.snapshot.v1.GovernanceNode.proposals:type_name -> vega.Proposal
+	190, // 114: vega.snapshot.v1.StakingAccount.events:type_name -> vega.events.v1.StakeLinking
 	46,  // 115: vega.snapshot.v1.StakingAccounts.accounts:type_name -> vega.snapshot.v1.StakingAccount
-	190, // 116: vega.snapshot.v1.StakingAccounts.pending_stake_total_supply:type_name -> vega.StakeTotalSupply
-	191, // 117: vega.snapshot.v1.MatchingBook.buy:type_name -> vega.Order
-	191, // 118: vega.snapshot.v1.MatchingBook.sell:type_name -> vega.Order
-	192, // 119: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
-	193, // 120: vega.snapshot.v1.PriceBound.trigger:type_name -> vega.PriceMonitoringTrigger
+	191, // 116: vega.snapshot.v1.StakingAccounts.pending_stake_total_supply:type_name -> vega.StakeTotalSupply
+	192, // 117: vega.snapshot.v1.MatchingBook.buy:type_name -> vega.Order
+	192, // 118: vega.snapshot.v1.MatchingBook.sell:type_name -> vega.Order
+	193, // 119: vega.snapshot.v1.NetParams.params:type_name -> vega.NetworkParameter
+	194, // 120: vega.snapshot.v1.PriceBound.trigger:type_name -> vega.PriceMonitoringTrigger
 	54,  // 121: vega.snapshot.v1.PriceRangeCache.bound:type_name -> vega.snapshot.v1.PriceBound
 	53,  // 122: vega.snapshot.v1.PriceRangeCache.range:type_name -> vega.snapshot.v1.PriceRange
 	50,  // 123: vega.snapshot.v1.PriceMonitor.fp_horizons:type_name -> vega.snapshot.v1.DecimalMap
@@ -15374,33 +15442,33 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	50,  // 126: vega.snapshot.v1.PriceMonitor.ref_price_cache:type_name -> vega.snapshot.v1.DecimalMap
 	56,  // 127: vega.snapshot.v1.PriceMonitor.prices_now:type_name -> vega.snapshot.v1.CurrentPrice
 	57,  // 128: vega.snapshot.v1.PriceMonitor.prices_past:type_name -> vega.snapshot.v1.PastPrice
-	194, // 129: vega.snapshot.v1.AuctionState.mode:type_name -> vega.Market.TradingMode
-	194, // 130: vega.snapshot.v1.AuctionState.default_mode:type_name -> vega.Market.TradingMode
-	195, // 131: vega.snapshot.v1.AuctionState.trigger:type_name -> vega.AuctionTrigger
-	196, // 132: vega.snapshot.v1.AuctionState.end:type_name -> vega.AuctionDuration
-	195, // 133: vega.snapshot.v1.AuctionState.extension:type_name -> vega.AuctionTrigger
+	195, // 129: vega.snapshot.v1.AuctionState.mode:type_name -> vega.Market.TradingMode
+	195, // 130: vega.snapshot.v1.AuctionState.default_mode:type_name -> vega.Market.TradingMode
+	196, // 131: vega.snapshot.v1.AuctionState.trigger:type_name -> vega.AuctionTrigger
+	197, // 132: vega.snapshot.v1.AuctionState.end:type_name -> vega.AuctionDuration
+	196, // 133: vega.snapshot.v1.AuctionState.extension:type_name -> vega.AuctionTrigger
 	60,  // 134: vega.snapshot.v1.EquityShare.lps:type_name -> vega.snapshot.v1.EquityShareLP
-	197, // 135: vega.snapshot.v1.SpotMarket.market:type_name -> vega.Market
+	198, // 135: vega.snapshot.v1.SpotMarket.market:type_name -> vega.Market
 	58,  // 136: vega.snapshot.v1.SpotMarket.price_monitor:type_name -> vega.snapshot.v1.PriceMonitor
 	59,  // 137: vega.snapshot.v1.SpotMarket.auction_state:type_name -> vega.snapshot.v1.AuctionState
 	76,  // 138: vega.snapshot.v1.SpotMarket.pegged_orders:type_name -> vega.snapshot.v1.PeggedOrders
-	191, // 139: vega.snapshot.v1.SpotMarket.expiring_orders:type_name -> vega.Order
+	192, // 139: vega.snapshot.v1.SpotMarket.expiring_orders:type_name -> vega.Order
 	61,  // 140: vega.snapshot.v1.SpotMarket.equity_share:type_name -> vega.snapshot.v1.EquityShare
 	62,  // 141: vega.snapshot.v1.SpotMarket.fee_splitter:type_name -> vega.snapshot.v1.FeeSplitter
 	75,  // 142: vega.snapshot.v1.SpotMarket.stop_orders:type_name -> vega.snapshot.v1.StopOrders
-	191, // 143: vega.snapshot.v1.SpotMarket.expiring_stop_orders:type_name -> vega.Order
-	198, // 144: vega.snapshot.v1.SpotMarket.fees_stats:type_name -> vega.events.v1.FeesStats
-	197, // 145: vega.snapshot.v1.Market.market:type_name -> vega.Market
+	192, // 143: vega.snapshot.v1.SpotMarket.expiring_stop_orders:type_name -> vega.Order
+	199, // 144: vega.snapshot.v1.SpotMarket.fees_stats:type_name -> vega.events.v1.FeesStats
+	198, // 145: vega.snapshot.v1.Market.market:type_name -> vega.Market
 	58,  // 146: vega.snapshot.v1.Market.price_monitor:type_name -> vega.snapshot.v1.PriceMonitor
 	59,  // 147: vega.snapshot.v1.Market.auction_state:type_name -> vega.snapshot.v1.AuctionState
 	76,  // 148: vega.snapshot.v1.Market.pegged_orders:type_name -> vega.snapshot.v1.PeggedOrders
-	191, // 149: vega.snapshot.v1.Market.expiring_orders:type_name -> vega.Order
+	192, // 149: vega.snapshot.v1.Market.expiring_orders:type_name -> vega.Order
 	61,  // 150: vega.snapshot.v1.Market.equity_share:type_name -> vega.snapshot.v1.EquityShare
 	62,  // 151: vega.snapshot.v1.Market.fee_splitter:type_name -> vega.snapshot.v1.FeeSplitter
 	75,  // 152: vega.snapshot.v1.Market.stop_orders:type_name -> vega.snapshot.v1.StopOrders
-	191, // 153: vega.snapshot.v1.Market.expiring_stop_orders:type_name -> vega.Order
+	192, // 153: vega.snapshot.v1.Market.expiring_stop_orders:type_name -> vega.Order
 	65,  // 154: vega.snapshot.v1.Market.product:type_name -> vega.snapshot.v1.Product
-	198, // 155: vega.snapshot.v1.Market.fees_stats:type_name -> vega.events.v1.FeesStats
+	199, // 155: vega.snapshot.v1.Market.fees_stats:type_name -> vega.events.v1.FeesStats
 	69,  // 156: vega.snapshot.v1.Product.perps:type_name -> vega.snapshot.v1.Perps
 	66,  // 157: vega.snapshot.v1.Perps.external_data_point:type_name -> vega.snapshot.v1.DataPoint
 	66,  // 158: vega.snapshot.v1.Perps.internal_data_point:type_name -> vega.snapshot.v1.DataPoint
@@ -15412,13 +15480,13 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	74,  // 164: vega.snapshot.v1.TrailingStopOrders.falls_bellow:type_name -> vega.snapshot.v1.OffsetsAtPrice
 	74,  // 165: vega.snapshot.v1.TrailingStopOrders.rises_above:type_name -> vega.snapshot.v1.OffsetsAtPrice
 	73,  // 166: vega.snapshot.v1.OffsetsAtPrice.offsets:type_name -> vega.snapshot.v1.OrdersAtOffset
-	199, // 167: vega.snapshot.v1.StopOrders.stop_orders:type_name -> vega.events.v1.StopOrderEvent
+	200, // 167: vega.snapshot.v1.StopOrders.stop_orders:type_name -> vega.events.v1.StopOrderEvent
 	71,  // 168: vega.snapshot.v1.StopOrders.priced_stop_orders:type_name -> vega.snapshot.v1.PricedStopOrders
 	72,  // 169: vega.snapshot.v1.StopOrders.trailing_stop_orders:type_name -> vega.snapshot.v1.TrailingStopOrders
-	191, // 170: vega.snapshot.v1.PeggedOrders.parked_orders:type_name -> vega.Order
+	192, // 170: vega.snapshot.v1.PeggedOrders.parked_orders:type_name -> vega.Order
 	64,  // 171: vega.snapshot.v1.ExecutionMarkets.markets:type_name -> vega.snapshot.v1.Market
 	63,  // 172: vega.snapshot.v1.ExecutionMarkets.spot_markets:type_name -> vega.snapshot.v1.SpotMarket
-	200, // 173: vega.snapshot.v1.ExecutionMarkets.settled_markets:type_name -> vega.checkpoint.v1.MarketState
+	201, // 173: vega.snapshot.v1.ExecutionMarkets.settled_markets:type_name -> vega.checkpoint.v1.MarketState
 	79,  // 174: vega.snapshot.v1.ExecutionMarkets.successors:type_name -> vega.snapshot.v1.Successors
 	77,  // 175: vega.snapshot.v1.ExecutionMarkets.sla_network_params:type_name -> vega.snapshot.v1.SLANetworkParams
 	80,  // 176: vega.snapshot.v1.MarketPositions.positions:type_name -> vega.snapshot.v1.Position
@@ -15447,19 +15515,19 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	108, // 199: vega.snapshot.v1.Topology.unsolved_ethereum_key_rotations:type_name -> vega.snapshot.v1.PendingEthereumKeyRotation
 	111, // 200: vega.snapshot.v1.ToplogySignatures.pending_signatures:type_name -> vega.snapshot.v1.PendingERC20MultisigControlSignature
 	112, // 201: vega.snapshot.v1.ToplogySignatures.issued_signatures:type_name -> vega.snapshot.v1.IssuedERC20MultisigControlSignature
-	201, // 202: vega.snapshot.v1.ValidatorState.validator_update:type_name -> vega.events.v1.ValidatorUpdate
+	202, // 202: vega.snapshot.v1.ValidatorState.validator_update:type_name -> vega.events.v1.ValidatorUpdate
 	114, // 203: vega.snapshot.v1.ValidatorState.heartbeat_tracker:type_name -> vega.snapshot.v1.HeartbeatTracker
-	202, // 204: vega.snapshot.v1.ValidatorState.ranking_score:type_name -> vega.RankingScore
+	203, // 204: vega.snapshot.v1.ValidatorState.ranking_score:type_name -> vega.RankingScore
 	115, // 205: vega.snapshot.v1.ValidatorPerformance.validator_perf_stats:type_name -> vega.snapshot.v1.PerformanceStats
 	120, // 206: vega.snapshot.v1.LiquidityPartiesLiquidityOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
-	191, // 207: vega.snapshot.v1.PartyOrders.orders:type_name -> vega.Order
+	192, // 207: vega.snapshot.v1.PartyOrders.orders:type_name -> vega.Order
 	120, // 208: vega.snapshot.v1.LiquidityPartiesOrders.party_orders:type_name -> vega.snapshot.v1.PartyOrders
-	203, // 209: vega.snapshot.v1.LiquidityProvisions.liquidity_provisions:type_name -> vega.LiquidityProvision
+	204, // 209: vega.snapshot.v1.LiquidityProvisions.liquidity_provisions:type_name -> vega.LiquidityProvision
 	124, // 210: vega.snapshot.v1.LiquidityScores.scores:type_name -> vega.snapshot.v1.LiquidityScore
-	204, // 211: vega.snapshot.v1.LiquidityV2Parameters.market_sla_parameters:type_name -> vega.LiquiditySLAParameters
-	205, // 212: vega.snapshot.v1.LiquidityV2PaidFeesStats.stats:type_name -> vega.events.v1.PaidLiquidityFeesStats
-	203, // 213: vega.snapshot.v1.LiquidityV2Provisions.liquidity_provisions:type_name -> vega.LiquidityProvision
-	203, // 214: vega.snapshot.v1.LiquidityV2PendingProvisions.pending_liquidity_provisions:type_name -> vega.LiquidityProvision
+	205, // 211: vega.snapshot.v1.LiquidityV2Parameters.market_sla_parameters:type_name -> vega.LiquiditySLAParameters
+	206, // 212: vega.snapshot.v1.LiquidityV2PaidFeesStats.stats:type_name -> vega.events.v1.PaidLiquidityFeesStats
+	204, // 213: vega.snapshot.v1.LiquidityV2Provisions.liquidity_provisions:type_name -> vega.LiquidityProvision
+	204, // 214: vega.snapshot.v1.LiquidityV2PendingProvisions.pending_liquidity_provisions:type_name -> vega.LiquidityProvision
 	130, // 215: vega.snapshot.v1.LiquidityV2Performances.performance_per_party:type_name -> vega.snapshot.v1.LiquidityV2PerformancePerParty
 	124, // 216: vega.snapshot.v1.LiquidityV2Scores.scores:type_name -> vega.snapshot.v1.LiquidityScore
 	12,  // 217: vega.snapshot.v1.LiquidityV2Supplied.bid_cache:type_name -> vega.snapshot.v1.LiquidityOffsetProbabilityPair
@@ -15467,14 +15535,14 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	136, // 219: vega.snapshot.v1.FloatingPointConsensus.next_time_trigger:type_name -> vega.snapshot.v1.NextTimeTrigger
 	134, // 220: vega.snapshot.v1.FloatingPointConsensus.state_variables:type_name -> vega.snapshot.v1.StateVarInternalState
 	135, // 221: vega.snapshot.v1.StateVarInternalState.validators_results:type_name -> vega.snapshot.v1.FloatingPointValidatorResult
-	206, // 222: vega.snapshot.v1.FloatingPointValidatorResult.bundle:type_name -> vega.KeyValueBundle
-	207, // 223: vega.snapshot.v1.MarketTracker.market_activity:type_name -> vega.checkpoint.v1.MarketActivityTracker
-	208, // 224: vega.snapshot.v1.MarketTracker.taker_notional_volume:type_name -> vega.checkpoint.v1.TakerNotionalVolume
-	209, // 225: vega.snapshot.v1.SignerEventsPerAddress.events:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
+	207, // 222: vega.snapshot.v1.FloatingPointValidatorResult.bundle:type_name -> vega.KeyValueBundle
+	208, // 223: vega.snapshot.v1.MarketTracker.market_activity:type_name -> vega.checkpoint.v1.MarketActivityTracker
+	209, // 224: vega.snapshot.v1.MarketTracker.taker_notional_volume:type_name -> vega.checkpoint.v1.TakerNotionalVolume
+	210, // 225: vega.snapshot.v1.SignerEventsPerAddress.events:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
 	138, // 226: vega.snapshot.v1.ERC20MultiSigTopologyVerified.events_per_address:type_name -> vega.snapshot.v1.SignerEventsPerAddress
-	210, // 227: vega.snapshot.v1.ERC20MultiSigTopologyVerified.threshold:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
-	209, // 228: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_signers:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
-	210, // 229: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_threshold_set:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
+	211, // 227: vega.snapshot.v1.ERC20MultiSigTopologyVerified.threshold:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
+	210, // 228: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_signers:type_name -> vega.events.v1.ERC20MultiSigSignerEvent
+	211, // 229: vega.snapshot.v1.ERC20MultiSigTopologyPending.pending_threshold_set:type_name -> vega.events.v1.ERC20MultiSigThresholdSetEvent
 	147, // 230: vega.snapshot.v1.ProofOfWork.tx_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
 	147, // 231: vega.snapshot.v1.ProofOfWork.tid_at_height:type_name -> vega.snapshot.v1.TransactionsAtHeight
 	142, // 232: vega.snapshot.v1.ProofOfWork.banned:type_name -> vega.snapshot.v1.BannedParty
@@ -15484,7 +15552,7 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	145, // 236: vega.snapshot.v1.ProofOfWorkState.pow_state:type_name -> vega.snapshot.v1.ProofOfWorkBlockState
 	146, // 237: vega.snapshot.v1.ProofOfWorkBlockState.party_state:type_name -> vega.snapshot.v1.ProofOfWorkPartyStateForBlock
 	148, // 238: vega.snapshot.v1.NonceRefsAtHeight.refs:type_name -> vega.snapshot.v1.NonceRef
-	211, // 239: vega.snapshot.v1.ProtocolUpgradeProposals.active_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	212, // 239: vega.snapshot.v1.ProtocolUpgradeProposals.active_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
 	151, // 240: vega.snapshot.v1.ProtocolUpgradeProposals.accepted_proposal:type_name -> vega.snapshot.v1.AcceptedProtocolUpgradeProposal
 	153, // 241: vega.snapshot.v1.Teams.teams:type_name -> vega.snapshot.v1.Team
 	154, // 242: vega.snapshot.v1.Team.referrer:type_name -> vega.snapshot.v1.Membership
@@ -15494,8 +15562,8 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	163, // 246: vega.snapshot.v1.PartyReward.asset_locked:type_name -> vega.snapshot.v1.AssetLocked
 	165, // 247: vega.snapshot.v1.PartyReward.in_vesting:type_name -> vega.snapshot.v1.InVesting
 	162, // 248: vega.snapshot.v1.ReferralProgramData.factor_by_referee:type_name -> vega.snapshot.v1.FactorByReferee
-	212, // 249: vega.snapshot.v1.ReferralProgramData.current_program:type_name -> vega.ReferralProgram
-	212, // 250: vega.snapshot.v1.ReferralProgramData.new_program:type_name -> vega.ReferralProgram
+	213, // 249: vega.snapshot.v1.ReferralProgramData.current_program:type_name -> vega.ReferralProgram
+	213, // 250: vega.snapshot.v1.ReferralProgramData.new_program:type_name -> vega.ReferralProgram
 	160, // 251: vega.snapshot.v1.ReferralProgramData.sets:type_name -> vega.snapshot.v1.ReferralSet
 	154, // 252: vega.snapshot.v1.ReferralSet.referrer:type_name -> vega.snapshot.v1.Membership
 	154, // 253: vega.snapshot.v1.ReferralSet.referees:type_name -> vega.snapshot.v1.Membership
@@ -15504,12 +15572,12 @@ var file_vega_snapshot_v1_snapshot_proto_depIdxs = []int32{
 	167, // 256: vega.snapshot.v1.ActivityStreak.parties_activity_streak:type_name -> vega.snapshot.v1.PartyActivityStreak
 	170, // 257: vega.snapshot.v1.VolumeDiscountProgram.epoch_party_volumes:type_name -> vega.snapshot.v1.EpochPartyVolumes
 	171, // 258: vega.snapshot.v1.VolumeDiscountProgram.average_party_volume:type_name -> vega.snapshot.v1.PartyVolume
-	213, // 259: vega.snapshot.v1.VolumeDiscountProgram.current_program:type_name -> vega.VolumeDiscountProgram
-	213, // 260: vega.snapshot.v1.VolumeDiscountProgram.new_program:type_name -> vega.VolumeDiscountProgram
+	214, // 259: vega.snapshot.v1.VolumeDiscountProgram.current_program:type_name -> vega.VolumeDiscountProgram
+	214, // 260: vega.snapshot.v1.VolumeDiscountProgram.new_program:type_name -> vega.VolumeDiscountProgram
 	169, // 261: vega.snapshot.v1.VolumeDiscountProgram.factors_by_party:type_name -> vega.snapshot.v1.VolumeDiscountStats
 	171, // 262: vega.snapshot.v1.EpochPartyVolumes.party_volume:type_name -> vega.snapshot.v1.PartyVolume
-	214, // 263: vega.snapshot.v1.Liquidation.config:type_name -> vega.LiquidationStrategy
-	215, // 264: vega.snapshot.v1.BankingTransferFeeDiscounts.party_asset_discount:type_name -> vega.checkpoint.v1.PartyAssetAmount
+	215, // 263: vega.snapshot.v1.Liquidation.config:type_name -> vega.LiquidationStrategy
+	173, // 264: vega.snapshot.v1.BankingTransferFeeDiscounts.party_asset_discount:type_name -> vega.snapshot.v1.PartyAssetAmount
 	265, // [265:265] is the sub-list for method output_type
 	265, // [265:265] is the sub-list for method input_type
 	265, // [265:265] is the sub-list for extension type_name
@@ -17588,6 +17656,18 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			}
 		}
 		file_vega_snapshot_v1_snapshot_proto_msgTypes[172].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PartyAssetAmount); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_snapshot_v1_snapshot_proto_msgTypes[173].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*BankingTransferFeeDiscounts); i {
 			case 0:
 				return &v.state
@@ -17687,7 +17767,7 @@ func file_vega_snapshot_v1_snapshot_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_snapshot_v1_snapshot_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   173,
+			NumMessages:   174,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

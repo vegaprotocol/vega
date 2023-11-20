@@ -21,6 +21,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
@@ -135,10 +136,26 @@ func (e *Engine) serialiseScheduledGovernanceTransfers() ([]byte, error) {
 }
 
 func (e *Engine) serialisedTransferFeeDiscounts() ([]byte, error) {
+	partyAssetDiscounts := make([]*snapshot.PartyAssetAmount, 0, len(e.feeDiscountPerPartyAndAsset))
+
+	for k, v := range e.feeDiscountPerPartyAndAsset {
+		partyAssetDiscounts = append(partyAssetDiscounts, &snapshot.PartyAssetAmount{
+			Party:  k.party,
+			Asset:  k.asset,
+			Amount: v.String(),
+		})
+	}
+	sort.SliceStable(partyAssetDiscounts, func(i, j int) bool {
+		if partyAssetDiscounts[i].Party == partyAssetDiscounts[j].Party {
+			return partyAssetDiscounts[i].Asset < partyAssetDiscounts[j].Asset
+		}
+		return partyAssetDiscounts[i].Party < partyAssetDiscounts[j].Party
+	})
+
 	payload := types.Payload{
 		Data: &types.PayloadBankingTransferFeeDiscounts{
 			BankingTransferFeeDiscounts: &snapshot.BankingTransferFeeDiscounts{
-				PartyAssetDiscount: e.getPartyAssetDiscounts(),
+				PartyAssetDiscount: partyAssetDiscounts,
 			},
 		},
 	}
@@ -400,7 +417,12 @@ func (e *Engine) restoreTransferFeeDiscounts(
 		return nil
 	}
 
-	e.loadTransferFeeDiscounts(ctx, state.PartyAssetDiscount)
+	e.feeDiscountPerPartyAndAsset = make(map[partyAssetKey]*num.Uint, len(state.PartyAssetDiscount))
+	for _, v := range state.PartyAssetDiscount {
+		discount, _ := num.UintFromString(v.Amount, 10)
+		e.feeDiscountPerPartyAndAsset[e.feeDiscountKey(v.Asset, v.Party)] = discount
+	}
+
 	e.bss.serialisedTransferFeeDiscounts, err = proto.Marshal(p.IntoProto())
 	return
 }

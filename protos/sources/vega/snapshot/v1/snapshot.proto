@@ -1261,6 +1261,12 @@ message Liquidation {
   vega.LiquidationStrategy config = 4;
 }
 
+message PartyAssetAmount {
+  string party = 1;
+  string asset = 2;
+  string amount = 3;
+}
+
 message BankingTransferFeeDiscounts {
-  repeated vega.checkpoint.v1.PartyAssetAmount party_asset_discount = 1;
+  repeated PartyAssetAmount party_asset_discount = 1;
 }

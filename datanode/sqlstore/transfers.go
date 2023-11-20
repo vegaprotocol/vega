@@ -259,6 +259,40 @@ func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, pagination 
 	return details, pageInfo, nil
 }
 
+func (t *Transfers) UpsertFeesDiscount(ctx context.Context, tfd *entities.TransferFeesDiscount) error {
+	defer metrics.StartSQLQuery("Transfers", "UpsertFeesDiscount")()
+	query := `INSERT INTO transfer_fees_discount(
+				party_id,
+				asset_id,
+				amount,
+				epoch_seq,
+				vega_time
+			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (vega_time, party_id, asset_id) DO NOTHING ;` // conflicts may occur on checkpoint restore.
+	if _, err := t.Connection.Exec(ctx, query, tfd.PartyID, tfd.AssetID, tfd.Amount, tfd.EpochSeq, tfd.VegaTime); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Transfers) GetCurrentTransferFeeDiscount(
+	ctx context.Context,
+	partyID entities.PartyID,
+	assetID entities.AssetID,
+) (*entities.TransferFeesDiscount, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetCurrentTransferFeeDiscount")()
+
+	var tfd entities.TransferFeesDiscount
+	query := `SELECT * FROM transfer_fees_discount
+		WHERE party_id = $1 AND asset_id = $2
+		ORDER BY vega_time DESC LIMIT 1`
+
+	if err := pgxscan.Get(ctx, t.Connection, &tfd, query, partyID, assetID); err != nil {
+		return &entities.TransferFeesDiscount{}, t.wrapE(err)
+	}
+
+	return &tfd, nil
+}
+
 func (t *Transfers) getCurrentTransfers(ctx context.Context, pagination entities.CursorPagination, filters ListTransfersFilters, where []string, args []any) ([]entities.Transfer, entities.PageInfo, error) {
 	whereStr, args := t.buildWhereClause(filters, where, args)
 	query := "select * from transfers_current " + whereStr
