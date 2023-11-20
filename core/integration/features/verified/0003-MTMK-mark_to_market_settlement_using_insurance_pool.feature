@@ -71,21 +71,21 @@ Feature: Test mark to market settlement with insurance pool
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party2 | ETH   | ETH/DEC19 | 13598  | 1302    |
+      | party2 | ETH   | ETH/DEC19 | 14900  | 0       |
       | party3 | ETH   | ETH/DEC19 | 7920   | 1480    |
 
     #party1 is closed out and traded with sell order ref-2, so there is no best ask to peg
     And the orders should have the following status:
       | party  | reference | status        |
       | aux    | ref-2     | STATUS_FILLED |
-      | lpprov | lp-buy    | STATUS_ACTIVE |
+      | lpprov | lp-buy    | STATUS_PARKED |
       | lpprov | lp-sell   | STATUS_PARKED |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "9520" for the market "ETH/DEC19"
+    And the insurance pool balance should be "14521" for the market "ETH/DEC19"
 
 
 
