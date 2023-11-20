@@ -564,17 +564,11 @@ func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
 
 	// left first auction, we can start the first funding-period
 	p.startedAt = t
-	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
-	p.externalTWAP = NewCachedTWAP(p.log, t, p.auctions)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
 }
 
 // SubmitDataPoint this will add a data point produced internally by the core node.
 func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int64) error {
-	if !p.readyForData() {
-		return ErrInitialPeriodNotStarted
-	}
-
 	// since all external data and funding period triggers are to seconds-precision we also want to truncate
 	// internal times to seconds to avoid sub-second backwards intervals that are dependent on the order data arrives
 	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
