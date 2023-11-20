@@ -395,32 +395,28 @@ func buildStopOrder(
 
 	if row.row.HasColumn("ra size override setting") {
 		value := row.RisesAboveSizeOverrideSetting()
+		sub.RisesAbove.SizeOverrideSetting = value
 		if value == types.StopOrderSizeOverrideSettingOrder {
-			sub.RisesAbove.SizeOverrideSetting = value
-			if value == types.StopOrderSizeOverrideSettingOrder {
-				// We need to convert the reference into an order ID
-				orderId, OK := refToOrderId[row.RisesAboveSizeOverrideReference()]
-				if OK {
-					sub.RisesAbove.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
-				} else {
-					return nil, errors.New("reference doesn't match to existing order")
-				}
+			// We need to convert the reference into an order ID
+			orderId, OK := refToOrderId[row.RisesAboveSizeOverrideReference()]
+			if OK {
+				sub.RisesAbove.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
+			} else {
+				return nil, errors.New("reference does not match to existing order")
 			}
 		}
 	}
 
 	if row.row.HasColumn("fb size override setting") {
 		value := row.FallsBelowSizeOverrideSetting()
+		sub.FallsBelow.SizeOverrideSetting = value
 		if value == types.StopOrderSizeOverrideSettingOrder {
-			sub.FallsBelow.SizeOverrideSetting = value
-			if value == types.StopOrderSizeOverrideSettingOrder {
-				// We need to convert the reference into an order ID
-				orderId, OK := refToOrderId[row.FallsBelowSizeOverrideReference()]
-				if OK {
-					sub.FallsBelow.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
-				} else {
-					return nil, errors.New("reference doesn't match to existing order")
-				}
+			// We need to convert the reference into an order ID
+			orderId, OK := refToOrderId[row.FallsBelowSizeOverrideReference()]
+			if OK {
+				sub.FallsBelow.SizeOverrideValue = &types.StopOrderSizeOverrideValue{OrderID: orderId}
+			} else {
+				return nil, errors.New("reference does not match to existing order")
 			}
 		}
 	}

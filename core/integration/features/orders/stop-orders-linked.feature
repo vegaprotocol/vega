@@ -1,4 +1,4 @@
-Feature: stop orders
+Feature: linked stop orders
 
   Background:
     Given the markets:
@@ -12,18 +12,16 @@ Feature: stop orders
       | limits.markets.maxPeggedOrders          | 1500  |
       | spam.protection.max.stopOrdersPerMarket | 5     |
 
-  Scenario: A linked stop order will change it's order size based on the linked order
-
     # setup accounts
     Given time is updated to "2019-11-30T00:00:00Z"
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
-      | party1 | BTC   | 100000   |
-      | party2 | BTC   | 100000   |
-      | party3 | BTC   | 100000   |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | aux3   | BTC   | 100000   |
+      | party1 | BTC   | 1000000  |
+      | party2 | BTC   | 1000000  |
+      | party3 | BTC   | 1000000  |
+      | aux    | BTC   | 1000000  |
+      | aux2   | BTC   | 1000000  |
+      | aux3   | BTC   | 1000000  |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
@@ -38,36 +36,102 @@ Feature: stop orders
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 20     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 20     | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    # setup party1 position, open a 10 long position
+  
+
+  Scenario: A linked stop order with position size override will be cancelled if the position flips short to long 
+
+    # party1 will start 10 short
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sellorder |
       | party2| ETH/DEC19 | buy  | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder  |
 
-
+    # Place a buy position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override reference |
-      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 51               | stop1     | ORDER                    | buyorder                   |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
       | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
 
-    # move the price down to trigger the stop order
+    # Now let party1 change their position to be long so we can trigger the stop order to be cancelled
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | party3| ETH/DEC19 | buy  | 1      | 52    | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2| ETH/DEC19 | sell | 1      | 52    | 1                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party1| ETH/DEC19 | buy  | 11     | 51    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party2| ETH/DEC19 | sell | 11     | 51    | 1                | TYPE_LIMIT | TIF_GTC | 
 
     # Stop order should have triggered
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
-      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+
+
+
+  Scenario: A linked stop order with position size override will be cancelled if the position flips long to short
+
+    # party1 will start 10 long
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1| ETH/DEC19 | buy  | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder  |
+      | party2| ETH/DEC19 | sell | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | sellorder |
+
+    # Place a sell position linked stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting |
+      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
+
+    # Now let party1 change their position to be short so we can trigger the stop order to be cancelled
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party2| ETH/DEC19 | buy  | 11     | 49    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party1| ETH/DEC19 | sell | 11     | 49    | 1                | TYPE_LIMIT | TIF_GTC | 
+
+    # Stop order should have triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+
+
+
+  Scenario: A linked stop order with order size override will be cancelled if the position flips short to long 
+
+    # party1 will start 10 short
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sellorder |
+      | party2| ETH/DEC19 | buy  | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder  |
+
+    # Place a buy order linked stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override reference |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | ORDER                    | sellorder                  |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
+
+    # Now let party1 change their position to be long so we can trigger the stop order to be cancelled
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party1| ETH/DEC19 | buy  | 11     | 51    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party2| ETH/DEC19 | sell | 11     | 51    | 1                | TYPE_LIMIT | TIF_GTC | 
+
+    # Stop order should have triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+
+

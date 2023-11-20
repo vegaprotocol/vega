@@ -19,6 +19,7 @@ import (
 	"log"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -107,12 +108,51 @@ func (p *Pool) Settled() []*types.StopOrder {
 	return out
 }
 
+func (p *Pool) CheckDirection(positions *positions.SnapshotEngine) []*types.StopOrder {
+	toCancel := []*types.StopOrder{}
+	for partyID, orders := range p.orders {
+		pos, ok := positions.GetPositionByPartyID(partyID)
+		if !ok {
+			continue
+		}
+		for _, order := range orders {
+			if order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder ||
+				order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+				if pos.Size() == 0 {
+					continue
+				} else if pos.Size() > 0 {
+					// Order needs to be a sell
+					if order.OrderSubmission.Side != types.SideSell {
+						order.Status = types.StopOrderStatusCancelled
+						toCancel = append(toCancel, order)
+					}
+				} else {
+					// Order needs to be a buy
+					if order.OrderSubmission.Side != types.SideBuy {
+						order.Status = types.StopOrderStatusCancelled
+						toCancel = append(toCancel, order)
+					}
+				}
+			}
+		}
+	}
+
+	// Remove the deleted items from the map
+	for _, stopOrder := range toCancel {
+		delete(p.orders[stopOrder.Party], stopOrder.OrderID)
+		delete(p.orderToParty, stopOrder.OrderID)
+	}
+	return toCancel
+}
+
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
 		p.priced.PriceUpdated(newPrice.Clone()),
 		p.trailing.PriceUpdated(newPrice.Clone())...,
 	)
+
+	// If we have any stop orders with links, check we are still
 
 	// first get all the orders which got triggered
 	for _, v := range ids {
@@ -148,7 +188,7 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.S
 		}
 	}
 
-	// now we get all the OCO oposit to them as they shall
+	// now we get all the OCO opposite to them as they shall
 	// be cancelled as well
 	for _, v := range triggered[:] {
 		if len(v.OCOLinkID) <= 0 {
