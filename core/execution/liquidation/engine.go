@@ -31,7 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions,Settlement
 
 type Book interface {
 	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
@@ -50,6 +50,10 @@ type Positions interface {
 	Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition
 }
 
+type Settlement interface {
+	AddTrade(trade *types.Trade)
+}
+
 type Engine struct {
 	// settings, orderbook, network pos data
 	cfg      *types.LiquidationStrategy
@@ -62,6 +66,7 @@ type Engine struct {
 	tSvc     common.TimeService
 	ml       MarketLiquidity
 	position Positions
+	settle   Settlement
 	stopped  bool
 }
 
@@ -96,7 +101,7 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions) *Engine {
+func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, se Settlement) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
@@ -110,6 +115,7 @@ func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, boo
 		tSvc:     tSvc,
 		ml:       ml,
 		position: pe,
+		settle:   se,
 		pos:      &Pos{},
 	}
 }
@@ -308,13 +314,17 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 		Aggressor:   order.Side, // we consider network to be aggressor
 		BuyOrder:    buyID,
 		SellOrder:   sellID,
-		Buyer:       buyParty,
-		Seller:      sellParty,
+		Buyer:       types.NetworkParty,
+		Seller:      types.NetworkParty,
 		Timestamp:   now.UnixNano(),
 		Type:        types.TradeTypeNetworkCloseOutBad,
 		SellerFee:   types.NewFee(),
 		BuyerFee:    types.NewFee(),
 	}
+	// settlement engine should see this as a wash trade
+	e.settle.AddTrade(&trade)
+	// the for the rest of the core, this should not seem like a wash trade though...
+	trade.Buyer, trade.Seller = buyParty, sellParty
 	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade
 }
