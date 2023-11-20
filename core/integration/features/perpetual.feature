@@ -222,7 +222,7 @@ Feature: Simple test creating a perpetual market.
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1             |
     And the following funding period events should be emitted:
       | start      | end        | internal twap    | external twap    |
-      | 1575072002 |            |                  |                  |
+      | 1575072002 |            | 9760000000000000 |                  |
 
     # perps payment doesn't happen in the absence of oracle data
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
@@ -230,9 +230,8 @@ Feature: Simple test creating a perpetual market.
       | perp.funding.cue | 1575072003 |  0s         |
     And the following funding period events should be emitted:
       | start      | end         | internal twap    | external twap    |
-      | 1575072002 | 1575072003  |                  |                  |
-    # TODO: this is a bug, internal & external twap should be nil or actual value
-      | 1575072003 |             | 0                | 0                |
+      | 1575072002 | 1575072003  | 9760000000000000 |                  |
+      | 1575072003 |             | 9760000000000000 |                  |
     Then the transfers of following types should NOT happen:
       | type                                  |
       | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
@@ -250,7 +249,7 @@ Feature: Simple test creating a perpetual market.
     And the following funding period events should be emitted:
       | start      | end         | internal twap    | external twap    | funding payment | funding rate        |
       | 1575072003 | 1575072007  | 9760000000000000 | 9770000000000000 | -10000000000000 | -0.0010235414534289 |
-      | 1575072007 |             | 0                | 0                |                 |                     | 
+      | 1575072007 |             | 9760000000000000 | 9770000000000000 |                 |                     | 
     And the following transfers should happen:
       | type                                  | from    | to      | from account             | to account              | market id | amount    | asset |
       | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | trader2 | market  | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 100000000 | ETH   |
@@ -292,7 +291,7 @@ Feature: Simple test creating a perpetual market.
     And the following funding period events should be emitted:
       | start      | end        | internal twap    | external twap    | funding payment | funding rate       |
       | 1575072007 | 1575072014 | 9820000000000000 | 9750000000000000 | 70000000000000  | 0.0071794871794872 |
-      | 1575072014 |            | 0                | 0                |                 |                    |
+      | 1575072014 |            | 9890000000000000 | 9720000000000000 |                 |                    |
     # payments for trader3 and trader4 should be twice those of trader1 and trader2
     And the following transfers should happen:
       | type                                  | from    | to      | from account             | to account              | market id |  amount    | asset |
