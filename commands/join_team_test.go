@@ -26,31 +26,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestApplyReferralCode(t *testing.T) {
-	t.Run("Applying referral code succeeds", testApplyReferralCodeSucceeds)
-	t.Run("Applying referral code with team ID fails", testApplyReferralCodeWithoutTeamIDFails)
+func TestJoinTeam(t *testing.T) {
+	t.Run("Joining team succeeds", testJoiningTeamSucceeds)
+	t.Run("Joining team with team ID fails", testJoinTeamWithoutTeamIDFails)
 }
 
-func testApplyReferralCodeSucceeds(t *testing.T) {
-	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
+func testJoiningTeamSucceeds(t *testing.T) {
+	err := checkJoinTeam(t, &commandspb.JoinTeam{
 		Id: vgtest.RandomVegaID(),
 	})
 
 	assert.Empty(t, err)
 }
 
-func testApplyReferralCodeWithoutTeamIDFails(t *testing.T) {
-	err := checkApplyReferralCode(t, &commandspb.ApplyReferralCode{
+func testJoinTeamWithoutTeamIDFails(t *testing.T) {
+	err := checkJoinTeam(t, &commandspb.JoinTeam{
 		Id: "",
 	})
 
-	assert.Contains(t, err.Get("apply_referral_code.id"), commands.ErrShouldBeAValidVegaID)
+	assert.Contains(t, err.Get("join_team.id"), commands.ErrShouldBeAValidVegaID)
 }
 
-func checkApplyReferralCode(t *testing.T, cmd *commandspb.ApplyReferralCode) commands.Errors {
+func checkJoinTeam(t *testing.T, cmd *commandspb.JoinTeam) commands.Errors {
 	t.Helper()
 
-	err := commands.CheckApplyReferralCode(cmd)
+	err := commands.CheckJoinTeam(cmd)
 
 	var e commands.Errors
 	if ok := errors.As(err, &e); !ok {
