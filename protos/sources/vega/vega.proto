@@ -13,13 +13,13 @@ message StopOrder {
 
   enum SizeOverrideSetting {
     // Never valid
-    SIZE_OVERRIDE_UNSPECIFIED = 0;
+    SIZE_OVERRIDE_SETTING_UNSPECIFIED = 0;
     // No override
-    SIZE_OVERRIDE_NONE = 1;
+    SIZE_OVERRIDE_SETTING_NONE = 1;
     // Use the filled value from an existing order
-    SIZE_OVERRIDE_ORDER = 2;
+    SIZE_OVERRIDE_SETTING_ORDER = 2;
     // Use the total position of the trader
-    SIZE_OVERRIDE_POSITION = 3;
+    SIZE_OVERRIDE_SETTING_POSITION = 3;
   }
 
   enum ExpiryStrategy {
