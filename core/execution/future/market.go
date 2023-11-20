@@ -1868,11 +1868,13 @@ func (m *Market) triggerStopOrders(
 	if m.lastTradedPrice == nil {
 		return nil
 	}
-
 	lastTradedPrice := m.priceToMarketPrecision(m.getLastTradedPrice())
 	triggered, cancelled := m.stopOrders.PriceUpdated(lastTradedPrice)
 
-	if len(triggered) <= 0 {
+	// See if there are any linked orders that are the wrong direction
+	cancelled = append(cancelled, m.stopOrders.CheckDirection(m.position)...)
+
+	if len(triggered) <= 0 && len(cancelled) <= 0 {
 		return nil
 	}
 
@@ -1891,6 +1893,10 @@ func (m *Market) triggerStopOrders(
 	}
 
 	m.broker.SendBatch(evts)
+
+	if len(triggered) <= 0 {
+		return nil
+	}
 
 	confirmations := m.submitStopOrders(ctx, triggered, types.StopOrderStatusTriggered, idgen)
 
@@ -3688,7 +3694,30 @@ func (m *Market) submitStopOrders(
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 				// Update the order size to match that of the party's position
 				pos, _ := m.position.GetPositionByPartyID(v.Party)
-				v.OrderSubmission.Size = uint64(pos.Size())
+				if pos.Size() == 0 {
+					// Nothing to do
+					m.log.Error("position is flat so no order required",
+						logging.StopOrderSubmission(v))
+					continue
+				} else if pos.Size() > 0 {
+					// We are long so need to sell
+					if v.OrderSubmission.Side != types.SideSell {
+						// Don't send an order as we are the wrong direction
+						m.log.Error("triggered order is the wrong side to flatten position",
+							logging.StopOrderSubmission(v))
+						continue
+					}
+					v.OrderSubmission.Size = uint64(pos.Size())
+				} else {
+					// We are short so need to buy
+					if v.OrderSubmission.Side != types.SideBuy {
+						// Don't send an order as we are the wrong direction
+						m.log.Error("triggered order is the wrong side to flatten position",
+							logging.StopOrderSubmission(v))
+						continue
+					}
+					v.OrderSubmission.Size = uint64(-pos.Size())
+				}
 			}
 
 			conf, err := m.SubmitOrderWithIDGeneratorAndOrderID(
@@ -3706,11 +3735,11 @@ func (m *Market) submitStopOrders(
 			}
 		}
 		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
 
-		// Remove any referenced orders
-		for _, order := range toDelete {
-			m.CancelOrder(ctx, v.Party, order.ID, order.ID)
-		}
+	// Remove any referenced orders
+	for _, order := range toDelete {
+		m.CancelOrder(ctx, order.Party, order.ID, order.ID)
 	}
 
 	m.broker.SendBatch(evts)
