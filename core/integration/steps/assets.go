@@ -47,9 +47,9 @@ func UpdateAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engin
 		})
 		if err != nil {
 			if err == collateral.ErrAssetHasNotBeenEnabled {
-				return fmt.Errorf("asset %s has not been enabled", aid)
+				return fmt.Errorf("asset %q has not been enabled", aid)
 			}
-			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
+			return fmt.Errorf("couldn't enable asset %q: %w", aid, err)
 		}
 	}
 	return nil
@@ -76,7 +76,7 @@ func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Eng
 			if err == collateral.ErrAssetAlreadyEnabled {
 				return fmt.Errorf("asset %s was already enabled, perhaps when defining markets, order of steps should be swapped", aid)
 			}
-			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
+			return fmt.Errorf("couldn't enable asset %q: %w", aid, err)
 		}
 	}
 	return nil

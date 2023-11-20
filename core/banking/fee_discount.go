@@ -111,15 +111,13 @@ func (e *Engine) ApplyFeeDiscount(ctx context.Context, asset string, party strin
 	}
 
 	key := e.feeDiscountKey(asset, party)
-	defer func() {
-		e.broker.Send(
-			events.NewTransferFeesDiscountUpdated(ctx,
-				party, asset,
-				e.feeDiscountPerPartyAndAsset[key].Clone(),
-				e.currentEpoch,
-			),
-		)
-	}()
+	defer e.broker.Send(
+		events.NewTransferFeesDiscountUpdated(ctx,
+			party, asset,
+			e.feeDiscountPerPartyAndAsset[key].Clone(),
+			e.currentEpoch,
+		),
+	)
 
 	e.feeDiscountPerPartyAndAsset[key].Sub(e.feeDiscountPerPartyAndAsset[key], discount)
 
@@ -170,10 +168,10 @@ func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum 
 func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
 	theoreticalFeeD := theoreticalFee.ToDecimal()
 	// min(accumulatedDiscount-theoreticalFee,0)
-	feeD := num.Min(
-		num.UintZero().Sub(accumulatedDiscount, theoreticalFee),
-		num.UintZero(),
-	).ToDecimal().Neg()
+	feeD := num.MinD(
+		accumulatedDiscount.ToDecimal().Sub(theoreticalFee.ToDecimal()),
+		num.DecimalZero(),
+	).Neg()
 
 	appliedDiscount, _ := num.UintFromDecimal(theoreticalFeeD.Sub(feeD))
 	// -fee
