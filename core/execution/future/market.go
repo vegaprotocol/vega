@@ -2310,11 +2310,6 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	}
 }
 
-// closeoutMTM is similar to confirmMTM, but only applies to the parties who have traded with the network
-// to reduce the position held by the network.
-func (m *Market) closeoutMTM(ctx context.Context) {
-}
-
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk) []*types.Order {
 	if len(margins) == 0 {
 		return nil
