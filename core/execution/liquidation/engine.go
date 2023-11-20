@@ -24,13 +24,14 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions
 
 type Book interface {
 	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
@@ -44,6 +45,11 @@ type IDGen interface {
 	NextID() string
 }
 
+type Positions interface {
+	RegisterOrder(ctx context.Context, order *types.Order) *positions.MarketPosition
+	Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition
+}
+
 type Engine struct {
 	// settings, orderbook, network pos data
 	cfg      *types.LiquidationStrategy
@@ -55,6 +61,7 @@ type Engine struct {
 	nextStep time.Time
 	tSvc     common.TimeService
 	ml       MarketLiquidity
+	position Positions
 	stopped  bool
 }
 
@@ -89,20 +96,21 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity) *Engine {
+func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
 	}
 	return &Engine{
-		cfg:    cfg,
-		broker: broker,
-		mID:    mktID,
-		book:   book,
-		as:     as,
-		tSvc:   tSvc,
-		ml:     ml,
-		pos:    &Pos{},
+		cfg:      cfg,
+		broker:   broker,
+		mID:      mktID,
+		book:     book,
+		as:       as,
+		tSvc:     tSvc,
+		ml:       ml,
+		position: pe,
+		pos:      &Pos{},
 	}
 }
 
@@ -195,7 +203,7 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	for _, cp := range closed {
 		e.pos.open += cp.Size()
 		// get the orders and trades so we can send events to update the datanode
-		o1, o2, t := e.getOrdersAndTrade(cp, idgen, now, mp, mmp)
+		o1, o2, t := e.getOrdersAndTrade(ctx, cp, idgen, now, mp, mmp)
 		orders = append(orders, events.NewOrderEvent(ctx, o1), events.NewOrderEvent(ctx, o2))
 		trades = append(trades, events.NewTradeEvent(ctx, *t))
 		netTrades = append(netTrades, t)
@@ -239,7 +247,7 @@ func (e *Engine) UpdateNetworkPosition(trades []*types.Trade) {
 	}
 }
 
-func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time, price, dpPrice *num.Uint) (*types.Order, *types.Order, *types.Trade) {
+func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen IDGen, now time.Time, price, dpPrice *num.Uint) (*types.Order, *types.Order, *types.Trade) {
 	tSide, nSide := types.SideSell, types.SideBuy // one of them will have to sell
 	s := pos.Size()
 	size := uint64(s)
@@ -261,9 +269,11 @@ func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:          types.OrderTypeNetwork,
 		Size:          size,
-		Remaining:     0,
+		Remaining:     size,
 		Side:          nSide,
 	}
+	e.position.RegisterOrder(ctx, &order)
+	order.Remaining = 0
 	partyOrder := types.Order{
 		ID:            idgen.NextID(),
 		MarketID:      e.mID,
@@ -303,5 +313,6 @@ func (e *Engine) getOrdersAndTrade(pos events.Margin, idgen IDGen, now time.Time
 		SellerFee:   types.NewFee(),
 		BuyerFee:    types.NewFee(),
 	}
+	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade
 }
