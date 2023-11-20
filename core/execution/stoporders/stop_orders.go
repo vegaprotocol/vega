@@ -116,8 +116,7 @@ func (p *Pool) CheckDirection(positions *positions.SnapshotEngine) []*types.Stop
 			continue
 		}
 		for _, order := range orders {
-			if order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder ||
-				order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+			if order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 				if pos.Size() == 0 {
 					continue
 				} else if pos.Size() > 0 {
