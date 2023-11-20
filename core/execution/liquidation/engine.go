@@ -278,7 +278,7 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 		ID:            idgen.NextID(),
 		MarketID:      e.mID,
 		Size:          size,
-		Remaining:     0,
+		Remaining:     size,
 		Status:        types.OrderStatusFilled,
 		Party:         pos.Party(),
 		Side:          tSide, // assume sell, price is zero in that case anyway
@@ -289,6 +289,8 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:          types.OrderTypeNetwork,
 	}
+	e.position.RegisterOrder(ctx, &partyOrder)
+	partyOrder.Remaining = 0
 	buyParty = order.Party
 	sellParty = partyOrder.Party
 	sellID = partyOrder.ID
