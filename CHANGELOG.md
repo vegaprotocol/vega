@@ -23,7 +23,6 @@
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
-- [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
 
 ### 🐛 Fixes
 
@@ -46,6 +45,7 @@
 - [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 - [10125](https://github.com/vegaprotocol/vega/issues/10125) - Wire the `JoinTeam` command in the wallet.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
+- [10138](https://github.com/vegaprotocol/vega/issues/10138) - Patch the win socialisation panic.
 
 ## 0.73.0
 
