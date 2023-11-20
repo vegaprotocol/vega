@@ -2282,6 +2282,9 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 	mp := m.getCurrentMarkPrice()
 	m.liquidation.UpdateMarkPrice(mp.Clone())
 	evts := m.position.UpdateMarkPrice(mp)
+	if npos := m.liquidation.GetNetworkPosition(); npos.Size() != 0 {
+		evts = append(evts, npos)
+	}
 	settle := m.settlement.SettleMTM(ctx, mp, evts)
 
 	for _, t := range settle {
