@@ -36,24 +36,10 @@ func (r *perpetualResolver) DataSourceSpecForSettlementData(ctx context.Context,
 	return resolveDataSourceSpec(obj.DataSourceSpecForSettlementData), nil
 }
 
-func (r *perpetualResolver) DataSourceSpecBinding(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpecPerpetualBinding, error) {
-	return &DataSourceSpecPerpetualBinding{
-		SettlementDataProperty:     obj.DataSourceSpecBinding.SettlementDataProperty,
-		SettlementScheduleProperty: obj.DataSourceSpecBinding.SettlementScheduleProperty,
-	}, nil
-}
-
 type perpetualProductResolver VegaResolverRoot
 
 func (r *perpetualProductResolver) SettlementAsset(ctx context.Context, obj *vega.PerpetualProduct) (*vega.Asset, error) {
 	return r.r.getAssetByID(ctx, obj.SettlementAsset)
-}
-
-func (r *perpetualProductResolver) DataSourceSpecBinding(ctx context.Context, obj *vega.PerpetualProduct) (*DataSourceSpecPerpetualBinding, error) {
-	return &DataSourceSpecPerpetualBinding{
-		SettlementDataProperty:     obj.DataSourceSpecBinding.SettlementDataProperty,
-		SettlementScheduleProperty: obj.DataSourceSpecBinding.SettlementScheduleProperty,
-	}, nil
 }
 
 func (r *perpetualProductResolver) DataSourceSpecForSettlementData(_ context.Context, obj *vegapb.PerpetualProduct) (*vegapb.DataSourceDefinition, error) {
