@@ -468,7 +468,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]*)" lp liquidity bond account balance should be "([^"]*)" for the market "([^"]*)"$`, func(party, rawAmount, market string) error {
 		return steps.TheLPLiquidityBondBalanceShouldBeForTheMarket(execsetup.broker, party, rawAmount, market)
 	})
-
+	s.Step(`^the transfers of following types should NOT happen:$`, func(table *godog.Table) error {
+		return steps.TheTransfersOfFollowingTypesShouldNotHappen(execsetup.broker, table)
+	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})
@@ -520,6 +522,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`fail`, func() {
 		reporter.Fatalf("fail step invoked")
+	})
+	s.Step(`system unix time is "([^"]+)"`, func(unixTime int) error {
+		now := execsetup.timeService.GetTimeNow()
+		return steps.VerifyTime(now, int64(unixTime))
 	})
 
 	// Referral program steps.
@@ -605,6 +611,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugLPDetail(execsetup.log, execsetup.broker)
 		return nil
 	})
+	s.Step(`^debug funding period events$`, func() error {
+		steps.DebugFundingPeriodEventss(execsetup.broker, execsetup.log)
+		return nil
+	})
 	s.Step(`^debug orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarket(execsetup.log, execsetup.broker, mkt)
 	})
@@ -627,6 +637,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^clear transfer response events$`, func() error {
 		steps.ClearTransferResponseEvents(execsetup.broker)
 		return nil
+	})
+
+	s.Step(`^the following funding period events should be emitted:$`, func(table *godog.Table) error {
+		return steps.TheFollowingFundingPeriodEventsShouldBeEmitted(execsetup.broker, table)
 	})
 	s.Step(`^the following events should be emitted:$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
