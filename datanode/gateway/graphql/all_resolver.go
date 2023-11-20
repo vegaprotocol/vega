@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type allResolver struct {
@@ -96,7 +97,7 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 	return res.Market, nil
 }
 
-func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int) (*v2.TransferConnection, error) {
+func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *eventspb.Transfer_Status) (*v2.TransferConnection, error) {
 	// if direction is nil just default to ToOrFrom
 	if direction == nil {
 		d := TransferDirectionToOrFrom
@@ -128,6 +129,7 @@ func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, 
 		IsReward:   isReward,
 		FromEpoch:  fromEpochU,
 		ToEpoch:    toEpochU,
+		Status:     status,
 	})
 	if err != nil {
 		return nil, err

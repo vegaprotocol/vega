@@ -82,6 +82,13 @@ func TransferWithID(id entities.TransferID) TransferOption {
 	}
 }
 
+func TransferWithStatus(status entities.TransferStatus) TransferOption {
+	return func(t *testing.T, transfer *eventspb.Transfer) {
+		t.Helper()
+		transfer.Status = eventspb.Transfer_Status(status)
+	}
+}
+
 func TransferWithAsset(asset *entities.Asset) TransferOption {
 	return func(t *testing.T, transfer *eventspb.Transfer) {
 		t.Helper()

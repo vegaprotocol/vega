@@ -2413,6 +2413,9 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		FromEpoch: req.FromEpoch,
 		ToEpoch:   req.ToEpoch,
 	}
+	if req.Status != nil {
+		filters.Status = ptr.From(entities.TransferStatus(*req.Status))
+	}
 
 	if req.Pubkey == nil {
 		if !isReward {

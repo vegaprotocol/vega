@@ -23,6 +23,7 @@
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
+- [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on status on transfers.
 
 ### 🐛 Fixes
 

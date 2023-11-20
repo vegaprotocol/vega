@@ -1736,6 +1736,8 @@ message ListTransfersRequest {
   optional uint64 from_epoch = 5;
   // Epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch.
   optional uint64 to_epoch = 6;
+  // Status to filter on.
+  optional vega.events.v1.Transfer.Status status = 7;
 }
 
 // Response that is received when listing  transfers
