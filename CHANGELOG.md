@@ -38,7 +38,11 @@
 - [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
 - [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
 - [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
+- [10120](https://github.com/vegaprotocol/vega/issues/10120) - Assure theoretical and actual funding payment calculations are consistent.
 - [10121](https://github.com/vegaprotocol/vega/issues/10121) - Assure `EstimatePosition` API works correctly with sparse perps data
+- [10126](https://github.com/vegaprotocol/vega/issues/10126) - Account for invalid stop orders in batch, charge default gas.
+- [10123](https://github.com/vegaprotocol/vega/issues/10123) - Ledger exports contain account types of "UNKNOWN" type
+- [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 
 ## 0.73.0
 

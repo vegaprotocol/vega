@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/types"
@@ -77,9 +76,9 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
 	t.Run("calculate batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calculate batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
-	t.Run("calculate position resolution", testCalcPositionResolution)
 
 	t.Run("Build liquidity fee transfers with remainder", testBuildLiquidityFeesRemainder)
+	t.Run("calculate closeout fees", testCloseoutFees)
 }
 
 func testUpdateFeeFactors(t *testing.T) {
@@ -1000,93 +999,83 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	assert.Equal(t, pay, 1)
 }
 
-func testCalcPositionResolution(t *testing.T) {
+func testCloseoutFees(t *testing.T) {
 	eng := getTestFee(t)
+	ctrl := gomock.NewController(t)
+	discountRewardService := mocks.NewMockReferralDiscountRewardService(ctrl)
+	volumeDiscountService := mocks.NewMockVolumeDiscountService(ctrl)
+	discountRewardService.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	volumeDiscountService.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	discountRewardService.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	trades := []*types.Trade{
 		{
 			Aggressor: types.SideSell,
-			Seller:    "party1",
-			Buyer:     "network",
-			Size:      3,
-			Price:     num.NewUint(1000),
+			Seller:    types.NetworkParty,
+			Buyer:     "party1",
+			Size:      1,
+			Price:     num.NewUint(100),
 		},
 		{
 			Aggressor: types.SideSell,
-			Seller:    "party2",
-			Buyer:     "network",
-			Size:      2,
-			Price:     num.NewUint(1100),
+			Seller:    types.NetworkParty,
+			Buyer:     "party2",
+			Size:      1,
+			Price:     num.NewUint(100),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    types.NetworkParty,
+			Buyer:     "party3",
+			Size:      1,
+			Price:     num.NewUint(100),
+		},
+		{
+			Aggressor: types.SideSell,
+			Seller:    types.NetworkParty,
+			Buyer:     "party4",
+			Size:      1,
+			Price:     num.NewUint(100),
 		},
 	}
 
-	positions := []events.MarketPosition{
-		fakeMktPos{party: "bad-party1", size: -10},
-		fakeMktPos{party: "bad-party2", size: 7},
-		fakeMktPos{party: "bad-party3", size: -2},
-		fakeMktPos{party: "bad-party4", size: 10},
+	ft, fee := eng.GetFeeForPositionResolution(trades)
+	assert.NotNil(t, fee)
+	allTransfers := ft.Transfers()
+	// first we have the network -> pay transfers, then 1 transfer per good party
+	assert.Equal(t, len(trades), len(allTransfers)-3)
+	goodPartyTransfers := allTransfers[3:]
+	networkTransfers := allTransfers[:3]
+
+	numTrades := num.NewUint(uint64(len(trades)))
+	// maker fee is 100 * 0.02 == 2
+	// total network fee is 2 * len(trades)
+	feeAmt := num.NewUint(2)
+	total := num.UintZero().Mul(feeAmt, numTrades)
+	// this must be the total fee for the network
+	require.True(t, total.EQ(fee.MakerFee))
+
+	// now check the transfers for the fee payouts
+	for _, trans := range goodPartyTransfers {
+		require.True(t, trans.Amount.Amount.EQ(feeAmt))
+		require.True(t, trans.MinAmount.EQ(num.UintZero()))
 	}
-
-	ft, partiesFee := eng.CalculateFeeForPositionResolution(trades, positions)
-	assert.NotNil(t, ft)
-	assert.NotNil(t, partiesFee)
-
-	// get the amounts map
-	feeAmounts := ft.TotalFeesAmountPerParty()
-	party1Amount, ok := feeAmounts["bad-party1"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(307), party1Amount)
-	party2Amount, ok := feeAmounts["bad-party2"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(217), party2Amount)
-	party3Amount, ok := feeAmounts["bad-party3"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(65), party3Amount)
-	party4Amount, ok := feeAmounts["bad-party4"]
-	assert.True(t, ok)
-	assert.Equal(t, num.NewUint(307), party4Amount)
-
-	// check the details of the parties
-	// 307 as expected
-	assert.Equal(t, num.NewUint(90), partiesFee["bad-party1"].InfrastructureFee)
-	assert.Equal(t, num.NewUint(37), partiesFee["bad-party1"].MakerFee)
-	assert.Equal(t, num.NewUint(180), partiesFee["bad-party1"].LiquidityFee)
-
-	// get the transfer and check we have enough of each types
-	transfers := ft.Transfers()
-	var pay, recv, infra, liquidity int
-	for _, v := range transfers {
-		if v.Type == types.TransferTypeLiquidityFeePay {
-			liquidity++
-		}
-		if v.Type == types.TransferTypeInfrastructureFeePay {
-			infra++
-		}
-		if v.Type == types.TransferTypeMakerFeeReceive {
-			recv++
-		}
-		if v.Type == types.TransferTypeMakerFeePay {
-			pay++
+	// other fees below, making these transfers may be a bit silly at times...
+	// liquidity fees are 100 * 0.1 -> 10 * 4 = 40
+	liqFee := num.UintZero().Mul(numTrades, num.NewUint(10))
+	require.True(t, liqFee.EQ(fee.LiquidityFee))
+	// infraFee is 100 * 0.05 -> 5 * 4 == 20
+	infraFee := num.UintZero().Mul(numTrades, num.NewUint(5))
+	require.True(t, infraFee.EQ(fee.InfrastructureFee))
+	for _, tf := range networkTransfers {
+		require.True(t, num.UintZero().EQ(tf.MinAmount))
+		switch tf.Type {
+		case types.TransferTypeMakerFeePay:
+			require.True(t, tf.Amount.Amount.EQ(fee.MakerFee))
+		case types.TransferTypeLiquidityFeePay:
+			require.True(t, tf.Amount.Amount.EQ(fee.LiquidityFee))
+		case types.TransferTypeInfrastructureFeePay:
+			require.True(t, tf.Amount.Amount.EQ(fee.InfrastructureFee))
 		}
 	}
-
-	assert.Equal(t, liquidity, len(trades)*len(positions))
-	assert.Equal(t, infra, len(trades)*len(positions))
-	assert.Equal(t, recv, len(trades))
-	assert.Equal(t, pay, len(trades)*len(positions))
 }
-
-type fakeMktPos struct {
-	party string
-	size  int64
-}
-
-func (f fakeMktPos) AverageEntryPrice() *num.Uint { return num.UintZero() }
-func (f fakeMktPos) Party() string                { return f.party }
-func (f fakeMktPos) Size() int64                  { return f.size }
-func (f fakeMktPos) Buy() int64                   { return 0 }
-func (f fakeMktPos) Sell() int64                  { return 0 }
-func (f fakeMktPos) Price() *num.Uint             { return num.UintZero() }
-func (f fakeMktPos) BuySumProduct() *num.Uint     { return num.UintZero() }
-func (f fakeMktPos) SellSumProduct() *num.Uint    { return num.UintZero() }
-func (f fakeMktPos) VWBuy() *num.Uint             { return num.UintZero() }
-func (f fakeMktPos) VWSell() *num.Uint            { return num.UintZero() }

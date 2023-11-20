@@ -1,5 +1,6 @@
 Feature: Test closeout type 1: margin >= cost of closeout
 
+  @NoPerp
   Scenario: case 1 (using simple risk model) from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910 (0015-INSR-001, 0015-INSR-003, 0018-RSKM-001, 0018-RSKM-003, 0010-MARG-004, 0010-MARG-005, 0010-MARG-006, 0010-MARG-007, 0010-MARG-008. 0010-MARG-009)
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |

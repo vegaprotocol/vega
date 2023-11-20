@@ -57,7 +57,7 @@ Feature: Test LP bond account when market is terminated
       | market.liquidity.providersFeeCalculationTimeStep | 2s    |
 
     Given the average block duration is "2"
-  @Now @SLABond
+  @Now @SLABond @Liquidation
   Scenario: 001: All liquidity providers in the market receive a greater than zero amount of liquidity fee
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
@@ -136,7 +136,7 @@ Feature: Test LP bond account when market is terminated
       | lp1    | -5     | 0              | 0            |
       | lp2    | 0      | 0              | 0            |
       | party1 | 16     | 320            | 0            |
-      | party2 | -11    | -320           | 0            |
+      | party2 | 0      | 0              | -100044      |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
@@ -162,12 +162,12 @@ Feature: Test LP bond account when market is terminated
       | lp1    | -5     | 0              | -2400        |
       | lp2    | 0      | 0              | 0            |
       | party1 | 16     | 0              | 8000         |
-      | party2 | -11    | 0              | -5600        |
+      | party2 | 0      | 0              | -100044      |
 
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
       | lp1   | USD   | ETH/MAR22 | 0      | 155592  | 0    |
       | lp2   | USD   | ETH/MAR22 | 0      | 99657   | 0    |
 
-    And the insurance pool balance should be "1408" for the market "ETH/MAR22"
+    And the insurance pool balance should be "95852" for the market "ETH/MAR22"
 

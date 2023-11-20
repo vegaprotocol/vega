@@ -11,6 +11,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @NoPerp
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

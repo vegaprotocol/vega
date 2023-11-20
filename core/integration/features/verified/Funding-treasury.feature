@@ -17,7 +17,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
       | property         | type         | binding         | decimals |
-      | prices.ETH.value | TYPE_INTEGER | settlement data | 0 |
+      | prices.ETH.value | TYPE_INTEGER | settlement data | 0        |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
       | property           | type         | binding             |
@@ -25,7 +25,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the oracle spec for settlement data filtering data from "0xCAFECAFE20" named "ethDec20Oracle":
       | property         | type         | binding         | decimals |
-      | prices.ETH.value | TYPE_INTEGER | settlement data | 0 |
+      | prices.ETH.value | TYPE_INTEGER | settlement data | 0        |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE20" named "ethDec20Oracle":
       | property           | type         | binding             |
@@ -54,14 +54,15 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | market.liquidity.successorLaunchWindowLength | 1s    |
       | limits.markets.maxPeggedOrders               | 4     |
 
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  @Liquidation
+  Scenario: using lognormal risk model, set "designatedLoser" closeout while the position of "designatedLoser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 21981         |
+      | designatedLoser  | USD   | 21981         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -115,26 +116,22 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
-      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedLoser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 17631  | 0       |
+      | party           | asset | market id | margin | general |
+      | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then the parties should have the following margin levels:
-      | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
+    And the parties should have the following margin levels:
+      | party           | market id | maintenance | search | initial | release |
+      | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
-    Then the order book should have the following volumes for market "ETH/DEC19":
+    And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 1     | 10     |
-      | buy  | 140   | 1      |
+      | buy  | 1     | 0      |
+      | buy  | 140   | 0      |
 
-    # insurance pool generation - modify order book
-    Then the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -147,66 +144,76 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the network moves ahead "1" blocks
 
+    Then debug trades
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
-      | buySideProvider | 120   | 290  | network          |
-      | network         | 120   | 290  | designatedLooser |
+      | network         | 150   | 290  | designatedLoser  |
+      | buySideProvider | 140   | 1    | network          |
+      | lpprov          | 40    | 225  | network          |
+      | aux             | 1     | 10   | network          |
+      | buySideProvider | 120   | 54   | network          |
 
     Then the following network trades should be executed:
-      | party            | aggressor side | volume |
-      | buySideProvider  | sell           | 290    |
-      | designatedLooser | buy            | 290    |
+      | party           | aggressor side | volume |
+      | buySideProvider | buy            | 1      |
+      | buySideProvider | sell           | 1      |
+      | lpprov          | sell           | 225    |
+      | aux             | sell           | 10     |
+      | designatedLoser | buy            | 290    |
 
     # check margin levels
     Then the parties should have the following margin levels:
-      | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | party           | market id | maintenance | search | initial | release |
+      | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
     # checking margins
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+      | party           | asset | market id | margin | general |
+      | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
 
 
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
-      | from             | to              | from account            | to account                       | market id | amount | asset |
-      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 3480   | USD   |
-      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
-      | market           | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 11251  | USD   |
-      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 5800   | USD   |
-      | market           | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 5800   | USD   |
+      | from            | to              | from account            | to account                       | market id | amount | asset |
+      | designatedLoser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 4350   | USD   |
+      | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 17631  | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16716  | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 8      | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 0      | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 8      | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 0      | USD   |
 
-    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
+      | buySideProvider  | USD   | ETH/DEC19 | 24057  | 999999975387 |
       | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux   | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux2  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux   | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    And the market data for the market "ETH/DEC19" should be:
+    Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 120        | TRADING_MODE_CONTINUOUS | 340728       | 9000           | 291           |
+      | 120        | TRADING_MODE_CONTINUOUS | 170949       | 9000           | 292           |
 
-    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 60396  | 999999939570 |
+      | buySideProvider  | USD   | ETH/DEC19 | 22937  | 999999975387 |
       | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054 |
 
     Then the following transfers should happen:
       | from            | to               | from account            | to account              | market id | amount | asset |
-      | buySideProvider | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 5820   | USD   |
+      | buySideProvider | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120   | USD   |
       | market          | sellSideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 5820   | USD   |
-    And the insurance pool balance should be "5451" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE19":
       | name               | value |
       | trading.terminated | true  |
@@ -216,21 +223,17 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the orders should have the following status:
       | party | reference | status        |
-      | aux   | aux-1-19  | STATUS_ACTIVE |
+      | aux   | aux-1-19  | STATUS_FILLED |
     Then the oracles broadcast data signed with "0xCAFECAFE19":
       | name             | value |
       | prices.ETH.value | 80    |
 
-    # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the global insurance account
+    # distribute insurance pool for DEC19
     When the network moves ahead "3" blocks
-    And the orders should have the following status:
-      | party | reference | status         |
-      | aux   | aux-1-19  | STATUS_STOPPED |
-
-    And the global insurance pool balance should be "1817" for the asset "USD"
+    Then the global insurance pool balance should be "0" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1817" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1817" for the market "ETH/DEC21"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
     When the oracles broadcast data signed with "0xCAFECAFE20":
       | name               | value |
@@ -243,22 +246,22 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the network moves ahead "3" blocks
     # When a market ETH/DEC20 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    And the global insurance pool balance should be "2726" for the asset "USD"
+    And the global insurance pool balance should be "0" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "2725" for the market "ETH/DEC21"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | sellSideProvider | -291   | 0              | 20360        |
-      | buySideProvider  | 291    | 0              | -11660       |
-      | designatedLooser | 0      | 0              | -17631       |
+      | buySideProvider  | 57     | 0              | -3942        |
+      | designatedLoser  | 0      | 0              | -17631       |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general       |
-      | buySideProvider  | USD   | ETH/DEC19 | 0      | 999999988326  |
+      | buySideProvider  | USD   | ETH/DEC19 | 0      | 999999996044  |
       | sellSideProvider | USD   | ETH/DEC19 | 0      | 1000000020360 |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0             |
-      | aux              | USD   | ETH/DEC19 | 0      | 999999999900  |
-      | aux2             | USD   | ETH/DEC19 | 0      | 1000000000088 |
-      | lpprov           | USD   | ETH/DEC19 | 0      | 1000000007856 |
+      | designatedLoser  | USD   | ETH/DEC19 | 0      | 0             |
+      | aux              | USD   | ETH/DEC19 | 0      | 1000000000136 |
+      | aux2             | USD   | ETH/DEC19 | 0      | 1000000000140 |
+      | lpprov           | USD   | ETH/DEC19 | 0      | 1000000005301 |

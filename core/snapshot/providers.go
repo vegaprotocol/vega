@@ -38,6 +38,7 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.MatchingSnapshot,               // Requires markets.
 	types.PositionsSnapshot,              // Requires markets.
 	types.SettlementSnapshot,             // Requires markets.
+	types.LiquidationSnapshot,            // Requires markets.
 	types.HoldingAccountTrackerSnapshot,
 	types.EthereumOracleVerifierSnapshot,
 	types.LiquiditySnapshot,

@@ -10,6 +10,7 @@ Feature: Test mark to market settlement with insurance pool
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: If settlement amount > party’s margin account balance + party’s general account balance for the asset, the full balance of the party’s margin account is transferred to the market’s temporary settlement account, the full balance of the party’s general account for the assets are transferred to the market’s temporary settlement account, the minimum insurance pool account balance for the market & asset, and the remainder, i.e. the difference between the total amount transferred from the trader’s margin + general accounts and the settlement amount, is transferred from the insurance pool account for the market to the temporary settlement account for the market (0003-MTMK-003)
     Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -84,7 +85,7 @@ Feature: Test mark to market settlement with insurance pool
 
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "9999" for the market "ETH/DEC19"
+    And the insurance pool balance should be "9520" for the market "ETH/DEC19"
 
 
 

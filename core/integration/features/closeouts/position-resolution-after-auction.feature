@@ -16,6 +16,7 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | name                                    | value |
       | limits.markets.maxPeggedOrders          | 2     |
       
+  @Liquidation @NoPerp
   Scenario:
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -42,28 +43,29 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 13440  |  6560   |
     When the opening auction period ends for market "ETH/DEC19"
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode            | auction trigger            | extension trigger           | target stake | supplied stake | open interest |
-      | 10000      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED| AUCTION_TRIGGER_UNSPECIFIED | 160000       | 160000         | 8             |
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake | open interest |
+      | 10000      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 80000        | 160000         | 8             |
+    When the network moves ahead "1" blocks
+    And debug trades
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | party1  | 10000 | 3    | party2a |
       | party1  | 10000 | 2    | party2a |
       | party1  | 10000 | 3    | party2c |
+      | network | 10000 | 8    | party1  |
       | lp      | 5900  | 8    | network |
-      | network | 5900  | 8    | party1  |
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | party2a | -5     | 0              |            0 |
-      | party2c | -3     | 0              |            0 |
-      | party1  | 0      | 0              |       -20000 |
-      | lp      | 8      | 32800          |       -13272 |
+      | party2a | -5     | 0              | 0            |
+      | party2c | -3     | 0              | 0            |
+      | party1  | 0      | 0              | -20000       |
     And the accumulated liquidity fees should be "472" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the parties should have the following account balances:
-      | party  | asset | market id | margin |  general |   bond |
-      | party1 | BTC   | ETH/DEC19 | 0      |        0 |        |
-      |     lp | BTC   | ETH/DEC19 | 82560  | 99776968 | 160000 | 
+      | party  | asset | market id | margin | general  | bond   |
+      | party1 | BTC   | ETH/DEC19 | 0      | 0        |        |
+      | lp     | BTC   | ETH/DEC19 | 82560  | 99776968 | 160000 |
     # sum of lp accounts = 100019528
     # lp started with 100000000, should've made 8*(10000-5900)=32800 in MTM gains following the closeout,
     # but party1 only had 20000, of which 472 has been put towards liquidity fees, 

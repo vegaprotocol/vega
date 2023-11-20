@@ -1190,6 +1190,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			LinearSlippageFactor:          terms.Changes.LinearSlippageFactor,
 			QuadraticSlippageFactor:       terms.Changes.QuadraticSlippageFactor,
 			LiquidityFeeSettings:          terms.Changes.LiquidityFeeSettings,
+			LiquidationStrategy:           terms.Changes.LiquidationStrategy,
 		},
 	}
 
@@ -1239,6 +1240,10 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		}
 	default:
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
+	}
+	// assign the current liquidation strategy if none was set on the update proposal
+	if newMarket.Changes.LiquidationStrategy == nil {
+		newMarket.Changes.LiquidationStrategy = existingMarket.LiquidationStrategy
 	}
 
 	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {

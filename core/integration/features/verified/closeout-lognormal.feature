@@ -20,7 +20,8 @@ Feature: Closeout scenarios
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
-  @EndBlock
+
+  @EndBlock @Liquidation @NoPerp
   Scenario: 001, 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005; 0007-POSN-015)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 
@@ -110,9 +111,10 @@ Feature: Closeout scenarios
       | buyer   | price | size | seller     |
       | trader3 | 100   | 10   | auxiliary2 |
 
-    And the order book should have the following volumes for market "ETH/DEC19":
+    When the network moves ahead "1" blocks
+    Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 5      |
+      | buy  | 5     | 0      |
       | buy  | 45    | 0      |
       | buy  | 50    | 0      |
       | buy  | 100   | 0      |
@@ -121,21 +123,21 @@ Feature: Closeout scenarios
 
     #   #trader3 is closed out, trader2 has no more open orders as they got cancelled after becoming distressed
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search      | initial     | release     |
-      | trader2 | ETH/DEC19 | 0           | 0           | 0           | 0           |
-      | trader3 | ETH/DEC19 | 11000000801 | 16500001201 | 22000001602 | 33000002403 |
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     # trader3 can not be closed-out because there is not enough vol on the order book
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
-      | trader3 | USD   | ETH/DEC19 | 162    | 0       |
+      | trader3 | USD   | ETH/DEC19 | 0      | 0       |
 
     Then the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl | status                        |
       | trader2    | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
-      | trader3    | 10     | 0              | 0            |                               |
+      | trader3    | 0      | 0              | -162         | POSITION_STATUS_CLOSED_OUT    |
       | auxiliary1 | -10    | -900           | 0            |                               |
-      | auxiliary2 | 0      | 0              | 900          |                               |
+      | auxiliary2 | 5      | 475            | 586          |                               |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party      | market id | side | price | volume | resulting trades | type       | tif     | reference       |
@@ -149,8 +151,8 @@ Feature: Closeout scenarios
     Then the network moves ahead "4" blocks
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 1     | 10     |
-      | buy  | 5     | 5      |
+      | buy  | 1     | 5      |
+      | buy  | 5     | 0      |
       | buy  | 45    | 0      |
       | buy  | 50    | 0      |
       | buy  | 100   | 0      |
@@ -160,28 +162,24 @@ Feature: Closeout scenarios
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-      | trader3 | ETH/DEC19 | 1771        | 2656   | 3542    | 5313    |
+      | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
-      | trader3 | USD   | ETH/DEC19 | 162    | 0       |
+      | trader3 | USD   | ETH/DEC19 | 0      | 0       |
 
 # 0007-POSN-015
-#   And the parties should have the following profit and loss:
-#     | party   | volume | unrealised pnl | realised pnl | status                        |
-#     | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
+    And the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | status                        |
+      | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
 
-#   And the insurance pool balance should be "0" for the market "ETH/DEC19"
-#   And the parties should have the following profit and loss:
-#     | party      | volume | unrealised pnl | realised pnl |
-#     | auxiliary1 | -10    | -900           | 0            |
-#     | auxiliary2 | 5      | 475            | 503          |
-#     | trader2    | 0      | 0              | 0            |
-#     | trader3    | 0      | 0              | -162         |
-#     | lprov      | 5      | 495            | -413         |
-#   Then the market data for the market "ETH/DEC19" should be:
-#     | mark price | trading mode                    | auction trigger                            |
-#     | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
+    And the insurance pool balance should be "3" for the market "ETH/DEC19"
+    And the parties should have the following profit and loss:
+      | party      | volume | unrealised pnl | realised pnl |
+      | auxiliary1 | 0      | 0              | -900         |
+      | auxiliary2 | 0      | 0              | 1061         |
+      | trader2    | 0      | 0              | 0            |
+      | trader3    | 0      | 0              | -162         |
 
 # Scenario: 002, Position becomes distressed upon exiting an auction (0007-POSN-016, 0012-POSR-008)
 #   Given the insurance pool balance should be "0" for the market "ETH/DEC19"

@@ -24,3 +24,8 @@ func ClearAllEvents(broker *stubs.BrokerStub) {
 func ClearTransferResponseEvents(broker *stubs.BrokerStub) {
 	broker.ClearTransferResponseEvents()
 }
+
+func ClearTradeEvents(broker *stubs.BrokerStub) error {
+	broker.ClearTradeEvents()
+	return nil
+}
