@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -158,7 +159,15 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
 	s.pendingCallEvents = make([]*pendingCallEvent, 0, len(results))
 
+	// clear up all the metrics
+	seenSpecId := map[string]struct{}{}
+
 	for _, callEvent := range results {
+		if _, ok := seenSpecId[callEvent.SpecId]; !ok {
+			metrics.DataSourceEthVerifierCallGaugeReset(callEvent.SpecId)
+			seenSpecId[callEvent.SpecId] = struct{}{}
+		}
+
 		// this populates the id/hash structs
 		if !s.ensureNotDuplicate(callEvent.Hash()) {
 			s.log.Panic("pendingCallEvents's unexpectedly pre-populated when restoring from snapshot")
@@ -174,6 +183,8 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 		if err := s.witness.RestoreResource(pending, s.onCallEventVerified); err != nil {
 			s.log.Panic("unable to restore pending call event resource", logging.String("ID", pending.GetID()), logging.Error(err))
 		}
+
+		metrics.DataSourceEthVerifierCallGaugeAdd(1, callEvent.SpecId)
 	}
 
 	var err error
