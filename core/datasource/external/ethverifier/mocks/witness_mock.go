@@ -49,16 +49,16 @@ func (mr *MockWitnessMockRecorder) RestoreResource(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreResource", reflect.TypeOf((*MockWitness)(nil).RestoreResource), arg0, arg1)
 }
 
-// StartCheck mocks base method.
-func (m *MockWitness) StartCheck(arg0 validators.Resource, arg1 func(interface{}, bool), arg2 time.Time) error {
+// StartCheckWithDelay mocks base method.
+func (m *MockWitness) StartCheckWithDelay(arg0 validators.Resource, arg1 func(interface{}, bool), arg2 time.Time, arg3 int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartCheck", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "StartCheckWithDelay", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// StartCheck indicates an expected call of StartCheck.
-func (mr *MockWitnessMockRecorder) StartCheck(arg0, arg1, arg2 interface{}) *gomock.Call {
+// StartCheckWithDelay indicates an expected call of StartCheckWithDelay.
+func (mr *MockWitnessMockRecorder) StartCheckWithDelay(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartCheck", reflect.TypeOf((*MockWitness)(nil).StartCheck), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartCheckWithDelay", reflect.TypeOf((*MockWitness)(nil).StartCheckWithDelay), arg0, arg1, arg2, arg3)
 }
