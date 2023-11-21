@@ -48,6 +48,7 @@
 - [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 - [10125](https://github.com/vegaprotocol/vega/issues/10125) - Wire the `JoinTeam` command in the wallet.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
+- [10147](https://github.com/vegaprotocol/vega/issues/10147) - Add network transfer largest share to the transfers if needed.
 
 ## 0.73.0
 
