@@ -138,6 +138,8 @@ func (t Tx) Command() txn.Command {
 		return txn.UpdateReferralSetCommand
 	case *commandspb.InputData_ApplyReferralCode:
 		return txn.ApplyReferralCodeCommand
+	case *commandspb.InputData_UpdateMarginMode:
+		return txn.UpdateMarginModeCommand
 	case *commandspb.InputData_JoinTeam:
 		return txn.JoinTeamCommand
 	default:

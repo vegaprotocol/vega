@@ -1000,3 +1000,28 @@ func (s *LiquidityFeeSettingsMethod) DecodeText(_ *pgtype.ConnInfo, src []byte) 
 	*s = LiquidityFeeSettingsMethod(val)
 	return nil
 }
+
+type MarginMode vega.MarginMode
+
+const (
+	MarginModeUnspecified    = MarginMode(vega.MarginMode_MARGIN_MODE_UNSPECIFIED)
+	MarginModeCrossMargin    = MarginMode(vega.MarginMode_MARGIN_MODE_CROSS_MARGIN)
+	MarginModeIsolatedMargin = MarginMode(vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN)
+)
+
+func (m MarginMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.MarginMode_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown margin mode: %v", m)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.MarginMode_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown margin mode: %s", src)
+	}
+	*m = MarginMode(val)
+	return nil
+}

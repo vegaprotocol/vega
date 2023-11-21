@@ -964,6 +964,49 @@ func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type MarginMode string
+
+const (
+	// Party is in cross margin mode
+	MarginModeMarginModeCrossMargin MarginMode = "MARGIN_MODE_CROSS_MARGIN"
+	// Party is in isolated margin mode
+	MarginModeMarginModeIsolatedMargin MarginMode = "MARGIN_MODE_ISOLATED_MARGIN"
+)
+
+var AllMarginMode = []MarginMode{
+	MarginModeMarginModeCrossMargin,
+	MarginModeMarginModeIsolatedMargin,
+}
+
+func (e MarginMode) IsValid() bool {
+	switch e {
+	case MarginModeMarginModeCrossMargin, MarginModeMarginModeIsolatedMargin:
+		return true
+	}
+	return false
+}
+
+func (e MarginMode) String() string {
+	return string(e)
+}
+
+func (e *MarginMode) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarginMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarginMode", str)
+	}
+	return nil
+}
+
+func (e MarginMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type MarketUpdateType string
 
 const (

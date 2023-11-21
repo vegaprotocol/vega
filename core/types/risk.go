@@ -190,10 +190,13 @@ type MarginLevels struct {
 	SearchLevel            *num.Uint
 	InitialMargin          *num.Uint
 	CollateralReleaseLevel *num.Uint
+	OrderMargin            *num.Uint
 	Party                  string
 	MarketID               string
 	Asset                  string
 	Timestamp              int64
+	MarginMode             MarginMode
+	MarginFactor           num.Decimal
 }
 
 type RiskFactor struct {
@@ -208,16 +211,19 @@ func (m MarginLevels) IntoProto() *proto.MarginLevels {
 		SearchLevel:            num.UintToString(m.SearchLevel),
 		InitialMargin:          num.UintToString(m.InitialMargin),
 		CollateralReleaseLevel: num.UintToString(m.CollateralReleaseLevel),
+		OrderMargin:            num.UintToString(m.OrderMargin),
 		PartyId:                m.Party,
 		MarketId:               m.MarketID,
 		Asset:                  m.Asset,
 		Timestamp:              m.Timestamp,
+		MarginMode:             m.MarginMode,
+		MarginFactor:           m.MarginFactor.String(),
 	}
 }
 
 func (m MarginLevels) String() string {
 	return fmt.Sprintf(
-		"marketID(%s) asset(%s) party(%s) intialMargin(%s) maintenanceMargin(%s) collateralReleaseLevel(%s) searchLevel(%s) timestamp(%v)",
+		"marketID(%s) asset(%s) party(%s) intialMargin(%s) maintenanceMargin(%s) collateralReleaseLevel(%s) searchLevel(%s) orderMargin(%s) timestamp(%v) marginMode(%d) marginFactor(%s)",
 		m.MarketID,
 		m.Asset,
 		m.Party,
@@ -225,7 +231,10 @@ func (m MarginLevels) String() string {
 		stringer.PtrToString(m.MaintenanceMargin),
 		stringer.PtrToString(m.CollateralReleaseLevel),
 		stringer.PtrToString(m.SearchLevel),
+		stringer.PtrToString(m.OrderMargin),
 		m.Timestamp,
+		m.MarginMode,
+		m.MarginFactor.String(),
 	)
 }
 

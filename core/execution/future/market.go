@@ -154,6 +154,9 @@ type Market struct {
 	// are applied properly
 	ensuredMigration73 bool
 	epoch              types.Epoch
+
+	// party ID to isolated margin factor
+	partyMarginFactor map[string]num.Decimal
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -320,6 +323,7 @@ func NewMarket(
 		perp:                          marketType == types.MarketTypePerp,
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		partyMarginFactor:             map[string]num.Decimal{},
 		liquidation:                   le,
 	}
 
@@ -1107,7 +1111,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.
 		m.recordPositionActivity(t)
 	}
 
-	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions, round)
+	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions, round, m.useGeneralAccountForMarginSearch)
 	if err != nil {
 		m.log.Error("Failed to get ledger movements after settling closed market",
 			logging.MarketID(m.GetID()),
@@ -1571,6 +1575,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		SearchLevel:            num.UintZero(),
 		InitialMargin:          num.UintZero(),
 		CollateralReleaseLevel: num.UintZero(),
+		OrderMargin:            num.UintZero(),
 		MarketID:               mktID,
 		Asset:                  m.settlementAsset,
 		Timestamp:              m.timeService.GetTimeNow().UnixNano(),
@@ -1598,6 +1603,8 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 			continue
 		}
 		marginEvt.Party = party
+		marginEvt.MarginFactor = m.getMarginFactor(party)
+		marginEvt.MarginMode = m.getMarginMode(party)
 		mEvts = append(mEvts, events.NewMarginLevelsEvent(ctx, marginEvt))
 
 		if transfers != nil {
@@ -1605,7 +1612,19 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 				ctx, []*types.LedgerMovement{transfers}),
 			)
 		}
-
+		if marginEvt.MarginMode == types.MarginModeIsolatedMargin {
+			transfers, err = m.collateral.ClearPartyOrderMarginAccount(
+				ctx, party, mktID, m.settlementAsset)
+			if err != nil {
+				m.log.Error("unable to clear party order margin account", logging.Error(err))
+				continue
+			}
+			if transfers != nil {
+				evts = append(evts, events.NewLedgerMovements(
+					ctx, []*types.LedgerMovement{transfers}),
+				)
+			}
+		}
 		// we can delete the party from the map here
 		// unless the party is an LP
 		if !m.liquidityEngine.IsLiquidityProvider(party) {
@@ -1997,9 +2016,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// keep track of the eventual reduce only size
 		order.ReduceOnlyAdjustRemaining(extraSize)
 	}
+	marginMode := m.getMarginMode(order.Party)
 
 	// Perform check and allocate margin unless the order is (partially) closing the party position
-	if !order.ReduceOnly && !pos.OrderReducesExposure(order) {
+	// NB: this is only done at this point for cross margin mode
+	if marginMode == types.MarginModeCrossMargin && !order.ReduceOnly && !pos.OrderReducesExposure(order) {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -2073,6 +2094,41 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// we replace the trades in the confirmation with the one we got initially
 	// the contains the fees information
 	confirmation.Trades = trades
+
+	if marginMode == types.MarginModeIsolatedMargin {
+		// NB: this is the position with the trades included and the order sizes updated to remaining!!!
+		posWithTrades := pos.UpdateInPlaceOnTrades(m.log, order.Side, trades)
+		// 	First, the core will check whether the order will trade, either fully or in part, immediately upon entry. If so:
+		// If the trade would increase the party's position, the required additional funds as specified in the Increasing Position section will be calculated.
+		// The total expected margin balance (current plus new funds) will then be compared to the maintenance margin for the expected position,
+		// if the margin balance would be less than maintenance, instead reject the order in it's entirety.
+		// If the margin will be greater than the maintenance margin their general account will be checked for sufficient funds.
+		// If they have sufficient, that amount will be moved into their margin account and the immediately matching portion of the order will trade.
+		// If they do not have sufficient, the order will be rejected in it's entirety for not meeting margin requirements.
+		// If the trade would decrease the party's position, that portion will trade and margin will be released as in the Decreasing Position.
+		// If the order is not persistent this is the end, if it is persistent any portion of the order which
+		// has not traded in step 1 will move to being placed on the order book.
+		if len(trades) > 0 {
+			if err := m.checkIsolatedMarginOnImmediateTrade(ctx, posWithTrades, order, trades); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add immediate trade margin for party",
+						logging.Order(*order), logging.Error(err))
+				}
+				_ = m.unregisterAndReject(
+					ctx, order, types.OrderErrorIsolatedMarginCheckFailed)
+				return nil, nil, common.ErrMarginCheckFailed
+			}
+		}
+		if err := m.checkIsolatedMarginForOrder(ctx, posWithTrades, order); err != nil {
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for party",
+					logging.Order(*order), logging.Error(err))
+			}
+			_ = m.unregisterAndReject(
+				ctx, order, types.OrderErrorMarginCheckFailed)
+			return nil, nil, common.ErrMarginCheckFailed
+		}
+	}
 
 	// Send out the order update here as handling the confirmation message
 	// below might trigger an action that can change the order details.
@@ -2240,13 +2296,49 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
-
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
-
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
 			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
+			// if the passive party is in isolated margin we need to update the margin on the position change
+			if m.getMarginMode(conf.PassiveOrdersAffected[idx].Party) == types.MarginModeIsolatedMargin {
+				pos, _ := m.position.GetPositionByPartyID(conf.PassiveOrdersAffected[idx].Party)
+				r, err := m.updateIsolatedMarginsOnPositionChange(ctx, pos, conf.PassiveOrdersAffected[idx], trade)
+				if err != nil {
+					m.log.Error("failed to update isolated margin on position change", logging.Error(err))
+				} else {
+					m.transferMargins(ctx, []events.Risk{r}, nil)
+				}
+				// recheck isolated order margin and stop active orders if there are insufficient funds, if they are insufficient, we cancel all
+				// outstanding orders
+				_, err = m.recalcIsolatedMargins(ctx, pos, m.matching.GetOrdersPerParty(conf.PassiveOrdersAffected[idx].Party))
+				if err != nil {
+					m.handleIsolatedMarginInsufficientOrderMargin(ctx, conf.PassiveOrdersAffected[idx].Party, err)
+				}
+			}
+			// if we're uncrossing an auction then we need to do this also for parties with isolated margin on the "aggressive" side
+			if m.as.InAuction() {
+				aggressor := trade.Buyer
+				aggressorOrder, _ := m.matching.GetOrderByID(trade.BuyOrder)
+				if trade.Aggressor == types.SideSell {
+					aggressor = trade.Seller
+					aggressorOrder, _ = m.matching.GetOrderByID(trade.SellOrder)
+				}
+				if m.getMarginMode(aggressor) == types.MarginModeIsolatedMargin {
+					pos, _ := m.position.GetPositionByPartyID(aggressor)
+					r, err := m.updateIsolatedMarginsOnPositionChange(ctx, pos, aggressorOrder, trade)
+					if err != nil {
+						m.log.Error("failed to update isolated margin on position change", logging.Error(err))
+					}
+					m.transferMargins(ctx, []events.Risk{r}, nil)
+					// recheck isolated order margin and stop active orders if there are insufficient funds, if they are insufficient, we cancel all
+					// outstanding orders
+					_, err = m.recalcIsolatedMargins(ctx, pos, m.matching.GetOrdersPerParty(aggressor))
+					if err != nil {
+						m.handleIsolatedMarginInsufficientOrderMargin(ctx, aggressor, err)
+					}
+				}
+			}
 		}
-
 		// Record open interest change
 		if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
 			m.log.Debug("unable record open interest",
@@ -2566,6 +2658,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []string) {
 	}
 	for _, p := range parties {
 		marginLevels.Party = p
+		marginLevels.MarginMode = m.getMarginMode(p)
+		marginLevels.MarginFactor = m.getMarginFactor(p)
 		evts = append(evts, events.NewMarginLevelsEvent(ctx, marginLevels))
 	}
 	if len(evts) > 0 {
@@ -2574,7 +2668,14 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []string) {
 }
 
 func (m *Market) recheckMargin(ctx context.Context, pos []events.MarketPosition) {
-	risk := m.updateMargin(ctx, pos)
+	posCrossMargin := make([]events.MarketPosition, 0, len(pos))
+
+	for _, mp := range pos {
+		if m.getMarginMode(mp.Party()) == types.MarginModeCrossMargin {
+			posCrossMargin = append(posCrossMargin, mp)
+		}
+	}
+	risk := m.updateMargin(ctx, posCrossMargin)
 	if len(risk) == 0 {
 		return
 	}
@@ -2592,6 +2693,22 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those parties are distressed
 	// the risk slice are risk events, that we must use to transfer funds
 	return m.transferMargins(ctx, risk, closed)
+}
+
+func (m *Market) checkIsolatedMarginOnImmediateTrade(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade) error {
+	risk, err := m.calcIsolatedMarginsOnNewOrderTraded(ctx, pos, order, trades)
+	if err != nil {
+		return err
+	}
+	return m.transferMargins(ctx, risk, nil)
+}
+
+func (m *Market) checkIsolatedMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
+	risk, err := m.calcIsolatedMarginsOrder(ctx, pos, order, m.matching.GetOrdersPerParty(pos.Party()))
+	if err != nil {
+		return err
+	}
+	return m.transferMargins(ctx, risk, nil)
 }
 
 func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *types.Order, amendedOrder *types.Order) error {
@@ -2614,6 +2731,32 @@ func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *ty
 	return err
 }
 
+// checkIsolatedMarginForAmendOrder is called when a previously parked order becomes unparked as it's being amended.
+func (m *Market) checkIsolatedMarginForAmendOrder(ctx context.Context, existingOrder *types.Order, amendedOrder *types.Order) error {
+	origPos, ok := m.position.GetPositionByPartyID(existingOrder.Party)
+	if !ok {
+		m.log.Panic("could not get position for party", logging.PartyID(existingOrder.Party))
+	}
+
+	pos := origPos.Clone()
+
+	// if order was park we have nothing to do here
+	if existingOrder.Status != types.OrderStatusParked {
+		pos.UnregisterOrder(m.log, existingOrder)
+	}
+
+	pos.RegisterOrder(m.log, amendedOrder)
+
+	// we are just checking here if we can pass the margin calls.
+	risk, err := m.calcIsolatedMarginsOrder(ctx, pos, amendedOrder, m.matching.GetOrdersPerParty(pos.Party()))
+	if err != nil {
+		return err
+	}
+	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those parties are distressed
+	// the risk slice are risk events, that we must use to transfer funds
+	return m.transferMargins(ctx, risk, nil)
+}
+
 func (m *Market) setLastTradedPrice(trade *types.Trade) {
 	m.lastTradedPrice = trade.Price.Clone()
 }
@@ -2623,7 +2766,7 @@ func (m *Market) setLastTradedPrice(trade *types.Trade) {
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "collateralAndRisk")
 	defer timer.EngineTimeCounterAdd()
-	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, m.settlementAsset)
+	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, m.settlementAsset, m.useGeneralAccountForMarginSearch)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
@@ -2845,6 +2988,15 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
+	if m.getMarginMode(partyID) == types.MarginModeIsolatedMargin {
+		pos, _ := m.position.GetPositionByPartyID(partyID)
+		rr, err := m.recalcIsolatedMargins(ctx, pos, m.matching.GetOrdersPerParty(partyID))
+		if err != nil {
+			m.log.Panic("failed to recalculate isolated margin after order cancellation", logging.String("party", partyID), logging.Order(order))
+		}
+		m.transferMargins(ctx, rr, nil)
+	}
+
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
 
@@ -2859,7 +3011,15 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 			logging.Error(err))
 	}
 
-	_ = m.position.UnregisterOrder(ctx, order)
+	pos := m.position.UnregisterOrder(ctx, order)
+	if m.getMarginMode(order.Party) == types.MarginModeIsolatedMargin {
+		rr, err := m.recalcIsolatedMargins(ctx, pos, m.matching.GetOrdersPerParty(order.Party))
+		if err != nil {
+			m.log.Panic("failed to recalculate isolated margin after order cancellation", logging.String("party", order.Party), logging.Order(order))
+		}
+		m.transferMargins(ctx, rr, nil)
+	}
+
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	m.releaseMarginExcess(ctx, order.Party)
@@ -2876,6 +3036,25 @@ func (m *Market) AmendOrder(
 ) {
 	idgen := idgeneration.New(deterministicID)
 	return m.AmendOrderWithIDGenerator(ctx, orderAmendment, party, idgen)
+}
+
+// handleIsolatedMarginInsufficientOrderMargin stops all party orders
+// Upon position/order update if there are insufficient funds in the order margin, all open orders are stopped and margin re-evaluated.
+func (m *Market) handleIsolatedMarginInsufficientOrderMargin(ctx context.Context, party string, err error) {
+	orders := m.matching.GetOrdersPerParty(party)
+	for _, o := range orders {
+		m.unregisterAndReject(ctx, o, err)
+		if o.PeggedOrder != nil {
+			m.removePeggedOrder(o)
+		}
+		// TODO is there anywhere else that this order needs to be removed from?
+	}
+	pos, _ := m.position.GetPositionByPartyID(party)
+	r, err := m.recalcIsolatedMargins(ctx, pos, []*types.Order{})
+	if err != nil {
+		m.log.Panic("failed to recalc isolated margin", logging.String("party", party))
+	}
+	m.transferMargins(ctx, r, nil)
 }
 
 func (m *Market) AmendOrderWithIDGenerator(
@@ -2900,6 +3079,9 @@ func (m *Market) AmendOrderWithIDGenerator(
 
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
+		if m.getMarginMode(party) == types.MarginModeIsolatedMargin && err == common.ErrMarginCheckFailed {
+			m.handleIsolatedMarginInsufficientOrderMargin(ctx, party, err)
+		}
 		return nil, err
 	}
 
@@ -3120,9 +3302,16 @@ func (m *Market) amendOrder(
 		// We got a new valid price, if we are parked we need to unpark
 		if amendedOrder.Status == types.OrderStatusParked {
 			// is we cann pass the margin calls, then do nothing
-			if err := m.checkMarginForAmendOrder(ctx, existingOrder, amendedOrder); err != nil {
-				return nil, nil, err
+			if m.getMarginMode(existingOrder.Party) == types.MarginModeCrossMargin {
+				if err := m.checkMarginForAmendOrder(ctx, existingOrder, amendedOrder); err != nil {
+					return nil, nil, err
+				}
+			} else {
+				if err := m.checkIsolatedMarginForAmendOrder(ctx, existingOrder, amendedOrder); err != nil {
+					return nil, nil, err
+				}
 			}
+
 			// we were parked, need to unpark
 			m.peggedOrders.Unpark(amendedOrder.ID)
 			return m.submitValidatedOrder(ctx, amendedOrder)
@@ -3151,16 +3340,18 @@ func (m *Market) amendOrder(
 	// will be updated later on for sure.
 
 	// always update margin, even for price/size decrease
-	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
-		// Undo the position registering
-		_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
+	if m.getMarginMode(party) == types.MarginModeCrossMargin {
+		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+			// Undo the position registering
+			_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to check/add margin for party",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for party",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+			return nil, nil, common.ErrMarginCheckFailed
 		}
-		return nil, nil, common.ErrMarginCheckFailed
 	}
 
 	icebergSizeIncrease := false
@@ -3282,6 +3473,16 @@ func (m *Market) orderCancelReplace(
 			m.log.Panic("should never reach this point")
 		}
 
+		if m.getMarginMode(newOrder.Party) == types.MarginModeIsolatedMargin {
+			pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
+			if err := m.checkIsolatedMarginForOrder(ctx, pos, newOrder); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add margin for party",
+						logging.Order(*newOrder), logging.Error(err))
+				}
+				return nil, nil, common.ErrMarginCheckFailed
+			}
+		}
 		return conf, nil, nil
 	}
 
@@ -3307,6 +3508,29 @@ func (m *Market) orderCancelReplace(
 	conf, err = m.matching.ReplaceOrder(existingOrder, newOrder)
 	if err != nil {
 		m.log.Panic("unable to submit order", logging.Error(err))
+	}
+
+	marginMode := m.getMarginMode(newOrder.Party)
+	if marginMode == types.MarginModeIsolatedMargin {
+		pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
+		posWithTrades := pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades)
+		if len(trades) > 0 {
+			// NB: this is the position with the trades included and the order sizes updated to remaining!!!
+			if err := m.checkIsolatedMarginOnImmediateTrade(ctx, posWithTrades, newOrder, trades); err != nil {
+				if m.log.GetLevel() <= logging.DebugLevel {
+					m.log.Debug("Unable to check/add immediate trade margin for party",
+						logging.Order(*newOrder), logging.Error(err))
+				}
+				return nil, nil, common.ErrMarginCheckFailed
+			}
+		}
+		if err := m.checkIsolatedMarginForOrder(ctx, posWithTrades, newOrder); err != nil {
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add margin for party",
+					logging.Order(*newOrder), logging.Error(err))
+			}
+			return nil, nil, common.ErrMarginCheckFailed
+		}
 	}
 
 	// replace the trades in the confirmation to have
@@ -3497,8 +3721,15 @@ func (m *Market) removeExpiredOrders(
 		// either a pegged + non parked
 		// or a non-pegged order
 		if foundOnBook {
-			m.position.UnregisterOrder(ctx, order)
+			pos := m.position.UnregisterOrder(ctx, order)
 			m.matching.DeleteOrder(order)
+			if m.getMarginMode(order.Party) == types.MarginModeIsolatedMargin {
+				rr, err := m.recalcIsolatedMargins(ctx, pos, m.matching.GetOrdersPerParty(order.Party))
+				if err != nil {
+					m.log.Panic("failed to recalculate isolated margin after order cancellation", logging.String("party", order.Party), logging.Order(order))
+				}
+				m.transferMargins(ctx, rr, nil)
+			}
 		}
 
 		// if this was a pegged order
@@ -3776,7 +4007,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	}
 	m.broker.Send(events.NewFundingPaymentsEvent(ctx, m.mkt.ID, m.tradableInstrument.Instrument.Product.GetCurrentPeriod(), transfers))
 
-	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round)
+	margins, ledgerMovements, err := m.collateral.PerpsFundingSettlement(ctx, m.GetID(), transfers, m.settlementAsset, round, m.useGeneralAccountForMarginSearch)
 	if err != nil {
 		m.log.Error("Failed to get ledger movements when performing the funding settlement",
 			logging.MarketID(m.GetID()),
@@ -3971,5 +4202,92 @@ func (m *Market) GetRiskFactors() *types.RiskFactor {
 }
 
 func (m *Market) UpdateMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
-	return errors.New("Unsupported")
+	return m.switchMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (m *Market) getMarginMode(party string) types.MarginMode {
+	marginFactor, ok := m.partyMarginFactor[party]
+	if !ok || marginFactor.IsZero() {
+		return types.MarginModeCrossMargin
+	}
+	return types.MarginModeIsolatedMargin
+}
+
+func (m *Market) useGeneralAccountForMarginSearch(party string) bool {
+	return m.getMarginMode(party) == types.MarginModeCrossMargin
+}
+
+func (m *Market) getMarginFactor(party string) num.Decimal {
+	marginFactor, ok := m.partyMarginFactor[party]
+	if !ok || marginFactor.IsZero() {
+		return num.DecimalZero()
+	}
+	return marginFactor
+}
+
+// switchMarginMode handles a switch between margin modes and/or changes to the margin factor.
+// When switching to isolated margin mode, the following steps will be taken:
+// 1. For any active position, calculate average entry price * abs(position) * margin factor.
+// Calculate the amount of funds which will be added to, or subtracted from, the general account in order to do this.
+// If additional funds must be added which are not available, reject the transaction immediately.
+// 2. For any active orders, calculate the quantity limit price * remaining size * margin factor which needs to be placed in the
+// order margin account. Add this amount to the difference calculated in step 1. If this amount is less than or equal to the
+// amount in the general account, perform the transfers (first move funds into/out of margin account, then move funds into
+// the order margin account). If there are insufficient funds, reject the transaction.
+// 3. Move account to isolated margin mode on this market
+//
+// When switching from isolated margin mode to cross margin mode, the following steps will be taken:
+// 1. Any funds in the order margin account will be moved to the margin account.
+// 2. At this point trading can continue with the account switched to the cross margining account type.
+// If there are excess funds in the margin account they will be freed at the next margin release cycle.
+func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	if marginMode == m.getMarginMode(party) && marginFactor.Equal(m.getMarginFactor(party)) {
+		return nil
+	}
+
+	pos, _ := m.position.GetPositionByPartyID(party)
+	margins, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, m.GetID())
+	if err != nil {
+		return err
+	}
+	marketObservablae := m.getMarketObservable(nil)
+	if marketObservablae == nil {
+		return fmt.Errorf("no market observable price")
+	}
+	increment := m.tradableInstrument.Instrument.Product.GetMarginIncrease(m.timeService.GetTimeNow().UnixNano())
+	var auctionPrice *num.Uint
+	if m.as.InAuction() {
+		auctionPrice = marketObservablae
+		markPrice := m.getCurrentMarkPrice()
+		if markPrice != nil && marketObservablae.LT(markPrice) {
+			auctionPrice = markPrice
+		}
+	}
+	// switching to isolated or changing the margin factor
+	if marginMode == types.MarginModeIsolatedMargin {
+		risk, err := m.risk.SwitchToIsolatedMargin(margins, marketObservablae, increment, m.matching.GetOrdersPerParty(party), marginFactor, auctionPrice)
+		if err != nil {
+			return err
+		}
+		err = m.transferMargins(ctx, risk, nil)
+		if err != nil {
+			return err
+		}
+		m.partyMarginFactor[party] = marginFactor
+		return nil
+	} else {
+		// switching from isolated margin to cross margin
+		// 1. Any funds in the order margin account will be moved to the margin account.
+		// 2. At this point trading can continue with the account switched to the cross margining account type. If there are excess funds in the margin account they will be freed at the next margin release cycle.
+		risk := m.risk.SwitchFromIsolatedMargin(margins, marketObservablae, increment)
+		if err != nil {
+			return err
+		}
+		err = m.transferMargins(ctx, []events.Risk{risk}, nil)
+		if err != nil {
+			return err
+		}
+		delete(m.partyMarginFactor, party)
+		return nil
+	}
 }

@@ -296,6 +296,21 @@ func (mr *MockCollateralMockRecorder) ClearPartyMarginAccount(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).ClearPartyMarginAccount), arg0, arg1, arg2, arg3)
 }
 
+// ClearPartyOrderMarginAccount mocks base method.
+func (m *MockCollateral) ClearPartyOrderMarginAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearPartyOrderMarginAccount", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClearPartyOrderMarginAccount indicates an expected call of ClearPartyOrderMarginAccount.
+func (mr *MockCollateralMockRecorder) ClearPartyOrderMarginAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPartyOrderMarginAccount", reflect.TypeOf((*MockCollateral)(nil).ClearPartyOrderMarginAccount), arg0, arg1, arg2, arg3)
+}
+
 // ClearSpotMarket mocks base method.
 func (m *MockCollateral) ClearSpotMarket(arg0 context.Context, arg1, arg2 string) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
@@ -401,18 +416,18 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 }
 
 // FinalSettlement mocks base method.
-func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer, arg3 *num.Uint) ([]*types.LedgerMovement, error) {
+func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer, arg3 *num.Uint, arg4 func(string) bool) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]*types.LedgerMovement)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FinalSettlement indicates an expected call of FinalSettlement.
-func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2, arg3, arg4)
 }
 
 // GetAssetQuantum mocks base method.
@@ -657,9 +672,9 @@ func (mr *MockCollateralMockRecorder) MarginUpdateOnOrder(arg0, arg1, arg2 inter
 }
 
 // MarkToMarket mocks base method.
-func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string) ([]events.Margin, []*types.LedgerMovement, error) {
+func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string, arg4 func(string) bool) ([]events.Margin, []*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkToMarket", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "MarkToMarket", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]events.Margin)
 	ret1, _ := ret[1].([]*types.LedgerMovement)
 	ret2, _ := ret[2].(error)
@@ -667,9 +682,9 @@ func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []
 }
 
 // MarkToMarket indicates an expected call of MarkToMarket.
-func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3, arg4)
 }
 
 // PartyHasSufficientBalance mocks base method.
@@ -687,9 +702,9 @@ func (mr *MockCollateralMockRecorder) PartyHasSufficientBalance(arg0, arg1, arg2
 }
 
 // PerpsFundingSettlement mocks base method.
-func (m *MockCollateral) PerpsFundingSettlement(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string, arg4 *num.Uint) ([]events.Margin, []*types.LedgerMovement, error) {
+func (m *MockCollateral) PerpsFundingSettlement(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string, arg4 *num.Uint, arg5 func(string) bool) ([]events.Margin, []*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PerpsFundingSettlement", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "PerpsFundingSettlement", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].([]events.Margin)
 	ret1, _ := ret[1].([]*types.LedgerMovement)
 	ret2, _ := ret[2].(error)
@@ -697,9 +712,9 @@ func (m *MockCollateral) PerpsFundingSettlement(arg0 context.Context, arg1 strin
 }
 
 // PerpsFundingSettlement indicates an expected call of PerpsFundingSettlement.
-func (mr *MockCollateralMockRecorder) PerpsFundingSettlement(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) PerpsFundingSettlement(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerpsFundingSettlement", reflect.TypeOf((*MockCollateral)(nil).PerpsFundingSettlement), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerpsFundingSettlement", reflect.TypeOf((*MockCollateral)(nil).PerpsFundingSettlement), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // ReleaseFromHoldingAccount mocks base method.

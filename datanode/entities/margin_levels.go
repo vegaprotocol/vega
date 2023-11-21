@@ -29,24 +29,47 @@ import (
 
 type MarginLevels struct {
 	AccountID              AccountID
+	OrderMarginAccountID   AccountID
 	MaintenanceMargin      decimal.Decimal
 	SearchLevel            decimal.Decimal
 	InitialMargin          decimal.Decimal
 	CollateralReleaseLevel decimal.Decimal
+	OrderMargin            decimal.Decimal
 	Timestamp              time.Time
 	TxHash                 TxHash
 	VegaTime               time.Time
+	MarginMode             MarginMode
+	MarginFactor           decimal.Decimal
 }
 
 func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, txHash TxHash, vegaTime time.Time) (MarginLevels, error) {
 	var (
-		maintenanceMargin, searchLevel, initialMargin, collateralReleaseLevel decimal.Decimal
-		err                                                                   error
+		maintenanceMargin, searchLevel, initialMargin, collateralReleaseLevel, orderMargin decimal.Decimal
+		err                                                                                error
 	)
+	marginFactor := decimal.NewFromInt32(0)
+	if len(margin.MarginFactor) > 0 {
+		marginFactor, err = decimal.NewFromString(margin.MarginFactor)
+		if err != nil {
+			return MarginLevels{}, fmt.Errorf("failed to obtain margin factor for margin level: %w", err)
+		}
+	}
+	marginMode := MarginModeCrossMargin
+	if margin.MarginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN {
+		marginMode = MarginMode(margin.MarginMode)
+	}
 
 	marginAccount, err := GetAccountFromMarginLevel(ctx, margin, accountSource, txHash, vegaTime)
 	if err != nil {
 		return MarginLevels{}, fmt.Errorf("failed to obtain account for margin level: %w", err)
+	}
+
+	orderMarginAccount, err := GetAccountFromOrderMarginLevel(ctx, margin, accountSource, txHash, vegaTime)
+	var orderMarginAccountID AccountID
+	if margin.MarginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN && err != nil {
+		return MarginLevels{}, fmt.Errorf("failed to obtain account for order margin level: %w", err)
+	} else {
+		orderMarginAccountID = orderMarginAccount.ID
 	}
 
 	if maintenanceMargin, err = decimal.NewFromString(margin.MaintenanceMargin); err != nil {
@@ -65,15 +88,25 @@ func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accou
 		return MarginLevels{}, fmt.Errorf("invalid collateralReleaseLevel: %w", err)
 	}
 
+	if len(margin.OrderMargin) == 0 {
+		orderMargin = decimal.NewFromInt32(0)
+	} else if orderMargin, err = decimal.NewFromString(margin.OrderMargin); err != nil {
+		return MarginLevels{}, fmt.Errorf("invalid orderMarginLevel: %w", err)
+	}
+
 	return MarginLevels{
 		AccountID:              marginAccount.ID,
+		OrderMarginAccountID:   orderMarginAccountID,
 		MaintenanceMargin:      maintenanceMargin,
 		SearchLevel:            searchLevel,
 		InitialMargin:          initialMargin,
 		CollateralReleaseLevel: collateralReleaseLevel,
+		OrderMargin:            orderMargin,
 		Timestamp:              time.Unix(0, vegaTime.UnixNano()),
 		TxHash:                 txHash,
 		VegaTime:               vegaTime,
+		MarginMode:             marginMode,
+		MarginFactor:           marginFactor,
 	}, nil
 }
 
@@ -92,6 +125,21 @@ func GetAccountFromMarginLevel(ctx context.Context, margin *vega.MarginLevels, a
 	return marginAccount, err
 }
 
+func GetAccountFromOrderMarginLevel(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, txHash TxHash, vegaTime time.Time) (Account, error) {
+	orderMarginAccount := Account{
+		ID:       "",
+		PartyID:  PartyID(margin.PartyId),
+		AssetID:  AssetID(margin.Asset),
+		MarketID: MarketID(margin.MarketId),
+		Type:     vega.AccountType_ACCOUNT_TYPE_ORDER_MARGIN,
+		TxHash:   txHash,
+		VegaTime: vegaTime,
+	}
+
+	err := accountSource.Obtain(ctx, &orderMarginAccount)
+	return orderMarginAccount, err
+}
+
 func (ml *MarginLevels) ToProto(ctx context.Context, accountSource AccountSource) (*vega.MarginLevels, error) {
 	marginAccount, err := accountSource.GetByID(ctx, ml.AccountID)
 	if err != nil {
@@ -103,10 +151,13 @@ func (ml *MarginLevels) ToProto(ctx context.Context, accountSource AccountSource
 		SearchLevel:            ml.SearchLevel.String(),
 		InitialMargin:          ml.InitialMargin.String(),
 		CollateralReleaseLevel: ml.CollateralReleaseLevel.String(),
+		OrderMargin:            ml.OrderMargin.String(),
 		PartyId:                marginAccount.PartyID.String(),
 		MarketId:               marginAccount.MarketID.String(),
 		Asset:                  marginAccount.AssetID.String(),
 		Timestamp:              ml.Timestamp.UnixNano(),
+		MarginMode:             vega.MarginMode(ml.MarginMode),
+		MarginFactor:           ml.MarginFactor.String(),
 	}, nil
 }
 
@@ -155,14 +206,16 @@ func (ml MarginLevels) Key() MarginLevelsKey {
 
 func (ml MarginLevels) ToRow() []interface{} {
 	return []interface{}{
-		ml.AccountID, ml.Timestamp, ml.MaintenanceMargin,
-		ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, ml.TxHash, ml.VegaTime,
+		ml.AccountID, ml.OrderMarginAccountID, ml.Timestamp, ml.MaintenanceMargin,
+		ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, ml.OrderMargin, ml.TxHash, ml.VegaTime,
+		ml.MarginMode, ml.MarginFactor,
 	}
 }
 
 var MarginLevelsColumns = []string{
-	"account_id", "timestamp", "maintenance_margin",
-	"search_level", "initial_margin", "collateral_release_level", "tx_hash", "vega_time",
+	"account_id", "order_margin_account_id", "timestamp", "maintenance_margin",
+	"search_level", "initial_margin", "collateral_release_level", "order_margin", "tx_hash",
+	"vega_time", "margin_mode", "margin_factor",
 }
 
 type MarginCursor struct {
