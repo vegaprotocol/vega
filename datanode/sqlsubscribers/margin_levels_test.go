@@ -46,6 +46,7 @@ func TestMarginLevels_Push(t *testing.T) {
 		SearchLevel:            num.NewUint(1000),
 		InitialMargin:          num.NewUint(1000),
 		CollateralReleaseLevel: num.NewUint(1000),
+		OrderMargin:            num.UintZero(),
 		Party:                  "DEADBEEF",
 		MarketID:               "DEADBEEF",
 		Asset:                  "DEADBEEF",

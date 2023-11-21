@@ -149,10 +149,11 @@ type Collateral interface {
 	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
-	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint) ([]*types.LedgerMovement, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]*types.LedgerMovement, error)
 	ClearMarket(ctx context.Context, mktID, asset string, parties []string, keepInsurance bool) ([]*types.LedgerMovement, error)
 	HasGeneralAccount(party, asset string) bool
 	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
+	ClearPartyOrderMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
 	CanCoverBond(market, party, asset string, amount *num.Uint) bool
 	Hash() []byte
 	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
@@ -160,8 +161,8 @@ type Collateral interface {
 	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
-	PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error)
-	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error)
+	PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error)
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 	GetAssetQuantum(asset string) (num.Decimal, error)

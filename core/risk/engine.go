@@ -34,8 +34,10 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
 
 var (
-	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
-	ErrRiskFactorsNotAvailableForAsset   = errors.New("risk factors not available for the specified asset")
+	ErrInsufficientFundsForInitialMargin          = errors.New("insufficient funds for initial margin")
+	ErrInsufficientFundsForMaintenanceMargin      = errors.New("insufficient funds for maintenance margin")
+	ErrInsufficientFundsForMarginInGeneralAccount = errors.New("insufficient funds to cover margin in general margin")
+	ErrRiskFactorsNotAvailableForAsset            = errors.New("risk factors not available for the specified asset")
 )
 
 const RiskFactorStateVarName = "risk-factors"
@@ -384,9 +386,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
 // move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
-func (e *Engine) UpdateMarginsOnSettlement(
-	ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
-) []events.Risk {
+func (e *Engine) UpdateMarginsOnSettlement(ctx context.Context, evts []events.Margin, markPrice *num.Uint, increment num.Decimal) []events.Risk {
 	ret := make([]events.Risk, 0, len(evts))
 	now := e.timeSvc.GetTimeNow().UnixNano()
 
@@ -412,10 +412,13 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				SearchLevel:            num.UintZero(),
 				InitialMargin:          num.UintZero(),
 				CollateralReleaseLevel: num.UintZero(),
+				OrderMargin:            num.UintZero(),
 				Party:                  evt.Party(),
 				MarketID:               evt.MarketID(),
 				Asset:                  evt.Asset(),
 				Timestamp:              now,
+				MarginMode:             types.MarginModeCrossMargin,
+				MarginFactor:           num.DecimalZero(),
 			}
 			e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, margins))
 			ret = append(ret, &marginChange{
@@ -510,9 +513,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 // ExpectMargins is used in the case some parties are in a distressed positions
 // in this situation we will only check if the party margin is > to the maintenance margin.
-func (e *Engine) ExpectMargins(
-	evts []events.Margin, markPrice *num.Uint, increment num.Decimal,
-) (okMargins []events.Margin, distressedPositions []events.Margin) {
+func (e *Engine) ExpectMargins(evts []events.Margin, markPrice *num.Uint, increment num.Decimal) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	auction := e.as.InAuction() && !e.as.CanLeave()

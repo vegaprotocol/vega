@@ -81,6 +81,7 @@ type Margin interface {
 	MarketPosition
 	Asset() string
 	MarginBalance() *num.Uint
+	OrderMarginBalance() *num.Uint
 	GeneralBalance() *num.Uint
 	BondBalance() *num.Uint
 	MarketID() string

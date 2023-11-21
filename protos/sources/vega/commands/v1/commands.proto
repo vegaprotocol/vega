@@ -26,6 +26,8 @@ message BatchMarketInstructions {
   repeated StopOrdersCancellation stop_orders_cancellation = 4;
   // List of stop order submissions to be processed sequentially.
   repeated StopOrdersSubmission stop_orders_submission = 5;
+  // Update margin mode instruction
+  UpdateMarginMode update_margin_mode = 6;
 }
 
 // A command that allows a party to submit a stop order for a given market.

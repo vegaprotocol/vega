@@ -23,8 +23,10 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -50,12 +52,17 @@ func (v Validate) CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmissi
 	return commands.CheckStopOrdersSubmission(order)
 }
 
+func (v Validate) CheckUpdateMarginMode(order *commandspb.UpdateMarginMode) error {
+	return commands.CheckUpdateMarginMode(order)
+}
+
 type Validator interface {
 	CheckOrderCancellation(cancel *commandspb.OrderCancellation) error
 	CheckOrderAmendment(amend *commandspb.OrderAmendment) error
 	CheckOrderSubmission(order *commandspb.OrderSubmission) error
 	CheckStopOrdersCancellation(cancel *commandspb.StopOrdersCancellation) error
 	CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmission) error
+	CheckUpdateMarginMode(update *commandspb.UpdateMarginMode) error
 }
 
 type BMIProcessor struct {
@@ -128,6 +135,22 @@ func (p *BMIProcessor) ProcessBatch(
 	// but a stop order could also be invalid and have neither, so we pre-generate the maximum ids we might need
 	nIDs := len(batch.Submissions) + (2 * len(batch.StopOrdersSubmission))
 
+	if batch.UpdateMarginMode != nil {
+		err := p.validator.CheckUpdateMarginMode(batch.UpdateMarginMode)
+		if err == nil {
+			var marginFactor num.Decimal
+			if batch.UpdateMarginMode.MarginFactor == nil || len(*batch.UpdateMarginMode.MarginFactor) == 0 {
+				marginFactor = num.DecimalZero()
+			} else {
+				marginFactor = num.MustDecimalFromString(*batch.UpdateMarginMode.MarginFactor)
+			}
+			err = p.exec.UpdateMarginMode(ctx, party, batch.UpdateMarginMode.MarketId, vega.MarginMode(batch.UpdateMarginMode.Mode), marginFactor)
+		}
+		if err != nil {
+			errs.AddForProperty("updateMarginMode", err)
+			errCnt++
+		}
+	}
 	submissionsIDs := make([]string, 0, nIDs)
 	for i := 0; i < nIDs; i++ {
 		submissionsIDs = append(submissionsIDs, idgen.NextID())
@@ -261,7 +284,11 @@ func (p *BMIProcessor) ProcessBatch(
 		idx++
 	}
 
-	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
+	updateMarginCnt := 0
+	if batch.UpdateMarginMode != nil {
+		updateMarginCnt = 1
+	}
+	errs.isPartial = errCnt != updateMarginCnt+len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
 
 	return errs.ErrorOrNil()
 }

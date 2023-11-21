@@ -1063,7 +1063,10 @@ type ComplexityRoot struct {
 		CollateralReleaseLevel func(childComplexity int) int
 		InitialLevel           func(childComplexity int) int
 		MaintenanceLevel       func(childComplexity int) int
+		MarginFactor           func(childComplexity int) int
+		MarginMode             func(childComplexity int) int
 		Market                 func(childComplexity int) int
+		OrderMarginLevel       func(childComplexity int) int
 		Party                  func(childComplexity int) int
 		SearchLevel            func(childComplexity int) int
 		Timestamp              func(childComplexity int) int
@@ -1074,7 +1077,10 @@ type ComplexityRoot struct {
 		CollateralReleaseLevel func(childComplexity int) int
 		InitialLevel           func(childComplexity int) int
 		MaintenanceLevel       func(childComplexity int) int
+		MarginFactor           func(childComplexity int) int
+		MarginMode             func(childComplexity int) int
 		MarketId               func(childComplexity int) int
+		OrderMarginLevel       func(childComplexity int) int
 		PartyId                func(childComplexity int) int
 		SearchLevel            func(childComplexity int) int
 		Timestamp              func(childComplexity int) int
@@ -2870,11 +2876,17 @@ type MarginLevelsResolver interface {
 	MaintenanceLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
 
 	InitialLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
+	OrderMarginLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
+
+	MarginMode(ctx context.Context, obj *vega.MarginLevels) (MarginMode, error)
 }
 type MarginLevelsUpdateResolver interface {
 	MaintenanceLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
 
 	InitialLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
+	OrderMarginLevel(ctx context.Context, obj *vega.MarginLevels) (string, error)
+
+	MarginMode(ctx context.Context, obj *vega.MarginLevels) (MarginMode, error)
 }
 type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
@@ -6948,12 +6960,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarginLevels.MaintenanceLevel(childComplexity), true
 
+	case "MarginLevels.marginFactor":
+		if e.complexity.MarginLevels.MarginFactor == nil {
+			break
+		}
+
+		return e.complexity.MarginLevels.MarginFactor(childComplexity), true
+
+	case "MarginLevels.marginMode":
+		if e.complexity.MarginLevels.MarginMode == nil {
+			break
+		}
+
+		return e.complexity.MarginLevels.MarginMode(childComplexity), true
+
 	case "MarginLevels.market":
 		if e.complexity.MarginLevels.Market == nil {
 			break
 		}
 
 		return e.complexity.MarginLevels.Market(childComplexity), true
+
+	case "MarginLevels.orderMarginLevel":
+		if e.complexity.MarginLevels.OrderMarginLevel == nil {
+			break
+		}
+
+		return e.complexity.MarginLevels.OrderMarginLevel(childComplexity), true
 
 	case "MarginLevels.party":
 		if e.complexity.MarginLevels.Party == nil {
@@ -7004,12 +7037,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarginLevelsUpdate.MaintenanceLevel(childComplexity), true
 
+	case "MarginLevelsUpdate.marginFactor":
+		if e.complexity.MarginLevelsUpdate.MarginFactor == nil {
+			break
+		}
+
+		return e.complexity.MarginLevelsUpdate.MarginFactor(childComplexity), true
+
+	case "MarginLevelsUpdate.marginMode":
+		if e.complexity.MarginLevelsUpdate.MarginMode == nil {
+			break
+		}
+
+		return e.complexity.MarginLevelsUpdate.MarginMode(childComplexity), true
+
 	case "MarginLevelsUpdate.marketId":
 		if e.complexity.MarginLevelsUpdate.MarketId == nil {
 			break
 		}
 
 		return e.complexity.MarginLevelsUpdate.MarketId(childComplexity), true
+
+	case "MarginLevelsUpdate.orderMarginLevel":
+		if e.complexity.MarginLevelsUpdate.OrderMarginLevel == nil {
+			break
+		}
+
+		return e.complexity.MarginLevelsUpdate.OrderMarginLevel(childComplexity), true
 
 	case "MarginLevelsUpdate.partyId":
 		if e.complexity.MarginLevelsUpdate.PartyId == nil {
@@ -28149,10 +28203,16 @@ func (ec *executionContext) fieldContext_Entities_marginLevels(ctx context.Conte
 				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevels_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevels_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
 		},
@@ -40797,10 +40857,16 @@ func (ec *executionContext) fieldContext_MarginEdge_node(ctx context.Context, fi
 				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevels_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevels_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
 		},
@@ -40900,10 +40966,16 @@ func (ec *executionContext) fieldContext_MarginEstimate_worstCase(ctx context.Co
 				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevels_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevels_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
 		},
@@ -40962,10 +41034,16 @@ func (ec *executionContext) fieldContext_MarginEstimate_bestCase(ctx context.Con
 				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevels_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevels_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
 		},
@@ -41369,6 +41447,50 @@ func (ec *executionContext) fieldContext_MarginLevels_initialLevel(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _MarginLevels_orderMarginLevel(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarginLevels().OrderMarginLevel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevels_orderMarginLevel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevels",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarginLevels_collateralReleaseLevel(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 	if err != nil {
@@ -41452,6 +41574,94 @@ func (ec *executionContext) fieldContext_MarginLevels_timestamp(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarginLevels_marginMode(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevels_marginMode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarginLevels().MarginMode(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarginMode)
+	fc.Result = res
+	return ec.marshalNMarginMode2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐMarginMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevels_marginMode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevels",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MarginMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarginLevels_marginFactor(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevels_marginFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevels_marginFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevels",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -41721,6 +41931,50 @@ func (ec *executionContext) fieldContext_MarginLevelsUpdate_initialLevel(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _MarginLevelsUpdate_orderMarginLevel(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevelsUpdate_orderMarginLevel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarginLevelsUpdate().OrderMarginLevel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevelsUpdate_orderMarginLevel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevelsUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarginLevelsUpdate_collateralReleaseLevel(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarginLevelsUpdate_collateralReleaseLevel(ctx, field)
 	if err != nil {
@@ -41804,6 +42058,94 @@ func (ec *executionContext) fieldContext_MarginLevelsUpdate_timestamp(ctx contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarginLevelsUpdate_marginMode(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevelsUpdate_marginMode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarginLevelsUpdate().MarginMode(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(MarginMode)
+	fc.Result = res
+	return ec.marshalNMarginMode2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐMarginMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevelsUpdate_marginMode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevelsUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MarginMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarginLevelsUpdate_marginFactor(ctx context.Context, field graphql.CollectedField, obj *vega.MarginLevels) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarginLevelsUpdate_marginFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarginLevelsUpdate_marginFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarginLevelsUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -55765,10 +56107,16 @@ func (ec *executionContext) fieldContext_OrderEstimate_marginLevels(ctx context.
 				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevels_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevels_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevels_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
 		},
@@ -79647,10 +79995,16 @@ func (ec *executionContext) fieldContext_Subscription_margins(ctx context.Contex
 				return ec.fieldContext_MarginLevelsUpdate_searchLevel(ctx, field)
 			case "initialLevel":
 				return ec.fieldContext_MarginLevelsUpdate_initialLevel(ctx, field)
+			case "orderMarginLevel":
+				return ec.fieldContext_MarginLevelsUpdate_orderMarginLevel(ctx, field)
 			case "collateralReleaseLevel":
 				return ec.fieldContext_MarginLevelsUpdate_collateralReleaseLevel(ctx, field)
 			case "timestamp":
 				return ec.fieldContext_MarginLevelsUpdate_timestamp(ctx, field)
+			case "marginMode":
+				return ec.fieldContext_MarginLevelsUpdate_marginMode(ctx, field)
+			case "marginFactor":
+				return ec.fieldContext_MarginLevelsUpdate_marginFactor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarginLevelsUpdate", field.Name)
 		},
@@ -100929,6 +101283,26 @@ func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.Selection
 				return innerFunc(ctx)
 
 			})
+		case "orderMarginLevel":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevels_orderMarginLevel(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "collateralReleaseLevel":
 
 			out.Values[i] = ec._MarginLevels_collateralReleaseLevel(ctx, field, obj)
@@ -100939,6 +101313,33 @@ func (ec *executionContext) _MarginLevels(ctx context.Context, sel ast.Selection
 		case "timestamp":
 
 			out.Values[i] = ec._MarginLevels_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marginMode":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevels_marginMode(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marginFactor":
+
+			out.Values[i] = ec._MarginLevels_marginFactor(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -101032,6 +101433,26 @@ func (ec *executionContext) _MarginLevelsUpdate(ctx context.Context, sel ast.Sel
 				return innerFunc(ctx)
 
 			})
+		case "orderMarginLevel":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevelsUpdate_orderMarginLevel(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "collateralReleaseLevel":
 
 			out.Values[i] = ec._MarginLevelsUpdate_collateralReleaseLevel(ctx, field, obj)
@@ -101042,6 +101463,33 @@ func (ec *executionContext) _MarginLevelsUpdate(ctx context.Context, sel ast.Sel
 		case "timestamp":
 
 			out.Values[i] = ec._MarginLevelsUpdate_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "marginMode":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarginLevelsUpdate_marginMode(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "marginFactor":
+
+			out.Values[i] = ec._MarginLevelsUpdate_marginFactor(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -118545,6 +118993,16 @@ func (ec *executionContext) marshalNMarginLevelsUpdate2ᚖcodeᚗvegaprotocolᚗ
 		return graphql.Null
 	}
 	return ec._MarginLevelsUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMarginMode2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐMarginMode(ctx context.Context, v interface{}) (MarginMode, error) {
+	var res MarginMode
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMarginMode2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐMarginMode(ctx context.Context, sel ast.SelectionSet, v MarginMode) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNMarket2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx context.Context, sel ast.SelectionSet, v vega.Market) graphql.Marshaler {

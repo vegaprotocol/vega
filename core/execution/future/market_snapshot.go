@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"golang.org/x/exp/maps"
 )
@@ -192,6 +193,11 @@ func NewMarketFromSnapshot(
 	}
 	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
 
+	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
+	for _, pmf := range em.PartyMarginFactors {
+		partyMargin[pmf.Party], _ = num.DecimalFromString(pmf.MarginFactor)
+	}
+
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -235,6 +241,7 @@ func NewMarketFromSnapshot(
 		stopOrders:                    stopOrders,
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
+		partyMarginFactor:             partyMargin,
 		liquidation:                   le,
 	}
 
@@ -294,6 +301,16 @@ func (m *Market) GetState() *types.ExecMarket {
 	sort.Strings(parties)
 	assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
 
+	partyMarginFactors := make([]*snapshot.PartyMarginFactor, 0, len(m.partyMarginFactor))
+	for k, d := range m.partyMarginFactor {
+		if !d.IsZero() {
+			partyMarginFactors = append(partyMarginFactors, &snapshot.PartyMarginFactor{Party: k, MarginFactor: d.String()})
+		}
+	}
+	sort.Slice(partyMarginFactors, func(i, j int) bool {
+		return partyMarginFactors[i].Party < partyMarginFactors[j].Party
+	})
+
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -321,6 +338,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
 		FeesStats:                  m.fee.GetState(assetQuantum),
+		PartyMarginFactors:         partyMarginFactors,
 	}
 
 	return em

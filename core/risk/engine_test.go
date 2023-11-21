@@ -69,6 +69,7 @@ type testMargin struct {
 	transfer        *types.Transfer
 	asset           string
 	margin          uint64
+	orderMargin     uint64
 	general         uint64
 	market          string
 	buySumProduct   uint64
@@ -1944,6 +1945,10 @@ func (m testMargin) Asset() string {
 
 func (m testMargin) MarginBalance() *num.Uint {
 	return num.NewUint(m.margin)
+}
+
+func (m testMargin) OrderMarginBalance() *num.Uint {
+	return num.NewUint(m.orderMargin)
 }
 
 func (m testMargin) GeneralBalance() *num.Uint {

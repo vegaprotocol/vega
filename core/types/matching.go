@@ -903,6 +903,7 @@ const (
 	OrderErrorTooManyPeggedOrders                   OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
 	OrderErrorPostOnlyOrderWouldTrade               OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
 	OrderErrorReduceOnlyOrderWouldNotReducePosition OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
+	OrderErrorIsolatedMarginCheckFailed             OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
 )
 
 var (
@@ -940,5 +941,6 @@ func IsOrderError(err error) (OrderError, bool) {
 func IsStoppingOrder(o OrderError) bool {
 	return o == OrderErrorNonPersistentOrderOutOfPriceBounds ||
 		o == ErrPostOnlyOrderWouldTrade ||
-		o == ErrReduceOnlyOrderWouldNotReducePosition
+		o == ErrReduceOnlyOrderWouldNotReducePosition ||
+		o == OrderErrorIsolatedMarginCheckFailed
 }
