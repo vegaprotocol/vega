@@ -270,14 +270,15 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	e.trades = map[string][]*settlementTrade{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
 	var (
-		largestShare *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
-		zeroShares   = []*mtmTransfer{} // all zero shares for equal distribution if possible
-		zeroAmts     = false
-		mtmDec       = num.NewDecimalFromFloat(0)
-		lossTotal    = num.UintZero()
-		winTotal     = num.UintZero()
-		lossTotalDec = num.NewDecimalFromFloat(0)
-		winTotalDec  = num.NewDecimalFromFloat(0)
+		largestShare  *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
+		zeroShares    = []*mtmTransfer{} // all zero shares for equal distribution if possible
+		zeroAmts      = false
+		mtmDec        = num.NewDecimalFromFloat(0)
+		lossTotal     = num.UintZero()
+		winTotal      = num.UintZero()
+		lossTotalDec  = num.NewDecimalFromFloat(0)
+		winTotalDec   = num.NewDecimalFromFloat(0)
+		appendLargest = false
 	)
 
 	// network is treated as a regular party
@@ -348,6 +349,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 				price: markPrice.Clone(),
 			},
 		}
+		appendLargest = true
 	}
 	// no need for this lock anymore
 	e.mu.Unlock()
@@ -385,6 +387,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
+	if len(transfers) > 0 && appendLargest {
+		transfers = append(transfers, largestShare)
+	}
 	e.broker.SendBatch(evts)
 	timer.EngineTimeCounterAdd()
 	return transfers

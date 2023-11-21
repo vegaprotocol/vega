@@ -1370,9 +1370,7 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 		if transfer == nil {
 			// no error when getting MTM accounts, and no margin account == network position
 			// we are not interested in this event, continue here
-			if party != types.NetworkParty {
-				marginEvts = append(marginEvts, marginEvt)
-			}
+			marginEvts = append(marginEvts, marginEvt)
 			continue
 		}
 
@@ -2668,40 +2666,45 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Type:  p.Type,
 		}
 	)
-	if p.Type == types.TransferTypeMTMLoss ||
-		p.Type == types.TransferTypePerpFundingLoss ||
-		p.Type == types.TransferTypeWin ||
-		p.Type == types.TransferTypeMarginLow {
-		// we do not care about errors here as the bond account is not mandatory for the transfers
-		// a partry would have a bond account only if it was also a market maker
-		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeBond))
-	}
-	if settle != nil && mEvt.margin == nil && p.Owner != types.NetworkParty {
-		// the accounts for the party we need
-		// the accounts for the trader we need
-		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeMargin))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the party margin account",
-				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
-				logging.Error(err),
-			)
-			return nil, err
+	if p.Owner != types.NetworkParty {
+		if p.Type == types.TransferTypeMTMLoss ||
+			p.Type == types.TransferTypePerpFundingLoss ||
+			p.Type == types.TransferTypeWin ||
+			p.Type == types.TransferTypeMarginLow {
+			// we do not care about errors here as the bond account is not mandatory for the transfers
+			// a partry would have a bond account only if it was also a market maker
+			mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeBond))
 		}
-	}
-	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	if mEvt.general == nil && p.Owner != types.NetworkParty {
-		mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountTypeGeneral))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the party general account",
-				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
-				logging.Error(err),
-			)
-			return nil, err
+		if settle != nil && mEvt.margin == nil {
+			// the accounts for the party we need
+			// the accounts for the trader we need
+			mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeMargin))
+			if err != nil {
+				e.log.Error(
+					"Failed to get the party margin account",
+					logging.String("owner-id", p.Owner),
+					logging.String("market-id", settle.MarketID),
+					logging.Error(err),
+				)
+				return nil, err
+			}
 		}
+		// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+		if mEvt.general == nil {
+			mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountTypeGeneral))
+			if err != nil {
+				e.log.Error(
+					"Failed to get the party general account",
+					logging.String("owner-id", p.Owner),
+					logging.String("market-id", settle.MarketID),
+					logging.Error(err),
+				)
+				return nil, err
+			}
+		}
+	} else if mEvt.general == nil {
+		// for the event, the insurance pool acts as the margin/general account
+		mEvt.general = insurance
 	}
 	if p.Type == types.TransferTypeWithdraw || p.Type == types.TransferTypeDeposit {
 		// external account:

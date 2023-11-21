@@ -752,7 +752,7 @@ func testAddNewPartySelfTrade(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
-	assert.Len(t, noTransfers, 1)
+	assert.Len(t, noTransfers, 2)
 	assert.Nil(t, noTransfers[0].Transfer())
 }
 
@@ -796,7 +796,7 @@ func testAddNewParty(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
-	assert.Len(t, noTransfers, 2)
+	assert.Len(t, noTransfers, 3)
 	for _, v := range noTransfers {
 		assert.Nil(t, v.Transfer())
 	}
