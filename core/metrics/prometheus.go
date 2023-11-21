@@ -48,12 +48,14 @@ var (
 )
 
 var (
-	unconfirmedTxGauge prometheus.Gauge
-	engineTime         *prometheus.CounterVec
-	orderCounter       *prometheus.CounterVec
-	ethCallCounter     *prometheus.CounterVec
-	evtForwardCounter  *prometheus.CounterVec
-	orderGauge         *prometheus.GaugeVec
+	unconfirmedTxGauge                      prometheus.Gauge
+	engineTime                              *prometheus.CounterVec
+	orderCounter                            *prometheus.CounterVec
+	dataSourceEthVerifierOnGoingCallCounter *prometheus.CounterVec
+	ethCallCounter                          *prometheus.CounterVec
+	evtForwardCounter                       *prometheus.CounterVec
+	orderGauge                              *prometheus.GaugeVec
+	dataSourceEthVerifierOnGoingCallGauge   *prometheus.GaugeVec
 	// Call counters for each request type per API.
 	apiRequestCallCounter *prometheus.CounterVec
 	// Total time counters for each request type per API.
@@ -379,6 +381,22 @@ func setupMetrics() error {
 
 	h, err = addInstrument(
 		Counter,
+		"data_source_ethverifier_calls_total",
+		Namespace("vega"),
+		Vectors("spec"),
+		Help("Number of orders processed"),
+	)
+	if err != nil {
+		return err
+	}
+	dataC, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	dataSourceEthVerifierOnGoingCallCounter = dataC
+
+	h, err = addInstrument(
+		Counter,
 		"eth_calls_total",
 		Namespace("vega"),
 		Vectors("func", "asset", "respcode"),
@@ -425,6 +443,24 @@ func setupMetrics() error {
 		return err
 	}
 	orderGauge = g
+
+	// now add the orders gauge
+	h, err = addInstrument(
+		Gauge,
+		"data_source_ethverifier_calls_ongoing",
+		Namespace("vega"),
+		Vectors("spec"),
+		Help("Number of event being verified"),
+	)
+	if err != nil {
+		return err
+	}
+	dataD, err := h.GaugeVec()
+	if err != nil {
+		return err
+	}
+	dataSourceEthVerifierOnGoingCallGauge = dataD
+
 	// example usage of this simple gauge:
 	// e.orderGauge.WithLabelValues(mkt.Name).Add(float64(len(orders)))
 	// e.orderGauge.WithLabelValues(mkt.Name).Sub(float64(len(completedOrders)))
@@ -547,6 +583,14 @@ func OrderCounterInc(labelValues ...string) {
 	orderCounter.WithLabelValues(labelValues...).Inc()
 }
 
+// DataSourceEthVerifierCallCounterInc increments the order counter.
+func DataSourceEthVerifierCallCounterInc(labelValues ...string) {
+	if dataSourceEthVerifierOnGoingCallCounter == nil {
+		return
+	}
+	dataSourceEthVerifierOnGoingCallCounter.WithLabelValues(labelValues...).Inc()
+}
+
 // EthCallInc increments the eth call counter.
 func EthCallInc(labelValues ...string) {
 	if ethCallCounter == nil {
@@ -569,6 +613,21 @@ func OrderGaugeAdd(n int, labelValues ...string) {
 		return
 	}
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
+}
+
+// DataSourceEthVerifierCallGaugeAdd increments the eth verified calls
+func DataSourceEthVerifierCallGaugeAdd(n int, labelValues ...string) {
+	if dataSourceEthVerifierOnGoingCallGauge == nil {
+		return
+	}
+	dataSourceEthVerifierOnGoingCallGauge.WithLabelValues(labelValues...).Add(float64(n))
+}
+
+func DataSourceEthVerifierCallGaugeReset(labelValues ...string) {
+	if dataSourceEthVerifierOnGoingCallGauge == nil {
+		return
+	}
+	dataSourceEthVerifierOnGoingCallGauge.WithLabelValues(labelValues...).Set(0)
 }
 
 // UnconfirmedTxGaugeSet update the number of unconfirmed transactions.

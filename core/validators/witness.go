@@ -154,6 +154,7 @@ type Witness struct {
 
 	validatorVotesRequired num.Decimal
 	wss                    *witnessSnapshotState
+	defaultConfirmations   int64
 }
 
 func NewWitness(ctx context.Context, log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -174,6 +175,10 @@ func NewWitness(ctx context.Context, log *logging.Logger, cfg Config, top Valida
 			serialised: []byte{},
 		},
 	}
+}
+
+func (w *Witness) SetDefaultConfirmations(c uint64) {
+	w.defaultConfirmations = int64(c)
 }
 
 func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d num.Decimal) error {
@@ -229,6 +234,24 @@ func (w *Witness) StartCheck(
 	cb func(interface{}, bool),
 	checkUntil time.Time,
 ) error {
+	return w.startCheck(r, cb, checkUntil, w.defaultConfirmations)
+}
+
+func (w *Witness) StartCheckWithDelay(
+	r Resource,
+	cb func(interface{}, bool),
+	checkUntil time.Time,
+	initialDelay int64,
+) error {
+	return w.startCheck(r, cb, checkUntil, initialDelay)
+}
+
+func (w *Witness) startCheck(
+	r Resource,
+	cb func(interface{}, bool),
+	checkUntil time.Time,
+	initialDelay int64,
+) error {
 	id := r.GetID()
 	if _, ok := w.resources[id]; ok {
 		return ErrResourceDuplicate
@@ -254,7 +277,7 @@ func (w *Witness) StartCheck(
 	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
 	if w.top.IsValidator() {
-		go w.start(ctx, rs)
+		go w.start(ctx, rs, &initialDelay)
 	} else {
 		// if not a validator, we just jump to the state voteSent
 		// and will wait for all validator to approve basically.
@@ -283,13 +306,20 @@ func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
 func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackOff {
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxElapsedTime = maxElapsedTime
-	bo.InitialInterval = 1 * time.Second
+	bo.InitialInterval = 15 * time.Second
 	return backoff.WithContext(bo, ctx)
 }
 
-func (w *Witness) start(ctx context.Context, r *res) {
+func (w *Witness) start(ctx context.Context, r *res, initialDelay *int64) {
+	if initialDelay != nil {
+		t := time.NewTimer(time.Duration(*initialDelay) * w.cfg.ApproxEthereumBlockTime.Duration * time.Second)
+		<-t.C
+		t.Stop()
+	}
+
 	backff := newBackoff(ctx, r.checkUntil.Sub(w.now))
 	f := func() error {
+
 		w.log.Debug("Checking the resource",
 			logging.String("asset-source", r.res.GetID()),
 		)
