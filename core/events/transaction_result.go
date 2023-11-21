@@ -186,9 +186,12 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_UpdateMarginMode{
 			UpdateMarginMode: tv,
 		}
-
+	case *commandspb.JoinTeam:
+		t.evt.Transaction = &eventspb.TransactionResult_JoinTeam{
+			JoinTeam: tv,
+		}
 	default:
-		panic(fmt.Sprintf("unsupported command: %v", tv))
+		panic(fmt.Sprintf("unsupported command %T", tv))
 	}
 
 	return t
