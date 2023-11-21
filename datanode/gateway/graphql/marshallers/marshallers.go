@@ -159,6 +159,26 @@ func MarshalTransferType(t vega.TransferType) graphql.Marshaler {
 	})
 }
 
+func MarshalTransferScope(s v2.ListTransfersRequest_Scope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalTransferScope(v interface{}) (v2.ListTransfersRequest_Scope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return v2.ListTransfersRequest_SCOPE_UNSPECIFIED, fmt.Errorf("expected transfer scope to be a string")
+	}
+
+	t, ok := v2.ListGovernanceDataRequest_Type_value[s]
+	if !ok {
+		return v2.ListTransfersRequest_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert transfer scope from GraphQL to Proto: %v", s)
+	}
+
+	return v2.ListTransfersRequest_Scope(t), nil
+}
+
 func UnmarshalTransferType(v interface{}) (vega.TransferType, error) {
 	s, ok := v.(string)
 	if !ok {

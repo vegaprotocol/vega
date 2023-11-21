@@ -280,6 +280,14 @@ func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	return nil
 }
 
+type TransferScope int32
+
+const (
+	TransferScopeUnspecified TransferScope = 1
+	TransferScopeIndividual  TransferScope = 1
+	TransferScopeTeam        TransferScope = 2
+)
+
 type TransferStatus eventspb.Transfer_Status
 
 const (

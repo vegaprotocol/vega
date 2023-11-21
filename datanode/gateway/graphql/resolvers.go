@@ -780,10 +780,18 @@ func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFil
 	return resp.Positions, nil
 }
 
-func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
-	pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *eventspb.Transfer_Status,
+func (r *myQueryResolver) TransfersConnection(
+	ctx context.Context,
+	partyID *string,
+	direction *TransferDirection,
+	pagination *v2.Pagination,
+	isReward *bool,
+	fromEpoch *int,
+	toEpoch *int,
+	status *eventspb.Transfer_Status,
+	scope *v2.ListTransfersRequest_Scope,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
@@ -1909,8 +1917,9 @@ func (r *myPartyResolver) TransfersConnection(
 	isReward *bool,
 	fromEpoch, toEpoch *int,
 	status *eventspb.Transfer_Status,
+	scope *v2.ListTransfersRequest_Scope,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {

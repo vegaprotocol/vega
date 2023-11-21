@@ -44,7 +44,14 @@ func ThePartiesUpdateMarginMode(
 		if r.HasColumn("margin_factor") && marginMode == types.MarginModeIsolatedMargin {
 			factor = num.MustDecimalFromString(r.MustStr("margin_factor"))
 		}
-		execution.UpdateMarginMode(context.Background(), party, market, marginMode, factor)
+		err := execution.UpdateMarginMode(context.Background(), party, market, marginMode, factor)
+		if r.HasColumn("error") && (err == nil || err != nil && r.Str("error") != err.Error()) {
+			gotError := ""
+			if err != nil {
+				gotError = err.Error()
+			}
+			return fmt.Errorf("invalid error expected %v got %v", r.Str("error"), gotError)
+		}
 	}
 
 	return nil
@@ -57,5 +64,6 @@ func parseUpdateMarginModeTable(table *godog.Table) []RowWrapper {
 		"margin_mode",
 	}, []string{
 		"margin_factor",
+		"error",
 	})
 }

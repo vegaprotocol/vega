@@ -4265,7 +4265,7 @@ func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode 
 	}
 	// switching to isolated or changing the margin factor
 	if marginMode == types.MarginModeIsolatedMargin {
-		risk, err := m.risk.SwitchToIsolatedMargin(margins, marketObservablae, increment, m.matching.GetOrdersPerParty(party), m.getMarginFactor(party), auctionPrice)
+		risk, err := m.risk.SwitchToIsolatedMargin(margins, marketObservablae, increment, m.matching.GetOrdersPerParty(party), marginFactor, auctionPrice)
 		if err != nil {
 			return err
 		}
