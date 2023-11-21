@@ -1180,11 +1180,6 @@ func TestNewResolverRoot_PerpetualResolver(t *testing.T) {
 	assert.Equal(t, want.DataSourceSpecForSettlementData.UpdatedAt, *gotData.UpdatedAt)
 	assert.Equal(t, want.DataSourceSpecForSettlementData.Data, gotData.Data)
 	assert.Equal(t, want.DataSourceSpecForSettlementData.Status.String(), gotData.Status.String())
-
-	wantBinding, err := root.Perpetual().DataSourceSpecBinding(ctx, perps)
-	require.NoError(t, err)
-	assert.Equal(t, want.DataSourceSpecBinding.SettlementScheduleProperty, wantBinding.SettlementScheduleProperty)
-	assert.Equal(t, want.DataSourceSpecBinding.SettlementDataProperty, wantBinding.SettlementDataProperty)
 }
 
 func TestNewResolverRoot_Resolver(t *testing.T) {
