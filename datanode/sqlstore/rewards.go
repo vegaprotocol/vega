@@ -82,7 +82,7 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			vega_time,
 			seq_num,
 			locked_until_epoch_id,
-			game_id
+            game_id
 		)
 		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14);`,
 		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.QuantumAmount, r.PercentOfTotal, r.Timestamp, r.TxHash,
@@ -106,7 +106,7 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			epoch_id,
             team_id,
 			total_rewards
-		) values ($1, $2, $3, $4, $5, $6, $7);`,
+		) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
 			r.GameID,
 			r.PartyID,
 			r.AssetID,
@@ -142,8 +142,7 @@ type scannedRewards struct {
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetAll")()
 	scanned := []scannedRewards{}
-	err := pgxscan.Select(ctx, rs.Connection, &scanned, `
-		SELECT * from rewards;`)
+	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards;`)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +198,7 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 func (rs *Rewards) GetSummaries(ctx context.Context,
 	partyIDHex *string, assetIDHex *string,
 ) ([]entities.RewardSummary, error) {
-	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
+	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
 	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
@@ -219,7 +218,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 	pagination entities.CursorPagination,
 ) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards `
+	query := `SELECT epoch_id, asset_id, market_id, reward_type, SUM(amount) AS amount FROM rewards `
 	where, args, err := FilterRewardsQuery(filter)
 	if err != nil {
 		return nil, pageInfo, err
