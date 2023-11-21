@@ -340,6 +340,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.IcebergOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceSpecPerpetualBinding:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToPerpetualBinding
   DataSourceDefinition:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinition
   DataSourceDefinitionExternal:
@@ -460,6 +462,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketConfiguration_LogNormal
   UpdateFutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateFutureProduct
+  UpdatePerpetualProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdatePerpetualProduct
   TradeConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TradeConnection
   TradeEdge:

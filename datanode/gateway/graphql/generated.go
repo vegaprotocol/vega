@@ -3118,12 +3118,9 @@ type PerpetualResolver interface {
 
 	DataSourceSpecForSettlementSchedule(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpec, error)
 	DataSourceSpecForSettlementData(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpec, error)
-	DataSourceSpecBinding(ctx context.Context, obj *vega.Perpetual) (*DataSourceSpecPerpetualBinding, error)
 }
 type PerpetualProductResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.PerpetualProduct) (*vega.Asset, error)
-
-	DataSourceSpecBinding(ctx context.Context, obj *vega.PerpetualProduct) (*DataSourceSpecPerpetualBinding, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *vega.Position) (*vega.Market, error)
@@ -23956,7 +23953,7 @@ func (ec *executionContext) fieldContext_DataSourceSpecConfigurationTimeTrigger_
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecPerpetualBinding) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementDataProperty(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecToPerpetualBinding) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceSpecPerpetualBinding_settlementDataProperty(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -24000,7 +23997,7 @@ func (ec *executionContext) fieldContext_DataSourceSpecPerpetualBinding_settleme
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecPerpetualBinding) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecToPerpetualBinding) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -60757,7 +60754,7 @@ func (ec *executionContext) _Perpetual_dataSourceSpecBinding(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Perpetual().DataSourceSpecBinding(rctx, obj)
+		return obj.DataSourceSpecBinding, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -60769,17 +60766,17 @@ func (ec *executionContext) _Perpetual_dataSourceSpecBinding(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	res := resTmp.(*vega.DataSourceSpecToPerpetualBinding)
 	fc.Result = res
-	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceSpecToPerpetualBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Perpetual",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "settlementDataProperty":
@@ -61363,7 +61360,7 @@ func (ec *executionContext) _PerpetualProduct_dataSourceSpecBinding(ctx context.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PerpetualProduct().DataSourceSpecBinding(rctx, obj)
+		return obj.DataSourceSpecBinding, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -61375,17 +61372,17 @@ func (ec *executionContext) _PerpetualProduct_dataSourceSpecBinding(ctx context.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	res := resTmp.(*vega.DataSourceSpecToPerpetualBinding)
 	fc.Result = res
-	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceSpecToPerpetualBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PerpetualProduct",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "settlementDataProperty":
@@ -87653,7 +87650,7 @@ func (ec *executionContext) fieldContext_UpdateNetworkParameter_networkParameter
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_quoteName(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_quoteName(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87697,7 +87694,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_quoteName(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_marginFundingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_marginFundingFactor(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87741,7 +87738,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_marginFundingFac
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_interestRate(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_interestRate(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87785,7 +87782,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_interestRate(ctx
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_clampLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_clampLowerBound(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87829,7 +87826,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_clampLowerBound(
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_clampUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_clampUpperBound(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87873,7 +87870,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_clampUpperBound(
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementSchedule(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87921,7 +87918,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecFo
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecForSettlementData(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87969,7 +87966,7 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecFo
 	return fc, nil
 }
 
-func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField, obj *UpdatePerpetualProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdatePerpetualProduct_dataSourceSpecBinding(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -87995,9 +87992,9 @@ func (ec *executionContext) _UpdatePerpetualProduct_dataSourceSpecBinding(ctx co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceSpecPerpetualBinding)
+	res := resTmp.(*vega.DataSourceSpecToPerpetualBinding)
 	fc.Result = res
-	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx, field.Selections, res)
+	return ec.marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceSpecToPerpetualBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecBinding(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -93728,9 +93725,9 @@ func (ec *executionContext) _UpdateProductConfiguration(ctx context.Context, sel
 			return graphql.Null
 		}
 		return ec._UpdateFutureProduct(ctx, sel, obj)
-	case UpdatePerpetualProduct:
+	case vega.UpdatePerpetualProduct:
 		return ec._UpdatePerpetualProduct(ctx, sel, &obj)
-	case *UpdatePerpetualProduct:
+	case *vega.UpdatePerpetualProduct:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -95912,7 +95909,7 @@ func (ec *executionContext) _DataSourceSpecConfigurationTimeTrigger(ctx context.
 
 var dataSourceSpecPerpetualBindingImplementors = []string{"DataSourceSpecPerpetualBinding"}
 
-func (ec *executionContext) _DataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, obj *DataSourceSpecPerpetualBinding) graphql.Marshaler {
+func (ec *executionContext) _DataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceSpecToPerpetualBinding) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceSpecPerpetualBindingImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -106818,25 +106815,12 @@ func (ec *executionContext) _Perpetual(ctx context.Context, sel ast.SelectionSet
 
 			})
 		case "dataSourceSpecBinding":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Perpetual_dataSourceSpecBinding(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Perpetual_dataSourceSpecBinding(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -106965,25 +106949,12 @@ func (ec *executionContext) _PerpetualProduct(ctx context.Context, sel ast.Selec
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "dataSourceSpecBinding":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._PerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -115324,7 +115295,7 @@ func (ec *executionContext) _UpdateNetworkParameter(ctx context.Context, sel ast
 
 var updatePerpetualProductImplementors = []string{"UpdatePerpetualProduct", "UpdateProductConfiguration"}
 
-func (ec *executionContext) _UpdatePerpetualProduct(ctx context.Context, sel ast.SelectionSet, obj *UpdatePerpetualProduct) graphql.Marshaler {
+func (ec *executionContext) _UpdatePerpetualProduct(ctx context.Context, sel ast.SelectionSet, obj *vega.UpdatePerpetualProduct) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, updatePerpetualProductImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -117282,11 +117253,7 @@ func (ec *executionContext) marshalNDataSourceSpec2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._DataSourceSpec(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDataSourceSpecPerpetualBinding2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, v DataSourceSpecPerpetualBinding) graphql.Marshaler {
-	return ec._DataSourceSpecPerpetualBinding(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceSpecPerpetualBinding(ctx context.Context, sel ast.SelectionSet, v *DataSourceSpecPerpetualBinding) graphql.Marshaler {
+func (ec *executionContext) marshalNDataSourceSpecPerpetualBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceSpecToPerpetualBinding(ctx context.Context, sel ast.SelectionSet, v *vega.DataSourceSpecToPerpetualBinding) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
