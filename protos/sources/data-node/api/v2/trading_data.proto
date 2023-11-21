@@ -1738,6 +1738,17 @@ message ListTransfersRequest {
   optional uint64 to_epoch = 6;
   // Status to filter on.
   optional vega.events.v1.Transfer.Status status = 7;
+  // Dispatch strategy's scope to filter for.
+  optional Scope scope = 8;
+
+  // Defines the types of a dispatch strategy's scope the API can filter on.
+  enum Scope {
+    SCOPE_UNSPECIFIED = 0;
+    // Matches transfers that have dispatch strategy scope of individual set.
+    SCOPE_INDIVIDUAL = 1;
+    // Matches transfers that have dispatch strategy scope of team set.
+    SCOPE_TEAM = 2;
+  }
 }
 
 // Response that is received when listing  transfers
