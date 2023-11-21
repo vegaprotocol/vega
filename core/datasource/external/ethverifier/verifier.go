@@ -25,20 +25,19 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/errors"
-	"code.vegaprotocol.io/vega/core/events"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
-
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier Witness
 type Witness interface {
-	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	StartCheckWithDelay(validators.Resource, func(interface{}, bool), time.Time, int64) error
 	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
@@ -122,6 +121,7 @@ func (p pendingCallEvent) GetID() string { return p.callEvent.Hash() }
 func (p pendingCallEvent) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeEthereumContractCallResult
 }
+
 func (p *pendingCallEvent) Check(ctx context.Context) error { return p.check(ctx) }
 
 func New(
@@ -181,23 +181,32 @@ func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractC
 		check:     func(ctx context.Context) error { return s.checkCallEventResult(ctx, callEvent) },
 	}
 
+	confirmations, err := s.ethEngine.GetRequiredConfirmations(callEvent.SpecId)
+	if err != nil {
+		return err
+	}
+
 	s.pendingCallEvents = append(s.pendingCallEvents, pending)
 
 	s.log.Info("ethereum call event received, starting validation",
 		logging.String("call-event", fmt.Sprintf("%+v", callEvent)))
 
 	// Timeout for the check set to 1 day, to allow for validator outage scenarios
-	err := s.witness.StartCheck(
-		pending, s.onCallEventVerified, s.timeService.GetTimeNow().Add(24*time.Hour))
+	err = s.witness.StartCheckWithDelay(
+		pending, s.onCallEventVerified, s.timeService.GetTimeNow().Add(30*time.Minute), int64(confirmations))
 	if err != nil {
 		s.log.Error("could not start witness routine", logging.String("id", pending.GetID()))
 		s.removePendingCallEvent(pending.GetID())
 	}
 
+	metrics.DataSourceEthVerifierCallGaugeAdd(1, callEvent.SpecId)
+
 	return err
 }
 
 func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.ContractCallEvent) error {
+	metrics.DataSourceEthVerifierCallCounterInc(callEvent.SpecId)
+
 	// Ensure that the ethtime on the call event matches the block number on the eth chain
 	// (submitting call events with malicious times could subvert, e.g. TWAPs on perp markets)
 	checkedTime, err := s.ethEngine.GetEthTime(ctx, callEvent.BlockHeight)
@@ -210,6 +219,7 @@ func (s *Verifier) checkCallEventResult(ctx context.Context, callEvent ethcall.C
 			callEvent.BlockHeight, callEvent.BlockTime, checkedTime)
 	}
 
+	metrics.DataSourceEthVerifierCallCounterInc(callEvent.SpecId)
 	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
 	if callEvent.Error != nil {
 		if err != nil {
@@ -273,6 +283,8 @@ func (s *Verifier) onCallEventVerified(event interface{}, ok bool) {
 
 	if err := s.removePendingCallEvent(pv.GetID()); err != nil {
 		s.log.Error("could not remove pending call event", logging.Error(err))
+	} else {
+		metrics.DataSourceEthVerifierCallGaugeAdd(-1, pv.callEvent.SpecId)
 	}
 
 	if ok {

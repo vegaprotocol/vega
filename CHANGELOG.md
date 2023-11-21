@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.73.6
+
+### 🐛 Fixes
+
+- Generate GraphQL binding properly.
+- [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
+
 ## 0.73.5
 
 ### 🐛 Fixes

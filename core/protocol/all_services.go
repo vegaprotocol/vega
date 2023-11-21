@@ -811,6 +811,22 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				// nothing to do if not a validator
+				if !svcs.conf.HaveEthClient() {
+					return nil
+				}
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		},
+		{
 			Param:   netparams.LimitsProposeMarketEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeMarketEnabledFromUpdate,
 		},
