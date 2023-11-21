@@ -172,18 +172,6 @@ type DataSourceSpec struct {
 	Status DataSourceSpecStatus `json:"status"`
 }
 
-// Bindings to describe which property of the data source data is to be used as settlement data
-// and which is to be used as the trading termination trigger.
-type DataSourceSpecPerpetualBinding struct {
-	// Name of the property in the source data that should be used as settlement data.
-	// For example, if it is set to "prices.BTC.value", then the perpetual market will use the value of this property
-	// as settlement data.
-	SettlementDataProperty string `json:"settlementDataProperty"`
-	// Name of the property in the source data that should be used as settlement schedule.
-	// For example, if it is set to "prices.BTC.timestamp", then the perpetual market will use the value of this property
-	SettlementScheduleProperty string `json:"settlementScheduleProperty"`
-}
-
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
@@ -834,27 +822,6 @@ type UpdateInstrumentConfiguration struct {
 	Code    string                     `json:"code"`
 	Product UpdateProductConfiguration `json:"product"`
 }
-
-type UpdatePerpetualProduct struct {
-	// Quote name of the instrument
-	QuoteName string `json:"quoteName"`
-	// Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]
-	MarginFundingFactor string `json:"marginFundingFactor"`
-	// Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]
-	InterestRate string `json:"interestRate"`
-	// Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
-	ClampLowerBound string `json:"clampLowerBound"`
-	// Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
-	ClampUpperBound string `json:"clampUpperBound"`
-	// Data source specification describing the data source for settlement schedule
-	DataSourceSpecForSettlementSchedule *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementSchedule"`
-	// Data source specification describing the data source for settlement
-	DataSourceSpecForSettlementData *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementData"`
-	// Binding between the data source spec and the settlement data
-	DataSourceSpecBinding *DataSourceSpecPerpetualBinding `json:"dataSourceSpecBinding"`
-}
-
-func (UpdatePerpetualProduct) IsUpdateProductConfiguration() {}
 
 // Event types
 type BusEventType string
