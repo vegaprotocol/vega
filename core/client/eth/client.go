@@ -67,7 +67,7 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
 
-	return &Client{ETHClient: &ethClientWrapper{ethClient}, cfg: cfg}, nil
+	return &Client{ETHClient: newEthClientWrapper(ethClient), cfg: cfg}, nil
 }
 
 func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {

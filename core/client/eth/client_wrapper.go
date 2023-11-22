@@ -3,11 +3,14 @@ package eth
 import (
 	"context"
 	"math/big"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
+
 	"github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 )
 
 // ETHClient ...
@@ -49,6 +52,18 @@ type ETHClient interface { //revive:disable:exported
 
 type ethClientWrapper struct {
 	clt ETHClient
+
+	headerByNumberCache *expirable.LRU[string, *ethtypes.Header]
+}
+
+func newEthClientWrapper(clt ETHClient) *ethClientWrapper {
+	return &ethClientWrapper{
+		clt: clt,
+		// arbitrary size of 100 blocks, kept for at most 10 minutes,
+		// let see later how to make this less hardcoded
+		headerByNumberCache: expirable.NewLRU[string, *ethtypes.Header](100, nil, 10*time.Minute),
+	}
+
 }
 
 func (c *ethClientWrapper) ChainID(ctx context.Context) (*big.Int, error) {
@@ -66,8 +81,22 @@ func (c *ethClientWrapper) BlockByHash(ctx context.Context, hash ethcommon.Hash)
 }
 
 func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (*ethtypes.Header, error) {
+
+	// first check the cache
+	if header, ok := c.headerByNumberCache.Get(number.String()); ok {
+		return ethtypes.CopyHeader(header), nil
+	}
+
+	// cache miss, so let's inc the counter, and call the rpc.
 	metrics.EthereumRPCCallCounterInc("header_by_number")
-	return c.clt.HeaderByNumber(ctx, number)
+	header, err := c.clt.HeaderByNumber(ctx, number)
+	if err != nil {
+		return nil, err
+	}
+
+	c.headerByNumberCache.Add(number.String(), ethtypes.CopyHeader(header))
+
+	return header, nil
 }
 
 func (c *ethClientWrapper) BlockByNumber(ctx context.Context, number *big.Int) (*ethtypes.Block, error) {
