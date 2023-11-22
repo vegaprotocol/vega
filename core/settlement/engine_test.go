@@ -752,8 +752,297 @@ func testAddNewPartySelfTrade(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
-	assert.Len(t, noTransfers, 2)
+	assert.Len(t, noTransfers, 1)
 	assert.Nil(t, noTransfers[0].Transfer())
+}
+
+func TestNetworkPartyCloseout(t *testing.T) {
+	engine := getTestEngine(t)
+	currentMP := num.NewUint(1000)
+	// network trade
+	nTrade := &types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: types.NetworkParty,
+		Price:  currentMP.Clone(),
+		Size:   10,
+	}
+	nPosition := testPos{
+		party: types.NetworkParty,
+		size:  10,
+		price: currentMP.Clone(),
+	}
+	sellPrice := num.NewUint(990)
+	// now trade with health party, at some different price
+	// trigger a loss for the network.
+	cTrade := &types.Trade{
+		Buyer:  "party1",
+		Seller: types.NetworkParty,
+		Size:   2,
+		Price:  sellPrice.Clone(),
+	}
+	init := []events.MarketPosition{
+		nPosition,
+		testPos{
+			party: "party1",
+			size:  0,
+			price: currentMP.Clone(),
+		},
+	}
+	positions := []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  8,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party1",
+			size:  2,
+			price: currentMP.Clone(),
+		},
+	}
+	engine.Update(init)
+	engine.AddTrade(nTrade)
+	engine.AddTrade(cTrade)
+	transfers := engine.SettleMTM(context.Background(), currentMP, positions)
+	assert.NotEmpty(t, transfers)
+	assert.Len(t, transfers, 2)
+}
+
+func TestNetworkCloseoutZero(t *testing.T) {
+	engine := getTestEngine(t)
+	currentMP := num.NewUint(1000)
+	// network trade
+	nTrade := &types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: types.NetworkParty,
+		Price:  currentMP.Clone(),
+		Size:   10,
+	}
+	nPosition := testPos{
+		party: types.NetworkParty,
+		size:  10,
+		price: currentMP.Clone(),
+	}
+	sellPrice := num.NewUint(999)
+	// now trade with health party, at some different price
+	// trigger a loss for the network.
+	cTrades := []*types.Trade{
+		{
+			Buyer:  "party1",
+			Seller: types.NetworkParty,
+			Size:   1,
+			Price:  sellPrice.Clone(),
+		},
+		{
+			Buyer:  "party2",
+			Seller: types.NetworkParty,
+			Size:   1,
+			Price:  sellPrice.Clone(),
+		},
+	}
+	init := []events.MarketPosition{
+		nPosition,
+		testPos{
+			party: "party1",
+			size:  0,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party2",
+			size:  0,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -5,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: currentMP.Clone(),
+		},
+	}
+	positions := []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  8,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party1",
+			size:  1,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party2",
+			size:  1,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -5,
+			price: currentMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: currentMP.Clone(),
+		},
+	}
+	engine.Update(init)
+	engine.AddTrade(nTrade)
+	for _, cTrade := range cTrades {
+		engine.AddTrade(cTrade)
+	}
+	transfers := engine.SettleMTM(context.Background(), currentMP, positions)
+	assert.NotEmpty(t, transfers)
+	// now that the network has an established long position, make short positions close out and mark to market
+	// party 3 closes their position, lowering the mark price
+	newMP := num.NewUint(990)
+	trade := &types.Trade{
+		Buyer:  "party3",
+		Seller: "party1",
+		Price:  newMP,
+		Size:   1,
+	}
+	positions = []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  8,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party1",
+			size:  0,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party2",
+			size:  1,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -4,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: newMP.Clone(),
+		},
+	}
+	engine.AddTrade(trade)
+	transfers = engine.SettleMTM(context.Background(), newMP, positions)
+	assert.NotEmpty(t, transfers)
+	// now make it look like party2 got distressed because of this MTM settlement
+	nTrade = &types.Trade{
+		Price:  newMP.Clone(),
+		Size:   1,
+		Buyer:  types.NetworkParty,
+		Seller: types.NetworkParty,
+	}
+	positions = []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  9,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -4,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: newMP.Clone(),
+		},
+	}
+	engine.AddTrade(nTrade)
+	transfers = engine.SettleMTM(context.Background(), newMP, positions) // amounts are zero here (was trade only)
+	assert.NotEmpty(t, transfers)
+	newMP = num.NewUint(995)
+	positions = []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  9,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -4,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: newMP.Clone(),
+		},
+	}
+	transfers = engine.SettleMTM(context.Background(), newMP.Clone(), positions)
+	assert.NotEmpty(t, transfers)
+	// now the same, but network loses
+	newMP = num.NewUint(990)
+	positions = []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  9,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  -4,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  -5,
+			price: newMP.Clone(),
+		},
+	}
+	transfers = engine.SettleMTM(context.Background(), newMP.Clone(), positions)
+	assert.NotEmpty(t, transfers)
+	// assume no trades occurred, but the mark price has changed (shouldn't happen, but this could end up with a situation where network profits without trading)
+	// network disposes of its position and profits
+	disposePrice := num.NewUint(1010)
+	trades := []*types.Trade{
+		{
+			Seller: types.NetworkParty,
+			Buyer:  "party3",
+			Price:  disposePrice.Clone(),
+			Size:   4,
+		},
+		{
+			Seller: types.NetworkParty,
+			Buyer:  "party4",
+			Price:  disposePrice.Clone(),
+			Size:   5,
+		},
+	}
+	positions = []events.MarketPosition{
+		testPos{
+			party: types.NetworkParty,
+			size:  0,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party3",
+			size:  0,
+			price: newMP.Clone(),
+		},
+		testPos{
+			party: "party4",
+			size:  0,
+			price: newMP.Clone(),
+		},
+	}
+	for _, tr := range trades {
+		engine.AddTrade(tr)
+	}
+	transfers = engine.SettleMTM(context.Background(), num.NewUint(1000), positions)
+	assert.NotEmpty(t, transfers)
 }
 
 func testAddNewParty(t *testing.T) {
@@ -796,7 +1085,7 @@ func testAddNewParty(t *testing.T) {
 	engine.Update(init)
 	engine.AddTrade(trade)
 	noTransfers := engine.SettleMTM(context.Background(), markPrice, positions)
-	assert.Len(t, noTransfers, 3)
+	assert.Len(t, noTransfers, 2)
 	for _, v := range noTransfers {
 		assert.Nil(t, v.Transfer())
 	}

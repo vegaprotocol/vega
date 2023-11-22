@@ -387,10 +387,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
-	if len(transfers) > 0 && appendLargest {
+	if len(transfers) > 0 && appendLargest && largestShare.transfer != nil {
 		transfers = append(transfers, largestShare)
 	}
-	e.broker.SendBatch(evts)
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
 	timer.EngineTimeCounterAdd()
 	return transfers
 }
