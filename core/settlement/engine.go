@@ -152,7 +152,7 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 // each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
-	defer d.mu.Unlock()
+	defer e.mu.Unlock()
 	// network registers a wash trade to update its position
 	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
 		e.addNetworkTrade(trade)
@@ -198,32 +198,19 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 }
 
 func (e *Engine) addNetworkTrade(trade *types.Trade) {
-	var size, tSize int64
-	if trade.Aggressor == types.SideBuy {
-		if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
-			e.trades[trade.Buyer] = []*settlementTrade{}
-			// check if the buyer already has a known position
-			if pos, ok := e.settledPosition[trade.Buyer]; ok {
-				size = pos
-			}
-		} else {
-			size = cd[len(cd)-1].newSize
-		}
-		tSize = int64(trade.Size)
-	} else {
-		if cd, ok := e.trades[trade.Seller]; !ok || len(cd) == 0 {
-			e.trades[trade.Seller] = []*settlementTrade{}
-			// check if seller has a known position
-			if pos, ok := e.settledPosition[trade.Seller]; ok {
-				size = pos
-			}
-		} else {
-			size = cd[len(cd)-1].newSize
-		}
-		tSize = -int64(trade.Size)
+	tSize := int64(trade.Size)
+	// sell wash trade, the settled position of the network decreases.
+	if trade.Aggressor == types.SideSell {
+		tSize *= -1
 	}
-	size += tSize
-	e.settledPosition[types.NetworkParty] = size
+	e.settledPosition[types.NetworkParty] += tSize
+	trades := e.trades[types.NetworkParty]
+	// all trades should be based on the new settled position size
+	for i, t := range trades {
+		t.newSize += tSize
+		trades[i] = t
+	}
+	e.trades[types.NetworkParty] = trades
 }
 
 func (e *Engine) HasTraded() bool {
