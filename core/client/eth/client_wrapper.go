@@ -3,14 +3,13 @@ package eth
 import (
 	"context"
 	"math/big"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
 
 	"github.com/ethereum/go-ethereum"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/hashicorp/golang-lru/v2/expirable"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 // ETHClient ...
@@ -53,17 +52,19 @@ type ETHClient interface { //revive:disable:exported
 type ethClientWrapper struct {
 	clt ETHClient
 
-	headerByNumberCache *expirable.LRU[string, *ethtypes.Header]
+	headerByNumberCache *lru.Cache[string, *ethtypes.Header]
 }
 
-func newEthClientWrapper(clt ETHClient) *ethClientWrapper {
-	return &ethClientWrapper{
-		clt: clt,
-		// arbitrary size of 100 blocks, kept for at most 10 minutes,
-		// let see later how to make this less hardcoded
-		headerByNumberCache: expirable.NewLRU[string, *ethtypes.Header](100, nil, 10*time.Minute),
+func newEthClientWrapper(clt ETHClient) (*ethClientWrapper, error) {
+	cache, err := lru.New[string, *ethtypes.Header](1000)
+	if err != nil {
+		return nil, err
 	}
 
+	return &ethClientWrapper{
+		clt:                 clt,
+		headerByNumberCache: cache,
+	}, nil
 }
 
 func (c *ethClientWrapper) ChainID(ctx context.Context) (*big.Int, error) {
