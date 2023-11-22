@@ -62,10 +62,39 @@ type Transfer struct {
 }
 
 type TransferFees struct {
-	TransferID TransferID
-	EpochSeq   uint64
-	Amount     decimal.Decimal
-	VegaTime   time.Time
+	TransferID      TransferID
+	EpochSeq        uint64
+	Amount          decimal.Decimal
+	DiscountApplied decimal.Decimal
+	VegaTime        time.Time
+}
+
+type TransferFeesDiscount struct {
+	PartyID  PartyID
+	AssetID  AssetID
+	Amount   decimal.Decimal
+	EpochSeq uint64
+	VegaTime time.Time
+}
+
+func (f *TransferFeesDiscount) ToProto() *eventspb.TransferFeesDiscount {
+	return &eventspb.TransferFeesDiscount{
+		Party:  f.PartyID.String(),
+		Asset:  f.AssetID.String(),
+		Amount: f.Amount.String(),
+		Epoch:  f.EpochSeq,
+	}
+}
+
+func TransferFeesDiscountFromProto(f *eventspb.TransferFeesDiscount, vegaTime time.Time) *TransferFeesDiscount {
+	amt, _ := decimal.NewFromString(f.Amount)
+	return &TransferFeesDiscount{
+		PartyID:  PartyID(f.Party),
+		AssetID:  AssetID(f.Asset),
+		EpochSeq: f.Epoch,
+		Amount:   amt,
+		VegaTime: vegaTime,
+	}
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -130,19 +159,22 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 
 func (f *TransferFees) ToProto() *eventspb.TransferFees {
 	return &eventspb.TransferFees{
-		TransferId: f.TransferID.String(),
-		Amount:     f.Amount.String(),
-		Epoch:      f.EpochSeq,
+		TransferId:      f.TransferID.String(),
+		Amount:          f.Amount.String(),
+		Epoch:           f.EpochSeq,
+		DiscountApplied: f.DiscountApplied.String(),
 	}
 }
 
 func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
 	amt, _ := decimal.NewFromString(f.Amount)
+	discount, _ := decimal.NewFromString(f.DiscountApplied)
 	return &TransferFees{
-		TransferID: TransferID(f.TransferId),
-		EpochSeq:   f.Epoch,
-		Amount:     amt,
-		VegaTime:   vegaTime,
+		TransferID:      TransferID(f.TransferId),
+		EpochSeq:        f.Epoch,
+		Amount:          amt,
+		DiscountApplied: discount,
+		VegaTime:        vegaTime,
 	}
 }
 

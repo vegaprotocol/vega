@@ -875,6 +875,20 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransactionResults"};
   }
 
+  // Estimate transfer fee costs
+  //
+  // Estimate transfer fee costs with potential discount applied
+  rpc EstimateTransferFee(EstimateTransferFeeRequest) returns (EstimateTransferFeeResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
+  }
+
+  // Available transfer fee discount
+  //
+  // Returns available per party per asset transfer discount
+  rpc GetTotalTransferFeeDiscount(GetTotalTransferFeeDiscountRequest) returns (GetTotalTransferFeeDiscountResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -4320,4 +4334,40 @@ message ObserveTransactionResultsRequest {
 message ObserveTransactionResultsResponse {
   // List of 0 or more transaction results.
   repeated vega.events.v1.TransactionResult transaction_results = 1;
+}
+
+// Request an estimation of transfer fee and discount
+message EstimateTransferFeeRequest {
+  // Sender's ID.
+  string from_account = 1;
+  // Type of account sent from.
+  vega.AccountType from_account_type = 2;
+  // Receiver's ID.
+  string to_account = 3;
+  // Amount to be transferred.
+  string amount = 4;
+  // Asset ID for the asset associated with the transaction.
+  string asset_id = 5;
+}
+
+// Results of estimation of transfer fee and the fee discount
+message EstimateTransferFeeResponse {
+  // Estimated fee for the transfer.
+  string fee = 1;
+  // Discount applied to the fee.
+  string discount = 2;
+}
+
+// Get total transfer fee discount available
+message GetTotalTransferFeeDiscountRequest {
+  // ID of party eligible for the discount.
+  string party_id = 1;
+  // ID of asset to associated with the discount.
+  string asset_id = 5;
+}
+
+// Returns total transfer fee discount available
+message GetTotalTransferFeeDiscountResponse {
+  // Total per party per asset discount available.
+  string total_discount = 2;
 }

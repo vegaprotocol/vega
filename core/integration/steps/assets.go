@@ -28,6 +28,33 @@ import (
 	"github.com/cucumber/godog"
 )
 
+func UpdateAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engine) error {
+	rows := parseAssetsTable(tbl)
+	for _, row := range rows {
+		aRow := assetRow{row: row}
+		aid := row.MustStr("id")
+		asset.Register(
+			aid,
+			row.MustU64("decimal places"),
+			aRow.maybeQuantum(),
+		)
+		err := col.PropagateAssetUpdate(context.Background(), types.Asset{
+			ID: aid,
+			Details: &types.AssetDetails{
+				Quantum: aRow.quantum(),
+				Symbol:  aid,
+			},
+		})
+		if err != nil {
+			if err == collateral.ErrAssetHasNotBeenEnabled {
+				return fmt.Errorf("asset %q has not been enabled", aid)
+			}
+			return fmt.Errorf("couldn't enable asset %q: %w", aid, err)
+		}
+	}
+	return nil
+}
+
 func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engine) error {
 	rows := parseAssetsTable(tbl)
 	for _, row := range rows {
@@ -49,7 +76,7 @@ func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Eng
 			if err == collateral.ErrAssetAlreadyEnabled {
 				return fmt.Errorf("asset %s was already enabled, perhaps when defining markets, order of steps should be swapped", aid)
 			}
-			return fmt.Errorf("couldn't enable asset(%s): %v", aid, err)
+			return fmt.Errorf("couldn't enable asset %q: %w", aid, err)
 		}
 	}
 	return nil

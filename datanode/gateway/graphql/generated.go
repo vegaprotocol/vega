@@ -648,6 +648,11 @@ type ComplexityRoot struct {
 		ReceiverAddress func(childComplexity int) int
 	}
 
+	EstimatedTransferFee struct {
+		Discount func(childComplexity int) int
+		Fee      func(childComplexity int) int
+	}
+
 	EthCallSpec struct {
 		Abi                   func(childComplexity int) int
 		Address               func(childComplexity int) int
@@ -1905,6 +1910,7 @@ type ComplexityRoot struct {
 		EstimateFees                       func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EstimatePosition                   func(childComplexity int, marketID string, openVolume string, orders []*OrderInfo, collateralAvailable *string, scaleLiquidationPriceToMarketDecimals *bool) int
+		EstimateTransferFee                func(childComplexity int, fromAccount string, fromAccountType vega.AccountType, toAccount string, amount string, assetID string) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
 		FeesStats                          func(childComplexity int, marketID *string, assetID *string, epoch *int, partyID *string) int
 		FeesStatsForParty                  func(childComplexity int, partyID string, assetID *string, fromEpoch *int, toEpoch *int) int
@@ -1951,6 +1957,7 @@ type ComplexityRoot struct {
 		TeamRefereeHistory                 func(childComplexity int, referee string, pagination *v2.Pagination) int
 		TeamReferees                       func(childComplexity int, teamID string, pagination *v2.Pagination) int
 		Teams                              func(childComplexity int, teamID *string, partyID *string, pagination *v2.Pagination) int
+		TotalTransferFeeDiscount           func(childComplexity int, partyID string, assetID string) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		Transfer                           func(childComplexity int, id string) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *v1.Transfer_Status, scope *v2.ListTransfersRequest_Scope) int
@@ -2352,6 +2359,10 @@ type ComplexityRoot struct {
 
 	TimeUpdate struct {
 		Timestamp func(childComplexity int) int
+	}
+
+	TotalTransferFeeDiscount struct {
+		TotalDiscount func(childComplexity int) int
 	}
 
 	TradableInstrument struct {
@@ -3247,6 +3258,8 @@ type QueryResolver interface {
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 	PaidLiquidityFees(ctx context.Context, marketID *string, assetID *string, epoch *int, partyIDs []string) (*v2.PaidLiquidityFeesConnection, error)
+	TotalTransferFeeDiscount(ctx context.Context, partyID string, assetID string) (*v2.GetTotalTransferFeeDiscountResponse, error)
+	EstimateTransferFee(ctx context.Context, fromAccount string, fromAccountType vega.AccountType, toAccount string, amount string, assetID string) (*v2.EstimateTransferFeeResponse, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -5390,6 +5403,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Erc20WithdrawalDetails.ReceiverAddress(childComplexity), true
+
+	case "EstimatedTransferFee.discount":
+		if e.complexity.EstimatedTransferFee.Discount == nil {
+			break
+		}
+
+		return e.complexity.EstimatedTransferFee.Discount(childComplexity), true
+
+	case "EstimatedTransferFee.fee":
+		if e.complexity.EstimatedTransferFee.Fee == nil {
+			break
+		}
+
+		return e.complexity.EstimatedTransferFee.Fee(childComplexity), true
 
 	case "EthCallSpec.abi":
 		if e.complexity.EthCallSpec.Abi == nil {
@@ -10969,6 +10996,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EstimatePosition(childComplexity, args["marketId"].(string), args["openVolume"].(string), args["orders"].([]*OrderInfo), args["collateralAvailable"].(*string), args["scaleLiquidationPriceToMarketDecimals"].(*bool)), true
 
+	case "Query.estimateTransferFee":
+		if e.complexity.Query.EstimateTransferFee == nil {
+			break
+		}
+
+		args, err := ec.field_Query_estimateTransferFee_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EstimateTransferFee(childComplexity, args["fromAccount"].(string), args["fromAccountType"].(vega.AccountType), args["toAccount"].(string), args["amount"].(string), args["assetId"].(string)), true
+
 	case "Query.ethereumKeyRotations":
 		if e.complexity.Query.EthereumKeyRotations == nil {
 			break
@@ -11490,6 +11529,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Teams(childComplexity, args["teamId"].(*string), args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.totalTransferFeeDiscount":
+		if e.complexity.Query.TotalTransferFeeDiscount == nil {
+			break
+		}
+
+		args, err := ec.field_Query_totalTransferFeeDiscount_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TotalTransferFeeDiscount(childComplexity, args["partyId"].(string), args["assetId"].(string)), true
 
 	case "Query.trades":
 		if e.complexity.Query.Trades == nil {
@@ -13189,6 +13240,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TimeUpdate.Timestamp(childComplexity), true
+
+	case "TotalTransferFeeDiscount.totalDiscount":
+		if e.complexity.TotalTransferFeeDiscount.TotalDiscount == nil {
+			break
+		}
+
+		return e.complexity.TotalTransferFeeDiscount.TotalDiscount(childComplexity), true
 
 	case "TradableInstrument.instrument":
 		if e.complexity.TradableInstrument.Instrument == nil {
@@ -15880,6 +15938,57 @@ func (ec *executionContext) field_Query_estimatePosition_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_estimateTransferFee_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["fromAccount"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromAccount"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromAccount"] = arg0
+	var arg1 vega.AccountType
+	if tmp, ok := rawArgs["fromAccountType"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fromAccountType"))
+		arg1, err = ec.unmarshalNAccountType2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccountType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fromAccountType"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["toAccount"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toAccount"))
+		arg2, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toAccount"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["amount"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("amount"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["amount"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg4
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -16963,6 +17072,30 @@ func (ec *executionContext) field_Query_teams_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["pagination"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_totalTransferFeeDiscount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["assetId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["assetId"] = arg1
 	return args, nil
 }
 
@@ -30547,6 +30680,94 @@ func (ec *executionContext) _Erc20WithdrawalDetails_receiverAddress(ctx context.
 func (ec *executionContext) fieldContext_Erc20WithdrawalDetails_receiverAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Erc20WithdrawalDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EstimatedTransferFee_fee(ctx context.Context, field graphql.CollectedField, obj *v2.EstimateTransferFeeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EstimatedTransferFee_fee(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EstimatedTransferFee_fee(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EstimatedTransferFee",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EstimatedTransferFee_discount(ctx context.Context, field graphql.CollectedField, obj *v2.EstimateTransferFeeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EstimatedTransferFee_discount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Discount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EstimatedTransferFee_discount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EstimatedTransferFee",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -71031,6 +71252,120 @@ func (ec *executionContext) fieldContext_Query_paidLiquidityFees(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_totalTransferFeeDiscount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_totalTransferFeeDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TotalTransferFeeDiscount(rctx, fc.Args["partyId"].(string), fc.Args["assetId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.GetTotalTransferFeeDiscountResponse)
+	fc.Result = res
+	return ec.marshalOTotalTransferFeeDiscount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGetTotalTransferFeeDiscountResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_totalTransferFeeDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "totalDiscount":
+				return ec.fieldContext_TotalTransferFeeDiscount_totalDiscount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TotalTransferFeeDiscount", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_totalTransferFeeDiscount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_estimateTransferFee(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_estimateTransferFee(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EstimateTransferFee(rctx, fc.Args["fromAccount"].(string), fc.Args["fromAccountType"].(vega.AccountType), fc.Args["toAccount"].(string), fc.Args["amount"].(string), fc.Args["assetId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.EstimateTransferFeeResponse)
+	fc.Result = res
+	return ec.marshalOEstimatedTransferFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEstimateTransferFeeResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_estimateTransferFee(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fee":
+				return ec.fieldContext_EstimatedTransferFee_fee(ctx, field)
+			case "discount":
+				return ec.fieldContext_EstimatedTransferFee_discount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EstimatedTransferFee", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_estimateTransferFee_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -82404,6 +82739,50 @@ func (ec *executionContext) fieldContext_TimeUpdate_timestamp(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TotalTransferFeeDiscount_totalDiscount(ctx context.Context, field graphql.CollectedField, obj *v2.GetTotalTransferFeeDiscountResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TotalTransferFeeDiscount_totalDiscount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalDiscount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TotalTransferFeeDiscount_totalDiscount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TotalTransferFeeDiscount",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -97586,6 +97965,41 @@ func (ec *executionContext) _Erc20WithdrawalDetails(ctx context.Context, sel ast
 	return out
 }
 
+var estimatedTransferFeeImplementors = []string{"EstimatedTransferFee"}
+
+func (ec *executionContext) _EstimatedTransferFee(ctx context.Context, sel ast.SelectionSet, obj *v2.EstimateTransferFeeResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, estimatedTransferFeeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EstimatedTransferFee")
+		case "fee":
+
+			out.Values[i] = ec._EstimatedTransferFee_fee(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "discount":
+
+			out.Values[i] = ec._EstimatedTransferFee_discount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var ethCallSpecImplementors = []string{"EthCallSpec", "ExternalDataSourceKind"}
 
 func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionSet, obj *vega.EthCallSpec) graphql.Marshaler {
@@ -110167,6 +110581,46 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "totalTransferFeeDiscount":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_totalTransferFeeDiscount(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "estimateTransferFee":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_estimateTransferFee(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -113607,6 +114061,34 @@ func (ec *executionContext) _TimeUpdate(ctx context.Context, sel ast.SelectionSe
 		case "timestamp":
 
 			out.Values[i] = ec._TimeUpdate_timestamp(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var totalTransferFeeDiscountImplementors = []string{"TotalTransferFeeDiscount"}
+
+func (ec *executionContext) _TotalTransferFeeDiscount(ctx context.Context, sel ast.SelectionSet, obj *v2.GetTotalTransferFeeDiscountResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, totalTransferFeeDiscountImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TotalTransferFeeDiscount")
+		case "totalDiscount":
+
+			out.Values[i] = ec._TotalTransferFeeDiscount_totalDiscount(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -122493,6 +122975,13 @@ func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotoc
 	return ec._Erc20WithdrawalApproval(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOEstimatedTransferFee2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEstimateTransferFeeResponse(ctx context.Context, sel ast.SelectionSet, v *v2.EstimateTransferFeeResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EstimatedTransferFee(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOEthereumKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v []*v1.EthereumKeyRotation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -126541,6 +127030,13 @@ func (ec *executionContext) marshalOTimestamp2ᚖint64(ctx context.Context, sel 
 	}
 	res := marshallers.MarshalTimestamp(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOTotalTransferFeeDiscount2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐGetTotalTransferFeeDiscountResponse(ctx context.Context, sel ast.SelectionSet, v *v2.GetTotalTransferFeeDiscountResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TotalTransferFeeDiscount(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx context.Context, sel ast.SelectionSet, v []*vega.Trade) graphql.Marshaler {

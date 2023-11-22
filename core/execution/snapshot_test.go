@@ -611,6 +611,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	eng := execution.NewEngine(
 		log,
@@ -624,6 +625,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		banking,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -678,6 +680,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	eng := execution.NewEngine(
 		log,
@@ -691,6 +694,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		banking,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())

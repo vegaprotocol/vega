@@ -289,15 +289,21 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
+	svcs.banking = banking.New(
+		svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker,
+		svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
+		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
+	svcs.epochService.NotifyOnEpoch(svcs.banking.OnEpoch, svcs.banking.OnEpochRestore)
+
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -768,6 +774,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.TransferFeeFactor,
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeMaxQuantumAmount,
+			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeDiscountDecayFraction,
+			Watcher: svcs.banking.OnTransferFeeDiscountDecayFractionUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: svcs.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
 		},
 		{
 			Param:   netparams.GovernanceTransferMaxFraction,

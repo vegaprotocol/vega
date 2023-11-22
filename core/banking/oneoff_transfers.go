@@ -92,7 +92,7 @@ func (e *Engine) oneOffTransfer(
 	}
 
 	tresps, err := e.processTransfer(
-		ctx, transfer.From, transfer.To, transfer.Asset, "", transfer.FromAccountType,
+		ctx, a, transfer.From, transfer.To, "", transfer.FromAccountType,
 		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, e.currentEpoch, transfer,
 	)
 	if err != nil {

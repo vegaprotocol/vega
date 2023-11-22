@@ -622,6 +622,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
 		return steps.RegisterAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
 	})
+	s.Step(`^the following assets are updated:$`, func(table *godog.Table) error {
+		return steps.UpdateAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
+	})
 	s.Step(`^set assets to strict$`, func() error {
 		execsetup.assetsEngine.SetStrict()
 		return nil

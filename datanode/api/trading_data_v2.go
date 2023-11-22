@@ -29,7 +29,9 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -4780,4 +4782,78 @@ func (t *TradingDataServiceV2) ObserveTransactionResults(req *v2.ObserveTransact
 		}
 		return nil
 	})
+}
+
+func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.EstimateTransferFeeRequest) (
+	*v2.EstimateTransferFeeResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateTransferFee")()
+
+	transferFeeMaxQuantumAmountParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeMaxQuantumAmount)
+	if err != nil {
+		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeMaxQuantumAmount))
+	}
+
+	transferFeeMaxQuantumAmount, _ := num.DecimalFromString(transferFeeMaxQuantumAmountParam.Value)
+
+	transferFeeFactorParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeFactor)
+	if err != nil {
+		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeFactor))
+	}
+
+	transferFeeFactor, _ := num.DecimalFromString(transferFeeFactorParam.Value)
+
+	asset, err := t.assetService.GetByID(ctx, req.AssetId)
+	if err != nil {
+		return nil, formatE(ErrAssetServiceGetByID, err)
+	}
+
+	amount := num.MustUintFromString(req.Amount, 10)
+
+	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
+		ctx,
+		entities.PartyID(req.FromAccount),
+		entities.AssetID(req.AssetId),
+	)
+	if err != nil {
+		return nil, formatE(ErrTransferServiceGetFeeDiscount, err)
+	}
+
+	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
+
+	fee, discount := banking.EstimateFee(
+		asset.Quantum,
+		transferFeeMaxQuantumAmount,
+		transferFeeFactor,
+		amount,
+		accumulatedDiscount,
+		req.FromAccount,
+		req.FromAccountType,
+		req.ToAccount,
+	)
+
+	return &v2.EstimateTransferFeeResponse{
+		Fee:      fee.String(),
+		Discount: discount.String(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetTotalTransferFeeDiscount(ctx context.Context, req *v2.GetTotalTransferFeeDiscountRequest) (
+	*v2.GetTotalTransferFeeDiscountResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTotalTransferFeeDiscount")()
+
+	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
+		ctx,
+		entities.PartyID(req.PartyId),
+		entities.AssetID(req.AssetId),
+	)
+	if err != nil {
+		return nil, formatE(ErrTransferServiceGetFeeDiscount, err)
+	}
+
+	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
+	return &v2.GetTotalTransferFeeDiscountResponse{
+		TotalDiscount: accumulatedDiscount.String(),
+	}, nil
 }

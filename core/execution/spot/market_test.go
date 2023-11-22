@@ -50,6 +50,7 @@ type testMarket struct {
 	collateralEngine *collateral.Engine
 	broker           *bmocks.MockBroker
 	timeService      *mocks.MockTimeService
+	banking          *mocks.MockBanking
 	now              time.Time
 	baseAsset        string
 	quoteAsset       string
@@ -220,8 +221,9 @@ func newTestMarket(
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
-	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
 
 	tm := &testMarket{
 		market:           market,
@@ -229,6 +231,7 @@ func newTestMarket(
 		ctrl:             ctrl,
 		broker:           broker,
 		timeService:      ts,
+		banking:          banking,
 		baseAsset:        base,
 		quoteAsset:       quote,
 		mas:              as,

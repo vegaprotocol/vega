@@ -65,6 +65,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -236,6 +237,7 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
 		liquidation:                   le,
+		banking:                       banking,
 	}
 
 	for _, p := range em.Parties {

@@ -208,15 +208,16 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	execBanking := emocks.NewMockBanking(ctrl)
 
-	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount)
+	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset, referralDiscountReward, volumeDiscount, execBanking)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
 	witness := mocks.NewMockWitness(ctrl)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
-	banking := mocks.NewMockBanking(ctrl)
 
-	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp, banking)
+	govBanking := mocks.NewMockBanking(ctrl)
+	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp, govBanking)
 	valFake := fakeCPComponent{
 		name: types.ValidatorsCheckpoint,
 	}
