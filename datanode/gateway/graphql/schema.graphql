@@ -5189,6 +5189,8 @@ type Reward {
   epoch: Epoch!
   "Amount received for this reward"
   amount: String!
+  "Amount paid as a reward, expressed in asset's quantum unit"
+  quantumAmount: String!
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
   "RFC3339Nano time when the rewards were received"
