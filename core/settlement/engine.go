@@ -381,6 +381,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 				zeroShares = append(zeroShares, largestShare)
 			}
 			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
+			zeroShares = append(zeroShares, largestShare)
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
 			if winTotalDec.LessThan(lossTotalDec) && winTotalDec.LessThan(lossTotalDec.Sub(zRound)) {
