@@ -20,15 +20,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -44,16 +42,6 @@ var ContractHashes = map[string]string{
 	"vesting":    "5278802577f4aca315b9524bfa78790f8f0fae08939ec58bc9e8f0ea40123b09",
 	"collateral": "1cd7f315188baf26f70c77a764df361c5d01bd365b109b96033b8755ee2b2750",
 	"multisig":   "5b7070e6159628455b38f5796e8d0dc08185aaaa1fb6073767c88552d396c6c2",
-}
-
-// ETHClient ...
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/client/eth ETHClient
-type ETHClient interface { //revive:disable:exported
-	bind.ContractBackend
-	ethereum.ChainReader
-	ChainID(context.Context) (*big.Int, error)
-	NetworkID(context.Context) (*big.Int, error)
 }
 
 type Client struct {
@@ -79,7 +67,7 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
 
-	return &Client{ETHClient: ethClient, cfg: cfg}, nil
+	return &Client{ETHClient: &ethClientWrapper{ethClient}, cfg: cfg}, nil
 }
 
 func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
