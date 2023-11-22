@@ -152,6 +152,12 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 // each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
+	defer e.mu.Unlock()
+	// network registers a wash trade to update its position
+	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
+		e.addNetworkTrade(trade)
+		return
+	}
 	var buyerSize, sellerSize int64
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
@@ -189,7 +195,22 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		size:        -size,
 		newSize:     sellerSize - size,
 	})
-	e.mu.Unlock()
+}
+
+func (e *Engine) addNetworkTrade(trade *types.Trade) {
+	tSize := int64(trade.Size)
+	// sell wash trade, the settled position of the network decreases.
+	if trade.Aggressor == types.SideSell {
+		tSize *= -1
+	}
+	e.settledPosition[types.NetworkParty] += tSize
+	trades := e.trades[types.NetworkParty]
+	// all trades should be based on the new settled position size
+	for i, t := range trades {
+		t.newSize += tSize
+		trades[i] = t
+	}
+	e.trades[types.NetworkParty] = trades
 }
 
 func (e *Engine) HasTraded() bool {
@@ -356,6 +377,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
+			if appendLargest {
+				zeroShares = append(zeroShares, largestShare)
+			}
 			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
@@ -387,10 +411,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
-	if len(transfers) > 0 && appendLargest {
+	if len(transfers) > 0 && appendLargest && largestShare.transfer != nil {
 		transfers = append(transfers, largestShare)
 	}
-	e.broker.SendBatch(evts)
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
 	timer.EngineTimeCounterAdd()
 	return transfers
 }
