@@ -226,6 +226,17 @@ message ProposalSubmission {
   vega.ProposalRationale rationale = 3;
 }
 
+// Command that allows a token holder to submit a batch governance proposal that can be voted on by any other token holders, and eventually enacted on the Vega network.
+// For example this command can be used to propose a new market and a network paramater change with it.
+message BatchProposalSubmission {
+  // Arbitrary human-readable reference identifying the proposal.
+  string reference = 1;
+  // Proposal terms containing the type and details of the proposal, as well as time spans for voting and enactment.
+  vega.ProposalTerms terms = 2;
+  // Rationale behind a proposal.
+  vega.ProposalRationale rationale = 3;
+}
+
 // Command that allows a token holder to vote for or against an active governance proposal.
 message VoteSubmission {
   // Submit vote for the specified proposal ID.

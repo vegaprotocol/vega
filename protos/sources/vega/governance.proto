@@ -352,6 +352,52 @@ message ProposalTerms {
   }
 }
 
+// Terms change for a batch governance proposal on Vega
+message BatchProposalTermsChange {
+  // Timestamp as Unix time in seconds when a proposal term gets enacted if proposal passed,
+  // constrained by `minEnact` and `maxEnact` network parameters.
+  int64 enactment_timestamp = 1;
+  // Change being proposed.
+  oneof change {
+    // Proposal change for modifying an existing futures market on Vega.
+    UpdateMarket update_market = 101;
+    // Proposal change for creating new futures market on Vega.
+    NewMarket new_market = 102;
+    // Proposal change for updating Vega network parameters.
+    UpdateNetworkParameter update_network_parameter = 103;
+    // Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system,
+    // and can be used to gauge community sentiment.
+    NewFreeform new_freeform = 104;
+    // Proposal change for updating an asset.
+    UpdateAsset update_asset = 105;
+    // Proposal change for creating new spot market on Vega.
+    NewSpotMarket new_spot_market = 106;
+    // Proposal change for modifying an existing spot market on Vega.
+    UpdateSpotMarket update_spot_market = 107;
+    // Proposal change for a governance transfer.
+    NewTransfer new_transfer = 108;
+    // Cancel a governance transfer.
+    CancelTransfer cancel_transfer = 109;
+    // Proposal change for updating the state of a market.
+    UpdateMarketState update_market_state = 110;
+    // Proposal change for updating the referral program.
+    UpdateReferralProgram update_referral_program = 111;
+    // Proposal change for updating the volume discount program.
+    UpdateVolumeDiscountProgram update_volume_discount_program = 112;
+  }
+}
+
+// Terms for a batch governance proposal on Vega
+message BatchProposalTerms {
+  // Timestamp as Unix time in seconds when voting closes for this proposal,
+  // constrained by `minClose` and `maxClose` network parameters.
+  int64 closing_timestamp = 1;
+  // Validation timestamp as Unix time in seconds.
+  int64 validation_timestamp = 2;
+  // Changes being proposed.
+  repeated BatchProposalTermsChange changes = 3;
+}
+
 // Rationale behind a proposal.
 message ProposalRationale {
   reserved 2, 3;
