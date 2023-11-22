@@ -152,6 +152,12 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 // each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
+	// network registers a wash trade to update its position
+	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
+		e.addNetworkTrade(trade)
+		e.mu.Unlock()
+		return
+	}
 	var buyerSize, sellerSize int64
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
@@ -190,6 +196,35 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		newSize:     sellerSize - size,
 	})
 	e.mu.Unlock()
+}
+
+func (e *Engine) addNetworkTrade(trade *types.Trade) {
+	var size, tSize int64
+	if trade.Aggressor == types.SideBuy {
+		if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
+			e.trades[trade.Buyer] = []*settlementTrade{}
+			// check if the buyer already has a known position
+			if pos, ok := e.settledPosition[trade.Buyer]; ok {
+				size = pos
+			}
+		} else {
+			size = cd[len(cd)-1].newSize
+		}
+		tSize = int64(trade.Size)
+	} else {
+		if cd, ok := e.trades[trade.Seller]; !ok || len(cd) == 0 {
+			e.trades[trade.Seller] = []*settlementTrade{}
+			// check if seller has a known position
+			if pos, ok := e.settledPosition[trade.Seller]; ok {
+				size = pos
+			}
+		} else {
+			size = cd[len(cd)-1].newSize
+		}
+		tSize = -int64(trade.Size)
+	}
+	size += tSize
+	e.settledPosition[types.NetworkParty] = size
 }
 
 func (e *Engine) HasTraded() bool {
