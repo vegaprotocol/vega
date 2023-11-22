@@ -152,10 +152,10 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 // each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
+	defer d.mu.Unlock()
 	// network registers a wash trade to update its position
 	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
 		e.addNetworkTrade(trade)
-		e.mu.Unlock()
 		return
 	}
 	var buyerSize, sellerSize int64
@@ -195,7 +195,6 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		size:        -size,
 		newSize:     sellerSize - size,
 	})
-	e.mu.Unlock()
 }
 
 func (e *Engine) addNetworkTrade(trade *types.Trade) {
