@@ -1,3 +1,4 @@
+---
 name: 'Sign windows binary'
 description: 'Sign binary using EV certificate'
 
