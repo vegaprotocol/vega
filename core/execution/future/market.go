@@ -159,6 +159,8 @@ type Market struct {
 
 	// party ID to isolated margin factor
 	partyMarginFactor map[string]num.Decimal
+	// Store information about all orders used as a reference in live stop orders
+	stopOrderReferences map[string]*types.Order
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -329,6 +331,7 @@ func NewMarket(
 		partyMarginFactor:             map[string]num.Decimal{},
 		liquidation:                   le,
 		banking:                       banking,
+		stopOrderReferences:           map[string]*types.Order{},
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -1788,7 +1791,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
 		}
-		stopOrderReferences[fallsBelow.SizeOverrideValue.OrderID] = order
+		m.stopOrderReferences[fallsBelow.SizeOverrideValue.OrderID] = order
 	}
 	if risesAbove != nil && risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
 		order, _, err := m.getOrderByID(risesAbove.SizeOverrideValue.OrderID)
@@ -1796,7 +1799,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
 		}
-		stopOrderReferences[risesAbove.SizeOverrideValue.OrderID] = order
+		m.stopOrderReferences[risesAbove.SizeOverrideValue.OrderID] = order
 	}
 
 	// if we are in an auction
@@ -1984,22 +1987,18 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	}
 
 	// If any of the affected orders are referenced from a stop order, update their state
-	m.updateStopOrderReferences(ctx, allUpdatedOrders)
+	m.updateStopOrderReferences(allUpdatedOrders)
 
 	return conf, nil
 }
 
-var stopOrderReferences map[string]*types.Order = map[string]*types.Order{}
-
-func (m *Market) updateStopOrderReferences(ctx context.Context, orders []*types.Order) error {
+func (m *Market) updateStopOrderReferences(orders []*types.Order) {
 	for _, order := range orders {
-		_, ok := stopOrderReferences[order.ID]
+		_, ok := m.stopOrderReferences[order.ID]
 		if ok {
-			stopOrderReferences[order.ID] = order
+			m.stopOrderReferences[order.ID] = order
 		}
 	}
-
-	return nil
 }
 
 func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
@@ -3714,7 +3713,7 @@ func (m *Market) submitStopOrders(
 			// If we have an order size override, handle that here
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
 				// Update the order size to match that of the referenced order
-				order, ok := stopOrderReferences[v.SizeOverrideValue.OrderID]
+				order, ok := m.stopOrderReferences[v.SizeOverrideValue.OrderID]
 				if !ok {
 					m.log.Error("could not get order to override size with",
 						logging.StopOrderSubmission(v))
