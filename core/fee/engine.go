@@ -103,6 +103,10 @@ func (e *Engine) GetState(assetQuantum num.Decimal) *eventspb.FeesStats {
 	return e.feesStats.ToProto(e.asset, assetQuantum)
 }
 
+func (e *Engine) TotalTradingFeesPerParty() map[string]*num.Uint {
+	return e.feesStats.TotalTradingFeesPerParty()
+}
+
 func (e *Engine) GetFeesStatsOnEpochEnd(assetQuantum num.Decimal) (FeesStats *eventspb.FeesStats) {
 	FeesStats, e.feesStats = e.feesStats.ToProto(e.asset, assetQuantum), NewFeesStats()
 	return
@@ -179,6 +183,9 @@ func (e *Engine) CalculateForContinuousMode(
 
 		e.feesStats.RegisterMakerFee(maker, taker, fee.MakerFee)
 
+		totalTradingFees := num.UintZero().AddSum(fee.MakerFee, fee.InfrastructureFee, fee.LiquidityFee)
+		e.feesStats.RegisterTradingFees(maker, taker, totalTradingFees)
+
 		switch trade.Aggressor {
 		case types.SideBuy:
 			trade.BuyerFee = fee
@@ -190,7 +197,7 @@ func (e *Engine) CalculateForContinuousMode(
 			maker = trade.Buyer
 		}
 
-		totalFeeAmount.AddSum(fee.InfrastructureFee, fee.LiquidityFee, fee.MakerFee)
+		totalFeeAmount.AddSum(totalTradingFees)
 		totalInfrastructureFeeAmount.AddSum(fee.InfrastructureFee)
 		totalLiquidityFeeAmount.AddSum(fee.LiquidityFee)
 		// create a transfer for the aggressor

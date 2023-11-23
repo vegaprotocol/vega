@@ -101,6 +101,7 @@ type Market struct {
 
 	// deps engines
 	collateral common.Collateral
+	banking    common.Banking
 
 	broker common.Broker
 	closed bool
@@ -169,6 +170,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -267,6 +269,7 @@ func NewMarket(
 		maxStopOrdersPerParties:       num.UintZero(),
 		stopOrders:                    stoporders.New(log),
 		expiringStopOrders:            common.NewExpiringOrders(),
+		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
@@ -2894,6 +2897,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		feesStats := m.fee.GetFeesStatsOnEpochEnd(quoteAssetQuantum)
 		feesStats.EpochSeq = epoch.Seq
 		feesStats.Market = m.GetID()
+
+		m.banking.RegisterTradingFees(ctx, feesStats.Asset, m.fee.TotalTradingFeesPerParty())
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 }

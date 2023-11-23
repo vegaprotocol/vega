@@ -65,6 +65,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -190,7 +191,7 @@ func NewMarketFromSnapshot(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity)
+	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
 
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
@@ -236,6 +237,7 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
 		liquidation:                   le,
+		banking:                       banking,
 	}
 
 	for _, p := range em.Parties {
@@ -264,12 +266,10 @@ func NewMarketFromSnapshot(
 	if mkt.State == types.MarketStateTradingTerminated {
 		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
 	}
-	if mkt.State == types.MarketStateSettled {
-		market.tradableInstrument.Instrument.Unsubscribe(ctx)
-	}
 
 	if em.Closed {
 		market.closed = true
+		market.tradableInstrument.Instrument.Unsubscribe(ctx)
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
 	return market, nil

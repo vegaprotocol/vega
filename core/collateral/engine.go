@@ -1370,9 +1370,7 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 		if transfer == nil {
 			// no error when getting MTM accounts, and no margin account == network position
 			// we are not interested in this event, continue here
-			if party != types.NetworkParty {
-				marginEvts = append(marginEvts, marginEvt)
-			}
+			marginEvts = append(marginEvts, marginEvt)
 			continue
 		}
 
@@ -1598,6 +1596,19 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 
 // GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
+	if pos.Party() == types.NetworkParty {
+		ins, err := e.GetMarketInsurancePoolAccount(marketID, asset)
+		if err != nil {
+			return nil, ErrAccountDoesNotExist
+		}
+		return marginUpdate{
+			MarketPosition:  pos,
+			margin:          ins,
+			asset:           asset,
+			marketID:        marketID,
+			marginShortFall: num.UintZero(),
+		}, nil
+	}
 	genID := e.accountID(noMarket, pos.Party(), asset, types.AccountTypeGeneral)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeMargin)
 	bondID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeBond)
@@ -1644,6 +1655,10 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 	)
 	// create "fake" settle account for market ID
 	for _, update := range updates {
+		if update.Party() == types.NetworkParty {
+			// network party is ignored here
+			continue
+		}
 		transfer := update.Transfer()
 		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 		mevt := &marginUpdate{
@@ -1951,6 +1966,10 @@ func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error) {
+	// network party is ignored for margin stuff.
+	if update.Party() == types.NetworkParty {
+		return nil, nil, nil
+	}
 	// create "fake" settle account for market ID
 	settle := &types.Account{
 		MarketID: marketID,
@@ -2647,40 +2666,45 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 			Type:  p.Type,
 		}
 	)
-	if p.Type == types.TransferTypeMTMLoss ||
-		p.Type == types.TransferTypePerpFundingLoss ||
-		p.Type == types.TransferTypeWin ||
-		p.Type == types.TransferTypeMarginLow {
-		// we do not care about errors here as the bond account is not mandatory for the transfers
-		// a partry would have a bond account only if it was also a market maker
-		mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeBond))
-	}
-	if settle != nil && mEvt.margin == nil && p.Owner != types.NetworkParty {
-		// the accounts for the party we need
-		// the accounts for the trader we need
-		mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeMargin))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the party margin account",
-				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
-				logging.Error(err),
-			)
-			return nil, err
+	if p.Owner != types.NetworkParty {
+		if p.Type == types.TransferTypeMTMLoss ||
+			p.Type == types.TransferTypePerpFundingLoss ||
+			p.Type == types.TransferTypeWin ||
+			p.Type == types.TransferTypeMarginLow {
+			// we do not care about errors here as the bond account is not mandatory for the transfers
+			// a partry would have a bond account only if it was also a market maker
+			mEvt.bond, _ = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeBond))
 		}
-	}
-	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	if mEvt.general == nil && p.Owner != types.NetworkParty {
-		mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountTypeGeneral))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the party general account",
-				logging.String("owner-id", p.Owner),
-				logging.String("market-id", settle.MarketID),
-				logging.Error(err),
-			)
-			return nil, err
+		if settle != nil && mEvt.margin == nil {
+			// the accounts for the party we need
+			// the accounts for the trader we need
+			mEvt.margin, err = e.GetAccountByID(e.accountID(settle.MarketID, p.Owner, asset, types.AccountTypeMargin))
+			if err != nil {
+				e.log.Error(
+					"Failed to get the party margin account",
+					logging.String("owner-id", p.Owner),
+					logging.String("market-id", settle.MarketID),
+					logging.Error(err),
+				)
+				return nil, err
+			}
 		}
+		// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+		if mEvt.general == nil {
+			mEvt.general, err = e.GetAccountByID(e.accountID(noMarket, p.Owner, asset, types.AccountTypeGeneral))
+			if err != nil {
+				e.log.Error(
+					"Failed to get the party general account",
+					logging.String("owner-id", p.Owner),
+					logging.String("market-id", settle.MarketID),
+					logging.Error(err),
+				)
+				return nil, err
+			}
+		}
+	} else if mEvt.general == nil {
+		// for the event, the insurance pool acts as the margin/general account
+		mEvt.general = insurance
 	}
 	if p.Type == types.TransferTypeWithdraw || p.Type == types.TransferTypeDeposit {
 		// external account:

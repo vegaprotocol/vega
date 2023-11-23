@@ -241,11 +241,12 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	banking := mocks.NewMockBanking(tm.ctrl)
 
 	mktEngine, err := future.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.timeService, tm.broker, mas, statevarEngine, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount,
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking,
 	)
 	require.NoError(tm.t, err)
 
@@ -646,11 +647,12 @@ func getTestMarket2WithDP(
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	mktEngine, err := future.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, timeService, broker, mas, statevar, marketActivityTracker, cfgAsset,
-		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+		peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
 	if err != nil {
 		t.Fatalf("couldn't create a market: %v", err)
 	}
@@ -3309,8 +3311,6 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	require.Equal(t, expectedTargetStake.String(), mktData.TargetStake)
 }
 
-// TODO karel - implement test for amending commitment
-
 func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
@@ -5269,8 +5269,6 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	require.Equal(t, types.OrderStatusFilled, o4.Status)
 	assert.Equal(t, uint64(0), o4.Remaining)
 }
-
-// TODO karel - test that LP can't be cancelled without penalty
 
 func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	now := time.Unix(10, 0)

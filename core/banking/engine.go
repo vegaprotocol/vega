@@ -160,6 +160,11 @@ type Engine struct {
 	scheduledTransfers         map[int64][]scheduledTransfer
 	transferFeeFactor          num.Decimal
 	minTransferQuantumMultiple num.Decimal
+	maxQuantumAmount           num.Decimal
+
+	feeDiscountDecayFraction        num.Decimal
+	feeDiscountMinimumTrackedAmount num.Decimal
+	feeDiscountPerPartyAndAsset     map[partyAssetKey]*num.Uint
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer
@@ -202,9 +207,6 @@ func New(
 	bridgeView ERC20BridgeView,
 	ethEventSource EthereumEventSource,
 ) (e *Engine) {
-	defer func() {
-		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
-	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -239,7 +241,8 @@ func New(
 		bridgeState: &bridgeState{
 			active: true,
 		},
-		bridgeView: bridgeView,
+		feeDiscountPerPartyAndAsset: map[partyAssetKey]*num.Uint{},
+		bridgeView:                  bridgeView,
 	}
 }
 

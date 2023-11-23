@@ -6,8 +6,14 @@ Background:
       | name                                    | value |
       | transfer.fee.factor                     | 0.5   |
       | validators.epoch.length                 | 10s   |
-      | transfer.minTransferQuantumMultiple     | 0.1   |
+      | transfer.minTransferQuantumMultiple     | 0.01  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | transfer.fee.maxQuantumAmount           |  1    |
+
+    
+    Given the following assets are updated:
+    | id    | decimal places | quantum  |
+    | VEGA  |       0        |   50000  |
 
     Given the parties deposit on asset's general account the following amount:
     | party    | asset | amount          |
@@ -97,7 +103,7 @@ Scenario: invalid recurring transfers
     | 33 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 1           |      0    |   0.5  | end epoch is zero             |
     | 34 | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL                    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 0           |           |   0.5  | start epoch is zero           |
 
-Scenario: As a user I can create a recurring transfer that decreases over time (0057-TRAN-050, 0057-TRAN-051)
+Scenario: As a user I can create a recurring transfer that decreases over time when start amount * transfer.fee.factor <= transfer.fee.maxQuantumAmount * quantum (0057-TRAN-050, 0057-TRAN-051)
     Given the parties deposit on asset's general account the following amount:
     | party    | asset |  amount |
     | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 1000000 |
@@ -128,6 +134,48 @@ Scenario: As a user I can create a recurring transfer that decreases over time (
     # end of epoch 5 - the transfer is ended so can't be cancelled
     When the network moves ahead "7" blocks
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "962005" for asset "VEGA"
+    Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "25330" for asset "VEGA"
+
+    When the parties submit the following transfer cancellations:
+    | party  | transfer_id |               error                |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |      1      | recurring transfer does not exists |
+
+Scenario: As a user I can create a recurring transfer that decreases over time when start amount * transfer.fee.factor > transfer.fee.maxQuantumAmount * quantum (0057-TRAN-065)
+    Given the following network parameters are set:
+      | name                                    | value |
+      | transfer.fee.factor                     |  1    |
+      | transfer.fee.maxQuantumAmount           |  0.1  |
+    
+    Given the parties deposit on asset's general account the following amount:
+    | party    | asset |  amount |
+    | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4   | VEGA  | 1000000 |
+
+    Given the parties submit the following recurring transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | start_epoch | end_epoch | factor |
+    | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 |  ACCOUNT_TYPE_GENERAL | 576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 |  2          |     5     |   0.7  |
+    
+    # end of epoch 1
+    When the network moves ahead "14" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "1000000" for asset "VEGA"
+
+    # end of epoch 2
+    When the network moves ahead "7" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "985000" for asset "VEGA"
+    Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "10000" for asset "VEGA"
+
+    # end of epoch 3
+    When the network moves ahead "7" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "973000" for asset "VEGA"
+    Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "17000" for asset "VEGA"
+
+    # end of epoch 4
+    When the network moves ahead "7" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "963200" for asset "VEGA"
+    Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "21900" for asset "VEGA"
+
+    # end of epoch 5 - the transfer is ended so can't be cancelled
+    When the network moves ahead "7" blocks
+    Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "956340" for asset "VEGA"
     Then "576380694832d9271682e86fffbbcebc09ca79c259baa5d4d0298e12ecdee303" should have general account balance of "25330" for asset "VEGA"
 
     When the parties submit the following transfer cancellations:

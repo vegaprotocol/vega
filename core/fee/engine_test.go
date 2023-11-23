@@ -229,6 +229,18 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 				},
 			},
 		},
+		TradingFeesGenerated: []*eventspb.TradingFeesGenerated{
+			{
+				Taker: "party1",
+				TradingFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:         "party2",
+						Amount:        "875",
+						QuantumAmount: "875",
+					},
+				},
+			},
+		},
 	}, eng.GetFeesStatsOnEpochEnd(num.DecimalFromInt64(1)))
 }
 
@@ -336,6 +348,18 @@ func testCalcContinuousTradingAndCheckAmountsWithDiscount(t *testing.T) {
 						Party:         "party2",
 						Amount:        "64",
 						QuantumAmount: "64",
+					},
+				},
+			},
+		},
+		TradingFeesGenerated: []*eventspb.TradingFeesGenerated{
+			{
+				Taker: "party1",
+				TradingFeesPaid: []*eventspb.PartyAmount{
+					{
+						Party:         "party2",
+						Amount:        "443",
+						QuantumAmount: "443",
 					},
 				},
 			},

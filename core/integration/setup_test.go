@@ -186,6 +186,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -199,13 +201,13 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.assetsEngine, // assets
 			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
+			execsetup.banking,
 		),
 		execsetup.broker,
 	)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
-
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.banking.OnEpoch, execsetup.banking.OnEpochRestore)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 
@@ -412,6 +414,18 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeMaxQuantumAmount,
+			Watcher: execsetup.banking.OnMaxQuantumAmountUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountDecayFraction,
+			Watcher: execsetup.banking.OnTransferFeeDiscountDecayFractionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: execsetup.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MaxPeggedOrders,

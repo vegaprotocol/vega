@@ -96,6 +96,7 @@ type Market struct {
 
 	// deps engines
 	collateral common.Collateral
+	banking    common.Banking
 
 	broker               common.Broker
 	closed               bool
@@ -181,6 +182,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -282,7 +284,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity)
+	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, settleEngine)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -325,6 +327,7 @@ func NewMarket(
 		volumeDiscountService:         volumeDiscountService,
 		liquidation:                   le,
 		stopOrderReferences:           map[string]*types.Order{},
+		banking:                       banking,
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -366,6 +369,8 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		feesStats := m.fee.GetFeesStatsOnEpochEnd(assetQuantum)
 		feesStats.Market = m.GetID()
 		feesStats.EpochSeq = epoch.Seq
+
+		m.banking.RegisterTradingFees(ctx, feesStats.Asset, m.fee.TotalTradingFeesPerParty())
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 

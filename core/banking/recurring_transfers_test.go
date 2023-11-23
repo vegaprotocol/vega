@@ -48,7 +48,7 @@ func TestMaturation(t *testing.T) {
 	ctx := context.Background()
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(10)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	fromAcc := types.Account{
@@ -68,7 +68,7 @@ func TestMaturation(t *testing.T) {
 					FromAccountType: types.AccountTypeGeneral,
 					To:              crypto.RandomHash(),
 					ToAccountType:   types.AccountTypeGeneral,
-					Asset:           "eth",
+					Asset:           assetNameETH,
 					Amount:          num.NewUint(10),
 					Reference:       "someref",
 				},
@@ -115,7 +115,7 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -126,7 +126,7 @@ func testInvalidRecurringTransfersBadAmount(t *testing.T) {
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -154,7 +154,7 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
@@ -164,7 +164,7 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.EqualError(t,
@@ -183,7 +183,7 @@ func testInvalidRecurringTransfersInThePast(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(50),
 				Reference:       "someotherref",
 			},
@@ -217,7 +217,7 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
@@ -227,7 +227,7 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
@@ -243,7 +243,7 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(50),
 				Reference:       "someotherref",
 			},
@@ -298,7 +298,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
@@ -315,7 +315,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	e.marketActivityTracker.EXPECT().CalculateMetricForIndividuals(gomock.Any()).AnyTimes().Return([]*types.PartyContributionScore{
 		{Party: "", Score: num.DecimalFromFloat(1)},
 	})
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
@@ -350,7 +350,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(100))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 2)
@@ -361,7 +361,7 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(50))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -421,7 +421,7 @@ func testValidRecurringTransfer(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(100),
 				Reference:       "someref",
 			},
@@ -431,7 +431,7 @@ func testValidRecurringTransfer(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(3)
 	e.broker.EXPECT().Send(gomock.Any()).Times(3)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
@@ -466,7 +466,7 @@ func testValidRecurringTransfer(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(100))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 2)
@@ -477,7 +477,7 @@ func testValidRecurringTransfer(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(50))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -508,7 +508,7 @@ func testValidRecurringTransfer(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(90))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 2)
@@ -519,7 +519,7 @@ func testValidRecurringTransfer(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(45))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -560,13 +560,13 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 		FromAccountType: types.AccountTypeGeneral,
 		To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 		ToAccountType:   types.AccountTypeGeneral,
-		Asset:           "eth",
+		Asset:           assetNameETH,
 		Amount:          num.NewUint(10),
 		Reference:       "someref",
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 
 	var baseCpy types.TransferBase
 
@@ -724,7 +724,7 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -738,7 +738,7 @@ func TestMarketAssetMismatchRejectsTransfer(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},

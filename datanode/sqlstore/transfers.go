@@ -41,7 +41,8 @@ type Transfers struct {
 type ListTransfersFilters struct {
 	FromEpoch *uint64
 	ToEpoch   *uint64
-	Scope     *string
+	Scope     *entities.TransferScope
+	Status    *entities.TransferStatus
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -103,9 +104,10 @@ func (t *Transfers) UpsertFees(ctx context.Context, tf *entities.TransferFees) e
 				transfer_id,
 				amount,
 				epoch_seq,
-				vega_time
-			) VALUES ($1, $2, $3, $4) ON CONFLICT (vega_time, transfer_id) DO NOTHING;` // conflicts may occur on checkpoint restore.
-	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.EpochSeq, tf.VegaTime); err != nil {
+				vega_time,
+				discount_applied
+			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (vega_time, transfer_id) DO NOTHING;` // conflicts may occur on checkpoint restore.
+	if _, err := t.Connection.Exec(ctx, query, tf.TransferID, tf.Amount, tf.EpochSeq, tf.VegaTime, tf.DiscountApplied); err != nil {
 		return err
 	}
 	return nil
@@ -257,6 +259,40 @@ func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, pagination 
 	return details, pageInfo, nil
 }
 
+func (t *Transfers) UpsertFeesDiscount(ctx context.Context, tfd *entities.TransferFeesDiscount) error {
+	defer metrics.StartSQLQuery("Transfers", "UpsertFeesDiscount")()
+	query := `INSERT INTO transfer_fees_discount(
+				party_id,
+				asset_id,
+				amount,
+				epoch_seq,
+				vega_time
+			) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (vega_time, party_id, asset_id) DO NOTHING ;` // conflicts may occur on checkpoint restore.
+	if _, err := t.Connection.Exec(ctx, query, tfd.PartyID, tfd.AssetID, tfd.Amount, tfd.EpochSeq, tfd.VegaTime); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Transfers) GetCurrentTransferFeeDiscount(
+	ctx context.Context,
+	partyID entities.PartyID,
+	assetID entities.AssetID,
+) (*entities.TransferFeesDiscount, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetCurrentTransferFeeDiscount")()
+
+	var tfd entities.TransferFeesDiscount
+	query := `SELECT * FROM transfer_fees_discount
+		WHERE party_id = $1 AND asset_id = $2
+		ORDER BY vega_time DESC LIMIT 1`
+
+	if err := pgxscan.Get(ctx, t.Connection, &tfd, query, partyID, assetID); err != nil {
+		return &entities.TransferFeesDiscount{}, t.wrapE(err)
+	}
+
+	return &tfd, nil
+}
+
 func (t *Transfers) getCurrentTransfers(ctx context.Context, pagination entities.CursorPagination, filters ListTransfersFilters, where []string, args []any) ([]entities.Transfer, entities.PageInfo, error) {
 	whereStr, args := t.buildWhereClause(filters, where, args)
 	query := "select * from transfers_current " + whereStr
@@ -280,6 +316,20 @@ FROM recurring_transfers
 }
 
 func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []string, args []any) (string, []any) {
+	if filters.Scope != nil {
+		where = append(where, "jsonb_typeof(dispatch_strategy) != 'null'")
+		switch *filters.Scope {
+		case entities.TransferScopeIndividual:
+			where = append(where, "dispatch_strategy ? 'individual_scope'")
+		case entities.TransferScopeTeam:
+			where = append(where, "dispatch_strategy ? 'team_scope'")
+		}
+	}
+
+	if filters.Status != nil {
+		where = append(where, fmt.Sprintf("status = %s", nextBindVar(&args, *filters.Status)))
+	}
+
 	if filters.FromEpoch != nil {
 		where = append(where, fmt.Sprintf("(start_epoch >= %s or end_epoch >= %s)",
 			nextBindVar(&args, *filters.FromEpoch),

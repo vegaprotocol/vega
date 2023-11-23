@@ -152,6 +152,12 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 // each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
+	defer e.mu.Unlock()
+	// network registers a wash trade to update its position
+	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
+		e.addNetworkTrade(trade)
+		return
+	}
 	var buyerSize, sellerSize int64
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
@@ -189,7 +195,22 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		size:        -size,
 		newSize:     sellerSize - size,
 	})
-	e.mu.Unlock()
+}
+
+func (e *Engine) addNetworkTrade(trade *types.Trade) {
+	tSize := int64(trade.Size)
+	// sell wash trade, the settled position of the network decreases.
+	if trade.Aggressor == types.SideSell {
+		tSize *= -1
+	}
+	e.settledPosition[types.NetworkParty] += tSize
+	trades := e.trades[types.NetworkParty]
+	// all trades should be based on the new settled position size
+	for i, t := range trades {
+		t.newSize += tSize
+		trades[i] = t
+	}
+	e.trades[types.NetworkParty] = trades
 }
 
 func (e *Engine) HasTraded() bool {
@@ -270,57 +291,22 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	e.trades = map[string][]*settlementTrade{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
 	var (
-		largestShare *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
-		zeroShares   = []*mtmTransfer{} // all zero shares for equal distribution if possible
-		zeroAmts     = false
-		mtmDec       = num.NewDecimalFromFloat(0)
-		lossTotal    = num.UintZero()
-		winTotal     = num.UintZero()
-		lossTotalDec = num.NewDecimalFromFloat(0)
-		winTotalDec  = num.NewDecimalFromFloat(0)
+		largestShare  *mtmTransfer       // pointer to whomever gets the last remaining amount from the loss
+		zeroShares    = []*mtmTransfer{} // all zero shares for equal distribution if possible
+		zeroAmts      = false
+		mtmDec        = num.NewDecimalFromFloat(0)
+		lossTotal     = num.UintZero()
+		winTotal      = num.UintZero()
+		lossTotalDec  = num.NewDecimalFromFloat(0)
+		winTotalDec   = num.NewDecimalFromFloat(0)
+		appendLargest = false
 	)
 
-	// Process any network trades first
-	traded, hasTraded := trades[types.NetworkParty]
-	if hasTraded {
-		// don't create an event for the network. Its position is irrelevant
-
-		mtmShare, mtmDShare, neg := calcMTM(markPrice, markPrice, 0, traded, e.positionFactor)
-		// MarketPosition stub for network
-		netMPos := &npos{
-			price: markPrice.Clone(),
-		}
-
-		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, netMPos, types.NetworkParty)
-
-		if !neg {
-			wins = append(wins, mtmTransfer)
-			winTotal.AddSum(mtmShare)
-			winTotalDec = winTotalDec.Add(mtmDShare)
-			mtmDec = mtmDShare
-			largestShare = mtmTransfer
-			// mtmDec is zero at this point, this will always be the largest winning party at this point
-			if mtmShare.IsZero() {
-				zeroShares = append(zeroShares, mtmTransfer)
-				zeroAmts = true
-			}
-		} else if mtmShare.IsZero() {
-			// This would be a zero-value loss, so not sure why this would be at the end of the slice
-			// shouldn't really matter if this is in the wins or losses part of the slice, but
-			// this was the previous behaviour, so let's keep it
-			wins = append(wins, mtmTransfer)
-			lossTotalDec = lossTotalDec.Add(mtmDShare)
-		} else {
-			transfers = append(transfers, mtmTransfer)
-			lossTotal.AddSum(mtmShare)
-			lossTotalDec = lossTotalDec.Add(mtmDShare)
-		}
-	}
-
+	// network is treated as a regular party
 	for _, evt := range positions {
 		party := evt.Party()
 		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size())
-		traded, hasTraded = trades[party]
+		traded, hasTraded := trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		// empty position
 		skip := current == 0 && lastSettledPrice.IsZero() && evt.Buy() == 0 && evt.Sell() == 0
@@ -378,11 +364,22 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
 	}
+	if largestShare == nil {
+		largestShare = &mtmTransfer{
+			MarketPosition: &npos{
+				price: markPrice.Clone(),
+			},
+		}
+		appendLargest = true
+	}
 	// no need for this lock anymore
 	e.mu.Unlock()
 	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
+			if appendLargest {
+				zeroShares = append(zeroShares, largestShare)
+			}
 			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
@@ -414,7 +411,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
-	e.broker.SendBatch(evts)
+	if len(transfers) > 0 && appendLargest && largestShare.transfer != nil {
+		transfers = append(transfers, largestShare)
+	}
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
 	timer.EngineTimeCounterAdd()
 	return transfers
 }

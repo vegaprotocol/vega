@@ -13,30 +13,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package validators
+package fee_test
 
 import (
-	"time"
+	"testing"
 
-	"code.vegaprotocol.io/vega/libs/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/core/fee"
+	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	namedLogger = "validators"
-)
-
-// Config represents governance specific configuration.
-type Config struct {
-	// logging level
-	Level                   encoding.LogLevel `long:"log-level"`
-	ApproxEthereumBlockTime encoding.Duration
+func TestFeesStats(t *testing.T) {
+	t.Run("test TotalTradingFeesPerParty", testFeesStatsTotalTradingFeesPerParty)
 }
 
-// NewDefaultConfig creates an instance of the package specific configuration.
-func NewDefaultConfig() Config {
-	return Config{
-		Level:                   encoding.LogLevel{Level: logging.InfoLevel},
-		ApproxEthereumBlockTime: encoding.Duration{Duration: 15 * time.Second},
-	}
+func testFeesStatsTotalTradingFeesPerParty(t *testing.T) {
+	stats := fee.NewFeesStats()
+
+	stats.RegisterTradingFees("maker-1", "taker-1", num.NewUint(10))
+	stats.RegisterTradingFees("maker-1", "taker-2", num.NewUint(20))
+	stats.RegisterTradingFees("taker-1", "maker-1", num.NewUint(5))
+
+	expected := map[string]*num.Uint{"maker-1": num.NewUint(35), "taker-1": num.NewUint(15), "taker-2": num.NewUint(20)}
+	assert.Equal(t, expected, stats.TotalTradingFeesPerParty())
 }

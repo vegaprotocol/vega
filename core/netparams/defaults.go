@@ -99,9 +99,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.05"),
 		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
-
-		// @TODO karel add validation
-		MarketLiquidityProvidersFeeCalculationTimeStep: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
+		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
@@ -258,9 +256,12 @@ func defaultNetParams() map[string]value {
 		MinimumEthereumEventsForNewValidator:       NewUint(gteU0).Mutable(true).MustUpdate("3"),
 
 		// transfers
-		TransferFeeFactor:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
-		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
-		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
+		TransferFeeFactor:                       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
+		TransferMinTransferQuantumMultiple:      NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
+		TransferMaxCommandsPerEpoch:             NewInt(gteI0).Mutable(true).MustUpdate("20"),
+		TransferFeeMaxQuantumAmount:             NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
+		TransferFeeDiscountDecayFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
+		TransferFeeDiscountMinimumTrackedAmount: NewDecimal(gteD0).Mutable(true).MustUpdate("0.001"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),

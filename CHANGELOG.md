@@ -23,6 +23,10 @@
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
+- [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on status on transfers.
+- [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
+- [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on scope on transfers.
+- [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
 
 ### 🐛 Fixes
 
@@ -44,7 +48,11 @@
 - [10123](https://github.com/vegaprotocol/vega/issues/10123) - Ledger exports contain account types of "UNKNOWN" type
 - [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 - [10125](https://github.com/vegaprotocol/vega/issues/10125) - Wire the `JoinTeam` command in the wallet.
+- [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
+- [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
+- [10147](https://github.com/vegaprotocol/vega/issues/10147) - Add network transfer largest share to the transfers if needed.
+- [10158](https://github.com/vegaprotocol/vega/issues/10158) - Add the network as the zero-share default party in settlement engine.
 
 ## 0.73.0
 

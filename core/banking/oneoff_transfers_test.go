@@ -52,7 +52,7 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -61,7 +61,7 @@ func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
 
 	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -99,7 +99,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -111,7 +111,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -135,7 +135,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 		FromAccountType: types.AccountTypeGeneral,
 		To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 		ToAccountType:   types.AccountTypeGeneral,
-		Asset:           "eth",
+		Asset:           assetNameETH,
 		Amount:          num.NewUint(10),
 		Reference:       "someref",
 	}
@@ -220,7 +220,7 @@ func testValidOneOffTransfer(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -234,7 +234,7 @@ func testValidOneOffTransfer(t *testing.T) {
 	// asset exists
 	e.tsvc.EXPECT().GetTimeNow().Times(1)
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
-		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+		assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -252,10 +252,10 @@ func testValidOneOffTransfer(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 				assert.Equal(t, transfers[1].Owner, "0000000000000000000000000000000000000000000000000000000000000000")
 				assert.Equal(t, transfers[1].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[1].Amount.Asset, "eth")
+				assert.Equal(t, transfers[1].Amount.Asset, assetNameETH)
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 2)
@@ -267,7 +267,7 @@ func testValidOneOffTransfer(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -303,7 +303,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -316,7 +316,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -334,10 +334,10 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 				assert.Equal(t, transfers[1].Owner, "0000000000000000000000000000000000000000000000000000000000000000")
 				assert.Equal(t, transfers[1].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[1].Amount.Asset, "eth")
+				assert.Equal(t, transfers[1].Amount.Asset, assetNameETH)
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 2)
@@ -349,7 +349,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -385,7 +385,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -404,7 +404,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 		}).Times(2)
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -422,7 +422,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 				assert.Len(t, transfers, 1)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 1)
@@ -433,7 +433,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -474,7 +474,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
 				assert.Equal(t, transfers[0].Owner, "0000000000000000000000000000000000000000000000000000000000000000")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 1)

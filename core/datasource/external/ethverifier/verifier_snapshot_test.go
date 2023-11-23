@@ -83,15 +83,15 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), uint64(5)).Return(uint64(100), nil)
 	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(5)).Return(result, nil)
 	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
-	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil)
+	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil).Times(2)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(5), uint64(5)).Return(nil)
 
 	var checkResult error
-	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+	eov.witness.EXPECT().StartCheckWithDelay(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time, _ int64) error {
 			checkResult = toCheck.Check(context.Background())
 			return nil
 		})

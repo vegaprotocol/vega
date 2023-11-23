@@ -62,6 +62,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -175,6 +176,7 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		hasTraded:                     em.HasTraded,
 		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
+		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	for _, p := range em.Parties {

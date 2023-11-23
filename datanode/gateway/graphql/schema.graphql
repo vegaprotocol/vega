@@ -127,9 +127,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-  @deprecated(
-    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-  )
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -584,7 +584,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-  @deprecated(reason: "Use estimateFees and estimatePosition instead")
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -1008,6 +1008,10 @@ type Query {
     fromEpoch: Int
     "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
     toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -1045,6 +1049,36 @@ type Query {
     "Optional party IDs to filter for"
     partyIDs: [String!]
   ): PaidLiquidityFeesConnection
+
+  "Get total transfer fee discount available"
+  totalTransferFeeDiscount(
+    "ID of party eligible for the discount."
+    partyId: String!
+    "ID of asset to associated with the discount."
+    assetId: String!
+  ): TotalTransferFeeDiscount
+
+  "Estimate transaction fee"
+  estimateTransferFee(
+    "Sender's ID."
+    fromAccount: ID!
+    "Type of account sent from."
+    fromAccountType: AccountType!
+    "Receiver's ID."
+    toAccount: ID!
+    "Amount to be transferred."
+    amount: String!
+    "Asset ID for the asset associated with the transaction."
+    assetId: String!
+  ): EstimatedTransferFee
+}
+
+"Defines the types of a dispatch strategy's scope the API can filter on."
+enum TransferScope {
+  "Matches transfers that have dispatch strategy scope of individual set."
+  SCOPE_INDIVIDUAL
+  "Matches transfers that have dispatch strategy scope of team set."
+  SCOPE_TEAM
 }
 
 "All the states a transfer can transition between"
@@ -1104,7 +1138,7 @@ type Transfer {
 }
 
 union TransferKind =
-  OneOffTransfer
+    OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -2296,9 +2330,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -2339,7 +2373,8 @@ type Market {
     live: Boolean
     "Pagination information"
     pagination: Pagination
-  ): LiquidityProvisionsConnection @deprecated(reason: "Use liquidityProvisions instead")
+  ): LiquidityProvisionsConnection
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2351,7 +2386,8 @@ type Market {
   linearSlippageFactor: String!
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
-  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
+  quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2529,9 +2565,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2547,7 +2583,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-  @deprecated(reason: "Use root positions query instead of sub-query")
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2611,7 +2647,8 @@ type Party {
     live: Boolean
     "Optional Pagination information"
     pagination: Pagination
-  ): LiquidityProvisionsConnection @deprecated(reason: "Use liquidityProvisions instead")
+  ): LiquidityProvisionsConnection
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -2651,6 +2688,10 @@ type Party {
     fromEpoch: Int
     "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
     toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "The activity streak"
@@ -2703,7 +2744,7 @@ type PartyVestingBalance {
 """
 Summary of a party's reward vesting balances.
 """
-type PartyVestingBalancesSummary{
+type PartyVestingBalancesSummary {
   "The epoch for which this summary is valid"
   epoch: Int
   "The party vesting balances"
@@ -2942,9 +2983,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -4306,7 +4347,8 @@ type NewMarket {
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
-  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
+  quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4347,7 +4389,8 @@ type UpdateMarketConfiguration {
   "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume."
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
-  quadraticSlippageFactor: String! @deprecated(reason: "This field will be removed in a future release")
+  quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4390,7 +4433,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-  UpdateMarketSimpleRiskModel
+    UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4471,7 +4514,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-  OneOffGovernanceTransfer
+    OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4632,7 +4675,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -6008,7 +6051,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-  DataSourceSpecConfigurationTime
+    DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6030,7 +6073,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-  DataSourceDefinitionInternal
+    DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -6572,4 +6615,18 @@ type PaidLiquidityFeesEdge {
   node: PaidLiquidityFees!
   "The cursor for this volume discount statistics"
   cursor: String!
+}
+
+"Returns total transfer fee discount available"
+type TotalTransferFeeDiscount {
+  "Total per party per asset discount available."
+  totalDiscount: String!
+}
+
+"EstimatedTransferFee Results of estimation of transfer fee and the fee discount"
+type EstimatedTransferFee {
+  "Estimated fee for the transfer."
+  fee: String!
+  "Discount applied to the fee."
+  discount: String!
 }
