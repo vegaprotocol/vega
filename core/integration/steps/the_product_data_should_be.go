@@ -19,12 +19,12 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
+
 	"github.com/cucumber/godog"
 )
 
 func TheProductDataShouldBe(engine Execution, mID string, data *godog.Table) error {
 	actual, err := engine.GetMarketData(mID)
-
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,6 @@ func TheProductDataShouldBe(engine Execution, mID string, data *godog.Table) err
 }
 
 func checkProductData(pd types.ProductData, row ProductDataWrapper) error {
-
 	expectedInternalTwap := row.InternalTWAP()
 	actualInternalTwap := pd.Data.IntoProto().GetPerpetualData().InternalTwap
 

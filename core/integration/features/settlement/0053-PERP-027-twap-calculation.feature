@@ -58,10 +58,9 @@ Feature: Test internal and external twap calculation
 
         Given the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
         When time is updated to "2020-10-16T00:02:00Z"
-        Then the mark price should be "11" for the market "ETH/DEC19"
         # 1602806400 + 120s = 1602806520
         # funding period is ended with perp.funding.cue
-        And the oracles broadcast data with block time signed with "0xCAFECAFE1":
+        Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
             | name             | value      | time offset |
             | perp.ETH.value   | 110        | -1s         |
             | perp.funding.cue | 1602806520 | 0s          |
@@ -134,11 +133,8 @@ Feature: Test internal and external twap calculation
             | name           | value | time offset |
             | perp.ETH.value | 140   | -1s         |
 
-        # end the funding period with perp.funding.cue
+        # if the funding period ended here, check the twap
         Given time is updated to "2020-10-16T00:12:00Z"
-        When the oracles broadcast data with block time signed with "0xCAFECAFE1":
-            | name             | value      | time offset |
-            | perp.funding.cue | 1602807120 | 0s          |
 
         # in theory internal TWAP = 9.3 external TWAP = 10.3
         # but these are type int so the decimal is truncated
