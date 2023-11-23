@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.7
+
+### 🐛 Fixes
+
+- [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
+
 ## 0.73.6
 
 ### 🐛 Fixes
