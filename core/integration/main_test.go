@@ -491,6 +491,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the market data for the market "([^"]+)" should be:$`, func(marketID string, table *godog.Table) error {
 		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
 	})
+	s.Step(`^the product data for the market "([^"]+)" should be:$`, func(marketID string, table *godog.Table) error {
+		return steps.TheProductDataShouldBe(execsetup.executionEngine, marketID, table)
+	})
 	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
 		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
