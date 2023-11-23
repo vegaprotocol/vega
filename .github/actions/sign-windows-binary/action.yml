@@ -25,7 +25,7 @@ steps:
         website: oracle.com
         release: 17
 
-    - name: Setup python
+    - name: "Setup python"
       uses: actions/setup-python@v4
       with:
         python-version: "3.9"
