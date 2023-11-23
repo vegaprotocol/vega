@@ -1781,6 +1781,24 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		m.stopOrderWouldTriggerAtSubmission(risesAbove)
 	triggered := fallsBelowTriggered || risesAboveTriggered
 
+	// if the stop order references an existing order, remember it so we can watch its state
+	if fallsBelow != nil && fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
+		order, _, err := m.getOrderByID(fallsBelow.SizeOverrideValue.OrderID)
+		if err != nil {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
+		}
+		stopOrderReferences[fallsBelow.SizeOverrideValue.OrderID] = order
+	}
+	if risesAbove != nil && risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
+		order, _, err := m.getOrderByID(risesAbove.SizeOverrideValue.OrderID)
+		if err != nil {
+			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
+		}
+		stopOrderReferences[risesAbove.SizeOverrideValue.OrderID] = order
+	}
+
 	// if we are in an auction
 	// or no order is triggered
 	// let's just submit it straight away
@@ -1965,7 +1983,23 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
 	}
 
+	// If any of the affected orders are referenced from a stop order, update their state
+	m.updateStopOrderReferences(ctx, allUpdatedOrders)
+
 	return conf, nil
+}
+
+var stopOrderReferences map[string]*types.Order = map[string]*types.Order{}
+
+func (m *Market) updateStopOrderReferences(ctx context.Context, orders []*types.Order) error {
+	for _, order := range orders {
+		_, ok := stopOrderReferences[order.ID]
+		if ok {
+			stopOrderReferences[order.ID] = order
+		}
+	}
+
+	return nil
 }
 
 func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
@@ -3680,11 +3714,10 @@ func (m *Market) submitStopOrders(
 			// If we have an order size override, handle that here
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
 				// Update the order size to match that of the referenced order
-				order, _, err := m.getOrderByID(v.SizeOverrideValue.OrderID)
-				if err != nil {
+				order, ok := stopOrderReferences[v.SizeOverrideValue.OrderID]
+				if !ok {
 					m.log.Error("could not get order to override size with",
-						logging.StopOrderSubmission(v),
-						logging.Error(err))
+						logging.StopOrderSubmission(v))
 				}
 				v.OrderSubmission.Size = order.Size - order.TrueRemaining()
 

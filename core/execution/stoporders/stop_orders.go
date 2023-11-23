@@ -151,8 +151,6 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.S
 		p.trailing.PriceUpdated(newPrice.Clone())...,
 	)
 
-	// If we have any stop orders with links, check we are still
-
 	// first get all the orders which got triggered
 	for _, v := range ids {
 		pid, ok := p.orderToParty[v]
