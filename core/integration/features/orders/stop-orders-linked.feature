@@ -106,7 +106,7 @@ Feature: linked stop orders
 
 
 
-  Scenario: A linked stop order with order size override will be cancelled if the position flips short to long 
+  Scenario: A linked stop order with an order that has filled will be rejected
 
     # party1 will start 10 short
     When the parties place the following orders:
@@ -116,27 +116,16 @@ Feature: linked stop orders
 
     # Place a buy order linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override reference |
-      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | ORDER                    | sellorder                  |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override reference | error                                         |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | ORDER                    | sellorder                  | stop order size override order does not exist |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
-      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
-
-    # Now let party1 change their position to be long so we can trigger the stop order to be cancelled
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | 
-      | party1| ETH/DEC19 | buy  | 11     | 51    | 0                | TYPE_LIMIT | TIF_GTC | 
-      | party2| ETH/DEC19 | sell | 11     | 51    | 1                | TYPE_LIMIT | TIF_GTC | 
-
-    # Stop order should have been cancelled
-    Then the stop orders should have the following states
-      | party  | market id | status           | reference |
-      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+      | party1 | ETH/DEC19 | STATUS_REJECTED | stop1     |
 
 
 
-  Scenario: A linked stop order with order size override will be cancelled if the position flips long to short
+  Scenario: A linked stop order with an order that has been filled will be rejected
 
     # party1 will start 10 long
     When the parties place the following orders:
@@ -146,23 +135,12 @@ Feature: linked stop orders
 
     # Place a sell position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override reference |
-      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | ORDER                    | buyorder                   |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override reference | error                                         |
+      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | ORDER                    | buyorder                   | stop order size override order does not exist |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
-      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
-
-    # Now let party1 change their position to be short so we can trigger the stop order to be cancelled
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | 
-      | party2| ETH/DEC19 | buy  | 11     | 49    | 0                | TYPE_LIMIT | TIF_GTC | 
-      | party1| ETH/DEC19 | sell | 11     | 49    | 1                | TYPE_LIMIT | TIF_GTC | 
-
-    # Stop order should have been cancelled
-    Then the stop orders should have the following states
-      | party  | market id | status           | reference |
-      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+      | party1 | ETH/DEC19 | STATUS_REJECTED | stop1     |
 
 
 
@@ -325,13 +303,13 @@ Scenario: A linked sell stop order with order size override will use the traded 
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1| ETH/DEC19 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTC | buyorder  |
       | party2| ETH/DEC19 | sell | 10     | 45    | 1                | TYPE_LIMIT | TIF_GTC | sellorder |
-      | party3| ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder  |
-      | party2| ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | sellorder |
+      | party3| ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder2 |
+      | party2| ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | sellorder2|
 
     # Place a sell position linked stop order
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override reference |
-      | party1| ETH/DEC19 | sell | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | buyorder                   |
+      | party1| ETH/DEC19 | sell | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | ORDER                    | buyorder                   |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
