@@ -68,7 +68,38 @@ func TestRestoreSettledMarket(t *testing.T) {
 	// check the market is restored settled and that we have unsubscribed the two oracles
 	assert.Equal(t, types.MarketStateSettled, snap.State())
 	assert.Equal(t, uint64(2), unsubs)
-	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
+	closed := snap.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
+	assert.True(t, closed)
+}
+
+func TestRestoreClosedMarket(t *testing.T) {
+	tm := getActiveMarket(t)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	changes := &types.MarketStateUpdateConfiguration{
+		MarketID:        tm.mktCfg.ID,
+		SettlementPrice: num.UintOne(),
+		UpdateType:      types.MarketStateUpdateTypeTerminate,
+	}
+	tm.market.UpdateMarketState(ctx, changes)
+	em := tm.market.GetState()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	oracleEngine := mocks.NewMockOracleEngine(ctrl)
+
+	var unsubs uint64
+	unsubscribe := func(_ context.Context, id spec.SubscriptionID) { unsubs++ }
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
+
+	snap, err := newMarketFromSnapshot(t, context.Background(), ctrl, em, oracleEngine)
+	require.NoError(t, err)
+	require.NotEmpty(t, snap)
+
+	// check the market is restored settled and that we have unsubscribed the two oracles
+	assert.Equal(t, types.MarketStateClosed, snap.State())
+	assert.Equal(t, uint64(2), unsubs)
+	closed := snap.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
 	assert.True(t, closed)
 }
 
@@ -96,7 +127,7 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 	// check the market is restored terminated and that we have unsubscribed one oracles
 	assert.Equal(t, types.MarketStateTradingTerminated, snap.State())
 	assert.True(t, termUnsub)
-	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
+	closed := snap.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
 	assert.False(t, closed)
 }
 
@@ -201,6 +232,24 @@ func getSettledMarket(t *testing.T) *testMarket {
 	assert.Equal(t, types.MarketStateSettled, tm.market.State())
 
 	return tm
+}
+
+func getActiveMarket(t *testing.T) *testMarket {
+	t.Helper()
+
+	esm := newEquityShareMarket(t)
+	matchingPrice := uint64(900000)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	esm.WithSubmittedOrder(t, "some-id-1", "party1", types.SideSell, matchingPrice+1).
+		WithSubmittedOrder(t, "some-id-2", "party2", types.SideBuy, matchingPrice-1).
+		WithSubmittedOrder(t, "some-id-3", "party1", types.SideSell, matchingPrice).
+		WithSubmittedOrder(t, "some-id-4", "party2", types.SideBuy, matchingPrice).
+		WithSubmittedLiquidityProvision(t, "party1", "lp-id-1", 2000000, "0.5").
+		WithSubmittedLiquidityProvision(t, "party2", "lp-id-2", 1000000, "0.5")
+
+	// end opening auction
+	esm.tm.market.OnTick(ctx, esm.Now.Add(2*time.Second))
+	return esm.tm
 }
 
 // newMarketFromSnapshot is a wrapper for NewMarketFromSnapshot with a lot of defaults handled.
