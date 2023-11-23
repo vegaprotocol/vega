@@ -1,0 +1,86 @@
+name: 'Sign windows binary'
+description: 'Sign binary using EV certificate'
+inputs:
+  current-working-directory:
+    description: 'The working directory, where the binary is located in'
+    required: true
+    default: './'
+  binary-file:
+    description: 'Binary file to sign'
+    required: true
+    default: ''
+
+runs:
+  using: "composite"
+steps:
+    - name: "Import signing certificate"
+      shell: bash
+      run: |
+        cd "${{ inputs.current-working-directory }}" && \
+        echo "${{ secrets.EV_SIGN_CERT_FULL_CHAIN_PEM }}" > certificate_chain.pem
+
+    - name: "Download Java v17"
+      uses: oracle-actions/setup-java@v1
+      with:
+        website: oracle.com
+        release: 17
+
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+
+    - id: "Authenticate to the Google Cloud"
+      uses: "google-github-actions/auth@v1"
+      with:
+        credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+
+    - name: "Set up Cloud SDK"
+      uses: "google-github-actions/setup-gcloud@v1"
+      env:
+        CLOUDSDK_PYTHON: "python3"
+
+    - name: "Check the Google Cloud CLI"
+      run: "gcloud info"
+
+    - name: "Download signing tool and verify sha265 checksum"
+      shell: bash
+      run: |
+        cd "${{ inputs.current-working-directory }}" && \
+        curl -L -o jsign.jar "https://github.com/ebourg/jsign/releases/download/4.2/jsign-4.2.jar" && \
+        echo '290377fc4f593256200b3ea4061b7409e8276255f449d4c6de7833faf0850cc1 jsign.jar' | sha256sum -c
+
+    # We sign binaries with the EV Certificate. You MUST NOT have a key in a file to sign binary.
+    # The only options to store keys are:
+    #   - HSM architecture(e.g., AWS or Google)
+    #   - Physical USB stick with hardware stored key
+    # We are using the first option to be able to sign the binaries within the CI servers without
+    # physical access to them. However, this signing method requires the signing tool supporting the HSM key.
+    #
+    # The high-level signing procedure looks like below:
+    #   1. Calculate the SHA256 Hash for the app
+    #   2. Send a request to sign the hash to the Google Cloud
+    #   3. Google signs our signature with a physically stored key on Google's HSM server and returns the signature over the network
+    #   4. Add our certificate and the signature received from the Google HSM to the EXE file
+    #   5. Our signature hash is again signed with the timestamp authority's private key, and the final hash is added to our binary.
+    #   6. Final executable with all necessary signing information included is produced
+    - name: "Sign binary"
+      shell: bash
+      run: |
+        cd "${{ inputs.current-working-directory }}" && \
+        java -jar jsign.jar \
+          --storetype GOOGLECLOUD \
+          --storepass "$(gcloud auth print-access-token)" \
+          --keystore "projects/vegaprotocol/locations/europe-west2/keyRings/windows-sign-apps" \
+          --alias "digicert-ev-signing-key-ecc-256" \
+          --certfile "./certificate_chain.pem" \
+          --tsmode RFC3161 \
+          --tsaurl http://timestamp.globalsign.com/tsa/r6advanced1 \
+          "${{ inputs.binary-file }}"
+
+    - name: "Clean up"
+      shell: bash
+      run: |
+        cd "${{ inputs.current-working-directory }}" && \
+        rm -f certificate_chain.pem && \
+        rm -f jsign.jar
