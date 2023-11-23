@@ -1,5 +1,6 @@
 name: 'Sign windows binary'
 description: 'Sign binary using EV certificate'
+
 inputs:
   current-working-directory:
     description: 'The working directory, where the binary is located in'
@@ -9,15 +10,23 @@ inputs:
     description: 'Binary file to sign'
     required: true
     default: ''
+  gcp-credentials:
+    description: 'GCP credentials'
+    required: true
+    default: ''
+  ev-cert-pem:
+    description: 'EV certificate PEM'
+    required: true
+    default: ''
 
 runs:
   using: "composite"
-steps:
+  steps:
     - name: "Import signing certificate"
       shell: bash
       run: |
         cd "${{ inputs.current-working-directory }}" && \
-        echo "${{ secrets.EV_SIGN_CERT_FULL_CHAIN_PEM }}" > certificate_chain.pem
+        echo "${{ inputs.ev-cert-pem }}" > certificate_chain.pem
 
     - name: "Download Java v17"
       uses: oracle-actions/setup-java@v1
@@ -30,10 +39,10 @@ steps:
       with:
         python-version: "3.9"
 
-    - id: "Authenticate to the Google Cloud"
+    - name: "Authenticate to the Google Cloud"
       uses: "google-github-actions/auth@v1"
       with:
-        credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+        credentials_json: "${{ inputs.gcp-credentials }}"
 
     - name: "Set up Cloud SDK"
       uses: "google-github-actions/setup-gcloud@v1"
@@ -41,6 +50,7 @@ steps:
         CLOUDSDK_PYTHON: "python3"
 
     - name: "Check the Google Cloud CLI"
+      shell: bash
       run: "gcloud info"
 
     - name: "Download signing tool and verify sha265 checksum"
