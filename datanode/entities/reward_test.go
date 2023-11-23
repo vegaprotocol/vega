@@ -32,12 +32,15 @@ func TestRewardFromProto(t *testing.T) {
 
 	pbReward := eventspb.RewardPayoutEvent{
 		Party:                "a0b1",
-		Asset:                "c2d3",
 		EpochSeq:             "42",
+		Asset:                "c2d3",
 		Amount:               "123456789",
 		PercentOfTotalReward: "3.14",
 		Timestamp:            timestamp.UnixNano(),
+		RewardType:           "Some Type",
+		Market:               "Test",
 		LockedUntilEpoch:     "44",
+		QuantumAmount:        "292929",
 	}
 
 	vegaTime := entities.NanosToPostgresTimestamp(now.UnixNano())

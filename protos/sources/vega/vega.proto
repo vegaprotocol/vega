@@ -1631,6 +1631,8 @@ message Reward {
   string reward_type = 8;
   // The epoch when the reward is being released.
   uint64 locked_until_epoch = 9;
+  // Amount paid as a reward, expressed in asset's quantum unit.
+  string quantum_amount = 10;
 }
 
 // Details for rewards for a single asset

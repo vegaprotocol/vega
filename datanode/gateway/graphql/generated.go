@@ -2074,6 +2074,7 @@ type ComplexityRoot struct {
 		MarketId          func(childComplexity int) int
 		Party             func(childComplexity int) int
 		PercentageOfTotal func(childComplexity int) int
+		QuantumAmount     func(childComplexity int) int
 		ReceivedAt        func(childComplexity int) int
 		RewardType        func(childComplexity int) int
 	}
@@ -12047,6 +12048,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Reward.PercentageOfTotal(childComplexity), true
+
+	case "Reward.quantumAmount":
+		if e.complexity.Reward.QuantumAmount == nil {
+			break
+		}
+
+		return e.complexity.Reward.QuantumAmount(childComplexity), true
 
 	case "Reward.receivedAt":
 		if e.complexity.Reward.ReceivedAt == nil {
@@ -28356,6 +28364,8 @@ func (ec *executionContext) fieldContext_Entities_rewards(ctx context.Context, f
 				return ec.fieldContext_Reward_epoch(ctx, field)
 			case "amount":
 				return ec.fieldContext_Reward_amount(ctx, field)
+			case "quantumAmount":
+				return ec.fieldContext_Reward_quantumAmount(ctx, field)
 			case "percentageOfTotal":
 				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
 			case "receivedAt":
@@ -74423,6 +74433,50 @@ func (ec *executionContext) fieldContext_Reward_amount(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Reward_quantumAmount(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Reward_quantumAmount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuantumAmount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Reward_quantumAmount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Reward_percentageOfTotal(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Reward_percentageOfTotal(ctx, field)
 	if err != nil {
@@ -74616,6 +74670,8 @@ func (ec *executionContext) fieldContext_RewardEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Reward_epoch(ctx, field)
 			case "amount":
 				return ec.fieldContext_Reward_amount(ctx, field)
+			case "quantumAmount":
+				return ec.fieldContext_Reward_quantumAmount(ctx, field)
 			case "percentageOfTotal":
 				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
 			case "receivedAt":
@@ -111575,6 +111631,13 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 		case "amount":
 
 			out.Values[i] = ec._Reward_amount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "quantumAmount":
+
+			out.Values[i] = ec._Reward_quantumAmount(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
