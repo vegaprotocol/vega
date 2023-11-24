@@ -2501,6 +2501,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		}
 	}
 
+	m.broker.Send(events.NewPositionResolution(ctx, len(distressedMarginEvts), len(closed), m.getCurrentMarkPrice(), m.mkt.ID))
 	// if no position are meant to be closed, just return now.
 	if len(closed) <= 0 {
 		return orderUpdates

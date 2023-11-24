@@ -53,6 +53,7 @@
 - [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
 - [10147](https://github.com/vegaprotocol/vega/issues/10147) - Add network transfer largest share to the transfers if needed.
 - [10158](https://github.com/vegaprotocol/vega/issues/10158) - Add the network as the zero-share default party in settlement engine.
+- [10173](https://github.com/vegaprotocol/vega/issues/10173) - Restore the position resolution event.
 
 ## 0.73.0
 
