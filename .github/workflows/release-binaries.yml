@@ -288,15 +288,14 @@ jobs:
         run: go build -o build/${{ matrix.app }}.exe ./cmd/${{ matrix.app }}
 
       - name: "Sign binary"
-        # we do notarization to vegawallet only
         if: ${{ matrix.app == 'vegawallet' }}
-        uses: Dana-Prajea/code-sign-action@98c79121b376beab8d6a9484f445089db4461bca
+        uses: ./.github/actions/sign-windows-binary
         with:
-          certificate: ${{ secrets.WINDOWS_CERTIFICATE }}
-          password: ${{ secrets.WINDOWS_CERTIFICATE_PASS }}
-          certificatesha1: ${{ secrets.WINDOWS_CERTIFICATE_HASH }}
-          folder: "build"
-          timestampUrl: "http://timestamp.sectigo.com"
+          current-working-directory: build
+          binary-file: ${{ matrix.app }}.exe
+          gcp-credentials: ${{ secrets.GCP_CREDENTIALS }}
+          ev-cert-pem: ${{ secrets.EV_SIGN_CERT_FULL_CHAIN_PEM }}
+
 
       - name: Check version
         if: ${{ env.GOARCH == 'amd64' }}
