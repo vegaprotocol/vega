@@ -400,7 +400,7 @@ func setupMetrics() error {
 		Counter,
 		"ethereum_rpc_calls_total",
 		Namespace("vega"),
-		Vectors("spec"),
+		Vectors("endpoint"),
 		Help("Number of calls made to the ethereum RPC"),
 	)
 	if err != nil {
