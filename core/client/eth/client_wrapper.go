@@ -71,6 +71,7 @@ func (c *ethClientWrapper) ChainID(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("chain_id")
 	return c.clt.ChainID(ctx)
 }
+
 func (c *ethClientWrapper) NetworkID(ctx context.Context) (*big.Int, error) {
 	metrics.EthereumRPCCallCounterInc("network_id")
 	return c.clt.NetworkID(ctx)
@@ -82,10 +83,11 @@ func (c *ethClientWrapper) BlockByHash(ctx context.Context, hash ethcommon.Hash)
 }
 
 func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (*ethtypes.Header, error) {
-
 	// first check the cache
-	if header, ok := c.headerByNumberCache.Get(number.String()); ok {
-		return ethtypes.CopyHeader(header), nil
+	if number != nil {
+		if header, ok := c.headerByNumberCache.Get(number.String()); ok {
+			return ethtypes.CopyHeader(header), nil
+		}
 	}
 
 	// cache miss, so let's inc the counter, and call the rpc.
@@ -95,7 +97,7 @@ func (c *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) 
 		return nil, err
 	}
 
-	c.headerByNumberCache.Add(number.String(), ethtypes.CopyHeader(header))
+	c.headerByNumberCache.Add(header.Number.String(), ethtypes.CopyHeader(header))
 
 	return header, nil
 }
