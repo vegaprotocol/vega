@@ -39,6 +39,7 @@ var (
 	year = num.DecimalFromInt64((24 * 365 * time.Hour).Nanoseconds())
 
 	ErrDataPointAlreadyExistsAtTime = errors.New("data-point already exists at timestamp")
+	ErrDataPointIsTooOld            = errors.New("data-point is too old")
 	ErrInitialPeriodNotStarted      = errors.New("initial settlement period not started")
 )
 
@@ -286,28 +287,48 @@ func (c *cachedTWAP) insertPoint(point *dataPoint) (*num.Uint, error) {
 	return twap, nil
 }
 
+// prependPoint handles the case where the given point is either before the first point, or before the start of the period.
+func (c *cachedTWAP) prependPoint(point *dataPoint) (*num.Uint, error) {
+	first := c.points[0]
+
+	if point.t == first.t {
+		return nil, ErrDataPointAlreadyExistsAtTime
+	}
+
+	// our first point is on or before the start of the period, and the new point is before both, its too old
+	if first.t <= c.periodStart && point.t < first.t {
+		return nil, ErrDataPointIsTooOld
+	}
+
+	points := c.points[:]
+	if first.t < c.periodStart && first.t < point.t {
+		// this is the case where we have first-point < new-point < period start and we only want to keep
+		// one data point that is before the start of the period, so we throw away first-point
+		points = c.points[1:]
+	}
+
+	c.points = []*dataPoint{point}
+	c.sumProduct = num.UintZero()
+	c.setPeriod(point.t, point.t)
+	for _, p := range points {
+		c.calculate(p.t)
+		c.points = append(c.points, p)
+	}
+	return point.price.Clone(), nil
+}
+
 // addPoint takes the given point and works out where it fits against what we already have, updates the
 // running sum-product and returns the TWAP at point.t.
 func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
-	if len(c.points) == 0 || point.t < c.start {
-		// first point, or new point is before the start of the funding period
+	if len(c.points) == 0 {
 		c.points = []*dataPoint{point}
 		c.setPeriod(point.t, point.t)
 		c.sumProduct = num.UintZero()
 		return point.price.Clone(), nil
 	}
 
-	// point to add is before the very first point we added, a little weird but ok
-	if point.t <= c.points[0].t {
-		points := c.points[:]
-		c.points = []*dataPoint{point}
-		c.setPeriod(point.t, point.t)
-		c.sumProduct = num.UintZero()
-		for _, p := range points {
-			c.calculate(p.t)
-			c.points = append(c.points, p)
-		}
-		return point.price.Clone(), nil
+	if point.t <= c.points[0].t || point.t <= c.periodStart {
+		return c.prependPoint(point)
 	}
 
 	// new point is after the last point, just calculate the TWAP at point.t and append
