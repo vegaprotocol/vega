@@ -49,6 +49,7 @@
 - [10123](https://github.com/vegaprotocol/vega/issues/10123) - Ledger exports contain account types of "UNKNOWN" type
 - [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 - [10125](https://github.com/vegaprotocol/vega/issues/10125) - Wire the `JoinTeam` command in the wallet.
+- [10177](https://github.com/vegaprotocol/vega/issues/10177) - Add validation that order sizes are not strangely large.
 - [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
 - [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
