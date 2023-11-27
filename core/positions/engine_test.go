@@ -18,6 +18,7 @@ package positions_test
 import (
 	"context"
 	"encoding/hex"
+	"math"
 	"testing"
 	"time"
 
@@ -37,6 +38,70 @@ func TestUpdatePosition(t *testing.T) {
 	t.Run("Update position regular", testUpdatePositionRegular)
 	t.Run("Update position network trade as buyer", testUpdatePositionNetworkBuy)
 	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
+}
+
+func TestRegisterLargeOrder(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	ctx := context.Background()
+	e := getTestEngine(t)
+	orderBuy := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
+		Price:     num.UintZero(),
+	}
+
+	assert.NoError(t, e.ValidateOrder(&orderBuy))
+	_ = e.RegisterOrder(ctx, &orderBuy)
+
+	// now say we're going to do another MASSIVE one
+	orderBuy2 := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      math.MaxInt64,
+		Remaining: math.MaxInt64,
+		Price:     num.UintZero(),
+	}
+	assert.Error(t, e.ValidateOrder(&orderBuy2)) // should fail because if we registered it'll overflow
+	require.Panics(t, func() {
+		e.RegisterOrder(ctx, &orderBuy2) // should panic and not silently overflow
+	})
+}
+
+func TestAmendLargeOrder(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	ctx := context.Background()
+	e := getTestEngine(t)
+	orderBuy := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
+		Price:     num.UintZero(),
+	}
+
+	assert.NoError(t, e.ValidateOrder(&orderBuy))
+	_ = e.RegisterOrder(ctx, &orderBuy)
+
+	// now say we're going to do an amend to a massive one
+	orderBuy2 := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      math.MaxUint64,
+		Remaining: math.MaxUint64,
+		Price:     num.UintZero(),
+	}
+	assert.Error(t, e.ValidateAmendOrder(&orderBuy, &orderBuy2)) // should fail because if we registered it'll overflow
+	require.Panics(t, func() {
+		e.RegisterOrder(ctx, &orderBuy2) // should panic and not silently overflow
+	})
 }
 
 func TestGetOpenInterest(t *testing.T) {
