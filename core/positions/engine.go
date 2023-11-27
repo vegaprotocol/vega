@@ -207,6 +207,28 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
+// ValidateOrder checks that the given order can be registered.
+func (e *Engine) ValidateOrder(order *types.Order) error {
+	pos, found := e.positions[order.Party]
+	if !found {
+		pos = NewMarketPosition(order.Party)
+	}
+	return pos.ValidateOrderRegistration(order.TrueRemaining(), order.Side)
+}
+
+// ValidateAmendOrder checks that replace the given order with a new order will no cause issues with position tracking.
+func (e *Engine) ValidateAmendOrder(order *types.Order, newOrder *types.Order) error {
+	pos, found := e.positions[order.Party]
+	if !found {
+		pos = NewMarketPosition(order.Party)
+	}
+
+	if order.TrueRemaining() >= newOrder.TrueRemaining() {
+		return nil
+	}
+	return pos.ValidateOrderRegistration(newOrder.TrueRemaining()-order.TrueRemaining(), order.Side)
+}
+
 // RegisterOrder updates the potential positions for a submitted order, as though
 // the order were already accepted.
 // It returns the updated position.
