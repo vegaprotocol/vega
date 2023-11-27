@@ -17,6 +17,7 @@ package commands
 
 import (
 	"errors"
+	"math"
 	"math/big"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -70,6 +71,9 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 
 	if cmd.Size != nil {
 		isAmending = true
+		if *cmd.Size > math.MaxInt64/2 {
+			errs.AddForProperty("order_amendment.size", ErrSizeIsTooLarge)
+		}
 	}
 
 	if cmd.SizeDelta != 0 {
