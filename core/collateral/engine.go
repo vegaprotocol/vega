@@ -1535,6 +1535,10 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 			)
 			return nil, nil, err
 		}
+		if req == nil {
+			// nil transfer encountered
+			continue
+		}
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
