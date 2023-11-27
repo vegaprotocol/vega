@@ -89,6 +89,8 @@ Feature: Test internal and external twap calculation
         # 5 min in to the next funding period market moves into auction
         Given time is updated to "2020-10-16T00:15:00Z"
         And the mark price should be "10" for the market "ETH/DEC19"
+        # this spot price is not counted in external twap calclation because it was broadcast during auction
+        # if it did then the External spot price would be pushed to 11.625 or 11 since field type is int
         When the oracles broadcast data with block time signed with "0xCAFECAFE1":
             | name           | value | time offset |
             | perp.ETH.value | 120   | -1s         |
@@ -144,7 +146,7 @@ Feature: Test internal and external twap calculation
             | party  | market id | side | volume | price | resulting trades | type       | tif     |
             | party1 | ETH/DEC19 | buy  | 1      | 30    | 0                | TYPE_LIMIT | TIF_GTC |
             | party2 | ETH/DEC19 | sell | 1      | 30    | 1                | TYPE_LIMIT | TIF_GTC |
-        # in theory internal TWAP = 9.625 external TWAP = 10.25
+        # in theory internal TWAP = 9.625 external TWAP = 10.25, if the auction period is excluded
         # but these are type int so the decimal is truncated
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap |
