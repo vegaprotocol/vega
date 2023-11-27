@@ -203,14 +203,27 @@ func (e *Engine) addNetworkTrade(trade *types.Trade) {
 	if trade.Aggressor == types.SideSell {
 		tSize *= -1
 	}
-	e.settledPosition[types.NetworkParty] += tSize
-	trades := e.trades[types.NetworkParty]
-	// all trades should be based on the new settled position size
-	for i, t := range trades {
-		t.newSize += tSize
-		trades[i] = t
+
+	// if in case of no trades, we start here
+	oldSize := e.settledPosition[types.NetworkParty]
+	if oldSize == 0 {
+		// the network was holding no position, we just opened one that was marked to market, so there is no need to add it to the trades volume
+		e.settledPosition[types.NetworkParty] += tSize
+		return
 	}
-	e.trades[types.NetworkParty] = trades
+	// for any other change in the position, this could have happened at a different mark price, and we will need to mark this trade to market
+	// e.g. parties getting distressed after a funding payment.
+	if trades, ok := e.trades[types.NetworkParty]; ok && len(trades) > 0 {
+		oldSize = trades[len(trades)-1].newSize
+	} else if !ok {
+		e.trades[types.NetworkParty] = []*settlementTrade{}
+	}
+	e.trades[types.NetworkParty] = append(e.trades[types.NetworkParty], &settlementTrade{
+		price:       trade.Price.Clone(),
+		marketPrice: trade.MarketPrice.Clone(),
+		size:        tSize,
+		newSize:     oldSize + tSize,
+	})
 }
 
 func (e *Engine) HasTraded() bool {
