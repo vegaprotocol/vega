@@ -245,12 +245,13 @@ func testCheckpointLoadingWithMissingRationaleShouldNotBeProblem(t *testing.T) {
 		PartyId:   vgrand.RandomStr(5),
 		State:     types.ProposalStateEnacted,
 		Timestamp: 123456789,
-		Terms: &vegapb.ProposalTerms{
-			ClosingTimestamp:    now.Add(10 * time.Minute).Unix(),
-			EnactmentTimestamp:  now.Add(30 * time.Minute).Unix(),
-			ValidationTimestamp: 0,
-			Change:              &vegapb.ProposalTerms_NewFreeform{},
-		},
+		TermsOneOf: &vegapb.Proposal_Terms{
+			Terms: &vegapb.ProposalTerms{
+				ClosingTimestamp:    now.Add(10 * time.Minute).Unix(),
+				EnactmentTimestamp:  now.Add(30 * time.Minute).Unix(),
+				ValidationTimestamp: 0,
+				Change:              &vegapb.ProposalTerms_NewFreeform{},
+			}},
 		Reason:       ptr.From(vegapb.ProposalError_PROPOSAL_ERROR_UNSPECIFIED),
 		ErrorDetails: ptr.From(""),
 		Rationale:    nil,

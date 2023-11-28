@@ -451,7 +451,7 @@ message Proposal {
     STATE_REJECTED = 4;
     // Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
     STATE_DECLINED = 5;
-    // Proposal enacted
+    // Proposal enacted. In case of batch proposal all terms are enacted.
     STATE_ENACTED = 6;
     // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
@@ -471,8 +471,15 @@ message Proposal {
   State state = 4;
   // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;
+
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
-  ProposalTerms terms = 6;
+  oneof terms_one_of {
+    // Single proposal term.
+    ProposalTerms terms = 6;
+    // Batch proposal terms.
+    BatchProposalTerms batch_terms = 14;
+  }
+
   // Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   optional ProposalError reason = 7;
   // Detailed error associated to the reason.

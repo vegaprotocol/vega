@@ -232,7 +232,7 @@ message BatchProposalSubmission {
   // Arbitrary human-readable reference identifying the proposal.
   string reference = 1;
   // Proposal terms containing the type and details of the proposal, as well as time spans for voting and enactment.
-  vega.ProposalTerms terms = 2;
+  vega.BatchProposalTerms terms = 2;
   // Rationale behind a proposal.
   vega.ProposalRationale rationale = 3;
 }

@@ -60,6 +60,18 @@ func (a ProposalTermsNewMarket) IntoProto() *vegapb.ProposalTerms_NewMarket {
 
 func (a ProposalTermsNewMarket) isPTerm() {}
 
+func (a ProposalTermsNewMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_NewMarket{
+		NewMarket: a.NewMarket.IntoProto(),
+	}
+}
+
+func (a ProposalTermsNewMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_NewMarket{
+		NewMarket: a.NewMarket.IntoProto(),
+	}
+}
+
 func (a ProposalTermsNewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
@@ -77,14 +89,14 @@ func (a ProposalTermsNewMarket) DeepClone() proposalTerm {
 	}
 }
 
-func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNewMarket, error) {
+func NewNewMarketFromProto(newMarketProto *vegapb.NewMarket) (*ProposalTermsNewMarket, error) {
 	var newMarket *NewMarket
-	if p.NewMarket != nil {
+	if newMarketProto != nil {
 		newMarket = &NewMarket{}
 
-		if p.NewMarket.Changes != nil {
+		if newMarketProto.Changes != nil {
 			var err error
-			newMarket.Changes, err = NewMarketConfigurationFromProto(p.NewMarket.Changes)
+			newMarket.Changes, err = NewMarketConfigurationFromProto(newMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}

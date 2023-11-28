@@ -86,7 +86,7 @@ message InputData {
     // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
     // Command to submit a governance proposal.
-    BatchProposalSubmission batch_proposal_submission = 1005;
+    BatchProposalSubmission batch_proposal_submission = 3002;
   }
 }
 

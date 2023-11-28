@@ -43,20 +43,26 @@ func (a ProposalTermsUpdateAsset) String() string {
 	)
 }
 
-func (a ProposalTermsUpdateAsset) IntoProto() *vegapb.ProposalTerms_UpdateAsset {
+func (a ProposalTermsUpdateAsset) IntoProto() *vegapb.UpdateAsset {
 	var updateAsset *vegapb.UpdateAsset
 	if a.UpdateAsset != nil {
 		updateAsset = a.UpdateAsset.IntoProto()
 	}
-	return &vegapb.ProposalTerms_UpdateAsset{
-		UpdateAsset: updateAsset,
-	}
+	return updateAsset
 }
 
 func (a ProposalTermsUpdateAsset) isPTerm() {}
 
-func (a ProposalTermsUpdateAsset) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateAsset) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_UpdateAsset{
+		UpdateAsset: a.UpdateAsset.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateAsset) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateAsset{
+		UpdateAsset: a.UpdateAsset.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateAsset) GetTermType() ProposalTermsType {
@@ -72,16 +78,16 @@ func (a ProposalTermsUpdateAsset) DeepClone() proposalTerm {
 	}
 }
 
-func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTermsUpdateAsset, error) {
+func NewUpdateAssetFromProto(updateAssetProto *vegapb.UpdateAsset) (*ProposalTermsUpdateAsset, error) {
 	var updateAsset *UpdateAsset
-	if p.UpdateAsset != nil {
+	if updateAssetProto != nil {
 		updateAsset = &UpdateAsset{
-			AssetID: p.UpdateAsset.GetAssetId(),
+			AssetID: updateAssetProto.GetAssetId(),
 		}
 
-		if p.UpdateAsset.Changes != nil {
+		if updateAssetProto.Changes != nil {
 			var err error
-			updateAsset.Changes, err = AssetDetailsUpdateFromProto(p.UpdateAsset.Changes)
+			updateAsset.Changes, err = AssetDetailsUpdateFromProto(updateAssetProto.Changes)
 			if err != nil {
 				return nil, err
 			}

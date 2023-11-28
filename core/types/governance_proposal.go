@@ -20,7 +20,6 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
-	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -193,7 +192,7 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 	return &ProposalSubmission{
 		Reference: p.Reference,
-		Terms:     p.Terms,
+		Terms:     p.SingleTerm(),
 		Rationale: p.Rationale,
 	}
 }
@@ -202,7 +201,7 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	var pterms *ProposalTerms
 	if p.Terms != nil {
 		var err error
-		pterms, err = ProposalTermsFromProto(p.Terms)
+		pterms, err = SingleProposalTermsFromProto(p.Terms)
 		if err != nil {
 			return nil, err
 		}
@@ -217,13 +216,19 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	}, nil
 }
 
+type proposalTerms interface {
+	DeepClone() proposalTerms
+	String() string
+	IntoOneOffProto() vegapb.ProposalOneOffTermType
+}
+
 type Proposal struct {
 	ID                      string
 	Reference               string
 	Party                   string
 	State                   ProposalState
 	Timestamp               int64
-	Terms                   *ProposalTerms
+	Terms                   proposalTerms
 	Rationale               *ProposalRationale
 	Reason                  ProposalError
 	ErrorDetails            string
@@ -233,99 +238,65 @@ type Proposal struct {
 	RequiredLPParticipation num.Decimal
 }
 
-func (p *Proposal) IsMarketStateUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *Proposal) IsMarketUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *Proposal) IsSpotMarketUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *Proposal) IsReferralProgramUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateReferralProgram:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *Proposal) IsVolumeDiscountProgramUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateVolumeDiscountProgram:
-		return true
-	default:
-		return false
-	}
-}
-
-func (p *Proposal) MarketUpdate() *UpdateMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return terms.UpdateMarket
+func (p Proposal) BatchTerms() *BatchProposalTerms {
+	switch t := p.Terms.(type) {
+	case *BatchProposalTerms:
+		return t
 	default:
 		return nil
 	}
 }
 
-func (p *Proposal) UpdateMarketState() *UpdateMarketState {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return terms.UpdateMarketState
+func (p Proposal) SingleTerm() *ProposalTerms {
+	switch t := p.Terms.(type) {
+	case *ProposalTerms:
+		return t
 	default:
 		return nil
 	}
 }
 
-func (p *Proposal) SpotMarketUpdate() *UpdateSpotMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return terms.UpdateSpotMarket
-	default:
-		return nil
-	}
+func (p Proposal) IsMarketUpdate() bool {
+	return p.IsMarketUpdate()
 }
 
-func (p *Proposal) IsNewMarket() bool {
-	return p.Terms.Change.GetTermType() == ProposalTermsTypeNewMarket
+func (p Proposal) IsSpotMarketUpdate() bool {
+	return p.IsSpotMarketUpdate()
 }
 
-func (p *Proposal) NewMarket() *NewMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsNewMarket:
-		return terms.NewMarket
-	default:
-		return nil
-	}
+func (p Proposal) IsReferralProgramUpdate() bool {
+	return p.IsReferralProgramUpdate()
+}
+
+func (p Proposal) IsVolumeDiscountProgramUpdate() bool {
+	return p.IsVolumeDiscountProgramUpdate()
+}
+
+func (p Proposal) MarketUpdate() *UpdateMarket {
+	return p.MarketUpdate()
+}
+
+func (p Proposal) UpdateMarketState() *UpdateMarketState {
+	return p.UpdateMarketState()
+}
+
+func (p Proposal) SpotMarketUpdate() *UpdateSpotMarket {
+	return p.SpotMarketUpdate()
+}
+
+func (p Proposal) IsNewMarket() bool {
+	return p.IsNewMarket()
+}
+
+func (p Proposal) NewMarket() *NewMarket {
+	return p.NewMarket()
 }
 
 func (p *Proposal) IsSuccessorMarket() bool {
-	if p.Terms == nil || p.Terms.Change == nil {
+	if p.Terms == nil {
 		return false
 	}
-	if nm := p.NewMarket(); nm != nil {
-		return nm.Changes.Successor != nil
-	}
-	return false
+	return p.IsSuccessorMarket()
 }
 
 func (p *Proposal) WaitForNodeVote() {
@@ -373,7 +344,7 @@ func (p Proposal) String() string {
 		p.Party,
 		p.State.String(),
 		p.Timestamp,
-		stringer.PtrToString(p.Terms),
+		p.Terms,
 		p.Reason.String(),
 		p.ErrorDetails,
 		p.RequiredMajority.String(),
@@ -384,9 +355,9 @@ func (p Proposal) String() string {
 }
 
 func (p Proposal) IntoProto() *vegapb.Proposal {
-	var terms *vegapb.ProposalTerms
+	var terms vegapb.ProposalOneOffTermType
 	if p.Terms != nil {
-		terms = p.Terms.IntoProto()
+		terms = p.Terms.IntoOneOffProto()
 	}
 
 	var lpMajority *string
@@ -404,7 +375,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 		PartyId:                                p.Party,
 		State:                                  p.State,
 		Timestamp:                              p.Timestamp,
-		Terms:                                  terms,
+		TermsOneOf:                             terms,
 		RequiredMajority:                       p.RequiredMajority.String(),
 		RequiredParticipation:                  p.RequiredParticipation.String(),
 		RequiredLiquidityProviderMajority:      lpMajority,
@@ -427,7 +398,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 }
 
 func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
-	terms, err := ProposalTermsFromProto(pp.Terms)
+	terms, err := ProposalTermsFromProto(pp.TermsOneOf)
 	if err != nil {
 		return nil, err
 	}
@@ -501,238 +472,4 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 		Description: p.Description,
 		Title:       p.Title,
 	}
-}
-
-type ProposalTerms struct {
-	ClosingTimestamp    int64
-	EnactmentTimestamp  int64
-	ValidationTimestamp int64
-	Change              proposalTerm
-}
-
-func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
-	change := p.Change.oneOfProto()
-	r := &vegapb.ProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		EnactmentTimestamp:  p.EnactmentTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-	}
-
-	switch ch := change.(type) {
-	case *vegapb.ProposalTerms_NewMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateNetworkParameter:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewAsset:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateAsset:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewFreeform:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewTransfer:
-		r.Change = ch
-	case *vegapb.ProposalTerms_CancelTransfer:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewSpotMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateSpotMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateMarketState:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateReferralProgram:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
-		r.Change = ch
-	}
-	return r
-}
-
-func (p ProposalTerms) DeepClone() *ProposalTerms {
-	cpy := p
-	cpy.Change = p.Change.DeepClone()
-	return &cpy
-}
-
-func (p ProposalTerms) String() string {
-	return fmt.Sprintf(
-		"validationTs(%v) closingTs(%v) enactmentTs(%v) change(%s)",
-		p.ValidationTimestamp,
-		p.ClosingTimestamp,
-		p.EnactmentTimestamp,
-		stringer.ObjToString(p.Change),
-	)
-}
-
-func (p *ProposalTerms) GetNewTransfer() *NewTransfer {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewTransfer:
-		return c.NewTransfer
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetCancelTransfer() *CancelTransfer {
-	switch c := p.Change.(type) {
-	case *ProposalTermsCancelTransfer:
-		return c.CancelTransfer
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetMarketStateUpdate() *UpdateMarketState {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return c.UpdateMarketState
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewAsset() *NewAsset {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewAsset:
-		return c.NewAsset
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateAsset() *UpdateAsset {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateAsset:
-		return c.UpdateAsset
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewMarket() *NewMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewMarket:
-		return c.NewMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateMarket() *UpdateMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return c.UpdateMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewSpotMarket() *NewSpotMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewSpotMarket:
-		return c.NewSpotMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateSpotMarket() *UpdateSpotMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return c.UpdateSpotMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateVolumeDiscountProgram() *UpdateVolumeDiscountProgram {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateVolumeDiscountProgram:
-		return c.UpdateVolumeDiscountProgram
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateReferralProgram() *UpdateReferralProgram {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateReferralProgram:
-		return c.UpdateReferralProgram
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateNetworkParameter:
-		return c.UpdateNetworkParameter
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewFreeform:
-		return c.NewFreeform
-	default:
-		return nil
-	}
-}
-
-func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
-	var (
-		change proposalTerm
-		err    error
-	)
-	if p.Change != nil {
-		switch ch := p.Change.(type) {
-		case *vegapb.ProposalTerms_NewMarket:
-			change, err = NewNewMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateMarket:
-			change, err = UpdateMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateNetworkParameter:
-			change = NewUpdateNetworkParameterFromProto(ch)
-		case *vegapb.ProposalTerms_NewAsset:
-			change, err = NewNewAssetFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateAsset:
-			change, err = NewUpdateAssetFromProto(ch)
-		case *vegapb.ProposalTerms_NewFreeform:
-			change = NewNewFreeformFromProto(ch)
-		case *vegapb.ProposalTerms_NewSpotMarket:
-			change, err = NewNewSpotMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateSpotMarket:
-			change, err = UpdateSpotMarketFromProto(ch)
-		case *vegapb.ProposalTerms_NewTransfer:
-			change, err = NewNewTransferFromProto(ch)
-		case *vegapb.ProposalTerms_CancelTransfer:
-			change, err = NewCancelGovernanceTransferFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateMarketState:
-			change, err = NewTerminateMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateReferralProgram:
-			change, err = NewUpdateReferralProgramProposalFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
-			change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &ProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		EnactmentTimestamp:  p.EnactmentTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-		Change:              change,
-	}, nil
-}
-
-type proposalTerm interface {
-	isPTerm()
-	oneOfProto() interface{} // calls IntoProto
-	DeepClone() proposalTerm
-	GetTermType() ProposalTermsType
-	String() string
 }

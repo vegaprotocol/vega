@@ -35,16 +35,18 @@ func (a ProposalTermsUpdateReferralProgram) String() string {
 	)
 }
 
-func (a ProposalTermsUpdateReferralProgram) IntoProto() *vegapb.ProposalTerms_UpdateReferralProgram {
+func (a ProposalTermsUpdateReferralProgram) isPTerm() {}
+
+func (a ProposalTermsUpdateReferralProgram) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_UpdateReferralProgram{
 		UpdateReferralProgram: a.UpdateReferralProgram.IntoProto(),
 	}
 }
 
-func (a ProposalTermsUpdateReferralProgram) isPTerm() {}
-
-func (a ProposalTermsUpdateReferralProgram) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateReferralProgram) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateReferralProgram{
+		UpdateReferralProgram: a.UpdateReferralProgram.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateReferralProgram) GetTermType() ProposalTermsType {
@@ -60,9 +62,11 @@ func (a ProposalTermsUpdateReferralProgram) DeepClone() proposalTerm {
 	}
 }
 
-func NewUpdateReferralProgramProposalFromProto(p *vegapb.ProposalTerms_UpdateReferralProgram) (*ProposalTermsUpdateReferralProgram, error) {
+func NewUpdateReferralProgramProposalFromProto(
+	updateReferralProgramProto *vegapb.UpdateReferralProgram,
+) (*ProposalTermsUpdateReferralProgram, error) {
 	return &ProposalTermsUpdateReferralProgram{
-		UpdateReferralProgram: NewUpdateReferralProgramFromProto(p.UpdateReferralProgram),
+		UpdateReferralProgram: NewUpdateReferralProgramFromProto(updateReferralProgramProto),
 	}, nil
 }
 

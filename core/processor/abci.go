@@ -50,6 +50,7 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	verrors "code.vegaprotocol.io/vega/libs/errors"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -1728,6 +1729,34 @@ func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	}
 }
 
+func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx) error {
+	p := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(p); err != nil {
+		return err
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p)
+	if err != nil {
+		return err
+	}
+
+	errs := verrors.NewCumulatedErrors()
+	for _, change := range propSubmission.Terms.Changes {
+		switch term := change.ProposalTerm().(type) {
+		case *types.ProposalTermsUpdateNetworkParameter:
+			if err := app.netp.IsUpdateAllowed(term.UpdateNetworkParameter.Changes.Key); err != nil {
+				errs.Add(errs)
+			}
+		}
+	}
+
+	if errs.HasAny() {
+		return fmt.Errorf("%s", errs.Error())
+	}
+
+	return nil
+}
+
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
@@ -1745,6 +1774,76 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 	}
 
 	propSubmission, err := types.NewProposalSubmissionFromProto(prop)
+	if err != nil {
+		return err
+	}
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicID, party)
+	if err != nil {
+		app.log.Debug("could not submit proposal",
+			logging.ProposalID(deterministicID),
+			logging.Error(err))
+		return err
+	}
+
+	if toSubmit.IsNewMarket() {
+		// opening auction start
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+		nm := toSubmit.NewMarket()
+
+		// @TODO pass in parent and insurance pool share if required
+		if err := app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
+			app.log.Debug("unable to submit new market with liquidity submission",
+				logging.ProposalID(nm.Market().ID),
+				logging.Error(err))
+			// an error happened when submitting the market
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject a nonexistent proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	} else if toSubmit.IsNewSpotMarket() {
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+		nm := toSubmit.NewSpotMarket()
+		if err := app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+			app.log.Debug("unable to submit new spot market",
+				logging.ProposalID(nm.Market().ID),
+				logging.Error(err))
+			// an error happened when submitting the market
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject a nonexistent proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	prop := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(prop); err != nil {
+		return err
+	}
+
+	party := tx.Party()
+
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("submitting proposal",
+			logging.ProposalID(deterministicID),
+			logging.String("proposal-reference", prop.Reference),
+			logging.String("proposal-party", party),
+			logging.String("proposal-terms", prop.Terms.String()))
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop)
 	if err != nil {
 		return err
 	}
