@@ -175,6 +175,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with filter with condition value succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
 	t.Run("Submitting a perps market change without oracle spec bindings fails", testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails)
 	t.Run("Submitting a perps market change with oracle spec binding succeeds", testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds)
+	t.Run("Submitting a perps market with funding rate modifiers", testNewPerpsMarketWithFundingRateModifiers)
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
@@ -5209,6 +5210,105 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 				return
 			}
 
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func testNewPerpsMarketWithFundingRateModifiers(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("-10"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0.1"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateLowerBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateLowerBound: ptr.From("-100"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_upper_bound",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+				FundingRateLowerBound: ptr.From("200"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValid,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
 			assert.Contains(t, errs, v.err, v.desc)
 		})
 	}

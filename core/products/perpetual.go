@@ -835,7 +835,7 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 	}
 
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
-	fundingPayment := num.IntFromUint(internalTWAP, true).Sub(num.IntFromUint(externalTWAP, true))
+	fundingPayment := num.DecimalFromUint(internalTWAP).Sub(num.DecimalFromUint(externalTWAP))
 
 	// apply interest-rates if necessary
 	if !p.p.InterestRate.IsZero() {
@@ -843,13 +843,30 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 		if p.log.GetLevel() == logging.DebugLevel {
 			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
 		}
-		fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+		fundingPayment = fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+	}
+
+	// apply funding scaling factor
+	if p.p.FundingRateScalingFactor != nil {
+		fundingPayment = fundingPayment.Mul(*p.p.FundingRateScalingFactor)
 	}
 
 	fundingRate := num.DecimalZero()
 	if !externalTWAP.IsZero() {
-		fundingRate = num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
+		fundingRate = fundingPayment.Div(num.DecimalFromUint(externalTWAP))
 	}
+
+	// apply upper/lower bound capping
+	if p.p.FundingRateUpperBound != nil && p.p.FundingRateUpperBound.LessThan(fundingRate) {
+		fundingRate = p.p.FundingRateUpperBound.Copy()
+		fundingPayment = fundingRate.Mul(num.DecimalFromUint(externalTWAP))
+	}
+
+	if p.p.FundingRateLowerBound != nil && p.p.FundingRateLowerBound.GreaterThan(fundingRate) {
+		fundingRate = p.p.FundingRateLowerBound.Copy()
+		fundingPayment = fundingRate.Mul(num.DecimalFromUint(externalTWAP))
+	}
+
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("funding payment calculated",
 			logging.MarketID(p.id),
@@ -857,15 +874,16 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 			logging.String("funding-payment", fundingPayment.String()),
 			logging.String("funding-rate", fundingRate.String()))
 	}
+	fundingPaymentInt, _ := num.IntFromDecimal(fundingPayment)
 	return &fundingData{
-		fundingPayment: fundingPayment,
+		fundingPayment: fundingPaymentInt,
 		fundingRate:    fundingRate,
 		externalTWAP:   externalTWAP,
 		internalTWAP:   internalTWAP,
 	}
 }
 
-func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) *num.Int {
+func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) num.Decimal {
 	// get delta in terms of years
 	td := num.DecimalFromInt64(delta).Div(year)
 
@@ -890,12 +908,7 @@ func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, 
 			logging.String("clamped-interest", clampedInterest.String()),
 		)
 	}
-
-	result, overflow := num.IntFromDecimal(clampedInterest)
-	if overflow {
-		p.log.Panic("overflow converting interest term to Int", logging.String("clampedInterest", clampedInterest.String()))
-	}
-	return result
+	return clampedInterest
 }
 
 // GetMarginIncrease returns the estimated extra margin required to account for the next funding payment

@@ -1885,6 +1885,12 @@ type Perpetual {
   dataSourceSpecForSettlementData: DataSourceSpec!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments"
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
 }
 
 """
@@ -4230,6 +4236,12 @@ type PerpetualProduct {
   dataSourceSpecForSettlementData: DataSourceDefinition!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
 }
 
 """
@@ -4430,6 +4442,12 @@ type UpdatePerpetualProduct {
   dataSourceSpecForSettlementData: DataSourceDefinition!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
 }
 
 union UpdateMarketRiskParameters =

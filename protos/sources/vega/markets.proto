@@ -66,6 +66,12 @@ message Perpetual {
   vega.DataSourceSpec data_source_spec_for_settlement_data = 8;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToPerpetualBinding data_source_spec_binding = 9;
+  // Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments.
+  optional string funding_rate_scaling_factor = 10;
+  // Lower bound for the funding-rate such that the funding-rate will never be lower than this value.
+  optional string funding_rate_lower_bound = 11;
+  // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
+  optional string funding_rate_upper_bound = 12;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
