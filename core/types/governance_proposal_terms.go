@@ -17,7 +17,6 @@ package types
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -136,12 +135,6 @@ func (p *ProposalTerms) IsSuccessorMarket() bool {
 	return false
 }
 
-func (p ProposalTerms) IntoOneOffProto() vegapb.ProposalOneOffTermType {
-	return &vegapb.Proposal_Terms{
-		Terms: p.IntoProto(),
-	}
-}
-
 func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 	change := p.Change.oneOfSingleProto()
 	terms := &vegapb.ProposalTerms{
@@ -182,7 +175,7 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 	return terms
 }
 
-func (p ProposalTerms) DeepClone() proposalTerms {
+func (p ProposalTerms) DeepClone() *ProposalTerms {
 	cpy := p
 	cpy.Change = p.Change.DeepClone()
 	return &cpy
@@ -315,7 +308,7 @@ func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
 	}
 }
 
-func SingleProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
+func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 	var (
 		err    error
 		change proposalTerm
@@ -360,19 +353,10 @@ func SingleProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, erro
 	}, nil
 }
 
-func ProposalTermsFromProto(termProto vegapb.ProposalOneOffTermType) (proposalTerms, error) {
-	switch protoType := termProto.(type) {
-	case *vegapb.Proposal_Terms:
-		return SingleProposalTermsFromProto(protoType.Terms)
-	case *vegapb.Proposal_BatchTerms:
-		return BatchProposalTermsFromProto(protoType.BatchTerms)
-	default:
-		return nil, errors.New("unknown proposal terms")
-	}
-}
-
 type batchProposalChange struct {
 	proposalTerm
+	ID            string
+	BatchID       string
 	enactmentTime int64
 }
 
@@ -395,77 +379,24 @@ func (c batchProposalChanges) String() string {
 }
 
 type BatchProposalTerms struct {
-	ClosingTimestamp    int64
-	EnactmentTimestamp  int64
-	ValidationTimestamp int64
-	Changes             batchProposalChanges
-}
-
-func (p BatchProposalTerms) IsMarketStateUpdate() bool {
-	return false
-}
-
-func (p BatchProposalTerms) IsMarketUpdate() bool {
-	return false
-}
-
-func (p BatchProposalTerms) IsSpotMarketUpdate() bool {
-	return false
-}
-
-func (p BatchProposalTerms) IsReferralProgramUpdate() bool {
-	return false
-}
-
-func (p BatchProposalTerms) IsVolumeDiscountProgramUpdate() bool {
-	return false
-}
-
-func (p BatchProposalTerms) MarketUpdate() *UpdateMarket {
-	return nil
-}
-
-func (p BatchProposalTerms) UpdateMarketState() *UpdateMarketState {
-	return nil
-}
-
-func (p BatchProposalTerms) SpotMarketUpdate() *UpdateSpotMarket {
-	return nil
-}
-
-func (p BatchProposalTerms) NewMarket() *NewMarket {
-	return nil
-}
-
-func (p BatchProposalTerms) IsNewMarket() bool {
-	return false
-}
-
-func (p BatchProposalTerms) IsSuccessorMarket() bool {
-	return false
+	ClosingTimestamp   int64
+	EnactmentTimestamp int64
+	Changes            batchProposalChanges
 }
 
 func (p BatchProposalTerms) String() string {
 	return fmt.Sprintf(
-		"batch term: validationTs(%v) closingTs(%v) enactmentTs(%v) changes(%s)",
-		p.ValidationTimestamp,
+		"batch term: closingTs(%v) enactmentTs(%v) changes(%s)",
 		p.ClosingTimestamp,
 		p.EnactmentTimestamp,
 		p.Changes,
 	)
 }
 
-func (p BatchProposalTerms) IntoOneOffProto() vegapb.ProposalOneOffTermType {
-	return &vegapb.Proposal_BatchTerms{
-		BatchTerms: p.IntoProto(),
-	}
-}
-
 func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 	terms := &vegapb.BatchProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-		Changes:             make([]*vegapb.BatchProposalTermsChange, 0, len(p.Changes)),
+		ClosingTimestamp: p.ClosingTimestamp,
+		Changes:          make([]*vegapb.BatchProposalTermsChange, 0, len(p.Changes)),
 	}
 
 	for _, c := range p.Changes {
@@ -508,7 +439,7 @@ func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 	return terms
 }
 
-func (p BatchProposalTerms) DeepClone() proposalTerms {
+func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
 	cpy := p
 
 	changes := make(batchProposalChanges, 0, len(p.Changes))
@@ -573,8 +504,7 @@ func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms) (*BatchProposalTe
 	}
 
 	return &BatchProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-		Changes:             changes,
+		ClosingTimestamp: p.ClosingTimestamp,
+		Changes:          changes,
 	}, nil
 }

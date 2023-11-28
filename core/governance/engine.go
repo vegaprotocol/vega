@@ -135,6 +135,7 @@ type Engine struct {
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
+	batchProposals   []*batchProposal
 	activeProposals  []*proposal
 	enactedProposals []*proposal
 
@@ -453,6 +454,14 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 	}
 
 	return p.proposal, true
+}
+
+func (e *Engine) SubmitBatchProposal(
+	ctx context.Context,
+	psub types.BatchProposalSubmission,
+	id, party string,
+) error {
+	return nil
 }
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
@@ -1296,6 +1305,14 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 
 type proposal struct {
 	*types.Proposal
+	yes          map[string]*types.Vote
+	no           map[string]*types.Vote
+	invalidVotes map[string]*types.Vote
+}
+
+type batchProposal struct {
+	*types.Proposal
+	sub          []*types.Proposal
 	yes          map[string]*types.Vote
 	no           map[string]*types.Vote
 	invalidVotes map[string]*types.Vote

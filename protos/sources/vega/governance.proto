@@ -392,8 +392,6 @@ message BatchProposalTerms {
   // Timestamp as Unix time in seconds when voting closes for this proposal,
   // constrained by `minClose` and `maxClose` network parameters.
   int64 closing_timestamp = 1;
-  // Validation timestamp as Unix time in seconds.
-  int64 validation_timestamp = 2;
   // Changes being proposed.
   repeated BatchProposalTermsChange changes = 3;
 }
@@ -429,6 +427,10 @@ message GovernanceData {
   map<string, Vote> no_party = 5;
 }
 
+message BatchProposal {
+
+}
+
 // Governance proposal
 message Proposal {
   // Proposal state transition:
@@ -455,6 +457,8 @@ message Proposal {
     STATE_ENACTED = 6;
     // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
+    // Proposal enacted. In case of batch proposal all terms are enacted.
+    STATE_PARTIALY_ENACTED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
@@ -471,15 +475,9 @@ message Proposal {
   State state = 4;
   // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;
-
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
-  oneof terms_one_of {
-    // Single proposal term.
-    ProposalTerms terms = 6;
-    // Batch proposal terms.
-    BatchProposalTerms batch_terms = 14;
-  }
-
+  // Single proposal term.
+  optional ProposalTerms terms = 6;
   // Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   optional ProposalError reason = 7;
   // Detailed error associated to the reason.
@@ -494,6 +492,9 @@ message Proposal {
   optional string required_liquidity_provider_participation = 12;
   // Required majority from liquidity providers, optional but is required for market update proposal.
   optional string required_liquidity_provider_majority = 13;
+  // Batch proposal terms.
+  optional BatchProposalTerms batch_terms = 14;
+  optional string batch_id = 15;
 }
 
 // List of possible errors that can cause a proposal to be in state rejected or failed

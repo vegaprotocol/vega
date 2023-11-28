@@ -192,7 +192,7 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 	return &ProposalSubmission{
 		Reference: p.Reference,
-		Terms:     p.SingleTerm(),
+		Terms:     p.Terms,
 		Rationale: p.Rationale,
 	}
 }
@@ -201,7 +201,7 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	var pterms *ProposalTerms
 	if p.Terms != nil {
 		var err error
-		pterms, err = SingleProposalTermsFromProto(p.Terms)
+		pterms, err = ProposalTermsFromProto(p.Terms)
 		if err != nil {
 			return nil, err
 		}
@@ -216,19 +216,14 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	}, nil
 }
 
-type proposalTerms interface {
-	DeepClone() proposalTerms
-	String() string
-	IntoOneOffProto() vegapb.ProposalOneOffTermType
-}
-
 type Proposal struct {
 	ID                      string
+	BatchID                 *string
 	Reference               string
 	Party                   string
 	State                   ProposalState
 	Timestamp               int64
-	Terms                   proposalTerms
+	Terms                   *ProposalTerms
 	Rationale               *ProposalRationale
 	Reason                  ProposalError
 	ErrorDetails            string
@@ -236,24 +231,6 @@ type Proposal struct {
 	RequiredParticipation   num.Decimal
 	RequiredLPMajority      num.Decimal
 	RequiredLPParticipation num.Decimal
-}
-
-func (p Proposal) BatchTerms() *BatchProposalTerms {
-	switch t := p.Terms.(type) {
-	case *BatchProposalTerms:
-		return t
-	default:
-		return nil
-	}
-}
-
-func (p Proposal) SingleTerm() *ProposalTerms {
-	switch t := p.Terms.(type) {
-	case *ProposalTerms:
-		return t
-	default:
-		return nil
-	}
 }
 
 func (p Proposal) IsMarketUpdate() bool {
@@ -355,9 +332,9 @@ func (p Proposal) String() string {
 }
 
 func (p Proposal) IntoProto() *vegapb.Proposal {
-	var terms vegapb.ProposalOneOffTermType
+	var terms *vegapb.ProposalTerms
 	if p.Terms != nil {
-		terms = p.Terms.IntoOneOffProto()
+		terms = p.Terms.IntoProto()
 	}
 
 	var lpMajority *string
@@ -375,7 +352,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 		PartyId:                                p.Party,
 		State:                                  p.State,
 		Timestamp:                              p.Timestamp,
-		TermsOneOf:                             terms,
+		Terms:                                  terms,
 		RequiredMajority:                       p.RequiredMajority.String(),
 		RequiredParticipation:                  p.RequiredParticipation.String(),
 		RequiredLiquidityProviderMajority:      lpMajority,
@@ -398,7 +375,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 }
 
 func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
-	terms, err := ProposalTermsFromProto(pp.TermsOneOf)
+	terms, err := ProposalTermsFromProto(pp.Terms)
 	if err != nil {
 		return nil, err
 	}

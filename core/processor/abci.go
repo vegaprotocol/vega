@@ -1827,7 +1827,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 	return nil
 }
 
-func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
+func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicBatchID string) error {
 	prop := &commandspb.BatchProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1836,21 +1836,23 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	party := tx.Party()
 
 	if app.log.GetLevel() <= logging.DebugLevel {
-		app.log.Debug("submitting proposal",
-			logging.ProposalID(deterministicID),
+		app.log.Debug("submitting batch proposal",
+			logging.ProposalID(deterministicBatchID),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
+	idgen := idgeneration.New(deterministicBatchID)
+
 	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop)
 	if err != nil {
 		return err
 	}
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicID, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicBatchID, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(deterministicID),
+			logging.ProposalID(deterministicBatchID),
 			logging.Error(err))
 		return err
 	}
