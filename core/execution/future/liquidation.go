@@ -87,8 +87,6 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 	// update the liquidation engine to reflect the trades have happened
 	m.liquidation.UpdateNetworkPosition(conf.Trades)
 
-	// perform a MTM settlement after the trades
-	m.confirmMTM(ctx, false)
 	// check for reference moves again? We should've already done this
 	// This can probably be removed
 	m.checkForReferenceMoves(ctx, conf.PassiveOrdersAffected, false)
