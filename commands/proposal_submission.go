@@ -1075,7 +1075,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
 	case *protoTypes.InstrumentConfiguration_Perpetual:
-		errs.Merge(checkNewPerps(product.Perpetual))
+		errs.Merge(checkNewPerps(product.Perpetual, fmt.Sprintf("%s.product", parent)))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -1104,7 +1104,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
 	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
-		errs.Merge(checkUpdatePerps(product.Perpetual))
+		errs.Merge(checkUpdatePerps(product.Perpetual, "proposal_submission.terms.change.update_market.changes.instrument.product"))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
 	}
@@ -1133,39 +1133,39 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
-func checkNewPerps(perps *protoTypes.PerpetualProduct) Errors {
+func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps", ErrIsRequired)
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.perps", parentProperty), ErrIsRequired)
 	}
 
 	if len(perps.SettlementAsset) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.settlement_asset", parentProperty), ErrIsRequired)
 	}
 	if len(perps.QuoteName) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.quote_name", parentProperty), ErrIsRequired)
 	}
 
 	if len(perps.MarginFundingFactor) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrIsRequired)
 	} else {
 		mff, err := num.DecimalFromString(perps.MarginFundingFactor)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrIsNotValidNumber)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrIsNotValidNumber)
 		} else if mff.IsNegative() || mff.GreaterThan(num.DecimalOne()) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.margin_funding_factor", ErrMustBeWithinRange01)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrMustBeWithinRange01)
 		}
 	}
 
 	if len(perps.InterestRate) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrIsRequired)
 	} else {
 		mff, err := num.DecimalFromString(perps.InterestRate)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrIsNotValidNumber)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrIsNotValidNumber)
 		} else if mff.LessThan(num.MustDecimalFromString("-1")) || mff.GreaterThan(num.DecimalOne()) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate", ErrMustBeWithinRange11)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrMustBeWithinRange11)
 		}
 	}
 
@@ -1176,39 +1176,67 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct) Errors {
 	)
 
 	if len(perps.ClampLowerBound) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrIsRequired)
 	} else {
 		clampLowerBound, err = num.DecimalFromString(perps.ClampLowerBound)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrIsNotValidNumber)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrIsNotValidNumber)
 		} else if clampLowerBound.LessThan(num.MustDecimalFromString("-1")) || clampLowerBound.GreaterThan(num.DecimalOne()) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound", ErrMustBeWithinRange11)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrMustBeWithinRange11)
 		} else {
 			okClampLowerBound = true
 		}
 	}
 
 	if len(perps.ClampUpperBound) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrIsRequired)
 	} else {
 		clampUpperBound, err = num.DecimalFromString(perps.ClampUpperBound)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrIsNotValidNumber)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrIsNotValidNumber)
 		} else if clampUpperBound.LessThan(num.MustDecimalFromString("-1")) || clampUpperBound.GreaterThan(num.DecimalOne()) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeWithinRange11)
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrMustBeWithinRange11)
 		} else {
 			okClampUpperBound = true
 		}
 	}
 
 	if okClampLowerBound && okClampUpperBound && clampUpperBound.LessThan(clampLowerBound) {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound", ErrMustBeGTEClampLowerBound)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrMustBeGTEClampLowerBound)
 	}
 
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
-	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
-	errs.Merge(checkNewPerpsOracleBinding(perps))
+	if perps.FundingRateScalingFactor != nil {
+		sf, err := num.DecimalFromString(*perps.FundingRateScalingFactor)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
+		}
+		if !sf.IsPositive() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		}
+	}
 
+	var lowerBound, upperBound num.Decimal
+	if perps.FundingRateLowerBound != nil {
+		if lowerBound, err = num.DecimalFromString(*perps.FundingRateLowerBound); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_lower_bound", parentProperty), ErrIsNotValidNumber)
+		}
+	}
+
+	if perps.FundingRateUpperBound != nil {
+		if upperBound, err = num.DecimalFromString(*perps.FundingRateUpperBound); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_upper_bound", parentProperty), ErrIsNotValidNumber)
+		}
+	}
+
+	if perps.FundingRateLowerBound != nil && perps.FundingRateUpperBound != nil {
+		if lowerBound.GreaterThan(upperBound) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_lower_bound", parentProperty), ErrIsNotValid)
+		}
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", fmt.Sprintf("%s.perps", parentProperty), true))
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", fmt.Sprintf("%s.perps", parentProperty), true))
+	errs.Merge(checkNewPerpsOracleBinding(perps))
 	return errs
 }
 
@@ -1252,15 +1280,102 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct) Errors {
+func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if perps == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.perps", parentProperty), ErrIsRequired)
 	}
 
 	if len(perps.QuoteName) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.perps.quote_name", parentProperty), ErrIsRequired)
+	}
+
+	if len(perps.MarginFundingFactor) <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.MarginFundingFactor)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrIsNotValidNumber)
+		} else if mff.IsNegative() || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.margin_funding_factor", parentProperty), ErrMustBeWithinRange01)
+		}
+	}
+
+	if len(perps.InterestRate) <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrIsRequired)
+	} else {
+		mff, err := num.DecimalFromString(perps.InterestRate)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrIsNotValidNumber)
+		} else if mff.LessThan(num.MustDecimalFromString("-1")) || mff.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.interest_rate", parentProperty), ErrMustBeWithinRange11)
+		}
+	}
+
+	var (
+		okClampLowerBound, okClampUpperBound bool
+		clampLowerBound, clampUpperBound     num.Decimal
+		err                                  error
+	)
+
+	if len(perps.ClampLowerBound) <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrIsRequired)
+	} else {
+		clampLowerBound, err = num.DecimalFromString(perps.ClampLowerBound)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrIsNotValidNumber)
+		} else if clampLowerBound.LessThan(num.MustDecimalFromString("-1")) || clampLowerBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_lower_bound", parentProperty), ErrMustBeWithinRange11)
+		} else {
+			okClampLowerBound = true
+		}
+	}
+
+	if len(perps.ClampUpperBound) <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrIsRequired)
+	} else {
+		clampUpperBound, err = num.DecimalFromString(perps.ClampUpperBound)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrIsNotValidNumber)
+		} else if clampUpperBound.LessThan(num.MustDecimalFromString("-1")) || clampUpperBound.GreaterThan(num.DecimalOne()) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrMustBeWithinRange11)
+		} else {
+			okClampUpperBound = true
+		}
+	}
+
+	if okClampLowerBound && okClampUpperBound && clampUpperBound.LessThan(clampLowerBound) {
+		errs.AddForProperty(fmt.Sprintf("%s.perps.clamp_upper_bound", parentProperty), ErrMustBeGTEClampLowerBound)
+	}
+
+	if perps.FundingRateScalingFactor != nil {
+		sf, err := num.DecimalFromString(*perps.FundingRateScalingFactor)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
+		}
+		if !sf.IsPositive() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		}
+	}
+
+	var lowerBound, upperBound num.Decimal
+	if perps.FundingRateLowerBound != nil {
+		if lowerBound, err = num.DecimalFromString(*perps.FundingRateLowerBound); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_lower_bound", parentProperty), ErrIsNotValidNumber)
+		}
+	}
+
+	if perps.FundingRateUpperBound != nil {
+		if upperBound, err = num.DecimalFromString(*perps.FundingRateUpperBound); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_upper_bound", parentProperty), ErrIsNotValidNumber)
+		}
+	}
+
+	if perps.FundingRateLowerBound != nil && perps.FundingRateUpperBound != nil {
+		if lowerBound.GreaterThan(upperBound) {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_lower_bound", parentProperty), ErrIsNotValid)
+		}
 	}
 
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))

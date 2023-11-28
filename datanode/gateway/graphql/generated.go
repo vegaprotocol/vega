@@ -1672,6 +1672,9 @@ type ComplexityRoot struct {
 		DataSourceSpecBinding               func(childComplexity int) int
 		DataSourceSpecForSettlementData     func(childComplexity int) int
 		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		FundingRateLowerBound               func(childComplexity int) int
+		FundingRateScalingFactor            func(childComplexity int) int
+		FundingRateUpperBound               func(childComplexity int) int
 		InterestRate                        func(childComplexity int) int
 		MarginFundingFactor                 func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
@@ -1691,6 +1694,9 @@ type ComplexityRoot struct {
 		DataSourceSpecBinding               func(childComplexity int) int
 		DataSourceSpecForSettlementData     func(childComplexity int) int
 		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		FundingRateLowerBound               func(childComplexity int) int
+		FundingRateScalingFactor            func(childComplexity int) int
+		FundingRateUpperBound               func(childComplexity int) int
 		InterestRate                        func(childComplexity int) int
 		MarginFundingFactor                 func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
@@ -2561,6 +2567,9 @@ type ComplexityRoot struct {
 		DataSourceSpecBinding               func(childComplexity int) int
 		DataSourceSpecForSettlementData     func(childComplexity int) int
 		DataSourceSpecForSettlementSchedule func(childComplexity int) int
+		FundingRateLowerBound               func(childComplexity int) int
+		FundingRateScalingFactor            func(childComplexity int) int
+		FundingRateUpperBound               func(childComplexity int) int
 		InterestRate                        func(childComplexity int) int
 		MarginFundingFactor                 func(childComplexity int) int
 		QuoteName                           func(childComplexity int) int
@@ -9913,6 +9922,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Perpetual.DataSourceSpecForSettlementSchedule(childComplexity), true
 
+	case "Perpetual.fundingRateLowerBound":
+		if e.complexity.Perpetual.FundingRateLowerBound == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.FundingRateLowerBound(childComplexity), true
+
+	case "Perpetual.fundingRateScalingFactor":
+		if e.complexity.Perpetual.FundingRateScalingFactor == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.FundingRateScalingFactor(childComplexity), true
+
+	case "Perpetual.fundingRateUpperBound":
+		if e.complexity.Perpetual.FundingRateUpperBound == nil {
+			break
+		}
+
+		return e.complexity.Perpetual.FundingRateUpperBound(childComplexity), true
+
 	case "Perpetual.interestRate":
 		if e.complexity.Perpetual.InterestRate == nil {
 			break
@@ -10003,6 +10033,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PerpetualProduct.DataSourceSpecForSettlementSchedule(childComplexity), true
+
+	case "PerpetualProduct.fundingRateLowerBound":
+		if e.complexity.PerpetualProduct.FundingRateLowerBound == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.FundingRateLowerBound(childComplexity), true
+
+	case "PerpetualProduct.fundingRateScalingFactor":
+		if e.complexity.PerpetualProduct.FundingRateScalingFactor == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.FundingRateScalingFactor(childComplexity), true
+
+	case "PerpetualProduct.fundingRateUpperBound":
+		if e.complexity.PerpetualProduct.FundingRateUpperBound == nil {
+			break
+		}
+
+		return e.complexity.PerpetualProduct.FundingRateUpperBound(childComplexity), true
 
 	case "PerpetualProduct.interestRate":
 		if e.complexity.PerpetualProduct.InterestRate == nil {
@@ -14046,6 +14097,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UpdatePerpetualProduct.DataSourceSpecForSettlementSchedule(childComplexity), true
+
+	case "UpdatePerpetualProduct.fundingRateLowerBound":
+		if e.complexity.UpdatePerpetualProduct.FundingRateLowerBound == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.FundingRateLowerBound(childComplexity), true
+
+	case "UpdatePerpetualProduct.fundingRateScalingFactor":
+		if e.complexity.UpdatePerpetualProduct.FundingRateScalingFactor == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.FundingRateScalingFactor(childComplexity), true
+
+	case "UpdatePerpetualProduct.fundingRateUpperBound":
+		if e.complexity.UpdatePerpetualProduct.FundingRateUpperBound == nil {
+			break
+		}
+
+		return e.complexity.UpdatePerpetualProduct.FundingRateUpperBound(childComplexity), true
 
 	case "UpdatePerpetualProduct.interestRate":
 		if e.complexity.UpdatePerpetualProduct.InterestRate == nil {
@@ -61021,6 +61093,138 @@ func (ec *executionContext) fieldContext_Perpetual_dataSourceSpecBinding(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _Perpetual_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_fundingRateScalingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateScalingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_fundingRateLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Perpetual_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.Perpetual) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Perpetual_fundingRateUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Perpetual_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Perpetual",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PerpetualData_fundingPayment(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PerpetualData_fundingPayment(ctx, field)
 	if err != nil {
@@ -61622,6 +61826,138 @@ func (ec *executionContext) fieldContext_PerpetualProduct_dataSourceSpecBinding(
 				return ec.fieldContext_DataSourceSpecPerpetualBinding_settlementScheduleProperty(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DataSourceSpecPerpetualBinding", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_fundingRateScalingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateScalingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_fundingRateLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PerpetualProduct_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.PerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PerpetualProduct_fundingRateUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PerpetualProduct_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -88451,6 +88787,138 @@ func (ec *executionContext) fieldContext_UpdatePerpetualProduct_dataSourceSpecBi
 	return fc, nil
 }
 
+func (ec *executionContext) _UpdatePerpetualProduct_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_fundingRateScalingFactor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateScalingFactor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_fundingRateScalingFactor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_fundingRateLowerBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateLowerBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_fundingRateLowerBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UpdatePerpetualProduct_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField, obj *vega.UpdatePerpetualProduct) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UpdatePerpetualProduct_fundingRateUpperBound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FundingRateUpperBound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UpdatePerpetualProduct_fundingRateUpperBound(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UpdatePerpetualProduct",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UpdateReferralProgram_benefitTiers(ctx context.Context, field graphql.CollectedField, obj *vega.UpdateReferralProgram) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UpdateReferralProgram_benefitTiers(ctx, field)
 	if err != nil {
@@ -107291,6 +107759,27 @@ func (ec *executionContext) _Perpetual(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "fundingRateScalingFactor":
+
+			out.Values[i] = ec._Perpetual_fundingRateScalingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingRateLowerBound":
+
+			out.Values[i] = ec._Perpetual_fundingRateLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingRateUpperBound":
+
+			out.Values[i] = ec._Perpetual_fundingRateUpperBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -107421,6 +107910,27 @@ func (ec *executionContext) _PerpetualProduct(ctx context.Context, sel ast.Selec
 		case "dataSourceSpecBinding":
 
 			out.Values[i] = ec._PerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingRateScalingFactor":
+
+			out.Values[i] = ec._PerpetualProduct_fundingRateScalingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingRateLowerBound":
+
+			out.Values[i] = ec._PerpetualProduct_fundingRateLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fundingRateUpperBound":
+
+			out.Values[i] = ec._PerpetualProduct_fundingRateUpperBound(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
@@ -115900,6 +116410,27 @@ func (ec *executionContext) _UpdatePerpetualProduct(ctx context.Context, sel ast
 		case "dataSourceSpecBinding":
 
 			out.Values[i] = ec._UpdatePerpetualProduct_dataSourceSpecBinding(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fundingRateScalingFactor":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_fundingRateScalingFactor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fundingRateLowerBound":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_fundingRateLowerBound(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fundingRateUpperBound":
+
+			out.Values[i] = ec._UpdatePerpetualProduct_fundingRateUpperBound(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

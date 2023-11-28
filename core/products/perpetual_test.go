@@ -61,7 +61,7 @@ func TestPeriodicSettlement(t *testing.T) {
 	t.Run("test pathological case with out of order points", testOutOfOrderPointsBeforePeriodStart)
 	t.Run("test update perpetual", testUpdatePerpetual)
 	t.Run("test terminate trading coincides with time trigger", testTerminateTradingCoincidesTimeTrigger)
-	t.Run("test funding-payment on start boundary", TestFundingPaymentOnStartBoundary)
+	t.Run("test funding-payment on start boundary", testFundingPaymentOnStartBoundary)
 	t.Run("test data point is before the first point", TestPrependPoint)
 }
 
@@ -584,7 +584,11 @@ func testRegisteredCallbacksWithDifferentData(t *testing.T) {
 }
 
 func testFundingPaymentsWithInterestRate(t *testing.T) {
-	perp := testPerpetualWithOpts(t, "0.01", "-1", "1", "0")
+	perp := testPerpetual(t)
+	perp.perp.InterestRate = num.DecimalFromFloat(0.01)
+	perp.perp.ClampLowerBound = num.DecimalFromInt64(-1)
+	perp.perp.ClampUpperBound = num.DecimalFromInt64(1)
+
 	defer perp.ctrl.Finish()
 	ctx := context.Background()
 
@@ -631,8 +635,11 @@ func testFundingPaymentsWithInterestRate(t *testing.T) {
 }
 
 func testFundingPaymentsWithInterestRateClamped(t *testing.T) {
-	perp := testPerpetualWithOpts(t, "0.5", "0.001", "0.002", "0")
+	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
+	perp.perp.InterestRate = num.DecimalFromFloat(0.5)
+	perp.perp.ClampLowerBound = num.DecimalFromFloat(0.001)
+	perp.perp.ClampUpperBound = num.DecimalFromFloat(0.002)
 	ctx := context.Background()
 
 	// test data
@@ -758,9 +765,9 @@ func testTerminateTradingCoincidesTimeTrigger(t *testing.T) {
 }
 
 func testGetMarginIncrease(t *testing.T) {
-	// margin factor is 0.5
-	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
+	perp.perp.MarginFundingFactor = num.DecimalFromFloat(0.5)
 
 	// test data
 	points := getTestDataPoints(t)
@@ -771,7 +778,6 @@ func testGetMarginIncrease(t *testing.T) {
 
 	// start funding period
 	whenLeaveOpeningAuction(t, perp, points[0].t)
-	return
 
 	// started interval, but not points, margin increase is 0
 	inc = perp.perpetual.GetMarginIncrease(points[0].t)
@@ -787,9 +793,9 @@ func testGetMarginIncrease(t *testing.T) {
 }
 
 func testGetMarginIncreaseNegativePayment(t *testing.T) {
-	// margin factor is 0.5
-	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
+	perp.perp.MarginFundingFactor = num.DecimalFromFloat(0.5)
 
 	// test data
 	points := getTestDataPoints(t)
@@ -807,9 +813,9 @@ func testGetMarginIncreaseNegativePayment(t *testing.T) {
 }
 
 func testUpdatePerpetual(t *testing.T) {
-	// margin factor is 0.5
-	perp := testPerpetualWithOpts(t, "0", "0", "0", "0.5")
+	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
+	perp.perp.MarginFundingFactor = num.DecimalFromFloat(0.5)
 	ctx := context.Background()
 
 	// test data
@@ -840,7 +846,7 @@ func testUpdatePerpetual(t *testing.T) {
 	assert.NoError(t, perp.perpetual.SubmitDataPoint(ctx, num.NewUint(123), lastPoint.t+int64(time.Hour)))
 }
 
-func TestFundingPaymentOnStartBoundary(t *testing.T) {
+func testFundingPaymentOnStartBoundary(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	// set of the data points such that difference in averages is 0
@@ -857,6 +863,71 @@ func TestFundingPaymentOnStartBoundary(t *testing.T) {
 	// now get the funding-payment at this time
 	fundingPayment := getFundingPayment(t, perp, st)
 	assert.Equal(t, "100", fundingPayment)
+}
+
+func TestFundingPaymentModifiers(t *testing.T) {
+	cases := []struct {
+		twapDifference         int
+		scalingFactor          *num.Decimal
+		upperBound             *num.Decimal
+		lowerBound             *num.Decimal
+		expectedFundingPayment string
+		expectedFundingRate    string
+	}{
+		{
+			twapDifference:         220,
+			scalingFactor:          ptr.From(num.DecimalFromFloat(0.5)),
+			expectedFundingPayment: "110",
+			expectedFundingRate:    "1",
+		},
+		{
+			twapDifference:         1100,
+			scalingFactor:          ptr.From(num.DecimalFromFloat(1.5)),
+			expectedFundingPayment: "1650",
+			expectedFundingRate:    "15",
+		},
+		{
+			twapDifference:         100,
+			upperBound:             ptr.From(num.DecimalFromFloat(0.5)),
+			expectedFundingPayment: "55", // 0.5 * external-twap < diff, so snap to 0.5
+			expectedFundingRate:    "0.5",
+		},
+		{
+			twapDifference:         5,
+			lowerBound:             ptr.From(num.DecimalFromFloat(0.5)),
+			expectedFundingPayment: "55", // 0.5 * external-twap > 5, so snap to 0.5
+			expectedFundingRate:    "0.5",
+		},
+		{
+			twapDifference:         1100,
+			scalingFactor:          ptr.From(num.DecimalFromFloat(1.5)),
+			upperBound:             ptr.From(num.DecimalFromFloat(0.5)),
+			expectedFundingPayment: "55",
+			expectedFundingRate:    "0.5",
+		},
+	}
+
+	for _, c := range cases {
+		perp := testPerpetual(t)
+		defer perp.ctrl.Finish()
+
+		// set modifiers
+		perp.perp.FundingRateScalingFactor = c.scalingFactor
+		perp.perp.FundingRateLowerBound = c.lowerBound
+		perp.perp.FundingRateUpperBound = c.upperBound
+
+		// tell the perpetual that we are ready to accept settlement stuff
+		points := getTestDataPoints(t)
+		whenLeaveOpeningAuction(t, perp, points[0].t)
+		submitPointWithDifference(t, perp, points[0], c.twapDifference)
+
+		// check the goods
+		fundingPayment := getFundingPayment(t, perp, points[0].t)
+		assert.Equal(t, c.expectedFundingPayment, fundingPayment)
+
+		fundingRate := getFundingRate(t, perp, points[0].t)
+		assert.Equal(t, c.expectedFundingRate, fundingRate)
+	}
 }
 
 // submits the given data points as both external and interval but with the given different added to the internal price.
@@ -949,11 +1020,6 @@ func (tp *tstPerp) unsubscribe(_ context.Context, _ spec.SubscriptionID) {
 
 func testPerpetual(t *testing.T) *tstPerp {
 	t.Helper()
-	return testPerpetualWithOpts(t, "0", "0", "0", "0")
-}
-
-func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpperBound, marginFactor string) *tstPerp {
-	t.Helper()
 
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
@@ -972,10 +1038,6 @@ func testPerpetualWithOpts(t *testing.T, interestRate, clampLowerBound, clampUpp
 	tp.oe.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(spec.SubscriptionID(1), tp.unsubscribe, nil)
 
 	perpetual, err := products.NewPerpetual(context.Background(), log, perp, "", ts, oe, broker, 1)
-	perp.InterestRate = num.MustDecimalFromString(interestRate)
-	perp.ClampLowerBound = num.MustDecimalFromString(clampLowerBound)
-	perp.ClampUpperBound = num.MustDecimalFromString(clampUpperBound)
-	perp.MarginFundingFactor = num.MustDecimalFromString(marginFactor)
 	if err != nil {
 		t.Fatalf("couldn't create a perp for testing: %v", err)
 	}

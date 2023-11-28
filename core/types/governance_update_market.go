@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
@@ -450,6 +451,31 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 			return nil, fmt.Errorf("failed to parse clamp upper bound: %w", err)
 		}
 
+		var scalingFactor, lowerBound, upperBound *num.Decimal
+		if pr.Perpetual.FundingRateScalingFactor != nil {
+			d, err := num.DecimalFromString(*pr.Perpetual.FundingRateScalingFactor)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse funding rate scaling factor: %w", err)
+			}
+			scalingFactor = &d
+		}
+
+		if pr.Perpetual.FundingRateLowerBound != nil {
+			d, err := num.DecimalFromString(*pr.Perpetual.FundingRateLowerBound)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse funding rate lower bound: %w", err)
+			}
+			lowerBound = &d
+		}
+
+		if pr.Perpetual.FundingRateUpperBound != nil {
+			d, err := num.DecimalFromString(*pr.Perpetual.FundingRateUpperBound)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse funding rate lower bound: %w", err)
+			}
+			upperBound = &d
+		}
+
 		r.Product = &UpdateInstrumentConfigurationPerps{
 			Perps: &UpdatePerpsProduct{
 				QuoteName:                           pr.Perpetual.QuoteName,
@@ -457,6 +483,9 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				InterestRate:                        interestRate,
 				ClampLowerBound:                     clampLowerBound,
 				ClampUpperBound:                     clampUpperBound,
+				FundingRateScalingFactor:            scalingFactor,
+				FundingRateLowerBound:               lowerBound,
+				FundingRateUpperBound:               upperBound,
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
 				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
 				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perpetual.DataSourceSpecBinding),
@@ -509,18 +538,36 @@ type UpdatePerpsProduct struct {
 	ClampLowerBound     num.Decimal
 	ClampUpperBound     num.Decimal
 
+	FundingRateScalingFactor *num.Decimal
+	FundingRateLowerBound    *num.Decimal
+	FundingRateUpperBound    *num.Decimal
+
 	DataSourceSpecForSettlementData     dsdefinition.Definition
 	DataSourceSpecForSettlementSchedule dsdefinition.Definition
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 }
 
 func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
+	var scalingFactor, upperBound, lowerBound *string
+	if p.FundingRateScalingFactor != nil {
+		scalingFactor = ptr.From(p.FundingRateScalingFactor.String())
+	}
+	if p.FundingRateLowerBound != nil {
+		lowerBound = ptr.From(p.FundingRateLowerBound.String())
+	}
+	if p.FundingRateUpperBound != nil {
+		lowerBound = ptr.From(p.FundingRateUpperBound.String())
+	}
+
 	return &vegapb.UpdatePerpetualProduct{
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
 		InterestRate:                        p.InterestRate.String(),
 		ClampLowerBound:                     p.ClampLowerBound.String(),
 		ClampUpperBound:                     p.ClampUpperBound.String(),
+		FundingRateScalingFactor:            scalingFactor,
+		FundingRateLowerBound:               lowerBound,
+		FundingRateUpperBound:               upperBound,
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
