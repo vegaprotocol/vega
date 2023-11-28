@@ -364,6 +364,7 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
+		HandleCheckTx(txn.BatchProposeCommand, app.CheckBatchPropose).
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
 		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
 
@@ -438,6 +439,13 @@ func NewApp(
 			app.SendTransactionResult(
 				app.CheckProposeW(
 					addDeterministicID(app.DeliverPropose),
+				),
+			),
+		).
+		HandleDeliverTx(txn.BatchProposeCommand,
+			app.SendTransactionResult(
+				app.CheckProposeW(
+					addDeterministicID(app.DeliverBatchPropose),
 				),
 			),
 		).
@@ -1844,12 +1852,17 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	}
 
 	idgen := idgeneration.New(deterministicBatchID)
+	ids := make([]string, 0, len(prop.Terms.Changes))
 
-	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop)
+	for i := 0; i < len(prop.Terms.Changes); i++ {
+		ids = append(ids, idgen.NextID())
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop, ids)
 	if err != nil {
 		return err
 	}
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicBatchID, party)
+	toSubmit, err := app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(deterministicBatchID),

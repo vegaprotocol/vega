@@ -22,21 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-// ProposalParameters stores proposal specific parameters.
-type ProposalParameters struct {
-	MinClose                time.Duration
-	MaxClose                time.Duration
-	MinEnact                time.Duration
-	MaxEnact                time.Duration
-	RequiredParticipation   num.Decimal
-	RequiredMajority        num.Decimal
-	MinProposerBalance      *num.Uint
-	MinVoterBalance         *num.Uint
-	RequiredParticipationLP num.Decimal
-	RequiredMajorityLP      num.Decimal
-	MinEquityLikeShare      num.Decimal
-}
-
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {

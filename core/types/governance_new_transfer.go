@@ -54,7 +54,7 @@ func (a ProposalTermsNewTransfer) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewTransfer
 }
 
-func (a ProposalTermsNewTransfer) DeepClone() proposalTerm {
+func (a ProposalTermsNewTransfer) DeepClone() ProposalTerm {
 	if a.NewTransfer == nil {
 		return &ProposalTermsNewTransfer{}
 	}

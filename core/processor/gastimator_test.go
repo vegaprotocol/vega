@@ -219,6 +219,7 @@ func TestGetPriority(t *testing.T) {
 		txn.AmendOrderCommand,
 		txn.WithdrawCommand,
 		txn.ProposeCommand,
+		txn.BatchProposeCommand,
 		txn.VoteCommand,
 		txn.AnnounceNodeCommand,
 		txn.NodeVoteCommand,

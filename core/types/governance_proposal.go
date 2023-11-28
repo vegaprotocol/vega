@@ -17,6 +17,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -216,6 +217,106 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	}, nil
 }
 
+// ProposalParameters stores proposal specific parameters.
+type ProposalParameters struct {
+	MinClose                time.Duration
+	MaxClose                time.Duration
+	MinEnact                time.Duration
+	MaxEnact                time.Duration
+	RequiredParticipation   num.Decimal
+	RequiredMajority        num.Decimal
+	MinProposerBalance      *num.Uint
+	MinVoterBalance         *num.Uint
+	RequiredParticipationLP num.Decimal
+	RequiredMajorityLP      num.Decimal
+	MinEquityLikeShare      num.Decimal
+}
+
+func (pp *ProposalParameters) Clone() ProposalParameters {
+	copy := *pp
+
+	copy.MinProposerBalance = pp.MinProposerBalance.Clone()
+	copy.MinVoterBalance = pp.MinVoterBalance.Clone()
+	return copy
+}
+
+type BatchProposal struct {
+	ID                 string
+	Reference          string
+	Party              string
+	State              ProposalState
+	Timestamp          int64
+	ClosingTimestamp   int64
+	Proposals          []*Proposal
+	Rationale          *ProposalRationale
+	Reason             ProposalError
+	ErrorDetails       string
+	ProposalParameters *ProposalParameters
+}
+
+// SetProposalParams set specific per proposal parameters and chooses the most aggressive ones.
+func (bp *BatchProposal) SetProposalParams(params *ProposalParameters) {
+	if bp.ProposalParameters == nil {
+		bp.ProposalParameters = params
+		bp.ProposalParameters.MaxEnact = 0
+		bp.ProposalParameters.MinEnact = 0
+		return
+	}
+
+	if bp.ProposalParameters.MaxClose > params.MaxClose {
+		bp.ProposalParameters.MaxClose = params.MaxClose
+	}
+
+	if bp.ProposalParameters.MinClose < params.MinClose {
+		bp.ProposalParameters.MinClose = params.MinClose
+	}
+
+	if bp.ProposalParameters.MinEquityLikeShare.LessThan(params.MinEquityLikeShare) {
+		bp.ProposalParameters.MinEquityLikeShare = params.MinEquityLikeShare
+	}
+
+	if bp.ProposalParameters.MinProposerBalance.LT(params.MinProposerBalance) {
+		bp.ProposalParameters.MinProposerBalance = params.MinProposerBalance.Clone()
+	}
+
+	if bp.ProposalParameters.MinVoterBalance.LT(params.MinVoterBalance) {
+		bp.ProposalParameters.MinVoterBalance = params.MinVoterBalance.Clone()
+	}
+
+	if bp.ProposalParameters.RequiredMajority.LessThan(params.RequiredMajority) {
+		bp.ProposalParameters.RequiredMajority = params.RequiredMajority
+	}
+
+	if bp.ProposalParameters.RequiredMajorityLP.LessThan(params.RequiredMajorityLP) {
+		bp.ProposalParameters.RequiredMajorityLP = params.RequiredMajorityLP
+	}
+
+	if bp.ProposalParameters.RequiredParticipation.LessThan(params.RequiredParticipation) {
+		bp.ProposalParameters.RequiredParticipation = params.RequiredParticipation
+	}
+
+	if bp.ProposalParameters.RequiredParticipationLP.LessThan(params.RequiredParticipationLP) {
+		bp.ProposalParameters.RequiredParticipationLP = params.RequiredParticipationLP
+	}
+}
+
+func (p *BatchProposal) Reject(reason ProposalError) {
+	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
+func (p *BatchProposal) RejectWithErr(reason ProposalError, details error) {
+	p.ErrorDetails = details.Error()
+	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
+func (p *BatchProposal) FailWithErr(reason ProposalError, details error) {
+	p.ErrorDetails = details.Error()
+	p.State = ProposalStateFailed
+	p.Reason = reason
+}
+
 type Proposal struct {
 	ID                      string
 	BatchID                 *string
@@ -234,39 +335,43 @@ type Proposal struct {
 }
 
 func (p Proposal) IsMarketUpdate() bool {
-	return p.IsMarketUpdate()
+	return p.Terms.IsMarketUpdate()
+}
+
+func (p Proposal) IsMarketStateUpdate() bool {
+	return p.Terms.IsMarketStateUpdate()
 }
 
 func (p Proposal) IsSpotMarketUpdate() bool {
-	return p.IsSpotMarketUpdate()
+	return p.Terms.IsSpotMarketUpdate()
 }
 
 func (p Proposal) IsReferralProgramUpdate() bool {
-	return p.IsReferralProgramUpdate()
+	return p.Terms.IsReferralProgramUpdate()
 }
 
 func (p Proposal) IsVolumeDiscountProgramUpdate() bool {
-	return p.IsVolumeDiscountProgramUpdate()
+	return p.Terms.IsVolumeDiscountProgramUpdate()
 }
 
 func (p Proposal) MarketUpdate() *UpdateMarket {
-	return p.MarketUpdate()
+	return p.Terms.MarketUpdate()
 }
 
 func (p Proposal) UpdateMarketState() *UpdateMarketState {
-	return p.UpdateMarketState()
+	return p.Terms.UpdateMarketState()
 }
 
 func (p Proposal) SpotMarketUpdate() *UpdateSpotMarket {
-	return p.SpotMarketUpdate()
+	return p.Terms.SpotMarketUpdate()
 }
 
 func (p Proposal) IsNewMarket() bool {
-	return p.IsNewMarket()
+	return p.Terms.IsNewMarket()
 }
 
 func (p Proposal) NewMarket() *NewMarket {
-	return p.NewMarket()
+	return p.Terms.NewMarket()
 }
 
 func (p *Proposal) IsSuccessorMarket() bool {

@@ -57,7 +57,7 @@ func (a ProposalTermsUpdateNetworkParameter) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateNetworkParameter
 }
 
-func (a ProposalTermsUpdateNetworkParameter) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateNetworkParameter) DeepClone() ProposalTerm {
 	if a.UpdateNetworkParameter == nil {
 		return &ProposalTermsUpdateNetworkParameter{}
 	}

@@ -53,11 +53,11 @@ func (p BatchProposalSubmission) IntoProto() *commandspb.BatchProposalSubmission
 // 	}
 // }
 
-func NewBatchProposalSubmissionFromProto(p *commandspb.BatchProposalSubmission) (*BatchProposalSubmission, error) {
+func NewBatchProposalSubmissionFromProto(p *commandspb.BatchProposalSubmission, ids []string) (*BatchProposalSubmission, error) {
 	var pterms *BatchProposalTerms
 	if p.Terms != nil {
 		var err error
-		pterms, err = BatchProposalTermsFromProto(p.Terms)
+		pterms, err = BatchProposalTermsFromProto(p.Terms, ids)
 		if err != nil {
 			return nil, err
 		}

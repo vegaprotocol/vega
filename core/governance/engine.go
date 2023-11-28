@@ -135,9 +135,9 @@ type Engine struct {
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
-	batchProposals   []*batchProposal
-	activeProposals  []*proposal
-	enactedProposals []*proposal
+	activeBatchProposals []*batchProposal
+	activeProposals      []*proposal
+	enactedProposals     []*proposal
 
 	// snapshot state
 	gss *governanceSnapshotState
@@ -456,11 +456,89 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 	return p.proposal, true
 }
 
+func (e *Engine) getBatchProposal(id string) (*batchProposal, bool) {
+	for _, v := range e.activeBatchProposals {
+		if v.ID == id {
+			return v, true
+		}
+	}
+
+	return nil, true
+}
+
 func (e *Engine) SubmitBatchProposal(
 	ctx context.Context,
-	psub types.BatchProposalSubmission,
-	id, party string,
+	bpsub types.BatchProposalSubmission,
+	batchID, party string,
 ) error {
+	if _, ok := e.getBatchProposal(batchID); ok {
+		return ErrProposalIsDuplicate // state is not allowed to change externally
+	}
+
+	timeNow := e.timeService.GetTimeNow().UnixNano()
+
+	bp := &types.BatchProposal{
+		ID:               batchID,
+		Timestamp:        timeNow,
+		ClosingTimestamp: bpsub.Terms.ClosingTimestamp,
+		Party:            party,
+		State:            types.ProposalStateOpen,
+		Reference:        bpsub.Reference,
+		Rationale:        bpsub.Rationale,
+		Proposals:        make([]*types.Proposal, 0, len(bpsub.Terms.Changes)),
+	}
+
+	proposalParamsPerProposalTermType := map[types.ProposalTermsType]*types.ProposalParameters{}
+
+	for _, change := range bpsub.Terms.Changes {
+		p := &types.Proposal{
+			ID:        change.ID,
+			BatchID:   &batchID,
+			Timestamp: timeNow,
+			Party:     party,
+			State:     bp.State,
+			Reference: bp.Reference,
+			Rationale: bp.Rationale,
+			Terms: &types.ProposalTerms{
+				ClosingTimestamp:   bp.ClosingTimestamp,
+				EnactmentTimestamp: change.EnactmentTime,
+				Change:             change.Change,
+			},
+		}
+
+		params, err := e.getProposalParams(change.Change)
+		if err != nil {
+			bp.RejectWithErr(types.ProposalErrorUnknownType, err)
+			return err
+		}
+
+		proposalParamsPerProposalTermType[change.Change.GetTermType()] = params
+
+		bp.SetProposalParams(params)
+		bp.Proposals = append(bp.Proposals, p)
+	}
+
+	for _, p := range bp.Proposals {
+		perTypeParams := proposalParamsPerProposalTermType[p.Terms.Change.GetTermType()]
+		params := bp.ProposalParameters.Clone()
+
+		params.MaxEnact = perTypeParams.MaxEnact
+		params.MinEnact = perTypeParams.MinEnact
+
+		if _, err := e.validateOpenProposal(p, &params); err != nil {
+			p.RejectWithErr(types.ProposalErrorUnknownType, err)
+			if e.log.IsDebug() {
+				e.log.Debug("Proposal rejected",
+					logging.String("proposal-id", p.ID),
+					logging.String("proposal details", p.String()),
+				)
+			}
+			return err
+		}
+	}
+
+	e.startBatchProposal(bp)
+
 	return nil
 }
 
@@ -493,7 +571,13 @@ func (e *Engine) SubmitProposal(
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}()
 
-	if perr, err := e.validateOpenProposal(p); err != nil {
+	params, err := e.getProposalParams(p.Terms.Change)
+	if err != nil {
+		p.RejectWithErr(types.ProposalErrorUnknownType, err)
+		return nil, err
+	}
+
+	if perr, err := e.validateOpenProposal(p, params); err != nil {
 		p.RejectWithErr(perr, err)
 		if e.log.IsDebug() {
 			e.log.Debug("Proposal rejected",
@@ -628,6 +712,15 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 	return tsb, nil
 }
 
+func (e *Engine) startBatchProposal(p *types.BatchProposal) {
+	e.activeBatchProposals = append(e.activeBatchProposals, &batchProposal{
+		BatchProposal: p,
+		yes:           map[string]*types.Vote{},
+		no:            map[string]*types.Vote{},
+		invalidVotes:  map[string]*types.Vote{},
+	})
+}
+
 func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals = append(e.activeProposals, &proposal{
 		Proposal:     p,
@@ -659,8 +752,8 @@ func (e *Engine) isAutoEnactableProposal(p *types.Proposal) bool {
 	return false
 }
 
-func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	switch terms.Change.GetTermType() {
+func (e *Engine) getProposalParams(proposalTerm types.ProposalTerm) (*types.ProposalParameters, error) {
+	switch proposalTerm.GetTermType() {
 	case types.ProposalTermsTypeNewMarket:
 		return e.getNewMarketProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateMarket:
@@ -694,12 +787,7 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 	}
 }
 
-func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalError, error) {
-	params, err := e.getProposalParams(proposal.Terms)
-	if err != nil {
-		return types.ProposalErrorUnknownType, err
-	}
-
+func (e *Engine) validateOpenProposal(proposal *types.Proposal, params *types.ProposalParameters) (types.ProposalError, error) {
 	// assign all requirement to the proposal itself.
 	proposal.RequiredMajority = params.RequiredMajority
 	proposal.RequiredParticipation = params.RequiredParticipation
@@ -834,6 +922,19 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 
 // AddVote adds a vote onto an existing active proposal.
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
+	_, found := e.getProposal(cmd.ProposalID)
+	_, batchFound := e.getBatchProposal(cmd.ProposalID)
+
+	if found {
+		return e.addVote(ctx, cmd, party)
+	} else if batchFound {
+		// TODO add vote for batch
+	}
+
+	return ErrProposalDoesNotExist
+}
+
+func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
 		e.log.Debug("invalid vote submission",
@@ -869,6 +970,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		)
 	}
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
+
 	return nil
 }
 
@@ -880,7 +982,7 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 		return nil, ErrProposalNotOpenForVotes
 	}
 
-	params, err := e.getProposalParams(proposal.Terms)
+	params, err := e.getProposalParams(proposal.Terms.Change)
 	if err != nil {
 		return nil, err
 	}
@@ -909,7 +1011,7 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 	return proposal, nil
 }
 
-func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *ProposalParameters) (types.ProposalError, error) {
+func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *types.ProposalParameters) (types.ProposalError, error) {
 	if !e.markets.MarketExists(marketID) {
 		e.log.Debug("market does not exist",
 			logging.MarketID(marketID),
@@ -938,7 +1040,7 @@ func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *Propos
 	return types.ProposalErrorUnspecified, nil
 }
 
-func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
+func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *types.ProposalParameters) (types.ProposalError, error) {
 	updateMarket := proposal.SpotMarketUpdate()
 	if !e.markets.MarketExists(updateMarket.MarketID) {
 		e.log.Debug("market does not exist",
@@ -1311,8 +1413,7 @@ type proposal struct {
 }
 
 type batchProposal struct {
-	*types.Proposal
-	sub          []*types.Proposal
+	*types.BatchProposal
 	yes          map[string]*types.Vote
 	no           map[string]*types.Vote
 	invalidVotes map[string]*types.Vote

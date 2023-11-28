@@ -53,7 +53,7 @@ func (a ProposalTermsUpdateReferralProgram) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateReferralProgram
 }
 
-func (a ProposalTermsUpdateReferralProgram) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateReferralProgram) DeepClone() ProposalTerm {
 	if a.UpdateReferralProgram == nil {
 		return &ProposalTermsUpdateReferralProgram{}
 	}

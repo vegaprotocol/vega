@@ -59,7 +59,7 @@ func (f ProposalTermsNewFreeform) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewFreeform
 }
 
-func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
+func (f ProposalTermsNewFreeform) DeepClone() ProposalTerm {
 	if f.NewFreeform == nil {
 		return &ProposalTermsNewFreeform{}
 	}

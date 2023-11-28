@@ -130,6 +130,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
+	e.transactionTypeToPolicy[txn.BatchProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
@@ -201,13 +202,19 @@ func (e *Engine) OnMinTokensForVotingChanged(ctx context.Context, minTokens num.
 
 // OnMaxProposalsChanged is called when the net param for max proposals per epoch has changed.
 func (e *Engine) OnMaxProposalsChanged(ctx context.Context, maxProposals int64) error {
-	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateIntParam(netparams.SpamProtectionMaxProposals, maxProposals)
+	if err := e.transactionTypeToPolicy[txn.ProposeCommand].UpdateIntParam(netparams.SpamProtectionMaxProposals, maxProposals); err != nil {
+		return err
+	}
+	return e.transactionTypeToPolicy[txn.BatchProposeCommand].UpdateIntParam(netparams.SpamProtectionMaxProposals, maxProposals)
 }
 
 // OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed.
 func (e *Engine) OnMinTokensForProposalChanged(ctx context.Context, minTokens num.Decimal) error {
 	minTokensForProposal, _ := num.UintFromDecimal(minTokens)
-	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
+	if err := e.transactionTypeToPolicy[txn.ProposeCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal); err != nil {
+		return err
+	}
+	return e.transactionTypeToPolicy[txn.BatchProposeCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
 }
 
 // OnMaxTransfersChanged is called when the net param for max transfers per epoch changes.
@@ -325,7 +332,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 
 	for txType, policy := range e.transactionTypeToPolicy {
 		switch txType {
-		case txn.ProposeCommand:
+		case txn.ProposeCommand, txn.BatchProposeCommand:
 			stats.Proposals = policy.GetSpamStats(partyID)
 		case txn.DelegateCommand:
 			stats.Delegations = policy.GetSpamStats(partyID)

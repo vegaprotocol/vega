@@ -60,7 +60,7 @@ func (a ProposalTermsUpdateSpotMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateSpotMarket
 }
 
-func (a ProposalTermsUpdateSpotMarket) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateSpotMarket) DeepClone() ProposalTerm {
 	if a.UpdateSpotMarket == nil {
 		return &ProposalTermsUpdateSpotMarket{}
 	}

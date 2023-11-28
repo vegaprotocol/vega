@@ -53,7 +53,7 @@ func (a ProposalTermsUpdateVolumeDiscountProgram) GetTermType() ProposalTermsTyp
 	return ProposalTermsTypeUpdateVolumeDiscountProgram
 }
 
-func (a ProposalTermsUpdateVolumeDiscountProgram) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateVolumeDiscountProgram) DeepClone() ProposalTerm {
 	if a.UpdateVolumeDiscountProgram == nil {
 		return &ProposalTermsUpdateVolumeDiscountProgram{}
 	}

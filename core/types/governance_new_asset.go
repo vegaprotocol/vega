@@ -61,7 +61,7 @@ func (a ProposalTermsNewAsset) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewAsset
 }
 
-func (a ProposalTermsNewAsset) DeepClone() proposalTerm {
+func (a ProposalTermsNewAsset) DeepClone() ProposalTerm {
 	if a.NewAsset == nil {
 		return &ProposalTermsNewAsset{}
 	}

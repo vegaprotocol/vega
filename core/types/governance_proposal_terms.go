@@ -16,19 +16,18 @@
 package types
 
 import (
-	"bytes"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
-type proposalTerm interface {
+type ProposalTerm interface {
 	isPTerm()
 	oneOfSingleProto() vegapb.ProposalOneOffTermChangeType
 	oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType
 
-	DeepClone() proposalTerm
+	DeepClone() ProposalTerm
 	GetTermType() ProposalTermsType
 	String() string
 }
@@ -37,7 +36,7 @@ type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
 	ValidationTimestamp int64
-	Change              proposalTerm
+	Change              ProposalTerm
 }
 
 func (p *ProposalTerms) IsMarketStateUpdate() bool {
@@ -311,7 +310,7 @@ func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
 func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 	var (
 		err    error
-		change proposalTerm
+		change ProposalTerm
 	)
 	switch ch := p.Change.(type) {
 	case *vegapb.ProposalTerms_NewMarket:
@@ -353,42 +352,21 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 	}, nil
 }
 
-type batchProposalChange struct {
-	proposalTerm
+type BatchProposalChange struct {
 	ID            string
-	BatchID       string
-	enactmentTime int64
-}
-
-func (change batchProposalChange) ProposalTerm() proposalTerm {
-	return change.proposalTerm
-}
-
-type batchProposalChanges []batchProposalChange
-
-func (c batchProposalChanges) String() string {
-	var buffer bytes.Buffer
-	l := len(c) - 1
-	for i, v := range c {
-		buffer.WriteString(fmt.Sprintf("change(%s)", stringer.ObjToString(v)))
-		if i != l {
-			buffer.WriteString(",")
-		}
-	}
-	return buffer.String()
+	Change        ProposalTerm
+	EnactmentTime int64
 }
 
 type BatchProposalTerms struct {
-	ClosingTimestamp   int64
-	EnactmentTimestamp int64
-	Changes            batchProposalChanges
+	ClosingTimestamp int64
+	Changes          []BatchProposalChange
 }
 
 func (p BatchProposalTerms) String() string {
 	return fmt.Sprintf(
-		"batch term: closingTs(%v) enactmentTs(%v) changes(%s)",
+		"batch term: closingTs(%v) changes(%v)",
 		p.ClosingTimestamp,
-		p.EnactmentTimestamp,
 		p.Changes,
 	)
 }
@@ -400,10 +378,10 @@ func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 	}
 
 	for _, c := range p.Changes {
-		change := c.oneOfBatchProto()
+		change := c.Change.oneOfBatchProto()
 
 		termsChange := &vegapb.BatchProposalTermsChange{
-			EnactmentTimestamp: c.enactmentTime,
+			EnactmentTimestamp: c.EnactmentTime,
 		}
 
 		switch ch := change.(type) {
@@ -442,11 +420,11 @@ func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
 	cpy := p
 
-	changes := make(batchProposalChanges, 0, len(p.Changes))
+	changes := make([]BatchProposalChange, 0, len(p.Changes))
 	for _, v := range cpy.Changes {
-		changes = append(changes, batchProposalChange{
-			enactmentTime: v.enactmentTime,
-			proposalTerm:  v.DeepClone(),
+		changes = append(changes, BatchProposalChange{
+			EnactmentTime: v.EnactmentTime,
+			Change:        v.Change.DeepClone(),
 		})
 	}
 
@@ -454,15 +432,15 @@ func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
 	return &cpy
 }
 
-func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms) (*BatchProposalTerms, error) {
-	changes := make(batchProposalChanges, 0, len(p.Changes))
+func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms, ids []string) (*BatchProposalTerms, error) {
+	changes := make([]BatchProposalChange, 0, len(p.Changes))
 
 	var (
 		err    error
-		change proposalTerm
+		change ProposalTerm
 	)
 
-	for _, term := range p.Changes {
+	for i, term := range p.Changes {
 		if term == nil {
 			continue
 		}
@@ -497,9 +475,10 @@ func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms) (*BatchProposalTe
 			return nil, err
 		}
 
-		changes = append(changes, batchProposalChange{
-			enactmentTime: term.EnactmentTimestamp,
-			proposalTerm:  change,
+		changes = append(changes, BatchProposalChange{
+			ID:            ids[i],
+			EnactmentTime: term.EnactmentTimestamp,
+			Change:        change,
 		})
 	}
 
