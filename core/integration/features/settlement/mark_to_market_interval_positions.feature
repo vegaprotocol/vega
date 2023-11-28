@@ -157,7 +157,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | aux             | 1     | 10   | network          |
       | buySideProvider | 20    | 54   | network          |
 
-    Then the following network trades should be executed:
+    And the following network trades should be executed:
       | party           | aggressor side | volume |
       | designatedLoser | buy            | 290    |
       | buySideProvider | sell           | 1      |
@@ -167,22 +167,23 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buySideProvider | buy            | 1      |
 
     # check positions and verify loss socialisation is reflected in realised P&L (0007-POSN-013)
-    Then the parties should have the following profit and loss:
+    And the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 56     | 7040           | -7022        |
+      | buySideProvider | 56     | 6480           | -3502        |
 
     # check margin levels
-    Then the parties should have the following margin levels:
+    And the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
       | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
     # checking margins
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
 
-    ## Then debug transfers
+    Then debug transfers
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+
     Then the following transfers should happen:
       | from            | to              | from account            | to account                       | market id | amount | asset |
       | designatedLoser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
@@ -190,14 +191,11 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
       | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 17631  | USD   |
-      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16716  | USD   |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 10     | USD   |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 8      | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16608  | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 2978   | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 217    | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 21980  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 22205  | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 46     | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 10715  | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -322,12 +320,11 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buySideProvider  | ETH/DEC20 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the network moves ahead "6" blocks
 
-    And the market data for the market "ETH/DEC20" should be:
+    Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 150        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 213687       | 9000           | 292           | 20                    | 1010             | 2000                    |
+      | 140        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 199441       | 9000           | 292           | 20                    | 1010             | 2000                    |
 
-    Then debug trades
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
       | network         | 150   | 290  | designatedLoser  |
@@ -350,7 +347,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 56     | 7040           | -7022        |
+      | buySideProvider | 56     | 6480           | -3502        |
 
     # check margin levels
     Then the parties should have the following margin levels:

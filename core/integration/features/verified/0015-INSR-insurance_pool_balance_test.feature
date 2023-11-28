@@ -150,6 +150,7 @@ Feature: Test closeout type 1: margin >= cost of closeout
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | sell | 1      | 126   | 1                | TYPE_LIMIT | TIF_GTC | ref-1-xxx |
+    And the network moves ahead "1" blocks
     Then the mark price should be "126" for the market "ETH/DEC19"
     And the insurance pool balance should be "38500" for the market "ETH/DEC19"
 

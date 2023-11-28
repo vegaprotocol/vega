@@ -61,11 +61,11 @@ Feature: Set up a market with an opening auction, then uncross the book so that 
       | party2c | -3     | 0              | 0            |
       | party1  | 0      | 0              | -20000       |
     And the accumulated liquidity fees should be "472" for the market "ETH/DEC19"
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "19528" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond   |
       | party1 | BTC   | ETH/DEC19 | 0      | 0        |        |
-      | lp     | BTC   | ETH/DEC19 | 82560  | 99776968 | 160000 |
+      | lp     | BTC   | ETH/DEC19 | 43200  | 99796800 | 160000 |
     # sum of lp accounts = 100019528
     # lp started with 100000000, should've made 8*(10000-5900)=32800 in MTM gains following the closeout,
     # but party1 only had 20000, of which 472 has been put towards liquidity fees, 

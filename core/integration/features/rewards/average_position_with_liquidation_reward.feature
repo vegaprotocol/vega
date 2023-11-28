@@ -80,7 +80,7 @@ Feature: Calculation of average position during closeout trades
             | party | market id    | side | volume | price | resulting trades | type       | tif     |
             | aux2  | ETH/USD-1-10 | buy  | 1      | 1099  | 0                | TYPE_LIMIT | TIF_GTC |
             | aux1  | ETH/USD-1-10 | sell | 1      | 1099  | 1                | TYPE_LIMIT | TIF_GTC |
-        When the network moves ahead "1" blocks
+        When the network moves ahead "2" blocks
         # Trades should result in all parties having no open position
         Then the following trades should be executed:
             | buyer   | price | size | seller  | aggressor side |
