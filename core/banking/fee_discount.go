@@ -17,6 +17,7 @@ package banking
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -36,6 +37,8 @@ func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
 }
 
 func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
+	fmt.Printf("------ RegisterTradingFees: %s, %+v \n", assetID, feesPerParty)
+
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
 
 	// ensure asset exists
@@ -60,8 +63,12 @@ func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPe
 			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
 		}
 
+		fmt.Println("-------- before decay e.feeDiscountPerPartyAndAsset[key] ", key, e.feeDiscountPerPartyAndAsset[key])
+
 		// apply decay discount amount
 		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
+
+		fmt.Println("-------- after e.feeDiscountPerPartyAndAsset[key] ", key, e.feeDiscountPerPartyAndAsset[key])
 
 		// add fees
 		e.feeDiscountPerPartyAndAsset[key].AddSum(fee)
@@ -91,6 +98,8 @@ func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPe
 
 		// apply decay discount amount
 		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
+
+		fmt.Println("-------- non updated after e.feeDiscountPerPartyAndAsset[key]:", key, e.feeDiscountPerPartyAndAsset[key])
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
@@ -155,6 +164,7 @@ func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum 
 		return currentDiscount
 	}
 
+	fmt.Println("------- currentDiscount, e.feeDiscountDecayFraction:", currentDiscount, e.feeDiscountDecayFraction)
 	decayedAmount := currentDiscount.ToDecimal().Mul(e.feeDiscountDecayFraction)
 
 	if decayedAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
