@@ -3597,6 +3597,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 			if err := e.UpdateBalance(ctx, bondAcc.ID, bondAcc.Balance.SetUint64(0)); err != nil {
 				return nil, err
 			}
+			// get an updated copy of the margin account after being topped up from bond account
+			marginAcc, _ = e.GetAccountByID(e.accountID(marketID, party.Party(), asset, types.AccountTypeMargin))
 		}
 		// take whatever is left on the general account, and move to margin balance
 		// we can take everything from the account, as whatever amount was left here didn't cover the minimum margin requirement
@@ -3617,6 +3619,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 			if err := e.UpdateBalance(ctx, genAcc.ID, genAcc.Balance.SetUint64(0)); err != nil {
 				return nil, err
 			}
+			// get an updated copy of the margin account after being topped up from general account
+			marginAcc, _ = e.GetAccountByID(e.accountID(marketID, party.Party(), asset, types.AccountTypeMargin))
 		}
 		// move monies from the margin account (balance is general, bond, and margin combined now)
 		if !marginAcc.Balance.IsZero() {
