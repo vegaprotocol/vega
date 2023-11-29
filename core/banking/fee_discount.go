@@ -17,7 +17,6 @@ package banking
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -36,9 +35,71 @@ func (e *Engine) feeDiscountKey(asset, party string) partyAssetKey {
 	return partyAssetKey{party: party, asset: asset}
 }
 
-func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
-	fmt.Printf("------ RegisterTradingFees: %s, %+v \n", assetID, feesPerParty)
+func (e *Engine) applyPendingFeeDiscountsUpdates(ctx context.Context) {
+	assetIDs := maps.Keys(e.pendingPerAssetAndPartyFeeDiscountUpdates)
+	sort.Strings(assetIDs)
 
+	updatedKeys := map[string]map[string]struct{}{}
+	for _, assetID := range assetIDs {
+		feeDiscountsPerParty := e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID]
+		perAssetUpdatedKeys := e.updateFeeDiscountsForAsset(ctx, assetID, feeDiscountsPerParty)
+		updatedKeys[assetID] = perAssetUpdatedKeys
+	}
+
+	e.pendingPerAssetAndPartyFeeDiscountUpdates = map[string]map[string]*num.Uint{}
+	e.decayAllFeeDiscounts(ctx, updatedKeys)
+}
+
+func (e *Engine) decayAllFeeDiscounts(ctx context.Context, perAssetAndPartyUpdates map[string]map[string]struct{}) {
+	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
+
+	feeDiscountPerPartyAndAssetKeys := maps.Keys(e.feeDiscountPerPartyAndAsset)
+	sort.SliceStable(feeDiscountPerPartyAndAssetKeys, func(i, j int) bool {
+		if feeDiscountPerPartyAndAssetKeys[i].party == feeDiscountPerPartyAndAssetKeys[j].party {
+			return feeDiscountPerPartyAndAssetKeys[i].asset < feeDiscountPerPartyAndAssetKeys[j].asset
+		}
+
+		return feeDiscountPerPartyAndAssetKeys[i].party < feeDiscountPerPartyAndAssetKeys[j].party
+	})
+
+	for _, key := range feeDiscountPerPartyAndAssetKeys {
+		if assetUpdate, assetOK := perAssetAndPartyUpdates[key.asset]; assetOK {
+			if _, partyOK := assetUpdate[key.party]; partyOK {
+				continue
+			}
+		}
+
+		// ensure asset exists
+		asset, err := e.assets.Get(key.asset)
+		if err != nil {
+			e.log.Panic("could not register taker fees, invalid asset", logging.Error(err))
+		}
+
+		assetQuantum := asset.Type().Details.Quantum
+
+		// apply decay discount amount
+		decayAmount := e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
+		if decayAmount.IsZero() {
+			delete(e.feeDiscountPerPartyAndAsset, key)
+		} else {
+			e.feeDiscountPerPartyAndAsset[key] = decayAmount
+		}
+
+		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
+			ctx,
+			key.party,
+			key.asset,
+			decayAmount.Clone(),
+			e.currentEpoch,
+		))
+	}
+
+	e.broker.SendBatch(updateDiscountEvents)
+}
+
+func (e *Engine) updateFeeDiscountsForAsset(
+	ctx context.Context, assetID string, feeDiscountsPerParty map[string]*num.Uint,
+) map[string]struct{} {
 	updateDiscountEvents := make([]events.Event, 0, len(e.feeDiscountPerPartyAndAsset))
 
 	// ensure asset exists
@@ -49,26 +110,22 @@ func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPe
 
 	assetQuantum := asset.Type().Details.Quantum
 
-	feesPerPartyKeys := maps.Keys(feesPerParty)
+	feesPerPartyKeys := maps.Keys(feeDiscountsPerParty)
 	sort.Strings(feesPerPartyKeys)
 
-	updatedKeys := map[partyAssetKey]struct{}{}
+	updatedKeys := map[string]struct{}{}
 	for _, party := range feesPerPartyKeys {
-		fee := feesPerParty[party]
+		fee := feeDiscountsPerParty[party]
+
+		updatedKeys[party] = struct{}{}
 
 		key := e.feeDiscountKey(assetID, party)
-		updatedKeys[key] = struct{}{}
-
 		if _, ok := e.feeDiscountPerPartyAndAsset[key]; !ok {
 			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
 		}
 
-		fmt.Println("-------- before decay e.feeDiscountPerPartyAndAsset[key] ", key, e.feeDiscountPerPartyAndAsset[key])
-
 		// apply decay discount amount
 		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
-
-		fmt.Println("-------- after e.feeDiscountPerPartyAndAsset[key] ", key, e.feeDiscountPerPartyAndAsset[key])
 
 		// add fees
 		e.feeDiscountPerPartyAndAsset[key].AddSum(fee)
@@ -82,35 +139,29 @@ func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPe
 		))
 	}
 
-	feeDiscountPerPartyAndAssetKeys := maps.Keys(e.feeDiscountPerPartyAndAsset)
-	sort.SliceStable(feeDiscountPerPartyAndAssetKeys, func(i, j int) bool {
-		if feeDiscountPerPartyAndAssetKeys[i].party == feeDiscountPerPartyAndAssetKeys[j].party {
-			return feeDiscountPerPartyAndAssetKeys[i].asset < feeDiscountPerPartyAndAssetKeys[j].asset
-		}
+	e.broker.SendBatch(updateDiscountEvents)
 
-		return feeDiscountPerPartyAndAssetKeys[i].party < feeDiscountPerPartyAndAssetKeys[j].party
-	})
+	return updatedKeys
+}
 
-	for _, key := range feeDiscountPerPartyAndAssetKeys {
-		if _, ok := updatedKeys[key]; ok {
-			continue
-		}
-
-		// apply decay discount amount
-		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
-
-		fmt.Println("-------- non updated after e.feeDiscountPerPartyAndAsset[key]:", key, e.feeDiscountPerPartyAndAsset[key])
-
-		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
-			ctx,
-			key.party,
-			assetID,
-			e.feeDiscountPerPartyAndAsset[key].Clone(),
-			e.currentEpoch,
-		))
+func (e *Engine) RegisterTradingFees(ctx context.Context, assetID string, feesPerParty map[string]*num.Uint) {
+	// ensure asset exists
+	_, err := e.assets.Get(assetID)
+	if err != nil {
+		e.log.Panic("could not register taker fees, invalid asset", logging.Error(err))
 	}
 
-	e.broker.SendBatch(updateDiscountEvents)
+	if _, ok := e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID]; !ok {
+		e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID] = map[string]*num.Uint{}
+	}
+
+	for partyID, fee := range feesPerParty {
+		if _, ok := e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID][partyID]; !ok {
+			e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID][partyID] = fee.Clone()
+			continue
+		}
+		e.pendingPerAssetAndPartyFeeDiscountUpdates[assetID][partyID].AddSum(fee)
+	}
 }
 
 func (e *Engine) ApplyFeeDiscount(ctx context.Context, asset string, party string, fee *num.Uint) (discountedFee *num.Uint, discount *num.Uint) {
@@ -164,7 +215,6 @@ func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum 
 		return currentDiscount
 	}
 
-	fmt.Println("------- currentDiscount, e.feeDiscountDecayFraction:", currentDiscount, e.feeDiscountDecayFraction)
 	decayedAmount := currentDiscount.ToDecimal().Mul(e.feeDiscountDecayFraction)
 
 	if decayedAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
