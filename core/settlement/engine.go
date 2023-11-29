@@ -204,13 +204,8 @@ func (e *Engine) addNetworkTrade(trade *types.Trade) {
 		tSize *= -1
 	}
 
-	// if in case of no trades, we start here
+	// get the current settled position (or zero if no settled position was found)
 	oldSize := e.settledPosition[types.NetworkParty]
-	if oldSize == 0 {
-		// the network was holding no position, we just opened one that was marked to market, so there is no need to add it to the trades volume
-		e.settledPosition[types.NetworkParty] += tSize
-		return
-	}
 	// for any other change in the position, this could have happened at a different mark price, and we will need to mark this trade to market
 	// e.g. parties getting distressed after a funding payment.
 	if trades, ok := e.trades[types.NetworkParty]; ok && len(trades) > 0 {
