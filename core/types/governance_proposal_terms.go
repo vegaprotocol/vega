@@ -433,7 +433,13 @@ func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
 }
 
 func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms, ids []string) (*BatchProposalTerms, error) {
-	changes := make([]BatchProposalChange, 0, len(p.Changes))
+	changesLen := len(p.Changes)
+
+	if changesLen != len(ids) {
+		return nil, fmt.Errorf("failed to convert BatchProposalTerms to proto due missing IDs")
+	}
+
+	changes := make([]BatchProposalChange, 0, changesLen)
 
 	var (
 		err    error

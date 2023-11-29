@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/pow"
@@ -1743,14 +1744,19 @@ func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p)
+	ids := make([]string, 0, len(p.Terms.Changes))
+	for i := 0; i < len(p.Terms.Changes); i++ {
+		ids = append(ids, fmt.Sprintf("prop-%d", i))
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p, ids)
 	if err != nil {
 		return err
 	}
 
 	errs := verrors.NewCumulatedErrors()
 	for _, change := range propSubmission.Terms.Changes {
-		switch term := change.ProposalTerm().(type) {
+		switch term := change.Change.(type) {
 		case *types.ProposalTermsUpdateNetworkParameter:
 			if err := app.netp.IsUpdateAllowed(term.UpdateNetworkParameter.Changes.Key); err != nil {
 				errs.Add(errs)
@@ -1759,7 +1765,7 @@ func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx) error {
 	}
 
 	if errs.HasAny() {
-		return fmt.Errorf("%s", errs.Error())
+		return errs
 	}
 
 	return nil
@@ -1862,7 +1868,7 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	if err != nil {
 		return err
 	}
-	toSubmit, err := app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
+	err = app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(deterministicBatchID),
@@ -1870,6 +1876,9 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 		return err
 	}
 
+	toSubmit := governance.ToSubmit{}
+
+	// TODO karel - fix this
 	if toSubmit.IsNewMarket() {
 		// opening auction start
 		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)

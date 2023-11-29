@@ -30,8 +30,10 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 
 	"github.com/pkg/errors"
 )
@@ -135,7 +137,7 @@ type Engine struct {
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
-	activeBatchProposals []*batchProposal
+	activeBatchProposals map[string]*batchProposal
 	activeProposals      []*proposal
 	enactedProposals     []*proposal
 
@@ -333,50 +335,116 @@ func (e *Engine) removeActiveProposalByID(ctx context.Context, id string) {
 	}
 }
 
-// OnTick triggers time bound state changes.
-func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
-	var (
-		preparedToEnact []*ToEnact
-		voteClosed      []*VoteClosed
-		toBeRemoved     []string // ids
-	)
+func (e *Engine) evaluateProposal(
+	ctx context.Context,
+	timeNow int64,
+	proposal *proposal,
+) (*ToEnact, *VoteClosed, *string) {
+	// check if the market for successor proposals still exists, if not, reject the proposal
+	if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+		if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+			proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
+			e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+			return nil, nil, &proposal.ID
+		}
+	}
 
+	// do not check parent market, the market was either rejected when the parent was succeeded
+	// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+	// loses its parent market reference
+	if proposal.ShouldClose(timeNow) {
+		e.closeProposal(ctx, proposal)
+		return nil, e.preVoteClosedProposal(proposal), nil
+	}
+
+	if !proposal.IsOpen() && !proposal.IsPassed() {
+		return nil, nil, &proposal.ID
+	} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(timeNow)) {
+		enact, perr, err := e.preEnactProposal(ctx, proposal)
+		if err != nil {
+			e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+			e.log.Error("proposal enactment has failed",
+				logging.String("proposal-id", proposal.ID),
+				logging.String("proposal-error", perr.String()),
+				logging.Error(err))
+			return nil, nil, &proposal.ID
+		} else {
+			return enact, nil, &proposal.ID
+		}
+	}
+
+	return nil, nil, nil
+}
+
+func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	now := t.Unix()
 
+	var (
+		batchToRemove        []string
+		voteClosed           []*VoteClosed
+		addToActiveProposals []*proposal
+	)
+
+	batchIDs := maps.Keys(e.activeBatchProposals)
+	sort.Strings(batchIDs)
+
+	for _, batchID := range batchIDs {
+		batchProposal, ok := e.activeBatchProposals[batchID]
+		if !ok {
+			continue
+		}
+
+		var refusedProposal *proposal
+		for _, propType := range batchProposal.Proposals {
+			prop := &proposal{
+				Proposal:     propType,
+				yes:          batchProposal.yes,
+				no:           batchProposal.no,
+				invalidVotes: map[string]*types.Vote{},
+			}
+			_, vc, _ := e.evaluateProposal(ctx, now, prop)
+
+			// proposal evaluation has failed
+			if prop.IsDeclined() || prop.IsFailed() || prop.IsRejected() {
+				refusedProposal = prop
+				break
+			}
+
+			// proposal vote has been closed
+			if vc != nil {
+				voteClosed = append(voteClosed, vc)
+				addToActiveProposals = append(addToActiveProposals, prop)
+			}
+		}
+
+		// TODO karel - solve here
+		if refusedProposal != nil {
+			// batchProposal.
+		}
+
+		// proposal has either failed or is closed for voting
+		if len(voteClosed) > 0 || refusedProposal != nil {
+			delete(e.activeBatchProposals, batchProposal.ID)
+		}
+	}
+
+	// TODO karel remove batch
+	// batchToRemove
+
+	var preparedToEnact []*ToEnact
+	var toBeRemoved []string // ids
+
 	for _, proposal := range e.activeProposals {
-		// check if the market for successor proposals still exists, if not, reject the proposal
-		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
-			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
-				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
-				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-				toBeRemoved = append(toBeRemoved, proposal.ID)
-				continue
-			}
-		}
+		pte, vc, tbr := e.evaluateProposal(ctx, now, proposal)
 
-		// do not check parent market, the market was either rejected when the parent was succeeded
-		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
-		// loses its parent market reference
-		if proposal.ShouldClose(now) {
-			e.closeProposal(ctx, proposal)
-			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
+		if pte != nil {
+			preparedToEnact = append(preparedToEnact, pte)
 		}
-
-		if !proposal.IsOpen() && !proposal.IsPassed() {
-			toBeRemoved = append(toBeRemoved, proposal.ID)
-		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
-			enact, perr, err := e.preEnactProposal(ctx, proposal)
-			if err != nil {
-				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-				toBeRemoved = append(toBeRemoved, proposal.ID)
-				e.log.Error("proposal enactment has failed",
-					logging.String("proposal-id", proposal.ID),
-					logging.String("proposal-error", perr.String()),
-					logging.Error(err))
-			} else {
-				toBeRemoved = append(toBeRemoved, proposal.ID)
-				preparedToEnact = append(preparedToEnact, enact)
-			}
+		if vc != nil {
+			voteClosed = append(voteClosed, vc)
+		}
+		if tbr != nil {
+			toBeRemoved = append(toBeRemoved, *tbr)
 		}
 	}
 
@@ -437,6 +505,9 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		e.removeActiveProposalByID(ctx, id)
 	}
 
+	// add these closed proposals from batch
+	e.activeProposals = append(e.activeProposals, addToActiveProposals...)
+
 	// flush here for now
 	return toBeEnacted, voteClosed
 }
@@ -457,13 +528,8 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 }
 
 func (e *Engine) getBatchProposal(id string) (*batchProposal, bool) {
-	for _, v := range e.activeBatchProposals {
-		if v.ID == id {
-			return v, true
-		}
-	}
-
-	return nil, true
+	bp, ok := e.activeBatchProposals[id]
+	return bp, ok
 }
 
 func (e *Engine) SubmitBatchProposal(
@@ -487,6 +553,10 @@ func (e *Engine) SubmitBatchProposal(
 		Rationale:        bpsub.Rationale,
 		Proposals:        make([]*types.Proposal, 0, len(bpsub.Terms.Changes)),
 	}
+
+	defer func() {
+		e.broker.Send(events.NewProposalEvent(ctx, *bp))
+	}()
 
 	proposalParamsPerProposalTermType := map[types.ProposalTermsType]*types.ProposalParameters{}
 
@@ -713,12 +783,12 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 }
 
 func (e *Engine) startBatchProposal(p *types.BatchProposal) {
-	e.activeBatchProposals = append(e.activeBatchProposals, &batchProposal{
+	e.activeBatchProposals[p.ID] = &batchProposal{
 		BatchProposal: p,
 		yes:           map[string]*types.Vote{},
 		no:            map[string]*types.Vote{},
 		invalidVotes:  map[string]*types.Vote{},
-	})
+	}
 }
 
 func (e *Engine) startProposal(p *types.Proposal) {
@@ -922,21 +992,33 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 
 // AddVote adds a vote onto an existing active proposal.
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
-	_, found := e.getProposal(cmd.ProposalID)
-	_, batchFound := e.getBatchProposal(cmd.ProposalID)
+	proposal, found := e.getProposal(cmd.ProposalID)
+	batchProposal, batchFound := e.getBatchProposal(cmd.ProposalID)
 
 	if found {
-		return e.addVote(ctx, cmd, party)
-	} else if batchFound {
-		// TODO add vote for batch
+		if !proposal.IsOpenForVotes() {
+			return ErrProposalNotOpenForVotes
+		}
+		return e.addVote(ctx, cmd, proposal, party)
+	}
+
+	if batchFound {
+		if !batchProposal.IsOpenForVotes() {
+			return ErrProposalNotOpenForVotes
+		}
+		return e.addBatchVote(ctx, batchProposal, cmd, party)
 	}
 
 	return ErrProposalDoesNotExist
 }
 
-func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
-	proposal, err := e.validateVote(cmd, party)
+func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, proposal *proposal, party string) error {
+	params, err := e.getProposalParams(proposal.Terms.Change)
 	if err != nil {
+		return err
+	}
+
+	if err := e.validateVote(cmd, proposal.Proposal, params, party); err != nil {
 		e.log.Debug("invalid vote submission",
 			logging.PartyID(party),
 			logging.String("vote", cmd.String()),
@@ -974,41 +1056,84 @@ func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, party st
 	return nil
 }
 
-func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposal, error) {
-	proposal, found := e.getProposal(vote.ProposalID)
-	if !found {
-		return nil, ErrProposalDoesNotExist
-	} else if !proposal.IsOpenForVotes() {
-		return nil, ErrProposalNotOpenForVotes
+func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal, cmd types.VoteSubmission, party string) error {
+	validationErrs := vgerrors.NewCumulatedErrors()
+
+	for _, proposal := range batchProposal.Proposals {
+		if err := e.validateVote(cmd, proposal, batchProposal.ProposalParameters, party); err != nil {
+			validationErrs.Add(fmt.Errorf("proposal term %q has failed with: %w", proposal.Terms.Change.GetTermType(), err))
+			continue
+		}
 	}
 
-	params, err := e.getProposalParams(proposal.Terms.Change)
-	if err != nil {
-		return nil, err
+	if validationErrs.HasAny() {
+		e.log.Debug("invalid vote submission",
+			logging.PartyID(party),
+			logging.String("vote", cmd.String()),
+			logging.Error(validationErrs),
+		)
+		return validationErrs
 	}
 
+	vote := types.Vote{
+		PartyID:                     party,
+		ProposalID:                  cmd.ProposalID,
+		Value:                       cmd.Value,
+		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
+		TotalGovernanceTokenBalance: getTokensBalance(e.accs, party),
+		TotalGovernanceTokenWeight:  num.DecimalZero(),
+		TotalEquityLikeShareWeight:  num.DecimalZero(),
+	}
+
+	// TODO Karel clarify later if this is needed
+	// if proposal.IsMarketUpdate() {
+	// 	mID := proposal.MarketUpdate().MarketID
+	// 	vote.TotalEquityLikeShareWeight, _ = e.markets.GetEquityLikeShareForMarketAndParty(mID, party)
+	// }
+
+	if err := batchProposal.AddVote(vote); err != nil {
+		return fmt.Errorf("couldn't cast the vote: %w", err)
+	}
+
+	if e.log.IsDebug() {
+		e.log.Debug("vote submission accepted",
+			logging.PartyID(party),
+			logging.String("vote", cmd.String()),
+		)
+	}
+	e.broker.Send(events.NewVoteEvent(ctx, vote))
+
+	return nil
+}
+
+func (e *Engine) validateVote(
+	vote types.VoteSubmission,
+	proposal *types.Proposal,
+	params *types.ProposalParameters,
+	party string,
+) error {
 	voterTokens, err := getGovernanceTokens(e.accs, party)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if proposal.IsMarketUpdate() {
 		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.MarketUpdate().MarketID, party)
 		if partyELS.IsZero() && voterTokens.IsZero() {
-			return nil, ErrVoterInsufficientTokensAndEquityLikeShare
+			return ErrVoterInsufficientTokensAndEquityLikeShare
 		}
 		// If he is not voting using his equity-like share, he should at least
 		// have enough tokens.
 		if partyELS.IsZero() && voterTokens.LT(params.MinVoterBalance) {
-			return nil, ErrVoterInsufficientTokens
+			return ErrVoterInsufficientTokens
 		}
 	} else {
 		if voterTokens.LT(params.MinVoterBalance) {
-			return nil, ErrVoterInsufficientTokens
+			return ErrVoterInsufficientTokens
 		}
 	}
 
-	return proposal, nil
+	return nil
 }
 
 func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *types.ProposalParameters) (types.ProposalError, error) {
@@ -1403,203 +1528,6 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	}
 
 	return newAsset, types.ProposalErrorUnspecified, nil
-}
-
-type proposal struct {
-	*types.Proposal
-	yes          map[string]*types.Vote
-	no           map[string]*types.Vote
-	invalidVotes map[string]*types.Vote
-}
-
-type batchProposal struct {
-	*types.BatchProposal
-	yes          map[string]*types.Vote
-	no           map[string]*types.Vote
-	invalidVotes map[string]*types.Vote
-}
-
-func (p *proposal) IsTimeToEnact(now int64) bool {
-	return p.Terms.EnactmentTimestamp < now
-}
-
-// ShouldClose tells if the proposal should be closed or not.
-// We also check the "open" state, alongside the closing timestamp as solely
-// relying on the closing timestamp could lead to call Close() on an
-// already-closed proposal.
-func (p *proposal) ShouldClose(now int64) bool {
-	return p.IsOpen() && p.Terms.ClosingTimestamp < now
-}
-
-func (p *proposal) SucceedsMarket(parentID string) bool {
-	nm := p.NewMarket()
-	if nm == nil {
-		return false
-	}
-	if pid, ok := nm.ParentMarketID(); !ok || pid != parentID {
-		return false
-	}
-	return true
-}
-
-func (p *proposal) IsOpen() bool {
-	return p.State == types.ProposalStateOpen
-}
-
-func (p *proposal) IsPassed() bool {
-	return p.State == types.ProposalStatePassed
-}
-
-func (p *proposal) IsDeclined() bool {
-	return p.State == types.ProposalStateDeclined
-}
-
-func (p *proposal) IsOpenForVotes() bool {
-	// It's allowed to vote during the validation of the proposal by the node.
-	return p.State == types.ProposalStateOpen || p.State == types.ProposalStateWaitingForNodeVote
-}
-
-// AddVote registers the last vote casted by a party. The proposal has to be
-// open, it returns an error otherwise.
-func (p *proposal) AddVote(vote types.Vote) error {
-	if !p.IsOpenForVotes() {
-		return ErrProposalNotOpenForVotes
-	}
-
-	if vote.Value == types.VoteValueYes {
-		delete(p.no, vote.PartyID)
-		p.yes[vote.PartyID] = &vote
-	} else {
-		delete(p.yes, vote.PartyID)
-		p.no[vote.PartyID] = &vote
-	}
-
-	return nil
-}
-
-// Close determines the state of the proposal, passed or declined based on the
-// vote balance and weight.
-// Warning: this method should only be called once. Use ShouldClose() to know
-// when to call.
-func (p *proposal) Close(accounts StakingAccounts, markets Markets) {
-	if !p.IsOpen() {
-		return
-	}
-
-	defer func() {
-		p.purgeBlankVotes(p.yes)
-		p.purgeBlankVotes(p.no)
-	}()
-
-	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(accounts)
-
-	p.State = tokenVoteState
-	p.Reason = tokenVoteError
-
-	// Proposals, other than market updates, solely relies on votes using the
-	// governance tokens. So, only proposals for market update can go beyond this
-	// guard.
-	if !p.IsMarketUpdate() {
-		return
-	}
-
-	if tokenVoteState == types.ProposalStateDeclined && tokenVoteError == types.ProposalErrorParticipationThresholdNotReached {
-		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(markets)
-		p.State = elsVoteState
-		p.Reason = elsVoteError
-	}
-}
-
-func (p *proposal) computeVoteStateUsingTokens(accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
-	totalStake := accounts.GetStakingAssetTotalSupply()
-
-	yes := p.countTokens(p.yes, accounts)
-	yesDec := num.DecimalFromUint(yes)
-	no := p.countTokens(p.no, accounts)
-	totalTokens := num.Sum(yes, no)
-	totalTokensDec := num.DecimalFromUint(totalTokens)
-	p.weightVotesFromToken(p.yes, totalTokensDec)
-	p.weightVotesFromToken(p.no, totalTokensDec)
-	majorityThreshold := totalTokensDec.Mul(p.RequiredMajority)
-	totalStakeDec := num.DecimalFromUint(totalStake)
-	participationThreshold := totalStakeDec.Mul(p.RequiredParticipation)
-
-	// if we have 0 votes, then just return straight away,
-	// prevents a proposal to go through if the participation is set to 0
-	if totalTokens.IsZero() {
-		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
-	}
-
-	if yesDec.GreaterThanOrEqual(majorityThreshold) && totalTokensDec.GreaterThanOrEqual(participationThreshold) {
-		return types.ProposalStatePassed, types.ProposalErrorUnspecified
-	}
-
-	if totalTokensDec.LessThan(participationThreshold) {
-		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
-	}
-
-	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
-}
-
-func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.ProposalState, types.ProposalError) {
-	yes := p.countEquityLikeShare(p.yes, markets)
-	no := p.countEquityLikeShare(p.no, markets)
-	totalEquityLikeShare := yes.Add(no)
-
-	if yes.GreaterThanOrEqual(p.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.RequiredLPParticipation) {
-		return types.ProposalStatePassed, types.ProposalErrorUnspecified
-	}
-
-	if totalEquityLikeShare.LessThan(p.RequiredLPParticipation) {
-		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
-	}
-
-	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
-}
-
-func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
-	tally := num.UintZero()
-	for _, v := range votes {
-		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
-		tally.AddSum(v.TotalGovernanceTokenBalance)
-	}
-
-	return tally
-}
-
-func (p *proposal) countEquityLikeShare(votes map[string]*types.Vote, markets Markets) num.Decimal {
-	tally := num.DecimalZero()
-	for _, v := range votes {
-		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.MarketUpdate().MarketID, v.PartyID)
-		tally = tally.Add(v.TotalEquityLikeShareWeight)
-	}
-
-	return tally
-}
-
-func (p *proposal) weightVotesFromToken(votes map[string]*types.Vote, totalVotes num.Decimal) {
-	if totalVotes.IsZero() {
-		return
-	}
-
-	for _, v := range votes {
-		tokenBalanceDec := num.DecimalFromUint(v.TotalGovernanceTokenBalance)
-		v.TotalGovernanceTokenWeight = tokenBalanceDec.Div(totalVotes)
-	}
-}
-
-// purgeBlankVotes removes votes that don't have tokens or equity-like share
-// associated. The user may have withdrawn their governance token or their
-// equity-like share before the end of the vote.
-// We will then purge them from the map if it's the case.
-func (p *proposal) purgeBlankVotes(votes map[string]*types.Vote) {
-	for k, v := range votes {
-		if v.TotalGovernanceTokenBalance.IsZero() && v.TotalEquityLikeShareWeight.IsZero() {
-			p.invalidVotes[k] = v
-			delete(votes, k)
-			continue
-		}
-	}
 }
 
 func getTokensBalance(accounts StakingAccounts, partyID string) *num.Uint {

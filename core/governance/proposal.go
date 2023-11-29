@@ -22,6 +22,243 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+type batchProposal struct {
+	*types.BatchProposal
+	yes          map[string]*types.Vote
+	no           map[string]*types.Vote
+	invalidVotes map[string]*types.Vote
+}
+
+// AddVote registers the last vote casted by a party. The proposal has to be
+// open, it returns an error otherwise.
+func (p *batchProposal) AddVote(vote types.Vote) error {
+	if !p.IsOpenForVotes() {
+		return ErrProposalNotOpenForVotes
+	}
+
+	if vote.Value == types.VoteValueYes {
+		delete(p.no, vote.PartyID)
+		p.yes[vote.PartyID] = &vote
+	} else {
+		delete(p.yes, vote.PartyID)
+		p.no[vote.PartyID] = &vote
+	}
+
+	return nil
+}
+
+func (p *batchProposal) IsOpenForVotes() bool {
+	// It's allowed to vote during the validation of the proposal by the node.
+	return p.State == types.ProposalStateOpen || p.State == types.ProposalStateWaitingForNodeVote
+}
+
+func (p *batchProposal) IsTimeToEnact(now int64) bool {
+	// return p.Terms.EnactmentTimestamp < now
+	return false
+}
+
+type proposal struct {
+	*types.Proposal
+	yes          map[string]*types.Vote
+	no           map[string]*types.Vote
+	invalidVotes map[string]*types.Vote
+}
+
+// ShouldClose tells if the proposal should be closed or not.
+// We also check the "open" state, alongside the closing timestamp as solely
+// relying on the closing timestamp could lead to call Close() on an
+// already-closed proposal.
+func (p *proposal) ShouldClose(now int64) bool {
+	return p.IsOpen() && p.Terms.ClosingTimestamp < now
+}
+
+func (p *proposal) IsTimeToEnact(now int64) bool {
+	return p.Terms.EnactmentTimestamp < now
+}
+
+func (p *proposal) SucceedsMarket(parentID string) bool {
+	nm := p.NewMarket()
+	if nm == nil {
+		return false
+	}
+	if pid, ok := nm.ParentMarketID(); !ok || pid != parentID {
+		return false
+	}
+	return true
+}
+
+func (p *proposal) IsOpen() bool {
+	return p.State == types.ProposalStateOpen
+}
+
+func (p *proposal) IsPassed() bool {
+	return p.State == types.ProposalStatePassed
+}
+
+func (p *proposal) IsDeclined() bool {
+	return p.State == types.ProposalStateDeclined
+}
+
+func (p *proposal) IsRejected() bool {
+	return p.State == types.ProposalStateRejected
+}
+
+func (p *proposal) IsFailed() bool {
+	return p.State == types.ProposalStateFailed
+}
+
+func (p *proposal) IsEnacted() bool {
+	return p.State == types.ProposalStateEnacted
+}
+
+func (p *proposal) IsOpenForVotes() bool {
+	// It's allowed to vote during the validation of the proposal by the node.
+	return p.State == types.ProposalStateOpen || p.State == types.ProposalStateWaitingForNodeVote
+}
+
+// AddVote registers the last vote casted by a party. The proposal has to be
+// open, it returns an error otherwise.
+func (p *proposal) AddVote(vote types.Vote) error {
+	if !p.IsOpenForVotes() {
+		return ErrProposalNotOpenForVotes
+	}
+
+	if vote.Value == types.VoteValueYes {
+		delete(p.no, vote.PartyID)
+		p.yes[vote.PartyID] = &vote
+	} else {
+		delete(p.yes, vote.PartyID)
+		p.no[vote.PartyID] = &vote
+	}
+
+	return nil
+}
+
+// Close determines the state of the proposal, passed or declined based on the
+// vote balance and weight.
+// Warning: this method should only be called once. Use ShouldClose() to know
+// when to call.
+func (p *proposal) Close(accounts StakingAccounts, markets Markets) {
+	if !p.IsOpen() {
+		return
+	}
+
+	defer func() {
+		p.purgeBlankVotes(p.yes)
+		p.purgeBlankVotes(p.no)
+	}()
+
+	tokenVoteState, tokenVoteError := p.computeVoteStateUsingTokens(accounts)
+
+	p.State = tokenVoteState
+	p.Reason = tokenVoteError
+
+	// Proposals, other than market updates, solely relies on votes using the
+	// governance tokens. So, only proposals for market update can go beyond this
+	// guard.
+	if !p.IsMarketUpdate() {
+		return
+	}
+
+	if tokenVoteState == types.ProposalStateDeclined && tokenVoteError == types.ProposalErrorParticipationThresholdNotReached {
+		elsVoteState, elsVoteError := p.computeVoteStateUsingEquityLikeShare(markets)
+		p.State = elsVoteState
+		p.Reason = elsVoteError
+	}
+}
+
+func (p *proposal) computeVoteStateUsingTokens(accounts StakingAccounts) (types.ProposalState, types.ProposalError) {
+	totalStake := accounts.GetStakingAssetTotalSupply()
+
+	yes := p.countTokens(p.yes, accounts)
+	yesDec := num.DecimalFromUint(yes)
+	no := p.countTokens(p.no, accounts)
+	totalTokens := num.Sum(yes, no)
+	totalTokensDec := num.DecimalFromUint(totalTokens)
+	p.weightVotesFromToken(p.yes, totalTokensDec)
+	p.weightVotesFromToken(p.no, totalTokensDec)
+	majorityThreshold := totalTokensDec.Mul(p.RequiredMajority)
+	totalStakeDec := num.DecimalFromUint(totalStake)
+	participationThreshold := totalStakeDec.Mul(p.RequiredParticipation)
+
+	// if we have 0 votes, then just return straight away,
+	// prevents a proposal to go through if the participation is set to 0
+	if totalTokens.IsZero() {
+		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
+	}
+
+	if yesDec.GreaterThanOrEqual(majorityThreshold) && totalTokensDec.GreaterThanOrEqual(participationThreshold) {
+		return types.ProposalStatePassed, types.ProposalErrorUnspecified
+	}
+
+	if totalTokensDec.LessThan(participationThreshold) {
+		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
+	}
+
+	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
+}
+
+func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.ProposalState, types.ProposalError) {
+	yes := p.countEquityLikeShare(p.yes, markets)
+	no := p.countEquityLikeShare(p.no, markets)
+	totalEquityLikeShare := yes.Add(no)
+
+	if yes.GreaterThanOrEqual(p.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.RequiredLPParticipation) {
+		return types.ProposalStatePassed, types.ProposalErrorUnspecified
+	}
+
+	if totalEquityLikeShare.LessThan(p.RequiredLPParticipation) {
+		return types.ProposalStateDeclined, types.ProposalErrorParticipationThresholdNotReached
+	}
+
+	return types.ProposalStateDeclined, types.ProposalErrorMajorityThresholdNotReached
+}
+
+func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
+	tally := num.UintZero()
+	for _, v := range votes {
+		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
+		tally.AddSum(v.TotalGovernanceTokenBalance)
+	}
+
+	return tally
+}
+
+func (p *proposal) countEquityLikeShare(votes map[string]*types.Vote, markets Markets) num.Decimal {
+	tally := num.DecimalZero()
+	for _, v := range votes {
+		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.MarketUpdate().MarketID, v.PartyID)
+		tally = tally.Add(v.TotalEquityLikeShareWeight)
+	}
+
+	return tally
+}
+
+func (p *proposal) weightVotesFromToken(votes map[string]*types.Vote, totalVotes num.Decimal) {
+	if totalVotes.IsZero() {
+		return
+	}
+
+	for _, v := range votes {
+		tokenBalanceDec := num.DecimalFromUint(v.TotalGovernanceTokenBalance)
+		v.TotalGovernanceTokenWeight = tokenBalanceDec.Div(totalVotes)
+	}
+}
+
+// purgeBlankVotes removes votes that don't have tokens or equity-like share
+// associated. The user may have withdrawn their governance token or their
+// equity-like share before the end of the vote.
+// We will then purge them from the map if it's the case.
+func (p *proposal) purgeBlankVotes(votes map[string]*types.Vote) {
+	for k, v := range votes {
+		if v.TotalGovernanceTokenBalance.IsZero() && v.TotalEquityLikeShareWeight.IsZero() {
+			p.invalidVotes[k] = v
+			delete(votes, k)
+			continue
+		}
+	}
+}
+
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {

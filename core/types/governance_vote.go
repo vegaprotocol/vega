@@ -63,6 +63,28 @@ func (v VoteSubmission) String() string {
 	)
 }
 
+// BatchVote represents a governance vote casted by a party for a given batch proposal.
+type BatchVote struct {
+	// PartyID is the party that casted the vote.
+	PartyID string
+	// ProposalID is the proposal identifier concerned by the vote.
+	ProposalID string
+	// Value is the actual position of the vote: yes or no.
+	Value VoteValue
+	// Timestamp is the date and time (in nanoseconds) at which the vote has
+	// been casted.
+	Timestamp int64
+	// TotalGovernanceTokenBalance is the total number of tokens hold by the
+	// party that casted the vote.
+	TotalGovernanceTokenBalance *num.Uint
+	// TotalGovernanceTokenWeight is the weight of the vote compared to the
+	// total number of governance token.
+	TotalGovernanceTokenWeight num.Decimal
+	// TotalEquityLikeShareWeight is the weight of the vote compared to the
+	// total number of equity-like share on the market.
+	TotalEquityLikeShareWeight num.Decimal
+}
+
 // Vote represents a governance vote casted by a party for a given proposal.
 type Vote struct {
 	// PartyID is the party that casted the vote.

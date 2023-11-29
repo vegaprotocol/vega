@@ -300,21 +300,36 @@ func (bp *BatchProposal) SetProposalParams(params *ProposalParameters) {
 	}
 }
 
-func (p *BatchProposal) Reject(reason ProposalError) {
-	p.State = ProposalStateRejected
-	p.Reason = reason
+func (bp *BatchProposal) Reject(reason ProposalError) {
+	bp.State = ProposalStateRejected
+
+	for _, proposal := range bp.Proposals {
+		proposal.State = bp.State
+	}
 }
 
-func (p *BatchProposal) RejectWithErr(reason ProposalError, details error) {
-	p.ErrorDetails = details.Error()
-	p.State = ProposalStateRejected
-	p.Reason = reason
+func (bp *BatchProposal) RejectWithErr(reason ProposalError, details error) {
+	bp.ErrorDetails = details.Error()
+	bp.State = ProposalStateRejected
+	bp.Reason = reason
+
+	for _, proposal := range bp.Proposals {
+		proposal.ErrorDetails = bp.ErrorDetails
+		proposal.State = bp.State
+		proposal.Reason = bp.Reason
+	}
 }
 
-func (p *BatchProposal) FailWithErr(reason ProposalError, details error) {
-	p.ErrorDetails = details.Error()
-	p.State = ProposalStateFailed
-	p.Reason = reason
+func (bp *BatchProposal) FailWithErr(reason ProposalError, details error) {
+	bp.ErrorDetails = details.Error()
+	bp.State = ProposalStateFailed
+	bp.Reason = reason
+
+	for _, proposal := range bp.Proposals {
+		proposal.ErrorDetails = bp.ErrorDetails
+		proposal.State = bp.State
+		proposal.Reason = bp.Reason
+	}
 }
 
 type Proposal struct {
