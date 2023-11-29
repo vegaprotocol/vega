@@ -91,12 +91,12 @@ func TestRestoreClosedMarket(t *testing.T) {
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
 	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
 
-	snap, err := newMarketFromSnapshot(t, context.Background(), ctrl, em, oracleEngine)
+	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)
 
 	// check the market is restored settled and that we have unsubscribed the two oracles
-	assert.Equal(t, types.MarketStateClosed, snap.State())
+	assert.Equal(t, types.MarketStateCancelled, snap.State())
 	assert.Equal(t, uint64(2), unsubs)
 	closed := snap.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), time.Now())
 	assert.True(t, closed)
