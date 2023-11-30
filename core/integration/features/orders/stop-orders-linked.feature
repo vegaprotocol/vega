@@ -268,11 +268,11 @@ Scenario: A linked buy stop order with order size override will use the traded a
 
     # party1 will start 10 short
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1| ETH/DEC19 | sell | 20     | 55    | 0                | TYPE_LIMIT | TIF_GTC | sellorder |
-      | party2| ETH/DEC19 | buy  | 10     | 55    | 1                | TYPE_LIMIT | TIF_GTC | buyorder1 |
-      | party3| ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder2 |
-      | party2| ETH/DEC19 | buy  | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder3 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1| ETH/DEC19 | sell | 20     | 55    | 0                | TYPE_LIMIT | TIF_GTC | sellorder  |
+      | party2| ETH/DEC19 | buy  | 10     | 55    | 1                | TYPE_LIMIT | TIF_GTC | buyorder   |
+      | party3| ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | sellorder2 |
+      | party2| ETH/DEC19 | buy  | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder2  |
 
     # Place a buy position linked stop order
     When the parties place the following orders:
@@ -326,3 +326,34 @@ Scenario: A linked sell stop order with order size override will use the traded 
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
 
+
+
+Scenario: A linked buy stop order with order size override will use the full amount of a filled order
+
+    # party1 will start 10 short
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1| ETH/DEC19 | sell | 20     | 55    | 0                | TYPE_LIMIT | TIF_GTC | sellorder  |
+      | party2| ETH/DEC19 | buy  | 10     | 55    | 1                | TYPE_LIMIT | TIF_GTC | buyorder   |
+      | party3| ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | sellorder2 |
+      | party2| ETH/DEC19 | buy  | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder2  |
+
+    # Place a buy position linked stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override reference |
+      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | ORDER                    | sellorder                  |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
+
+    # Place some orders on the book to move the last price to trigger the stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party3| ETH/DEC19 | sell | 21     | 53    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party2| ETH/DEC19 | buy  | 1      | 53    | 1                | TYPE_LIMIT | TIF_GTC | 
+
+    # Stop order should have triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
