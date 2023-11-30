@@ -339,6 +339,7 @@ message GovernanceActive {
 
 message GovernanceNode {
   repeated vega.Proposal proposals = 1;
+  repeated ProposalData proposal_data = 2; // includes votes
 }
 
 message StakingAccount {
