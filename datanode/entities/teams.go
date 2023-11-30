@@ -238,7 +238,7 @@ func (t TeamMemberHistory) Cursor() *Cursor {
 func (t TeamMemberHistory) ToProto() *v2.TeamRefereeHistory {
 	return &v2.TeamRefereeHistory{
 		TeamId:        string(t.TeamID),
-		JoinedAt:      t.JoinedAt.Unix(),
+		JoinedAt:      t.JoinedAt.UnixNano(),
 		JoinedAtEpoch: t.JoinedAtEpoch,
 	}
 }
@@ -247,7 +247,7 @@ func (t TeamMemberHistory) ToProtoEdge(_ ...any) (*v2.TeamRefereeHistoryEdge, er
 	return &v2.TeamRefereeHistoryEdge{
 		Node: &v2.TeamRefereeHistory{
 			TeamId:        string(t.TeamID),
-			JoinedAt:      t.JoinedAt.Unix(),
+			JoinedAt:      t.JoinedAt.UnixNano(),
 			JoinedAtEpoch: t.JoinedAtEpoch,
 		},
 		Cursor: t.Cursor().Encode(),
