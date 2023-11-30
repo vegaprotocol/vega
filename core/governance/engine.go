@@ -555,7 +555,7 @@ func (e *Engine) SubmitBatchProposal(
 	}
 
 	defer func() {
-		e.broker.Send(events.NewProposalEvent(ctx, *bp))
+		e.broker.Send(events.NewProposalEvent(ctx, *bp.ToProposal()))
 	}()
 
 	proposalParamsPerProposalTermType := map[types.ProposalTermsType]*types.ProposalParameters{}

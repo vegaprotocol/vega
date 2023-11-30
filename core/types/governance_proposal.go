@@ -254,6 +254,38 @@ type BatchProposal struct {
 	ProposalParameters *ProposalParameters
 }
 
+func (bp BatchProposal) ToProto() *vegapb.Proposal {
+	batchTerms := &vegapb.BatchProposalTerms{
+		ClosingTimestamp: bp.ClosingTimestamp,
+	}
+
+	for _, proposal := range bp.Proposals {
+		batchTerms.Changes = append(batchTerms.Changes, &vegapb.BatchProposalTermsChange{
+			Change:             proposal.Terms.Change.oneOfBatchProto(),
+			EnactmentTimestamp: proposal.Terms.EnactmentTimestamp,
+		})
+	}
+
+	requiredParticipationLP := bp.ProposalParameters.RequiredParticipationLP.String()
+	requiredMajorityLP := bp.ProposalParameters.RequiredMajorityLP.String()
+
+	return &vegapb.Proposal{
+		Id:                                     bp.ID,
+		Reference:                              bp.Reference,
+		PartyId:                                bp.Party,
+		State:                                  bp.State,
+		Timestamp:                              bp.Timestamp,
+		Reason:                                 &bp.Reason,
+		ErrorDetails:                           &bp.ErrorDetails,
+		Rationale:                              bp.Rationale.ToProto(),
+		RequiredParticipation:                  bp.ProposalParameters.RequiredParticipation.String(),
+		RequiredMajority:                       bp.ProposalParameters.RequiredMajority.String(),
+		RequiredLiquidityProviderParticipation: &requiredParticipationLP,
+		RequiredLiquidityProviderMajority:      &requiredMajorityLP,
+		BatchTerms:                             batchTerms,
+	}
+}
+
 // SetProposalParams set specific per proposal parameters and chooses the most aggressive ones.
 func (bp *BatchProposal) SetProposalParams(params *ProposalParameters) {
 	if bp.ProposalParameters == nil {
@@ -559,6 +591,13 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 type ProposalRationale struct {
 	Description string
 	Title       string
+}
+
+func (pr ProposalRationale) ToProto() *vegapb.ProposalRationale {
+	return &vegapb.ProposalRationale{
+		Description: pr.Description,
+		Title:       pr.Title,
+	}
 }
 
 func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {

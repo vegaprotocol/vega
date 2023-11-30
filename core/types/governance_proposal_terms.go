@@ -16,6 +16,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/stringer"
@@ -436,7 +437,7 @@ func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms, ids []string) (*B
 	changesLen := len(p.Changes)
 
 	if changesLen != len(ids) {
-		return nil, fmt.Errorf("failed to convert BatchProposalTerms to proto due missing IDs")
+		return nil, errors.New("failed to convert BatchProposalTerms to proto due missing IDs")
 	}
 
 	changes := make([]BatchProposalChange, 0, changesLen)
