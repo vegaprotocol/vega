@@ -22,24 +22,44 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 )
 
 type Rewards struct {
 	*ConnectionSource
+	runningTotals map[entities.GameID]map[entities.PartyID]decimal.Decimal
 }
 
 var rewardsOrdering = TableOrdering{
 	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
-func NewRewards(connectionSource *ConnectionSource) *Rewards {
+func NewRewards(ctx context.Context, connectionSource *ConnectionSource) *Rewards {
 	r := &Rewards{
 		ConnectionSource: connectionSource,
 	}
+	r.runningTotals = make(map[entities.GameID]map[entities.PartyID]decimal.Decimal)
+	r.fetchRunningTotals(ctx)
 	return r
+}
+
+func (rs *Rewards) fetchRunningTotals(ctx context.Context) {
+	query := `SELECT * FROM current_game_reward_totals`
+	var totals []entities.RewardTotals
+	err := pgxscan.Select(ctx, rs.Connection, &totals, query)
+	if err != nil && !pgxscan.NotFound(err) {
+		panic(fmt.Errorf("could not retrieve game reward totals: %w", err))
+	}
+	for _, total := range totals {
+		if _, ok := rs.runningTotals[total.GameID]; !ok {
+			rs.runningTotals[total.GameID] = make(map[entities.PartyID]decimal.Decimal)
+		}
+		rs.runningTotals[total.GameID][total.PartyID] = total.TotalRewards
+	}
 }
 
 func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
@@ -58,11 +78,39 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			tx_hash,
 			vega_time,
 			seq_num,
-			locked_until_epoch_id
+			locked_until_epoch_id,
+			game_id
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13);`,
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14);`,
 		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.QuantumAmount, r.PercentOfTotal, r.Timestamp, r.TxHash,
-		r.VegaTime, r.SeqNum, r.LockedUntilEpochID)
+		r.VegaTime, r.SeqNum, r.LockedUntilEpochID, r.GameID)
+
+	if r.GameID != "" {
+		if _, ok := rs.runningTotals[r.GameID]; !ok {
+			rs.runningTotals[r.GameID] = make(map[entities.PartyID]decimal.Decimal)
+			rs.runningTotals[r.GameID][r.PartyID] = num.DecimalZero()
+		}
+
+		rs.runningTotals[r.GameID][r.PartyID] = rs.runningTotals[r.GameID][r.PartyID].Add(r.QuantumAmount)
+
+		defer metrics.StartSQLQuery("GameRewardTotals", "Add")()
+		_, err = rs.Connection.Exec(ctx, `INSERT INTO game_reward_totals(
+			game_id,
+			party_id,
+			asset_id,
+			market_id,
+			epoch_id,
+            team_id,
+			total_rewards
+		) values ($1, $2, $3, $4, $5, $6, $7);`,
+			r.GameID,
+			r.PartyID,
+			r.AssetID,
+			r.MarketID,
+			r.EpochID,
+			entities.TeamID(""),
+			rs.runningTotals[r.GameID][r.PartyID])
+	}
 	return err
 }
 

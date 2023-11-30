@@ -28,6 +28,7 @@
 - [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on scope on transfers.
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
+- [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
 
 ### 🐛 Fixes
 

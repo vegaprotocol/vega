@@ -302,6 +302,9 @@ message Transfer {
   Status status = 9;
   int64 timestamp = 10;
   optional string reason = 11;
+  // ID of the game this transfer was made in relation to. A transfer is made to members of a team
+  // or participants who take part in a game and are rewarded for their participation
+  optional string game_id = 12;
 
   oneof kind {
     OneOffTransfer one_off = 101;
@@ -429,6 +432,7 @@ message RewardPayoutEvent {
   string market = 8;
   string locked_until_epoch = 9;
   string quantum_amount = 10;
+  optional string game_id = 11;
 }
 
 // ValidatorScoreEvent is the score a validator gets for a given epoch

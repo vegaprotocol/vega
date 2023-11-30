@@ -106,11 +106,11 @@ func TransferFromToAccounts(from, to *entities.Account) TransferOption {
 	}
 }
 
-func TransferAsRecurring(config eventspb.RecurringTransfer) TransferOption {
+func TransferAsRecurring(config *eventspb.RecurringTransfer) TransferOption {
 	return func(t *testing.T, transfer *eventspb.Transfer) {
 		t.Helper()
 		transfer.Kind = &eventspb.Transfer_Recurring{
-			Recurring: &config,
+			Recurring: config,
 		}
 	}
 }
@@ -141,4 +141,11 @@ func TransferDetailsAsTransfers(t *testing.T, details []entities.TransferDetails
 		transfers = append(transfers, details[i].Transfer)
 	}
 	return transfers
+}
+
+func TransferWithGameID(gameID *string) TransferOption {
+	return func(t *testing.T, transfer *eventspb.Transfer) {
+		t.Helper()
+		transfer.GameId = gameID
+	}
 }

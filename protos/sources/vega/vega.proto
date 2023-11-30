@@ -1633,6 +1633,8 @@ message Reward {
   uint64 locked_until_epoch = 9;
   // Amount paid as a reward, expressed in asset's quantum unit.
   string quantum_amount = 10;
+  // ID of the game the reward payment was made for if the payment was made for participation in a game.
+  optional string game_id = 11;
 }
 
 // Details for rewards for a single asset

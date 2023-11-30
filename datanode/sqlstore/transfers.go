@@ -69,11 +69,12 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				end_epoch,
 				factor,
 				dispatch_strategy,
-				reason		
+				reason,
+				game_id
 			)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 					on conflict (id, vega_time) do update
-					set 
+					set
 				from_account_id=EXCLUDED.from_account_id,
 				to_account_id=EXCLUDED.to_account_id,
 				asset_id=EXCLUDED.asset_id,
@@ -87,11 +88,13 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				factor=EXCLUDED.factor,
 				dispatch_strategy=EXCLUDED.dispatch_strategy,
 				reason=EXCLUDED.reason,
-				tx_hash=EXCLUDED.tx_hash`
+				tx_hash=EXCLUDED.tx_hash,
+				game_id=EXCLUDED.game_id
+				;`
 
 	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountID, transfer.ToAccountID,
 		transfer.AssetID, transfer.Amount, transfer.Reference, transfer.Status, transfer.TransferType,
-		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchStrategy, transfer.Reason); err != nil {
+		transfer.DeliverOn, transfer.StartEpoch, transfer.EndEpoch, transfer.Factor, transfer.DispatchStrategy, transfer.Reason, transfer.GameID); err != nil {
 		return fmt.Errorf("could not insert transfer into database: %w", err)
 	}
 

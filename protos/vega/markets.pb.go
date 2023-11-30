@@ -656,20 +656,18 @@ func (x *DataSourceSpecToFutureBinding) GetTradingTerminationProperty() string {
 	return ""
 }
 
-// Describes which property of the data source data is to be
-// used as settlement data and which to use as the trading terminated trigger
+// Describes which properties of the data source data is to be
+// used for settlement.
 type DataSourceSpecToPerpetualBinding struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the perpetual market will use the value of
-	// this property as settlement data.
+	// Name of the property in the source data that should be used for settlement data.
+	// If it is set to "prices.BTC.value" for example, then the perpetual market will use the value of
+	// this property to get settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
-	// Name of the property in the source data that should be used as settlement data.
-	// If it is set to "prices.BTC.value", then the perpetual market will use the value of
-	// this property as settlement data.
+	// Name of the property in the source data that should be used to determine the perpetual's settlement schedule.
 	SettlementScheduleProperty string `protobuf:"bytes,2,opt,name=settlement_schedule_property,json=settlementScheduleProperty,proto3" json:"settlement_schedule_property,omitempty"`
 }
 
