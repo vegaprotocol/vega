@@ -633,7 +633,7 @@ type Query {
     toAccount: ID!
     "Amount to be transferred."
     amount: String!
-    "Asset ID for the asset associated with the transaction."
+    "Asset ID for the asset used in the transaction."
     assetId: String!
   ): EstimatedTransferFee
 
@@ -1030,7 +1030,7 @@ type Query {
   totalTransferFeeDiscount(
     "ID of party eligible for the discount."
     partyId: String!
-    "ID of asset the discount relates to."
+    "ID of the asset that the discount relates to."
     assetId: String!
   ): TotalTransferFeeDiscount
 
