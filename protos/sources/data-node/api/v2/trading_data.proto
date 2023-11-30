@@ -4382,7 +4382,7 @@ message GetTotalTransferFeeDiscountResponse {
 // Request to retrieve games data.
 message ListGamesRequest {
   // Game ID to filter for.
-  optional string gameId = 1;
+  optional string game_id = 1;
   // First epoch to retrieve game data from. If not provided, defaults to the last epoch minus 30,
   // or the first epoch available if not enough epochs have passed.
   optional uint64 epoch_from = 2;
