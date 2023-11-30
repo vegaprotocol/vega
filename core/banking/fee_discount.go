@@ -94,7 +94,9 @@ func (e *Engine) decayAllFeeDiscounts(ctx context.Context, perAssetAndPartyUpdat
 		))
 	}
 
-	e.broker.SendBatch(updateDiscountEvents)
+	if len(updateDiscountEvents) > 0 {
+		e.broker.SendBatch(updateDiscountEvents)
+	}
 }
 
 func (e *Engine) updateFeeDiscountsForAsset(
@@ -139,7 +141,9 @@ func (e *Engine) updateFeeDiscountsForAsset(
 		))
 	}
 
-	e.broker.SendBatch(updateDiscountEvents)
+	if len(updateDiscountEvents) > 0 {
+		e.broker.SendBatch(updateDiscountEvents)
+	}
 
 	return updatedKeys
 }
