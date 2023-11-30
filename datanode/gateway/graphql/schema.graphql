@@ -1018,11 +1018,27 @@ type Query {
   teamsStatistics(
     "Optional team ID to filter for"
     teamId: ID
-    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 30 epochs."
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 10 epochs."
     aggregationEpochs: Int
     "Optional pagination information"
     pagination: Pagination
   ): TeamsStatisticsConnection
+
+  """
+  List team members' statistics for a given team
+  Get the statistics of all team members for a given team ID, or for a specific member by using party ID, over a number of epochs.
+  If a team does not have at least the number of epochs worth of data, it is ignored.
+  """
+  teamMembersStatistics(
+    "Team ID to filter for"
+    teamId: ID!
+    "Optional party ID to filter for"
+    partyId: ID
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 10 epochs."
+    aggregationEpochs: Int
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamMembersStatisticsConnection
 
   "List all referees for a team"
   teamReferees(
@@ -6505,7 +6521,7 @@ type TeamStatistics {
   "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
   quantumRewards: [QuantumRewardsPerEpoch!]!
   "Total of games played."
-  totalGamePlayed: Int!
+  totalGamesPlayed: Int!
   "List of games played over the requested epoch period."
   gamesPlayed: [String!]!
 }
@@ -6529,6 +6545,38 @@ type TeamStatisticsEdge {
 type TeamsStatisticsConnection {
   "Teams' statistics in this connection"
   edges: [TeamStatisticsEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Team member's statistics record containing the member's information."
+type TeamMemberStatistics {
+  "Party ID the statistics are related to."
+  partyId: String!
+  "Total of volume accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumVolume: String!
+  "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumRewards: String!
+  "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
+  quantumRewards: [QuantumRewardsPerEpoch!]!
+  "Total number of games played."
+  totalGamesPlayed: Int!
+  "List of games played over the requested epoch period."
+  gamesPlayed: [String!]!
+}
+
+"Edge type containing a team member statistics cursor and its associated statistics data"
+type TeamMemberStatisticsEdge {
+  "Team member's statistics data"
+  node: TeamMemberStatistics!
+  "Cursor identifying the team data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team member statistics data"
+type TeamMembersStatisticsConnection {
+  "Team members' statistics in this connection"
+  edges: [TeamMemberStatisticsEdge!]!
   "Pagination information"
   pageInfo: PageInfo!
 }

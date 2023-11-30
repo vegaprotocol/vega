@@ -4634,6 +4634,43 @@ func (t *TradingDataServiceV2) ListTeamsStatistics(ctx context.Context, req *v2.
 	}, nil
 }
 
+func (t *TradingDataServiceV2) ListTeamMembersStatistics(ctx context.Context, req *v2.ListTeamMembersStatisticsRequest) (*v2.ListTeamMembersStatisticsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamMembersStatistics")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListTeamMembersStatisticsFilters{
+		AggregationEpochs: 10,
+	}
+
+	if req.PartyId != nil {
+		filters.PartyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+	if req.AggregationEpochs != nil {
+		filters.AggregationEpochs = *req.AggregationEpochs
+	}
+
+	stats, pageInfo, err := t.teamsService.ListTeamMembersStatistics(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListTeamReferees, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamMemberStatisticsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListTeamMembersStatisticsResponse{
+		Statistics: &v2.TeamMembersStatisticsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
 func (t *TradingDataServiceV2) ListTeamReferees(ctx context.Context, req *v2.ListTeamRefereesRequest) (*v2.ListTeamRefereesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamReferees")()
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)

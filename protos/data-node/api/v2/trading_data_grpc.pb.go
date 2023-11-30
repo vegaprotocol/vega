@@ -492,6 +492,11 @@ type TradingDataServiceClient interface {
 	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
 	// If a team does not have at least the number of epochs' worth of data, it is ignored.
 	ListTeamsStatistics(ctx context.Context, in *ListTeamsStatisticsRequest, opts ...grpc.CallOption) (*ListTeamsStatisticsResponse, error)
+	// List team members' statistics
+	//
+	// Get the statistics for all members of a given team, or for a specific member by using party ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamMembersStatistics(ctx context.Context, in *ListTeamMembersStatisticsRequest, opts ...grpc.CallOption) (*ListTeamMembersStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -1890,6 +1895,15 @@ func (c *tradingDataServiceClient) ListTeamsStatistics(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListTeamMembersStatistics(ctx context.Context, in *ListTeamMembersStatisticsRequest, opts ...grpc.CallOption) (*ListTeamMembersStatisticsResponse, error) {
+	out := new(ListTeamMembersStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamMembersStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListTeamReferees(ctx context.Context, in *ListTeamRefereesRequest, opts ...grpc.CallOption) (*ListTeamRefereesResponse, error) {
 	out := new(ListTeamRefereesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamReferees", in, out, opts...)
@@ -2535,6 +2549,11 @@ type TradingDataServiceServer interface {
 	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
 	// If a team does not have at least the number of epochs' worth of data, it is ignored.
 	ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error)
+	// List team members' statistics
+	//
+	// Get the statistics for all members of a given team, or for a specific member by using party ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamMembersStatistics(context.Context, *ListTeamMembersStatisticsRequest) (*ListTeamMembersStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -2965,6 +2984,9 @@ func (UnimplementedTradingDataServiceServer) ListTeams(context.Context, *ListTea
 }
 func (UnimplementedTradingDataServiceServer) ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamsStatistics not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTeamMembersStatistics(context.Context, *ListTeamMembersStatisticsRequest) (*ListTeamMembersStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamMembersStatistics not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *ListTeamRefereesRequest) (*ListTeamRefereesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamReferees not implemented")
@@ -4925,6 +4947,24 @@ func _TradingDataService_ListTeamsStatistics_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListTeamMembersStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamMembersStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamMembersStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamMembersStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamMembersStatistics(ctx, req.(*ListTeamMembersStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListTeamReferees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTeamRefereesRequest)
 	if err := dec(in); err != nil {
@@ -5541,6 +5581,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTeamsStatistics",
 			Handler:    _TradingDataService_ListTeamsStatistics_Handler,
+		},
+		{
+			MethodName: "ListTeamMembersStatistics",
+			Handler:    _TradingDataService_ListTeamMembersStatistics_Handler,
 		},
 		{
 			MethodName: "ListTeamReferees",

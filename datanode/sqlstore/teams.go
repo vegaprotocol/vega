@@ -27,53 +27,144 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-const listTeamsStatsQuery = `
--- This CTE retrieves the teams statistics for the last N epochs.
-WITH windowed_teams_stats AS (
+const (
+	listTeamsStatsQuery = `
+WITH
+  -- This CTE retrieves the all teams statistics reported for the last N epochs.
+  windowed_teams_stats AS (
     SELECT *
     FROM teams_stats
     WHERE at_epoch > (
-      SELECT max(at_epoch) - $1
+      SELECT MAX(at_epoch) - $1
       FROM teams_stats
-    ) %s -- This is where we filter the output either based on team ID or party ID. 
+    ) %s
+  ),
+  -- This CTE is used to determine at which epoch the teams have stats within
+  -- the aggregation window.
+  teams_per_epochs AS (
+    SELECT team_id,
+           at_epoch
+    FROM windowed_teams_stats
+    GROUP BY
+      team_id,
+      at_epoch
   ),
   -- This CTE filters the team that have exactly N epochs worth of statistics.
   -- We are exclusively computing the stats for teams that have at least N epochs worth of data.
   -- If we are looking at the stats for the last 30 epochs, a team that has less than 30 epochs
   -- worth of data aggregated, then it's ignored.
   eligible_teams AS (
-    SELECT team_id,
-           count(*) AS total_of_data_points
-    FROM windowed_teams_stats
+    SELECT team_id
+    FROM teams_per_epochs
     GROUP BY
       team_id
-    HAVING count(*) = $1
+    HAVING COUNT(*) = $1
+  ),
+  eligible_stats AS (
+    SELECT *
+    FROM windowed_teams_stats
+    WHERE team_id IN (
+      SELECT *
+      FROM eligible_teams
+    )
+  ),
+  team_rewards AS (
+    SELECT t.team_id,
+           SUM(total_quantum_reward) AS total_in_quantum,
+           JSONB_AGG(JSONB_BUILD_OBJECT('epoch', at_epoch, 'total', total_quantum_reward) ORDER BY at_epoch, total_quantum_reward) AS list
+    FROM eligible_stats t
+    GROUP BY
+      t.team_id
+  ),
+  team_games AS (
+    SELECT team_id,
+           COALESCE(ARRAY_LENGTH(ARRAY_REMOVE(ARRAY_AGG(DISTINCT game_played), NULL), 1), 0) AS count,
+           COALESCE(JSONB_AGG(DISTINCT game_played::BYTEA ORDER BY game_played::BYTEA)
+                    FILTER (WHERE game_played <> 'null' ), '[]'::JSONB) AS LIST
+    FROM eligible_stats stats
+      LEFT JOIN LATERAL JSONB_OBJECT_KEYS(stats.games_played) AS game_played ON TRUE
+    GROUP BY
+      team_id
   )
-SELECT eligible_teams.team_id AS team_id,
-       rewards.total_in_quantum AS total_quantum_rewards,
-       rewards.list AS quantum_rewards,
-       COALESCE(games_played.count, 0) AS total_games_played,
-       games_played.list AS games_played
-FROM eligible_teams
-  -- For each team ID in 'eligible_teams', we expand the JSON object keys from column 'games_played' to get a row
-  -- for each game ID, that we deduplicate and aggregate into an array.
-  INNER JOIN LATERAL (SELECT ARRAY_LENGTH(ARRAY_AGG(DISTINCT game_played), 1) AS count,
-                             JSONB_AGG(DISTINCT game_played::bytea ORDER BY game_played::bytea) AS list
-                      FROM windowed_teams_stats AS stats
-                        -- That is the tricky part. For each rows matching 'team_id', we generate a row for each object's
-                        -- key from the column 'games_played'. This allows us to flatten the object and effectively
-                        -- deduplicate the game IDs before counting.
-                        INNER JOIN LATERAL JSONB_OBJECT_KEYS(stats.games_played) AS game_played ON TRUE
-                      WHERE eligible_teams.team_id = stats.team_id ) AS games_played ON TRUE
-  -- For each team ID in 'eligible_teams', we compute the rewards from the statistics retrieved from the table
-  -- 'windowed_teams_stats'.
-  INNER JOIN LATERAL (
-  SELECT SUM(total_quantum_reward) AS total_in_quantum,
-         -- For each line before the aggregation, we build an object { epoch: total }, and group
-         -- all these objects into an array.
-         JSONB_AGG(JSONB_BUILD_OBJECT('epoch', stats.at_epoch, 'total', stats.total_quantum_reward)) AS list
-  FROM windowed_teams_stats AS stats
-  WHERE eligible_teams.team_id = stats.team_id ) AS rewards ON TRUE`
+SELECT mr.team_id AS team_id,
+       mr.total_in_quantum AS total_quantum_rewards,
+       mr.list AS quantum_rewards,
+       mg.list AS games_played,
+       mg.count AS total_games_played
+FROM team_rewards mr
+  LEFT JOIN team_games mg ON mr.team_id = mg.team_id
+`
+
+	listTeamMembersStatsQuery = `
+WITH
+  -- This CTE retrieves the all teams statistics reported for the last N epochs.
+  windowed_teams_stats AS (
+    SELECT *
+    FROM teams_stats
+    WHERE at_epoch > (
+      SELECT MAX(at_epoch) - $1
+      FROM teams_stats
+    ) AND team_id = $2 %s
+  ),
+  -- This CTE is used to determine at which epoch the teams have stats within
+  -- the aggregation window.
+  teams_per_epochs AS (
+    SELECT team_id,
+           at_epoch
+    FROM windowed_teams_stats
+    GROUP BY
+      team_id,
+      at_epoch
+  ),
+  -- This CTE filters the team that have exactly N epochs worth of statistics.
+  -- We are exclusively computing the stats for teams that have at least N epochs worth of data.
+  -- If we are looking at the stats for the last 30 epochs, a team that has less than 30 epochs
+  -- worth of data aggregated, then it's ignored.
+  eligible_teams AS (
+    SELECT team_id
+    FROM teams_per_epochs
+    GROUP BY
+      team_id
+    HAVING COUNT(*) = $1
+  ),
+  eligible_stats AS (
+    SELECT *
+    FROM windowed_teams_stats
+    WHERE team_id IN (
+      SELECT *
+      FROM eligible_teams
+    )
+  ),
+  members_rewards AS (
+    SELECT team_id,
+           party_id,
+           SUM(total_quantum_reward) AS total_in_quantum,
+           JSONB_AGG(JSONB_BUILD_OBJECT('epoch', at_epoch, 'total', total_quantum_reward)) AS quantum_rewards
+    FROM eligible_stats
+    GROUP BY
+      team_id,
+      party_id
+  ),
+  members_games AS (
+    SELECT team_id,
+           party_id,
+           COALESCE(ARRAY_LENGTH(ARRAY_REMOVE(ARRAY_AGG(DISTINCT game_played), NULL), 1), 0) AS count,
+           COALESCE(JSONB_AGG(DISTINCT game_played::BYTEA ORDER BY game_played::BYTEA)
+                    FILTER ( WHERE game_played <> 'null' ), '[]'::JSONB) AS list
+    FROM eligible_stats stats
+      LEFT JOIN LATERAL JSONB_OBJECT_KEYS(stats.games_played) AS game_played ON TRUE
+    GROUP BY
+      team_id,
+      party_id
+  )
+SELECT mr.party_id AS party_id,
+       mr.total_in_quantum AS total_quantum_rewards,
+       mr.quantum_rewards AS quantum_rewards,
+       mg.list AS games_played,
+       mg.count AS total_games_played
+FROM members_rewards mr
+  LEFT JOIN members_games mg ON mr.team_id = mg.team_id AND mr.party_id = mg.party_id`
+)
 
 type (
 	Teams struct {
@@ -84,6 +175,12 @@ type (
 		TeamID            *entities.TeamID
 		AggregationEpochs uint64
 	}
+
+	ListTeamMembersStatisticsFilters struct {
+		TeamID            entities.TeamID
+		PartyID           *entities.PartyID
+		AggregationEpochs uint64
+	}
 )
 
 var (
@@ -92,6 +189,9 @@ var (
 	}
 	teamsStatsOrdering = TableOrdering{
 		ColumnOrdering{Name: "team_id", Sorting: ASC},
+	}
+	teamMembersStatsOrdering = TableOrdering{
+		ColumnOrdering{Name: "party_id", Sorting: ASC},
 	}
 	refereesOrdering = TableOrdering{
 		ColumnOrdering{Name: "party_id", Sorting: ASC},
@@ -250,9 +350,9 @@ func (t *Teams) ListTeamsStatistics(ctx context.Context, pagination entities.Cur
 		pageInfo   entities.PageInfo
 	)
 
+	query := listTeamsStatsQuery
 	args := []any{filters.AggregationEpochs}
 
-	query := listTeamsStatsQuery
 	if filters.TeamID != nil {
 		query = fmt.Sprintf(query, fmt.Sprintf(`AND team_id = %s`, nextBindVar(&args, *filters.TeamID)))
 	} else {
@@ -281,6 +381,47 @@ func (t *Teams) ListTeamsStatistics(ctx context.Context, pagination entities.Cur
 	}
 
 	return teamsStats, pageInfo, nil
+}
+
+func (t *Teams) ListTeamMembersStatistics(ctx context.Context, pagination entities.CursorPagination, filters ListTeamMembersStatisticsFilters) ([]entities.TeamMembersStatistics, entities.PageInfo, error) {
+	defer metrics.StartSQLQuery("Teams", "ListTeamMembersStatistics")()
+
+	var (
+		membersStats []entities.TeamMembersStatistics
+		pageInfo     entities.PageInfo
+	)
+
+	query := listTeamMembersStatsQuery
+	args := []any{filters.AggregationEpochs, filters.TeamID}
+
+	if filters.PartyID != nil {
+		query = fmt.Sprintf(query, fmt.Sprintf(`AND party_id = %s`, nextBindVar(&args, *filters.PartyID)))
+	} else {
+		query = fmt.Sprintf(query, "")
+	}
+
+	query, args, err := PaginateQuery[entities.TeamMemberStatisticsCursor](query, args, teamMembersStatsOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
+	}
+
+	if err := pgxscan.Select(ctx, t.Connection, &membersStats, query, args...); err != nil {
+		return nil, pageInfo, err
+	}
+
+	membersStats, pageInfo = entities.PageEntities[*v2.TeamMemberStatisticsEdge](membersStats, pagination)
+
+	// Deserializing the GameID array as a PostgreSQL array is not correctly
+	// interpreted by the scanny library. So, we have to use the JSONB array which
+	// convert the bytea as strings. This leaves the prefix `\\x` on the game ID.
+	// As a result, we have to manually clean up of the ID.
+	for i := range membersStats {
+		for j := range membersStats[i].GamesPlayed {
+			membersStats[i].GamesPlayed[j] = entities.GameID(strings.TrimLeft(membersStats[i].GamesPlayed[j].String(), "\\x"))
+		}
+	}
+
+	return membersStats, pageInfo, nil
 }
 
 func (t *Teams) ListReferees(ctx context.Context, teamID entities.TeamID, pagination entities.CursorPagination) ([]entities.TeamMember, entities.PageInfo, error) {

@@ -163,7 +163,7 @@ func (t TeamsStatistics) ToProto() *v2.TeamStatistics {
 		TotalQuantumVolume:  "",
 		TotalQuantumRewards: t.TotalQuantumRewards.String(),
 		QuantumRewards:      quantumRewards,
-		TotalGamePlayed:     t.TotalGamesPlayed,
+		TotalGamesPlayed:    t.TotalGamesPlayed,
 		GamesPlayed:         gamesPlayed,
 	}
 }
@@ -188,6 +188,71 @@ func (c TeamsStatisticsCursor) String() string {
 }
 
 func (c *TeamsStatisticsCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
+}
+
+type TeamMembersStatistics struct {
+	PartyID             PartyID
+	TotalQuantumRewards num.Decimal
+	QuantumRewards      []QuantumRewardsPerEpoch
+	TotalGamesPlayed    uint64
+	GamesPlayed         []GameID
+}
+
+func (t TeamMembersStatistics) Cursor() *Cursor {
+	tc := TeamMemberStatisticsCursor{
+		ID: t.PartyID,
+	}
+	return NewCursor(tc.String())
+}
+
+func (t TeamMembersStatistics) ToProto() *v2.TeamMemberStatistics {
+	gamesPlayed := make([]string, 0, len(t.GamesPlayed))
+	for _, id := range t.GamesPlayed {
+		gamesPlayed = append(gamesPlayed, id.String())
+	}
+
+	quantumRewards := make([]*v2.QuantumRewardsPerEpoch, 0, len(t.QuantumRewards))
+	for _, r := range t.QuantumRewards {
+		quantumRewards = append(quantumRewards, &v2.QuantumRewardsPerEpoch{
+			Epoch:               r.Epoch,
+			TotalQuantumRewards: r.Total.String(),
+		})
+	}
+
+	return &v2.TeamMemberStatistics{
+		PartyId:             string(t.PartyID),
+		TotalQuantumVolume:  "",
+		TotalQuantumRewards: t.TotalQuantumRewards.String(),
+		QuantumRewards:      quantumRewards,
+		TotalGamesPlayed:    t.TotalGamesPlayed,
+		GamesPlayed:         gamesPlayed,
+	}
+}
+
+func (t TeamMembersStatistics) ToProtoEdge(_ ...any) (*v2.TeamMemberStatisticsEdge, error) {
+	return &v2.TeamMemberStatisticsEdge{
+		Node:   t.ToProto(),
+		Cursor: t.Cursor().Encode(),
+	}, nil
+}
+
+type TeamMemberStatisticsCursor struct {
+	ID PartyID
+}
+
+func (c TeamMemberStatisticsCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal team member stats cursor: %v", err))
+	}
+	return string(bs)
+}
+
+func (c *TeamMemberStatisticsCursor) Parse(cursorString string) error {
 	if cursorString == "" {
 		return nil
 	}
