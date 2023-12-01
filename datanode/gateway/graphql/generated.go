@@ -13271,7 +13271,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TargetStakeParameters.TimeWindow(childComplexity), true
 
-	case "Team.avatarURL":
+	case "Team.avatarUrl":
 		if e.complexity.Team.AvatarUrl == nil {
 			break
 		}
@@ -13320,7 +13320,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Team.TeamId(childComplexity), true
 
-	case "Team.teamURL":
+	case "Team.teamUrl":
 		if e.complexity.Team.TeamUrl == nil {
 			break
 		}
@@ -82979,8 +82979,8 @@ func (ec *executionContext) fieldContext_Team_name(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Team_teamURL(ctx context.Context, field graphql.CollectedField, obj *v2.Team) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Team_teamURL(ctx, field)
+func (ec *executionContext) _Team_teamUrl(ctx context.Context, field graphql.CollectedField, obj *v2.Team) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Team_teamUrl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -83010,7 +83010,7 @@ func (ec *executionContext) _Team_teamURL(ctx context.Context, field graphql.Col
 	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Team_teamURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Team_teamUrl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Team",
 		Field:      field,
@@ -83023,8 +83023,8 @@ func (ec *executionContext) fieldContext_Team_teamURL(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Team_avatarURL(ctx context.Context, field graphql.CollectedField, obj *v2.Team) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Team_avatarURL(ctx, field)
+func (ec *executionContext) _Team_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *v2.Team) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Team_avatarUrl(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -83054,7 +83054,7 @@ func (ec *executionContext) _Team_avatarURL(ctx context.Context, field graphql.C
 	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Team_avatarURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Team_avatarUrl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Team",
 		Field:      field,
@@ -83348,10 +83348,10 @@ func (ec *executionContext) fieldContext_TeamEdge_node(ctx context.Context, fiel
 				return ec.fieldContext_Team_referrer(ctx, field)
 			case "name":
 				return ec.fieldContext_Team_name(ctx, field)
-			case "teamURL":
-				return ec.fieldContext_Team_teamURL(ctx, field)
-			case "avatarURL":
-				return ec.fieldContext_Team_avatarURL(ctx, field)
+			case "teamUrl":
+				return ec.fieldContext_Team_teamUrl(ctx, field)
+			case "avatarUrl":
+				return ec.fieldContext_Team_avatarUrl(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Team_createdAt(ctx, field)
 			case "createdAtEpoch":
@@ -115942,16 +115942,16 @@ func (ec *executionContext) _Team(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "teamURL":
+		case "teamUrl":
 
-			out.Values[i] = ec._Team_teamURL(ctx, field, obj)
+			out.Values[i] = ec._Team_teamUrl(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "avatarURL":
+		case "avatarUrl":
 
-			out.Values[i] = ec._Team_avatarURL(ctx, field, obj)
+			out.Values[i] = ec._Team_avatarUrl(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

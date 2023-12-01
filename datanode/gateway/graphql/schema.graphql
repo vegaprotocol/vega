@@ -6443,9 +6443,9 @@ type Team {
   "Name of the team."
   name: String!
   "Link to the team's homepage."
-  teamURL: String!
+  teamUrl: String!
   "Link to an image of the team's avatar."
-  avatarURL: String!
+  avatarUrl: String!
   "Time in RFC3339Nano format when the team was created."
   createdAt: Timestamp!
   "Epoch at which the team was created."
