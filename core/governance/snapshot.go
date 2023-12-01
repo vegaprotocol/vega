@@ -115,22 +115,21 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 // serialiseNodeProposals returns the engine's proposals waiting for node validation.
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	nodeProposals := e.nodeProposalValidation.getProposals()
-	proposals := make([]*types.Proposal, 0, len(nodeProposals))
+	proposals := make([]*types.ProposalData, 0, len(nodeProposals))
 
 	for _, np := range nodeProposals {
-		// Given a snapshot is always taken at the end of a block the value of `state` in np will
-		// always be pending since any that are not will have already been resolved as accepted/rejected
-		// and removed from the slice. The yes/no/invalid fields in `np.proposal` are also unnecessary to
-		// save since "voting" as is done for active proposals is not done on node-proposals, and so the
-		// maps will always be empty
-		p := np.proposal.Proposal
-		proposals = append(proposals, p)
+		proposals = append(proposals, &types.ProposalData{
+			Proposal: np.Proposal,
+			Yes:      votesAsSlice(np.yes),
+			No:       votesAsSlice(np.no),
+			Invalid:  votesAsSlice(np.invalidVotes),
+		})
 	}
 
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceNode{
 			GovernanceNode: &types.GovernanceNode{
-				Proposals: proposals,
+				ProposalData: proposals,
 			},
 		},
 	}
@@ -287,10 +286,17 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 }
 
 func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.GovernanceNode, p *types.Payload) error {
+	// node.Proposals should be empty for new snapshots because they are the old version that didn't include votes
 	for _, p := range node.Proposals {
-		e.nodeProposalValidation.restore(ctx, p)
+		e.nodeProposalValidation.restore(ctx, &types.ProposalData{Proposal: p})
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
+
+	for _, p := range node.ProposalData {
+		e.nodeProposalValidation.restore(ctx, p)
+		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+	}
+
 	var err error
 	e.gss.serialisedNodeValidation, err = proto.Marshal(p.IntoProto())
 	return err

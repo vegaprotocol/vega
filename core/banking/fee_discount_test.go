@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -48,16 +49,29 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		eng.OnTransferFeeDiscountDecayFractionUpdate(context.Background(), num.DecimalFromFloat(0.5))
 		eng.OnTransferFeeDiscountMinimumTrackedAmountUpdate(context.Background(), num.DecimalFromFloat(1))
 
+		asset2 := "asset-2"
+		party2 := "party-2"
+
 		assert.Equal(t, "0", eng.AvailableFeeDiscount(assetID, party).String())
-		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(50)})
+		assert.Equal(t, "0", eng.AvailableFeeDiscount(asset2, party2).String())
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(25)})
+		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(25)})
+		eng.RegisterTradingFees(ctx, asset2, map[string]*num.Uint{party2: num.NewUint(20)})
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 		assert.Equal(t, "50", eng.AvailableFeeDiscount(assetID, party).String())
+		assert.Equal(t, "20", eng.AvailableFeeDiscount(asset2, party2).String())
 		eng.RegisterTradingFees(ctx, assetID, nil)
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 		// decay by half
 		assert.Equal(t, "25", eng.AvailableFeeDiscount(assetID, party).String())
+		assert.Equal(t, "10", eng.AvailableFeeDiscount(asset2, party2).String())
 		eng.RegisterTradingFees(ctx, assetID, nil)
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 		// decay by half
 		assert.Equal(t, "12", eng.AvailableFeeDiscount(assetID, party).String())
+		assert.Equal(t, "0", eng.AvailableFeeDiscount(asset2, party2).String())
 		eng.RegisterTradingFees(ctx, assetID, nil)
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 
 		// decay by half but it's 0 because decayed amount (6) is less then
 		// asset quantum x TransferFeeDiscountMinimumTrackedAmount (10 x 1)
@@ -80,8 +94,9 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		discountedFee, discount := eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(5))
 		assert.Equal(t, "5", discountedFee.String())
 		assert.Equal(t, "0", discount.String())
-		// move to another epoch
 		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(10)})
+		// move to another epoch
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 
 		assert.Equal(t, "10", eng.AvailableFeeDiscount(assetID, party).String())
 
@@ -89,8 +104,9 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 		discountedFee, discount = eng.ApplyFeeDiscount(ctx, assetID, party, num.NewUint(15))
 		assert.Equal(t, "5", discountedFee.String())
 		assert.Equal(t, "10", discount.String())
-		// move to another epoch
 		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(20)})
+		// move to another epoch
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 
 		assert.Equal(t, "20", eng.AvailableFeeDiscount(assetID, party).String())
 
@@ -101,8 +117,9 @@ func TestBankingTransactionFeeDiscount(t *testing.T) {
 
 		assert.Equal(t, "17", eng.AvailableFeeDiscount(assetID, party).String())
 
-		// move to another epoch
 		eng.RegisterTradingFees(ctx, assetID, map[string]*num.Uint{party: num.NewUint(5)})
+		// move to another epoch
+		eng.OnEpoch(ctx, types.Epoch{Action: proto.EpochAction_EPOCH_ACTION_END})
 
 		// it's 13 because 9 was decayed and extra 5 added = 17-8+5
 		assert.Equal(t, "13", eng.AvailableFeeDiscount(assetID, party).String())
