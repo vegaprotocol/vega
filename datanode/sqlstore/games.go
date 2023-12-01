@@ -259,7 +259,9 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 	for key, game := range games {
 		if teamMembers[key] != nil {
 			for teamID, individuals := range teamMembers[key] {
-				sort.Slice(individuals, func(i, j int) bool { return individuals[i].Rank < individuals[j].Rank })
+				sort.Slice(individuals, func(i, j int) bool {
+					return individuals[i].Rank < individuals[j].Rank || (individuals[i].Rank == individuals[j].Rank && individuals[i].Individual < individuals[j].Individual)
+				})
 				team := entities.TeamGameParticipation{
 					TeamID:               teamID,
 					MembersParticipating: individuals,
@@ -287,13 +289,17 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 				})
 			}
 			sort.Slice(game.Entities, func(i, j int) bool {
-				return game.Entities[i].(*entities.TeamGameEntity).Rank < game.Entities[j].(*entities.TeamGameEntity).Rank
+				return game.Entities[i].(*entities.TeamGameEntity).Rank < game.Entities[j].(*entities.TeamGameEntity).Rank ||
+					(game.Entities[i].(*entities.TeamGameEntity).Rank == game.Entities[j].(*entities.TeamGameEntity).Rank &&
+						game.Entities[i].(*entities.TeamGameEntity).Team.TeamID < game.Entities[j].(*entities.TeamGameEntity).Team.TeamID)
 			})
 		}
 		if gameIndividuals[key] != nil {
 			game.Entities = append(game.Entities, gameIndividuals[key]...)
 			sort.Slice(game.Entities, func(i, j int) bool {
-				return game.Entities[i].(*entities.IndividualGameEntity).Rank < game.Entities[j].(*entities.IndividualGameEntity).Rank
+				return game.Entities[i].(*entities.IndividualGameEntity).Rank < game.Entities[j].(*entities.IndividualGameEntity).Rank ||
+					(game.Entities[i].(*entities.IndividualGameEntity).Rank == game.Entities[j].(*entities.IndividualGameEntity).Rank &&
+						game.Entities[i].(*entities.IndividualGameEntity).Individual < game.Entities[j].(*entities.IndividualGameEntity).Individual)
 			})
 		}
 		results = append(results, game)

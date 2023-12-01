@@ -209,6 +209,18 @@ func TestListGames(t *testing.T) {
 				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, ptr.From(epochTo), entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
+				for i, w := range want {
+					for j, e := range w.Entities {
+						wt := e.(*entities.TeamGameEntity)
+						gt := got[i].Entities[j].(*entities.TeamGameEntity)
+						assert.Equalf(t, wt.Team.TeamID, gt.Team.TeamID, "TeamID mismatch, game index: %d, entity index: %d", i, j)
+						for k, m := range wt.Team.MembersParticipating {
+							assert.Equalf(t, m.Individual, gt.Team.MembersParticipating[k].Individual, "Individual mismatch, game index: %d, entity index: %d, member index: %d", i, j, k)
+							assert.Equal(t, m.Rank, gt.Team.MembersParticipating[k].Rank, "Rank mismatch, game index: %d, entity index: %d, member index: %d", i, j, k)
+						}
+						assert.Equal(t, wt.Rank, gt.Rank, "Rank mismatch, game index: %d, entity index: %d", i, j)
+					}
+				}
 				assert.Equal(t, want, got)
 			})
 			t.Run("when entity scope is individuals", func(t *testing.T) {
@@ -461,13 +473,15 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					}
 					// now that the team members have been ranked, we need to order the team members by rank
 					sort.Slice(te.Team.MembersParticipating, func(i, j int) bool {
-						return te.Team.MembersParticipating[i].Rank < te.Team.MembersParticipating[j].Rank
+						return te.Team.MembersParticipating[i].Rank < te.Team.MembersParticipating[j].Rank || (te.Team.MembersParticipating[i].Rank == te.Team.MembersParticipating[j].Rank &&
+							te.Team.MembersParticipating[i].Individual < te.Team.MembersParticipating[j].Individual)
 					})
 				}
 
 				// now that we have the ranks for the teams ranked, we need to order the team entities by rank
 				sort.Slice(teamEntities, func(i, j int) bool {
-					return teamEntities[i].(*entities.TeamGameEntity).Rank < teamEntities[j].(*entities.TeamGameEntity).Rank
+					return teamEntities[i].(*entities.TeamGameEntity).Rank < teamEntities[j].(*entities.TeamGameEntity).Rank || (teamEntities[i].(*entities.TeamGameEntity).Rank == teamEntities[j].(*entities.TeamGameEntity).Rank &&
+						teamEntities[i].(*entities.TeamGameEntity).Team.TeamID.String() < teamEntities[j].(*entities.TeamGameEntity).Team.TeamID.String())
 				})
 
 				gameEntity := gameEntities[gk]
@@ -516,7 +530,8 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					ie.Rank = individualRanking[ie.Individual]
 				}
 				sort.Slice(individualEntities, func(i, j int) bool {
-					return individualEntities[i].(*entities.IndividualGameEntity).Rank < individualEntities[j].(*entities.IndividualGameEntity).Rank
+					return individualEntities[i].(*entities.IndividualGameEntity).Rank < individualEntities[j].(*entities.IndividualGameEntity).Rank || (individualEntities[i].(*entities.IndividualGameEntity).Rank == individualEntities[j].(*entities.IndividualGameEntity).Rank &&
+						individualEntities[i].(*entities.IndividualGameEntity).Individual < individualEntities[j].(*entities.IndividualGameEntity).Individual)
 				})
 
 				gameEntity := gameEntities[gk]
@@ -658,11 +673,16 @@ func rankEntity(entities map[string]*num.Uint) map[string]uint64 {
 		})
 	}
 	sort.Slice(entityRanks, func(i, j int) bool {
-		return entityRanks[i].Total.GT(entityRanks[j].Total)
+		return entityRanks[i].Total.GT(entityRanks[j].Total) || (entityRanks[i].Total.EQ(entityRanks[j].Total) && entityRanks[i].ID < entityRanks[j].ID)
 	})
 	// now that we have the totals ordered, we can assign ranks
 	ranks := make(map[string]uint64)
 	for i, e := range entityRanks {
+		if i > 0 && e.Total.EQ(entityRanks[i-1].Total) {
+			// if the totals are the same, they should have the same rank
+			ranks[e.ID] = ranks[entityRanks[i-1].ID]
+			continue
+		}
 		ranks[e.ID] = uint64(i + 1)
 	}
 	return ranks
