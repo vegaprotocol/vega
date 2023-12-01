@@ -846,16 +846,21 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (vegapb.Account, 
 }
 
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (vegapb.Account, error) {
+func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
+	foundOne := false
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return v, nil
+			ga = v
+			foundOne = true
 		}
 	}
-
-	return vegapb.Account{}, errors.New("account does not exist")
+	if !foundOne {
+		ga = vegapb.Account{}
+		err = errors.New("account does not exist")
+	}
+	return
 }
 
 // GetPartyVestingAccount returns the latest event WRT the party's general account.
