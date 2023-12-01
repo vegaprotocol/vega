@@ -335,56 +335,9 @@ func (e *Engine) removeActiveProposalByID(ctx context.Context, id string) {
 	}
 }
 
-func (e *Engine) evaluateProposal(
-	ctx context.Context,
-	timeNow int64,
-	proposal *proposal,
-) (*ToEnact, *VoteClosed, *string) {
-	// check if the market for successor proposals still exists, if not, reject the proposal
-	if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
-		if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
-			proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
-			e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-			return nil, nil, &proposal.ID
-		}
-	}
-
-	// do not check parent market, the market was either rejected when the parent was succeeded
-	// or, if the parent market state is gone (ie succession window has expired), the proposal simply
-	// loses its parent market reference
-	if proposal.ShouldClose(timeNow) {
-		e.closeProposal(ctx, proposal)
-		return nil, e.preVoteClosedProposal(proposal), nil
-	}
-
-	if !proposal.IsOpen() && !proposal.IsPassed() {
-		return nil, nil, &proposal.ID
-	} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(timeNow)) {
-		enact, perr, err := e.preEnactProposal(ctx, proposal)
-		if err != nil {
-			e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
-			e.log.Error("proposal enactment has failed",
-				logging.String("proposal-id", proposal.ID),
-				logging.String("proposal-error", perr.String()),
-				logging.Error(err))
-			return nil, nil, &proposal.ID
-		} else {
-			return enact, nil, &proposal.ID
-		}
-	}
-
-	return nil, nil, nil
-}
-
-func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
-	now := t.Unix()
-
-	var (
-		batchToRemove        []string
-		voteClosed           []*VoteClosed
-		addToActiveProposals []*proposal
-	)
-
+func (e *Engine) evaluateBatchProposals(
+	ctx context.Context, now int64,
+) (voteClosed []*VoteClosed, addToActiveProposals []*proposal) {
 	batchIDs := maps.Keys(e.activeBatchProposals)
 	sort.Strings(batchIDs)
 
@@ -394,57 +347,144 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			continue
 		}
 
-		var refusedProposal *proposal
+		// list of failed, declined, rejected proposals
+		var rejectedProposal *proposal
+		var batchHasDeclinedProposal bool
+		var closedProposals []*proposal
 		for _, propType := range batchProposal.Proposals {
-			prop := &proposal{
+			proposal := &proposal{
 				Proposal:     propType,
 				yes:          batchProposal.yes,
 				no:           batchProposal.no,
 				invalidVotes: map[string]*types.Vote{},
 			}
-			_, vc, _ := e.evaluateProposal(ctx, now, prop)
 
-			// proposal evaluation has failed
-			if prop.IsDeclined() || prop.IsFailed() || prop.IsRejected() {
-				refusedProposal = prop
-				break
+			// check if the market for successor proposals still exists, if not, reject the proposal
+			// in case a single proposal is rejected we can reject the whole batch
+			if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+				if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+					proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
+					rejectedProposal = proposal
+					break
+				}
 			}
 
-			// proposal vote has been closed
-			if vc != nil {
-				voteClosed = append(voteClosed, vc)
-				addToActiveProposals = append(addToActiveProposals, prop)
+			// do not check parent market, the market was either rejected when the parent was succeeded
+			// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+			// loses its parent market reference
+			if proposal.ShouldClose(now) {
+				proposal.Close(e.accs, e.markets)
+				if proposal.IsPassed() {
+					e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
+				} else if proposal.IsDeclined() {
+					e.log.Debug("Proposal declined",
+						logging.ProposalID(proposal.ID),
+						logging.String("details", proposal.ErrorDetails),
+						logging.String("reason", proposal.Reason.String()),
+					)
+					batchHasDeclinedProposal = true
+				}
+
+				closedProposals = append(closedProposals, proposal)
+				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
 			}
 		}
 
-		// TODO karel - solve here
-		if refusedProposal != nil {
-			// batchProposal.
-		}
+		if rejectedProposal != nil {
+			batchProposal.State = types.ProposalStateRejected
 
-		// proposal has either failed or is closed for voting
-		if len(voteClosed) > 0 || refusedProposal != nil {
+			proposalsEvents := make([]events.Event, 0, len(batchProposal.Proposals))
+			for _, proposal := range batchProposal.Proposals {
+				if proposal.ID == rejectedProposal.ID {
+					continue
+				}
+
+				proposal.State = types.ProposalStateRejected
+				proposal.Reason = types.ProposalErrorProposalInBatchDeclined
+				proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *proposal))
+			}
+
+			e.broker.Send(events.NewProposalEventFromProto(ctx, batchProposal.ToProto()))
+			e.broker.SendBatch(proposalsEvents)
+
 			delete(e.activeBatchProposals, batchProposal.ID)
+			continue
 		}
+
+		if len(closedProposals) < 1 {
+			continue
+		}
+
+		proposalEvents := make([]events.Event, 0, len(closedProposals))
+		for _, proposal := range closedProposals {
+			if proposal.IsPassed() && batchHasDeclinedProposal {
+				proposal.State = types.ProposalStateDeclined
+				proposal.Reason = types.ProposalErrorProposalInBatchDeclined
+			} else if proposal.IsPassed() {
+				addToActiveProposals = append(addToActiveProposals, proposal)
+			}
+
+			proposalEvents = append(proposalEvents, events.NewProposalEvent(ctx, *proposal.Proposal))
+			proposalEvents = append(proposalEvents, newUpdatedProposalEvents(ctx, proposal)...)
+		}
+
+		batchProposal.State = types.ProposalStatePassed
+		if batchHasDeclinedProposal {
+			batchProposal.State = types.ProposalStateDeclined
+		}
+
+		e.broker.Send(events.NewProposalEventFromProto(ctx, batchProposal.ToProto()))
+		e.broker.SendBatch(proposalEvents)
+		delete(e.activeBatchProposals, batchProposal.ID)
 	}
 
-	// TODO karel remove batch
-	// batchToRemove
+	return
+}
 
-	var preparedToEnact []*ToEnact
-	var toBeRemoved []string // ids
+func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
+	now := t.Unix()
+
+	voteClosed, addToActiveProposals := e.evaluateBatchProposals(ctx, now)
+
+	var (
+		preparedToEnact []*ToEnact
+		toBeRemoved     []string // ids
+	)
 
 	for _, proposal := range e.activeProposals {
-		pte, vc, tbr := e.evaluateProposal(ctx, now, proposal)
+		// check if the market for successor proposals still exists, if not, reject the proposal
+		if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
+			if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
+				proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
+				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				continue
+			}
+		}
 
-		if pte != nil {
-			preparedToEnact = append(preparedToEnact, pte)
+		// do not check parent market, the market was either rejected when the parent was succeeded
+		// or, if the parent market state is gone (ie succession window has expired), the proposal simply
+		// loses its parent market reference
+		if proposal.ShouldClose(now) {
+			e.closeProposal(ctx, proposal)
+			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
 		}
-		if vc != nil {
-			voteClosed = append(voteClosed, vc)
-		}
-		if tbr != nil {
-			toBeRemoved = append(toBeRemoved, *tbr)
+
+		if !proposal.IsOpen() && !proposal.IsPassed() {
+			toBeRemoved = append(toBeRemoved, proposal.ID)
+		} else if proposal.IsPassed() && (e.isAutoEnactableProposal(proposal.Proposal) || proposal.IsTimeToEnact(now)) {
+			enact, perr, err := e.preEnactProposal(ctx, proposal)
+			if err != nil {
+				e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				e.log.Error("proposal enactment has failed",
+					logging.String("proposal-id", proposal.ID),
+					logging.String("proposal-error", perr.String()),
+					logging.Error(err))
+			} else {
+				toBeRemoved = append(toBeRemoved, proposal.ID)
+				preparedToEnact = append(preparedToEnact, enact)
+			}
 		}
 	}
 
@@ -505,7 +545,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 		e.removeActiveProposalByID(ctx, id)
 	}
 
-	// add these closed proposals from batch
+	// add these passed proposals from batch
 	e.activeProposals = append(e.activeProposals, addToActiveProposals...)
 
 	// flush here for now
@@ -554,8 +594,13 @@ func (e *Engine) SubmitBatchProposal(
 		Proposals:        make([]*types.Proposal, 0, len(bpsub.Terms.Changes)),
 	}
 
+	var proposalsEvents []events.Event
 	defer func() {
-		e.broker.Send(events.NewProposalEvent(ctx, *bp.ToProposal()))
+		e.broker.Send(events.NewProposalEventFromProto(ctx, bp.ToProto()))
+
+		if len(proposalsEvents) > 0 {
+			e.broker.SendBatch(proposalsEvents)
+		}
 	}()
 
 	proposalParamsPerProposalTermType := map[types.ProposalTermsType]*types.ProposalParameters{}
@@ -605,6 +650,8 @@ func (e *Engine) SubmitBatchProposal(
 			}
 			return err
 		}
+
+		proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *p))
 	}
 
 	e.startBatchProposal(bp)
@@ -1084,12 +1131,6 @@ func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal,
 		TotalGovernanceTokenWeight:  num.DecimalZero(),
 		TotalEquityLikeShareWeight:  num.DecimalZero(),
 	}
-
-	// TODO Karel clarify later if this is needed
-	// if proposal.IsMarketUpdate() {
-	// 	mID := proposal.MarketUpdate().MarketID
-	// 	vote.TotalEquityLikeShareWeight, _ = e.markets.GetEquityLikeShareForMarketAndParty(mID, party)
-	// }
 
 	if err := batchProposal.AddVote(vote); err != nil {
 		return fmt.Errorf("couldn't cast the vote: %w", err)

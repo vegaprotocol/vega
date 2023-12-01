@@ -604,6 +604,10 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM = 56;
   // Volume discount program proposal is invalid
   PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM = 57;
+  // One or more proposals in a batch has been rejected
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED = 58;
+  // One or more proposals in a batch has been declined
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
 }
 
 // Governance vote

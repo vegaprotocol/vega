@@ -16,8 +16,10 @@
 package governance
 
 import (
+	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
@@ -55,6 +57,21 @@ func (p *batchProposal) IsOpenForVotes() bool {
 func (p *batchProposal) IsTimeToEnact(now int64) bool {
 	// return p.Terms.EnactmentTimestamp < now
 	return false
+}
+
+func (bp *batchProposal) RefuseWithProposal(ctx context.Context, refusedProposal *types.Proposal) []events.Event {
+	bp.State = refusedProposal.State
+	bp.Reason = refusedProposal.Reason
+	bp.ErrorDetails = refusedProposal.ErrorDetails
+
+	evts := make([]events.Event, 0, len(bp.Proposals))
+	for _, proposal := range bp.Proposals {
+		proposal.State = bp.State
+		proposal.Reason = bp.Reason
+		proposal.ErrorDetails = bp.ErrorDetails
+		evts = append(evts, events.NewProposalEvent(ctx, *proposal))
+	}
+	return evts
 }
 
 type proposal struct {

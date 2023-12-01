@@ -125,6 +125,10 @@ const (
 	ProposalErrorInvalidReferralProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
 	// ProposalErrorInvalidVolumeDiscountProgram is returned when the volume discount program proposal is not valid.
 	ProposalErrorInvalidVolumeDiscountProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM
+	// ProposalErrorProposalInBatchRejected is returned when one or more proposals in the batch are rejected.
+	ProposalErrorProposalInBatchRejected ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
+	// ProposalErrorProposalInBatchDeclined is returned when one or more proposals in the batch are rejected.
+	ProposalErrorProposalInBatchDeclined ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
 )
 
 type ProposalState = vegapb.Proposal_State
