@@ -21,7 +21,12 @@ returns trigger
     as $$
     declare party_team_id bytea;
 begin
-    select team_id into party_team_id from team_members where party_id = new.party_id;
+    with current_team_members as (
+        select distinct on (party_id) *
+        from team_members
+        order by party_id, joined_at_epoch desc
+    )
+    select team_id into party_team_id from current_team_members where party_id = new.party_id;
 
     update game_reward_totals
     set team_id = coalesce(party_team_id, '\x')
