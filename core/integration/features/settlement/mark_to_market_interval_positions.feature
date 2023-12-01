@@ -170,7 +170,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     And the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 56     | 6480           | -3502        |
+      | buySideProvider | 56     | 6480           | -3242        |
 
     # check margin levels
     And the parties should have the following margin levels:
@@ -192,7 +192,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
       | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 17631  | USD   |
       | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16608  | USD   |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 2978   | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 3238   | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 22205  | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 46     | USD   |
@@ -347,7 +347,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 56     | 6480           | -3502        |
+      | buySideProvider | 56     | 6480           | -3242        |
 
     # check margin levels
     Then the parties should have the following margin levels:
