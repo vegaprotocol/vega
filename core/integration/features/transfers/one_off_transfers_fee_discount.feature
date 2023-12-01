@@ -62,7 +62,6 @@ Feature: Test fee discounts for one off transfers
         And the parties have the following transfer fee discounts:
             | party                                                            | asset | available discount |
             | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ETH   | 7000               |
-            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 4000               |
 
         # assert decay is 7000 * 0.9
         Given the network moves ahead "1" epochs
