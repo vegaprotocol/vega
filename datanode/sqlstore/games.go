@@ -177,7 +177,7 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 	participants := uint64(0)
 
 	gameIndividuals := make(map[gameKey][]entities.GameEntity)
-	teamMembers := make(map[gameKey]map[entities.TeamID][]entities.IndividualGameEntity)
+	teamMembers := make(map[gameKey]map[entities.TeamID][]*entities.IndividualGameEntity)
 	teamRanks := make(map[gameKey]map[entities.TeamID]uint64)
 
 	var game entities.Game
@@ -233,9 +233,9 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 		if rewards[i].TeamID != "" {
 			currentTeamID := rewards[i].TeamID
 			if teamMembers[gk] == nil {
-				teamMembers[gk] = make(map[entities.TeamID][]entities.IndividualGameEntity)
+				teamMembers[gk] = make(map[entities.TeamID][]*entities.IndividualGameEntity)
 			}
-			teamMembers[gk][currentTeamID] = append(teamMembers[gk][currentTeamID], individual)
+			teamMembers[gk][currentTeamID] = append(teamMembers[gk][currentTeamID], &individual)
 			if rewards[i].TeamRank == nil {
 				return nil, fmt.Errorf("team rank is nil for team %s", currentTeamID)
 			}

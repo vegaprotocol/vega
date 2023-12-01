@@ -16,7 +16,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -214,10 +213,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	// ctx := tempTransaction(t)
-	//
-
-	ctx := context.Background()
+	ctx := tempTransaction(t)
 
 	blocks := []entities.Block{
 		addTestBlock(t, ctx, bs),

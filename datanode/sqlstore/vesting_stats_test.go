@@ -16,7 +16,6 @@
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -44,10 +43,12 @@ func TestVestingStats(t *testing.T) {
 		party2 = "a696300fec90755c90e2489af68fe2dfede5744184711ea3acde0ca55ae19585"
 	)
 
+	ctx := tempTransaction(t)
+
 	t.Run("return error if do not exists", func(t *testing.T) {
-		_, err := vs.GetByPartyID(context.Background(), party1)
+		_, err := vs.GetByPartyID(ctx, party1)
 		require.EqualError(t, err, "no resource corresponding to this id")
-		_, err = vs.GetByPartyID(context.Background(), party2)
+		_, err = vs.GetByPartyID(ctx, party2)
 		require.EqualError(t, err, "no resource corresponding to this id")
 	})
 
@@ -75,12 +76,12 @@ func TestVestingStats(t *testing.T) {
 			},
 		}
 
-		assert.NoError(t, vs.Add(context.Background(), &w))
+		assert.NoError(t, vs.Add(ctx, &w))
 
-		pvs1, err := vs.GetByPartyID(context.Background(), party1)
+		pvs1, err := vs.GetByPartyID(ctx, party1)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[0], pvs1)
-		pvs2, err := vs.GetByPartyID(context.Background(), party2)
+		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
 	})
@@ -109,12 +110,12 @@ func TestVestingStats(t *testing.T) {
 			},
 		}
 
-		assert.NoError(t, vs.Add(context.Background(), &w))
+		assert.NoError(t, vs.Add(ctx, &w))
 
-		pvs1, err := vs.GetByPartyID(context.Background(), party1)
+		pvs1, err := vs.GetByPartyID(ctx, party1)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[0], pvs1)
-		pvs2, err := vs.GetByPartyID(context.Background(), party2)
+		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
 	})

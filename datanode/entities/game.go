@@ -75,7 +75,7 @@ type GameEntity interface {
 
 type TeamGameParticipation struct {
 	TeamID               TeamID
-	MembersParticipating []IndividualGameEntity
+	MembersParticipating []*IndividualGameEntity
 }
 
 func (t TeamGameParticipation) ToProto() *v2.TeamGameParticipation {
