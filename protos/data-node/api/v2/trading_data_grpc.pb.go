@@ -532,6 +532,10 @@ type TradingDataServiceClient interface {
 	//
 	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1994,6 +1998,15 @@ func (c *tradingDataServiceClient) GetTotalTransferFeeDiscount(ctx context.Conte
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error) {
+	out := new(ListGamesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGames", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2548,6 +2561,10 @@ type TradingDataServiceServer interface {
 	//
 	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2959,6 +2976,9 @@ func (UnimplementedTradingDataServiceServer) EstimateTransferFee(context.Context
 }
 func (UnimplementedTradingDataServiceServer) GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTotalTransferFeeDiscount not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGames not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5066,6 +5086,24 @@ func _TradingDataService_GetTotalTransferFeeDiscount_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListGames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGamesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGames",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGames(ctx, req.(*ListGamesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5499,6 +5537,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTotalTransferFeeDiscount",
 			Handler:    _TradingDataService_GetTotalTransferFeeDiscount_Handler,
+		},
+		{
+			MethodName: "ListGames",
+			Handler:    _TradingDataService_ListGames_Handler,
 		},
 		{
 			MethodName: "Ping",

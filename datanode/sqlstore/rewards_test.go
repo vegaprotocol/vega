@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -48,6 +49,7 @@ func addTestReward(t *testing.T,
 	seqNum uint64,
 	amount num.Decimal,
 	txHash entities.TxHash,
+	gameID entities.GameID,
 ) entities.Reward {
 	t.Helper()
 	r := entities.Reward{
@@ -62,6 +64,8 @@ func addTestReward(t *testing.T,
 		VegaTime:       block.VegaTime,
 		SeqNum:         seqNum,
 		TxHash:         txHash,
+		QuantumAmount:  amount,
+		GameID:         gameID,
 	}
 	err := rs.Add(ctx, r)
 	require.NoError(t, err)
@@ -91,7 +95,7 @@ func TestRewards(t *testing.T) {
 
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
@@ -108,11 +112,11 @@ func TestRewards(t *testing.T) {
 
 	now := time.Now()
 	amount := num.DecimalFromInt64(100)
-	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash())
-	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash())
-	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash())
-	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash())
-	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash())
+	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash(), "")
+	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash(), "")
+	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash(), "")
+	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash(), "")
+	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash(), "")
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
@@ -145,7 +149,7 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
@@ -160,56 +164,56 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	now := time.Now()
 	// rewards for epoch1
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash())
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash(), "")
 
 	// rewards for epoch2
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash())
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash(), "")
 
 	first := int32(1000)
 	pagination, _ := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -320,10 +324,10 @@ func verifyRewardsForEpoch(t *testing.T, summaries []entities.EpochRewardSummary
 	}
 }
 
-func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets) {
+func setupRewardsTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
 
@@ -477,8 +481,8 @@ func TestRewardsPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPagination(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -500,8 +504,8 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPage(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
@@ -524,8 +528,8 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPage(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
@@ -548,8 +552,8 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -574,8 +578,8 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -599,8 +603,8 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -622,8 +626,8 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
@@ -646,8 +650,8 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
@@ -670,8 +674,8 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -696,8 +700,8 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -858,5 +862,268 @@ func Test_FilterRewardsQuery(t *testing.T) {
 				assert.Equalf(t, tt.wantArgs[i], arg, "filterSQL(%v, %v)", tt.args.table, tt.args.inFilter)
 			}
 		})
+	}
+}
+
+func TestRewardsGameTotals(t *testing.T) {
+	ctx := tempTransaction(t)
+	// teams
+	teams := []entities.Team{
+		{
+			ID:             "deadd00d01",
+			Referrer:       "beefbeef01",
+			Name:           "aaaa",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+		{
+			ID:             "deadd00d02",
+			Referrer:       "beefbeef02",
+			Name:           "bbbb",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+		{
+			ID:             "deadd00d03",
+			Referrer:       "beefbeef03",
+			Name:           "cccc",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+	}
+	for _, team := range teams {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`insert into teams (id, referrer, name, team_url, avatar_url, closed, created_at_epoch, created_at, vega_time)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			team.ID, team.Referrer, team.Name, team.TeamURL, team.AvatarURL, team.Closed, team.CreatedAtEpoch, team.CreatedAt, team.VegaTime)
+		require.NoError(t, err)
+	}
+	// team members data
+	teamMembers := []entities.TeamMember{
+		{
+			TeamID:        "deadd00d01",
+			PartyID:       "deadbeef01",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+		{
+			TeamID:        "deadd00d02",
+			PartyID:       "deadbeef02",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+		{
+			TeamID:        "deadd00d03",
+			PartyID:       "deadbeef03",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+	}
+	for _, member := range teamMembers {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`insert into team_members (team_id, party_id, joined_at_epoch, joined_at, vega_time)
+		values ($1, $2, $3, $4, $5)`,
+			member.TeamID, member.PartyID, member.JoinedAtEpoch, member.JoinedAt, member.VegaTime)
+		require.NoError(t, err)
+	}
+	// populate the game reward totals with some test data
+	existingTotals := []entities.RewardTotals{
+		{
+			GameID:       "deadbeef01",
+			PartyID:      "cafedaad01",
+			AssetID:      "deadbaad01",
+			MarketID:     "beefcafe01",
+			EpochID:      1,
+			TeamID:       "deadd00d01",
+			TotalRewards: decimal.NewFromFloat(1000),
+		},
+		{
+			GameID:       "deadbeef02",
+			PartyID:      "cafedaad02",
+			AssetID:      "deadbaad02",
+			MarketID:     "beefcafe02",
+			EpochID:      1,
+			TeamID:       "deadd00d02",
+			TotalRewards: decimal.NewFromFloat(2000),
+		},
+		{
+			GameID:       "deadbeef03",
+			PartyID:      "cafedaad03",
+			AssetID:      "deadbaad03",
+			MarketID:     "beefcafe03",
+			EpochID:      1,
+			TeamID:       "deadd00d03",
+			TotalRewards: decimal.NewFromFloat(3000),
+		},
+	}
+	for _, total := range existingTotals {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`insert into game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards)
+		values ($1, $2, $3, $4, $5, $6, $7)`,
+			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards)
+		require.NoError(t, err)
+	}
+
+	ts := time.Now()
+	ts2 := ts.Add(time.Minute)
+	// add rewards
+	rewardsToAdd := []entities.Reward{
+		{
+			PartyID:            "cafedaad01",
+			AssetID:            "deadbaad01",
+			MarketID:           "beefcafe01",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             1,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef01",
+		},
+		{
+			PartyID:            "cafedaad02",
+			AssetID:            "deadbaad02",
+			MarketID:           "beefcafe02",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             2,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef02",
+		},
+		{
+			PartyID:            "cafedaad03",
+			AssetID:            "deadbaad03",
+			MarketID:           "beefcafe03",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             3,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef03",
+		},
+		{
+			PartyID:            "cafedaad01",
+			AssetID:            "deadbaad01",
+			MarketID:           "beefcafe01",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             1,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef01",
+		},
+		{
+			PartyID:            "cafedaad02",
+			AssetID:            "deadbaad02",
+			MarketID:           "beefcafe02",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             2,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef02",
+		},
+		{
+			PartyID:            "cafedaad03",
+			AssetID:            "deadbaad03",
+			MarketID:           "beefcafe03",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             3,
+			LockedUntilEpochID: 30,
+			GameID:             "deadbeef03",
+		},
+	}
+
+	rs := sqlstore.NewRewards(ctx, connectionSource)
+	for _, r := range rewardsToAdd {
+		require.NoError(t, rs.Add(ctx, r))
+	}
+
+	// Now make sure the totals are updated and correct
+	testCases := []struct {
+		game_id  entities.GameID
+		party_id entities.PartyID
+		epoch_id int64
+		want     decimal.Decimal
+	}{
+		{
+			game_id:  "deadbeef01",
+			party_id: "cafedaad01",
+			epoch_id: 2,
+			want:     decimal.NewFromFloat(2000),
+		},
+		{
+			game_id:  "deadbeef01",
+			party_id: "cafedaad01",
+			epoch_id: 3,
+			want:     decimal.NewFromFloat(3000),
+		},
+		{
+			game_id:  "deadbeef02",
+			party_id: "cafedaad02",
+			epoch_id: 2,
+			want:     decimal.NewFromFloat(3000),
+		},
+		{
+			game_id:  "deadbeef02",
+			party_id: "cafedaad02",
+			epoch_id: 3,
+			want:     decimal.NewFromFloat(4000),
+		},
+	}
+	for _, tc := range testCases {
+		var totals []entities.RewardTotals
+		require.NoError(t, pgxscan.Select(ctx, connectionSource.Connection, &totals,
+			`select * from game_reward_totals where game_id = $1 and party_id = $2 and epoch_id = $3`,
+			tc.game_id, tc.party_id, tc.epoch_id))
+		assert.Equal(t, 1, len(totals))
+		assert.True(t, tc.want.Equal(totals[0].TotalRewards), "totals don't match, got: %s, want: %s", totals[0].TotalRewards, tc.want)
 	}
 }

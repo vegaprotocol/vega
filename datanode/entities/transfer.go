@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -59,6 +60,7 @@ type Transfer struct {
 	Factor           *decimal.Decimal
 	DispatchStrategy *vega.DispatchStrategy
 	Reason           *string
+	GameID           *GameID
 }
 
 type TransferFees struct {
@@ -108,6 +110,11 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
 
+	var gameID *string
+	if t.GameID != nil {
+		gameID = ptr.From(t.GameID.String())
+	}
+
 	proto := eventspb.Transfer{
 		Id:              t.ID.String(),
 		From:            fromAcc.PartyID.String(),
@@ -121,6 +128,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 		Timestamp:       t.VegaTime.UnixNano(),
 		Kind:            nil,
 		Reason:          t.Reason,
+		GameId:          gameID,
 	}
 
 	switch t.TransferType {
@@ -218,6 +226,12 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		return nil, fmt.Errorf("invalid transfer amount: %w", err)
 	}
 
+	var gameID *GameID
+
+	if t.GameId != nil {
+		gameID = ptr.From(GameID(*t.GameId))
+	}
+
 	transfer := Transfer{
 		ID:            TransferID(t.Id),
 		TxHash:        txHash,
@@ -234,6 +248,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		EndEpoch:      nil,
 		Factor:        nil,
 		Reason:        t.Reason,
+		GameID:        gameID,
 	}
 
 	switch v := t.Kind.(type) {

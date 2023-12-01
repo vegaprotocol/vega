@@ -30,6 +30,10 @@ type ExternalDataSourceKind interface {
 	IsExternalDataSourceKind()
 }
 
+type GameEntity interface {
+	IsGameEntity()
+}
+
 type GovernanceTransferKind interface {
 	IsGovernanceTransferKind()
 }
@@ -348,6 +352,24 @@ type Filter struct {
 	// considered of interest.
 	Conditions []*Condition `json:"conditions"`
 }
+
+// Individual party participating in a game and their metrics
+type IndividualGameEntity struct {
+	// Party ID of the participant
+	Individual string `json:"individual"`
+	// The rank of the individual within the game. If the individual is in a team, then the rank of the individual in the team
+	Rank int `json:"rank"`
+	// The volume traded by the individual
+	Volume string `json:"volume"`
+	// The reward metric applied to the game
+	RewardMetric string `json:"rewardMetric"`
+	// The rewards earned by the individual during the epoch
+	RewardEarned string `json:"rewardEarned"`
+	// Total rewards earned by the individual during the game
+	TotalRewardsEarned string `json:"totalRewardsEarned"`
+}
+
+func (IndividualGameEntity) IsGameEntity() {}
 
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
@@ -721,6 +743,32 @@ type TargetStakeParameters struct {
 	TimeWindow int `json:"timeWindow"`
 	// Specifies scaling factors used in target stake calculation
 	ScalingFactor float64 `json:"scalingFactor"`
+}
+
+// Team participating in a game and their metrics.
+type TeamGameEntity struct {
+	// Breakdown of the team members and their contributions to the total team metrics.
+	Team *TeamParticipation `json:"team"`
+	// Rank of the team within the game.
+	Rank int `json:"rank"`
+	// Total volume traded by the team
+	Volume string `json:"volume"`
+	// Reward metric applied to the game.
+	RewardMetric string `json:"rewardMetric"`
+	// Total rewards earned by the team during the epoch
+	RewardEarned string `json:"rewardEarned"`
+	// Total rewards earned by the team for the game
+	TotalRewardsEarned string `json:"totalRewardsEarned"`
+}
+
+func (TeamGameEntity) IsGameEntity() {}
+
+// Team participation information, i.e. the team ID and the metrics for each participating team member.
+type TeamParticipation struct {
+	// Team ID
+	TeamID string `json:"teamId"`
+	// List of participating team members and their metrics.
+	MembersParticipating []*IndividualGameEntity `json:"membersParticipating"`
 }
 
 type TimeUpdate struct {

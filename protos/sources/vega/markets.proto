@@ -85,16 +85,14 @@ message DataSourceSpecToFutureBinding {
   string trading_termination_property = 2;
 }
 
-// Describes which property of the data source data is to be
-// used as settlement data and which to use as the trading terminated trigger
+// Describes which properties of the data source data is to be
+// used for settlement.
 message DataSourceSpecToPerpetualBinding {
-  // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
-  // this property as settlement data.
+  // Name of the property in the source data that should be used for settlement data.
+  // If it is set to "prices.BTC.value" for example, then the perpetual market will use the value of
+  // this property to get settlement data.
   string settlement_data_property = 1;
-  // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
-  // this property as settlement data.
+  // Name of the property in the source data that should be used to determine the perpetual's settlement schedule.
   string settlement_schedule_property = 2;
 }
 

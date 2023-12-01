@@ -744,3 +744,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetTotalTransferFeeDiscountResponse
   EstimatedTransferFee:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateTransferFeeResponse
+  Game:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Game
+  GameEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameEdge
+  GamesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamesConnection

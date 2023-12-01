@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -42,6 +43,17 @@ type Reward struct {
 	VegaTime           time.Time
 	SeqNum             uint64
 	LockedUntilEpochID int64
+	GameID             GameID
+}
+
+type RewardTotals struct {
+	GameID       GameID
+	PartyID      PartyID
+	AssetID      AssetID
+	MarketID     MarketID
+	EpochID      int64
+	TeamID       TeamID
+	TotalRewards decimal.Decimal
 }
 
 func (r Reward) String() string {
@@ -50,6 +62,11 @@ func (r Reward) String() string {
 }
 
 func (r Reward) ToProto() *vega.Reward {
+	var gameID *string
+	if r.GameID != "" {
+		gameID = ptr.From(r.GameID.String())
+	}
+
 	protoReward := vega.Reward{
 		PartyId:           r.PartyID.String(),
 		AssetId:           r.AssetID.String(),
@@ -61,6 +78,7 @@ func (r Reward) ToProto() *vega.Reward {
 		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
 		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
+		GameId:            gameID,
 	}
 	return &protoReward
 }
@@ -115,6 +133,11 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		}
 	}
 
+	var gameID GameID
+	if pr.GameId != nil {
+		gameID = GameID(*pr.GameId)
+	}
+
 	reward := Reward{
 		PartyID:            PartyID(pr.Party),
 		AssetID:            AssetID(pr.Asset),
@@ -129,6 +152,7 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		VegaTime:           vegaTime,
 		SeqNum:             seqNum,
 		LockedUntilEpochID: lockedUntilEpochID,
+		GameID:             gameID,
 	}
 
 	return reward, nil
