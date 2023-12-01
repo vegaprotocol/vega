@@ -1054,11 +1054,11 @@ type Query {
   totalTransferFeeDiscount(
     "ID of party eligible for the discount."
     partyId: String!
-    "ID of asset to associated with the discount."
+    "ID of asset to be associated with the discount."
     assetId: String!
   ): TotalTransferFeeDiscount
 
-  "Estimate transaction fee"
+  "Get transaction fee estimate"
   estimateTransferFee(
     "Sender's ID."
     fromAccount: ID!
