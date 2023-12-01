@@ -34,6 +34,7 @@ type snapshotCmd struct {
 	DBPath               string `description:"path to snapshot state data"                                                  long:"db-path"           short:"d"`
 	SnapshotContentsPath string `description:"path to file where to write the content of a snapshot"                        long:"snapshot-contents" short:"c"`
 	BlockHeight          uint64 `description:"block-height of requested snapshot"                                           long:"block-height"      short:"b"`
+	SetProtocolUpgrade   bool   `description:"set protocol-upgrade flag to true in the latest snapshot"                     long:"set-pup"           short:"p"`
 	TendermintHome       string `description:"tendermint home directory, if set will print the last processed block height" long:"tendermint-home"`
 }
 
@@ -62,6 +63,11 @@ func (opts *snapshotCmd) Execute(_ []string) error {
 	if opts.DBPath == "" {
 		vegaPaths := paths.New(rootCmd.VegaHome)
 		db = vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	}
+
+	if opts.SetProtocolUpgrade {
+		err := snapshotdb.SetProtocolUpgrade(paths.New(rootCmd.VegaHome))
+		return err
 	}
 
 	if opts.SnapshotContentsPath != "" {
