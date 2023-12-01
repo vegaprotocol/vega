@@ -206,6 +206,13 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
 	require.Nil(t, err)
 
+	// vote on it even though its in waiting-for-node-vote-state
+	voter1 := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voter1, 1)
+	eng.expectVoteEvent(t, voter1, proposal.ID)
+	err = eng.addYesVote(t, voter1, proposal.ID)
+	require.NoError(t, err)
+
 	// get snapshot state for node proposals and hope its changed
 	s1, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
@@ -236,6 +243,13 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	s2, _, err := snapEng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s1, s2))
+
+	// check the vote still exists
+	err = proto.Unmarshal(s2, snap)
+	require.Nil(t, err)
+	pp := types.PayloadFromProto(snap)
+	dd := pp.Data.(*types.PayloadGovernanceNode)
+	assert.Equal(t, 1, len(dd.GovernanceNode.ProposalData[0].Yes))
 }
 
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
