@@ -87,7 +87,7 @@ Scenario: transfer where fee-discount has decayed to 0 results in no fee discoun
 
     And the parties have the following transfer fee discounts:
     | party                                                              | asset | available discount |
-    | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c   |  ETH  | 324                |
+    | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c   |  ETH  | 16                 |
     
     # let the discount decay to zero
     Given the following network parameters are set:

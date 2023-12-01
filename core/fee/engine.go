@@ -184,7 +184,6 @@ func (e *Engine) CalculateForContinuousMode(
 		e.feesStats.RegisterMakerFee(maker, taker, fee.MakerFee)
 
 		totalTradingFees := num.UintZero().AddSum(fee.MakerFee, fee.InfrastructureFee, fee.LiquidityFee)
-		e.feesStats.RegisterTradingFees(maker, taker, totalTradingFees)
 
 		switch trade.Aggressor {
 		case types.SideBuy:
@@ -196,6 +195,9 @@ func (e *Engine) CalculateForContinuousMode(
 			trade.BuyerFee = types.NewFee()
 			maker = trade.Buyer
 		}
+
+		e.feesStats.RegisterTradingFees(taker, totalTradingFees)
+		e.feesStats.RegisterTradingFees(maker, fee.MakerFee)
 
 		totalFeeAmount.AddSum(totalTradingFees)
 		totalInfrastructureFeeAmount.AddSum(fee.InfrastructureFee)
