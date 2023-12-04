@@ -57,13 +57,13 @@ func checkProductData(pd types.ProductData, row ProductDataWrapper) error {
 	expectedFundingPayment, b := row.FundingPayment()
 	actualFundingPayment := pd.Data.IntoProto().GetPerpetualData().FundingPayment
 	if b && expectedFundingPayment != actualFundingPayment {
-		return fmt.Errorf("expected '%s' for InternalTWAP, instead got '%s'", expectedFundingPayment, actualFundingPayment)
+		return fmt.Errorf("expected '%s' for funding payment, instead got '%s'", expectedFundingPayment, actualFundingPayment)
 	}
 
 	expectedFundingRate, b := row.FundingRate()
 	actualFundingRate := pd.Data.IntoProto().GetPerpetualData().FundingRate
 	if b && expectedFundingRate != actualFundingRate {
-		return fmt.Errorf("expected '%s' for InternalTWAP, instead got '%s'", expectedFundingRate, actualFundingRate)
+		return fmt.Errorf("expected '%s' for funding rate, instead got '%s'", expectedFundingRate, actualFundingRate)
 	}
 
 	return nil
