@@ -132,3 +132,57 @@ Feature: Test fee discounts for one off transfers
         Then the following transfers should happen:
             | from                                                             | to     | from account         | to account                       | market id | amount | asset |
             | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 5000   | ETH   |
+
+    @transfer @fee-discount
+    Scenario: 0057-TRAN-024 when a party received maker fee f in previous epoch, and transfer.feeDiscountDecayFraction = 0.9, then in 3 epochs the fee-free discount amount would be c = 0.9^3 x f, when a party makes a transfer and the theoretical fee the party should pay is f1, and f1 <= 0.729 x f, then no amount is paid for transfer
+        # fee free discount total = maker fees made = 4000
+        # move ahead 3 epochs but check discount at each epoch
+        Given the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 4000               |
+        # assert decay is 3240 * 0.9
+        When the network moves ahead "1" epochs
+        Then the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 3600               |
+
+        Given the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 3600               |
+        # assert decay is 3600 * 0.9
+        When the network moves ahead "1" epochs
+        Then the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 3240               |
+
+        Given the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 3240               |
+        # assert decay is 3240 * 0.9
+        When the network moves ahead "1" epochs
+        Then the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 2916               |
+
+        # transfer depletes fees discount total
+        Given the parties submit the following one off transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | delivery_time        |
+            | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | ETH   | 5832   | 2021-08-26T00:00:10Z |
+        And time is updated to "2021-08-26T00:00:10Z"
+        When the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 0                  |
+        Then the following transfers should happen:
+            | from                                                             | to     | from account         | to account                       | market id | amount | asset |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 0      | ETH   |
+
+        # one more transfer that will incur fees
+        Given the parties submit the following one off transfers:
+            | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | delivery_time        |
+            | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | ETH   | 10000  | 2021-08-26T00:00:10Z |
+        When the parties have the following transfer fee discounts:
+            | party                                                            | asset | available discount |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ETH   | 0                  |
+        Then the following transfers should happen:
+            | from                                                             | to     | from account         | to account                       | market id | amount | asset |
+            | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 5000   | ETH   |
