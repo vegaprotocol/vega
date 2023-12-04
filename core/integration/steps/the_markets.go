@@ -275,6 +275,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 						MarginFundingFactor:                 pfp.MarginFundingFactor,
 						ClampLowerBound:                     pfp.ClampLowerBound,
 						ClampUpperBound:                     pfp.ClampUpperBound,
+						FundingRateScalingFactor:            pfp.FundingRateScalingFactor,
+						FundingRateLowerBound:               pfp.FundingRateLowerBound,
+						FundingRateUpperBound:               pfp.FundingRateUpperBound,
 						DataSourceSpecForSettlementData:     *pfp.DataSourceSpecForSettlementData.Data,
 						DataSourceSpecForSettlementSchedule: *pfp.DataSourceSpecForSettlementSchedule.Data,
 						DataSourceSpecBinding:               pfp.DataSourceSpecBinding,
@@ -284,6 +287,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			// apply update
 			ti.Perps.ClampLowerBound = pfp.ClampLowerBound
 			ti.Perps.ClampUpperBound = pfp.ClampUpperBound
+			ti.Perps.FundingRateScalingFactor = pfp.FundingRateScalingFactor
+			ti.Perps.FundingRateUpperBound = pfp.FundingRateUpperBound
+			ti.Perps.FundingRateLowerBound = pfp.FundingRateLowerBound
 			ti.Perps.MarginFundingFactor = pfp.MarginFundingFactor
 			ti.Perps.DataSourceSpecBinding = pfp.DataSourceSpecBinding
 			ti.Perps.DataSourceSpecForSettlementData = pfp.DataSourceSpecForSettlementData
