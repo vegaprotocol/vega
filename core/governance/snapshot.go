@@ -206,7 +206,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			invalidVotes: votesAsMap(p.Invalid),
 		}
 
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.4") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
 			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
 				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{

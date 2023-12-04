@@ -82,16 +82,10 @@ func NewPerpetualFromSnapshot(
 		return nil, err
 	}
 
-	perps.auctions = &auctionIntervals{
-		auctionStart: state.AuctionIntervals.AuctionStart,
-		auctions:     state.AuctionIntervals.T,
-		total:        state.AuctionIntervals.Total,
-	}
-
 	perps.startedAt = state.StartedAt
 	perps.seq = state.Seq
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.4") {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
 		// do it the old way where we'd regenerate the cached values by adding the points again
 		perps.externalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
 		perps.internalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
@@ -111,8 +105,15 @@ func NewPerpetualFromSnapshot(
 			}
 			perps.internalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
 		}
+		return perps, nil
 	}
-	// do it the new way where we restore state exactly, because its become more complicated now
+
+	perps.auctions = &auctionIntervals{
+		auctionStart: state.AuctionIntervals.AuctionStart,
+		auctions:     state.AuctionIntervals.T,
+		total:        state.AuctionIntervals.Total,
+	}
+
 	perps.externalTWAP = NewCachedTWAPFromSnapshot(log, state.StartedAt, perps.auctions, state.ExternalTwapData, state.ExternalDataPoint)
 	perps.internalTWAP = NewCachedTWAPFromSnapshot(log, state.StartedAt, perps.auctions, state.InternalTwapData, state.InternalDataPoint)
 	return perps, nil
