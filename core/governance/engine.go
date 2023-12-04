@@ -392,15 +392,14 @@ func (e *Engine) evaluateBatchProposals(
 
 		if rejectedProposal != nil {
 			batchProposal.State = types.ProposalStateRejected
+			batchProposal.Reason = types.ProposalErrorProposalInBatchRejected
 
 			proposalsEvents := make([]events.Event, 0, len(batchProposal.Proposals))
 			for _, proposal := range batchProposal.Proposals {
-				if proposal.ID == rejectedProposal.ID {
-					continue
+				if proposal.IsPassed() {
+					proposal.Reject(types.ProposalErrorProposalInBatchRejected)
 				}
 
-				proposal.State = types.ProposalStateRejected
-				proposal.Reason = types.ProposalErrorProposalInBatchDeclined
 				proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *proposal))
 			}
 
@@ -418,8 +417,7 @@ func (e *Engine) evaluateBatchProposals(
 		proposalEvents := make([]events.Event, 0, len(closedProposals))
 		for _, proposal := range closedProposals {
 			if proposal.IsPassed() && batchHasDeclinedProposal {
-				proposal.State = types.ProposalStateDeclined
-				proposal.Reason = types.ProposalErrorProposalInBatchDeclined
+				proposal.Decline(types.ProposalErrorProposalInBatchDeclined)
 			} else if proposal.IsPassed() {
 				addToActiveProposals = append(addToActiveProposals, proposal)
 			}
@@ -572,13 +570,50 @@ func (e *Engine) getBatchProposal(id string) (*batchProposal, bool) {
 	return bp, ok
 }
 
+func (e *Engine) validateProposalFromBatch(
+	ctx context.Context,
+	p *types.Proposal,
+	batchParams, perTypeParams types.ProposalParameters,
+) (*ToSubmit, error) {
+	batchParams.MaxEnact = perTypeParams.MaxEnact
+	batchParams.MinEnact = perTypeParams.MinEnact
+
+	if proposalErr, err := e.validateOpenProposal(p, &batchParams); err != nil {
+		p.RejectWithErr(proposalErr, err)
+
+		if e.log.IsDebug() {
+			e.log.Debug("Batch proposal rejected",
+				logging.String("proposal-id", p.ID),
+				logging.String("proposal details", p.String()),
+				logging.Error(err),
+			)
+		}
+
+		return nil, err
+	}
+
+	submit, err := e.intoToSubmit(ctx, p, &enactmentTime{current: p.Terms.EnactmentTimestamp}, false)
+	if err != nil {
+		if e.log.IsDebug() {
+			e.log.Debug("Batch proposal rejected",
+				logging.String("proposal-id", p.ID),
+				logging.String("proposal details", p.String()),
+				logging.Error(err),
+			)
+		}
+		return nil, err
+	}
+
+	return submit, nil
+}
+
 func (e *Engine) SubmitBatchProposal(
 	ctx context.Context,
 	bpsub types.BatchProposalSubmission,
 	batchID, party string,
-) error {
+) ([]*ToSubmit, error) {
 	if _, ok := e.getBatchProposal(batchID); ok {
-		return ErrProposalIsDuplicate // state is not allowed to change externally
+		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 
 	timeNow := e.timeService.GetTimeNow().UnixNano()
@@ -624,7 +659,7 @@ func (e *Engine) SubmitBatchProposal(
 		params, err := e.getProposalParams(change.Change)
 		if err != nil {
 			bp.RejectWithErr(types.ProposalErrorUnknownType, err)
-			return err
+			return nil, err
 		}
 
 		proposalParamsPerProposalTermType[change.Change.GetTermType()] = params
@@ -633,30 +668,40 @@ func (e *Engine) SubmitBatchProposal(
 		bp.Proposals = append(bp.Proposals, p)
 	}
 
+	var toSubmits []*ToSubmit
+	errs := vgerrors.NewCumulatedErrors()
+
 	for _, p := range bp.Proposals {
 		perTypeParams := proposalParamsPerProposalTermType[p.Terms.Change.GetTermType()]
 		params := bp.ProposalParameters.Clone()
 
-		params.MaxEnact = perTypeParams.MaxEnact
-		params.MinEnact = perTypeParams.MinEnact
+		submit, err := e.validateProposalFromBatch(ctx, p, params, *perTypeParams)
+		if err != nil {
+			errs.Add(err)
+			continue
+		}
 
-		if _, err := e.validateOpenProposal(p, &params); err != nil {
-			p.RejectWithErr(types.ProposalErrorUnknownType, err)
-			if e.log.IsDebug() {
-				e.log.Debug("Proposal rejected",
-					logging.String("proposal-id", p.ID),
-					logging.String("proposal details", p.String()),
-				)
-			}
-			return err
+		toSubmits = append(toSubmits, submit)
+	}
+
+	for _, p := range bp.Proposals {
+		if !p.IsRejected() && errs.HasAny() {
+			p.Reject(types.ProposalErrorProposalInBatchRejected)
 		}
 
 		proposalsEvents = append(proposalsEvents, events.NewProposalEvent(ctx, *p))
 	}
 
+	if errs.HasAny() {
+		bp.State = types.ProposalStateRejected
+		bp.Reason = types.ProposalErrorProposalInBatchRejected
+
+		return nil, errs
+	}
+
 	e.startBatchProposal(bp)
 
-	return nil
+	return toSubmits, nil
 }
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
@@ -734,6 +779,27 @@ func (e *Engine) RejectProposal(
 
 	e.rejectProposal(ctx, p, r, errorDetails)
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
+	return nil
+}
+
+func (e *Engine) RejectBatchProposal(
+	ctx context.Context, proposalID string, r types.ProposalError, errorDetails error,
+) error {
+	bp, ok := e.getBatchProposal(proposalID)
+	if !ok {
+		return ErrProposalDoesNotExist
+	}
+
+	bp.RejectWithErr(r, errorDetails)
+
+	evts := make([]events.Event, 0, len(bp.Proposals))
+	for _, proposal := range bp.Proposals {
+		e.rejectProposal(ctx, proposal, r, errorDetails)
+		evts = append(evts, events.NewProposalEvent(ctx, *proposal))
+	}
+
+	e.broker.Send(events.NewProposalEventFromProto(ctx, bp.ToProto()))
+	e.broker.SendBatch(evts)
 	return nil
 }
 

@@ -44,15 +44,6 @@ func (p BatchProposalSubmission) IntoProto() *commandspb.BatchProposalSubmission
 	}
 }
 
-// TODO karel - make this batch proposal
-// func BatchProposalSubmissionFromProposal(p *Proposal) *BatchProposalSubmission {
-// 	return &BatchProposalSubmission{
-// 		Reference: p.Reference,
-// 		Terms:     p.Terms,
-// 		Rationale: p.Rationale,
-// 	}
-// }
-
 func NewBatchProposalSubmissionFromProto(p *commandspb.BatchProposalSubmission, ids []string) (*BatchProposalSubmission, error) {
 	var pterms *BatchProposalTerms
 	if p.Terms != nil {

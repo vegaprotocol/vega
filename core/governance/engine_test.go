@@ -94,36 +94,6 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submit proposal update market", testSubmitProposalMarketUpdate)
 }
 
-func TestSubmitBatchProposals(t *testing.T) {
-	t.Run("Submitting a batch proposal with closing time too soon fails", testSubmittingBatchProposalWithClosingTimeTooSoonFails)
-	// t.Run("Submitting a proposal with internal time termination with closing time too soon fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails)
-	// t.Run("Submitting a proposal with closing time too late fails", testSubmittingProposalWithClosingTimeTooLateFails)
-	// t.Run("Submitting a proposal with internal time termination with closing time too late fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails)
-	// t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
-	// t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
-	// t.Run("Submitting a proposal with enactment time too late fails", testSubmittingProposalWithEnactmentTimeTooLateFails)
-	// t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
-	// t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
-	// t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
-	// t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
-	// t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
-
-	// t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
-
-	// t.Run("Voting on non-existing proposal fails", testVotingOnNonExistingProposalFails)
-	// t.Run("Voting with non-existing account fails", testVotingWithNonExistingAccountFails)
-	// t.Run("Voting without token fails", testVotingWithoutTokenFails)
-
-	// t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
-	// t.Run("Withdrawing vote assets removes vote from proposal state calculation", testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation)
-
-	// t.Run("Updating voters key on votes succeeds", testUpdatingVotersKeyOnVotesSucceeds)
-	// t.Run("Updating voters key on votes with internal time termination succeeds", testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds)
-
-	// t.Run("Computing the governance state hash is deterministic", testComputingGovernanceStateHashIsDeterministic)
-	// t.Run("Submit proposal update market", testSubmitProposalMarketUpdate)
-}
-
 func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 
@@ -496,49 +466,6 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 			// then
 			require.Error(tt, err)
 			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
-		})
-	}
-}
-
-func testSubmittingBatchProposalWithClosingTimeTooSoonFails(t *testing.T) {
-	eng := getTestEngine(t, time.Now())
-
-	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
-	party := vgrand.RandomStr(5)
-
-	cases := []struct {
-		msg      string
-		proposal types.Proposal
-	}{
-		{
-			msg:      "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
-		}, {
-			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
-		}, {
-			msg:      "For new asset",
-			proposal: eng.newProposalForNewAsset(party, now),
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.msg, func(tt *testing.T) {
-			// given
-			tc.proposal.Terms.ClosingTimestamp = now.Unix()
-
-			// setup
-			eng.ensureAllAssetEnabled(tt)
-
-			// expect
-			eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorCloseTimeTooSoon)
-
-			// when
-			_, err := eng.submitProposal(tt, tc.proposal)
-
-			// then
-			require.Error(tt, err)
-			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
 		})
 	}
 }
@@ -1647,6 +1574,20 @@ func (e *tstEngine) submitProposal(t *testing.T, proposal types.Proposal) (*gove
 	)
 }
 
+func (e *tstEngine) submitBatchProposal(
+	t *testing.T,
+	submission types.BatchProposalSubmission,
+	proposalID, party string,
+) ([]*governance.ToSubmit, error) {
+	t.Helper()
+	return e.SubmitBatchProposal(
+		context.Background(),
+		submission,
+		proposalID,
+		party,
+	)
+}
+
 func (e *tstEngine) addYesVote(t *testing.T, party, proposal string) error {
 	t.Helper()
 	return e.AddVote(context.Background(), types.VoteSubmission{
@@ -1676,6 +1617,33 @@ func (e *tstEngine) newValidParty(partyID string, balance uint64) *types.Party {
 func (e *tstEngine) newProposalID() string {
 	e.proposalCounter++
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
+}
+
+func (e *tstEngine) newBatchSubmission(
+	closingTimestamp int64,
+	proposals ...types.Proposal,
+) types.BatchProposalSubmission {
+	id := e.newProposalID()
+
+	sub := types.BatchProposalSubmission{
+		Reference: id,
+		Terms: &types.BatchProposalTerms{
+			ClosingTimestamp: closingTimestamp,
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+
+	for _, proposal := range proposals {
+		sub.Terms.Changes = append(sub.Terms.Changes, types.BatchProposalChange{
+			ID:            proposal.ID,
+			Change:        proposal.Terms.Change,
+			EnactmentTime: proposal.Terms.EnactmentTimestamp,
+		})
+	}
+
+	return sub
 }
 
 //nolint:unparam
@@ -1979,6 +1947,32 @@ func (e *tstEngine) expectRejectedProposalEvent(t *testing.T, partyID, proposalI
 		assert.Equal(t, partyID, p.PartyId)
 		assert.Equal(t, types.ProposalStateRejected.String(), p.State.String())
 		assert.Equal(t, reason.String(), p.Reason.String())
+	})
+}
+
+type expectedProposal struct {
+	partyID    string
+	proposalID string
+	state      types.ProposalState
+	reason     types.ProposalError
+}
+
+func (e *tstEngine) expectProposalEvents(t *testing.T, expected []expectedProposal) {
+	t.Helper()
+	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		assert.Equal(t, len(expected), len(evts))
+
+		for i, e := range evts {
+			pe, ok := e.(*events.Proposal)
+			require.True(t, ok)
+			p := pe.Proposal()
+			e := expected[i]
+
+			assert.Equal(t, e.proposalID, p.Id)
+			assert.Equal(t, e.partyID, p.PartyId)
+			assert.Equal(t, e.state.String(), p.State.String())
+			assert.Equal(t, e.reason.String(), p.Reason.String())
+		}
 	})
 }
 

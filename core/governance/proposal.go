@@ -16,10 +16,8 @@
 package governance
 
 import (
-	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
@@ -59,21 +57,6 @@ func (p *batchProposal) IsTimeToEnact(now int64) bool {
 	return false
 }
 
-func (bp *batchProposal) RefuseWithProposal(ctx context.Context, refusedProposal *types.Proposal) []events.Event {
-	bp.State = refusedProposal.State
-	bp.Reason = refusedProposal.Reason
-	bp.ErrorDetails = refusedProposal.ErrorDetails
-
-	evts := make([]events.Event, 0, len(bp.Proposals))
-	for _, proposal := range bp.Proposals {
-		proposal.State = bp.State
-		proposal.Reason = bp.Reason
-		proposal.ErrorDetails = bp.ErrorDetails
-		evts = append(evts, events.NewProposalEvent(ctx, *proposal))
-	}
-	return evts
-}
-
 type proposal struct {
 	*types.Proposal
 	yes          map[string]*types.Vote
@@ -102,30 +85,6 @@ func (p *proposal) SucceedsMarket(parentID string) bool {
 		return false
 	}
 	return true
-}
-
-func (p *proposal) IsOpen() bool {
-	return p.State == types.ProposalStateOpen
-}
-
-func (p *proposal) IsPassed() bool {
-	return p.State == types.ProposalStatePassed
-}
-
-func (p *proposal) IsDeclined() bool {
-	return p.State == types.ProposalStateDeclined
-}
-
-func (p *proposal) IsRejected() bool {
-	return p.State == types.ProposalStateRejected
-}
-
-func (p *proposal) IsFailed() bool {
-	return p.State == types.ProposalStateFailed
-}
-
-func (p *proposal) IsEnacted() bool {
-	return p.State == types.ProposalStateEnacted
 }
 
 func (p *proposal) IsOpenForVotes() bool {

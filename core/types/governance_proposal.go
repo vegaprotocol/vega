@@ -336,14 +336,6 @@ func (bp *BatchProposal) SetProposalParams(params *ProposalParameters) {
 	}
 }
 
-func (bp *BatchProposal) Reject(reason ProposalError) {
-	bp.State = ProposalStateRejected
-
-	for _, proposal := range bp.Proposals {
-		proposal.State = bp.State
-	}
-}
-
 func (bp *BatchProposal) RejectWithErr(reason ProposalError, details error) {
 	bp.ErrorDetails = details.Error()
 	bp.State = ProposalStateRejected
@@ -356,16 +348,8 @@ func (bp *BatchProposal) RejectWithErr(reason ProposalError, details error) {
 	}
 }
 
-func (bp *BatchProposal) FailWithErr(reason ProposalError, details error) {
-	bp.ErrorDetails = details.Error()
-	bp.State = ProposalStateFailed
-	bp.Reason = reason
-
-	for _, proposal := range bp.Proposals {
-		proposal.ErrorDetails = bp.ErrorDetails
-		proposal.State = bp.State
-		proposal.Reason = bp.Reason
-	}
+func (bp *BatchProposal) IsRejected() bool {
+	return bp.State == ProposalStateRejected
 }
 
 type Proposal struct {
@@ -383,6 +367,30 @@ type Proposal struct {
 	RequiredParticipation   num.Decimal
 	RequiredLPMajority      num.Decimal
 	RequiredLPParticipation num.Decimal
+}
+
+func (p Proposal) IsOpen() bool {
+	return p.State == ProposalStateOpen
+}
+
+func (p Proposal) IsPassed() bool {
+	return p.State == ProposalStatePassed
+}
+
+func (p Proposal) IsDeclined() bool {
+	return p.State == ProposalStateDeclined
+}
+
+func (p Proposal) IsRejected() bool {
+	return p.State == ProposalStateRejected
+}
+
+func (p Proposal) IsFailed() bool {
+	return p.State == ProposalStateFailed
+}
+
+func (p Proposal) IsEnacted() bool {
+	return p.State == ProposalStateEnacted
 }
 
 func (p Proposal) IsMarketUpdate() bool {
@@ -438,6 +446,11 @@ func (p *Proposal) WaitForNodeVote() {
 
 func (p *Proposal) Reject(reason ProposalError) {
 	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
+func (p *Proposal) Decline(reason ProposalError) {
+	p.State = ProposalStateDeclined
 	p.Reason = reason
 }
 

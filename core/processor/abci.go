@@ -37,7 +37,6 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
-	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/pow"
@@ -1841,7 +1840,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 	return nil
 }
 
-func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicBatchID string) error {
+func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicBatchID string) (err error) {
 	prop := &commandspb.BatchProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1868,53 +1867,66 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	if err != nil {
 		return err
 	}
-	err = app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
+	toSubmits, err := app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
 	if err != nil {
-		app.log.Debug("could not submit proposal",
+		app.log.Debug("could not submit batch proposal",
 			logging.ProposalID(deterministicBatchID),
 			logging.Error(err))
 		return err
 	}
 
-	toSubmit := governance.ToSubmit{}
-
-	// TODO karel - fix this
-	if toSubmit.IsNewMarket() {
-		// opening auction start
-		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
-		nm := toSubmit.NewMarket()
-
-		// @TODO pass in parent and insurance pool share if required
-		if err := app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
-			app.log.Debug("unable to submit new market with liquidity submission",
-				logging.ProposalID(nm.Market().ID),
-				logging.Error(err))
-			// an error happened when submitting the market
-			// we should cancel this proposal now
-			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
-				// this should never happen
-				app.log.Panic("tried to reject a nonexistent proposal",
-					logging.String("proposal-id", toSubmit.Proposal().ID),
-					logging.Error(err))
-			}
-			return err
+	var submittedMarketIDs []string
+	defer func() {
+		if err == nil {
+			return
 		}
-	} else if toSubmit.IsNewSpotMarket() {
-		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
-		nm := toSubmit.NewSpotMarket()
-		if err := app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
-			app.log.Debug("unable to submit new spot market",
-				logging.ProposalID(nm.Market().ID),
+
+		// an error happened when submitting the market
+		// we should cancel this proposal now
+		if err := app.gov.RejectBatchProposal(ctx, deterministicBatchID,
+			types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+			// this should never happen
+			app.log.Panic("tried to reject a nonexistent batch proposal",
+				logging.String("proposal-id", deterministicBatchID),
 				logging.Error(err))
-			// an error happened when submitting the market
-			// we should cancel this proposal now
-			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+		}
+
+		for _, marketID := range submittedMarketIDs {
+			if err := app.exec.RejectMarket(ctx, marketID); err != nil {
 				// this should never happen
-				app.log.Panic("tried to reject a nonexistent proposal",
-					logging.String("proposal-id", toSubmit.Proposal().ID),
+				app.log.Panic("unable to submit reject submitted market",
+					logging.ProposalID(marketID),
 					logging.Error(err))
 			}
-			return err
+		}
+	}()
+
+	for _, toSubmit := range toSubmits {
+		if toSubmit.IsNewMarket() {
+			// opening auction start
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewMarket()
+
+			// @TODO pass in parent and insurance pool share if required
+			if err = app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new market with liquidity submission",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
+		} else if toSubmit.IsNewSpotMarket() {
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewSpotMarket()
+			if err = app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new spot market",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
 		}
 	}
 
