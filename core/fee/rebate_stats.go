@@ -28,9 +28,8 @@ type FeesStats struct {
 	// TotalMakerFeesReceived is the total of maker fees received by the maker side.
 	// maker -> amount
 	TotalMakerFeesReceived map[string]*num.Uint
-	// TradingFeesGenerated tracks all trading fees paid by taker (aggressor) to the maker.
-	// taker -> maker -> amount
-	TradingFeesGenerated map[string]map[string]*num.Uint
+	// TradingFeesPaidAndReceived tracks all trading fees paid and received by party.
+	TradingFeesPaidAndReceived map[string]*num.Uint
 	// MakerFeesGenerated tracks maker fees paid by taker (aggressor) to the maker.
 	// taker -> maker -> amount
 	MakerFeesGenerated map[string]map[string]*num.Uint
@@ -44,13 +43,13 @@ type FeesStats struct {
 
 func NewFeesStats() *FeesStats {
 	return &FeesStats{
-		TotalMakerFeesReceived:   map[string]*num.Uint{},
-		MakerFeesGenerated:       map[string]map[string]*num.Uint{},
-		TradingFeesGenerated:     map[string]map[string]*num.Uint{},
-		TotalRewardsReceived:     map[string]*num.Uint{},
-		ReferrerRewardsGenerated: map[string]map[string]*num.Uint{},
-		RefereeDiscountApplied:   map[string]*num.Uint{},
-		VolumeDiscountApplied:    map[string]*num.Uint{},
+		TotalMakerFeesReceived:     map[string]*num.Uint{},
+		MakerFeesGenerated:         map[string]map[string]*num.Uint{},
+		TradingFeesPaidAndReceived: map[string]*num.Uint{},
+		TotalRewardsReceived:       map[string]*num.Uint{},
+		ReferrerRewardsGenerated:   map[string]map[string]*num.Uint{},
+		RefereeDiscountApplied:     map[string]*num.Uint{},
+		VolumeDiscountApplied:      map[string]*num.Uint{},
 	}
 }
 
@@ -91,13 +90,8 @@ func NewFeesStatsFromProto(fsp *eventspb.FeesStats) *FeesStats {
 		fs.MakerFeesGenerated[f.Taker] = rg
 	}
 
-	for _, f := range fsp.TradingFeesGenerated {
-		rg := map[string]*num.Uint{}
-		for _, pa := range f.TradingFeesPaid {
-			rg[pa.Party] = num.MustUintFromString(pa.Amount, 10)
-		}
-
-		fs.TradingFeesGenerated[f.Taker] = rg
+	for _, f := range fsp.TotalFeesPaidAndReceived {
+		fs.TradingFeesPaidAndReceived[f.Party] = num.MustUintFromString(f.Amount, 10)
 	}
 
 	return fs
@@ -127,20 +121,13 @@ func (f *FeesStats) RegisterMakerFee(makerID, takerID string, amount *num.Uint) 
 	makerTally.Add(makerTally, amount)
 }
 
-func (f *FeesStats) RegisterTradingFees(makerID, takerID string, amount *num.Uint) {
-	tradingFeesGenerated, ok := f.TradingFeesGenerated[takerID]
-	if !ok {
-		tradingFeesGenerated = map[string]*num.Uint{}
-		f.TradingFeesGenerated[takerID] = tradingFeesGenerated
+// RegisterTradingFees registers fees paid or received by the party.
+func (f *FeesStats) RegisterTradingFees(partyID string, amount *num.Uint) {
+	if _, ok := f.TradingFeesPaidAndReceived[partyID]; !ok {
+		f.TradingFeesPaidAndReceived[partyID] = num.UintZero()
 	}
 
-	makerTally, ok := tradingFeesGenerated[makerID]
-	if !ok {
-		makerTally = num.NewUint(0)
-		tradingFeesGenerated[makerID] = makerTally
-	}
-
-	makerTally.Add(makerTally, amount)
+	f.TradingFeesPaidAndReceived[partyID].AddSum(amount)
 }
 
 func (f *FeesStats) RegisterReferrerReward(
@@ -192,24 +179,7 @@ func (f *FeesStats) RegisterVolumeDiscount(party string, amount *num.Uint) {
 
 // TotalTradingFeesPerParty returns per party sum of all paid and received trading fees.
 func (f *FeesStats) TotalTradingFeesPerParty() map[string]*num.Uint {
-	generatedFeesPerParty := make(map[string]*num.Uint, len(f.TradingFeesGenerated))
-
-	for payer, makers := range f.TradingFeesGenerated {
-		if _, ok := generatedFeesPerParty[payer]; !ok {
-			generatedFeesPerParty[payer] = num.UintZero()
-		}
-
-		for receiver, amount := range makers {
-			if _, ok := generatedFeesPerParty[receiver]; !ok {
-				generatedFeesPerParty[receiver] = num.UintZero()
-			}
-
-			generatedFeesPerParty[receiver].AddSum(amount)
-			generatedFeesPerParty[payer].AddSum(amount)
-		}
-	}
-
-	return generatedFeesPerParty
+	return f.TradingFeesPaidAndReceived
 }
 
 func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.FeesStats {
@@ -221,7 +191,7 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		VolumeDiscountApplied:    make([]*eventspb.PartyAmount, 0, len(f.VolumeDiscountApplied)),
 		TotalMakerFeesReceived:   make([]*eventspb.PartyAmount, 0, len(f.TotalMakerFeesReceived)),
 		MakerFeesGenerated:       make([]*eventspb.MakerFeesGenerated, 0, len(f.MakerFeesGenerated)),
-		TradingFeesGenerated:     make([]*eventspb.TradingFeesGenerated, 0, len(f.TradingFeesGenerated)),
+		TotalFeesPaidAndReceived: make([]*eventspb.PartyAmount, 0, len(f.TradingFeesPaidAndReceived)),
 	}
 
 	totalRewardsReceivedParties := maps.Keys(f.TotalRewardsReceived)
@@ -322,31 +292,16 @@ func (f *FeesStats) ToProto(asset string, assetQuantum num.Decimal) *eventspb.Fe
 		fs.MakerFeesGenerated = append(fs.MakerFeesGenerated, rewardsGenerated)
 	}
 
-	tradingFeesGeneratedParties := maps.Keys(f.TradingFeesGenerated)
+	tradingFeesGeneratedParties := maps.Keys(f.TradingFeesPaidAndReceived)
 	sort.Strings(tradingFeesGeneratedParties)
-	for _, taker := range tradingFeesGeneratedParties {
-		makersAmounts := f.TradingFeesGenerated[taker]
+	for _, party := range tradingFeesGeneratedParties {
+		amount := f.TradingFeesPaidAndReceived[party]
 
-		rewardsGenerated := &eventspb.TradingFeesGenerated{
-			Taker:           taker,
-			TradingFeesPaid: make([]*eventspb.PartyAmount, 0, len(makersAmounts)),
-		}
-
-		makersAmountsParties := maps.Keys(makersAmounts)
-		sort.Strings(makersAmountsParties)
-		for _, maker := range makersAmountsParties {
-			amount := makersAmounts[maker]
-			rewardsGenerated.TradingFeesPaid = append(
-				rewardsGenerated.TradingFeesPaid,
-				&eventspb.PartyAmount{
-					Party:         maker,
-					Amount:        amount.String(),
-					QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
-				},
-			)
-		}
-
-		fs.TradingFeesGenerated = append(fs.TradingFeesGenerated, rewardsGenerated)
+		fs.TotalFeesPaidAndReceived = append(fs.TotalFeesPaidAndReceived, &eventspb.PartyAmount{
+			Party:         party,
+			Amount:        amount.String(),
+			QuantumAmount: amount.ToDecimal().Div(assetQuantum).Truncate(6).String(),
+		})
 	}
 
 	return fs
