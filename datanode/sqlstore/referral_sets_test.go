@@ -467,7 +467,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 
-	ctx := context.Background()
+	ctx := tempTransaction(t)
 
 	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
