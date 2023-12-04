@@ -60,6 +60,7 @@
 - [10158](https://github.com/vegaprotocol/vega/issues/10158) - Add the network as the zero-share default party in settlement engine.
 - [10183](https://github.com/vegaprotocol/vega/issues/10183) - Fix transfer fees registration and decay.
 - [9840](https://github.com/vegaprotocol/vega/issues/9840) - Team API inconsistency in joined at timestamps.
+- [10205](https://github.com/vegaprotocol/vega/issues/10205) - Fix for transfer discount fees.
 
 ## 0.73.0
 

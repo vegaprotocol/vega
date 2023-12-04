@@ -77,19 +77,24 @@ func (e *Engine) decayAllFeeDiscounts(ctx context.Context, perAssetAndPartyUpdat
 
 		assetQuantum := asset.Type().Details.Quantum
 
+		var decayAmountD *num.Uint
 		// apply decay discount amount
-		decayAmount := e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
-		if decayAmount.IsZero() {
+		decayAmount := e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key])
+
+		// or 0 if discount is less than e.feeDiscountMinimumTrackedAmount x quantum (where quantum is the asset quantum).
+		if decayAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
+			decayAmountD = num.UintZero()
 			delete(e.feeDiscountPerPartyAndAsset, key)
 		} else {
-			e.feeDiscountPerPartyAndAsset[key] = decayAmount
+			decayAmountD, _ = num.UintFromDecimal(decayAmount)
+			e.feeDiscountPerPartyAndAsset[key] = decayAmountD
 		}
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
 			key.party,
 			key.asset,
-			decayAmount.Clone(),
+			decayAmountD.Clone(),
 			e.currentEpoch,
 		))
 	}
@@ -126,11 +131,15 @@ func (e *Engine) updateFeeDiscountsForAsset(
 			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
 		}
 
-		// apply decay discount amount
-		e.feeDiscountPerPartyAndAsset[key] = e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key], assetQuantum)
+		// apply decay discount amount and add new fees to it
+		newAmount := e.decayFeeDiscountAmount(e.feeDiscountPerPartyAndAsset[key]).Add(fee.ToDecimal())
 
-		// add fees
-		e.feeDiscountPerPartyAndAsset[key].AddSum(fee)
+		if newAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
+			e.feeDiscountPerPartyAndAsset[key] = num.UintZero()
+		} else {
+			newAmountD, _ := num.UintFromDecimal(newAmount)
+			e.feeDiscountPerPartyAndAsset[key] = newAmountD
+		}
 
 		updateDiscountEvents = append(updateDiscountEvents, events.NewTransferFeesDiscountUpdated(
 			ctx,
@@ -212,21 +221,13 @@ func (e *Engine) AvailableFeeDiscount(asset string, party string) *num.Uint {
 	return num.UintZero()
 }
 
-// decayFeeDiscountAmount update current discount with: discount x e.feeDiscountDecayFraction
-// or 0 if discount is less than e.feeDiscountMinimumTrackedAmount x quantum (where quantum is the asset quantum).
-func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint, assetQuantum num.Decimal) *num.Uint {
-	if currentDiscount.IsZero() {
-		return currentDiscount
+// decayFeeDiscountAmount update current discount with: discount x e.feeDiscountDecayFraction.
+func (e *Engine) decayFeeDiscountAmount(currentDiscount *num.Uint) num.Decimal {
+	discount := currentDiscount.ToDecimal()
+	if discount.IsZero() {
+		return discount
 	}
-
-	decayedAmount := currentDiscount.ToDecimal().Mul(e.feeDiscountDecayFraction)
-
-	if decayedAmount.LessThan(e.feeDiscountMinimumTrackedAmount.Mul(assetQuantum)) {
-		return num.UintZero()
-	}
-
-	decayedAmountUint, _ := num.UintFromDecimal(decayedAmount)
-	return decayedAmountUint
+	return discount.Mul(e.feeDiscountDecayFraction)
 }
 
 func calculateDiscount(accumulatedDiscount, theoreticalFee *num.Uint) (discountedFee, discount *num.Uint) {
