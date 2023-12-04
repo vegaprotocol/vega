@@ -131,7 +131,7 @@ Feature: Test fee discounts for one off transfers
 
     @transfer @fee-discount
     Scenario: 0057-TRAN-027 when a party makes a transfer and f would be the theoretical fee the party should pay then the fee on the transfer that is actually charged is -min(f-c,0). The system subsequently updates c <- max(0,c-f). At the end of epoch, update c <- c x D and c <- c + all_trading_fees_for_trades_involved_in, if c < M x quantum(M is transfer.feeDiscountMinimumTrackedAmount), then set c <- 0
-        # Scenario make a transfer that drops total discount to below transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount = 0
+        # Scenario make a transfer that total discount < below transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount = 0
 
         # fee free discount total = 4000 + 2000 + 1000
         Given the parties have the following transfer fee discounts:
@@ -170,7 +170,7 @@ Feature: Test fee discounts for one off transfers
 
     @transfer @fee-discount
     Scenario: 0057-TRAN-027 when a party makes a transfer and f would be the theoretical fee the party should pay then the fee on the transfer that is actually charged is -min(f-c,0). The system subsequently updates c <- max(0,c-f). At the end of epoch, update c <- c x D and c <- c + all_trading_fees_for_trades_involved_in, if c < M x quantum(M is transfer.feeDiscountMinimumTrackedAmount), then set c <- 0
-        # Scenario make a trade that generates discount above transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount is retained
+        # Scenario make a trade that generates discount > transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount is retained
 
         # fee free discount total = 4000 + 2000 + 1000
         Given the parties have the following transfer fee discounts:
@@ -211,11 +211,11 @@ Feature: Test fee discounts for one off transfers
         # trade at previous epoch generated total fee discount of 16 + 8 + 4 = 28 < 50 so it becomes 0
         And the parties have the following transfer fee discounts:
             | party                                                            | asset | available discount |
-            | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ETH   | 58                 |
+            | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ETH   | 57                 |
 
     @transfer @fee-discount
     Scenario: 0057-TRAN-027 when a party makes a transfer and f would be the theoretical fee the party should pay then the fee on the transfer that is actually charged is -min(f-c,0). The system subsequently updates c <- max(0,c-f). At the end of epoch, update c <- c x D and c <- c + all_trading_fees_for_trades_involved_in, if c < M x quantum(M is transfer.feeDiscountMinimumTrackedAmount), then set c <- 0
-        # Scenario make a trade that generates discount below transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount is 0
+        # Scenario make a trade that generates discount but the total discount < transfer.feeDiscountMinimumTrackedAmount and next epoch check total discount is 0
 
         # fee free discount total = 4000 + 2000 + 1000
         Given the parties have the following transfer fee discounts:
