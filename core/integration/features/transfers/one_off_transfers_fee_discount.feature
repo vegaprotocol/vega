@@ -96,8 +96,9 @@ Feature: Test fee discounts for one off transfers
             | from                                                             | to     | from account         | to account                       | market id | amount | asset |
             | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 5000   | ETH   |
 
-    @transfer @fee-discount
+    @transfer @fee-discount @sp-test
     Scenario: 0057-TRAN-020 and 0057-TRAN-022 when a party made maker fee g in previous epoch, and transfer.feeDiscountDecayFraction = 0.9, then in the next epoch when a party (did not generate any fees) makes a transfer and the theoretical fee the party should pay is f, fee-free amount is then c = 0.9 x g. If c > f, then no transfer fee is paid. And a party makes another transfer, and the theoretical fee the party should pay is f, then the party is not getting any fee-free discount
+        # 0057-TRAN-020: when a party made maker fee g in previous epoch, and transfer.feeDiscountDecayFraction = 0.9, then in the next epoch when a party (did not generate any fees) makes a transfer and the theoretical fee the party should pay is f, fee-free amount is then c = 0.9 x g. If c > f, then no transfer fee is paid
         # fee free discount total = maker fees made = 4000
         Given the parties have the following transfer fee discounts:
             | party                                                            | asset | available discount |
@@ -112,7 +113,7 @@ Feature: Test fee discounts for one off transfers
         # transfer depletes fees discount total 0057-TRAN-020
         Given the parties submit the following one off transfers:
             | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | delivery_time        |
-            | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | ETH   | 7600   | 2021-08-26T00:00:10Z |
+            | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | ETH   | 7200   | 2021-08-26T00:00:10Z |
         And time is updated to "2021-08-26T00:00:10Z"
         When the parties have the following transfer fee discounts:
             | party                                                            | asset | available discount |
@@ -121,7 +122,7 @@ Feature: Test fee discounts for one off transfers
             | from                                                             | to     | from account         | to account                       | market id | amount | asset |
             | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 0      | ETH   |
 
-        # one more transfer that will incur fees 0057-TRAN-022
+        # now we have used up the fee discount, one more transfer that will incur fees 0057-TRAN-022
         Given the parties submit the following one off transfers:
             | id | from                                                             | from_account_type    | to                                                               | to_account_type      | asset | amount | delivery_time        |
             | 1  | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | ACCOUNT_TYPE_GENERAL | ETH   | 10000  | 2021-08-26T00:00:10Z |
