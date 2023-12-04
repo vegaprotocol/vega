@@ -96,7 +96,7 @@ Feature: Test fee discounts for one off transfers
             | from                                                             | to     | from account         | to account                       | market id | amount | asset |
             | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 5000   | ETH   |
 
-    @transfer @fee-discount @sp-test
+    @transfer @fee-discount
     Scenario: 0057-TRAN-020 and 0057-TRAN-022 when a party made maker fee g in previous epoch, and transfer.feeDiscountDecayFraction = 0.9, then in the next epoch when a party (did not generate any fees) makes a transfer and the theoretical fee the party should pay is f, fee-free amount is then c = 0.9 x g. If c > f, then no transfer fee is paid. And a party makes another transfer, and the theoretical fee the party should pay is f, then the party is not getting any fee-free discount
         # 0057-TRAN-020: when a party made maker fee g in previous epoch, and transfer.feeDiscountDecayFraction = 0.9, then in the next epoch when a party (did not generate any fees) makes a transfer and the theoretical fee the party should pay is f, fee-free amount is then c = 0.9 x g. If c > f, then no transfer fee is paid
         # fee free discount total = maker fees made = 4000
