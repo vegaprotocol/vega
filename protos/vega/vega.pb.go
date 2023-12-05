@@ -7655,9 +7655,9 @@ type Reward struct {
 	QuantumAmount string `protobuf:"bytes,10,opt,name=quantum_amount,json=quantumAmount,proto3" json:"quantum_amount,omitempty"`
 	// ID of the game the reward payment was made for if the payment was made for participation in a game.
 	GameId *string `protobuf:"bytes,11,opt,name=game_id,json=gameId,proto3,oneof" json:"game_id,omitempty"`
-	// ID of the team the party is a member of if the reward payment was made for participation in a game,
-	// and the party is a member of a participating team.
-	// This field may not be populated in core, and populated by data node APIs only.
+	// ID of the team the party is a member of, if the party is a member of a participating team,
+	// and the reward payment was made for participation in a game.
+	// This field is currently only populated by the rewards API.
 	TeamId *string `protobuf:"bytes,12,opt,name=team_id,json=teamId,proto3,oneof" json:"team_id,omitempty"`
 }
 

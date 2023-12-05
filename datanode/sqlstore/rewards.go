@@ -16,7 +16,6 @@
 package sqlstore
 
 import (
-	"code.vegaprotocol.io/vega/libs/ptr"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -26,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -120,7 +120,7 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 
 // scany does not like deserializing byte arrays to strings so if an ID
 // needs to be nillable, we need to scan it into a temporary struct that will
-// define the ID field as a byte array and then parse the value accordingly
+// define the ID field as a byte array and then parse the value accordingly.
 type scannedRewards struct {
 	PartyID            entities.PartyID
 	AssetID            entities.AssetID

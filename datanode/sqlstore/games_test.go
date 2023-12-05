@@ -298,7 +298,8 @@ func setupResultsStore(t *testing.T, gameIDs []string, epochCount int64) map[gam
 }
 
 func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block entities.Block, epochCount int64) (
-	[]entities.Game, []string, map[gameDataKey][]entities.Reward, map[string][]entities.Party) {
+	[]entities.Game, []string, map[gameDataKey][]entities.Reward, map[string][]entities.Party,
+) {
 	t.Helper()
 
 	gameCount := 5

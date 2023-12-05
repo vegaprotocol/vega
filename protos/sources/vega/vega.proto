@@ -1635,9 +1635,9 @@ message Reward {
   string quantum_amount = 10;
   // ID of the game the reward payment was made for if the payment was made for participation in a game.
   optional string game_id = 11;
-  // ID of the team the party is a member of if the reward payment was made for participation in a game,
-  // and the party is a member of a participating team.
-  // This field may not be populated in core, and populated by data node APIs only.
+  // ID of the team the party is a member of, if the party is a member of a participating team,
+  // and the reward payment was made for participation in a game.
+  // This field is currently only populated by the rewards API.
   optional string team_id = 12;
 }
 

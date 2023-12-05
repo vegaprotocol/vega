@@ -1991,7 +1991,8 @@ func (r *myPartyResolver) TransfersConnection(
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
-	fromEpoch *int, toEpoch *int, teamID, gameID *string) (*v2.RewardsConnection, error) {
+	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
 	if fromEpoch != nil {

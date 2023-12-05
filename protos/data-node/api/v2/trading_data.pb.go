@@ -10338,9 +10338,9 @@ type ListRewardsRequest struct {
 	FromEpoch *uint64 `protobuf:"varint,4,opt,name=from_epoch,json=fromEpoch,proto3,oneof" json:"from_epoch,omitempty"`
 	// Restrict rewards data to those that were paid up to and including the given epoch ID.
 	ToEpoch *uint64 `protobuf:"varint,5,opt,name=to_epoch,json=toEpoch,proto3,oneof" json:"to_epoch,omitempty"`
-	// Filter for rewards earned by the party for team participation
+	// Filter for rewards paid if the party is a member of the given team
 	TeamId *string `protobuf:"bytes,6,opt,name=team_id,json=teamId,proto3,oneof" json:"team_id,omitempty"`
-	// Filter for rewards earned by the party for a given game
+	// Filter for rewards paid if the party participated in the given game
 	GameId *string `protobuf:"bytes,7,opt,name=game_id,json=gameId,proto3,oneof" json:"game_id,omitempty"`
 }
 

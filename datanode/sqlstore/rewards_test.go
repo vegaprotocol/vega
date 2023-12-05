@@ -1154,7 +1154,7 @@ func filterRewardsByTeam(rewards []entities.Reward, teamID entities.TeamID) []en
 func filterRewardsByGame(rewards []entities.Reward, gameID entities.GameID) []entities.Reward {
 	filtered := make([]entities.Reward, 0)
 	for _, r := range rewards {
-		if r.GameID == gameID {
+		if *r.GameID == gameID {
 			filtered = append(filtered, r)
 		}
 	}
