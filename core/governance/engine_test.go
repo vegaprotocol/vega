@@ -70,7 +70,6 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with closing time too late fails", testSubmittingProposalWithClosingTimeTooLateFails)
 	t.Run("Submitting a proposal with internal time termination with closing time too late fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails)
 	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
-	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
 	t.Run("Submitting a proposal with enactment time too late fails", testSubmittingProposalWithEnactmentTimeTooLateFails)
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
 	t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
@@ -269,6 +268,37 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.EqualError(tt, err, errNoBalanceForParty.Error())
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+			eng.ensureNoAccountForParty(tt, party)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.EqualError(tt, err, errNoBalanceForParty.Error())
+		})
 	}
 }
 
@@ -387,6 +417,37 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+			eng.ensureNoAccountForParty(tt, party)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.EqualError(tt, err, errNoBalanceForParty.Error())
+		})
 	}
 }
 
@@ -418,6 +479,38 @@ func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.
 		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
 		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
 		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.Error(tt, err)
+		assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+	})
+
+	t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+		// setup
+		eng.ensureTokenBalanceForParty(tt, party, 10)
+		eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+		eng.ensureAllAssetEnabled(tt)
+
+		// when
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
+		batchID := eng.newProposalID()
+
+		eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+		eng.expectProposalEvents(t, []expectedProposal{
+			{
+				partyID:    party,
+				proposalID: tc.proposal.ID,
+				state:      types.ProposalStateRejected,
+				reason:     types.ProposalErrorInsufficientTokens,
+			},
+		})
+
+		sub := eng.newBatchSubmission(
+			now.Add(48*time.Hour).Unix(),
+			tc.proposal,
+		)
+		_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 		// then
 		require.Error(tt, err)
@@ -467,6 +560,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 			require.Error(tt, err)
 			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureTokenBalanceForParty(tt, party, 10)
+			eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+			eng.ensureAllAssetEnabled(tt)
+
+			// when
+			batchID := eng.newProposalID()
+
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+		})
 	}
 }
 
@@ -505,6 +628,36 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -553,6 +706,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFail
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
+		})
 	}
 }
 
@@ -596,6 +779,36 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(3*365*24*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
+		})
 	}
 }
 
@@ -634,6 +847,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFail
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(3*365*24*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -716,6 +959,39 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal enactment time too soon, expected >")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.EnactmentTimestamp = now.Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorEnactTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal enactment time too soon, expected >")
+		})
 	}
 }
 
@@ -754,6 +1030,39 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal enactment time too late, expected <")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.EnactmentTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorEnactTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -1960,18 +2269,19 @@ type expectedProposal struct {
 func (e *tstEngine) expectProposalEvents(t *testing.T, expected []expectedProposal) {
 	t.Helper()
 	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		assert.Equal(t, len(expected), len(evts))
-
-		for i, e := range evts {
+		assert.GreaterOrEqual(t, len(evts), len(expected))
+		for i, expect := range expected {
+			e := evts[i]
 			pe, ok := e.(*events.Proposal)
 			require.True(t, ok)
 			p := pe.Proposal()
-			e := expected[i]
 
-			assert.Equal(t, e.proposalID, p.Id)
-			assert.Equal(t, e.partyID, p.PartyId)
-			assert.Equal(t, e.state.String(), p.State.String())
-			assert.Equal(t, e.reason.String(), p.Reason.String())
+			assert.Equal(t, expect.proposalID, p.Id)
+			assert.Equal(t, expect.partyID, p.PartyId)
+			assert.Equal(t, expect.state.String(), p.State.String())
+			if p.Reason != nil {
+				assert.Equal(t, expect.reason.String(), p.Reason.String())
+			}
 		}
 	})
 }

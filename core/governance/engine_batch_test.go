@@ -1,42 +1,204 @@
 package governance_test
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSubmitBatchProposals(t *testing.T) {
+	t.Run("Submitted batch proposal is declined", testSubmittingBatchProposalDeclined)
+	t.Run("Submitted batch proposal has passed", testSubmittingBatchProposalPassed)
 	t.Run("Submitting batch fails if any of the terms fails validation", testSubmittingBatchProposalFailsWhenTermValidationFails)
 
-	// t.Run("Submitting a batch proposal with enactment time too soon fails", testSubmittingBatchProposalWithEnactmentTimeTooSoonFails)
-	// t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
-	// t.Run("Submitting a proposal with enactment time too late fails", testSubmittingProposalWithEnactmentTimeTooLateFails)
-	// t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
-	// t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
-	// t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
-	// t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
-	// t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
+	t.Run("Voting with non-existing account fails", testVotingOnBatchWithNonExistingAccountFails)
+	t.Run("Voting without token fails", testVotingOnBatchWithoutTokenFails)
+}
 
-	// t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSubmittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
+func testSubmittingBatchProposalDeclined(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
 
-	// t.Run("Voting on non-existing proposal fails", testVotingOnNonExistingProposalFails)
-	// t.Run("Voting with non-existing account fails", testVotingWithNonExistingAccountFails)
-	// t.Run("Voting without token fails", testVotingWithoutTokenFails)
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	party := vgrand.RandomStr(5)
 
-	// t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
-	// t.Run("Withdrawing vote assets removes vote from proposal state calculation", testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation)
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, party, 1)
 
-	// t.Run("Updating voters key on votes succeeds", testUpdatingVotersKeyOnVotesSucceeds)
-	// t.Run("Updating voters key on votes with internal time termination succeeds", testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds)
+	batchID := eng.newProposalID()
 
-	// t.Run("Computing the governance state hash is deterministic", testComputingGovernanceStateHashIsDeterministic)
-	// t.Run("Submit proposal update market", testSubmitProposalMarketUpdate)
+	newFormProposal := eng.newFreeformProposal(party, now)
+	newNetParamProposal := eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now)
+	newMarketProposal := eng.newProposalForNewMarket(party, now, nil, nil, true)
+
+	// expect
+	eng.expectOpenProposalEvent(t, party, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
+		{
+			partyID:    party,
+			proposalID: newFormProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+		{
+			partyID:    party,
+			proposalID: newNetParamProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+		{
+			partyID:    party,
+			proposalID: newMarketProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+	})
+
+	batchClosingTime := now.Add(48 * time.Hour)
+
+	// when
+	_, err := eng.submitBatchProposal(t, eng.newBatchSubmission(
+		batchClosingTime.Unix(),
+		newFormProposal,
+		newNetParamProposal,
+		newMarketProposal,
+	), batchID, party)
+
+	assert.NoError(t, err)
+	ctx := context.Background()
+
+	eng.expectDeclinedProposalEvent(t, batchID, types.ProposalErrorProposalInBatchDeclined)
+	eng.expectProposalEvents(t, []expectedProposal{
+		{
+			partyID:    party,
+			proposalID: newFormProposal.ID,
+			state:      types.ProposalStateDeclined,
+			reason:     types.ProposalErrorParticipationThresholdNotReached,
+		},
+		{
+			partyID:    party,
+			proposalID: newNetParamProposal.ID,
+			state:      types.ProposalStateDeclined,
+			reason:     types.ProposalErrorParticipationThresholdNotReached,
+		},
+		{
+			partyID:    party,
+			proposalID: newMarketProposal.ID,
+			state:      types.ProposalStateDeclined,
+			reason:     types.ProposalErrorParticipationThresholdNotReached,
+		},
+	})
+
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().AnyTimes().Return(num.NewUint(200))
+	eng.OnTick(ctx, batchClosingTime.Add(1*time.Second))
+}
+
+func testSubmittingBatchProposalPassed(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
+	party := vgrand.RandomStr(5)
+
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, party, 1)
+
+	batchID := eng.newProposalID()
+
+	newFormProposal := eng.newFreeformProposal(party, now)
+	newNetParamProposal := eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now)
+	newMarketProposal := eng.newProposalForNewMarket(party, now, nil, nil, true)
+
+	// expect
+	eng.expectOpenProposalEvent(t, party, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
+		{
+			partyID:    party,
+			proposalID: newFormProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+		{
+			partyID:    party,
+			proposalID: newNetParamProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+		{
+			partyID:    party,
+			proposalID: newMarketProposal.ID,
+			state:      types.ProposalStateOpen,
+			reason:     types.ProposalErrorUnspecified,
+		},
+	})
+
+	batchClosingTime := now.Add(48 * time.Hour)
+
+	// when
+	_, err := eng.submitBatchProposal(t, eng.newBatchSubmission(
+		batchClosingTime.Unix(),
+		newFormProposal,
+		newNetParamProposal,
+		newMarketProposal,
+	), batchID, party)
+
+	assert.NoError(t, err)
+	ctx := context.Background()
+
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().AnyTimes().Return(num.NewUint(200))
+
+	for i := 0; i < 10; i++ {
+		partyID := fmt.Sprintf("party-%d", i)
+		eng.ensureTokenBalanceForParty(t, partyID, 20)
+		eng.expectVoteEvent(t, partyID, batchID)
+		err = eng.addYesVote(t, partyID, batchID)
+		assert.NoError(t, err)
+	}
+
+	eng.expectPassedProposalEvent(t, batchID)
+
+	expectedProposals := []expectedProposal{
+		{
+			partyID:    party,
+			proposalID: newFormProposal.ID,
+			state:      types.ProposalStatePassed,
+		},
+		{
+			partyID:    party,
+			proposalID: newNetParamProposal.ID,
+			state:      types.ProposalStatePassed,
+		},
+		{
+			partyID:    party,
+			proposalID: newMarketProposal.ID,
+			state:      types.ProposalStatePassed,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		i := 0
+		for _, evt := range evts {
+			switch e := evt.(type) {
+			case *events.Proposal:
+				p := e.Proposal()
+				assert.Equal(t, expectedProposals[i].proposalID, p.Id)
+				assert.Equal(t, expectedProposals[i].partyID, p.PartyId)
+				assert.Equal(t, expectedProposals[i].state.String(), p.State.String())
+				i++
+			}
+		}
+	})
+
+	eng.OnTick(ctx, batchClosingTime.Add(1*time.Second))
 }
 
 func testSubmittingBatchProposalFailsWhenTermValidationFails(t *testing.T) {
@@ -45,23 +207,29 @@ func testSubmittingBatchProposalFailsWhenTermValidationFails(t *testing.T) {
 	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
 	party := vgrand.RandomStr(5)
 
-	closingTime := now.Add(48 * time.Hour).Unix()
-
+	newFormProposal := eng.newFreeformProposal(party, now)
+	newNetParamProposal := eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now)
 	newMarketProposal := eng.newProposalForNewMarket(party, now, nil, nil, true)
 	newMarketProposal.Terms.EnactmentTimestamp = time.Now().Unix()
 
-	newFormProposal := eng.newFreeformProposal(party, now)
-	newNetParamProposal := eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now)
+	newFormProposal2 := eng.newFreeformProposal(party, now)
+	newNetParamProposal2 := eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now)
+	newNetParamProposal2.Terms.EnactmentTimestamp = now.Add(24 * 365 * time.Hour).Unix()
+	newMarketProposal2 := eng.newProposalForNewMarket(party, now, nil, nil, true)
+
+	batchClosingTime := now.Add(48 * time.Hour).Unix()
 
 	cases := []struct {
 		msg            string
 		submission     types.BatchProposalSubmission
 		expectProposal []expectedProposal
+		containsError  string
 	}{
 		{
-			msg: "New market fails",
+			msg:           "New market rejected and other proposals with it",
+			containsError: "proposal enactment time too soon",
 			submission: eng.newBatchSubmission(
-				closingTime,
+				batchClosingTime,
 				newFormProposal,
 				newNetParamProposal,
 				newMarketProposal,
@@ -71,13 +239,13 @@ func testSubmittingBatchProposalFailsWhenTermValidationFails(t *testing.T) {
 					partyID:    party,
 					proposalID: newFormProposal.ID,
 					state:      types.ProposalStateRejected,
-					reason:     types.ProposalErrorInsufficientTokens,
+					reason:     types.ProposalErrorProposalInBatchRejected,
 				},
 				{
 					partyID:    party,
 					proposalID: newNetParamProposal.ID,
 					state:      types.ProposalStateRejected,
-					reason:     types.ProposalErrorInsufficientTokens,
+					reason:     types.ProposalErrorProposalInBatchRejected,
 				},
 				{
 					partyID:    party,
@@ -87,88 +255,149 @@ func testSubmittingBatchProposalFailsWhenTermValidationFails(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	msg: "For market update",
-		// 	submission: eng.newBatchSubmission(
-		// 		closingTime,
-		// 		eng.newFreeformProposal(party, now),
-		// 		eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
-		// 		eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now),
-		// 	),
-		// },
+		{
+			msg:           "Net parameter is rejected and the whole batch with it",
+			containsError: "proposal enactment time too late",
+			submission: eng.newBatchSubmission(
+				batchClosingTime,
+				newNetParamProposal2,
+				newFormProposal2,
+				newMarketProposal2,
+			),
+			expectProposal: []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: newNetParamProposal2.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorEnactTimeTooLate,
+				},
+				{
+					partyID:    party,
+					proposalID: newFormProposal2.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorProposalInBatchRejected,
+				},
+				{
+					partyID:    party,
+					proposalID: newMarketProposal2.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorProposalInBatchRejected,
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.msg, func(tt *testing.T) {
 			// setup
 			eng.ensureAllAssetEnabled(tt)
+			eng.ensureTokenBalanceForParty(t, party, 1)
 
-			proposalID := eng.newProposalID()
+			batchID := eng.newProposalID()
 
 			// expect
-			eng.expectRejectedProposalEvent(tt, party, proposalID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
 			eng.expectProposalEvents(tt, tc.expectProposal)
 
 			// when
-			_, err := eng.submitBatchProposal(tt, tc.submission, proposalID, party)
+			_, err := eng.submitBatchProposal(tt, tc.submission, batchID, party)
 
 			// then
 			require.Error(tt, err)
-			assert.Contains(tt, err.Error(), "proposal enactment time too soon")
+			if tc.containsError != "" {
+				assert.Contains(tt, err.Error(), tc.containsError)
+			}
 		})
 	}
 }
 
-func testSubmittingBatchProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
+func testVotingOnBatchWithNonExistingAccountFails(t *testing.T) {
 	eng := getTestEngine(t, time.Now())
 
-	now := eng.tsvc.GetTimeNow().Add(2 * time.Hour)
-	closingTimestamp := now.Add(48 * time.Hour).Unix()
-	party := vgrand.RandomStr(5)
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
 
-	newMarketProposal := eng.newProposalForNewMarket(party, now, nil, nil, true)
-	newMarketProposal.Terms.EnactmentTimestamp = now.Unix()
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
 
-	updateMarketProposal := eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true)
-	updateMarketProposal.Terms.EnactmentTimestamp = now.Unix()
+	batchID := eng.newProposalID()
 
-	cases := []struct {
-		msg        string
-		submission types.BatchProposalSubmission
-	}{
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
 		{
-			msg: "For new market",
-			submission: eng.newBatchSubmission(
-				closingTimestamp,
-				eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now),
-				newMarketProposal,
-			),
+			partyID:    proposer,
+			proposalID: proposal.ID,
+			state:      types.ProposalStateOpen,
 		},
+	})
+
+	// when
+	sub := eng.newBatchSubmission(
+		proposal.Terms.ClosingTimestamp,
+		proposal,
+	)
+	_, err := eng.submitBatchProposal(t, sub, batchID, proposer)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	voterWithoutAccount := "voter-no-account"
+
+	// setup
+	eng.ensureNoAccountForParty(t, voterWithoutAccount)
+
+	// when
+	err = eng.addYesVote(t, voterWithoutAccount, batchID)
+
+	// then
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "no balance for party")
+}
+
+func testVotingOnBatchWithoutTokenFails(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	// given
+	proposer := eng.newValidParty("proposer", 1)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+
+	// setup
+	batchID := eng.newProposalID()
+
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, proposer.Id, batchID)
+	eng.expectProposalEvents(t, []expectedProposal{
 		{
-			msg: "For market update",
-			submission: eng.newBatchSubmission(
-				closingTimestamp,
-				eng.newProposalForNetParam(party, netparams.MarketAuctionMaximumDuration, "10h", now),
-				updateMarketProposal,
-			),
+			partyID:    proposer.Id,
+			proposalID: proposal.ID,
+			state:      types.ProposalStateOpen,
 		},
-	}
+	})
 
-	for _, tc := range cases {
-		t.Run(tc.msg, func(tt *testing.T) {
-			// setup
-			eng.ensureAllAssetEnabled(tt)
+	// when
+	sub := eng.newBatchSubmission(
+		proposal.Terms.ClosingTimestamp,
+		proposal,
+	)
+	_, err := eng.submitBatchProposal(t, sub, batchID, proposer.Id)
 
-			proposalID := eng.newProposalID()
+	// then
+	require.NoError(t, err)
 
-			eng.expectRejectedProposalEvent(tt, party, proposalID, types.ProposalErrorEnactTimeTooSoon)
+	// given
+	voterWithEmptyAccount := vgrand.RandomStr(5)
 
-			// when
-			_, err := eng.submitBatchProposal(tt, tc.submission, proposalID, party)
+	// setup
+	eng.ensureTokenBalanceForParty(t, voterWithEmptyAccount, 0)
 
-			// then
-			require.Error(tt, err)
-			assert.Contains(tt, err.Error(), "proposal enactment time too soon, expected >")
-		})
-	}
+	// when
+	err = eng.addYesVote(t, voterWithEmptyAccount, batchID)
+
+	// then
+	require.Error(t, err)
+	assert.ErrorContains(t, err, governance.ErrVoterInsufficientTokens.Error())
 }

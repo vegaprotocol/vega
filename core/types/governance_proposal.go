@@ -291,9 +291,9 @@ func (bp BatchProposal) ToProto() *vegapb.Proposal {
 }
 
 // SetProposalParams set specific per proposal parameters and chooses the most aggressive ones.
-func (bp *BatchProposal) SetProposalParams(params *ProposalParameters) {
+func (bp *BatchProposal) SetProposalParams(params ProposalParameters) {
 	if bp.ProposalParameters == nil {
-		bp.ProposalParameters = params
+		bp.ProposalParameters = &params
 		bp.ProposalParameters.MaxEnact = 0
 		bp.ProposalParameters.MinEnact = 0
 		return
@@ -483,9 +483,14 @@ func (p Proposal) DeepClone() *Proposal {
 }
 
 func (p Proposal) String() string {
+	var batchID string
+	if p.BatchID != nil {
+		batchID = *p.BatchID
+	}
 	return fmt.Sprintf(
-		"id(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s) requireMajority(%s) requiredParticiption(%s) requireLPMajority(%s) requiredLPParticiption(%s)",
+		"id(%s) batchId(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s) requireMajority(%s) requiredParticiption(%s) requireLPMajority(%s) requiredLPParticiption(%s)",
 		p.ID,
+		batchID,
 		p.Reference,
 		p.Party,
 		p.State.String(),
@@ -517,6 +522,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 
 	proposal := &vegapb.Proposal{
 		Id:                                     p.ID,
+		BatchId:                                p.BatchID,
 		Reference:                              p.Reference,
 		PartyId:                                p.Party,
 		State:                                  p.State,
@@ -590,6 +596,7 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 
 	return &Proposal{
 		ID:                      pp.Id,
+		BatchID:                 pp.BatchId,
 		Reference:               pp.Reference,
 		Party:                   pp.PartyId,
 		State:                   pp.State,

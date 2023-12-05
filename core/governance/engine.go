@@ -166,6 +166,7 @@ func NewEngine(
 		log:                    log,
 		activeProposals:        []*proposal{},
 		enactedProposals:       []*proposal{},
+		activeBatchProposals:   map[string]*batchProposal{},
 		nodeProposalValidation: NewNodeValidation(log, assets, tm.GetTimeNow(), witness),
 		timeService:            tm,
 		broker:                 broker,
@@ -429,6 +430,7 @@ func (e *Engine) evaluateBatchProposals(
 		batchProposal.State = types.ProposalStatePassed
 		if batchHasDeclinedProposal {
 			batchProposal.State = types.ProposalStateDeclined
+			batchProposal.Reason = types.ProposalErrorProposalInBatchDeclined
 		}
 
 		e.broker.Send(events.NewProposalEventFromProto(ctx, batchProposal.ToProto()))
@@ -664,7 +666,7 @@ func (e *Engine) SubmitBatchProposal(
 
 		proposalParamsPerProposalTermType[change.Change.GetTermType()] = params
 
-		bp.SetProposalParams(params)
+		bp.SetProposalParams(params.Clone())
 		bp.Proposals = append(bp.Proposals, p)
 	}
 
