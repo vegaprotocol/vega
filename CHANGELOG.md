@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 
 ### 🗑️ Deprecation
 
@@ -71,6 +72,7 @@
 - [10227](https://github.com/vegaprotocol/vega/issues/10227) - Make the wallet errors on spam stats meaningful.
 - [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
 - [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
 
 ## 0.73.0
 

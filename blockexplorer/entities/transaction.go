@@ -131,3 +131,13 @@ func TxCursorFromString(s string) (TxCursor, error) {
 func (c *TxCursor) String() string {
 	return fmt.Sprintf("%d.%d", c.BlockNumber, c.TxIndex)
 }
+
+// AreValidCursorBoundaries checks if the start and end cursors creates valid
+// set boundaries for cursors, as: [start, end].
+func AreValidCursorBoundaries(start, end *TxCursor) bool {
+	if start.BlockNumber == end.BlockNumber {
+		return start.TxIndex < end.TxIndex
+	}
+
+	return start.BlockNumber < end.BlockNumber
+}
