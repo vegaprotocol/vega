@@ -18,6 +18,7 @@ package vesting
 import (
 	"context"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -39,6 +40,7 @@ type Collateral interface {
 	) ([]*types.LedgerMovement, error)
 	GetVestingRecovery() map[string]map[string]*num.Uint
 	GetAllVestingQuantumBalance(party string) *num.Uint
+	GetVestingAccounts() []*types.Account
 }
 
 type ActivityStreakVestingMultiplier interface {
@@ -76,7 +78,9 @@ type Engine struct {
 	baseRate     num.Decimal
 	benefitTiers []*types.VestingBenefitTier
 
-	state map[string]*PartyRewards
+	state                map[string]*PartyRewards
+	epochSeq             uint64
+	upgradeHackActivated bool
 }
 
 func New(
@@ -146,7 +150,9 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	}
 }
 
-func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {}
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	e.epochSeq = epoch.Seq
+}
 
 func (e *Engine) AddReward(
 	party, asset string,
@@ -295,6 +301,15 @@ func (e *Engine) distributeVested(ctx context.Context) {
 	e.broker.Send(events.NewLedgerMovements(ctx, responses))
 }
 
+// OnTick is called on the beginning of the block. In here
+// this is a post upgrade.
+func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
+	if e.upgradeHackActivated {
+		e.broadcastSummary(ctx, e.epochSeq)
+		e.upgradeHackActivated = false
+	}
+}
+
 func (e *Engine) makeTransfer(
 	party, assetID string,
 	balance *num.Uint,
@@ -342,6 +357,12 @@ func (e *Engine) broadcastSummary(ctx context.Context, seq uint64) {
 		EpochSeq:              seq,
 		PartiesVestingSummary: []*eventspb.PartyVestingSummary{},
 	}
+
+	parties := make([]string, 0, len(e.state))
+	for k := range e.state {
+		parties = append(parties, k)
+	}
+	sort.Strings(parties)
 
 	for p, pRewards := range e.state {
 		pSummary := &eventspb.PartyVestingSummary{

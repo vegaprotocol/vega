@@ -21,6 +21,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -64,21 +65,34 @@ func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, erro
 	return state, nil, err
 }
 
-func (e *SnapshotEngine) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch data := p.Data.(type) {
 	case *types.PayloadVesting:
-		e.loadStateFromSnapshot(data.Vesting)
+		e.loadStateFromSnapshot(ctx, data.Vesting)
 		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *SnapshotEngine) loadStateFromSnapshot(state *snapshotpb.Vesting) {
+func (e *SnapshotEngine) recoverVesting736() {
+	e.upgradeHackActivated = true
+	accs := e.c.GetVestingAccounts()
+	for _, a := range accs {
+		e.increaseVestingBalance(a.Owner, a.Asset, a.Balance)
+	}
+}
+
+func (e *SnapshotEngine) loadStateFromSnapshot(ctx context.Context, state *snapshotpb.Vesting) {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
+		e.recoverVesting736()
+		return
+	}
+
 	for _, entry := range state.PartiesReward {
 		for _, v := range entry.InVesting {
 			balance, underflow := num.UintFromString(v.Balance, 10)
