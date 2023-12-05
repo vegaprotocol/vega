@@ -17,9 +17,11 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -27,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 )
 
 type Games struct {
@@ -45,14 +48,27 @@ func NewGames(connectionSource *ConnectionSource) *Games {
 }
 
 type GameReward struct {
-	entities.Reward
-	DispatchStrategy vega.DispatchStrategy
-	TeamID           entities.TeamID
-	MemberRank       int64
-	TeamRank         *int64
-	TotalRewards     num.Decimal
-	TeamTotalRewards *num.Decimal
-	EntityScope      string
+	PartyID            entities.PartyID
+	AssetID            entities.AssetID
+	MarketID           entities.MarketID
+	EpochID            int64
+	Amount             decimal.Decimal
+	QuantumAmount      decimal.Decimal
+	PercentOfTotal     float64
+	RewardType         string
+	Timestamp          time.Time
+	TxHash             entities.TxHash
+	VegaTime           time.Time
+	SeqNum             uint64
+	LockedUntilEpochID int64
+	GameID             []byte
+	DispatchStrategy   vega.DispatchStrategy
+	TeamID             entities.TeamID
+	MemberRank         int64
+	TeamRank           *int64
+	TotalRewards       num.Decimal
+	TeamTotalRewards   *num.Decimal
+	EntityScope        string
 }
 
 func (g *Games) ListGames(ctx context.Context, gameID *string, entityScope *vega.EntityScope, epochFrom, epochTo *uint64,
@@ -187,7 +203,8 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 	// if the reward is for a team participant, i.e. there is a team ID then the participant will be added to the teamMembers map
 	// otherwise we add it to the gameIndividuals map
 	for i := range rewards {
-		currentGameID := rewards[i].GameID
+		gID := hex.EncodeToString(rewards[i].GameID)
+		currentGameID := entities.GameID(gID)
 		currentEpochID := rewards[i].EpochID
 		gk = gameKey{
 			EpochID: uint64(currentEpochID),

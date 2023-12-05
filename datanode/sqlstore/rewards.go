@@ -17,12 +17,15 @@ package sqlstore
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -85,13 +88,14 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.QuantumAmount, r.PercentOfTotal, r.Timestamp, r.TxHash,
 		r.VegaTime, r.SeqNum, r.LockedUntilEpochID, r.GameID)
 
-	if r.GameID != "" {
-		if _, ok := rs.runningTotals[r.GameID]; !ok {
-			rs.runningTotals[r.GameID] = make(map[entities.PartyID]decimal.Decimal)
-			rs.runningTotals[r.GameID][r.PartyID] = num.DecimalZero()
+	if r.GameID != nil && *r.GameID != "" {
+		gID := *r.GameID
+		if _, ok := rs.runningTotals[gID]; !ok {
+			rs.runningTotals[gID] = make(map[entities.PartyID]decimal.Decimal)
+			rs.runningTotals[gID][r.PartyID] = num.DecimalZero()
 		}
 
-		rs.runningTotals[r.GameID][r.PartyID] = rs.runningTotals[r.GameID][r.PartyID].Add(r.QuantumAmount)
+		rs.runningTotals[gID][r.PartyID] = rs.runningTotals[gID][r.PartyID].Add(r.QuantumAmount)
 
 		defer metrics.StartSQLQuery("GameRewardTotals", "Add")()
 		_, err = rs.Connection.Exec(ctx, `INSERT INTO game_reward_totals(
@@ -109,29 +113,49 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			r.MarketID,
 			r.EpochID,
 			entities.TeamID(""),
-			rs.runningTotals[r.GameID][r.PartyID])
+			rs.runningTotals[gID][r.PartyID])
 	}
 	return err
 }
 
+type scannedRewards struct {
+	PartyID            entities.PartyID
+	AssetID            entities.AssetID
+	MarketID           entities.MarketID
+	EpochID            int64
+	Amount             decimal.Decimal
+	QuantumAmount      decimal.Decimal
+	PercentOfTotal     float64
+	RewardType         string
+	Timestamp          time.Time
+	TxHash             entities.TxHash
+	VegaTime           time.Time
+	SeqNum             uint64
+	LockedUntilEpochID int64
+	GameID             []byte
+}
+
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetAll")()
-	rewards := []entities.Reward{}
-	err := pgxscan.Select(ctx, rs.Connection, &rewards, `
+	scanned := []scannedRewards{}
+	err := pgxscan.Select(ctx, rs.Connection, &scanned, `
 		SELECT * from rewards;`)
-	return rewards, err
+	if err != nil {
+		return nil, err
+	}
+	return parseScannedRewards(scanned), nil
 }
 
 func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetByTxHash")()
 
-	var rewards []entities.Reward
-	err := pgxscan.Select(ctx, rs.Connection, &rewards, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
+	scanned := []scannedRewards{}
+	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
 	if err != nil {
 		return nil, err
 	}
 
-	return rewards, nil
+	return parseScannedRewards(scanned), nil
 }
 
 func (rs *Rewards) GetByCursor(ctx context.Context,
@@ -151,11 +175,12 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 		return nil, pageInfo, err
 	}
 
-	rewards := []entities.Reward{}
-	if err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...); err != nil {
+	scanned := []scannedRewards{}
+	if err := pgxscan.Select(ctx, rs.Connection, &scanned, query, args...); err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
+	rewards := parseScannedRewards(scanned)
 	rewards, pageInfo = entities.PageEntities[*v2.RewardEdge](rewards, pagination)
 	return rewards, pageInfo, nil
 }
@@ -280,4 +305,34 @@ func FilterRewardsQuery(filter entities.RewardSummaryFilter) (string, []any, err
 		return "", nil, nil
 	}
 	return " WHERE " + strings.Join(conditions, " AND "), args, nil
+}
+
+func parseScannedRewards(scanned []scannedRewards) []entities.Reward {
+	rewards := make([]entities.Reward, len(scanned))
+	for i, s := range scanned {
+		var gID *entities.GameID
+		if s.GameID != nil {
+			id := hex.EncodeToString(s.GameID)
+			if id != "" {
+				gID = ptr.From(entities.GameID(id))
+			}
+		}
+		rewards[i] = entities.Reward{
+			PartyID:            s.PartyID,
+			AssetID:            s.AssetID,
+			MarketID:           s.MarketID,
+			EpochID:            s.EpochID,
+			Amount:             s.Amount,
+			QuantumAmount:      s.QuantumAmount,
+			PercentOfTotal:     s.PercentOfTotal,
+			RewardType:         s.RewardType,
+			Timestamp:          s.Timestamp,
+			TxHash:             s.TxHash,
+			VegaTime:           s.VegaTime,
+			SeqNum:             s.SeqNum,
+			LockedUntilEpochID: s.LockedUntilEpochID,
+			GameID:             gID,
+		}
+	}
+	return rewards
 }

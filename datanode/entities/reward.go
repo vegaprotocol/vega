@@ -43,7 +43,7 @@ type Reward struct {
 	VegaTime           time.Time
 	SeqNum             uint64
 	LockedUntilEpochID int64
-	GameID             GameID
+	GameID             *GameID
 }
 
 type RewardTotals struct {
@@ -63,7 +63,7 @@ func (r Reward) String() string {
 
 func (r Reward) ToProto() *vega.Reward {
 	var gameID *string
-	if r.GameID != "" {
+	if r.GameID != nil && *r.GameID != "" {
 		gameID = ptr.From(r.GameID.String())
 	}
 
@@ -133,9 +133,9 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		}
 	}
 
-	var gameID GameID
+	var gameID *GameID
 	if pr.GameId != nil {
-		gameID = GameID(*pr.GameId)
+		gameID = ptr.From(GameID(*pr.GameId))
 	}
 
 	reward := Reward{

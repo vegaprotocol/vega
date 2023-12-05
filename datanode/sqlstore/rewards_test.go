@@ -49,7 +49,7 @@ func addTestReward(t *testing.T,
 	seqNum uint64,
 	amount num.Decimal,
 	txHash entities.TxHash,
-	gameID entities.GameID,
+	gameID *entities.GameID,
 ) entities.Reward {
 	t.Helper()
 	r := entities.Reward{
@@ -112,11 +112,11 @@ func TestRewards(t *testing.T) {
 
 	now := time.Now()
 	amount := num.DecimalFromInt64(100)
-	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash(), "")
-	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash(), "")
-	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash(), "")
-	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash(), "")
-	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash(), "")
+	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash(), nil)
+	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash(), nil)
+	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash(), nil)
+	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash(), nil)
+	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash(), nil)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
@@ -164,56 +164,56 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	now := time.Now()
 	// rewards for epoch1
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash(), nil)
 
 	// rewards for epoch2
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash(), "")
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash(), "")
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash(), nil)
 
 	first := int32(1000)
 	pagination, _ := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -997,7 +997,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts,
 			SeqNum:             1,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef01",
+			GameID:             ptr.From(entities.GameID("deadbeef01")),
 		},
 		{
 			PartyID:            "cafedaad02",
@@ -1013,7 +1013,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts,
 			SeqNum:             2,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef02",
+			GameID:             ptr.From(entities.GameID("deadbeef02")),
 		},
 		{
 			PartyID:            "cafedaad03",
@@ -1029,7 +1029,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts,
 			SeqNum:             3,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef03",
+			GameID:             ptr.From(entities.GameID("deadbeef03")),
 		},
 		{
 			PartyID:            "cafedaad01",
@@ -1045,7 +1045,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts2,
 			SeqNum:             1,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef01",
+			GameID:             ptr.From(entities.GameID("deadbeef01")),
 		},
 		{
 			PartyID:            "cafedaad02",
@@ -1061,7 +1061,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts2,
 			SeqNum:             2,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef02",
+			GameID:             ptr.From(entities.GameID("deadbeef02")),
 		},
 		{
 			PartyID:            "cafedaad03",
@@ -1077,7 +1077,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			VegaTime:           ts2,
 			SeqNum:             3,
 			LockedUntilEpochID: 30,
-			GameID:             "deadbeef03",
+			GameID:             ptr.From(entities.GameID("deadbeef03")),
 		},
 	}
 
