@@ -408,7 +408,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					memberEntities := make([]*entities.IndividualGameEntity, 0)
 					for _, member := range members {
 						amount := num.DecimalFromInt64(r.Int63n(1000))
-						reward := addTestReward(t, ctx, stores.rewards, member, *asset, market, epoch, "", block.VegaTime, block, seqNum, amount, generateTxHash(), gID)
+						reward := addTestReward(t, ctx, stores.rewards, member, *asset, market, epoch, "", block.VegaTime, block, seqNum, amount, generateTxHash(), &gID)
 						rewards[gk] = append(rewards[gk], reward)
 						rewardEarned, _ := num.UintFromDecimal(amount)
 						individualEntity := entities.IndividualGameEntity{
@@ -501,7 +501,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 				}
 				for i, individual := range individuals {
 					amount := num.DecimalFromInt64(r.Int63n(1000))
-					reward := addTestReward(t, ctx, stores.rewards, individual, *asset, market, epoch, "", block.VegaTime, block, seqNum, amount, generateTxHash(), gID)
+					reward := addTestReward(t, ctx, stores.rewards, individual, *asset, market, epoch, "", block.VegaTime, block, seqNum, amount, generateTxHash(), &gID)
 					rewards[gk] = append(rewards[gk], reward)
 					rewardEarned, _ := num.UintFromDecimal(amount)
 					individualEntity := entities.IndividualGameEntity{

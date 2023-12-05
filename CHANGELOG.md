@@ -62,6 +62,7 @@
 - [9840](https://github.com/vegaprotocol/vega/issues/9840) - Team API inconsistency in joined at timestamps.
 - [10205](https://github.com/vegaprotocol/vega/issues/10205) - Fix for transfer discount fees.
 - [10211](https://github.com/vegaprotocol/vega/issues/10211) - Ensure infra fees don't get counted for vesting.
+- [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
 
 ## 0.73.0
 
