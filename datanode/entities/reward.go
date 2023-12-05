@@ -44,6 +44,7 @@ type Reward struct {
 	SeqNum             uint64
 	LockedUntilEpochID int64
 	GameID             *GameID
+	TeamID             *TeamID
 }
 
 type RewardTotals struct {
@@ -62,9 +63,13 @@ func (r Reward) String() string {
 }
 
 func (r Reward) ToProto() *vega.Reward {
-	var gameID *string
+	var gameID, teamID *string
 	if r.GameID != nil && *r.GameID != "" {
 		gameID = ptr.From(r.GameID.String())
+	}
+
+	if r.TeamID != nil && *r.TeamID != "" {
+		teamID = ptr.From(r.TeamID.String())
 	}
 
 	protoReward := vega.Reward{
@@ -79,6 +84,7 @@ func (r Reward) ToProto() *vega.Reward {
 		RewardType:        r.RewardType,
 		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
 		GameId:            gameID,
+		TeamId:            teamID,
 	}
 	return &protoReward
 }
@@ -153,6 +159,8 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		SeqNum:             seqNum,
 		LockedUntilEpochID: lockedUntilEpochID,
 		GameID:             gameID,
+		// We are not expecting TeamID to be set in the proto from core, but the API will populate it
+		// if the reward is for a team game.
 	}
 
 	return reward, nil

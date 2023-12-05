@@ -2695,6 +2695,10 @@ type Party {
     fromEpoch: Int
     "Optionally only return rewards <= this epoch"
     toEpoch: Int
+    "Optionally filter rewards earned by the party for team participation."
+    teamId: ID
+    "Optionally filter rewards earned for the given game ID"
+    gameId: ID
   ): RewardsConnection
 
   "Return net reward information"
@@ -5235,6 +5239,8 @@ type Reward {
   lockedUntilEpoch: Epoch!
   "Optional game ID for rewards that are paid for participation in a game"
   gameId: ID
+  "Optional team ID for rewards that are paid for participation in a game, and the party is a member of a team."
+  teamId: ID
 }
 
 type RewardSummary {
