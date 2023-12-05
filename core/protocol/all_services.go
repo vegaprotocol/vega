@@ -330,6 +330,7 @@ func newServices(
 	)
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.

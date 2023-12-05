@@ -4,6 +4,12 @@
 
 ### 🐛 Fixes
 
+- [10211](https://github.com/vegaprotocol/vega/issues/10211) - Ensure infra fees don't get counted for vesting.
+
+## 0.73.7
+
+### 🐛 Fixes
+
 - [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
 - [10177](https://github.com/vegaprotocol/vega/issues/10177) - Add validation that order sizes are not strangely large.
 

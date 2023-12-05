@@ -447,9 +447,12 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		return
 	}
 
-	for _, party := range partyIDs {
-		amt := po.partyToAmount[party]
-		e.vesting.AddReward(party, po.asset, amt, po.lockedForEpochs)
+	// if the reward type is not infra fee, report it to the vesting engine
+	if po.rewardType != types.AccountTypeFeesInfrastructure {
+		for _, party := range partyIDs {
+			amt := po.partyToAmount[party]
+			e.vesting.AddReward(party, po.asset, amt, po.lockedForEpochs)
+		}
 	}
 	e.broker.Send(events.NewLedgerMovements(ctx, responses))
 }
