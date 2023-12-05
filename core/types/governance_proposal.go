@@ -437,7 +437,7 @@ func (p *Proposal) IsSuccessorMarket() bool {
 	if p.Terms == nil {
 		return false
 	}
-	return p.IsSuccessorMarket()
+	return p.Terms.IsSuccessorMarket()
 }
 
 func (p *Proposal) WaitForNodeVote() {

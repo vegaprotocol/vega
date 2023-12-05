@@ -128,15 +128,13 @@ func (p Proposal) ToProto() *vega.Proposal {
 	}
 
 	pp := vega.Proposal{
-		Id:        p.ID.String(),
-		Reference: p.Reference,
-		PartyId:   p.PartyID.String(),
-		State:     vega.Proposal_State(p.State),
-		Rationale: p.Rationale.ProposalRationale,
-		Timestamp: p.ProposalTime.UnixNano(),
-		TermsOneOf: &vega.Proposal_Terms{
-			Terms: p.Terms.ProposalTerms,
-		},
+		Id:                                     p.ID.String(),
+		Reference:                              p.Reference,
+		PartyId:                                p.PartyID.String(),
+		State:                                  vega.Proposal_State(p.State),
+		Rationale:                              p.Rationale.ProposalRationale,
+		Timestamp:                              p.ProposalTime.UnixNano(),
+		Terms:                                  p.Terms.ProposalTerms,
 		Reason:                                 reason,
 		ErrorDetails:                           errDetails,
 		RequiredMajority:                       p.RequiredMajority.String(),
