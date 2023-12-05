@@ -4389,3 +4389,16 @@ func (e *Engine) TransferSpot(ctx context.Context, partyID, toPartyID, asset str
 	}
 	return res, nil
 }
+
+func (e *Engine) GetVestingAccounts() []*types.Account {
+	accs := []*types.Account{}
+	for _, a := range e.accs {
+		if a.Type == types.AccountTypeVestingRewards {
+			accs = append(accs, a.Clone())
+		}
+	}
+	sort.Slice(accs, func(i, j int) bool {
+		return accs[i].ID < accs[j].ID
+	})
+	return accs
+}
