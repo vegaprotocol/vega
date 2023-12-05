@@ -326,6 +326,9 @@ var (
 	ErrListPaidLiquidityFees = errors.New("failed to list paid liquidity fees")
 	// List Games.
 	ErrListGames = errors.New("failed to list games")
+
+	// Transfer fee estimates.
+	ErrInvalidTransferAmount = newInvalidArgumentError("invalid transfer amount")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
