@@ -19,6 +19,7 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -61,12 +62,15 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 			},
 		}
 		perp := &protoTypes.Perpetual{
-			SettlementAsset:     row.Asset(),
-			QuoteName:           row.QuoteName(),
-			MarginFundingFactor: row.MarginFundingFactor().String(),
-			InterestRate:        row.InterestRate().String(),
-			ClampLowerBound:     row.LowerClamp().String(),
-			ClampUpperBound:     row.UpperClamp().String(),
+			SettlementAsset:          row.Asset(),
+			QuoteName:                row.QuoteName(),
+			MarginFundingFactor:      row.MarginFundingFactor().String(),
+			InterestRate:             row.InterestRate().String(),
+			ClampLowerBound:          row.LowerClamp().String(),
+			ClampUpperBound:          row.UpperClamp().String(),
+			FundingRateScalingFactor: row.FundingRateScalingFactor(),
+			FundingRateLowerBound:    row.FundingRateLowerBound(),
+			FundingRateUpperBound:    row.FundingRateUpperBound(),
 			DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
 				Id: vgrand.RandomStr(10),
 				Data: protoTypes.NewDataSourceDefinition(
@@ -117,6 +121,9 @@ func parseOraclePerpsTable(table *godog.Table) []RowWrapper {
 		"clamp lower bound",
 		"clamp upper bound",
 		"quote name",
+		"funding rate scaling factor",
+		"funding rate lower bound",
+		"funding rate upper bound",
 	})
 }
 
@@ -153,6 +160,27 @@ func (p perpOracleRow) QuoteName() string {
 		return ""
 	}
 	return p.row.MustStr("quote name")
+}
+
+func (p perpOracleRow) FundingRateScalingFactor() *string {
+	if !p.row.HasColumn("funding rate scaling factor") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate scaling factor").String())
+}
+
+func (p perpOracleRow) FundingRateUpperBound() *string {
+	if !p.row.HasColumn("funding rate upper bound") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate upper bound").String())
+}
+
+func (p perpOracleRow) FundingRateLowerBound() *string {
+	if !p.row.HasColumn("funding rate lower bound") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate lower bound").String())
 }
 
 func (p perpOracleRow) MarginFundingFactor() num.Decimal {

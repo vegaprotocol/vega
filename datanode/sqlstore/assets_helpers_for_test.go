@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateAssert(t *testing.T, ctx context.Context, store *sqlstore.Assets, block entities.Block) *entities.Asset {
+func CreateAsset(t *testing.T, ctx context.Context, store *sqlstore.Assets, block entities.Block) *entities.Asset {
 	t.Helper()
 
 	asset := NewAsset(t, block)

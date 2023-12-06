@@ -39,6 +39,7 @@ var (
 	year = num.DecimalFromInt64((24 * 365 * time.Hour).Nanoseconds())
 
 	ErrDataPointAlreadyExistsAtTime = errors.New("data-point already exists at timestamp")
+	ErrDataPointIsTooOld            = errors.New("data-point is too old")
 	ErrInitialPeriodNotStarted      = errors.New("initial settlement period not started")
 )
 
@@ -286,28 +287,48 @@ func (c *cachedTWAP) insertPoint(point *dataPoint) (*num.Uint, error) {
 	return twap, nil
 }
 
+// prependPoint handles the case where the given point is either before the first point, or before the start of the period.
+func (c *cachedTWAP) prependPoint(point *dataPoint) (*num.Uint, error) {
+	first := c.points[0]
+
+	if point.t == first.t {
+		return nil, ErrDataPointAlreadyExistsAtTime
+	}
+
+	// our first point is on or before the start of the period, and the new point is before both, its too old
+	if first.t <= c.periodStart && point.t < first.t {
+		return nil, ErrDataPointIsTooOld
+	}
+
+	points := c.points[:]
+	if first.t < c.periodStart && first.t < point.t {
+		// this is the case where we have first-point < new-point < period start and we only want to keep
+		// one data point that is before the start of the period, so we throw away first-point
+		points = c.points[1:]
+	}
+
+	c.points = []*dataPoint{point}
+	c.sumProduct = num.UintZero()
+	c.setPeriod(point.t, point.t)
+	for _, p := range points {
+		c.calculate(p.t)
+		c.points = append(c.points, p)
+	}
+	return point.price.Clone(), nil
+}
+
 // addPoint takes the given point and works out where it fits against what we already have, updates the
 // running sum-product and returns the TWAP at point.t.
 func (c *cachedTWAP) addPoint(point *dataPoint) (*num.Uint, error) {
-	if len(c.points) == 0 || point.t < c.start {
-		// first point, or new point is before the start of the funding period
+	if len(c.points) == 0 {
 		c.points = []*dataPoint{point}
 		c.setPeriod(point.t, point.t)
 		c.sumProduct = num.UintZero()
 		return point.price.Clone(), nil
 	}
 
-	// point to add is before the very first point we added, a little weird but ok
-	if point.t <= c.points[0].t {
-		points := c.points[:]
-		c.points = []*dataPoint{point}
-		c.setPeriod(point.t, point.t)
-		c.sumProduct = num.UintZero()
-		for _, p := range points {
-			c.calculate(p.t)
-			c.points = append(c.points, p)
-		}
-		return point.price.Clone(), nil
+	if point.t <= c.points[0].t || point.t <= c.periodStart {
+		return c.prependPoint(point)
 	}
 
 	// new point is after the last point, just calculate the TWAP at point.t and append
@@ -814,7 +835,7 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 	}
 
 	// the funding payment is the difference between the two, the sign representing the direction of cash flow
-	fundingPayment := num.IntFromUint(internalTWAP, true).Sub(num.IntFromUint(externalTWAP, true))
+	fundingPayment := num.DecimalFromUint(internalTWAP).Sub(num.DecimalFromUint(externalTWAP))
 
 	// apply interest-rates if necessary
 	if !p.p.InterestRate.IsZero() {
@@ -822,13 +843,30 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 		if p.log.GetLevel() == logging.DebugLevel {
 			p.log.Debug("applying interest-rate with clamping", logging.String("funding-payment", fundingPayment.String()), logging.Int64("delta", delta))
 		}
-		fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+		fundingPayment = fundingPayment.Add(p.calculateInterestTerm(externalTWAP, internalTWAP, delta))
+	}
+
+	// apply funding scaling factor
+	if p.p.FundingRateScalingFactor != nil {
+		fundingPayment = fundingPayment.Mul(*p.p.FundingRateScalingFactor)
 	}
 
 	fundingRate := num.DecimalZero()
 	if !externalTWAP.IsZero() {
-		fundingRate = num.DecimalFromInt(fundingPayment).Div(num.DecimalFromUint(externalTWAP))
+		fundingRate = fundingPayment.Div(num.DecimalFromUint(externalTWAP))
 	}
+
+	// apply upper/lower bound capping
+	if p.p.FundingRateUpperBound != nil && p.p.FundingRateUpperBound.LessThan(fundingRate) {
+		fundingRate = p.p.FundingRateUpperBound.Copy()
+		fundingPayment = fundingRate.Mul(num.DecimalFromUint(externalTWAP))
+	}
+
+	if p.p.FundingRateLowerBound != nil && p.p.FundingRateLowerBound.GreaterThan(fundingRate) {
+		fundingRate = p.p.FundingRateLowerBound.Copy()
+		fundingPayment = fundingRate.Mul(num.DecimalFromUint(externalTWAP))
+	}
+
 	if p.log.GetLevel() == logging.DebugLevel {
 		p.log.Debug("funding payment calculated",
 			logging.MarketID(p.id),
@@ -836,15 +874,16 @@ func (p *Perpetual) calculateFundingPayment(t int64) *fundingData {
 			logging.String("funding-payment", fundingPayment.String()),
 			logging.String("funding-rate", fundingRate.String()))
 	}
+	fundingPaymentInt, _ := num.IntFromDecimal(fundingPayment)
 	return &fundingData{
-		fundingPayment: fundingPayment,
+		fundingPayment: fundingPaymentInt,
 		fundingRate:    fundingRate,
 		externalTWAP:   externalTWAP,
 		internalTWAP:   internalTWAP,
 	}
 }
 
-func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) *num.Int {
+func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, delta int64) num.Decimal {
 	// get delta in terms of years
 	td := num.DecimalFromInt64(delta).Div(year)
 
@@ -869,12 +908,7 @@ func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, 
 			logging.String("clamped-interest", clampedInterest.String()),
 		)
 	}
-
-	result, overflow := num.IntFromDecimal(clampedInterest)
-	if overflow {
-		p.log.Panic("overflow converting interest term to Int", logging.String("clampedInterest", clampedInterest.String()))
-	}
-	return result
+	return clampedInterest
 }
 
 // GetMarginIncrease returns the estimated extra margin required to account for the next funding payment

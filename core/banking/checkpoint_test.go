@@ -312,7 +312,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e2.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil).AnyTimes()
 
 	// load the checkpoint
-	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	require.NoError(t, e2.Load(ctx, checkp))
 
 	chp2, err := e2.Checkpoint()

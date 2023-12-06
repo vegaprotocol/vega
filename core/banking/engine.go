@@ -164,7 +164,10 @@ type Engine struct {
 
 	feeDiscountDecayFraction        num.Decimal
 	feeDiscountMinimumTrackedAmount num.Decimal
-	feeDiscountPerPartyAndAsset     map[partyAssetKey]*num.Uint
+
+	// assetID -> partyID -> fee discount
+	pendingPerAssetAndPartyFeeDiscountUpdates map[string]map[string]*num.Uint
+	feeDiscountPerPartyAndAsset               map[partyAssetKey]*num.Uint
 
 	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
 	recurringGovernanceTransfers    []*types.GovernanceTransfer
@@ -241,8 +244,9 @@ func New(
 		bridgeState: &bridgeState{
 			active: true,
 		},
-		feeDiscountPerPartyAndAsset: map[partyAssetKey]*num.Uint{},
-		bridgeView:                  bridgeView,
+		feeDiscountPerPartyAndAsset:               map[partyAssetKey]*num.Uint{},
+		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
+		bridgeView: bridgeView,
 	}
 }
 
@@ -283,6 +287,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	case proto.EpochAction_EPOCH_ACTION_END:
 		e.distributeRecurringTransfers(ctx, e.currentEpoch)
 		e.distributeRecurringGovernanceTransfers(ctx)
+		e.applyPendingFeeDiscountsUpdates(ctx)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}

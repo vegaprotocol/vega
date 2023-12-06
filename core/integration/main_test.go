@@ -312,6 +312,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following transfer cancellations:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelTransfers(execsetup.banking, table)
 	})
+	s.Step(`^the parties have the following transfer fee discounts`, func(table *godog.Table) error {
+		return steps.PartiesAvailableFeeDiscounts(execsetup.banking, table)
+	})
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
 		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})

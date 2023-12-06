@@ -31,10 +31,12 @@ func TestFeesStats(t *testing.T) {
 func testFeesStatsTotalTradingFeesPerParty(t *testing.T) {
 	stats := fee.NewFeesStats()
 
-	stats.RegisterTradingFees("maker-1", "taker-1", num.NewUint(10))
-	stats.RegisterTradingFees("maker-1", "taker-2", num.NewUint(20))
-	stats.RegisterTradingFees("taker-1", "maker-1", num.NewUint(5))
+	stats.RegisterTradingFees("party1", num.NewUint(10))
+	stats.RegisterTradingFees("party2", num.NewUint(20))
+	stats.RegisterTradingFees("party1", num.NewUint(5))
+	stats.RegisterTradingFees("party1", num.NewUint(20))
+	stats.RegisterTradingFees("party2", num.NewUint(20))
 
-	expected := map[string]*num.Uint{"maker-1": num.NewUint(35), "taker-1": num.NewUint(15), "taker-2": num.NewUint(20)}
+	expected := map[string]*num.Uint{"party1": num.NewUint(35), "party2": num.NewUint(40)}
 	assert.Equal(t, expected, stats.TotalTradingFeesPerParty())
 }

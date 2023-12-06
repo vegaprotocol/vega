@@ -174,6 +174,12 @@ func getFundingPayment(t *testing.T, perp *tstPerp, now int64) string {
 	return data.FundingPayment
 }
 
+func getFundingRate(t *testing.T, perp *tstPerp, now int64) string {
+	t.Helper()
+	data := perp.perpetual.GetData(now).Data.(*types.PerpetualData)
+	return data.FundingRate
+}
+
 func between(p, q int64) int64 {
 	return (p + q) / 2
 }

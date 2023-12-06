@@ -128,6 +128,7 @@ type TradingDataServiceV2 struct {
 	partyVestingBalances          *service.PartyVestingBalances
 	vestingStats                  *service.VestingStats
 	transactionResults            *service.TransactionResults
+	gamesService                  *service.Games
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -1626,7 +1627,7 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination)
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -4789,6 +4790,11 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 ) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateTransferFee")()
 
+	amount, overflow := num.UintFromString(req.Amount, 10)
+	if overflow || amount.IsNegative() {
+		return nil, formatE(ErrInvalidTransferAmount)
+	}
+
 	transferFeeMaxQuantumAmountParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeMaxQuantumAmount)
 	if err != nil {
 		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeMaxQuantumAmount))
@@ -4807,8 +4813,6 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
-
-	amount := num.MustUintFromString(req.Amount, 10)
 
 	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
 		ctx,
@@ -4855,5 +4859,30 @@ func (t *TradingDataServiceV2) GetTotalTransferFeeDiscount(ctx context.Context, 
 	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
 	return &v2.GetTotalTransferFeeDiscountResponse{
 		TotalDiscount: accumulatedDiscount.String(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesRequest) (*v2.ListGamesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGames")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, pagination)
+	if err != nil {
+		return nil, formatE(ErrListGames, err)
+	}
+
+	edges, err := makeEdges[*v2.GameEdge](games)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	return &v2.ListGamesResponse{
+		Games: &v2.GamesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }

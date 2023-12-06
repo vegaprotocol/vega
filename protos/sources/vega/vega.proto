@@ -122,12 +122,22 @@ enum Interval {
   INTERVAL_I5M = 300;
   // 15 minutes.
   INTERVAL_I15M = 900;
+  // 30 minutes.
+  INTERVAL_I30M = 1800;
   // 1 hour.
   INTERVAL_I1H = 3600;
+  // 4 hours.
+  INTERVAL_I4H = 14400;
   // 6 hours.
   INTERVAL_I6H = 21600;
+  // 8 hours.
+  INTERVAL_I8H = 28800;
+  // 12 hours.
+  INTERVAL_I12H = 43200;
   // 1 day.
   INTERVAL_I1D = 86400;
+  // 7 days.
+  INTERVAL_I7D = 604800;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
@@ -1633,6 +1643,12 @@ message Reward {
   uint64 locked_until_epoch = 9;
   // Amount paid as a reward, expressed in asset's quantum unit.
   string quantum_amount = 10;
+  // ID of the game the reward payment was made for if the payment was made for participation in a game.
+  optional string game_id = 11;
+  // ID of the team the party is a member of, if the party is a member of a participating team,
+  // and the reward payment was made for participation in a game.
+  // This field is currently only populated by the rewards API.
+  optional string team_id = 12;
 }
 
 // Details for rewards for a single asset

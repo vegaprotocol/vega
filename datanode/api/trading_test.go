@@ -120,7 +120,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlPositionService := service.NewPosition(sqlstore.NewPositions(sqlConn), logger)
 	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn))
 	sqlAccountService := service.NewAccount(sqlstore.NewAccounts(sqlConn), sqlstore.NewBalances(sqlConn), logger)
-	sqlRewardsService := service.NewReward(sqlstore.NewRewards(sqlConn), logger)
+	sqlRewardsService := service.NewReward(sqlstore.NewRewards(ctx, sqlConn), logger)
 	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn))
 	sqlDelegationService := service.NewDelegation(sqlstore.NewDelegations(sqlConn), logger)
 	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn))
@@ -162,6 +162,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	partyLockedBalances := service.NewPartyLockedBalances(sqlstore.NewPartyLockedBalances(sqlConn))
 	partyVestingBalances := service.NewPartyVestingBalances(sqlstore.NewPartyVestingBalances(sqlConn))
 	transactionResults := service.NewTransactionResults(sqlsubscribers.NewTransactionResults(logger))
+	gameService := service.NewGames(sqlstore.NewGames(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -219,6 +220,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		partyLockedBalances,
 		partyVestingBalances,
 		transactionResults,
+		gameService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

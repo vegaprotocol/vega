@@ -120,6 +120,7 @@ var (
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
 	ErrCouldNotGetChainIDFromNode                         = errors.New("could not get the chain ID from the node")
 	ErrCouldNotGetLastBlockInformation                    = errors.New("could not get information about the last block on the network")
+	ErrCouldNotGetSpamStatistics                          = errors.New("could not get latest spam statistics for the public key on the network")
 	ErrCouldNotListKeys                                   = errors.New("could not list the keys")
 	ErrCouldNotSendTransaction                            = errors.New("could not send transaction")
 	ErrCouldNotSignTransaction                            = errors.New("could not sign transaction")

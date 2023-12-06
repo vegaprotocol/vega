@@ -52,6 +52,7 @@ var (
 	engineTime                              *prometheus.CounterVec
 	orderCounter                            *prometheus.CounterVec
 	dataSourceEthVerifierOnGoingCallCounter *prometheus.CounterVec
+	ethereumRPCCallCounter                  *prometheus.CounterVec
 	ethCallCounter                          *prometheus.CounterVec
 	evtForwardCounter                       *prometheus.CounterVec
 	orderGauge                              *prometheus.GaugeVec
@@ -397,6 +398,22 @@ func setupMetrics() error {
 
 	h, err = addInstrument(
 		Counter,
+		"ethereum_rpc_calls_total",
+		Namespace("vega"),
+		Vectors("endpoint"),
+		Help("Number of calls made to the ethereum RPC"),
+	)
+	if err != nil {
+		return err
+	}
+	ethRPCC, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	ethereumRPCCallCounter = ethRPCC
+
+	h, err = addInstrument(
+		Counter,
 		"eth_calls_total",
 		Namespace("vega"),
 		Vectors("func", "asset", "respcode"),
@@ -589,6 +606,15 @@ func DataSourceEthVerifierCallCounterInc(labelValues ...string) {
 		return
 	}
 	dataSourceEthVerifierOnGoingCallCounter.WithLabelValues(labelValues...).Inc()
+}
+
+// EthereumRPCCallCounterInc increments the order counter.
+func EthereumRPCCallCounterInc(labelValues ...string) {
+	if ethereumRPCCallCounter == nil {
+		return
+	}
+	ethereumRPCCallCounter.WithLabelValues("all").Inc()
+	ethereumRPCCallCounter.WithLabelValues(labelValues...).Inc()
 }
 
 // EthCallInc increments the eth call counter.
