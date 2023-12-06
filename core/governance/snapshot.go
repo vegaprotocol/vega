@@ -25,9 +25,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -98,7 +98,6 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 
 // serialiseBatchActiveProposals returns the engine's batch active proposals as marshalled bytes.
 func (e *Engine) serialiseBatchActiveProposals() ([]byte, error) {
-
 	batchIDs := maps.Keys(e.activeBatchProposals)
 	sort.Strings(batchIDs)
 
@@ -305,7 +304,6 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.BatchProposals)))
 	for _, bpp := range active.BatchProposals {
-
 		bp := &batchProposal{
 			BatchProposal: types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals),
 			yes:           votesAsMapFromProto(bpp.BatchProposal.Yes),

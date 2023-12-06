@@ -72,10 +72,6 @@ func (a ProposalTermsNewMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatch
 	}
 }
 
-func (a ProposalTermsNewMarket) oneOfProto() interface{} {
-	return a.IntoProto()
-}
-
 func (a ProposalTermsNewMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewMarket
 }

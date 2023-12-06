@@ -25,6 +25,7 @@ import (
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -50,7 +51,7 @@ func (e *Engine) SubmitBatchProposal(
 		Proposals:        make([]*types.Proposal, 0, len(bpsub.Terms.Changes)),
 	}
 
-	var proposalsEvents []events.Event
+	var proposalsEvents []events.Event //nolint:prealloc
 	defer func() {
 		e.broker.Send(events.NewProposalEventFromProto(ctx, bp.ToProto()))
 
@@ -89,7 +90,7 @@ func (e *Engine) SubmitBatchProposal(
 		bp.Proposals = append(bp.Proposals, p)
 	}
 
-	var toSubmits []*ToSubmit
+	var toSubmits []*ToSubmit //nolint:prealloc
 	errs := vgerrors.NewCumulatedErrors()
 
 	for _, p := range bp.Proposals {
@@ -314,7 +315,7 @@ func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal,
 	validationErrs := vgerrors.NewCumulatedErrors()
 
 	for _, proposal := range batchProposal.Proposals {
-		if err := e.validateVote(cmd, proposal, batchProposal.ProposalParameters, party); err != nil {
+		if err := e.canVote(proposal, batchProposal.ProposalParameters, party); err != nil {
 			validationErrs.Add(fmt.Errorf("proposal term %q has failed with: %w", proposal.Terms.Change.GetTermType(), err))
 			continue
 		}

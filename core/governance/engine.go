@@ -857,7 +857,7 @@ func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, proposal
 		return err
 	}
 
-	if err := e.validateVote(cmd, proposal.Proposal, params, party); err != nil {
+	if err := e.canVote(proposal.Proposal, params, party); err != nil {
 		e.log.Debug("invalid vote submission",
 			logging.PartyID(party),
 			logging.String("vote", cmd.String()),
@@ -895,8 +895,7 @@ func (e *Engine) addVote(ctx context.Context, cmd types.VoteSubmission, proposal
 	return nil
 }
 
-func (e *Engine) validateVote(
-	vote types.VoteSubmission,
+func (e *Engine) canVote(
 	proposal *types.Proposal,
 	params *types.ProposalParameters,
 	party string,

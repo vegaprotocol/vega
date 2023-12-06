@@ -53,10 +53,6 @@ func (a ProposalTermsNewAsset) oneOfBatchProto() vegapb.ProposalOneOffTermBatchC
 	return nil
 }
 
-func (a ProposalTermsNewAsset) oneOfProto() interface{} {
-	return a.IntoProto()
-}
-
 func (a ProposalTermsNewAsset) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewAsset
 }
