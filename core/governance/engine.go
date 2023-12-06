@@ -343,13 +343,10 @@ func (e *Engine) evaluateBatchProposals(
 	sort.Strings(batchIDs)
 
 	for _, batchID := range batchIDs {
-		batchProposal, ok := e.activeBatchProposals[batchID]
-		if !ok {
-			continue
-		}
+		batchProposal := e.activeBatchProposals[batchID]
 
 		// list of failed, declined, rejected proposals
-		var rejectedProposal *proposal
+		var batchHasRejectedProposal bool
 		var batchHasDeclinedProposal bool
 		var closedProposals []*proposal
 		for _, propType := range batchProposal.Proposals {
@@ -365,7 +362,7 @@ func (e *Engine) evaluateBatchProposals(
 			if nm := proposal.Terms.GetNewMarket(); nm != nil && nm.Successor() != nil {
 				if _, err := e.markets.GetMarketState(proposal.ID); err != nil {
 					proposal.RejectWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketSucceededByCompeting)
-					rejectedProposal = proposal
+					batchHasRejectedProposal = true
 					break
 				}
 			}
@@ -376,7 +373,10 @@ func (e *Engine) evaluateBatchProposals(
 			if proposal.ShouldClose(now) {
 				proposal.Close(e.accs, e.markets)
 				if proposal.IsPassed() {
-					e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
+					e.log.Debug("Proposal passed",
+						logging.ProposalID(proposal.ID),
+						logging.ProposalBatchID(batchID),
+					)
 				} else if proposal.IsDeclined() {
 					e.log.Debug("Proposal declined",
 						logging.ProposalID(proposal.ID),
@@ -391,7 +391,7 @@ func (e *Engine) evaluateBatchProposals(
 			}
 		}
 
-		if rejectedProposal != nil {
+		if batchHasRejectedProposal {
 			batchProposal.State = types.ProposalStateRejected
 			batchProposal.Reason = types.ProposalErrorProposalInBatchRejected
 
