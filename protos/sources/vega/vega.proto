@@ -122,12 +122,22 @@ enum Interval {
   INTERVAL_I5M = 300;
   // 15 minutes.
   INTERVAL_I15M = 900;
+  // 30 minutes.
+  INTERVAL_I30M = 1800;
   // 1 hour.
   INTERVAL_I1H = 3600;
+  // 4 hours.
+  INTERVAL_I4H = 14400;
   // 6 hours.
   INTERVAL_I6H = 21600;
+  // 8 hours.
+  INTERVAL_I8H = 28800;
+  // 12 hours.
+  INTERVAL_I12H = 43200;
   // 1 day.
   INTERVAL_I1D = 86400;
+  // 7 days.
+  INTERVAL_I7D = 604800;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
