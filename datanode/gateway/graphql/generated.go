@@ -1624,7 +1624,7 @@ type ComplexityRoot struct {
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
-		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) int
+		RewardsConnection             func(childComplexity int, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int, teamID *string, gameID *string) int
 		StakingSummary                func(childComplexity int, pagination *v2.Pagination) int
 		TradesConnection              func(childComplexity int, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) int
 		TransfersConnection           func(childComplexity int, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *v1.Transfer_Status, scope *v2.ListTransfersRequest_Scope) int
@@ -2112,6 +2112,7 @@ type ComplexityRoot struct {
 		QuantumAmount     func(childComplexity int) int
 		ReceivedAt        func(childComplexity int) int
 		RewardType        func(childComplexity int) int
+		TeamId            func(childComplexity int) int
 	}
 
 	RewardEdge struct {
@@ -3148,7 +3149,7 @@ type PartyResolver interface {
 	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, live *bool, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
-	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
+	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int, teamID *string, gameID *string) (*v2.RewardsConnection, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, assetID *string) ([]*vega.RewardSummary, error)
 	TransfersConnection(ctx context.Context, obj *vega.Party, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *v1.Transfer_Status, scope *v2.ListTransfersRequest_Scope) (*v2.TransferConnection, error)
 	ActivityStreak(ctx context.Context, obj *vega.Party, epoch *int) (*v1.PartyActivityStreak, error)
@@ -9751,7 +9752,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination), args["fromEpoch"].(*int), args["toEpoch"].(*int)), true
+		return e.complexity.Party.RewardsConnection(childComplexity, args["assetId"].(*string), args["pagination"].(*v2.Pagination), args["fromEpoch"].(*int), args["toEpoch"].(*int), args["teamId"].(*string), args["gameId"].(*string)), true
 
 	case "Party.stakingSummary":
 		if e.complexity.Party.StakingSummary == nil {
@@ -12287,6 +12288,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Reward.RewardType(childComplexity), true
+
+	case "Reward.teamId":
+		if e.complexity.Reward.TeamId == nil {
+			break
+		}
+
+		return e.complexity.Reward.TeamId(childComplexity), true
 
 	case "RewardEdge.cursor":
 		if e.complexity.RewardEdge.Cursor == nil {
@@ -15519,6 +15527,24 @@ func (ec *executionContext) field_Party_rewardsConnection_args(ctx context.Conte
 		}
 	}
 	args["toEpoch"] = arg3
+	var arg4 *string
+	if tmp, ok := rawArgs["teamId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("teamId"))
+		arg4, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["teamId"] = arg4
+	var arg5 *string
+	if tmp, ok := rawArgs["gameId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gameId"))
+		arg5, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gameId"] = arg5
 	return args, nil
 }
 
@@ -28729,6 +28755,8 @@ func (ec *executionContext) fieldContext_Entities_rewards(ctx context.Context, f
 				return ec.fieldContext_Reward_lockedUntilEpoch(ctx, field)
 			case "gameId":
 				return ec.fieldContext_Reward_gameId(ctx, field)
+			case "teamId":
+				return ec.fieldContext_Reward_teamId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
 		},
@@ -59792,7 +59820,7 @@ func (ec *executionContext) _Party_rewardsConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int))
+		return ec.resolvers.Party().RewardsConnection(rctx, obj, fc.Args["assetId"].(*string), fc.Args["pagination"].(*v2.Pagination), fc.Args["fromEpoch"].(*int), fc.Args["toEpoch"].(*int), fc.Args["teamId"].(*string), fc.Args["gameId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -75980,6 +76008,47 @@ func (ec *executionContext) fieldContext_Reward_gameId(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Reward_teamId(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Reward_teamId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TeamId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Reward_teamId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RewardEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.RewardEdge) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RewardEdge_node(ctx, field)
 	if err != nil {
@@ -76041,6 +76110,8 @@ func (ec *executionContext) fieldContext_RewardEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Reward_lockedUntilEpoch(ctx, field)
 			case "gameId":
 				return ec.fieldContext_Reward_gameId(ctx, field)
+			case "teamId":
+				return ec.fieldContext_Reward_teamId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
 		},
@@ -113892,6 +113963,10 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 		case "gameId":
 
 			out.Values[i] = ec._Reward_gameId(ctx, field, obj)
+
+		case "teamId":
+
+			out.Values[i] = ec._Reward_teamId(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

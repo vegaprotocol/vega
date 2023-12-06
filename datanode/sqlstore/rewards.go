@@ -118,6 +118,9 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 	return err
 }
 
+// scany does not like deserializing byte arrays to strings so if an ID
+// needs to be nillable, we need to scan it into a temporary struct that will
+// define the ID field as a byte array and then parse the value accordingly.
 type scannedRewards struct {
 	PartyID            entities.PartyID
 	AssetID            entities.AssetID
@@ -133,6 +136,7 @@ type scannedRewards struct {
 	SeqNum             uint64
 	LockedUntilEpochID int64
 	GameID             []byte
+	TeamID             []byte
 }
 
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
@@ -164,11 +168,18 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	fromEpoch *uint64,
 	toEpoch *uint64,
 	pagination entities.CursorPagination,
+	teamIDHex, gameIDHex *string,
 ) ([]entities.Reward, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT * from rewards`
+	query := `
+	WITH cte_rewards AS (
+		SELECT r.*, grt.team_id
+		FROM rewards r
+		LEFT JOIN game_reward_totals grt ON r.game_id = grt.game_id AND r.party_id = grt.party_id and r.epoch_id = grt.epoch_id
+	)
+	SELECT * from cte_rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, fromEpoch, toEpoch)
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
@@ -190,7 +201,7 @@ func (rs *Rewards) GetSummaries(ctx context.Context,
 ) ([]entities.RewardSummary, error) {
 	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil)
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
@@ -234,7 +245,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
 	predicates := []string{}
 
 	if partyIDHex != nil && *partyIDHex != "" {
@@ -245,6 +256,16 @@ func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDH
 	if assetIDHex != nil && *assetIDHex != "" {
 		assetID := entities.AssetID(*assetIDHex)
 		predicates = append(predicates, fmt.Sprintf("asset_id = %s", nextBindVar(&args, assetID)))
+	}
+
+	if teamIDHex != nil && *teamIDHex != "" {
+		teamID := entities.TeamID(*teamIDHex)
+		predicates = append(predicates, fmt.Sprintf("team_id = %s", nextBindVar(&args, teamID)))
+	}
+
+	if gameIDHex != nil && *gameIDHex != "" {
+		gameID := entities.GameID(*gameIDHex)
+		predicates = append(predicates, fmt.Sprintf("game_id = %s", nextBindVar(&args, gameID)))
 	}
 
 	if fromEpoch != nil {
@@ -311,10 +332,17 @@ func parseScannedRewards(scanned []scannedRewards) []entities.Reward {
 	rewards := make([]entities.Reward, len(scanned))
 	for i, s := range scanned {
 		var gID *entities.GameID
+		var teamID *entities.TeamID
 		if s.GameID != nil {
 			id := hex.EncodeToString(s.GameID)
 			if id != "" {
 				gID = ptr.From(entities.GameID(id))
+			}
+		}
+		if s.TeamID != nil {
+			id := hex.EncodeToString(s.TeamID)
+			if id != "" {
+				teamID = ptr.From(entities.TeamID(id))
 			}
 		}
 		rewards[i] = entities.Reward{
@@ -332,6 +360,7 @@ func parseScannedRewards(scanned []scannedRewards) []entities.Reward {
 			SeqNum:             s.SeqNum,
 			LockedUntilEpochID: s.LockedUntilEpochID,
 			GameID:             gID,
+			TeamID:             teamID,
 		}
 	}
 	return rewards

@@ -2499,6 +2499,10 @@ message ListRewardsRequest {
   optional uint64 from_epoch = 4;
   // Restrict rewards data to those that were paid up to and including the given epoch ID.
   optional uint64 to_epoch = 5;
+  // Filter for rewards paid if the party is a member of the given team
+  optional string team_id = 6;
+  // Filter for rewards paid if the party participated in the given game
+  optional string game_id = 7;
 }
 
 // Response for listing reward details for a single party

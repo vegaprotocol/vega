@@ -1990,7 +1990,9 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
 	if fromEpoch != nil {
@@ -2014,6 +2016,8 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 		Pagination: pagination,
 		FromEpoch:  from,
 		ToEpoch:    to,
+		TeamId:     teamID,
+		GameId:     gameID,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

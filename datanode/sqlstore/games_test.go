@@ -49,7 +49,7 @@ func TestListGames(t *testing.T) {
 	ctx := tempTransaction(t)
 	stores := setupGamesTest(t, ctx)
 	startingBlock := addTestBlockForTime(t, ctx, stores.blocks, time.Now())
-	gamesData, gameIDs := setupGamesData(ctx, t, stores, startingBlock, 50)
+	gamesData, gameIDs, _, _ := setupGamesData(ctx, t, stores, startingBlock, 50)
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)
 	t.Run("Should list all games data if no filter is given", func(t *testing.T) {
@@ -297,7 +297,9 @@ func setupResultsStore(t *testing.T, gameIDs []string, epochCount int64) map[gam
 	return store
 }
 
-func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block entities.Block, epochCount int64) ([]entities.Game, []string) {
+func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block entities.Block, epochCount int64) (
+	[]entities.Game, []string, map[gameDataKey][]entities.Reward, map[string][]entities.Party,
+) {
 	t.Helper()
 
 	gameCount := 5
@@ -409,6 +411,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					for _, member := range members {
 						amount := num.DecimalFromInt64(r.Int63n(1000))
 						reward := addTestReward(t, ctx, stores.rewards, member, *asset, market, epoch, "", block.VegaTime, block, seqNum, amount, generateTxHash(), &gID)
+						reward.TeamID = ptr.From(entities.TeamID(team))
 						rewards[gk] = append(rewards[gk], reward)
 						rewardEarned, _ := num.UintFromDecimal(amount)
 						individualEntity := entities.IndividualGameEntity{
@@ -548,7 +551,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 		results = append(results, game)
 	}
 
-	return orderResults(results), gameIDs
+	return orderResults(results), gameIDs, rewards, teams
 }
 
 func orderResults(results []entities.Game) []entities.Game {
