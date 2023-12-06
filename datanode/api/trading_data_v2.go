@@ -4790,6 +4790,11 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 ) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateTransferFee")()
 
+	amount, overflow := num.UintFromString(req.Amount, 10)
+	if overflow || amount.IsNegative() {
+		return nil, formatE(ErrInvalidTransferAmount)
+	}
+
 	transferFeeMaxQuantumAmountParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeMaxQuantumAmount)
 	if err != nil {
 		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeMaxQuantumAmount))
@@ -4808,8 +4813,6 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
-
-	amount := num.MustUintFromString(req.Amount, 10)
 
 	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
 		ctx,
