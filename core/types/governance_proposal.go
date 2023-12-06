@@ -236,12 +236,44 @@ type ProposalParameters struct {
 	MinEquityLikeShare      num.Decimal
 }
 
+func ProposalParametersFromProto(pp *vegapb.ProposalParameters) *ProposalParameters {
+	return &ProposalParameters{
+		MinClose:                time.Duration(pp.MinClose),
+		MaxClose:                time.Duration(pp.MaxClose),
+		MinEnact:                time.Duration(pp.MinEnact),
+		MaxEnact:                time.Duration(pp.MaxEnact),
+		RequiredParticipation:   num.MustDecimalFromString(pp.RequiredParticipation),
+		RequiredMajority:        num.MustDecimalFromString(pp.RequiredMajority),
+		MinProposerBalance:      num.MustUintFromString(pp.MinProposerBalance, 10),
+		MinVoterBalance:         num.MustUintFromString(pp.MinVoterBalance, 10),
+		RequiredParticipationLP: num.MustDecimalFromString(pp.RequiredParticipationLp),
+		RequiredMajorityLP:      num.MustDecimalFromString(pp.RequiredMajorityLp),
+		MinEquityLikeShare:      num.MustDecimalFromString(pp.MinEquityLikeShare),
+	}
+}
+
 func (pp *ProposalParameters) Clone() ProposalParameters {
 	copy := *pp
 
 	copy.MinProposerBalance = pp.MinProposerBalance.Clone()
 	copy.MinVoterBalance = pp.MinVoterBalance.Clone()
 	return copy
+}
+
+func (pp *ProposalParameters) ToProto() *vegapb.ProposalParameters {
+	return &vegapb.ProposalParameters{
+		MinClose:                int64(pp.MinClose),
+		MaxClose:                int64(pp.MaxClose),
+		MinEnact:                int64(pp.MinEnact),
+		MaxEnact:                int64(pp.MaxEnact),
+		RequiredParticipation:   pp.RequiredParticipation.String(),
+		RequiredMajority:        pp.RequiredMajority.String(),
+		MinProposerBalance:      pp.MinProposerBalance.String(),
+		MinVoterBalance:         pp.MinVoterBalance.String(),
+		RequiredParticipationLp: pp.RequiredParticipationLP.String(),
+		RequiredMajorityLp:      pp.RequiredMajorityLP.String(),
+		MinEquityLikeShare:      pp.MinEquityLikeShare.String(),
+	}
 }
 
 type BatchProposal struct {
@@ -258,9 +290,32 @@ type BatchProposal struct {
 	ProposalParameters *ProposalParameters
 }
 
+func BatchProposalFromSnapshotProto(bp *vegapb.Proposal, pps []*vegapb.Proposal) *BatchProposal {
+	proposals := make([]*Proposal, 0, len(pps))
+
+	for _, pp := range pps {
+		proposal, _ := ProposalFromProto(pp)
+		proposals = append(proposals, proposal)
+	}
+
+	return &BatchProposal{
+		ID:                 bp.Id,
+		Reference:          bp.Reference,
+		Party:              bp.PartyId,
+		State:              bp.State,
+		Timestamp:          bp.Timestamp,
+		ClosingTimestamp:   bp.BatchTerms.ClosingTimestamp,
+		Rationale:          ProposalRationaleFromProto(bp.Rationale),
+		Reason:             *bp.Reason,
+		ProposalParameters: ProposalParametersFromProto(bp.BatchTerms.ProposalParams),
+		Proposals:          proposals,
+	}
+}
+
 func (bp BatchProposal) ToProto() *vegapb.Proposal {
 	batchTerms := &vegapb.BatchProposalTerms{
 		ClosingTimestamp: bp.ClosingTimestamp,
+		ProposalParams:   bp.ProposalParameters.ToProto(),
 	}
 
 	for _, proposal := range bp.Proposals {
@@ -270,23 +325,16 @@ func (bp BatchProposal) ToProto() *vegapb.Proposal {
 		})
 	}
 
-	requiredParticipationLP := bp.ProposalParameters.RequiredParticipationLP.String()
-	requiredMajorityLP := bp.ProposalParameters.RequiredMajorityLP.String()
-
 	return &vegapb.Proposal{
-		Id:                                     bp.ID,
-		Reference:                              bp.Reference,
-		PartyId:                                bp.Party,
-		State:                                  bp.State,
-		Timestamp:                              bp.Timestamp,
-		Reason:                                 &bp.Reason,
-		ErrorDetails:                           &bp.ErrorDetails,
-		Rationale:                              bp.Rationale.ToProto(),
-		RequiredParticipation:                  bp.ProposalParameters.RequiredParticipation.String(),
-		RequiredMajority:                       bp.ProposalParameters.RequiredMajority.String(),
-		RequiredLiquidityProviderParticipation: &requiredParticipationLP,
-		RequiredLiquidityProviderMajority:      &requiredMajorityLP,
-		BatchTerms:                             batchTerms,
+		Id:           bp.ID,
+		Reference:    bp.Reference,
+		PartyId:      bp.Party,
+		State:        bp.State,
+		Timestamp:    bp.Timestamp,
+		Reason:       &bp.Reason,
+		ErrorDetails: &bp.ErrorDetails,
+		Rationale:    bp.Rationale.ToProto(),
+		BatchTerms:   batchTerms,
 	}
 }
 

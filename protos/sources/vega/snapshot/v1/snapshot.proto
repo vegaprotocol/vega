@@ -142,6 +142,7 @@ message Payload {
     LiquidityV2PaidFeesStats liquidity_v2_paid_fees_stats = 79;
     Liquidation liquidation = 80;
     BankingTransferFeeDiscounts banking_transfer_fee_discounts = 81;
+    GovernanceBatchActive governance_batch_active = 82;
   }
 }
 
@@ -335,6 +336,15 @@ message GovernanceEnacted {
 
 message GovernanceActive {
   repeated ProposalData proposals = 1;
+}
+
+message BatchProposalData {
+  ProposalData batch_proposal = 1;
+  repeated vega.Proposal proposals = 2;
+}
+
+message GovernanceBatchActive {
+  repeated BatchProposalData batch_proposals = 1;
 }
 
 message GovernanceNode {

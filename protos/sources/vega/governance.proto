@@ -387,11 +387,29 @@ message BatchProposalTermsChange {
   }
 }
 
+message ProposalParameters {
+  // Duration of min close time
+	int64 min_close = 1;
+	int64 max_close = 2;
+	int64 min_enact = 3;
+	int64 max_enact = 4;
+	string required_participation = 5;
+	string required_majority = 6;
+	string min_proposer_balance = 7;
+	string min_voter_balance = 8;
+	string required_participation_lp = 9;
+	string required_majority_lp = 10;
+	string min_equity_like_share = 11;
+}
+
 // Terms for a batch governance proposal on Vega
 message BatchProposalTerms {
   // Timestamp as Unix time in seconds when voting closes for this proposal,
   // constrained by `minClose` and `maxClose` network parameters.
   int64 closing_timestamp = 1;
+
+  ProposalParameters proposal_params = 2;
+  
   // Changes being proposed.
   repeated BatchProposalTermsChange changes = 3;
 }
