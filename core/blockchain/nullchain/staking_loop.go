@@ -16,6 +16,7 @@
 package nullchain
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -44,10 +45,14 @@ type StakingLoop struct {
 // from the collateral engine. Used by the null-blockchain to remove the need for an Ethereum connection.
 func NewStakingLoop(col Collateral, assets Assets) *StakingLoop {
 	return &StakingLoop{
-		col:          col,
-		assets:       assets,
-		stakingAsset: "VOTE",
+		col:    col,
+		assets: assets,
 	}
+}
+
+func (s *StakingLoop) OnStakingAsstUpdate(_ context.Context, value string) error {
+	s.stakingAsset = value
+	return nil
 }
 
 func (s *StakingLoop) GetAvailableBalance(party string) (*num.Uint, error) {
