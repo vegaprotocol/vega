@@ -65,6 +65,7 @@
 - [10205](https://github.com/vegaprotocol/vega/issues/10205) - Fix for transfer discount fees.
 - [10211](https://github.com/vegaprotocol/vega/issues/10211) - Ensure infra fees don't get counted for vesting.
 - [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
+- [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
 
 ## 0.73.0
 

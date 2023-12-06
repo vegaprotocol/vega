@@ -18,6 +18,7 @@ package store_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -50,12 +51,12 @@ func TestMain(m *testing.M) {
 
 	tempDir, err := os.MkdirTemp("", "block_explorer")
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("could not create temporary root directory for block_explorer tests: %w", err))
 	}
 	postgresRuntimePath = filepath.Join(tempDir, "sqlstore")
 	err = os.Mkdir(postgresRuntimePath, fs.ModePerm)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("could not create temporary directory for postgres runtime: %w", err))
 	}
 	defer os.RemoveAll(postgresRuntimePath)
 
@@ -117,39 +118,38 @@ type txResult struct {
 
 func addTestTxResults(ctx context.Context, t *testing.T, txResults ...txResult) []*pb.Transaction {
 	t.Helper()
+
 	conn := connectionSource.Connection
 	rows := make([]*pb.Transaction, 0, len(txResults))
 	blockIDs := make(map[int64]int64)
+
+	blockSQL := `INSERT INTO blocks (height, chain_id, created_at) VALUES ($1, $2, $3) ON CONFLICT (height, chain_id) DO UPDATE SET created_at = EXCLUDED.created_at RETURNING rowid`
+	resultSQL := `INSERT INTO tx_results (block_id, index, created_at, tx_hash, tx_result, submitter, cmd_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING rowid`
 
 	for _, txr := range txResults {
 		var blockID int64
 		var ok bool
 
-		blockSQL := `INSERT INTO blocks (height, chain_id, created_at) VALUES ($1, $2, $3) ON CONFLICT (height, chain_id) DO UPDATE SET created_at = EXCLUDED.created_at RETURNING rowid`
-		resultSQL := `INSERT INTO tx_results (block_id, index, created_at, tx_hash, tx_result, submitter, cmd_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING rowid`
-
 		if blockID, ok = blockIDs[txr.height]; !ok {
-			err := conn.QueryRow(ctx, blockSQL, txr.height, "test-chain", txr.createdAt).Scan(&blockID)
-			require.NoError(t, err)
+			require.NoError(t, conn.QueryRow(ctx, blockSQL, txr.height, "test-chain", txr.createdAt).Scan(&blockID))
 			blockIDs[txr.height] = blockID
 		}
 
-		row := entities.TxResultRow{
-			BlockID:   blockID,
-			Index:     txr.index,
-			CreatedAt: txr.createdAt,
-			TxHash:    txr.txHash,
-			TxResult:  txr.txResult,
-			Submitter: txr.submitter,
-			CmdType:   txr.cmdType,
-		}
+		index := txr.index
 
 		var rowID int64
+		require.NoError(t, conn.QueryRow(ctx, resultSQL, blockID, index, txr.createdAt, txr.txHash, txr.txResult, txr.submitter, txr.cmdType).Scan(&rowID))
 
-		err := conn.QueryRow(ctx, resultSQL, blockID, txr.index, txr.createdAt, txr.txHash, txr.txResult, txr.submitter, txr.cmdType).Scan(&rowID)
-		require.NoError(t, err)
-		row.RowID = rowID
-		row.BlockID = txr.height
+		row := entities.TxResultRow{
+			RowID:       rowID,
+			BlockHeight: txr.height,
+			Index:       index,
+			CreatedAt:   txr.createdAt,
+			TxHash:      txr.txHash,
+			TxResult:    txr.txResult,
+			Submitter:   txr.submitter,
+			CmdType:     txr.cmdType,
+		}
 
 		proto, err := row.ToProto()
 		require.NoError(t, err)
@@ -190,7 +190,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    1,
 			index:     1,
 			createdAt: now.Add(1 * time.Second),
-			txHash:    "deadbeef03",
+			txHash:    "deadbeef11",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -199,7 +199,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    2,
 			index:     1,
 			createdAt: now.Add(2 * time.Second),
-			txHash:    "deadbeef04",
+			txHash:    "deadbeef21",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -208,7 +208,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    2,
 			index:     2,
 			createdAt: now.Add(2*time.Second + 50),
-			txHash:    "deadbeef05",
+			txHash:    "deadbeef22",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -217,7 +217,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    2,
 			index:     4,
 			createdAt: now.Add(2*time.Second + 700),
-			txHash:    "deadbeef06",
+			txHash:    "deadbeef24",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -226,7 +226,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    3,
 			index:     1,
 			createdAt: now.Add(3 * time.Second),
-			txHash:    "deadbeef07",
+			txHash:    "deadbeef31",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -235,7 +235,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    4,
 			index:     1,
 			createdAt: now.Add(4 * time.Second),
-			txHash:    "deadbeef08",
+			txHash:    "deadbeef41",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -244,7 +244,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    5,
 			index:     1,
 			createdAt: now.Add(5 * time.Second),
-			txHash:    "deadbeef09",
+			txHash:    "deadbeef51",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -253,7 +253,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 			height:    6,
 			index:     1,
 			createdAt: now.Add(6 * time.Second),
-			txHash:    "deadbeef10",
+			txHash:    "deadbeef61",
 			txResult:  txr,
 			submitter: "TEST",
 			cmdType:   "TEST",
@@ -265,7 +265,7 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 
 func TestStore_ListTransactions(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	inserted := setupTestTransactions(ctx, t)
 
