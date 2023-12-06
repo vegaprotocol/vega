@@ -133,14 +133,14 @@ func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.P
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	stats, err := currentNode.SpamStatistics(ctx, request.PubKey)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, fmt.Errorf("could not get the latest block information from the node: %w", err))
-		return nil, NodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, fmt.Errorf("could not get the latest spam statistics for the public key from the node: %w", err))
+		return nil, NodeCommunicationError(ErrCouldNotGetSpamStatistics)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if stats.LastBlockHeight == 0 {
-		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, ErrCouldNotGetLastBlockInformation)
-		return nil, NodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, ErrCouldNotGetSpamStatistics)
+		return nil, NodeCommunicationError(ErrCouldNotGetSpamStatistics)
 	}
 
 	if stats.ChainID == "" {
