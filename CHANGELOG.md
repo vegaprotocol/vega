@@ -31,6 +31,7 @@
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
+- [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
 
 ### 🐛 Fixes
 
