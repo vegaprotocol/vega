@@ -315,6 +315,12 @@ func newServices(
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 		} else {
 			stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
+			svcs.netParams.Watch([]netparams.WatchParam{
+				{
+					Param:   netparams.RewardAsset,
+					Watcher: stakingLoop.OnStakingAsstUpdate,
+				},
+			}...)
 			svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 		}

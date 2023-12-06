@@ -31,14 +31,14 @@ import (
 )
 
 type TxResultRow struct {
-	RowID     int64     `db:"rowid"`
-	BlockID   int64     `db:"block_id"`
-	Index     int64     `db:"index"`
-	CreatedAt time.Time `db:"created_at"`
-	TxHash    string    `db:"tx_hash"`
-	TxResult  []byte    `db:"tx_result"`
-	Submitter string    `db:"submitter"`
-	CmdType   string    `db:"cmd_type"`
+	RowID       int64     `db:"rowid"`
+	BlockHeight int64     `db:"block_height"`
+	Index       int64     `db:"index"`
+	CreatedAt   time.Time `db:"created_at"`
+	TxHash      string    `db:"tx_hash"`
+	TxResult    []byte    `db:"tx_result"`
+	Submitter   string    `db:"submitter"`
+	CmdType     string    `db:"cmd_type"`
 }
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
@@ -65,7 +65,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 	}
 
 	return &pb.Transaction{
-		Block:     uint64(t.BlockID),
+		Block:     uint64(t.BlockHeight),
 		Index:     uint32(t.Index),
 		Type:      extractAttribute(&txResult, "command", "type"),
 		Submitter: extractAttribute(&txResult, "tx", "submitter"),
@@ -83,7 +83,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 
 func (t *TxResultRow) Cursor() TxCursor {
 	return TxCursor{
-		BlockNumber: uint64(t.BlockID),
+		BlockNumber: uint64(t.BlockHeight),
 		TxIndex:     uint32(t.Index),
 	}
 }
@@ -123,7 +123,7 @@ func TxCursorFromString(s string) (TxCursor, error) {
 	}
 
 	return TxCursor{
-		BlockNumber: blockNumber, // increase by one again to make the behaviour consistent
+		BlockNumber: blockNumber,
 		TxIndex:     uint32(txIndex),
 	}, nil
 }
