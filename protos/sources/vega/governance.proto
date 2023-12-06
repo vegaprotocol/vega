@@ -388,18 +388,28 @@ message BatchProposalTermsChange {
 }
 
 message ProposalParameters {
-  // Duration of min close time
-	int64 min_close = 1;
-	int64 max_close = 2;
-	int64 min_enact = 3;
-	int64 max_enact = 4;
-	string required_participation = 5;
-	string required_majority = 6;
-	string min_proposer_balance = 7;
-	string min_voter_balance = 8;
-	string required_participation_lp = 9;
-	string required_majority_lp = 10;
-	string min_equity_like_share = 11;
+  // Represents the minimum time before a proposal can be closed.
+  int64 min_close = 1;
+  // Represents the maximum time before a proposal must be closed.
+  int64 max_close = 2;
+  // Represents the minimum time before an enacted proposal takes effect.
+  int64 min_enact = 3;
+  // Represents the maximum time before an enacted proposal must take effect.
+  int64 max_enact = 4;
+  // Specifies the required percentage of eligible participants that must partake in the proposal for it to be valid.
+  string required_participation = 5;
+  // Specifies the required percentage of votes a proposal needs to be approved.
+  string required_majority = 6;
+  // Specifies the minimum balance a proposer must hold to initiate a proposal.
+  string min_proposer_balance = 7;
+  // Specifies the minimum balance a voter must hold to participate in voting.
+  string min_voter_balance = 8;
+  // Specifies the required percentage of participation from liquidity providers for the proposal to be valid.
+  string required_participation_lp = 9;
+  // Specifies the required majority percentage from liquidity providers for a proposal to be approved.
+  string required_majority_lp = 10;
+  // Specifies the minimum share that is akin to equity, which a participant must hold for their vote to be eligible.
+  string min_equity_like_share = 11;
 }
 
 // Terms for a batch governance proposal on Vega
@@ -445,10 +455,6 @@ message GovernanceData {
   map<string, Vote> no_party = 5;
 }
 
-message BatchProposal {
-
-}
-
 // Governance proposal
 message Proposal {
   // Proposal state transition:
@@ -471,12 +477,10 @@ message Proposal {
     STATE_REJECTED = 4;
     // Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
     STATE_DECLINED = 5;
-    // Proposal enacted. In case of batch proposal all terms are enacted.
+    // Proposal enacted.
     STATE_ENACTED = 6;
     // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
-    // Proposal enacted. In case of batch proposal all terms are enacted.
-    STATE_PARTIALY_ENACTED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go

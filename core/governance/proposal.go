@@ -52,11 +52,6 @@ func (p *batchProposal) IsOpenForVotes() bool {
 	return p.State == types.ProposalStateOpen || p.State == types.ProposalStateWaitingForNodeVote
 }
 
-func (p *batchProposal) IsTimeToEnact(now int64) bool {
-	// return p.Terms.EnactmentTimestamp < now
-	return false
-}
-
 type proposal struct {
 	*types.Proposal
 	yes          map[string]*types.Vote
