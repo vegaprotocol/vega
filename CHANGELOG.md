@@ -32,6 +32,7 @@
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
+- [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 
 ### 🐛 Fixes
 
