@@ -177,7 +177,7 @@ func TestDiscountFactor(t *testing.T) {
 	}).Times(1)
 
 	// end the epoch to get the market activity recorded
-	expectStatsUpdated(t, broker)
+	expectStatsUpdatedWithUnqualifiedParties(t, broker)
 	currentTime = currentTime.Add(1 * time.Minute)
 	endEpoch(t, engine, currentEpoch, currentTime.Add(1*time.Minute))
 
@@ -279,7 +279,7 @@ func TestDiscountFactorWithWindow(t *testing.T) {
 		"p7": num.NewUint(5000),
 	}).Times(1)
 
-	expectStatsUpdated(t, broker)
+	expectStatsUpdatedWithUnqualifiedParties(t, broker)
 	currentTime = currentTime.Add(1 * time.Minute)
 	endEpoch(t, engine, currentEpoch, currentTime)
 	// start a new epoch for the discount factors to be in place
