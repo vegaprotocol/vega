@@ -117,7 +117,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(raw))
 	assert.NotEmpty(t, evts)
@@ -219,7 +219,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(raw))
 	assert.NotEmpty(t, evts)

@@ -22,6 +22,7 @@
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
+- [10095](https://github.com/vegaprotocol/vega/issues/10095) - Add isolated margin support.
 - [10222](https://github.com/vegaprotocol/vega/issues/10222) - Supply bootstrap peers after starting the `IPFS` node to increase reliability.
 - [10097](https://github.com/vegaprotocol/vega/issues/10097) - Add funding rate modifiers to perpetual product definition.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.

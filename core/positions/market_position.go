@@ -71,6 +71,22 @@ func (p *MarketPosition) Closed() bool {
 	return p.size == 0 && p.buy+p.sell == 0
 }
 
+func (p *MarketPosition) UpdateInPlaceOnTrades(log *logging.Logger, traderSide types.Side, trades []*types.Trade, order *types.Order) *MarketPosition {
+	pos := p.Clone()
+	for _, t := range trades {
+		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, int64(t.Size), t.Price)
+		if traderSide == types.SideBuy {
+			pos.size += int64(t.Size)
+		} else {
+			pos.size -= int64(t.Size)
+		}
+		// if we bought then we want to decrease the order size for this side so add=false
+		// and vice versa for sell
+		pos.UpdateOnOrderChange(log, traderSide, order.Price, t.Size, false)
+	}
+	return pos
+}
+
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(log *logging.Logger, order *types.Order) {

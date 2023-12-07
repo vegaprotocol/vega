@@ -32,6 +32,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBatchMarketInstructionsErrors(t *testing.T) {
@@ -226,6 +227,163 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	assert.EqualError(t, err, "1 (cannot cancel order), 4 (cannot amend order), 7 (cannot submit order)")
 
 	// ensure the errors is reported as partial
+	perr, ok := err.(abci.MaybePartialError)
+	assert.True(t, ok)
+	assert.True(t, perr.IsPartial())
+}
+
+func TestBatchMarketInstructionsContinueFailsAllOrdersForMarketOnSwitchFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	exec := mocks.NewMockExecutionEngine(ctrl)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
+
+	batch := commandspb.BatchMarketInstructions{
+		UpdateMarginMode: []*commandspb.UpdateMarginMode{
+			{
+				MarketId: "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				Mode:     commandspb.UpdateMarginMode_MODE_ISOLATED_MARGIN,
+			},
+		},
+		Cancellations: []*commandspb.OrderCancellation{
+			{
+				OrderId:  "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				MarketId: "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+			},
+			{
+				OrderId:  "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				MarketId: "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+			},
+		},
+		Amendments: []*commandspb.OrderAmendment{
+			{
+				MarketId:    "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				OrderId:     "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				TimeInForce: vega.Order_TIME_IN_FORCE_GTC,
+			},
+			{
+				MarketId:    "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				OrderId:     "f31f922db56ee0ffee7695e358c5f6c253857b8e0656ddead6dc40474502bc22",
+				TimeInForce: vega.Order_TIME_IN_FORCE_GTC,
+			},
+			{
+				MarketId:    "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				OrderId:     "87d4717b42796bda59870f53d6bcb1f57acd53e4236a941077aae8a860fd1bad",
+				TimeInForce: vega.Order_TIME_IN_FORCE_GTC,
+			},
+		},
+		Submissions: []*commandspb.OrderSubmission{
+			{
+				MarketId:    "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				Side:        vega.Side_SIDE_BUY,
+				Size:        10,
+				TimeInForce: vega.Order_TIME_IN_FORCE_FOK,
+				Type:        vega.Order_TYPE_MARKET,
+			},
+			{
+				MarketId:    "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				Side:        vega.Side_SIDE_BUY,
+				Size:        10,
+				TimeInForce: vega.Order_TIME_IN_FORCE_FOK,
+				Type:        vega.Order_TYPE_MARKET,
+			},
+			{
+				MarketId:    "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				Side:        vega.Side_SIDE_BUY,
+				Size:        10,
+				TimeInForce: vega.Order_TIME_IN_FORCE_FOK,
+				Type:        vega.Order_TYPE_MARKET,
+			},
+		},
+	}
+
+	cancelCnt := 0
+	exec.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
+			cancelCnt++
+
+			if order.OrderID == "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa" {
+				return nil, errors.New("cannot cancel order")
+			}
+			return nil, nil
+		},
+	)
+	amendCnt := 0
+	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(
+		func(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) ([]*types.OrderConfirmation, error) {
+			amendCnt++
+
+			// if the order is order 2 we return an error
+			if order.OrderID == "f31f922db56ee0ffee7695e358c5f6c253857b8e0656ddead6dc40474502bc22" {
+				return nil, errors.New("cannot amend order")
+			}
+			return nil, nil
+		},
+	)
+
+	orderCnt := 0
+	exec.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(
+		func(ctx context.Context, order *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error) {
+			orderCnt++
+
+			// if the order is order 2 we return an error
+			if orderCnt == 2 {
+				return nil, errors.New("cannot submit order")
+			}
+			return &types.OrderConfirmation{Order: nil, Trades: []*types.Trade{{ID: "1"}, {ID: "2"}}, PassiveOrdersAffected: []*types.Order{}}, nil
+		},
+	)
+
+	err := proc.ProcessBatch(
+		context.Background(),
+		&batch,
+		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
+		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
+	)
+	errors := err.(*processor.BMIError).Errors
+	require.Equal(t, 7, len(errors))
+	require.Equal(t, 1, len(errors["updateMarginMode"]))
+	require.Equal(t, "update_margin_mode.margin_factor (margin factor must be defined when margin mode is isolated margin)", errors["updateMarginMode"][0].Error())
+
+	require.Equal(t, 1, len(errors["0"])) // cancellation for market with failed update margin mode
+	require.Equal(t, "Update margin mode transaction failed for market 926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23. Ignoring all transactions for the market", errors["0"][0].Error())
+
+	require.Equal(t, 1, len(errors["1"])) // cancellation tx failed
+	require.Equal(t, "cannot cancel order", errors["1"][0].Error())
+
+	require.Equal(t, 1, len(errors["3"])) // amend tx failed
+	require.Equal(t, "cannot amend order", errors["3"][0].Error())
+
+	require.Equal(t, 1, len(errors["4"])) // amend for market with failed update margin mode
+	require.Equal(t, "Update margin mode transaction failed for market 926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23. Ignoring all transactions for the market", errors["4"][0].Error())
+
+	require.Equal(t, 1, len(errors["5"])) // submit for market with failed update margin mode
+	require.Equal(t, "Update margin mode transaction failed for market 926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23. Ignoring all transactions for the market", errors["5"][0].Error())
+
+	require.Equal(t, 1, len(errors["7"])) // submit tx failed
+	require.Equal(t, "cannot submit order", errors["7"][0].Error())
+
+	// one cancellation gets through, the other one is for 926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23
+	// which had a failure in updating margin mode
+	assert.Equal(t, uint64(1), stats.Blockchain.TotalCancelOrder())
+
+	// 3 amends:
+	// 1 is rejected for the market's switch margin mode failing
+	assert.Equal(t, uint64(2), stats.Blockchain.TotalAmendOrder())
+
+	// 3 submits:
+	// 1 is rejected for the market's switch margin mode failing
+	assert.Equal(t, uint64(2), stats.Blockchain.TotalCreateOrder())
+
+	stats.Blockchain.NewBatch()
+
+	assert.Equal(t, 2, amendCnt)
+	assert.Equal(t, 1, cancelCnt)
+	assert.Equal(t, 2, orderCnt)
+
+	// // ensure the errors is reported as partial
 	perr, ok := err.(abci.MaybePartialError)
 	assert.True(t, ok)
 	assert.True(t, perr.IsPartial())

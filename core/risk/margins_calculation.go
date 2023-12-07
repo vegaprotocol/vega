@@ -52,6 +52,9 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 		SearchLevel:            num.UintZero().Div(num.UintZero().Mul(scalingFactors.search, umaintenance), exp),
 		InitialMargin:          num.UintZero().Div(num.UintZero().Mul(scalingFactors.initial, umaintenance), exp),
 		CollateralReleaseLevel: num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, umaintenance), exp),
+		OrderMargin:            num.UintZero(),
+		MarginMode:             types.MarginModeCrossMargin,
+		MarginFactor:           num.DecimalZero(),
 	}
 }
 
@@ -80,6 +83,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			SearchLevel:            num.UintZero(),
 			InitialMargin:          num.UintZero(),
 			CollateralReleaseLevel: num.UintZero(),
+			OrderMargin:            num.UintZero(),
+			MarginMode:             types.MarginModeCrossMargin,
+			MarginFactor:           num.DecimalZero(),
 		}
 	}
 	// negative increment == short positions require extra margin, otherwise long requires extra margin
@@ -266,6 +272,9 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		SearchLevel:            num.UintZero(),
 		InitialMargin:          num.UintZero(),
 		CollateralReleaseLevel: num.UintZero(),
+		OrderMargin:            num.UintZero(),
+		MarginMode:             types.MarginModeCrossMargin,
+		MarginFactor:           num.DecimalZero(),
 	}
 }
 

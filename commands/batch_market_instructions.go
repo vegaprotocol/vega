@@ -36,7 +36,8 @@ func checkBatchMarketInstructions(cmd *commandspb.BatchMarketInstructions) Error
 		len(cmd.Amendments)+
 		len(cmd.Submissions)+
 		len(cmd.StopOrdersSubmission)+
-		len(cmd.StopOrdersCancellation) == 0 {
+		len(cmd.StopOrdersCancellation)+
+		len(cmd.UpdateMarginMode) == 0 {
 		return errs.FinalAddForProperty("batch_market_instructions", ErrEmptyBatchMarketInstructions)
 	}
 

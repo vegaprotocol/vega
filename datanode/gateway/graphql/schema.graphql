@@ -160,6 +160,8 @@ type MarginLevels {
   searchLevel: String!
   "This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer"
   initialLevel: String!
+  "When in isolated margin, the required order margin level, otherwise, 0"
+  orderMarginLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
@@ -167,6 +169,19 @@ type MarginLevels {
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: Timestamp!
+
+  "Margin mode of the party (cross margin/isolated margin)"
+  marginMode: MarginMode!
+
+  "Margin factor, only relevant for isolated margin mode, else 0"
+  marginFactor: String! 
+}
+
+enum MarginMode {
+  "Party is in cross margin mode"
+  MARGIN_MODE_CROSS_MARGIN
+  "Party is in isolated margin mode"
+  MARGIN_MODE_ISOLATED_MARGIN
 }
 
 "Margins for a given a party"
@@ -183,6 +198,8 @@ type MarginLevelsUpdate {
   searchLevel: String!
   "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
+  "When in isolated margin, the required order margin level, otherwise, 0"
+  orderMarginLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
@@ -190,6 +207,12 @@ type MarginLevelsUpdate {
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: Timestamp!
+
+  "Margin mode of the party (cross margin/isolated margin)"
+  marginMode: MarginMode!
+
+  "Margin factor, only relevant for isolated margin mode, else 0"
+  marginFactor: String! 
 }
 
 "Details of a  perpetual product."
@@ -4210,6 +4233,12 @@ enum TransferType {
   TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
   "Funds moved from the vesting account to the vested account once the vesting period is reached."
   TRANSFER_TYPE_REWARDS_VESTED
+  "Funds moved from general account to order margin account."
+  TRANSFER_TYPE_ORDER_MARGIN_LOW
+  "Funds released from order margin account to general."
+  TRANSFER_TYPE_ORDER_MARGIN_HIGH
+  "Funds moved from order margin account to margin account."
+  TRANSFER_TYPE_ISOLATED_MARGIN_LOW
 }
 
 union ProductConfiguration = FutureProduct | SpotProduct | PerpetualProduct
