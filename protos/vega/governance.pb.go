@@ -3064,11 +3064,11 @@ type BatchProposalTerms struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp as Unix time in seconds when voting closes for this proposal,
-	// constrained by `minClose` and `maxClose` network parameters.
-	ClosingTimestamp int64               `protobuf:"varint,1,opt,name=closing_timestamp,json=closingTimestamp,proto3" json:"closing_timestamp,omitempty"`
-	ProposalParams   *ProposalParameters `protobuf:"bytes,2,opt,name=proposal_params,json=proposalParams,proto3" json:"proposal_params,omitempty"`
-	// Changes being proposed.
+	// Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
+	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closing_timestamp,json=closingTimestamp,proto3" json:"closing_timestamp,omitempty"`
+	// Specific parameters defining the proposal's characteristics used for validation.
+	ProposalParams *ProposalParameters `protobuf:"bytes,2,opt,name=proposal_params,json=proposalParams,proto3" json:"proposal_params,omitempty"`
+	// List of individual changes included in the batch proposal.
 	Changes []*BatchProposalTermsChange `protobuf:"bytes,3,rep,name=changes,proto3" json:"changes,omitempty"`
 }
 

@@ -414,13 +414,11 @@ message ProposalParameters {
 
 // Terms for a batch governance proposal on Vega
 message BatchProposalTerms {
-  // Timestamp as Unix time in seconds when voting closes for this proposal,
-  // constrained by `minClose` and `maxClose` network parameters.
+  // Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
   int64 closing_timestamp = 1;
-
+  // Specific parameters defining the proposal's characteristics used for validation.
   ProposalParameters proposal_params = 2;
-  
-  // Changes being proposed.
+  // List of individual changes included in the batch proposal.
   repeated BatchProposalTermsChange changes = 3;
 }
 

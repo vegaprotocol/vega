@@ -637,6 +637,20 @@ func (mr *MockGovernanceEngineMockRecorder) OnTick(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnTick", reflect.TypeOf((*MockGovernanceEngine)(nil).OnTick), arg0, arg1)
 }
 
+// RejectBatchProposal mocks base method.
+func (m *MockGovernanceEngine) RejectBatchProposal(arg0 context.Context, arg1 string, arg2 vega.ProposalError, arg3 error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RejectBatchProposal", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RejectBatchProposal indicates an expected call of RejectBatchProposal.
+func (mr *MockGovernanceEngineMockRecorder) RejectBatchProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectBatchProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).RejectBatchProposal), arg0, arg1, arg2, arg3)
+}
+
 // RejectProposal mocks base method.
 func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *types.Proposal, arg2 vega.ProposalError, arg3 error) error {
 	m.ctrl.T.Helper()
@@ -649,6 +663,21 @@ func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *types.
 func (mr *MockGovernanceEngineMockRecorder) RejectProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RejectProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).RejectProposal), arg0, arg1, arg2, arg3)
+}
+
+// SubmitBatchProposal mocks base method.
+func (m *MockGovernanceEngine) SubmitBatchProposal(arg0 context.Context, arg1 types.BatchProposalSubmission, arg2, arg3 string) ([]*governance.ToSubmit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitBatchProposal", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*governance.ToSubmit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitBatchProposal indicates an expected call of SubmitBatchProposal.
+func (mr *MockGovernanceEngineMockRecorder) SubmitBatchProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitBatchProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitBatchProposal), arg0, arg1, arg2, arg3)
 }
 
 // SubmitProposal mocks base method.
