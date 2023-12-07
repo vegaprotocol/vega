@@ -352,16 +352,16 @@ message ProposalTerms {
   }
 }
 
-// Terms change for a batch governance proposal on Vega
+// Terms change for a batch governance proposal
 message BatchProposalTermsChange {
-  // Timestamp as Unix time in seconds when a proposal term gets enacted if proposal passed,
+  // Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
   // constrained by `minEnact` and `maxEnact` network parameters.
   int64 enactment_timestamp = 1;
-  // Change being proposed.
+  // Changes being proposed.
   oneof change {
-    // Proposal change for modifying an existing futures market on Vega.
+    // Proposal change for modifying an existing futures market.
     UpdateMarket update_market = 101;
-    // Proposal change for creating new futures market on Vega.
+    // Proposal change for creating new futures market.
     NewMarket new_market = 102;
     // Proposal change for updating Vega network parameters.
     UpdateNetworkParameter update_network_parameter = 103;
@@ -370,13 +370,13 @@ message BatchProposalTermsChange {
     NewFreeform new_freeform = 104;
     // Proposal change for updating an asset.
     UpdateAsset update_asset = 105;
-    // Proposal change for creating new spot market on Vega.
+    // Proposal change for creating new spot market.
     NewSpotMarket new_spot_market = 106;
-    // Proposal change for modifying an existing spot market on Vega.
+    // Proposal change for modifying an existing spot market.
     UpdateSpotMarket update_spot_market = 107;
-    // Proposal change for a governance transfer.
+    // Proposal change for a governance initiated transfer.
     NewTransfer new_transfer = 108;
-    // Cancel a governance transfer.
+    // Proposal change to cancel a governance initiated transfe.
     CancelTransfer cancel_transfer = 109;
     // Proposal change for updating the state of a market.
     UpdateMarketState update_market_state = 110;
@@ -388,9 +388,9 @@ message BatchProposalTermsChange {
 }
 
 message ProposalParameters {
-  // Represents the minimum time before a proposal can be closed.
+  // Represents the minimum time before a proposal can be closed for voting.
   int64 min_close = 1;
-  // Represents the maximum time before a proposal must be closed.
+  // Represents the maximum time that a proposal can be open for voting.
   int64 max_close = 2;
   // Represents the minimum time before an enacted proposal takes effect.
   int64 min_enact = 3;
@@ -400,9 +400,9 @@ message ProposalParameters {
   string required_participation = 5;
   // Specifies the required percentage of votes a proposal needs to be approved.
   string required_majority = 6;
-  // Specifies the minimum balance a proposer must hold to initiate a proposal.
+  // Specifies the minimum governance token balance a proposer must hold to initiate a proposal.
   string min_proposer_balance = 7;
-  // Specifies the minimum balance a voter must hold to participate in voting.
+  // Specifies the minimum governance token balance a voter must hold to participate in voting.
   string min_voter_balance = 8;
   // Specifies the required percentage of participation from liquidity providers for the proposal to be valid.
   string required_participation_lp = 9;

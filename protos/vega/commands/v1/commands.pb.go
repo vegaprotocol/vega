@@ -1260,7 +1260,7 @@ func (x *ProposalSubmission) GetRationale() *vega.ProposalRationale {
 }
 
 // Command that allows a token holder to submit a batch governance proposal that can be voted on by any other token holders, and eventually enacted on the Vega network.
-// For example this command can be used to propose a new market and a network paramater change with it.
+// For example this command can be used to propose a new market and a network parameter change with it.
 type BatchProposalSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -2673,16 +2673,16 @@ func (*ProposalTerms_UpdateReferralProgram) isProposalTerms_Change() {}
 
 func (*ProposalTerms_UpdateVolumeDiscountProgram) isProposalTerms_Change() {}
 
-// Terms change for a batch governance proposal on Vega
+// Terms change for a batch governance proposal
 type BatchProposalTermsChange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp as Unix time in seconds when a proposal term gets enacted if proposal passed,
+	// Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
 	// constrained by `minEnact` and `maxEnact` network parameters.
 	EnactmentTimestamp int64 `protobuf:"varint,1,opt,name=enactment_timestamp,json=enactmentTimestamp,proto3" json:"enactment_timestamp,omitempty"`
-	// Change being proposed.
+	// Changes being proposed.
 	//
 	// Types that are assignable to Change:
 	//
@@ -2836,12 +2836,12 @@ type isBatchProposalTermsChange_Change interface {
 }
 
 type BatchProposalTermsChange_UpdateMarket struct {
-	// Proposal change for modifying an existing futures market on Vega.
+	// Proposal change for modifying an existing futures market.
 	UpdateMarket *UpdateMarket `protobuf:"bytes,101,opt,name=update_market,json=updateMarket,proto3,oneof"`
 }
 
 type BatchProposalTermsChange_NewMarket struct {
-	// Proposal change for creating new futures market on Vega.
+	// Proposal change for creating new futures market.
 	NewMarket *NewMarket `protobuf:"bytes,102,opt,name=new_market,json=newMarket,proto3,oneof"`
 }
 
@@ -2862,22 +2862,22 @@ type BatchProposalTermsChange_UpdateAsset struct {
 }
 
 type BatchProposalTermsChange_NewSpotMarket struct {
-	// Proposal change for creating new spot market on Vega.
+	// Proposal change for creating new spot market.
 	NewSpotMarket *NewSpotMarket `protobuf:"bytes,106,opt,name=new_spot_market,json=newSpotMarket,proto3,oneof"`
 }
 
 type BatchProposalTermsChange_UpdateSpotMarket struct {
-	// Proposal change for modifying an existing spot market on Vega.
+	// Proposal change for modifying an existing spot market.
 	UpdateSpotMarket *UpdateSpotMarket `protobuf:"bytes,107,opt,name=update_spot_market,json=updateSpotMarket,proto3,oneof"`
 }
 
 type BatchProposalTermsChange_NewTransfer struct {
-	// Proposal change for a governance transfer.
+	// Proposal change for a governance initiated transfer.
 	NewTransfer *NewTransfer `protobuf:"bytes,108,opt,name=new_transfer,json=newTransfer,proto3,oneof"`
 }
 
 type BatchProposalTermsChange_CancelTransfer struct {
-	// Cancel a governance transfer.
+	// Proposal change to cancel a governance initiated transfe.
 	CancelTransfer *CancelTransfer `protobuf:"bytes,109,opt,name=cancel_transfer,json=cancelTransfer,proto3,oneof"`
 }
 
@@ -2925,9 +2925,9 @@ type ProposalParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Represents the minimum time before a proposal can be closed.
+	// Represents the minimum time before a proposal can be closed for voting.
 	MinClose int64 `protobuf:"varint,1,opt,name=min_close,json=minClose,proto3" json:"min_close,omitempty"`
-	// Represents the maximum time before a proposal must be closed.
+	// Represents the maximum time that a proposal can be open for voting.
 	MaxClose int64 `protobuf:"varint,2,opt,name=max_close,json=maxClose,proto3" json:"max_close,omitempty"`
 	// Represents the minimum time before an enacted proposal takes effect.
 	MinEnact int64 `protobuf:"varint,3,opt,name=min_enact,json=minEnact,proto3" json:"min_enact,omitempty"`
@@ -2937,9 +2937,9 @@ type ProposalParameters struct {
 	RequiredParticipation string `protobuf:"bytes,5,opt,name=required_participation,json=requiredParticipation,proto3" json:"required_participation,omitempty"`
 	// Specifies the required percentage of votes a proposal needs to be approved.
 	RequiredMajority string `protobuf:"bytes,6,opt,name=required_majority,json=requiredMajority,proto3" json:"required_majority,omitempty"`
-	// Specifies the minimum balance a proposer must hold to initiate a proposal.
+	// Specifies the minimum governance token balance a proposer must hold to initiate a proposal.
 	MinProposerBalance string `protobuf:"bytes,7,opt,name=min_proposer_balance,json=minProposerBalance,proto3" json:"min_proposer_balance,omitempty"`
-	// Specifies the minimum balance a voter must hold to participate in voting.
+	// Specifies the minimum governance token balance a voter must hold to participate in voting.
 	MinVoterBalance string `protobuf:"bytes,8,opt,name=min_voter_balance,json=minVoterBalance,proto3" json:"min_voter_balance,omitempty"`
 	// Specifies the required percentage of participation from liquidity providers for the proposal to be valid.
 	RequiredParticipationLp string `protobuf:"bytes,9,opt,name=required_participation_lp,json=requiredParticipationLp,proto3" json:"required_participation_lp,omitempty"`

@@ -572,7 +572,7 @@ type InputData_OracleDataSubmission struct {
 }
 
 type InputData_BatchProposalSubmission struct {
-	// Command to submit a governance proposal.
+	// Command to submit a batch governance proposal.
 	BatchProposalSubmission *BatchProposalSubmission `protobuf:"bytes,3002,opt,name=batch_proposal_submission,json=batchProposalSubmission,proto3,oneof"`
 }
 
