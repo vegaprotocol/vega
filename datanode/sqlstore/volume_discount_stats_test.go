@@ -85,8 +85,8 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	vds := sqlstore.NewVolumeDiscountStats(connectionSource)
 
-	parties := make([]entities.Party, 0, 5)
-	for i := 0; i < 5; i++ {
+	parties := make([]entities.Party, 0, 6)
+	for i := 0; i < 6; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
 		parties = append(parties, addTestParty(t, ctx, ps, block))
 	}
@@ -231,8 +231,8 @@ func flattenVolumeDiscountStatsForParty(flattenStats []entities.FlattenVolumeDis
 func setupPartyVolumeDiscountStats(t *testing.T, ctx context.Context, ps *sqlstore.Parties, bs *sqlstore.Blocks) []*eventspb.PartyVolumeDiscountStats {
 	t.Helper()
 
-	parties := make([]entities.Party, 0, 5)
-	for i := 0; i < 5; i++ {
+	parties := make([]entities.Party, 0, 6)
+	for i := 0; i < 6; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
 		parties = append(parties, addTestParty(t, ctx, ps, block))
 	}
@@ -249,8 +249,17 @@ func setupPartyVolumeDiscountStats(t *testing.T, ctx context.Context, ps *sqlsto
 func setupPartyVolumeDiscountStatsMod(t *testing.T, parties []entities.Party, f func(i int, party entities.Party) *eventspb.PartyVolumeDiscountStats) []*eventspb.PartyVolumeDiscountStats {
 	t.Helper()
 
-	partiesStats := make([]*eventspb.PartyVolumeDiscountStats, 0, 5)
+	partiesStats := make([]*eventspb.PartyVolumeDiscountStats, 0, 6)
 	for i, p := range parties {
+		// make the last party an unqualified party
+		if i == len(parties)-1 {
+			partiesStats = append(partiesStats, &eventspb.PartyVolumeDiscountStats{
+				PartyId:        p.ID.String(),
+				DiscountFactor: "0",
+				RunningVolume:  "99",
+			})
+			continue
+		}
 		partiesStats = append(partiesStats, f(i, p))
 	}
 

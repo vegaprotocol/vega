@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.9
+
+### 🐛 Fixes
+
+- [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
+
 ## 0.73.8
 
 ### 🐛 Fixes
