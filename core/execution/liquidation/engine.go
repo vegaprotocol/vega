@@ -322,9 +322,9 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 		BuyerFee:    types.NewFee(),
 	}
 	// settlement engine should see this as a wash trade
+	trade.Buyer, trade.Seller = buyParty, sellParty
 	e.settle.AddTrade(&trade)
 	// the for the rest of the core, this should not seem like a wash trade though...
-	trade.Buyer, trade.Seller = buyParty, sellParty
 	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade
 }
