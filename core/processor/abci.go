@@ -364,7 +364,7 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
-		HandleCheckTx(txn.BatchProposeCommand, app.CheckBatchPropose).
+		HandleCheckTx(txn.BatchProposeCommand, addDeterministicID(app.CheckBatchPropose)).
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
 		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
 
@@ -1737,15 +1737,17 @@ func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	}
 }
 
-func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx) error {
+func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx, deterministicBatchID string) error {
 	p := &commandspb.BatchProposalSubmission{}
 	if err := tx.Unmarshal(p); err != nil {
 		return err
 	}
 
+	idgen := idgeneration.New(deterministicBatchID)
 	ids := make([]string, 0, len(p.Terms.Changes))
+
 	for i := 0; i < len(p.Terms.Changes); i++ {
-		ids = append(ids, fmt.Sprintf("prop-%d", i))
+		ids = append(ids, idgen.NextID())
 	}
 
 	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p, ids)
