@@ -147,7 +147,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | asset | market id | margin | general |
       | party1 | USD   | ETH/FEB23 | 68688  | 146812  |
 
-    # #switch to isolated margin
+    #switch to isolated margin
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor |
       | party1 | ETH/FEB23 | isolated margin | 0.5           |
@@ -174,11 +174,12 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | asset | market id | margin | general | order margin |
       | party1 | USD   | ETH/FEB23 | 79501  | 35997   | 100002       |
 
-    # @jiajia at this point you can't change to 0.4 as the initial margin = 66780 and the the position margin with 0.4 would be 63600
+    #at this point you can't change to 0.4 as the initial margin = 66780 and the the position margin with 0.4 would be 63600
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                        |
       | party1 | ETH/FEB23 | isolated margin | 0.4           | required position margin must be greater than initial margin |
 
+    #the the position margin with 0.45 would be 71550 which is greater than initial margin, update of margin factor is accepted
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error |
       | party1 | ETH/FEB23 | isolated margin | 0.45          |       |
@@ -191,53 +192,64 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | asset | market id | margin | general | order margin |
       | party1 | USD   | ETH/FEB23 | 71550  | 33946   | 110004       |
 
+    And the parties submit update margin mode:
+      | party  | market    | margin_mode     | margin_factor | error |
+      | party1 | ETH/FEB23 | isolated margin | 0.6           |       |
 
-#trigger more MTM (18000-15900)*10= 21000 with party has both short position and short orders, when party is distressed, order will remain active
-# And the parties place the following orders:
-#   | party            | market id | side | volume | price | resulting trades | type       | tif     |
-#   | buySideProvider  | ETH/FEB23 | buy  | 1      | 18000 | 0                | TYPE_LIMIT | TIF_GTC |
-#   | sellSideProvider | ETH/FEB23 | sell | 1      | 18000 | 1                | TYPE_LIMIT | TIF_GTC |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order  |
+      | party1 | ETH/FEB23 | 55650       | 0      | 66780   | 0       | isolated margin | 0.6           | 120000 |
 
-# And the market data for the market "ETH/FEB23" should be:
-#   | mark price | trading mode            |
-#   | 15900      | TRADING_MODE_CONTINUOUS |
-# And the network moves ahead "1" blocks
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party1 | USD   | ETH/FEB23 | 95400  | 100     | 120000       |
 
-# Then the parties should have the following account balances:
-#   | party  | asset | market id | margin | general | order margin |
-#   | party1 | USD   | ETH/FEB23 | 74400  | 100     | 120000       |
+    #trigger MTM (18000-15900)*10= 21000 with party has both short position and short orders, when party is distressed, order will remain active
+    And the parties place the following orders:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 18000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideProvider | ETH/FEB23 | sell | 1      | 18000 | 1                | TYPE_LIMIT | TIF_GTC |
 
-# #MTM for party1: 10*(25440-18000)=74400
-# And the parties place the following orders:
-#   | party            | market id | side | volume | price | resulting trades | type       | tif     |
-#   | buySideProvider  | ETH/FEB23 | buy  | 1      | 25440 | 0                | TYPE_LIMIT | TIF_GTC |
-#   | sellSideProvider | ETH/FEB23 | sell | 1      | 25440 | 1                | TYPE_LIMIT | TIF_GTC |
+    And the market data for the market "ETH/FEB23" should be:
+      | mark price | trading mode            |
+      | 15900      | TRADING_MODE_CONTINUOUS |
+    And the network moves ahead "1" blocks
 
-# And the network moves ahead "1" blocks
+    #MTM for party1: 95400-21000=74400
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party1 | USD   | ETH/FEB23 | 74400  | 100     | 120000       |
 
-# And the market data for the market "ETH/FEB23" should be:
-#   | mark price | trading mode            |
-#   | 25440      | TRADING_MODE_CONTINUOUS |
+    #trigger MTM (25440-18000)*10= 74400 which will empty the position margin account
+    And the parties place the following orders:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 25440 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideProvider | ETH/FEB23 | sell | 1      | 25440 | 1                | TYPE_LIMIT | TIF_GTC |
 
-# Then the parties should have the following account balances:
-#   | party  | asset | market id | margin | general | order margin |
-#   | party1 | USD   | ETH/FEB23 | 120000 | 100     | 0            |
+    And the network moves ahead "1" blocks
+    And the following transfers should happen:
+      | from   | to     | from account              | to account              | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_MARGIN       | ACCOUNT_TYPE_SETTLEMENT | ETH/FEB23 | 74400  | USD   |
+      | party1 | party1 | ACCOUNT_TYPE_ORDER_MARGIN | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 120000 | USD   |
 
-# # #MTM for party1: 10*(25540-25440)=1000
-# #trigger more MTM with party has both short position and the margin account is alreay empty
-# And the parties place the following orders:
-#   | party            | market id | side | volume | price | resulting trades | type       | tif     |
-#   | buySideProvider  | ETH/FEB23 | buy  | 1      | 25540 | 0                | TYPE_LIMIT | TIF_GTC |
-#   | sellSideProvider | ETH/FEB23 | sell | 1      | 25540 | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party1 | USD   | ETH/FEB23 | 120000 | 100     | 0            |
 
-# And the network moves ahead "1" blocks
+    #MTM for party1: 10*(25540-25440)=1000
+    And the parties place the following orders:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 25540 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideProvider | ETH/FEB23 | sell | 1      | 25540 | 1                | TYPE_LIMIT | TIF_GTC |
 
-# And the market data for the market "ETH/FEB23" should be:
-#   | mark price | trading mode            |
-#   | 25540      | TRADING_MODE_CONTINUOUS |
+    And the network moves ahead "1" blocks
 
-# Then the parties should have the following account balances:
-#   | party  | asset | market id | margin | general | order margin |
-#   | party1 | USD   | ETH/FEB23 | 119900 | 100     | 0            |
+    And the market data for the market "ETH/FEB23" should be:
+      | mark price | trading mode            |
+      | 25540      | TRADING_MODE_CONTINUOUS |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party1 | USD   | ETH/FEB23 | 119900 | 100     | 0            |
 
 
