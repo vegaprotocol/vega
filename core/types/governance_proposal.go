@@ -277,17 +277,16 @@ func (pp *ProposalParameters) ToProto() *vegapb.ProposalParameters {
 }
 
 type BatchProposal struct {
-	ID                 string
-	Reference          string
-	Party              string
-	State              ProposalState
-	Timestamp          int64
-	ClosingTimestamp   int64
-	Proposals          []*Proposal
-	Rationale          *ProposalRationale
-	Reason             ProposalError
-	ErrorDetails       string
-	ProposalParameters *ProposalParameters
+	ID               string
+	Reference        string
+	Party            string
+	State            ProposalState
+	Timestamp        int64
+	ClosingTimestamp int64
+	Proposals        []*Proposal
+	Rationale        *ProposalRationale
+	Reason           ProposalError
+	ErrorDetails     string
 }
 
 func BatchProposalFromSnapshotProto(bp *vegapb.Proposal, pps []*vegapb.Proposal) *BatchProposal {
@@ -299,23 +298,21 @@ func BatchProposalFromSnapshotProto(bp *vegapb.Proposal, pps []*vegapb.Proposal)
 	}
 
 	return &BatchProposal{
-		ID:                 bp.Id,
-		Reference:          bp.Reference,
-		Party:              bp.PartyId,
-		State:              bp.State,
-		Timestamp:          bp.Timestamp,
-		ClosingTimestamp:   bp.BatchTerms.ClosingTimestamp,
-		Rationale:          ProposalRationaleFromProto(bp.Rationale),
-		Reason:             *bp.Reason,
-		ProposalParameters: ProposalParametersFromProto(bp.BatchTerms.ProposalParams),
-		Proposals:          proposals,
+		ID:               bp.Id,
+		Reference:        bp.Reference,
+		Party:            bp.PartyId,
+		State:            bp.State,
+		Timestamp:        bp.Timestamp,
+		ClosingTimestamp: bp.BatchTerms.ClosingTimestamp,
+		Rationale:        ProposalRationaleFromProto(bp.Rationale),
+		Reason:           *bp.Reason,
+		Proposals:        proposals,
 	}
 }
 
 func (bp BatchProposal) ToProto() *vegapb.Proposal {
 	batchTerms := &vegapb.BatchProposalTerms{
 		ClosingTimestamp: bp.ClosingTimestamp,
-		ProposalParams:   bp.ProposalParameters.ToProto(),
 	}
 
 	for _, proposal := range bp.Proposals {
@@ -335,52 +332,6 @@ func (bp BatchProposal) ToProto() *vegapb.Proposal {
 		ErrorDetails: &bp.ErrorDetails,
 		Rationale:    bp.Rationale.ToProto(),
 		BatchTerms:   batchTerms,
-	}
-}
-
-// SetProposalParams set specific per proposal parameters and chooses the most aggressive ones.
-func (bp *BatchProposal) SetProposalParams(params ProposalParameters) {
-	if bp.ProposalParameters == nil {
-		bp.ProposalParameters = &params
-		bp.ProposalParameters.MaxEnact = 0
-		bp.ProposalParameters.MinEnact = 0
-		return
-	}
-
-	if bp.ProposalParameters.MaxClose > params.MaxClose {
-		bp.ProposalParameters.MaxClose = params.MaxClose
-	}
-
-	if bp.ProposalParameters.MinClose < params.MinClose {
-		bp.ProposalParameters.MinClose = params.MinClose
-	}
-
-	if bp.ProposalParameters.MinEquityLikeShare.LessThan(params.MinEquityLikeShare) {
-		bp.ProposalParameters.MinEquityLikeShare = params.MinEquityLikeShare
-	}
-
-	if bp.ProposalParameters.MinProposerBalance.LT(params.MinProposerBalance) {
-		bp.ProposalParameters.MinProposerBalance = params.MinProposerBalance.Clone()
-	}
-
-	if bp.ProposalParameters.MinVoterBalance.LT(params.MinVoterBalance) {
-		bp.ProposalParameters.MinVoterBalance = params.MinVoterBalance.Clone()
-	}
-
-	if bp.ProposalParameters.RequiredMajority.LessThan(params.RequiredMajority) {
-		bp.ProposalParameters.RequiredMajority = params.RequiredMajority
-	}
-
-	if bp.ProposalParameters.RequiredMajorityLP.LessThan(params.RequiredMajorityLP) {
-		bp.ProposalParameters.RequiredMajorityLP = params.RequiredMajorityLP
-	}
-
-	if bp.ProposalParameters.RequiredParticipation.LessThan(params.RequiredParticipation) {
-		bp.ProposalParameters.RequiredParticipation = params.RequiredParticipation
-	}
-
-	if bp.ProposalParameters.RequiredParticipationLP.LessThan(params.RequiredParticipationLP) {
-		bp.ProposalParameters.RequiredParticipationLP = params.RequiredParticipationLP
 	}
 }
 

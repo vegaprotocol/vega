@@ -86,7 +86,6 @@ func (e *Engine) SubmitBatchProposal(
 
 		proposalParamsPerProposalTermType[change.Change.GetTermType()] = params
 
-		bp.SetProposalParams(params.Clone())
 		bp.Proposals = append(bp.Proposals, p)
 	}
 
@@ -95,9 +94,7 @@ func (e *Engine) SubmitBatchProposal(
 
 	for _, p := range bp.Proposals {
 		perTypeParams := proposalParamsPerProposalTermType[p.Terms.Change.GetTermType()]
-		params := bp.ProposalParameters.Clone()
-
-		submit, err := e.validateProposalFromBatch(ctx, p, params, *perTypeParams)
+		submit, err := e.validateProposalFromBatch(ctx, p, perTypeParams)
 		if err != nil {
 			errs.Add(err)
 			continue
@@ -268,12 +265,9 @@ func (e *Engine) getBatchProposal(id string) (*batchProposal, bool) {
 func (e *Engine) validateProposalFromBatch(
 	ctx context.Context,
 	p *types.Proposal,
-	batchParams, perTypeParams types.ProposalParameters,
+	params *types.ProposalParameters,
 ) (*ToSubmit, error) {
-	batchParams.MaxEnact = perTypeParams.MaxEnact
-	batchParams.MinEnact = perTypeParams.MinEnact
-
-	if proposalErr, err := e.validateOpenProposal(p, &batchParams); err != nil {
+	if proposalErr, err := e.validateOpenProposal(p, params); err != nil {
 		p.RejectWithErr(proposalErr, err)
 
 		if e.log.IsDebug() {
@@ -314,8 +308,20 @@ func (e *Engine) startBatchProposal(p *types.BatchProposal) {
 func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal, cmd types.VoteSubmission, party string) error {
 	validationErrs := vgerrors.NewCumulatedErrors()
 
+	proposalParamsPerProposalTermType := map[types.ProposalTermsType]*types.ProposalParameters{}
 	for _, proposal := range batchProposal.Proposals {
-		if err := e.canVote(proposal, batchProposal.ProposalParameters, party); err != nil {
+		params, ok := proposalParamsPerProposalTermType[proposal.Terms.Change.GetTermType()]
+		if !ok {
+			p, err := e.getProposalParams(proposal.Terms.Change)
+			if err != nil {
+				validationErrs.Add(fmt.Errorf("proposal term %q has failed with: %w", proposal.Terms.Change.GetTermType(), err))
+				continue
+			}
+			proposalParamsPerProposalTermType[proposal.Terms.Change.GetTermType()] = p
+			params = p
+		}
+
+		if err := e.canVote(proposal, params, party); err != nil {
 			validationErrs.Add(fmt.Errorf("proposal term %q has failed with: %w", proposal.Terms.Change.GetTermType(), err))
 			continue
 		}

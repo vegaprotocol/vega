@@ -416,10 +416,8 @@ message ProposalParameters {
 message BatchProposalTerms {
   // Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
   int64 closing_timestamp = 1;
-  // Specific parameters defining the proposal's characteristics used for validation.
-  ProposalParameters proposal_params = 2;
   // List of individual changes included in the batch proposal.
-  repeated BatchProposalTermsChange changes = 3;
+  repeated BatchProposalTermsChange changes = 2;
 }
 
 // Rationale behind a proposal.
