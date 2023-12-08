@@ -69,6 +69,7 @@
 - [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
 - [10227](https://github.com/vegaprotocol/vega/issues/10227) - Make the wallet errors on spam stats meaningful.
 - [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
+- [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
 
 ## 0.73.0
 
