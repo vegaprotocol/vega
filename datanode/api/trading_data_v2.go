@@ -4566,18 +4566,16 @@ func listTeam(ctx context.Context, teamsService *service.Teams, teamID entities.
 		return nil, formatE(err)
 	}
 
-	connection := &v2.TeamConnection{
-		Edges: edges,
-		PageInfo: &v2.PageInfo{
-			HasNextPage:     false,
-			HasPreviousPage: false,
-			StartCursor:     team.Cursor().Encode(),
-			EndCursor:       team.Cursor().Encode(),
-		},
-	}
-
 	return &v2.ListTeamsResponse{
-		Teams: connection,
+		Teams: &v2.TeamConnection{
+			Edges: edges,
+			PageInfo: &v2.PageInfo{
+				HasNextPage:     false,
+				HasPreviousPage: false,
+				StartCursor:     team.Cursor().Encode(),
+				EndCursor:       team.Cursor().Encode(),
+			},
+		},
 	}, nil
 }
 
@@ -4597,6 +4595,42 @@ func listTeams(ctx context.Context, teamsService *service.Teams, pagination enti
 
 	return &v2.ListTeamsResponse{
 		Teams: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamsStatistics(ctx context.Context, req *v2.ListTeamsStatisticsRequest) (*v2.ListTeamsStatisticsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamsStatistics")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListTeamsStatisticsFilters{
+		AggregationEpochs: 10,
+	}
+	if req.TeamId != nil {
+		filters.TeamID = ptr.From(entities.TeamID(*req.TeamId))
+	}
+	if req.AggregationEpochs != nil {
+		filters.AggregationEpochs = *req.AggregationEpochs
+	}
+
+	stats, pageInfo, err := t.teamsService.ListTeamsStatistics(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListTeamReferees, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamStatisticsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListTeamsStatisticsResponse{
+		Statistics: &v2.TeamsStatisticsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 
