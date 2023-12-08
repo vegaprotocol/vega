@@ -71,33 +71,43 @@ func (s *Store) ListTransactions(ctx context.Context,
 	args := []interface{}{}
 	predicates := []string{}
 
-	// by default we want the most recent transactions so we'll set the limit to first
-	// and sort order to desc
-	limit := first
+	limit := uint32(0)
+
 	sortOrder := "desc"
 
-	// if we have a before cursor we want the results ordered earliest to latest
-	// so the limit will be set to last and sort order to asc
-	if before != nil {
-		block := nextBindVar(&args, before.BlockNumber)
-		index := nextBindVar(&args, before.TxIndex)
-		predicate := fmt.Sprintf("(t.block_height, t.index) > (%s, %s)", block, index)
-		predicates = append(predicates, predicate)
+	if first > 0 {
+		// We want the N most recent transactions, descending on block height and block
+		// index: 4.1, 3.2, 3.1, 2.2...
+		// The resulting query should already sort the rows in the right order.
+		limit = first
+		sortOrder = "desc"
+	} else if last > 0 {
+		// We want the N oldest transactions, ascending on block height and block
+		// index: 1.1, 1.2, 2.1, 2.2...
+		// The resulting query should sort the rows in the chronological order. But
+		// that's necessary to apply the LIMIT clause. It will be sorted in the
+		// reverse chronological order later on.
 		limit = last
 		sortOrder = "asc"
 	}
 
+	if before != nil {
+		block := nextBindVar(&args, before.BlockNumber)
+		index := nextBindVar(&args, before.TxIndex)
+		predicate := fmt.Sprintf("(t.block_height, t.index) < (%s, %s)", block, index)
+		predicates = append(predicates, predicate)
+		// We change the sorting order because we want the transactions right before
+		// the cursor, meaning older transactions.
+		sortOrder = "desc"
+	}
 	if after != nil {
 		block := nextBindVar(&args, after.BlockNumber)
 		index := nextBindVar(&args, after.TxIndex)
-		predicate := fmt.Sprintf("(t.block_height, t.index) < (%s, %s)", block, index)
+		predicate := fmt.Sprintf("(t.block_height, t.index) > (%s, %s)", block, index)
 		predicates = append(predicates, predicate)
-	}
-
-	// just in case we have no before cursor, but we want to have the last N transactions in the data set
-	// i.e. the earliest transactions, sorting ascending
-	if last > 0 && first == 0 && after == nil && before == nil {
-		limit = last
+		// We change the sorting order because we want the transactions right after
+		// the cursor, meaning newer transaction. That's necessary to apply the
+		// LIMIT clause.
 		sortOrder = "asc"
 	}
 
@@ -143,7 +153,9 @@ func (s *Store) ListTransactions(ctx context.Context,
 	}
 
 	query = fmt.Sprintf("%s ORDER BY t.block_height %s, t.index %s", query, sortOrder, sortOrder)
-	query = fmt.Sprintf("%s LIMIT %d", query, limit)
+	if limit != 0 {
+		query = fmt.Sprintf("%s LIMIT %d", query, limit)
+	}
 
 	var rows []entities.TxResultRow
 	if err := pgxscan.Select(ctx, s.pool, &rows, query, args...); err != nil {
@@ -160,8 +172,10 @@ func (s *Store) ListTransactions(ctx context.Context,
 		txs = append(txs, tx)
 	}
 
-	// make sure the results are always order in the same direction, i.e. newest first, regardless of the order of the
-	// results from the database.
+	// Make sure the results are always order in the reverse chronological order,
+	// as required.
+	// This cannot be replaced by the `order by` in the request as it's used by the
+	// pagination system.
 	sort.Slice(txs, func(i, j int) bool {
 		if txs[i].Block == txs[j].Block {
 			return txs[i].Index > txs[j].Index

@@ -295,24 +295,39 @@ func TestStore_ListTransactions(t *testing.T) {
 	})
 
 	t.Run("should return the transactions after the cursor when first is set", func(t *testing.T) {
-		first := entities.TxCursor{
-			BlockNumber: 5,
+		after := entities.TxCursor{
+			BlockNumber: 2,
 			TxIndex:     1,
 		}
-		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 2, &first, 0, nil)
+		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 2, &after, 0, nil)
 		require.NoError(t, err)
-		want := []*pb.Transaction{inserted[7], inserted[6]}
+		want := []*pb.Transaction{inserted[5], inserted[4]}
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("should return the transactions before the cursor when last is set", func(t *testing.T) {
-		first := entities.TxCursor{
+		before := entities.TxCursor{
 			BlockNumber: 2,
 			TxIndex:     1,
 		}
-		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 2, &first, 0, nil)
+		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 0, nil, 2, &before)
 		require.NoError(t, err)
 		want := []*pb.Transaction{inserted[2], inserted[1]}
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("should return the transactions before the cursor when last is set", func(t *testing.T) {
+		before := entities.TxCursor{
+			BlockNumber: 5,
+			TxIndex:     1,
+		}
+		after := entities.TxCursor{
+			BlockNumber: 2,
+			TxIndex:     2,
+		}
+		got, err := s.ListTransactions(ctx, nil, nil, nil, nil, 0, &after, 0, &before)
+		require.NoError(t, err)
+		want := []*pb.Transaction{inserted[7], inserted[6], inserted[5]}
 		assert.Equal(t, want, got)
 	})
 }
