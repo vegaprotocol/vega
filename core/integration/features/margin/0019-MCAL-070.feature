@@ -529,11 +529,52 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | party  | reference | status        |
       | party1 | b-1       | STATUS_ACTIVE |
 
-# And the following transfers should happen:
-#   | from   | to               | from account            | to account              | market id | amount | asset |
-#   | party1 | party1           | ACCOUNT_TYPE_BOND       | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 1000   | USD   |
-#   | party1 | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE  | ETH/FEB23 | 55650  | USD   |
-#   | market | market           | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/FEB23 | 55650  | USD   |
-#   | market | sellSideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 55650  | USD   |
+  # And the following transfers should happen:
+  #   | from   | to               | from account            | to account              | market id | amount | asset |
+  #   | party1 | party1           | ACCOUNT_TYPE_BOND       | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 1000   | USD   |
+  #   | party1 | market           | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE  | ETH/FEB23 | 55650  | USD   |
+  #   | market | market           | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/FEB23 | 55650  | USD   |
+  #   | market | sellSideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 55650  | USD   |
 
+  Scenario: 006 check order margin account when order placed during opening auction
+    Given the parties deposit on asset's general account the following amount:
+      | party            | asset | amount       |
+      | buySideProvider  | USD   | 100000000000 |
+      | sellSideProvider | USD   | 100000000000 |
+      | party1           | USD   | 172500       |
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | party1 | ETH/FEB23 | 1000              | 0.1 | submission |
 
+    And the parties place the following orders:
+      | party            | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1           | ETH/FEB23 | buy  | 6      | 15800  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider  | ETH/FEB23 | buy  | 10     | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1           | ETH/FEB23 | sell | 10     | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider | ETH/FEB23 | sell | 10     | 20000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider | ETH/FEB23 | sell | 10     | 200100 | 0                | TYPE_LIMIT | TIF_GTC |           |
+
+    When the network moves ahead "2" blocks
+    And the market data for the market "ETH/FEB23" should be:
+      | mark price | trading mode            |
+      | 15900      | TRADING_MODE_CONTINUOUS |
+
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
+      | party1 | ETH/FEB23 | 55650       | 61215  | 66780   | 77910   | cross margin | 0             | 0     |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party1 | USD   | ETH/FEB23 | 66780  | 104720  | 1000 |
+
+    #switch to isolated margin
+    And the parties submit update margin mode:
+      | party  | market    | margin_mode     | margin_factor | error |
+      | party1 | ETH/FEB23 | isolated margin | 0.5           |       |
+
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 55650       | 0      | 66780   | 0       | isolated margin | 0.5           | 0     |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin | bond |
+      | party1 | USD   | ETH/FEB23 | 79500  | 44600   | 47400        | 1000 |
