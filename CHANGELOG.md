@@ -5,6 +5,7 @@
 ### 🐛 Fixes
 
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
+- [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
 
 ## 0.73.8
 
