@@ -60,16 +60,15 @@ func addTestReward(t *testing.T,
 		RewardType:     rewardType,
 		EpochID:        epochID,
 		Amount:         amount,
+		QuantumAmount:  amount,
 		PercentOfTotal: 0.2,
 		Timestamp:      timestamp.Truncate(time.Microsecond),
 		VegaTime:       block.VegaTime,
 		SeqNum:         seqNum,
 		TxHash:         txHash,
-		QuantumAmount:  amount,
 		GameID:         gameID,
 	}
-	err := rs.Add(ctx, r)
-	require.NoError(t, err)
+	require.NoError(t, rs.Add(ctx, r))
 	return r
 }
 
@@ -906,8 +905,8 @@ func TestRewardsGameTotals(t *testing.T) {
 	}
 	for _, team := range teams {
 		_, err := connectionSource.Connection.Exec(ctx,
-			`insert into teams (id, referrer, name, team_url, avatar_url, closed, created_at_epoch, created_at, vega_time)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			`INSERT INTO teams (id, referrer, name, team_url, avatar_url, closed, created_at_epoch, created_at, vega_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 			team.ID, team.Referrer, team.Name, team.TeamURL, team.AvatarURL, team.Closed, team.CreatedAtEpoch, team.CreatedAt, team.VegaTime)
 		require.NoError(t, err)
 	}
@@ -937,8 +936,8 @@ func TestRewardsGameTotals(t *testing.T) {
 	}
 	for _, member := range teamMembers {
 		_, err := connectionSource.Connection.Exec(ctx,
-			`insert into team_members (team_id, party_id, joined_at_epoch, joined_at, vega_time)
-		values ($1, $2, $3, $4, $5)`,
+			`INSERT INTO team_members (team_id, party_id, joined_at_epoch, joined_at, vega_time)
+		VALUES ($1, $2, $3, $4, $5)`,
 			member.TeamID, member.PartyID, member.JoinedAtEpoch, member.JoinedAt, member.VegaTime)
 		require.NoError(t, err)
 	}
@@ -974,8 +973,8 @@ func TestRewardsGameTotals(t *testing.T) {
 	}
 	for _, total := range existingTotals {
 		_, err := connectionSource.Connection.Exec(ctx,
-			`insert into game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards)
-		values ($1, $2, $3, $4, $5, $6, $7)`,
+			`INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards)
 		require.NoError(t, err)
 	}
@@ -1122,7 +1121,7 @@ func TestRewardsGameTotals(t *testing.T) {
 	for _, tc := range testCases {
 		var totals []entities.RewardTotals
 		require.NoError(t, pgxscan.Select(ctx, connectionSource.Connection, &totals,
-			`select * from game_reward_totals where game_id = $1 and party_id = $2 and epoch_id = $3`,
+			`SELECT * FROM game_reward_totals WHERE game_id = $1 AND party_id = $2 AND epoch_id = $3`,
 			tc.game_id, tc.party_id, tc.epoch_id))
 		assert.Equal(t, 1, len(totals))
 		assert.True(t, tc.want.Equal(totals[0].TotalRewards), "totals don't match, got: %s, want: %s", totals[0].TotalRewards, tc.want)

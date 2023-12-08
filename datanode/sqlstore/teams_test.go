@@ -16,15 +16,20 @@
 package sqlstore_test
 
 import (
+	"encoding/json"
 	"math/rand"
 	"sort"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
@@ -765,5 +770,204 @@ func testShouldReturnPageOfRefereeHistoryGivenPagination(t *testing.T) {
 			StartCursor:     want[0].Cursor().Encode(),
 			EndCursor:       want[len(want)-1].Cursor().Encode(),
 		}, pageInfo)
+	})
+}
+
+func TestListTeamStatistics(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	teamsStore := sqlstore.NewTeams(connectionSource)
+	blocksStore := sqlstore.NewBlocks(connectionSource)
+	rewardsStore := sqlstore.NewRewards(ctx, connectionSource)
+
+	member1 := entities.PartyID(GenerateID())
+	member2 := entities.PartyID(GenerateID())
+	member3 := entities.PartyID(GenerateID())
+	member4 := entities.PartyID(GenerateID())
+
+	team1 := entities.TeamID(GenerateID())
+	team2 := entities.TeamID(GenerateID())
+	team3 := entities.TeamID(GenerateID())
+	team4 := entities.TeamID(GenerateID())
+
+	teams := map[entities.TeamID][]entities.PartyID{
+		team1: {member1},
+		team2: {member2},
+		team3: {member3},
+		team4: {member4},
+	}
+
+	teamIDs := []entities.TeamID{team1, team2, team3, team4}
+	gameIDs := []entities.GameID{
+		entities.GameID(GenerateID()),
+		entities.GameID(GenerateID()),
+		entities.GameID(GenerateID()),
+		entities.GameID(GenerateID()),
+	}
+
+	startTime := time.Now()
+
+	for team, members := range teams {
+		require.NoError(t, teamsStore.AddTeam(ctx, &entities.Team{
+			ID:             team,
+			Referrer:       entities.PartyID(GenerateID()),
+			Name:           "Name",
+			Closed:         false,
+			CreatedAt:      startTime,
+			CreatedAtEpoch: 1,
+			VegaTime:       startTime,
+		}))
+
+		for _, member := range members {
+			require.NoError(t, teamsStore.RefereeJoinedTeam(ctx, &entities.TeamMember{
+				TeamID:        team,
+				PartyID:       member,
+				JoinedAt:      startTime,
+				JoinedAtEpoch: 1,
+				VegaTime:      startTime,
+			}))
+		}
+	}
+
+	for epoch := int64(1); epoch < 4; epoch++ {
+		blockTime := startTime.Add(time.Duration(epoch) * time.Minute).Truncate(time.Microsecond)
+
+		require.NoError(t, blocksStore.Add(ctx, entities.Block{
+			VegaTime: blockTime,
+			Height:   epoch,
+			Hash:     []byte(vgcrypto.RandomHash()),
+		}))
+
+		seqNum := uint64(0)
+		for _, teamID := range teamIDs {
+			for _, member := range teams[teamID] {
+				seqNum += 1
+				require.NoError(t, rewardsStore.Add(ctx, entities.Reward{
+					PartyID:            member,
+					AssetID:            entities.AssetID(GenerateID()),
+					MarketID:           entities.MarketID(GenerateID()),
+					EpochID:            epoch,
+					Amount:             decimal.NewFromInt(int64(seqNum)),
+					QuantumAmount:      decimal.NewFromInt(epoch + int64(seqNum)),
+					PercentOfTotal:     0.1 * float64(epoch),
+					RewardType:         "NICE_BOY",
+					Timestamp:          blockTime,
+					TxHash:             generateTxHash(),
+					VegaTime:           blockTime,
+					SeqNum:             seqNum,
+					LockedUntilEpochID: epoch,
+					GameID:             ptr.From(gameIDs[(seqNum-1)%4]),
+				}))
+			}
+		}
+	}
+
+	t.Run("Getting all stats from the last 2 epochs", func(t *testing.T) {
+		stats, _, err := teamsStore.ListTeamsStatistics(ctx, entities.DefaultCursorPagination(false), sqlstore.ListTeamsStatisticsFilters{
+			AggregationEpochs: 2,
+		})
+
+		require.NoError(t, err)
+		expectedStats := []entities.TeamsStatistics{
+			{
+				TeamID:              team1,
+				TotalQuantumRewards: decimal.NewFromInt(7),
+				QuantumRewards: []entities.QuantumRewardsPerEpoch{
+					{
+						Epoch: 2,
+						Total: decimal.NewFromInt(3),
+					}, {
+						Epoch: 3,
+						Total: decimal.NewFromInt(4),
+					},
+				},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[0]},
+			},
+			{
+				TeamID:              team2,
+				TotalQuantumRewards: decimal.NewFromInt(9),
+				QuantumRewards: []entities.QuantumRewardsPerEpoch{
+					{
+						Epoch: 2,
+						Total: decimal.NewFromInt(4),
+					}, {
+						Epoch: 3,
+						Total: decimal.NewFromInt(5),
+					},
+				},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[1]},
+			},
+			{
+				TeamID:              team3,
+				TotalQuantumRewards: decimal.NewFromInt(11),
+				QuantumRewards: []entities.QuantumRewardsPerEpoch{
+					{
+						Epoch: 2,
+						Total: decimal.NewFromInt(5),
+					}, {
+						Epoch: 3,
+						Total: decimal.NewFromInt(6),
+					},
+				},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[2]},
+			},
+			{
+				TeamID:              team4,
+				TotalQuantumRewards: decimal.NewFromInt(13),
+				QuantumRewards: []entities.QuantumRewardsPerEpoch{
+					{
+						Epoch: 2,
+						Total: decimal.NewFromInt(6),
+					}, {
+						Epoch: 3,
+						Total: decimal.NewFromInt(7),
+					},
+				},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[3]},
+			},
+		}
+		slices.SortStableFunc(expectedStats, func(a, b entities.TeamsStatistics) bool {
+			return a.TeamID < b.TeamID
+		})
+
+		// Ugly hack to bypass deep-equal limitation with assert.Equal().
+		expectedStatsJson, _ := json.Marshal(expectedStats)
+		statsJson, _ := json.Marshal(stats)
+		assert.JSONEq(t, string(expectedStatsJson), string(statsJson))
+	})
+
+	t.Run("Getting stats from a given team from the last 2 epochs ", func(t *testing.T) {
+		stats, _, err := teamsStore.ListTeamsStatistics(ctx, entities.DefaultCursorPagination(false), sqlstore.ListTeamsStatisticsFilters{
+			TeamID:            ptr.From(entities.TeamID(team1.String())),
+			AggregationEpochs: 2,
+		})
+
+		require.NoError(t, err)
+		expectedStats := []entities.TeamsStatistics{
+			{
+				TeamID:              team1,
+				TotalQuantumRewards: decimal.NewFromInt(7),
+				QuantumRewards: []entities.QuantumRewardsPerEpoch{
+					{
+						Epoch: 2,
+						Total: decimal.NewFromInt(3),
+					}, {
+						Epoch: 3,
+						Total: decimal.NewFromInt(4),
+					},
+				},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[0]},
+			},
+		}
+
+		// Ugly hack to bypass deep-equal limitation with assert.Equal().
+		expectedStatsJson, _ := json.Marshal(expectedStats)
+		statsJson, _ := json.Marshal(stats)
+		assert.JSONEq(t, string(expectedStatsJson), string(statsJson))
 	})
 }

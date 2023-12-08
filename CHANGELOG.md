@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 
 ### 🗑️ Deprecation
 
@@ -30,6 +31,7 @@
 - [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on scope on transfers.
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
+- [9980](https://github.com/vegaprotocol/vega/issues/9980) - Add teams statistics API.
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
@@ -70,6 +72,8 @@
 - [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
 - [10227](https://github.com/vegaprotocol/vega/issues/10227) - Make the wallet errors on spam stats meaningful.
 - [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
+- [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
 
 ## 0.73.0
 

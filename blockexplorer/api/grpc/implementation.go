@@ -81,28 +81,12 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 	var before, after *entities.TxCursor
 	var first, last uint32
 
+	if req.Before != nil && req.After != nil && (req.First > 0 || req.Last > 0) {
+		return nil, apiError(codes.InvalidArgument, errors.New("cannot use neither limits `first`, nor `last` when both cursors `before` and `after` are set"))
+	}
+
 	if req.First > 0 && req.Last > 0 {
-		return nil, apiError(codes.InvalidArgument, errors.New("cannot specify both first and last"))
-	}
-
-	first = b.MaxPageSizeDefault
-	if req.First > 0 {
-		first = req.First
-		if req.After == nil && req.Before != nil {
-			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify before when using first"))
-		}
-	}
-
-	if req.Last > 0 {
-		last = req.Last
-		if req.Before == nil && req.After != nil {
-			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify after when using last"))
-		}
-	}
-
-	// Temporary for now, until we have fully deprecated the limit field in the request.
-	if req.Limit > 0 && req.First == 0 && req.Last == 0 {
-		first = req.Limit
+		return nil, apiError(codes.InvalidArgument, errors.New("cannot use both limits `first` and `last` within the same query"))
 	}
 
 	if req.Before != nil {
@@ -111,6 +95,7 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 			return nil, apiError(codes.InvalidArgument, err)
 		}
 		before = &cursor
+		last = b.MaxPageSizeDefault
 	}
 
 	if req.After != nil {
@@ -119,6 +104,37 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 			return nil, apiError(codes.InvalidArgument, err)
 		}
 		after = &cursor
+		first = b.MaxPageSizeDefault
+	}
+
+	if before != nil && after != nil {
+		// The order of the parameters may seem odd, but this is expected as we have
+		// to keep in mind the natural order of the block-explorer is reverse-chronological.
+		// so, given transactions 4.2, 4.1, 3.2, 3.1, 2.2, when applying the window between
+		// 3.1 and 4.2, then we have to set after to 3.1 and before to 4.2.
+		// So effectively, after is the start and before is the end of the set.
+		if entities.AreValidCursorBoundaries(after, before) {
+			return nil, apiError(codes.InvalidArgument, errors.New("cursors `before` and `after` do not create a valid window"))
+		}
+	}
+
+	if req.First > 0 {
+		if req.Before != nil {
+			return nil, apiError(codes.InvalidArgument, errors.New("cannot use cursor `before` when using limit `first`"))
+		}
+		first = req.First
+	} else if req.Last > 0 {
+		if req.After != nil {
+			return nil, apiError(codes.InvalidArgument, errors.New("cannot use cursor `after` when using limit `last`"))
+		}
+		last = req.Last
+	}
+
+	// Entering this condition means there is no pagination set, so it defaults
+	// to listing the MaxPageSizeDefault newest transactions.
+	// Note, setting limits on a cursor window is not supported.
+	if !(before != nil && after != nil) && first == 0 && last == 0 {
+		first = b.MaxPageSizeDefault
 	}
 
 	transactions, err := b.store.ListTransactions(ctx,

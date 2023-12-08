@@ -1002,7 +1002,7 @@ func (m *Market) removeAllStopOrders(
 		sos, _ := m.stopOrders.Cancel(v.Party(), "")
 		for _, so := range sos {
 			if so.Expiry.Expires() {
-				_ = m.expiringOrders.RemoveOrder(so.Expiry.ExpiresAt.UnixNano(), so.ID)
+				_ = m.expiringStopOrders.RemoveOrder(so.Expiry.ExpiresAt.UnixNano(), so.ID)
 			}
 			evts = append(evts, events.NewStopOrderEvent(ctx, so))
 		}

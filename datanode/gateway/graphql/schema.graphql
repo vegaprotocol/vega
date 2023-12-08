@@ -127,9 +127,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-    @deprecated(
-      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-    )
+  @deprecated(
+    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+  )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -607,7 +607,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-    @deprecated(reason: "Use estimateFees and estimatePosition instead")
+  @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -1017,22 +1017,6 @@ type Query {
     pagination: Pagination
   ): SuccessorMarketConnection
 
-  "List all referees for a team"
-  teamReferees(
-    "ID of the team to list referees for"
-    teamId: ID!
-    "Optional pagination information"
-    pagination: Pagination
-  ): TeamRefereeConnection
-
-  "List a referee's team history"
-  teamRefereeHistory(
-    "ID of the referee to list team history for"
-    referee: ID!
-    "Optional pagination information"
-    pagination: Pagination
-  ): TeamRefereeHistoryConnection
-
   """
   List information about all teams or filter for a specific team ID or referrer, or referee's party ID
   If no filter is provided all teams will be listed.
@@ -1048,6 +1032,36 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): TeamConnection
+
+  """
+  List teams statistics
+  Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+  If a team does not have at least the number of epochs worth of data, it is ignored.
+  """
+  teamsStatistics(
+    "Optional team ID to filter for"
+    teamId: ID
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 30 epochs."
+    aggregationEpochs: Int
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamsStatisticsConnection
+
+  "List all referees for a team"
+  teamReferees(
+    "ID of the team to list referees for"
+    teamId: ID!
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamRefereeConnection
+
+  "List a referee's team history"
+  teamRefereeHistory(
+    "ID of the referee to list team history for"
+    referee: ID!
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamRefereeHistoryConnection
 
   "Get total transfer fee discount available"
   totalTransferFeeDiscount(
@@ -1179,7 +1193,7 @@ type Transfer {
 }
 
 union TransferKind =
-    OneOffTransfer
+  OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -2377,9 +2391,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Current depth on the order book for this market"
   depth(
@@ -2421,7 +2435,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2434,7 +2448,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2612,9 +2626,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2630,7 +2644,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-    @deprecated(reason: "Use root positions query instead of sub-query")
+  @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2695,7 +2709,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-    @deprecated(reason: "Use liquidityProvisions instead")
+  @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -3034,9 +3048,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-    @deprecated(
-      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-    )
+  @deprecated(
+    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+  )
 
   "The order type"
   type: OrderType
@@ -4415,7 +4429,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4457,7 +4471,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-    @deprecated(reason: "This field will be removed in a future release")
+  @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4506,7 +4520,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-    UpdateMarketSimpleRiskModel
+  UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4587,7 +4601,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-    OneOffGovernanceTransfer
+  OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4748,7 +4762,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-    NewMarket
+  NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -6130,7 +6144,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-    DataSourceSpecConfigurationTime
+  DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6152,7 +6166,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-    DataSourceDefinitionInternal
+  DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -6505,6 +6519,45 @@ type TeamEdge {
 type TeamConnection {
   "Teams in this connection"
   edges: [TeamEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Team's statistics record containing the team information."
+type TeamStatistics {
+  "Team ID the statistics are related to."
+  teamId: String!
+  "Total of volume accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumVolume: String!
+  "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumRewards: String!
+  "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
+  quantumRewards: [QuantumRewardsPerEpoch!]!
+  "Total of games played."
+  totalGamePlayed: Int!
+  "List of games played over the requested epoch period."
+  gamesPlayed: [String!]!
+}
+
+type QuantumRewardsPerEpoch {
+  "Epoch for which this information is valid."
+  epoch: Int!
+  "Total of rewards accumulated over the  epoch period expressed in quantum value."
+  total_quantum_rewards: String!
+}
+
+"Edge type containing a team statistics cursor and its associated team's statistics data"
+type TeamStatisticsEdge {
+  "Team's statistics data"
+  node: TeamStatistics!
+  "Cursor identifying the team data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team statistics data"
+type TeamsStatisticsConnection {
+  "Teams' statistics in this connection"
+  edges: [TeamStatisticsEdge!]!
   "Pagination information"
   pageInfo: PageInfo!
 }

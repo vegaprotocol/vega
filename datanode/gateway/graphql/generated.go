@@ -130,6 +130,7 @@ type ResolverRoot interface {
 	ProposalDetail() ProposalDetailResolver
 	ProposalTerms() ProposalTermsResolver
 	ProtocolUpgradeProposal() ProtocolUpgradeProposalResolver
+	QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolver
 	Query() QueryResolver
 	RankingScore() RankingScoreResolver
 	RecurringGovernanceTransfer() RecurringGovernanceTransferResolver
@@ -149,6 +150,7 @@ type ResolverRoot interface {
 	Team() TeamResolver
 	TeamReferee() TeamRefereeResolver
 	TeamRefereeHistory() TeamRefereeHistoryResolver
+	TeamStatistics() TeamStatisticsResolver
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
 	TradeUpdate() TradeUpdateResolver
@@ -1929,6 +1931,11 @@ type ComplexityRoot struct {
 		Key func(childComplexity int) int
 	}
 
+	QuantumRewardsPerEpoch struct {
+		Epoch               func(childComplexity int) int
+		TotalQuantumRewards func(childComplexity int) int
+	}
+
 	Query struct {
 		Asset                              func(childComplexity int, id string) int
 		AssetsConnection                   func(childComplexity int, id *string, pagination *v2.Pagination) int
@@ -1997,6 +2004,7 @@ type ComplexityRoot struct {
 		TeamRefereeHistory                 func(childComplexity int, referee string, pagination *v2.Pagination) int
 		TeamReferees                       func(childComplexity int, teamID string, pagination *v2.Pagination) int
 		Teams                              func(childComplexity int, teamID *string, partyID *string, pagination *v2.Pagination) int
+		TeamsStatistics                    func(childComplexity int, teamID *string, aggregationEpochs *int, pagination *v2.Pagination) int
 		TotalTransferFeeDiscount           func(childComplexity int, partyID string, assetID string) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		Transfer                           func(childComplexity int, id string) int
@@ -2412,6 +2420,25 @@ type ComplexityRoot struct {
 	TeamRefereeHistoryEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	TeamStatistics struct {
+		GamesPlayed         func(childComplexity int) int
+		QuantumRewards      func(childComplexity int) int
+		TeamId              func(childComplexity int) int
+		TotalGamePlayed     func(childComplexity int) int
+		TotalQuantumRewards func(childComplexity int) int
+		TotalQuantumVolume  func(childComplexity int) int
+	}
+
+	TeamStatisticsEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	TeamsStatisticsConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	TimeUpdate struct {
@@ -3258,6 +3285,9 @@ type ProposalTermsResolver interface {
 type ProtocolUpgradeProposalResolver interface {
 	UpgradeBlockHeight(ctx context.Context, obj *v1.ProtocolUpgradeEvent) (string, error)
 }
+type QuantumRewardsPerEpochResolver interface {
+	Epoch(ctx context.Context, obj *v2.QuantumRewardsPerEpoch) (int, error)
+}
 type QueryResolver interface {
 	Asset(ctx context.Context, id string) (*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
@@ -3323,9 +3353,10 @@ type QueryResolver interface {
 	StopOrder(ctx context.Context, id string) (*v1.StopOrderEvent, error)
 	StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error)
 	SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error)
+	Teams(ctx context.Context, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.TeamConnection, error)
+	TeamsStatistics(ctx context.Context, teamID *string, aggregationEpochs *int, pagination *v2.Pagination) (*v2.TeamsStatisticsConnection, error)
 	TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error)
 	TeamRefereeHistory(ctx context.Context, referee string, pagination *v2.Pagination) (*v2.TeamRefereeHistoryConnection, error)
-	Teams(ctx context.Context, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.TeamConnection, error)
 	TotalTransferFeeDiscount(ctx context.Context, partyID string, assetID string) (*v2.GetTotalTransferFeeDiscountResponse, error)
 	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *v1.Transfer_Status, scope *v2.ListTransfersRequest_Scope) (*v2.TransferConnection, error)
@@ -3455,6 +3486,9 @@ type TeamRefereeResolver interface {
 }
 type TeamRefereeHistoryResolver interface {
 	JoinedAtEpoch(ctx context.Context, obj *v2.TeamRefereeHistory) (int, error)
+}
+type TeamStatisticsResolver interface {
+	TotalGamePlayed(ctx context.Context, obj *v2.TeamStatistics) (int, error)
 }
 type TradableInstrumentResolver interface {
 	RiskModel(ctx context.Context, obj *vega.TradableInstrument) (RiskModel, error)
@@ -11033,6 +11067,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PubKey.Key(childComplexity), true
 
+	case "QuantumRewardsPerEpoch.epoch":
+		if e.complexity.QuantumRewardsPerEpoch.Epoch == nil {
+			break
+		}
+
+		return e.complexity.QuantumRewardsPerEpoch.Epoch(childComplexity), true
+
+	case "QuantumRewardsPerEpoch.total_quantum_rewards":
+		if e.complexity.QuantumRewardsPerEpoch.TotalQuantumRewards == nil {
+			break
+		}
+
+		return e.complexity.QuantumRewardsPerEpoch.TotalQuantumRewards(childComplexity), true
+
 	case "Query.asset":
 		if e.complexity.Query.Asset == nil {
 			break
@@ -11796,6 +11844,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Teams(childComplexity, args["teamId"].(*string), args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+
+	case "Query.teamsStatistics":
+		if e.complexity.Query.TeamsStatistics == nil {
+			break
+		}
+
+		args, err := ec.field_Query_teamsStatistics_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TeamsStatistics(childComplexity, args["teamId"].(*string), args["aggregationEpochs"].(*int), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.totalTransferFeeDiscount":
 		if e.complexity.Query.TotalTransferFeeDiscount == nil {
@@ -13577,6 +13637,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TeamRefereeHistoryEdge.Node(childComplexity), true
+
+	case "TeamStatistics.gamesPlayed":
+		if e.complexity.TeamStatistics.GamesPlayed == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.GamesPlayed(childComplexity), true
+
+	case "TeamStatistics.quantumRewards":
+		if e.complexity.TeamStatistics.QuantumRewards == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.QuantumRewards(childComplexity), true
+
+	case "TeamStatistics.teamId":
+		if e.complexity.TeamStatistics.TeamId == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.TeamId(childComplexity), true
+
+	case "TeamStatistics.totalGamePlayed":
+		if e.complexity.TeamStatistics.TotalGamePlayed == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.TotalGamePlayed(childComplexity), true
+
+	case "TeamStatistics.totalQuantumRewards":
+		if e.complexity.TeamStatistics.TotalQuantumRewards == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.TotalQuantumRewards(childComplexity), true
+
+	case "TeamStatistics.totalQuantumVolume":
+		if e.complexity.TeamStatistics.TotalQuantumVolume == nil {
+			break
+		}
+
+		return e.complexity.TeamStatistics.TotalQuantumVolume(childComplexity), true
+
+	case "TeamStatisticsEdge.cursor":
+		if e.complexity.TeamStatisticsEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.TeamStatisticsEdge.Cursor(childComplexity), true
+
+	case "TeamStatisticsEdge.node":
+		if e.complexity.TeamStatisticsEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.TeamStatisticsEdge.Node(childComplexity), true
+
+	case "TeamsStatisticsConnection.edges":
+		if e.complexity.TeamsStatisticsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.TeamsStatisticsConnection.Edges(childComplexity), true
+
+	case "TeamsStatisticsConnection.pageInfo":
+		if e.complexity.TeamsStatisticsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.TeamsStatisticsConnection.PageInfo(childComplexity), true
 
 	case "TimeUpdate.timestamp":
 		if e.complexity.TimeUpdate.Timestamp == nil {
@@ -17480,6 +17610,39 @@ func (ec *executionContext) field_Query_teamReferees_args(ctx context.Context, r
 		}
 	}
 	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_teamsStatistics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["teamId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("teamId"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["teamId"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["aggregationEpochs"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("aggregationEpochs"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["aggregationEpochs"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -68290,6 +68453,94 @@ func (ec *executionContext) fieldContext_PubKey_key(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _QuantumRewardsPerEpoch_epoch(ctx context.Context, field graphql.CollectedField, obj *v2.QuantumRewardsPerEpoch) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuantumRewardsPerEpoch_epoch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.QuantumRewardsPerEpoch().Epoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuantumRewardsPerEpoch_epoch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuantumRewardsPerEpoch",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _QuantumRewardsPerEpoch_total_quantum_rewards(ctx context.Context, field graphql.CollectedField, obj *v2.QuantumRewardsPerEpoch) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_QuantumRewardsPerEpoch_total_quantum_rewards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalQuantumRewards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_QuantumRewardsPerEpoch_total_quantum_rewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "QuantumRewardsPerEpoch",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_asset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_asset(ctx, field)
 	if err != nil {
@@ -72453,6 +72704,122 @@ func (ec *executionContext) fieldContext_Query_successorMarkets(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_teams(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_teams(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Teams(rctx, fc.Args["teamId"].(*string), fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TeamConnection)
+	fc.Result = res
+	return ec.marshalOTeamConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_teams(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_TeamConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TeamConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TeamConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_teams_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_teamsStatistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_teamsStatistics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TeamsStatistics(rctx, fc.Args["teamId"].(*string), fc.Args["aggregationEpochs"].(*int), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TeamsStatisticsConnection)
+	fc.Result = res
+	return ec.marshalOTeamsStatisticsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamsStatisticsConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_teamsStatistics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_TeamsStatisticsConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TeamsStatisticsConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TeamsStatisticsConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_teamsStatistics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_teamReferees(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_teamReferees(ctx, field)
 	if err != nil {
@@ -72563,64 +72930,6 @@ func (ec *executionContext) fieldContext_Query_teamRefereeHistory(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_teamRefereeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_teams(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_teams(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Teams(rctx, fc.Args["teamId"].(*string), fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.TeamConnection)
-	fc.Result = res
-	return ec.marshalOTeamConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_teams(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_TeamConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_TeamConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TeamConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_teams_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -84911,6 +85220,482 @@ func (ec *executionContext) fieldContext_TeamRefereeHistoryEdge_cursor(ctx conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_teamId(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_teamId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TeamId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_teamId(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_totalQuantumVolume(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_totalQuantumVolume(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalQuantumVolume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_totalQuantumVolume(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_totalQuantumRewards(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_totalQuantumRewards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalQuantumRewards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_totalQuantumRewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_quantumRewards(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_quantumRewards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.QuantumRewards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.QuantumRewardsPerEpoch)
+	fc.Result = res
+	return ec.marshalNQuantumRewardsPerEpoch2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐQuantumRewardsPerEpochᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_quantumRewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "epoch":
+				return ec.fieldContext_QuantumRewardsPerEpoch_epoch(ctx, field)
+			case "total_quantum_rewards":
+				return ec.fieldContext_QuantumRewardsPerEpoch_total_quantum_rewards(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type QuantumRewardsPerEpoch", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_totalGamePlayed(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_totalGamePlayed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TeamStatistics().TotalGamePlayed(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_totalGamePlayed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatistics_gamesPlayed(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatistics_gamesPlayed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GamesPlayed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatistics_gamesPlayed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatisticsEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatisticsEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatisticsEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TeamStatistics)
+	fc.Result = res
+	return ec.marshalNTeamStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatistics(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatisticsEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatisticsEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "teamId":
+				return ec.fieldContext_TeamStatistics_teamId(ctx, field)
+			case "totalQuantumVolume":
+				return ec.fieldContext_TeamStatistics_totalQuantumVolume(ctx, field)
+			case "totalQuantumRewards":
+				return ec.fieldContext_TeamStatistics_totalQuantumRewards(ctx, field)
+			case "quantumRewards":
+				return ec.fieldContext_TeamStatistics_quantumRewards(ctx, field)
+			case "totalGamePlayed":
+				return ec.fieldContext_TeamStatistics_totalGamePlayed(ctx, field)
+			case "gamesPlayed":
+				return ec.fieldContext_TeamStatistics_gamesPlayed(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TeamStatistics", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamStatisticsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.TeamStatisticsEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamStatisticsEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamStatisticsEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamStatisticsEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamsStatisticsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.TeamsStatisticsConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamsStatisticsConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.TeamStatisticsEdge)
+	fc.Result = res
+	return ec.marshalNTeamStatisticsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatisticsEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamsStatisticsConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamsStatisticsConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_TeamStatisticsEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_TeamStatisticsEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TeamStatisticsEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TeamsStatisticsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.TeamsStatisticsConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TeamsStatisticsConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TeamsStatisticsConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TeamsStatisticsConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -111832,6 +112617,54 @@ func (ec *executionContext) _PubKey(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var quantumRewardsPerEpochImplementors = []string{"QuantumRewardsPerEpoch"}
+
+func (ec *executionContext) _QuantumRewardsPerEpoch(ctx context.Context, sel ast.SelectionSet, obj *v2.QuantumRewardsPerEpoch) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, quantumRewardsPerEpochImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("QuantumRewardsPerEpoch")
+		case "epoch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._QuantumRewardsPerEpoch_epoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "total_quantum_rewards":
+
+			out.Values[i] = ec._QuantumRewardsPerEpoch_total_quantum_rewards(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -113206,6 +114039,46 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "teams":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_teams(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "teamsStatistics":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_teamsStatistics(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "teamReferees":
 			field := field
 
@@ -113236,26 +114109,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_teamRefereeHistory(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "teams":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_teams(ctx, field)
 				return res
 			}
 
@@ -116934,6 +117787,152 @@ func (ec *executionContext) _TeamRefereeHistoryEdge(ctx context.Context, sel ast
 		case "cursor":
 
 			out.Values[i] = ec._TeamRefereeHistoryEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var teamStatisticsImplementors = []string{"TeamStatistics"}
+
+func (ec *executionContext) _TeamStatistics(ctx context.Context, sel ast.SelectionSet, obj *v2.TeamStatistics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, teamStatisticsImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TeamStatistics")
+		case "teamId":
+
+			out.Values[i] = ec._TeamStatistics_teamId(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "totalQuantumVolume":
+
+			out.Values[i] = ec._TeamStatistics_totalQuantumVolume(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "totalQuantumRewards":
+
+			out.Values[i] = ec._TeamStatistics_totalQuantumRewards(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "quantumRewards":
+
+			out.Values[i] = ec._TeamStatistics_quantumRewards(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "totalGamePlayed":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TeamStatistics_totalGamePlayed(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "gamesPlayed":
+
+			out.Values[i] = ec._TeamStatistics_gamesPlayed(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var teamStatisticsEdgeImplementors = []string{"TeamStatisticsEdge"}
+
+func (ec *executionContext) _TeamStatisticsEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.TeamStatisticsEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, teamStatisticsEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TeamStatisticsEdge")
+		case "node":
+
+			out.Values[i] = ec._TeamStatisticsEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._TeamStatisticsEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var teamsStatisticsConnectionImplementors = []string{"TeamsStatisticsConnection"}
+
+func (ec *executionContext) _TeamsStatisticsConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.TeamsStatisticsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, teamsStatisticsConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TeamsStatisticsConnection")
+		case "edges":
+
+			out.Values[i] = ec._TeamsStatisticsConnection_edges(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._TeamsStatisticsConnection_pageInfo(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -123306,6 +124305,60 @@ func (ec *executionContext) marshalNProtocolUpgradeProposalStatus2codeᚗvegapro
 	return res
 }
 
+func (ec *executionContext) marshalNQuantumRewardsPerEpoch2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐQuantumRewardsPerEpochᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.QuantumRewardsPerEpoch) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNQuantumRewardsPerEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐQuantumRewardsPerEpoch(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNQuantumRewardsPerEpoch2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐQuantumRewardsPerEpoch(ctx context.Context, sel ast.SelectionSet, v *v2.QuantumRewardsPerEpoch) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._QuantumRewardsPerEpoch(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐRankingScore(ctx context.Context, sel ast.SelectionSet, v *vega.RankingScore) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -124184,6 +125237,70 @@ func (ec *executionContext) marshalNTeamRefereeHistoryEdge2ᚖcodeᚗvegaprotoco
 		return graphql.Null
 	}
 	return ec._TeamRefereeHistoryEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTeamStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatistics(ctx context.Context, sel ast.SelectionSet, v *v2.TeamStatistics) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TeamStatistics(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTeamStatisticsEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatisticsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.TeamStatisticsEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTeamStatisticsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatisticsEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTeamStatisticsEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamStatisticsEdge(ctx context.Context, sel ast.SelectionSet, v *v2.TeamStatisticsEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TeamStatisticsEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNTimestamp2int64(ctx context.Context, v interface{}) (int64, error) {
@@ -130146,6 +131263,13 @@ func (ec *executionContext) marshalOTeamRefereeHistoryConnection2ᚖcodeᚗvegap
 		return graphql.Null
 	}
 	return ec._TeamRefereeHistoryConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTeamsStatisticsConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTeamsStatisticsConnection(ctx context.Context, sel ast.SelectionSet, v *v2.TeamsStatisticsConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TeamsStatisticsConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2int64(ctx context.Context, v interface{}) (int64, error) {
