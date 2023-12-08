@@ -91,11 +91,13 @@ type ProposalID = ID[_Proposal]
 
 type Proposal struct {
 	ID                      ProposalID
+	BatchID                 *ProposalID
 	Reference               string
 	PartyID                 PartyID
 	State                   ProposalState
 	Rationale               ProposalRationale
 	Terms                   ProposalTerms
+	BatchTerms              BatchProposalTerms
 	Reason                  ProposalError
 	ErrorDetails            string
 	ProposalTime            time.Time
@@ -127,14 +129,21 @@ func (p Proposal) ToProto() *vega.Proposal {
 		errDetails = ptr.From(p.ErrorDetails)
 	}
 
+	var batchID *string
+	if p.BatchID != nil {
+		batchID = ptr.From(p.BatchID.String())
+	}
+
 	pp := vega.Proposal{
 		Id:                                     p.ID.String(),
+		BatchId:                                batchID,
 		Reference:                              p.Reference,
 		PartyId:                                p.PartyID.String(),
 		State:                                  vega.Proposal_State(p.State),
 		Rationale:                              p.Rationale.ProposalRationale,
 		Timestamp:                              p.ProposalTime.UnixNano(),
 		Terms:                                  p.Terms.ProposalTerms,
+		BatchTerms:                             p.BatchTerms.BatchProposalTerms,
 		Reason:                                 reason,
 		ErrorDetails:                           errDetails,
 		RequiredMajority:                       p.RequiredMajority.String(),
@@ -202,13 +211,20 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		errDetails = *pp.ErrorDetails
 	}
 
+	var batchID *ProposalID
+	if pp.BatchId != nil {
+		batchID = ptr.From(ProposalID(*pp.BatchId))
+	}
+
 	p := Proposal{
 		ID:                      ProposalID(pp.Id),
+		BatchID:                 batchID,
 		Reference:               pp.Reference,
 		PartyID:                 PartyID(pp.PartyId),
 		State:                   ProposalState(pp.State),
 		Rationale:               ProposalRationale{pp.Rationale},
 		Terms:                   ProposalTerms{pp.GetTerms()},
+		BatchTerms:              BatchProposalTerms{pp.GetBatchTerms()},
 		Reason:                  reason,
 		ErrorDetails:            errDetails,
 		ProposalTime:            time.Unix(0, pp.Timestamp),
@@ -244,7 +260,36 @@ func (pt ProposalTerms) MarshalJSON() ([]byte, error) {
 
 func (pt *ProposalTerms) UnmarshalJSON(b []byte) error {
 	pt.ProposalTerms = &vega.ProposalTerms{}
-	return protojson.Unmarshal(b, pt)
+	if err := protojson.Unmarshal(b, pt); err != nil {
+		return err
+	}
+
+	if pt.ProposalTerms.Change == nil {
+		pt.ProposalTerms = nil
+	}
+
+	return nil
+}
+
+type BatchProposalTerms struct {
+	*vega.BatchProposalTerms
+}
+
+func (pt BatchProposalTerms) MarshalJSON() ([]byte, error) {
+	return protojson.Marshal(pt)
+}
+
+func (pt *BatchProposalTerms) UnmarshalJSON(b []byte) error {
+	pt.BatchProposalTerms = &vega.BatchProposalTerms{}
+	if err := protojson.Unmarshal(b, pt); err != nil {
+		return err
+	}
+
+	if pt.BatchProposalTerms.Changes == nil || len(pt.BatchProposalTerms.Changes) == 0 {
+		pt.BatchProposalTerms = nil
+	}
+
+	return nil
 }
 
 type ProposalCursor struct {

@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
@@ -46,13 +47,23 @@ func addTestProposal(
 	rationale entities.ProposalRationale,
 	terms entities.ProposalTerms,
 	reason entities.ProposalError,
+	batchID *string,
+	batchTerms entities.BatchProposalTerms,
 ) entities.Proposal {
 	t.Helper()
+
+	var batchProposalID *entities.ProposalID
+	if batchID != nil {
+		batchProposalID = ptr.From(entities.ProposalID(*batchID))
+	}
+
 	p := entities.Proposal{
 		ID:                      entities.ProposalID(id),
+		BatchID:                 batchProposalID,
 		PartyID:                 party.ID,
 		Reference:               reference,
 		Terms:                   terms,
+		BatchTerms:              batchTerms,
 		State:                   state,
 		VegaTime:                block.VegaTime,
 		ProposalTime:            block.VegaTime,
@@ -75,7 +86,17 @@ func proposalLessThan(x, y entities.Proposal) bool {
 func assertProposalsMatch(t *testing.T, expected, actual []entities.Proposal) {
 	t.Helper()
 	sortProposals := cmpopts.SortSlices(proposalLessThan)
-	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{}, vega.ProposalRationale{}, vega.NewMarket{}, vega.NewAsset{})
+	ignoreProtoState := cmpopts.IgnoreUnexported(
+		vega.ProposalTerms{},
+		vega.BatchProposalTerms{},
+		vega.BatchProposalTermsChange{},
+		vega.ProposalRationale{},
+		vega.NewMarket{},
+		vega.NewAsset{},
+		vega.UpdateAsset{},
+		vega.NewMarketConfiguration{},
+		vega.SuccessorConfiguration{},
+	)
 	assert.Empty(t, cmp.Diff(actual, expected, sortProposals, ignoreProtoState))
 }
 
@@ -83,9 +104,12 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 	t.Helper()
 	ignoreProtoState := cmpopts.IgnoreUnexported(
 		vega.ProposalTerms{},
+		vega.BatchProposalTerms{},
+		vega.BatchProposalTermsChange{},
 		vega.ProposalRationale{},
 		vega.NewMarket{},
 		vega.NewAsset{},
+		vega.UpdateAsset{},
 		vega.NewMarketConfiguration{},
 		vega.SuccessorConfiguration{},
 	)
@@ -111,8 +135,8 @@ func TestProposals(t *testing.T) {
 
 	reference1 := GenerateID()
 	reference2 := GenerateID()
-	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
-	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -168,7 +192,112 @@ func TestProposals(t *testing.T) {
 
 	t.Run("Add with proposal error", func(t *testing.T) {
 		propError := entities.ProposalInvalidPerpetualProduct
-		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
+		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError, nil, entities.BatchProposalTerms{})
+		actual, err := propStore.GetByID(ctx, string(expected.ID))
+		require.NoError(t, err)
+		assert.Equal(t, expected.Reason, actual.Reason)
+	})
+
+}
+
+func newBatchProposalProposal() entities.BatchProposalTerms {
+	return entities.BatchProposalTerms{
+		BatchProposalTerms: &vega.BatchProposalTerms{
+			ClosingTimestamp: 10,
+			Changes: []*vega.BatchProposalTermsChange{
+				{
+					EnactmentTimestamp: 20,
+					Change:             &vega.BatchProposalTermsChange_NewMarket{NewMarket: &vega.NewMarket{}},
+				},
+				{
+					EnactmentTimestamp: 30,
+					Change:             &vega.BatchProposalTermsChange_UpdateAsset{UpdateAsset: &vega.UpdateAsset{}},
+				},
+			},
+		},
+	}
+}
+
+func TestBatchProposals(t *testing.T) {
+	// ctx := context.Background()
+	ctx := tempTransaction(t)
+
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	block1 := addTestBlock(t, ctx, blockStore)
+
+	party1 := addTestParty(t, ctx, partyStore, block1)
+	party2 := addTestParty(t, ctx, partyStore, block1)
+	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
+	terms1 := newBatchProposalProposal()
+	terms2 := newBatchProposalProposal()
+	id1 := GenerateID()
+	id2 := GenerateID()
+
+	reference1 := GenerateID()
+	reference2 := GenerateID()
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1,
+		entities.ProposalTerms{}, entities.ProposalErrorUnspecified, nil, terms1)
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2,
+		entities.ProposalTerms{}, entities.ProposalErrorUnspecified, nil, terms2)
+
+	party1ID := party1.ID.String()
+	prop1ID := prop1.ID.String()
+	propType := &entities.ProposalTypeNewMarket
+
+	t.Run("GetById", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByID(ctx, prop1ID)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
+
+		expected = prop2
+		actual, err = propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
+	})
+
+	t.Run("GetByReference", func(t *testing.T) {
+		expected := prop2
+		actual, err := propStore.GetByReference(ctx, prop2.Reference)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetInState", func(t *testing.T) {
+		enacted := entities.ProposalStateEnacted
+		expected := []entities.Proposal{prop1, prop2}
+		actual, _, err := propStore.Get(ctx, &enacted, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByParty", func(t *testing.T) {
+		expected := []entities.Proposal{prop1}
+		actual, _, err := propStore.Get(ctx, nil, &party1ID, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByType", func(t *testing.T) {
+		expected := []entities.Proposal{prop1}
+		actual, _, err := propStore.Get(ctx, nil, nil, propType, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("Add with proposal error", func(t *testing.T) {
+		propError := entities.ProposalInvalidPerpetualProduct
+		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, entities.ProposalTerms{}, propError, nil, terms1)
 		actual, err := propStore.GetByID(ctx, string(expected.ID))
 		require.NoError(t, err)
 		assert.Equal(t, expected.Reason, actual.Reason)
@@ -940,8 +1069,8 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 		terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 		terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
 
-		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1, entities.ProposalErrorUnspecified)
-		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2, entities.ProposalErrorUnspecified)
+		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
 		i++
 	}
 
@@ -995,8 +1124,8 @@ func TestProposeSuccessorMarket(t *testing.T) {
 
 	reference1 := GenerateID()
 	reference2 := GenerateID()
-	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
-	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket, nil, entities.BatchProposalTerms{})
 
 	t.Run("GetByID", func(t *testing.T) {
 		want := prop1

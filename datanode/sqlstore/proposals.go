@@ -49,10 +49,12 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
+			batch_id,
 			reference,
 			party_id,
 			state,
 			terms,
+			batch_terms,
 			rationale,
 			reason,
 			error_details,
@@ -63,7 +65,7 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			required_lp_majority,
 			required_lp_participation,
 			tx_hash)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
@@ -76,7 +78,9 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			tx_hash = EXCLUDED.tx_hash
 			;
 		 `,
-		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
+		p.ID, p.BatchID, p.Reference, p.PartyID, p.State, p.Terms, p.BatchTerms, p.Rationale, p.Reason,
+		p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation,
+		p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
 	return err
 }
 
@@ -272,6 +276,7 @@ func (ps *Proposals) Get(ctx context.Context,
 
 	if proposalType != nil && *proposalType != entities.ProposalTypeAll {
 		conditions = append(conditions, fmt.Sprintf("terms ? %s", nextBindVar(&args, proposalType.String())))
+		conditions = append(conditions, fmt.Sprintf("batch_terms->>'changes' LIKE '%%%s%%'", nextBindVar(&args, proposalType.String())))
 	}
 
 	var err error
@@ -302,9 +307,13 @@ func (ps *Proposals) Get(ctx context.Context,
 		batch.Queue(stateOpenQuery, stateOpenArgs...)
 	}
 
+	fmt.Println("stateOpenQuery:", stateOpenQuery)
+
 	if stateOtherQuery != "" {
 		batch.Queue(stateOtherQuery, stateOtherArgs...)
 	}
+
+	fmt.Println("stateOtherQuery:", stateOtherQuery)
 
 	defer metrics.StartSQLQuery("Proposals", "Get")()
 	results := ps.Connection.SendBatch(ctx, batch)
