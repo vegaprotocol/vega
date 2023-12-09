@@ -251,6 +251,12 @@ func (e *Engine) ResetPosition(ctx context.Context, party string) *MarketPositio
 
 	pos = NewMarketPosition(party)
 	e.positions[party] = pos
+	for i := range e.positionsCpy {
+		if e.positionsCpy[i].Party() == party {
+			e.positionsCpy[i] = pos
+			break
+		}
+	}
 	e.positionUpdated(ctx, pos)
 	return pos
 }

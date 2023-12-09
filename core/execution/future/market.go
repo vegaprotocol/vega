@@ -882,6 +882,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// hack hack hack
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
 	if blockHeight == 26439343 && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+		m.log.Info("going to remove all orders for party")
 		err := m.cancelAllOrders26439343(ctx)
 		if err != nil {
 			m.log.Panic("failed to cancel orders for patch block 26439343")
@@ -2925,6 +2926,7 @@ func (m *Market) cancelAllOrders26439343(ctx context.Context) error {
 
 	// just an early exit, there's just no orders...
 	if len(orders) <= 0 {
+		m.log.Info("HACK: there were no orders")
 		return nil
 	}
 
@@ -2943,6 +2945,9 @@ func (m *Market) cancelAllOrders26439343(ctx context.Context) error {
 		return orders[i].ID < orders[j].ID
 	})
 
+	for _, o := range orders {
+		m.log.Info("HACK: going to cancel order", logging.Order(o))
+	}
 	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
 
 	// now iterate over all orders and cancel one by one.
@@ -2950,12 +2955,21 @@ func (m *Market) cancelAllOrders26439343(ctx context.Context) error {
 	for _, order := range orders {
 		cancellation, err := m.cancelOrder26439343(ctx, partyID, order.ID)
 		if err != nil {
+			m.log.Error("Hack: got error when cancelling order", logging.Order(order))
 			return err
 		}
 		cancellations = append(cancellations, cancellation)
 		cancelledOrders = append(cancelledOrders, cancellation.Order)
 	}
-	m.position.ResetPosition(ctx, partyID)
+	// verify that all transactions are gone
+	orders = m.matching.GetOrdersPerParty(partyID)
+	m.log.Info("HACK: orders after cancelling all transctions:", logging.Int("orders", len(orders)))
+	for _, o := range orders {
+		m.log.Info("HACK: order survived cancellation somehow", logging.Order(o))
+	}
+
+	p := m.position.ResetPosition(ctx, partyID)
+	m.log.Info("HACK: position after reset", logging.Int64("size", p.Size()), logging.Int64("buy", p.Buy()), logging.Int64("sell", p.Sell()))
 	m.releaseMarginExcess(ctx, partyID)
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
 	return nil
