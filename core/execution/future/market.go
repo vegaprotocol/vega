@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"sync"
 	"time"
@@ -882,10 +883,13 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// hack hack hack
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
 	if blockHeight == 26439343 && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
-		m.log.Info("going to remove all orders for party")
+		m.log.Info("HACK: going to remove all orders for party")
 		err := m.cancelAllOrders26439343(ctx)
 		if err != nil {
 			m.log.Panic("failed to cancel orders for patch block 26439343")
+		}
+		if len(m.matching.GetOrdersPerParty("239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379")) > 0 {
+			m.log.Panic("HACK: the order book for the party is not empty")
 		}
 	}
 	// end hack hack hack
@@ -1874,6 +1878,16 @@ func (m *Market) SubmitOrder(
 	deterministicID string,
 ) (oc *types.OrderConfirmation, _ error) {
 	idgen := idgeneration.New(deterministicID)
+	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+	if blockHeight >= 26439344 {
+		if m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" && party == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" {
+			m.log.Info("HACK: new transaction submitted with size", logging.Uint64("size=", orderSubmission.Size))
+		}
+		if orderSubmission.Size > math.MaxInt64/2 {
+			return nil, fmt.Errorf("HACK: Size too large")
+		}
+	}
+
 	return m.SubmitOrderWithIDGeneratorAndOrderID(
 		ctx, orderSubmission, party, idgen, idgen.NextID(), true,
 	)
@@ -3165,7 +3179,8 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, common.ErrMarketClosed
 	}
 
-	if partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+	if blockHeight >= 264393434 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
 		m.log.Info("HACK: normal cancel order" + orderID)
 	}
 
@@ -3211,7 +3226,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			return nil, err
 		}
 		p, _ := m.position.GetPositionByPartyID(partyID)
-		m.log.Info("HACK: before unregistering the order, the position looks like", logging.Int64("size", p.Size()), logging.Int64("buy", p.Buy()), logging.Int64("sell", p.Sell()))
+		if partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+			m.log.Info("HACK: before unregistering the order, the position looks like", logging.Int64("size", p.Size()), logging.Int64("buy", p.Buy()), logging.Int64("sell", p.Sell()))
+		}
 		_ = m.position.UnregisterOrder(ctx, order)
 	}
 
