@@ -3180,7 +3180,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	}
 
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
-	if blockHeight >= 264393433 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+	if blockHeight >= 26439343 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
 		m.log.Info("HACK: normal cancel order" + orderID)
 	}
 
@@ -3189,7 +3189,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 		return nil, err
 	}
 
-	if blockHeight >= 264393433 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+	if blockHeight >= 26439343 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
 		m.log.Info("HACK: normal cancel order"+orderID, logging.Bool("found on book", foundOnBook))
 		ordersForParty := m.matching.GetOrdersPerParty(partyID)
 		m.log.Info("HACK: at this point the party has orders?", logging.Int("order count when trying to cancel the order", len(ordersForParty)))
@@ -3226,7 +3226,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			return nil, err
 		}
 		p, _ := m.position.GetPositionByPartyID(partyID)
-		if blockHeight >= 264393433 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+		if blockHeight >= 26439343 && partyID == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
 			m.log.Info("HACK: before unregistering the order, the position looks like", logging.Int64("size", p.Size()), logging.Int64("buy", p.Buy()), logging.Int64("sell", p.Sell()))
 		}
 		_ = m.position.UnregisterOrder(ctx, order)
