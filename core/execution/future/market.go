@@ -882,9 +882,9 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	// hack hack hack
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
 	if blockHeight == 26439343 && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
-		err := m.cancelAllOrdersLewis(ctx)
+		err := m.cancelAllOrders26439343(ctx)
 		if err != nil {
-			m.log.Panic("failed to cancel orders for lewis")
+			m.log.Panic("failed to cancel orders for patch block 26439343")
 		}
 	}
 	// end hack hack hack
@@ -2910,10 +2910,10 @@ func (m *Market) CancelAllStopOrders(ctx context.Context, partyID string) error 
 	return nil
 }
 
-// cancelAllOrdersLewis is a copy of cancelAllOrder which is run with Lewis' party id with the intention of cancelling all of his
+// cancelAllOrders26439343 is a copy of cancelAllOrder which is run with party id with the intention of cancelling all of his
 // orders for this market, with one exception - rather than updating the position for each order, we're resetting his position to zero
 // after cancelling all orders.
-func (m *Market) cancelAllOrdersLewis(ctx context.Context) error {
+func (m *Market) cancelAllOrders26439343(ctx context.Context) error {
 	partyID := "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379"
 	defer m.onTxProcessed()
 
@@ -2948,7 +2948,7 @@ func (m *Market) cancelAllOrdersLewis(ctx context.Context) error {
 	// now iterate over all orders and cancel one by one.
 	cancelledOrders := make([]*types.Order, 0, len(orders))
 	for _, order := range orders {
-		cancellation, err := m.cancelOrderLewis(ctx, partyID, order.ID)
+		cancellation, err := m.cancelOrder26439343(ctx, partyID, order.ID)
 		if err != nil {
 			return err
 		}
@@ -3081,8 +3081,8 @@ func (m *Market) removeCancelledExpiringStopOrders(
 	}
 }
 
-// cancelOrderLewis is copy of cancelOrder just without releasing the position and margin, this is done on the cancelAllOrders
-func (m *Market) cancelOrderLewis(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+// cancelOrder26439343 is copy of cancelOrder just without releasing the position and margin, this is done on the cancelAllOrders
+func (m *Market) cancelOrder26439343(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
