@@ -1877,7 +1877,7 @@ func (m *Market) SubmitOrder(
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
 	if blockHeight >= 26439343 {
 		if orderSubmission.Size > math.MaxInt64/2 {
-			return nil, fmt.Errorf("Order Size too large")
+			return nil, fmt.Errorf("Order size too large")
 		}
 	}
 
