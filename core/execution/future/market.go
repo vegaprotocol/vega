@@ -3140,6 +3140,8 @@ func (m *Market) cancelOrder26439343(ctx context.Context, partyID, orderID strin
 
 	// Publish the changed order details
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
+	order.Remaining = 0
+	order.Size = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
