@@ -44,6 +44,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -877,6 +878,16 @@ func (m *Market) PostRestore(ctx context.Context) error {
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	defer m.onTxProcessed()
+
+	// hack hack hack
+	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+	if blockHeight == 26439343 && m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" {
+		err := m.cancelAllOrdersLewis(ctx)
+		if err != nil {
+			m.log.Panic("failed to cancel orders for lewis")
+		}
+	}
+	// end hack hack hack
 
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnTick")
 	m.mu.Lock()
@@ -2899,6 +2910,57 @@ func (m *Market) CancelAllStopOrders(ctx context.Context, partyID string) error 
 	return nil
 }
 
+// cancelAllOrdersLewis is a copy of cancelAllOrder which is run with Lewis' party id with the intention of cancelling all of his
+// orders for this market, with one exception - rather than updating the position for each order, we're resetting his position to zero
+// after cancelling all orders.
+func (m *Market) cancelAllOrdersLewis(ctx context.Context) error {
+	partyID := "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379"
+	defer m.onTxProcessed()
+
+	// get all order for this party in the book
+	orders := m.matching.GetOrdersPerParty(partyID)
+
+	// add all orders being eventually parked
+	orders = append(orders, m.peggedOrders.GetAllParkedForParty(partyID)...)
+
+	// just an early exit, there's just no orders...
+	if len(orders) <= 0 {
+		return nil
+	}
+
+	// now we eventually dedup them
+	uniq := map[string]*types.Order{}
+	for _, v := range orders {
+		uniq[v.ID] = v
+	}
+
+	// put them back in the slice, and sort them
+	orders = make([]*types.Order, 0, len(uniq))
+	for _, v := range uniq {
+		orders = append(orders, v)
+	}
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].ID < orders[j].ID
+	})
+
+	cancellations := make([]*types.OrderCancellationConfirmation, 0, len(orders))
+
+	// now iterate over all orders and cancel one by one.
+	cancelledOrders := make([]*types.Order, 0, len(orders))
+	for _, order := range orders {
+		cancellation, err := m.cancelOrderLewis(ctx, partyID, order.ID)
+		if err != nil {
+			return err
+		}
+		cancellations = append(cancellations, cancellation)
+		cancelledOrders = append(cancelledOrders, cancellation.Order)
+	}
+	m.position.ResetPosition(ctx, partyID)
+	m.releaseMarginExcess(ctx, partyID)
+	m.checkForReferenceMoves(ctx, cancelledOrders, false)
+	return nil
+}
+
 func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
 	defer m.onTxProcessed()
 
@@ -3019,7 +3081,66 @@ func (m *Market) removeCancelledExpiringStopOrders(
 	}
 }
 
-// CancelOrder cancels the given order.
+// cancelOrderLewis is copy of cancelOrder just without releasing the position and margin, this is done on the cancelAllOrders
+func (m *Market) cancelOrderLewis(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
+	defer timer.EngineTimeCounterAdd()
+
+	if m.closed {
+		return nil, common.ErrMarketClosed
+	}
+
+	order, foundOnBook, err := m.getOrderByID(orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only allow the original order creator to cancel their order
+	if order.Party != partyID {
+		if m.log.GetLevel() == logging.DebugLevel {
+			m.log.Debug("Party ID mismatch",
+				logging.String("party-id", partyID),
+				logging.String("order-id", orderID),
+				logging.String("market", m.mkt.ID))
+		}
+		return nil, types.ErrInvalidPartyID
+	}
+
+	defer m.releaseMarginExcess(ctx, partyID)
+
+	if foundOnBook {
+		cancellation, err := m.matching.CancelOrder(order)
+		if cancellation == nil || err != nil {
+			if m.log.GetLevel() == logging.DebugLevel {
+				m.log.Debug("Failure after cancel order from matching engine",
+					logging.String("party-id", partyID),
+					logging.String("order-id", orderID),
+					logging.String("market", m.mkt.ID),
+					logging.Error(err))
+			}
+			return nil, err
+		}
+		// not removing the position here intentionally, will remove the whole thing after all orders are cancelled
+		// _ = m.position.UnregisterOrder(ctx, order)
+	}
+
+	if order.IsExpireable() {
+		m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
+	}
+
+	// If this is a pegged order, remove from pegged and parked lists
+	if order.PeggedOrder != nil {
+		m.removePeggedOrder(order)
+		order.Status = types.OrderStatusCancelled
+	}
+
+	// Publish the changed order details
+	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
+	m.broker.Send(events.NewOrderEvent(ctx, order))
+
+	return &types.OrderCancellationConfirmation{Order: order}, nil
+}
+
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()

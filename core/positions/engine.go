@@ -241,6 +241,20 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 	return pos
 }
 
+// ResetPosition is a hack to reset the position of a party with orders only
+func (e *Engine) ResetPosition(ctx context.Context, party string) *MarketPosition {
+	pos, found := e.positions[party]
+	if !found || pos.size != 0 {
+		e.log.Panic("could not find position in engine when resetting position or position is non-zero",
+			logging.String("party", party))
+	}
+
+	pos = NewMarketPosition(party)
+	e.positions[party] = pos
+	e.positionUpdated(ctx, pos)
+	return pos
+}
+
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs.
 func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.Order) *MarketPosition {
