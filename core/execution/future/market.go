@@ -1879,7 +1879,7 @@ func (m *Market) SubmitOrder(
 ) (oc *types.OrderConfirmation, _ error) {
 	idgen := idgeneration.New(deterministicID)
 	blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
-	if blockHeight >= 26439344 {
+	if blockHeight >= 26439343 {
 		if m.mkt.ID == "f148741398d6bafafdc384819808a14e07340182455105e280aa0294c92c2e60" && party == "239a6fe4f7878b1c2ac6b1fa1916fb6574e1fe6d08a1ca0de6beb68783493379" {
 			m.log.Info("HACK: new transaction submitted with size", logging.Uint64("size=", orderSubmission.Size))
 		}
