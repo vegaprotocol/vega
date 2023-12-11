@@ -74,6 +74,7 @@
 - [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
 - [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
+- [10241](https://github.com/vegaprotocol/vega/issues/10241) - Do not include start epoch on referees set statistics.
 
 ## 0.73.0
 
