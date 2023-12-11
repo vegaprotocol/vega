@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -194,26 +194,50 @@ func TestCheckAmendAMM(t *testing.T) {
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: ptr.From(""),
+					MarginRatioAtUpperBound: ptr.From(""),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: ptr.From("abc"),
+					MarginRatioAtUpperBound: ptr.From("abc"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: ptr.From("-10"),
+					MarginRatioAtUpperBound: ptr.From("-10"),
 				},
 			},
-			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (must be positive)",
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (must be positive)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: ptr.From(""),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: ptr.From("abc"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: ptr.From("-10"),
+				},
+			},
+			errStr: "amend_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (must be positive)",
 		},
 		{
 			submission: commandspb.AmendAMM{
