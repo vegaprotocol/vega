@@ -1,0 +1,282 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package amm
+
+import (
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
+)
+
+type curve struct {
+	l    *num.Uint   // virtual liquidity
+	high *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
+	low  *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
+	rf   num.Decimal // commitment scaling factor
+}
+
+type Pool struct {
+	ID         string
+	SubAccount string
+	Commitment *num.Uint
+	Parameters *types.ConcentratedLiquidityParameters
+
+	asset      string
+	market     string
+	collateral Collateral
+	position   Position
+
+	// sqrt function to use.
+	sqrt sqrtFn
+
+	// the two curves joined at base-price used to determine price and volume in the pool
+	// lower is used when the pool is long.
+	lower *curve
+	upper *curve
+}
+
+func NewPool(
+	id,
+	subAccount,
+	asset string,
+	submit *types.SubmitAMM,
+	sqrt sqrtFn,
+	collateral Collateral,
+	position Position,
+	rf *types.RiskFactor,
+	sf *types.ScalingFactors,
+	linearSlippage num.Decimal,
+) *Pool {
+	pool := &Pool{
+		ID:         id,
+		SubAccount: subAccount,
+		Commitment: submit.CommitmentAmount,
+		Parameters: submit.Parameters,
+		market:     submit.MarketID,
+		asset:      asset,
+		sqrt:       sqrt,
+		collateral: collateral,
+		position:   position,
+	}
+	pool.setCurves(rf, sf, linearSlippage)
+	return pool
+}
+
+func (p *Pool) Update(
+	amend *types.AmendAMM,
+	rf *types.RiskFactor,
+	sf *types.ScalingFactors,
+	linearSlippage num.Decimal,
+) {
+	p.Commitment = amend.CommitmentAmount
+	p.Parameters.ApplyUpdate(amend.Parameters)
+	p.setCurves(rf, sf, linearSlippage)
+}
+
+func calculateVirtualLiquidity(
+	sqrt sqrtFn,
+	commitment,
+	low, high *num.Uint,
+	riskFactor,
+	marginFactor,
+	linearSlippage num.Decimal,
+	marginRatio *num.Decimal,
+) (*num.Uint, num.Decimal) {
+	rf := num.DecimalOne().Div(marginFactor.Mul(riskFactor.Add(linearSlippage)))
+	if marginRatio != nil {
+		// min(rf, 1/margin-ratio)
+		rf = num.MinD(rf, num.DecimalOne().Div(*marginRatio))
+	}
+
+	// v_worst = rf * commitment
+	vw, _ := num.UintFromDecimal(rf.Mul(num.DecimalFromUint(commitment)))
+
+	// L = v_worst / ( sqrt(high) - sqrt(low) )
+	// where if calculating for the lower curve high = base, low = lower_bound
+	// and if the upper curve, high = upper_bound, low = base
+	denom := num.UintZero().Sub(sqrt(high), sqrt(low))
+	return num.UintOne().Div(vw, denom), rf
+}
+
+func (p *Pool) setCurves(
+	rfs *types.RiskFactor,
+	sfs *types.ScalingFactors,
+	linearSlippage num.Decimal,
+) {
+	l, rf := calculateVirtualLiquidity(
+		p.sqrt,
+		p.Commitment.Clone(),
+		p.Parameters.LowerBound.Clone(),
+		p.Parameters.Base.Clone(),
+		rfs.Long,
+		sfs.InitialMargin,
+		linearSlippage,
+		p.Parameters.MarginRatioAtLowerBound,
+	)
+	p.lower = &curve{
+		l:    l,
+		rf:   rf,
+		low:  p.Parameters.LowerBound.Clone(),
+		high: p.Parameters.Base.Clone(),
+	}
+
+	l, rf = calculateVirtualLiquidity(
+		p.sqrt,
+		p.Commitment.Clone(),
+		p.Parameters.Base.Clone(),
+		p.Parameters.UpperBound.Clone(),
+		rfs.Short,
+		sfs.InitialMargin,
+		linearSlippage,
+		p.Parameters.MarginRatioAtUpperBound,
+	)
+	p.upper = &curve{
+		l:    l,
+		rf:   rf,
+		low:  p.Parameters.Base.Clone(),
+		high: p.Parameters.UpperBound.Clone(),
+	}
+}
+
+// impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
+// the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
+// price to caluclate the position for, and higher boundary of the curve.
+func impliedPosition(sqrtPrice, sqrtHigh, l *num.Uint) *num.Uint {
+	// L * (sqrt(high) - sqrt(price))
+	numer := num.UintZero().Sub(sqrtHigh, sqrtPrice)
+	numer.Mul(numer, l)
+
+	// sqrt(high) * sqrt(price)
+	denom := num.UintOne().Mul(sqrtHigh, sqrtPrice)
+
+	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
+	return numer.Div(numer, denom)
+}
+
+// VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for the given order.
+func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 *num.Uint) *num.Uint {
+	var pos int64
+	if pp, ok := p.position.GetPositionByPartyID(p.SubAccount); ok {
+		pos = pp.Size()
+	}
+
+	st, nd := price1, price2
+	if st.EQ(nd) {
+		return num.UintZero()
+	}
+
+	if st.GT(nd) {
+		st, nd = nd, st
+	}
+
+	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
+	// e.g trading with a buy order will make the pool short, so we take the upper curve.
+	var cu *curve
+	if pos < 0 || (pos == 0 && order.Side == types.SideBuy) {
+		cu = p.upper
+	} else {
+		cu = p.lower
+	}
+
+	// there is no volume outside of the bounds for the curve so we snap st, nd to the boundaries
+	st = num.Max(st, cu.low)
+	nd = num.Min(nd, cu.high)
+
+	// abs(P(st) - P(nd))
+	volume, _ := num.UintZero().Delta(
+		impliedPosition(p.sqrt(st), p.sqrt(cu.high), cu.l),
+		impliedPosition(p.sqrt(nd), p.sqrt(cu.high), cu.l),
+	)
+	return volume
+}
+
+// virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
+func (p *Pool) virtualBalances(pos int64, ae *num.Uint) (*num.Uint, *num.Uint) {
+	// lets gets the pool current balance
+	balance := num.UintZero()
+	general, _ := p.collateral.GetPartyGeneralAccount(p.SubAccount, p.asset)
+	margin, _ := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
+	balance.AddSum(general.Balance, margin.Balance)
+
+	if pos > 0 {
+		// get the lower curve
+		cu := p.lower
+
+		// x_v = P + (L / sqrt(base))
+		x := num.UintZero()
+		pp := num.NewUint(uint64(pos))
+		x.AddSum(pp, num.UintOne().Div(cu.l, p.sqrt(cu.high)))
+
+		// y_v = cc * rf + (L / sqrt(pl))
+		y, _ := num.UintFromDecimal(num.DecimalFromUint(balance).Mul(cu.rf))
+		term2 := num.UintZero().Div(cu.l, p.sqrt(cu.low))
+		y.AddSum(term2)
+		return x, y
+	}
+
+	// get the upper curve
+	cu := p.upper
+
+	// P
+	term1x := num.NewUint(uint64(-pos))
+	// cc * rf / pu
+	// TODO is cc here the balance, or initial commitment? Asked on spec.
+	term2x, _ := num.UintFromDecimal(cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(cu.high)))
+
+	// L / sqrt(pl)
+	term3x := num.UintOne().Div(cu.l, p.sqrt(cu.low))
+	// x_v = P + (cc * rf / pu) + (L / sqrt(pl))
+	x := num.UintZero().AddSum(term1x, term2x, term3x)
+
+	// abs(P) * average-entry
+	term1y := ae.Mul(ae, num.NewUint(uint64(-pos)))
+
+	// L * pl
+	term2y := num.UintZero().Mul(cu.l, cu.low)
+	// abs(P) * average-entry + L * pl
+	y := num.UintZero().AddSum(term1y, term2y)
+	return x, y
+}
+
+// TradePrice returns the price that the pool is willing to trade for the given order and its volume.
+func (p *Pool) TradePrice(order *types.Order) *num.Uint {
+	var pos int64
+	ae := num.UintZero()
+	if pp, ok := p.position.GetPositionByPartyID(p.SubAccount); ok {
+		pos = pp.Size()
+		ae = pp.AverageEntryPrice()
+	}
+
+	if pos == 0 {
+		return p.Parameters.Base.Clone()
+	}
+
+	x, y := p.virtualBalances(pos, ae)
+
+	fairPrice := y.Div(y, x)
+	switch {
+	case order.Size == 0:
+		// special case where we've been asked for a fair price
+		return fairPrice
+	case order.Side == types.SideBuy:
+		// incoming is a buy, so we +1 to the fair price
+		return fairPrice.AddSum(num.UintOne())
+	case order.Side == types.SideSell:
+		// incoming is a sell so we - 1 the fair price
+		return fairPrice.Sub(fairPrice, num.UintOne())
+	default:
+		panic("should never reach here")
+	}
+}
