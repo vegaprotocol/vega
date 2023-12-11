@@ -536,12 +536,48 @@ message Market {
   CompositePriceCalculator mark_price_calculator = 29;
   optional CompositePriceCalculator internal_composite_price_calculator = 30;
   int64 next_internal_composite_price_calc = 31;
+  AmmState amm = 32;
 }
 
 message PartyMarginFactor {
   string party = 1;
   string margin_factor = 2;
 }
+
+message AmmState {
+  repeated StringMapEntry sqrter = 1;
+  repeated StringMapEntry sub_accounts = 2;
+  repeated PoolMapEntry pools = 3;
+}
+
+message PoolMapEntry {
+  message Curve {
+    string l = 1;
+    string high = 2;
+    string low = 3;
+    string rf = 4;
+  }
+
+  message Pool {
+    string id = 1;
+    string sub_account = 2;
+    string commitment = 3;
+    vega.events.v1.AMMPool.ConcentratedLiquidityParameters parameters = 4;
+    string asset = 5;
+    string market = 6;
+    Curve lower = 7;
+    Curve upper = 8;
+  }
+
+  string party = 1;
+  Pool pool = 2;
+}
+
+message StringMapEntry {
+  string key = 1;
+  string value = 2;
+}
+
 
 // eventually support multiple products
 message Product {
