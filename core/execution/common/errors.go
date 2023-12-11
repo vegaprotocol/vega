@@ -75,6 +75,6 @@ var (
 	ErrStopOrderSideNotClosingThePosition                   = errors.New("side used in stop order does not close the position")
 	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
 	ErrStopOrderExpiryInThePast                             = errors.New("stop order expiry in the past")
-	ErrStopOrderSizeOverrideOrderDoesNotExist               = errors.New("stop order size override order does not exist")
+	ErrStopOrderSizeOverridePercentageInvalid               = errors.New("stop order size override percentage value is invalid")
 	ErrPartyHasNoExistingLiquidityProvision                 = errors.New("party has no existing liquidity provision")
 )
