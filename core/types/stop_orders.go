@@ -75,8 +75,6 @@ const (
 	StopOrderSizeOverrideSettingUnspecified StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED
 	// No size override is used.
 	StopOrderSizeOverrideSettingNone = vega.StopOrder_SIZE_OVERRIDE_SETTING_NONE
-	// Use the total traded size of an existing order to override the order size.
-	StopOrderSizeOverrideSettingOrder = vega.StopOrder_SIZE_OVERRIDE_SETTING_ORDER
 	// Use the position size of the trader to override the order size.
 	StopOrderSizeOverrideSettingPosition = vega.StopOrder_SIZE_OVERRIDE_SETTING_POSITION
 )
@@ -85,14 +83,14 @@ type StopOrderRejectionReason = vega.StopOrder_RejectionReason
 
 const (
 	// Never valid.
-	StopOrderRejectionUnspecified                   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
-	StopOrderRejectionTradingNotAllowed             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
-	StopOrderRejectionExpiryInThePast               StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
-	StopOrderRejectionMustBeReduceOnly              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
-	StopOrderRejectionMaxStopOrdersPerPartyReached  StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
-	StopOrderRejectionNotAllowedWithoutAPosition    StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
-	StopOrderRejectionNotClosingThePosition         StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
-	StopOrderRejectionSizeOverrideOrderDoesNotExist StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_SIZE_OVERRIDE_ORDER_DOES_NOT_EXIST
+	StopOrderRejectionUnspecified                  StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
+	StopOrderRejectionTradingNotAllowed            StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
+	StopOrderRejectionExpiryInThePast              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
+	StopOrderRejectionMustBeReduceOnly             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
+	StopOrderRejectionMaxStopOrdersPerPartyReached StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
+	StopOrderRejectionNotAllowedWithoutAPosition   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
+	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+	StopOrderRejectionLinkedPercentageInvalid      StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID
 )
 
 type StopOrderExpiry struct {
@@ -113,7 +111,7 @@ func (s *StopOrderExpiry) Expires() bool {
 }
 
 type StopOrderSizeOverrideValue struct {
-	OrderID string
+	PercentageSize num.Decimal
 }
 
 type StopOrderTrigger struct {
@@ -384,8 +382,12 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 	}
 
 	var sizeOverride *StopOrderSizeOverrideValue
-	if p.StopOrder.SizeOverrideSetting == StopOrderSizeOverrideSettingOrder {
-		sizeOverride = &StopOrderSizeOverrideValue{OrderID: p.StopOrder.SizeOverrideValue.GetOrderId()}
+	if p.StopOrder.SizeOverrideSetting == StopOrderSizeOverrideSettingPosition {
+		value, err := num.DecimalFromString(p.StopOrder.SizeOverrideValue.GetPercentage())
+		if err != nil {
+			panic(err)
+		}
+		sizeOverride = &StopOrderSizeOverrideValue{PercentageSize: value}
 	}
 
 	return &StopOrder{

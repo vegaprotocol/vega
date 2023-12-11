@@ -155,9 +155,6 @@ type Market struct {
 	// are applied properly
 	ensuredMigration73 bool
 	epoch              types.Epoch
-
-	// Store information about all orders used as a reference in live stop orders
-	stopOrderReferences map[string]*types.Order
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -326,7 +323,6 @@ func NewMarket(
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
 		liquidation:                   le,
-		stopOrderReferences:           map[string]*types.Order{},
 		banking:                       banking,
 	}
 
@@ -1743,22 +1739,25 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		m.stopOrderWouldTriggerAtSubmission(risesAbove)
 	triggered := fallsBelowTriggered || risesAboveTriggered
 
-	// if the stop order references an existing order, remember it so we can watch its state
-	if fallsBelow != nil && fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
-		order, _, err := m.getOrderByID(fallsBelow.SizeOverrideValue.OrderID)
-		if err != nil {
-			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
+	// if the stop order links to a position, see if we are scaling the size
+	if fallsBelow != nil && fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+		if fallsBelow.SizeOverrideValue != nil {
+			if fallsBelow.SizeOverrideValue.PercentageSize.LessThan(num.DecimalFromFloat(0.0)) ||
+				fallsBelow.SizeOverrideValue.PercentageSize.GreaterThan(num.DecimalFromFloat(1.0)) {
+				rejectStopOrders(types.StopOrderRejectionLinkedPercentageInvalid, fallsBelow, risesAbove)
+				return nil, common.ErrStopOrderSizeOverridePercentageInvalid
+			}
 		}
-		m.stopOrderReferences[fallsBelow.SizeOverrideValue.OrderID] = order
 	}
-	if risesAbove != nil && risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
-		order, _, err := m.getOrderByID(risesAbove.SizeOverrideValue.OrderID)
-		if err != nil {
-			rejectStopOrders(types.StopOrderRejectionSizeOverrideOrderDoesNotExist, fallsBelow, risesAbove)
-			return nil, common.ErrStopOrderSizeOverrideOrderDoesNotExist
+
+	if risesAbove != nil && risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+		if risesAbove.SizeOverrideValue != nil {
+			if risesAbove.SizeOverrideValue.PercentageSize.LessThan(num.DecimalFromFloat(0.0)) ||
+				risesAbove.SizeOverrideValue.PercentageSize.GreaterThan(num.DecimalFromFloat(1.0)) {
+				rejectStopOrders(types.StopOrderRejectionLinkedPercentageInvalid, fallsBelow, risesAbove)
+				return nil, common.ErrStopOrderSizeOverridePercentageInvalid
+			}
 		}
-		m.stopOrderReferences[risesAbove.SizeOverrideValue.OrderID] = order
 	}
 
 	// if we are in an auction
@@ -1945,19 +1944,7 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 		m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
 	}
 
-	// If any of the affected orders are referenced from a stop order, update their state
-	m.updateStopOrderReferences(allUpdatedOrders)
-
 	return conf, nil
-}
-
-func (m *Market) updateStopOrderReferences(orders []*types.Order) {
-	for _, order := range orders {
-		_, ok := m.stopOrderReferences[order.ID]
-		if ok {
-			m.stopOrderReferences[order.ID] = order
-		}
-	}
 }
 
 func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
@@ -3414,19 +3401,6 @@ func (m *Market) submitStopOrders(
 	// might contain both the triggered orders and the expired OCO
 	for _, v := range stopOrders {
 		if v.Status == status {
-			// If we have an order size override, handle that here
-			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingOrder {
-				// Update the order size to match that of the referenced order
-				order, ok := m.stopOrderReferences[v.SizeOverrideValue.OrderID]
-				if !ok {
-					m.log.Error("could not get order to override size with",
-						logging.StopOrderSubmission(v))
-				}
-				v.OrderSubmission.Size = order.Size - order.TrueRemaining()
-
-				// Need to cancel the referenced order
-				toDelete = append(toDelete, order)
-			}
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 				// Update the order size to match that of the party's position
 				pos, _ := m.position.GetPositionByPartyID(v.Party)

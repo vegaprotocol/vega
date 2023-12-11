@@ -617,8 +617,6 @@ func sizeOverrideSetting(rawValue string) types.StopOrderSizeOverrideSetting {
 	switch rawValue {
 	case "NONE":
 		return types.StopOrderSizeOverrideSettingNone
-	case "ORDER":
-		return types.StopOrderSizeOverrideSettingOrder
 	case "POSITION":
 		return types.StopOrderSizeOverrideSettingPosition
 	}
