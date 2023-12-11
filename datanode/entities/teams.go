@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -27,64 +28,47 @@ import (
 type (
 	_Team  struct{}
 	TeamID = ID[_Team]
-
-	Team struct {
-		ID             TeamID
-		Referrer       PartyID
-		Name           string
-		TeamURL        *string
-		AvatarURL      *string
-		Closed         bool
-		CreatedAt      time.Time
-		CreatedAtEpoch uint64
-		VegaTime       time.Time
-	}
-
-	TeamUpdated struct {
-		ID        TeamID
-		Name      string
-		TeamURL   *string
-		AvatarURL *string
-		Closed    bool
-		VegaTime  time.Time
-	}
-
-	TeamCursor struct {
-		CreatedAt time.Time
-		ID        TeamID
-	}
-
-	TeamMember struct {
-		TeamID        TeamID
-		PartyID       PartyID
-		JoinedAt      time.Time
-		JoinedAtEpoch uint64
-		VegaTime      time.Time
-	}
-
-	TeamMemberHistory struct {
-		TeamID        TeamID
-		JoinedAt      time.Time
-		JoinedAtEpoch uint64
-	}
-
-	RefereeTeamSwitch struct {
-		FromTeamID      TeamID
-		ToTeamID        TeamID
-		PartyID         PartyID
-		SwitchedAt      time.Time
-		SwitchedAtEpoch uint64
-		VegaTime        time.Time
-	}
-
-	RefereeCursor struct {
-		PartyID PartyID
-	}
-
-	RefereeHistoryCursor struct {
-		JoinedAtEpoch uint64
-	}
 )
+
+type Team struct {
+	ID             TeamID
+	Referrer       PartyID
+	Name           string
+	TeamURL        *string
+	AvatarURL      *string
+	Closed         bool
+	CreatedAt      time.Time
+	CreatedAtEpoch uint64
+	VegaTime       time.Time
+}
+
+func (t Team) Cursor() *Cursor {
+	tc := TeamCursor{
+		CreatedAt: t.CreatedAt,
+		ID:        t.ID,
+	}
+	return NewCursor(tc.String())
+}
+
+func (t Team) ToProto() *v2.Team {
+	return &v2.Team{
+		TeamId:         string(t.ID),
+		Referrer:       string(t.Referrer),
+		Name:           t.Name,
+		TeamUrl:        t.TeamURL,
+		AvatarUrl:      t.AvatarURL,
+		CreatedAt:      t.CreatedAt.UnixNano(),
+		Closed:         t.Closed,
+		CreatedAtEpoch: t.CreatedAtEpoch,
+	}
+}
+
+func (t Team) ToProtoEdge(_ ...any) (*v2.TeamEdge, error) {
+	return &v2.TeamEdge{
+		Node:   t.ToProto(),
+		Cursor: t.Cursor().Encode(),
+	}, nil
+}
 
 func TeamCreatedFromProto(created *eventspb.TeamCreated, vegaTime time.Time) *Team {
 	return &Team{
@@ -100,6 +84,15 @@ func TeamCreatedFromProto(created *eventspb.TeamCreated, vegaTime time.Time) *Te
 	}
 }
 
+type TeamUpdated struct {
+	ID        TeamID
+	Name      string
+	TeamURL   *string
+	AvatarURL *string
+	Closed    bool
+	VegaTime  time.Time
+}
+
 func TeamUpdatedFromProto(updated *eventspb.TeamUpdated, vegaTime time.Time) *TeamUpdated {
 	return &TeamUpdated{
 		ID:        TeamID(updated.TeamId),
@@ -111,25 +104,9 @@ func TeamUpdatedFromProto(updated *eventspb.TeamUpdated, vegaTime time.Time) *Te
 	}
 }
 
-func TeamRefereeFromProto(joined *eventspb.RefereeJoinedTeam, vegaTime time.Time) *TeamMember {
-	return &TeamMember{
-		TeamID:        TeamID(joined.TeamId),
-		PartyID:       PartyID(joined.Referee),
-		JoinedAt:      time.Unix(0, joined.JoinedAt),
-		JoinedAtEpoch: joined.AtEpoch,
-		VegaTime:      vegaTime,
-	}
-}
-
-func TeamRefereeHistoryFromProto(switched *eventspb.RefereeSwitchedTeam, vegaTime time.Time) *RefereeTeamSwitch {
-	return &RefereeTeamSwitch{
-		FromTeamID:      TeamID(switched.FromTeamId),
-		ToTeamID:        TeamID(switched.ToTeamId),
-		PartyID:         PartyID(switched.Referee),
-		SwitchedAt:      time.Unix(0, switched.SwitchedAt),
-		SwitchedAtEpoch: switched.AtEpoch,
-		VegaTime:        vegaTime,
-	}
+type TeamCursor struct {
+	CreatedAt time.Time
+	ID        TeamID
 }
 
 func (tc TeamCursor) String() string {
@@ -147,6 +124,121 @@ func (tc *TeamCursor) Parse(cursorString string) error {
 	return json.Unmarshal([]byte(cursorString), tc)
 }
 
+type TeamsStatistics struct {
+	TeamID              TeamID
+	TotalQuantumRewards num.Decimal
+	QuantumRewards      []QuantumRewardsPerEpoch
+	TotalGamesPlayed    uint64
+	GamesPlayed         []GameID
+}
+
+type QuantumRewardsPerEpoch struct {
+	Epoch uint64
+	Total num.Decimal
+}
+
+func (t TeamsStatistics) Cursor() *Cursor {
+	tc := TeamsStatisticsCursor{
+		ID: t.TeamID,
+	}
+	return NewCursor(tc.String())
+}
+
+func (t TeamsStatistics) ToProto() *v2.TeamStatistics {
+	gamesPlayed := make([]string, 0, len(t.GamesPlayed))
+	for _, id := range t.GamesPlayed {
+		gamesPlayed = append(gamesPlayed, id.String())
+	}
+
+	quantumRewards := make([]*v2.QuantumRewardsPerEpoch, 0, len(t.QuantumRewards))
+	for _, r := range t.QuantumRewards {
+		quantumRewards = append(quantumRewards, &v2.QuantumRewardsPerEpoch{
+			Epoch:               r.Epoch,
+			TotalQuantumRewards: r.Total.String(),
+		})
+	}
+
+	return &v2.TeamStatistics{
+		TeamId:              string(t.TeamID),
+		TotalQuantumVolume:  "",
+		TotalQuantumRewards: t.TotalQuantumRewards.String(),
+		QuantumRewards:      quantumRewards,
+		TotalGamePlayed:     t.TotalGamesPlayed,
+		GamesPlayed:         gamesPlayed,
+	}
+}
+
+func (t TeamsStatistics) ToProtoEdge(_ ...any) (*v2.TeamStatisticsEdge, error) {
+	return &v2.TeamStatisticsEdge{
+		Node:   t.ToProto(),
+		Cursor: t.Cursor().Encode(),
+	}, nil
+}
+
+type TeamsStatisticsCursor struct {
+	ID TeamID
+}
+
+func (c TeamsStatisticsCursor) String() string {
+	bs, err := json.Marshal(c)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal teams stats cursor: %v", err))
+	}
+	return string(bs)
+}
+
+func (c *TeamsStatisticsCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), c)
+}
+
+type TeamMember struct {
+	TeamID        TeamID
+	PartyID       PartyID
+	JoinedAt      time.Time
+	JoinedAtEpoch uint64
+	VegaTime      time.Time
+}
+
+func (t TeamMember) Cursor() *Cursor {
+	rc := RefereeCursor{
+		PartyID: t.PartyID,
+	}
+	return NewCursor(rc.String())
+}
+
+func (t TeamMember) ToProto() *v2.TeamReferee {
+	return &v2.TeamReferee{
+		TeamId:        string(t.TeamID),
+		Referee:       string(t.PartyID),
+		JoinedAt:      t.JoinedAt.UnixNano(),
+		JoinedAtEpoch: t.JoinedAtEpoch,
+	}
+}
+
+func (t TeamMember) ToProtoEdge(_ ...any) (*v2.TeamRefereeEdge, error) {
+	return &v2.TeamRefereeEdge{
+		Node:   t.ToProto(),
+		Cursor: t.Cursor().Encode(),
+	}, nil
+}
+
+func TeamRefereeFromProto(joined *eventspb.RefereeJoinedTeam, vegaTime time.Time) *TeamMember {
+	return &TeamMember{
+		TeamID:        TeamID(joined.TeamId),
+		PartyID:       PartyID(joined.Referee),
+		JoinedAt:      time.Unix(0, joined.JoinedAt),
+		JoinedAtEpoch: joined.AtEpoch,
+		VegaTime:      vegaTime,
+	}
+}
+
+type RefereeCursor struct {
+	PartyID PartyID
+}
+
 func (rc RefereeCursor) String() string {
 	bs, err := json.Marshal(rc)
 	if err != nil {
@@ -160,6 +252,42 @@ func (rc *RefereeCursor) Parse(cursorString string) error {
 		return nil
 	}
 	return json.Unmarshal([]byte(cursorString), rc)
+}
+
+type TeamMemberHistory struct {
+	TeamID        TeamID
+	JoinedAt      time.Time
+	JoinedAtEpoch uint64
+}
+
+func (t TeamMemberHistory) Cursor() *Cursor {
+	rc := RefereeHistoryCursor{
+		JoinedAtEpoch: t.JoinedAtEpoch,
+	}
+	return NewCursor(rc.String())
+}
+
+func (t TeamMemberHistory) ToProto() *v2.TeamRefereeHistory {
+	return &v2.TeamRefereeHistory{
+		TeamId:        string(t.TeamID),
+		JoinedAt:      t.JoinedAt.UnixNano(),
+		JoinedAtEpoch: t.JoinedAtEpoch,
+	}
+}
+
+func (t TeamMemberHistory) ToProtoEdge(_ ...any) (*v2.TeamRefereeHistoryEdge, error) {
+	return &v2.TeamRefereeHistoryEdge{
+		Node: &v2.TeamRefereeHistory{
+			TeamId:        string(t.TeamID),
+			JoinedAt:      t.JoinedAt.UnixNano(),
+			JoinedAtEpoch: t.JoinedAtEpoch,
+		},
+		Cursor: t.Cursor().Encode(),
+	}, nil
+}
+
+type RefereeHistoryCursor struct {
+	JoinedAtEpoch uint64
 }
 
 func (rh RefereeHistoryCursor) String() string {
@@ -177,78 +305,22 @@ func (rh *RefereeHistoryCursor) Parse(cursorString string) error {
 	return json.Unmarshal([]byte(cursorString), rh)
 }
 
-func (t Team) Cursor() *Cursor {
-	tc := TeamCursor{
-		CreatedAt: t.CreatedAt,
-		ID:        t.ID,
+type RefereeTeamSwitch struct {
+	FromTeamID      TeamID
+	ToTeamID        TeamID
+	PartyID         PartyID
+	SwitchedAt      time.Time
+	SwitchedAtEpoch uint64
+	VegaTime        time.Time
+}
+
+func TeamRefereeHistoryFromProto(switched *eventspb.RefereeSwitchedTeam, vegaTime time.Time) *RefereeTeamSwitch {
+	return &RefereeTeamSwitch{
+		FromTeamID:      TeamID(switched.FromTeamId),
+		ToTeamID:        TeamID(switched.ToTeamId),
+		PartyID:         PartyID(switched.Referee),
+		SwitchedAt:      time.Unix(0, switched.SwitchedAt),
+		SwitchedAtEpoch: switched.AtEpoch,
+		VegaTime:        vegaTime,
 	}
-	return NewCursor(tc.String())
-}
-
-func (t Team) ToProto() *v2.Team {
-	return &v2.Team{
-		TeamId:    string(t.ID),
-		Referrer:  string(t.Referrer),
-		Name:      t.Name,
-		TeamUrl:   t.TeamURL,
-		AvatarUrl: t.AvatarURL,
-		CreatedAt: t.CreatedAt.Unix(),
-		Closed:    t.Closed,
-	}
-}
-
-func (t Team) ToProtoEdge(_ ...any) (*v2.TeamEdge, error) {
-	return &v2.TeamEdge{
-		Node:   t.ToProto(),
-		Cursor: t.Cursor().Encode(),
-	}, nil
-}
-
-func (t TeamMember) Cursor() *Cursor {
-	rc := RefereeCursor{
-		PartyID: t.PartyID,
-	}
-	return NewCursor(rc.String())
-}
-
-func (t TeamMember) ToProto() *v2.TeamReferee {
-	return &v2.TeamReferee{
-		TeamId:        string(t.TeamID),
-		Referee:       string(t.PartyID),
-		JoinedAt:      t.JoinedAt.Unix(),
-		JoinedAtEpoch: t.JoinedAtEpoch,
-	}
-}
-
-func (t TeamMember) ToProtoEdge(_ ...any) (*v2.TeamRefereeEdge, error) {
-	return &v2.TeamRefereeEdge{
-		Node:   t.ToProto(),
-		Cursor: t.Cursor().Encode(),
-	}, nil
-}
-
-func (t TeamMemberHistory) Cursor() *Cursor {
-	rc := RefereeHistoryCursor{
-		JoinedAtEpoch: t.JoinedAtEpoch,
-	}
-	return NewCursor(rc.String())
-}
-
-func (t TeamMemberHistory) ToProto() *v2.TeamRefereeHistory {
-	return &v2.TeamRefereeHistory{
-		TeamId:        string(t.TeamID),
-		JoinedAt:      t.JoinedAt.Unix(),
-		JoinedAtEpoch: t.JoinedAtEpoch,
-	}
-}
-
-func (t TeamMemberHistory) ToProtoEdge(_ ...any) (*v2.TeamRefereeHistoryEdge, error) {
-	return &v2.TeamRefereeHistoryEdge{
-		Node: &v2.TeamRefereeHistory{
-			TeamId:        string(t.TeamID),
-			JoinedAt:      t.JoinedAt.Unix(),
-			JoinedAtEpoch: t.JoinedAtEpoch,
-		},
-		Cursor: t.Cursor().Encode(),
-	}, nil
 }

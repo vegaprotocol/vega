@@ -64,6 +64,7 @@ type (
 	TransactionResults struct {
 		*sqlsubscribers.TransactionResults
 	}
+	Games struct{ *sqlstore.Games }
 )
 
 type (
@@ -201,4 +202,8 @@ func NewPartyVestingBalances(store *sqlstore.PartyVestingBalance) *PartyVestingB
 
 func NewTransactionResults(subscriber *sqlsubscribers.TransactionResults) *TransactionResults {
 	return &TransactionResults{TransactionResults: subscriber}
+}
+
+func NewGames(store *sqlstore.Games) *Games {
+	return &Games{Games: store}
 }

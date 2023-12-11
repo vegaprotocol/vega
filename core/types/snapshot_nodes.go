@@ -689,7 +689,8 @@ type GovernanceEnacted struct {
 }
 
 type GovernanceNode struct {
-	Proposals []*Proposal
+	Proposals    []*Proposal
+	ProposalData []*ProposalData
 }
 
 type ProposalData struct {
@@ -2921,21 +2922,32 @@ func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 
 func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 	ret := GovernanceNode{
-		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
+		Proposals:    make([]*Proposal, 0, len(ge.Proposals)),
+		ProposalData: make([]*ProposalData, 0, len(ge.ProposalData)),
 	}
 	for _, p := range ge.Proposals {
 		gn, _ := ProposalFromProto(p)
 		ret.Proposals = append(ret.Proposals, gn)
 	}
+
+	for _, p := range ge.ProposalData {
+		gn := ProposalDataFromProto(p)
+		ret.ProposalData = append(ret.ProposalData, gn)
+	}
+
 	return &ret
 }
 
 func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
 	ret := snapshot.GovernanceNode{
-		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
+		Proposals:    make([]*vega.Proposal, 0, len(g.Proposals)),
+		ProposalData: make([]*snapshot.ProposalData, 0, len(g.ProposalData)),
 	}
 	for _, p := range g.Proposals {
 		ret.Proposals = append(ret.Proposals, p.IntoProto())
+	}
+	for _, p := range g.ProposalData {
+		ret.ProposalData = append(ret.ProposalData, p.IntoProto())
 	}
 	return &ret
 }

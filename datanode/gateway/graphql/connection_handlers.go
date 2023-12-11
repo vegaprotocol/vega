@@ -101,12 +101,22 @@ func toV2IntervalString(interval vega.Interval) (string, error) {
 		return "5 minutes", nil
 	case vega.Interval_INTERVAL_I15M:
 		return "15 minutes", nil
+	case vega.Interval_INTERVAL_I30M:
+		return "30 minutes", nil
 	case vega.Interval_INTERVAL_I1H:
 		return "1 hour", nil
+	case vega.Interval_INTERVAL_I4H:
+		return "4 hours", nil
 	case vega.Interval_INTERVAL_I6H:
 		return "6 hours", nil
+	case vega.Interval_INTERVAL_I8H:
+		return "8 hours", nil
+	case vega.Interval_INTERVAL_I12H:
+		return "12 hours", nil
 	case vega.Interval_INTERVAL_I1D:
 		return "1 day", nil
+	case vega.Interval_INTERVAL_I7D:
+		return "7 days", nil
 	default:
 		return "", fmt.Errorf("interval not support:%s", interval)
 	}

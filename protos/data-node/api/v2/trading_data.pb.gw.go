@@ -3778,6 +3778,42 @@ func local_request_TradingDataService_ListTeams_0(ctx context.Context, marshaler
 }
 
 var (
+	filter_TradingDataService_ListTeamsStatistics_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TradingDataService_ListTeamsStatistics_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTeamsStatisticsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ListTeamsStatistics_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListTeamsStatistics(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TradingDataService_ListTeamsStatistics_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListTeamsStatisticsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ListTeamsStatistics_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListTeamsStatistics(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
 	filter_TradingDataService_ListTeamReferees_0 = &utilities.DoubleArray{Encoding: map[string]int{"team_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
@@ -4173,6 +4209,42 @@ func local_request_TradingDataService_GetTotalTransferFeeDiscount_0(ctx context.
 	}
 
 	msg, err := server.GetTotalTransferFeeDiscount(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+var (
+	filter_TradingDataService_ListGames_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_TradingDataService_ListGames_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListGamesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ListGames_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListGames(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_TradingDataService_ListGames_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListGamesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ListGames_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListGames(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -6225,6 +6297,29 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 
 	})
 
+	mux.Handle("GET", pattern_TradingDataService_ListTeamsStatistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListTeamsStatistics", runtime.WithHTTPPathPattern("/api/v2/teams/stats"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TradingDataService_ListTeamsStatistics_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingDataService_ListTeamsStatistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_TradingDataService_ListTeamReferees_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -6413,6 +6508,29 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 		}
 
 		forward_TradingDataService_GetTotalTransferFeeDiscount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TradingDataService_ListGames_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListGames", runtime.WithHTTPPathPattern("/api/v2/games"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_TradingDataService_ListGames_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingDataService_ListGames_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -8424,6 +8542,26 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
+	mux.Handle("GET", pattern_TradingDataService_ListTeamsStatistics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListTeamsStatistics", runtime.WithHTTPPathPattern("/api/v2/teams/stats"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TradingDataService_ListTeamsStatistics_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingDataService_ListTeamsStatistics_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_TradingDataService_ListTeamReferees_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -8601,6 +8739,26 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 		}
 
 		forward_TradingDataService_GetTotalTransferFeeDiscount_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_TradingDataService_ListGames_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ListGames", runtime.WithHTTPPathPattern("/api/v2/games"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_TradingDataService_ListGames_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_TradingDataService_ListGames_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -8824,6 +8982,8 @@ var (
 
 	pattern_TradingDataService_ListTeams_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "teams"}, ""))
 
+	pattern_TradingDataService_ListTeamsStatistics_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "teams", "stats"}, ""))
+
 	pattern_TradingDataService_ListTeamReferees_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v2", "teams", "referees", "team_id"}, ""))
 
 	pattern_TradingDataService_ListTeamRefereeHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v2", "teams", "referees", "history", "referee"}, ""))
@@ -8841,6 +9001,8 @@ var (
 	pattern_TradingDataService_EstimateTransferFee_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "transfers", "estimate-fee"}, ""))
 
 	pattern_TradingDataService_GetTotalTransferFeeDiscount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "transfers", "total-fee-discount"}, ""))
+
+	pattern_TradingDataService_ListGames_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "games"}, ""))
 
 	pattern_TradingDataService_ExportNetworkHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "export"}, ""))
 )
@@ -9042,6 +9204,8 @@ var (
 
 	forward_TradingDataService_ListTeams_0 = runtime.ForwardResponseMessage
 
+	forward_TradingDataService_ListTeamsStatistics_0 = runtime.ForwardResponseMessage
+
 	forward_TradingDataService_ListTeamReferees_0 = runtime.ForwardResponseMessage
 
 	forward_TradingDataService_ListTeamRefereeHistory_0 = runtime.ForwardResponseMessage
@@ -9059,6 +9223,8 @@ var (
 	forward_TradingDataService_EstimateTransferFee_0 = runtime.ForwardResponseMessage
 
 	forward_TradingDataService_GetTotalTransferFeeDiscount_0 = runtime.ForwardResponseMessage
+
+	forward_TradingDataService_ListGames_0 = runtime.ForwardResponseMessage
 
 	forward_TradingDataService_ExportNetworkHistory_0 = runtime.ForwardResponseStream
 )

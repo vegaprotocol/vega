@@ -53,7 +53,7 @@ func TestGetExistingCandles(t *testing.T) {
 		t.Fatalf("failed to get candles for market:%s", err)
 	}
 
-	defaultCandles := "block,1 minute,5 minutes,15 minutes,1 hour,6 hours,1 day"
+	defaultCandles := "block,1 minute,5 minutes,15 minutes,30 minutes,1 hour,4 hours,6 hours,8 hours,12 hours,1 day,7 days"
 	intervals := strings.Split(defaultCandles, ",")
 	assert.Equal(t, len(intervals), len(candles))
 

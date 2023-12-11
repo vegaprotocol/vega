@@ -688,6 +688,14 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamEdge
   TeamConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamConnection
+  TeamStatistics:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatistics
+  QuantumRewardsPerEpoch:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.QuantumRewardsPerEpoch
+  TeamStatisticsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatisticsEdge
+  TeamsStatisticsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamsStatisticsConnection
   TeamReferee:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamReferee
   TeamRefereeEdge:
@@ -744,3 +752,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetTotalTransferFeeDiscountResponse
   EstimatedTransferFee:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateTransferFeeResponse
+  Game:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Game
+  GameEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameEdge
+  GamesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamesConnection

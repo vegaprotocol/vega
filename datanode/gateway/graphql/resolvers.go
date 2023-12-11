@@ -525,6 +525,14 @@ func (r *VegaResolverRoot) Team() TeamResolver {
 	return (*teamResolver)(r)
 }
 
+func (r *VegaResolverRoot) TeamStatistics() TeamStatisticsResolver {
+	return (*teamStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolver {
+	return (*quantumRewardsPerEpochResolver)(r)
+}
+
 func (r *VegaResolverRoot) TeamReferee() TeamRefereeResolver {
 	return (*teamRefereeResolver)(r)
 }
@@ -591,6 +599,10 @@ func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
 
 func (r *VegaResolverRoot) DispatchStrategy() DispatchStrategyResolver {
 	return (*dispatchStrategyResolver)(r)
+}
+
+func (r *VegaResolverRoot) Game() GameResolver {
+	return (*gameResolver)(r)
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot
@@ -699,6 +711,32 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, pagination *v2.Pagination) (*v2.GamesConnection, error) {
+	var from *uint64
+	var to *uint64
+
+	if epochFrom != nil {
+		from = ptr.From(uint64(*epochFrom))
+	}
+
+	if epochTo != nil {
+		to = ptr.From(uint64(*epochTo))
+	}
+
+	req := v2.ListGamesRequest{
+		GameId:      gameID,
+		EpochFrom:   from,
+		EpochTo:     to,
+		EntityScope: entityScope,
+		Pagination:  pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGames(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Games, nil
+}
 
 func (r *myQueryResolver) FundingPayments(
 	ctx context.Context,
@@ -1741,6 +1779,24 @@ func (r *myQueryResolver) Teams(ctx context.Context, teamID *string, partyID *st
 	return teams.Teams, nil
 }
 
+func (r *myQueryResolver) TeamsStatistics(ctx context.Context, teamID *string, aggregationEpochs *int, pagination *v2.Pagination) (*v2.TeamsStatisticsConnection, error) {
+	filters := &v2.ListTeamsStatisticsRequest{
+		TeamId:     teamID,
+		Pagination: pagination,
+	}
+
+	if aggregationEpochs != nil {
+		filters.AggregationEpochs = ptr.From(uint64(*aggregationEpochs))
+	}
+
+	stats, err := r.tradingDataClientV2.ListTeamsStatistics(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats.Statistics, nil
+}
+
 func (r *myQueryResolver) TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error) {
 	referees, err := r.tradingDataClientV2.ListTeamReferees(ctx, &v2.ListTeamRefereesRequest{
 		TeamId:     teamID,
@@ -1960,7 +2016,9 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
 	if fromEpoch != nil {
@@ -1984,6 +2042,8 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 		Pagination: pagination,
 		FromEpoch:  from,
 		ToEpoch:    to,
+		TeamId:     teamID,
+		GameId:     gameID,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {

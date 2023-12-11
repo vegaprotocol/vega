@@ -16,7 +16,9 @@
 package positions
 
 import (
+	"errors"
 	"fmt"
+	"math"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -90,6 +92,13 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 				logging.Int64("potential-buy", p.buy),
 				logging.Uint64("size-change", sizeChange))
 		}
+
+		if add && p.buy > math.MaxInt64-iSizeChange {
+			log.Panic("order too large to register, will overflow",
+				logging.Int64("potential-buy", p.buy),
+				logging.Uint64("size-change", sizeChange))
+		}
+
 		// recalculate sumproduct
 		if add {
 			p.buySumProduct.Add(p.buySumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
@@ -111,6 +120,13 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 			logging.Int64("potential-sell", p.sell),
 			logging.Uint64("size-change", sizeChange))
 	}
+
+	if add && p.sell > math.MaxInt64-iSizeChange {
+		log.Panic("order too large to register, will overflow",
+			logging.Int64("potential-sell", p.sell),
+			logging.Uint64("size-change", sizeChange))
+	}
+
 	// recalculate sumproduct
 	if add {
 		p.sellSumProduct.Add(p.sellSumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
@@ -219,6 +235,31 @@ func (p MarketPosition) VWSell() *num.Uint {
 		return vol.Div(p.sellSumProduct, vol)
 	}
 	return num.UintZero()
+}
+
+// ValidateOrder returns an error is the order is so large that the position engine does not have the precision
+// to register it.
+func (p MarketPosition) ValidateOrderRegistration(s uint64, side types.Side) error {
+	size := int64(s)
+	if size == 0 {
+		return nil
+	}
+
+	// check that the cast to int64 hasn't pushed it backwards
+	if size < 0 {
+		return errors.New("cannot register position without causing overflow")
+	}
+
+	amt := p.buy
+	if side == types.SideSell {
+		amt = p.sell
+	}
+
+	if size > math.MaxInt64-amt {
+		return errors.New("cannot register position without causing overflow")
+	}
+
+	return nil
 }
 
 func (p MarketPosition) OrderReducesExposure(ord *types.Order) bool {

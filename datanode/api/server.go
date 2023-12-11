@@ -140,6 +140,7 @@ type GRPCServer struct {
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
 	transactionResults            *service.TransactionResults
+	gamesService                  *service.Games
 
 	eventObserver *eventObserver
 
@@ -207,6 +208,7 @@ func NewGRPCServer(
 	partyLockedBalances *service.PartyLockedBalances,
 	partyVestingBalances *service.PartyVestingBalances,
 	transactionResults *service.TransactionResults,
+	gameService *service.Games,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -273,6 +275,7 @@ func NewGRPCServer(
 		partyLockedBalances:           partyLockedBalances,
 		partyVestingBalances:          partyVestingBalances,
 		transactionResults:            transactionResults,
+		gamesService:                  gameService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -509,6 +512,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		partyVestingBalances:          g.partyVestingBalances,
 		vestingStats:                  g.vestingStatsService,
 		transactionResults:            g.transactionResults,
+		gamesService:                  g.gamesService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

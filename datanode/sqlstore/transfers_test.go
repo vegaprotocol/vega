@@ -39,7 +39,7 @@ func TestGetTransferByID(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -52,7 +52,7 @@ func TestGetTransferByID(t *testing.T) {
 	transfer := NewTransfer(t, ctx, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
@@ -63,7 +63,7 @@ func TestGetTransferByID(t *testing.T) {
 		TransferWithID(transfer.ID),
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 15,
 			EndEpoch:   nil,
 			Factor:     "0.15",
@@ -75,7 +75,7 @@ func TestGetTransferByID(t *testing.T) {
 		TransferWithID(transfer.ID),
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 20,
 			EndEpoch:   ptr.From(uint64(25)),
 			Factor:     "0.2",
@@ -109,7 +109,7 @@ func TestGetTransfersByHash(t *testing.T) {
 	block1 := addTestBlockForTime(t, ctx, blocksStore, time.Now().Add(-2*time.Minute))
 	block2 := addTestBlockForTime(t, ctx, blocksStore, time.Now().Add(-1*time.Minute))
 
-	asset := CreateAssert(t, ctx, assetsStore, block1)
+	asset := CreateAsset(t, ctx, assetsStore, block1)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block1,
 		AccountForAsset(asset),
@@ -122,7 +122,7 @@ func TestGetTransfersByHash(t *testing.T) {
 	transfer1 := NewTransfer(t, ctx, accountsStore, block1,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
@@ -132,7 +132,7 @@ func TestGetTransfersByHash(t *testing.T) {
 	transfer2 := NewTransfer(t, ctx, accountsStore, block1,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   nil,
 			Factor:     "0.1",
@@ -144,7 +144,7 @@ func TestGetTransfersByHash(t *testing.T) {
 		TransferWithID(transfer1.ID),
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 15,
 			EndEpoch:   nil,
 			Factor:     "0.15",
@@ -156,7 +156,7 @@ func TestGetTransfersByHash(t *testing.T) {
 		TransferWithID(transfer1.ID),
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 20,
 			EndEpoch:   ptr.From(uint64(25)),
 			Factor:     "0.2",
@@ -193,7 +193,7 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -209,7 +209,7 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account2, account1),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 5,
 			EndEpoch:   ptr.From(uint64(15)),
 			Factor:     "0.1",
@@ -223,7 +223,7 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   ptr.From(uint64(20)),
 			Factor:     "0.1",
@@ -232,7 +232,7 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account3),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 25,
 			EndEpoch:   nil,
 			Factor:     "0.1",
@@ -241,7 +241,7 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 	transfer4 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account3, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 15,
 			EndEpoch:   ptr.From(uint64(20)),
 			Factor:     "0.1",
@@ -326,7 +326,7 @@ func TestGetTransfersByParty(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -339,7 +339,7 @@ func TestGetTransfersByParty(t *testing.T) {
 	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 5,
 			EndEpoch:   ptr.From(uint64(15)),
 			Factor:     "0.1",
@@ -348,7 +348,7 @@ func TestGetTransfersByParty(t *testing.T) {
 	transfer2 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account2, account1),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   ptr.From(uint64(17)),
 			Factor:     "0.1",
@@ -357,7 +357,7 @@ func TestGetTransfersByParty(t *testing.T) {
 	transfer3 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account2, account1),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 15,
 			EndEpoch:   ptr.From(uint64(20)),
 			Factor:     "0.1",
@@ -366,7 +366,7 @@ func TestGetTransfersByParty(t *testing.T) {
 	transfer4 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 15,
 			EndEpoch:   ptr.From(uint64(20)),
 			Factor:     "0.1",
@@ -490,7 +490,7 @@ func TestGetAllTransfers(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -506,7 +506,7 @@ func TestGetAllTransfers(t *testing.T) {
 	transfer1 := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account2, account1),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 5,
 			EndEpoch:   ptr.From(uint64(15)),
 			Factor:     "0.1",
@@ -522,7 +522,7 @@ func TestGetAllTransfers(t *testing.T) {
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account2),
 		TransferWithStatus(entities.TransferStatusDone),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 10,
 			EndEpoch:   ptr.From(uint64(20)),
 			Factor:     "0.1",
@@ -532,7 +532,7 @@ func TestGetAllTransfers(t *testing.T) {
 		TransferWithAsset(asset),
 		TransferFromToAccounts(account1, account3),
 		TransferWithStatus(entities.TransferStatusCancelled),
-		TransferAsRecurring(eventspb.RecurringTransfer{
+		TransferAsRecurring(&eventspb.RecurringTransfer{
 			StartEpoch: 25,
 			EndEpoch:   nil,
 			Factor:     "0.1",
@@ -642,7 +642,7 @@ func TestGetAllTransfersWithPagination(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, time.Now())
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -658,7 +658,7 @@ func TestGetAllTransfersWithPagination(t *testing.T) {
 		transfer := CreateTransfer(t, ctx, transfersStore, accountsStore, block,
 			TransferWithAsset(asset),
 			TransferFromToAccounts(account1, account2),
-			TransferAsRecurring(eventspb.RecurringTransfer{
+			TransferAsRecurring(&eventspb.RecurringTransfer{
 				StartEpoch: 5,
 				EndEpoch:   ptr.From(uint64(15)),
 				Factor:     "0.1",
@@ -763,7 +763,7 @@ func TestGetAllRewardTransfers(t *testing.T) {
 
 	block := addTestBlockForTime(t, ctx, blocksStore, vegaTime)
 
-	asset := CreateAssert(t, ctx, assetsStore, block)
+	asset := CreateAsset(t, ctx, assetsStore, block)
 
 	account1 := CreateAccount(t, ctx, accountsStore, block,
 		AccountForAsset(asset),
@@ -807,7 +807,7 @@ func TestGetAllRewardTransfers(t *testing.T) {
 			})
 			statusOption = TransferWithStatus(entities.TransferStatusDone)
 		} else {
-			kindOption = TransferAsRecurring(eventspb.RecurringTransfer{
+			kindOption = TransferAsRecurring(&eventspb.RecurringTransfer{
 				StartEpoch: 15,
 				EndEpoch:   nil,
 				Factor:     "0.15",

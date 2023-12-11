@@ -487,6 +487,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
 	ListTeams(ctx context.Context, in *ListTeamsRequest, opts ...grpc.CallOption) (*ListTeamsResponse, error)
+	// List teams statistics
+	//
+	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamsStatistics(ctx context.Context, in *ListTeamsStatisticsRequest, opts ...grpc.CallOption) (*ListTeamsStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -532,6 +537,10 @@ type TradingDataServiceClient interface {
 	//
 	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1872,6 +1881,15 @@ func (c *tradingDataServiceClient) ListTeams(ctx context.Context, in *ListTeamsR
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListTeamsStatistics(ctx context.Context, in *ListTeamsStatisticsRequest, opts ...grpc.CallOption) (*ListTeamsStatisticsResponse, error) {
+	out := new(ListTeamsStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamsStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListTeamReferees(ctx context.Context, in *ListTeamRefereesRequest, opts ...grpc.CallOption) (*ListTeamRefereesResponse, error) {
 	out := new(ListTeamRefereesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamReferees", in, out, opts...)
@@ -1988,6 +2006,15 @@ func (c *tradingDataServiceClient) EstimateTransferFee(ctx context.Context, in *
 func (c *tradingDataServiceClient) GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error) {
 	out := new(GetTotalTransferFeeDiscountResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTotalTransferFeeDiscount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error) {
+	out := new(ListGamesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGames", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2503,6 +2530,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
 	ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error)
+	// List teams statistics
+	//
+	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -2548,6 +2580,10 @@ type TradingDataServiceServer interface {
 	//
 	// Returns available per party per asset transfer discount
 	GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2927,6 +2963,9 @@ func (UnimplementedTradingDataServiceServer) GetReferralSetStats(context.Context
 func (UnimplementedTradingDataServiceServer) ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeams not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamsStatistics not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *ListTeamRefereesRequest) (*ListTeamRefereesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamReferees not implemented")
 }
@@ -2959,6 +2998,9 @@ func (UnimplementedTradingDataServiceServer) EstimateTransferFee(context.Context
 }
 func (UnimplementedTradingDataServiceServer) GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTotalTransferFeeDiscount not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGames not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -4865,6 +4907,24 @@ func _TradingDataService_ListTeams_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListTeamsStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamsStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamsStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamsStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamsStatistics(ctx, req.(*ListTeamsStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListTeamReferees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTeamRefereesRequest)
 	if err := dec(in); err != nil {
@@ -5062,6 +5122,24 @@ func _TradingDataService_GetTotalTransferFeeDiscount_Handler(srv interface{}, ct
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).GetTotalTransferFeeDiscount(ctx, req.(*GetTotalTransferFeeDiscountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGamesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGames",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGames(ctx, req.(*ListGamesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5461,6 +5539,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListTeams_Handler,
 		},
 		{
+			MethodName: "ListTeamsStatistics",
+			Handler:    _TradingDataService_ListTeamsStatistics_Handler,
+		},
+		{
 			MethodName: "ListTeamReferees",
 			Handler:    _TradingDataService_ListTeamReferees_Handler,
 		},
@@ -5499,6 +5581,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTotalTransferFeeDiscount",
 			Handler:    _TradingDataService_GetTotalTransferFeeDiscount_Handler,
+		},
+		{
+			MethodName: "ListGames",
+			Handler:    _TradingDataService_ListGames_Handler,
 		},
 		{
 			MethodName: "Ping",

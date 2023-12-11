@@ -44,6 +44,7 @@ import (
 	"github.com/ipfs/kubo/config"
 	serialize "github.com/ipfs/kubo/config/serialize"
 	"github.com/ipfs/kubo/core"
+	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/ipfs/kubo/core/coreapi"
 	"github.com/ipfs/kubo/core/corehttp"
 	"github.com/ipfs/kubo/core/corerepo"
@@ -167,8 +168,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	}
 
 	p.log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
-	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
-		cfg.SwarmPort)
+	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.SwarmPort)
 
 	p.log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
 
@@ -188,13 +188,21 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	}
 
 	p.ipfsAPI, err = coreapi.NewCoreAPI(p.ipfsNode)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs api:%w", err)
 	}
 
+	peers, err := config.ParseBootstrapPeers(cfg.BootstrapPeers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse bootstrap peers: %w", err)
+	}
+
+	if err = p.ipfsNode.Bootstrap(bootstrap.BootstrapConfigWithPeers(peers)); err != nil {
+		return nil, fmt.Errorf("failed to bootstrap peers: %w", err)
+	}
+
 	if err = setupMetrics(p.ipfsNode); err != nil {
-		return nil, fmt.Errorf("failed to setup metrics:%w", err)
+		return nil, fmt.Errorf("failed to setup metrics: %w", err)
 	}
 
 	return p, nil
@@ -744,7 +752,7 @@ func (p *Store) StagedContiguousHistory(ctx context.Context, chunk segment.Conti
 	return staged, nil
 }
 
-func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int) (*config.Config, error) {
+func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, swarmPort int) (*config.Config, error) {
 	cfg, err := config.InitWithIdentity(identity)
 
 	// Don't try and do local node discovery with mDNS; we're probably on the internet if running
@@ -765,8 +773,7 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	}
 
 	cfg.Addresses.Swarm = updatedSwarmAddrs
-	cfg.Bootstrap = bootstrapPeers
-
+	cfg.Bootstrap = []string{} // we'll provide these later, but we empty them here so we don't get the default set
 	prettyCfgJSON, _ := json.MarshalIndent(cfg, "", "  ")
 	log.Debugf("IPFS Node Config:\n%s", prettyCfgJSON)
 

@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmSwFEigU45GKivqYR9L8Rpk4gEAo6a9MFfZRqD5MnxGBW", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmZYVRFgSc8vedQG29mZ3LoLHevHkv5DXM1m1gx5U28NvP", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmYedcGtNSyU4eyS8kQQbGB4hjYMHzvX5iJqR9jzCqugS7", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmYCRQNLbcSiZoPTpCrtf1B4VuoTSqaLCGJTUCHAbwJHSY", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmX9fvwArR9ymP11b9VteyW1yAFpK9fKuhdnVRQQP2G6WX", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmS3wNKg9K35doCrTSt5dPk5pW7ZdsWTrqLMi2i4PVMCDQ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "Qmb37vQANU8UWK52ogCB9LdYFH9MsMUdKN4JKkykiCgyGm", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmP3yEwwQtNjZJbCnwVJP4XJmVLi7Sp9KrN4bUKkeFtUcA", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "Qmaoc7eDEhgCQMu2ufZdkx5U7ksqakQFp1gj68QbhXL4mJ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmQneYFsD3gnXyqkJXEWG58m5B1tqqyQ7Adt8Gj7FZPZ5Q", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmYSBS3XpXoDWYaveBahQyfoffeqS8Z9vbiKvTR3MakSrF", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmQU5DvHjcJASeceZMJHsm5hKuFpgaGaJZZRUHXzHA5su1", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1465,6 +1465,11 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 		"trades_candle_1_minute":   "market_id, period_start",
 		"trades_candle_5_minutes":  "market_id, period_start",
 		"trades_candle_6_hours":    "market_id, period_start",
+		"trades_candle_30_minutes": "market_id, period_start",
+		"trades_candle_4_hours":    "market_id, period_start",
+		"trades_candle_8_hours":    "market_id, period_start",
+		"trades_candle_12_hours":   "market_id, period_start",
+		"trades_candle_7_days":     "market_id, period_start",
 	}
 
 	caggSummaries := map[string]tableDataSummary{}

@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -133,6 +134,8 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a market with external data sources for settlement and termination with empty eth address signers fail", testUpdateMarketWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
 	t.Run("Submitting a market with termination time trigger fails", testUpdateMarketWithTerminationWithTimeTriggerFails)
 	t.Run("Submitting a market withsettlement with time trigger fails", testUpdateMarketWithSettlementWithTimeTriggerFails)
+	t.Run("Submitting a perps market product parameters", testUpdatePerpsMarketChangeSubmissionProductParameters)
+	t.Run("Submitting a perps market with funding rate modifiers", testUpdatePerpetualMarketWithFundingRateModifiers)
 }
 
 func testUpdateMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {
@@ -3477,4 +3480,348 @@ func testUpdateMarketWithSettlementWithTimeTriggerFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
+}
+
+func testUpdatePerpetualMarketWithFundingRateModifiers(t *testing.T) {
+	cases := []struct {
+		product vegapb.UpdatePerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("-10"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0.1"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateLowerBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateLowerBound: ptr.From("-100"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_upper_bound",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+				FundingRateLowerBound: ptr.From("200"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValid,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_UpdateMarket{
+						UpdateMarket: &vegapb.UpdateMarket{
+							Changes: &vegapb.UpdateMarketConfiguration{
+								Instrument: &vegapb.UpdateInstrumentConfiguration{
+									Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+			errs := err.Get(v.path)
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func testUpdatePerpsMarketChangeSubmissionProductParameters(t *testing.T) {
+	cases := []struct {
+		product vegapb.UpdatePerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsRequired,
+			desc: "margin_funding_factor is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "margin_funding_factor is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (< 0)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			desc: "margin_funding_factor is valid",
+		},
+		// interest_rate
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsRequired,
+			desc: "interest_rate is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "interest_rate is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		// clamp_lower_bound
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_lower_bound is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_lower_bound is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		// clamp_upper_bound
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_upper_bound is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_upper_bound is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		// clamp lower and upper
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound == clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.4",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound > clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.4",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeGTEClampLowerBound,
+			desc: "clamp_upper_bound < clamp_lower_bound is invalid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_UpdateMarket{
+						UpdateMarket: &vegapb.UpdateMarket{
+							Changes: &vegapb.UpdateMarketConfiguration{
+								Instrument: &vegapb.UpdateInstrumentConfiguration{
+									Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
 }

@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 
 ### 🗑️ Deprecation
 
@@ -22,11 +23,18 @@
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
+- [10222](https://github.com/vegaprotocol/vega/issues/10222) - Supply bootstrap peers after starting the `IPFS` node to increase reliability.
+- [10097](https://github.com/vegaprotocol/vega/issues/10097) - Add funding rate modifiers to perpetual product definition.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on status on transfers.
 - [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on scope on transfers.
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
+- [9980](https://github.com/vegaprotocol/vega/issues/9980) - Add teams statistics API.
+- [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
+- [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
+- [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
+- [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 
 ### 🐛 Fixes
 
@@ -43,16 +51,30 @@
 - [10052](https://github.com/vegaprotocol/vega/issues/10052) - Some recent stats tables should have been `hypertables` with retention periods.
 - [10103](https://github.com/vegaprotocol/vega/issues/10103) - List ledgers `API` returns bad error when filtering by transfer type only.
 - [10120](https://github.com/vegaprotocol/vega/issues/10120) - Assure theoretical and actual funding payment calculations are consistent.
+- [10164](https://github.com/vegaprotocol/vega/issues/10164) - Properly handle edge case where an external data point is received out of order.
 - [10121](https://github.com/vegaprotocol/vega/issues/10121) - Assure `EstimatePosition` API works correctly with sparse perps data
 - [10126](https://github.com/vegaprotocol/vega/issues/10126) - Account for invalid stop orders in batch, charge default gas.
 - [10123](https://github.com/vegaprotocol/vega/issues/10123) - Ledger exports contain account types of "UNKNOWN" type
 - [10132](https://github.com/vegaprotocol/vega/issues/10132) - Add mapping in `GraphQL` for update perps market proposal.
 - [10125](https://github.com/vegaprotocol/vega/issues/10125) - Wire the `JoinTeam` command in the wallet.
+- [10177](https://github.com/vegaprotocol/vega/issues/10177) - Add validation that order sizes are not strangely large.
+- [10189](https://github.com/vegaprotocol/vega/issues/10189) - Votes for assets while proposal is waiting for node votes are included in the snapshot state.
 - [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
 - [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
 - [10147](https://github.com/vegaprotocol/vega/issues/10147) - Add network transfer largest share to the transfers if needed.
 - [10158](https://github.com/vegaprotocol/vega/issues/10158) - Add the network as the zero-share default party in settlement engine.
+- [10183](https://github.com/vegaprotocol/vega/issues/10183) - Fix transfer fees registration and decay.
+- [9840](https://github.com/vegaprotocol/vega/issues/9840) - Team API inconsistency in joined at timestamps.
+- [10205](https://github.com/vegaprotocol/vega/issues/10205) - Fix for transfer discount fees.
+- [10211](https://github.com/vegaprotocol/vega/issues/10211) - Ensure infra fees don't get counted for vesting.
+- [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
+- [10238](https://github.com/vegaprotocol/vega/issues/10238) - Fix logic when a user firsts requests spam information
+- [10227](https://github.com/vegaprotocol/vega/issues/10227) - Make the wallet errors on spam stats meaningful.
+- [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
+- [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
+- [10241](https://github.com/vegaprotocol/vega/issues/10241) - Do not include start epoch on referees set statistics.
 
 ## 0.73.0
 

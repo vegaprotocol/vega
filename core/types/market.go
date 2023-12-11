@@ -24,6 +24,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 
@@ -486,12 +487,31 @@ type Perps struct {
 	ClampLowerBound     num.Decimal
 	ClampUpperBound     num.Decimal
 
+	// funding payment modifiers
+	FundingRateScalingFactor *num.Decimal
+	FundingRateLowerBound    *num.Decimal
+	FundingRateUpperBound    *num.Decimal
+
 	DataSourceSpecForSettlementData     *datasource.Spec
 	DataSourceSpecForSettlementSchedule *datasource.Spec
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 }
 
 func PerpsFromProto(p *vegapb.Perpetual) *Perps {
+	var scalingFactor *num.Decimal
+	if p.FundingRateScalingFactor != nil {
+		scalingFactor = ptr.From(num.MustDecimalFromString(*p.FundingRateScalingFactor))
+	}
+
+	var upperBound *num.Decimal
+	if p.FundingRateUpperBound != nil {
+		upperBound = ptr.From(num.MustDecimalFromString(*p.FundingRateUpperBound))
+	}
+
+	var lowerBound *num.Decimal
+	if p.FundingRateLowerBound != nil {
+		lowerBound = ptr.From(num.MustDecimalFromString(*p.FundingRateLowerBound))
+	}
 	return &Perps{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -499,6 +519,9 @@ func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 		InterestRate:                        num.MustDecimalFromString(p.InterestRate),
 		ClampLowerBound:                     num.MustDecimalFromString(p.ClampLowerBound),
 		ClampUpperBound:                     num.MustDecimalFromString(p.ClampUpperBound),
+		FundingRateScalingFactor:            scalingFactor,
+		FundingRateUpperBound:               upperBound,
+		FundingRateLowerBound:               lowerBound,
 		DataSourceSpecForSettlementData:     datasource.SpecFromProto(p.DataSourceSpecForSettlementData),
 		DataSourceSpecForSettlementSchedule: datasource.SpecFromProto(p.DataSourceSpecForSettlementSchedule),
 		DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(p.DataSourceSpecBinding),
@@ -506,6 +529,21 @@ func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 }
 
 func (p Perps) IntoProto() *vegapb.Perpetual {
+	var scalingFactor *string
+	if p.FundingRateScalingFactor != nil {
+		scalingFactor = ptr.From(p.FundingRateScalingFactor.String())
+	}
+
+	var upperBound *string
+	if p.FundingRateUpperBound != nil {
+		upperBound = ptr.From(p.FundingRateUpperBound.String())
+	}
+
+	var lowerBound *string
+	if p.FundingRateLowerBound != nil {
+		lowerBound = ptr.From(p.FundingRateLowerBound.String())
+	}
+
 	return &vegapb.Perpetual{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -513,6 +551,9 @@ func (p Perps) IntoProto() *vegapb.Perpetual {
 		InterestRate:                        p.InterestRate.String(),
 		ClampLowerBound:                     p.ClampLowerBound.String(),
 		ClampUpperBound:                     p.ClampUpperBound.String(),
+		FundingRateScalingFactor:            scalingFactor,
+		FundingRateUpperBound:               upperBound,
+		FundingRateLowerBound:               lowerBound,
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),

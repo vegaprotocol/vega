@@ -79,6 +79,7 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
 	partyLockedBalancesStore    *sqlstore.PartyLockedBalance
 	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
+	gamesStore                  *sqlstore.Games
 
 	// Services
 	candleService                 *candlesv2.Svc
@@ -132,6 +133,7 @@ type SQLSubscribers struct {
 	partyLockedBalancesService    *service.PartyLockedBalances
 	partyVestingBalancesService   *service.PartyVestingBalances
 	transactionResultsService     *service.TransactionResults
+	gamesService                  *service.Games
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -253,7 +255,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.tradeStore = sqlstore.NewTrades(transactionalConnectionSource)
 	s.networkLimitsStore = sqlstore.NewNetworkLimits(transactionalConnectionSource)
 	s.marketDataStore = sqlstore.NewMarketData(transactionalConnectionSource)
-	s.rewardStore = sqlstore.NewRewards(transactionalConnectionSource)
+	s.rewardStore = sqlstore.NewRewards(ctx, transactionalConnectionSource)
 	s.marketsStore = sqlstore.NewMarkets(transactionalConnectionSource)
 	s.delegationStore = sqlstore.NewDelegations(transactionalConnectionSource)
 	s.epochStore = sqlstore.NewEpochs(transactionalConnectionSource)
@@ -294,6 +296,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.paidLiquidityFeesStatsStore = sqlstore.NewPaidLiquidityFeesStats(transactionalConnectionSource)
 	s.partyLockedBalancesStore = sqlstore.NewPartyLockedBalances(transactionalConnectionSource)
 	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
+	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -347,6 +350,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
+	s.gamesService = service.NewGames(s.gamesStore)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)

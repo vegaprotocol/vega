@@ -811,6 +811,14 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
   }
 
+  // List teams statistics
+  //
+  // Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+  // If a team does not have at least the number of epochs' worth of data, it is ignored.
+  rpc ListTeamsStatistics(ListTeamsStatisticsRequest) returns (ListTeamsStatisticsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
+  }
+
   // List team referees
   //
   // Get a list of all referees for a given team ID
@@ -887,6 +895,13 @@ service TradingDataService {
   // Returns available per party per asset transfer discount
   rpc GetTotalTransferFeeDiscount(GetTotalTransferFeeDiscountRequest) returns (GetTotalTransferFeeDiscountResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transfers"};
+  }
+
+  // List games
+  //
+  // Get a list of games and corresponding game data, given the provided filters
+  rpc ListGames(ListGamesRequest) returns (ListGamesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
   }
 
   // Export network history as CSV
@@ -2492,6 +2507,10 @@ message ListRewardsRequest {
   optional uint64 from_epoch = 4;
   // Restrict rewards data to those that were paid up to and including the given epoch ID.
   optional uint64 to_epoch = 5;
+  // Filter for rewards paid if the party is a member of the given team
+  optional string team_id = 6;
+  // Filter for rewards paid if the party participated in the given game
+  optional string game_id = 7;
 }
 
 // Response for listing reward details for a single party
@@ -4110,6 +4129,65 @@ message ListTeamsResponse {
   TeamConnection teams = 1;
 }
 
+// Request to list all teams' statistics.
+message ListTeamsStatisticsRequest {
+  // Restrict team statistics to those with the given team ID.
+  optional string team_id = 1;
+  // Defines the number of past epochs to aggregate data from. By default, it takes
+  // the last 10 epochs.
+  optional uint64 aggregation_epochs = 2;
+  // Pagination controls.
+  optional Pagination pagination = 3;
+}
+
+// Response for the list teams' statistics request containing the statistics.
+message ListTeamsStatisticsResponse {
+  // Page of teams' statistics data and corresponding page information.
+  TeamsStatisticsConnection statistics = 1;
+}
+
+// Page of teams' statistics and corresponding page information.
+message TeamsStatisticsConnection {
+  // Page of team data and their corresponding cursors.
+  repeated TeamStatisticsEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Team data item with the corresponding cursor.
+message TeamStatisticsEdge {
+  // Team's statistics data.
+  TeamStatistics node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Team's statistics record containing the team information.
+message TeamStatistics {
+  // Team ID the statistics are related to.
+  string team_id = 1;
+  // Total of volume accumulated over the requested epoch period, expressed in
+  // quantum value.
+  string total_quantum_volume = 2;
+  // Total of rewards accumulated over the requested epoch period, expressed in
+  // quantum value.
+  string total_quantum_rewards = 3;
+  // List of rewards over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumRewardsPerEpoch quantum_rewards = 4;
+  // Total of games played.
+  uint64 total_game_played = 5;
+  // List of games played over the requested epoch period.
+  repeated string games_played = 6;
+}
+
+message QuantumRewardsPerEpoch {
+  // Epoch for which this information is valid.
+  uint64 epoch = 1;
+  // Total rewards accumulated over the epoch period, expressed in quantum value.
+  string total_quantum_rewards = 2;
+}
+
 // Request that is sent when listing the referees for a given team.
 message ListTeamRefereesRequest {
   // Team ID to list referees for.
@@ -4370,4 +4448,112 @@ message GetTotalTransferFeeDiscountRequest {
 message GetTotalTransferFeeDiscountResponse {
   // Total per party per asset discount available.
   string total_discount = 2;
+}
+
+// Request to retrieve games data.
+message ListGamesRequest {
+  // Game ID to filter for.
+  optional string game_id = 1;
+  // First epoch to retrieve game data from. If not provided, defaults to the last epoch minus 30,
+  // or the first epoch available if not enough epochs have passed.
+  optional uint64 epoch_from = 2;
+  // Last epoch to retrieve game data to (inclusive). If not provided, defaults to the last epoch.
+  optional uint64 epoch_to = 3;
+  // Entity scope to filter games for, i.e. team games or individual games only
+  optional vega.EntityScope entity_scope = 4;
+  // Pagination controls.
+  optional Pagination pagination = 5;
+}
+
+// Response containing games data.
+message ListGamesResponse {
+  // Page of games data and corresponding page information.
+  GamesConnection games = 1;
+}
+
+// Page of games data and corresponding page information.
+message GamesConnection {
+  // Page of games data and their corresponding cursors.
+  repeated GameEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Game information and corresponding cursor.
+message GameEdge {
+  // Game data.
+  Game node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Data relating to a game.
+message Game {
+  // Unique ID of the game
+  string id = 1;
+  // Epoch at which the last game metrics were captured.
+  uint64 epoch = 2;
+  // The number of participants in the game.
+  uint64 participants = 3;
+  // Entities participating in a game and their corresponding metrics.
+  oneof entities {
+    // Team entities that are participating in the game
+    TeamGameEntities team = 4;
+    // Individual entities that are participating in the game
+    IndividualGameEntities individual = 5;
+  }
+}
+
+// List of teams that are participating in a game
+message TeamGameEntities {
+  // List of teams, the participant members of a team, and the metrics associated with each participant.
+  repeated TeamGameEntity team = 1;
+}
+
+// List of individuals that are participating in a game
+message IndividualGameEntities {
+  // List of individual party IDs, and the metrics associated with each participant.
+  repeated IndividualGameEntity individual = 1;
+}
+
+// Data relating to a team participating in a game.
+message TeamGameEntity {
+  // Team participation breakdown
+  TeamGameParticipation team = 1;
+  // Rank of the team in the game
+  uint64 rank = 2;
+  // Volume traded by the team
+  string volume = 3;
+  // Reward metric applied to the team
+  string reward_metric = 4;
+  // Reward earned by the team
+  string reward_earned = 5;
+  // Total rewards earned by the individual for the team
+  string total_rewards_earned = 6;
+}
+
+// Breakdown of a team's participation in a game.
+message TeamGameParticipation {
+  // ID of the team participating
+  string team_id = 1;
+  // Individual team member metrics for their participation in the game
+  repeated IndividualGameEntity members_participating = 2;
+}
+
+// Data relating to an individual participating in a game.
+// This can be used for both team members who are participating in a team game,
+// or individuals participating in an individual entity game.
+message IndividualGameEntity {
+  // Party ID of the individual participating
+  string individual = 1;
+  // Rank of the individual either in the game or within their team.
+  uint64 rank = 2;
+  // Volume traded by the individual
+  string volume = 3;
+  // Reward metric applied to the individual
+  string reward_metric = 4;
+  // Reward earned by the individual during the epoch
+  string reward_earned = 5;
+  // Total rewards earned by the individual for the game
+  string total_rewards_earned = 6;
 }

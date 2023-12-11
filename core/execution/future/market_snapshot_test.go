@@ -180,7 +180,7 @@ func TestRestoreMarketUpgradeV0_73_2(t *testing.T) {
 	em.Market.Fees.LiquidityFeeSettings = nil
 
 	// and set in the context the information that says we are upgrading
-	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.4", true)
+	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.6", true)
 	snap, err := newMarketFromSnapshot(t, ctx, ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)

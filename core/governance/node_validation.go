@@ -227,17 +227,17 @@ func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
-func (n *NodeValidation) restore(ctx context.Context, p *types.Proposal) error {
-	checker, err := n.getChecker(ctx, p)
+func (n *NodeValidation) restore(ctx context.Context, p *types.ProposalData) error {
+	checker, err := n.getChecker(ctx, p.Proposal)
 	if err != nil {
 		return err
 	}
 	np := &nodeProposal{
 		proposal: &proposal{
-			Proposal:     p,
-			yes:          map[string]*types.Vote{},
-			no:           map[string]*types.Vote{},
-			invalidVotes: map[string]*types.Vote{},
+			Proposal:     p.Proposal,
+			yes:          votesAsMap(p.Yes),
+			no:           votesAsMap(p.No),
+			invalidVotes: votesAsMap(p.Invalid),
 		},
 		state:   atomic.Uint32{},
 		checker: checker,

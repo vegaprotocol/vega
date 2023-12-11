@@ -315,6 +315,12 @@ func newServices(
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 		} else {
 			stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
+			svcs.netParams.Watch([]netparams.WatchParam{
+				{
+					Param:   netparams.RewardAsset,
+					Watcher: stakingLoop.OnStakingAsstUpdate,
+				},
+			}...)
 			svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 		}
@@ -336,6 +342,7 @@ func newServices(
 	)
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.

@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -34,6 +35,7 @@ type Reward struct {
 	MarketID           MarketID
 	EpochID            int64
 	Amount             decimal.Decimal
+	QuantumAmount      decimal.Decimal
 	PercentOfTotal     float64
 	RewardType         string
 	Timestamp          time.Time
@@ -41,6 +43,18 @@ type Reward struct {
 	VegaTime           time.Time
 	SeqNum             uint64
 	LockedUntilEpochID int64
+	GameID             *GameID
+	TeamID             *TeamID
+}
+
+type RewardTotals struct {
+	GameID       GameID
+	PartyID      PartyID
+	AssetID      AssetID
+	MarketID     MarketID
+	EpochID      int64
+	TeamID       TeamID
+	TotalRewards decimal.Decimal
 }
 
 func (r Reward) String() string {
@@ -49,16 +63,28 @@ func (r Reward) String() string {
 }
 
 func (r Reward) ToProto() *vega.Reward {
+	var gameID, teamID *string
+	if r.GameID != nil && *r.GameID != "" {
+		gameID = ptr.From(r.GameID.String())
+	}
+
+	if r.TeamID != nil && *r.TeamID != "" {
+		teamID = ptr.From(r.TeamID.String())
+	}
+
 	protoReward := vega.Reward{
 		PartyId:           r.PartyID.String(),
 		AssetId:           r.AssetID.String(),
 		Epoch:             uint64(r.EpochID),
 		Amount:            r.Amount.String(),
+		QuantumAmount:     r.QuantumAmount.String(),
 		PercentageOfTotal: fmt.Sprintf("%v", r.PercentOfTotal),
 		ReceivedAt:        r.Timestamp.UnixNano(),
 		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
 		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
+		GameId:            gameID,
+		TeamId:            teamID,
 	}
 	return &protoReward
 }
@@ -82,19 +108,22 @@ func (r Reward) ToProtoEdge(_ ...any) (*v2.RewardEdge, error) {
 func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time.Time, seqNum uint64) (Reward, error) {
 	epochID, err := strconv.ParseInt(pr.EpochSeq, 10, 64)
 	if err != nil {
-		return Reward{}, fmt.Errorf("parsing epoch '%v': %w", pr.EpochSeq, err)
+		return Reward{}, fmt.Errorf("could not parse epoch %q: %w", pr.EpochSeq, err)
 	}
 
 	percentOfTotal, err := strconv.ParseFloat(pr.PercentOfTotalReward, 64)
 	if err != nil {
-		return Reward{}, fmt.Errorf("parsing percent of total reward '%v': %w",
-			pr.PercentOfTotalReward, err)
+		return Reward{}, fmt.Errorf("could not parse percent of total reward %q: %w", pr.PercentOfTotalReward, err)
 	}
 
 	amount, err := decimal.NewFromString(pr.Amount)
 	if err != nil {
-		return Reward{}, fmt.Errorf("parsing amount of reward: '%v': %w",
-			pr.Amount, err)
+		return Reward{}, fmt.Errorf("could not parse amount of reward %q: %w", pr.Amount, err)
+	}
+
+	quantumAmount, err := decimal.NewFromString(pr.QuantumAmount)
+	if err != nil {
+		return Reward{}, fmt.Errorf("could not parse the amount of reward %q: %w", pr.QuantumAmount, err)
 	}
 
 	marketID := pr.Market
@@ -106,8 +135,13 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 	if len(pr.LockedUntilEpoch) > 0 {
 		lockedUntilEpochID, err = strconv.ParseInt(pr.LockedUntilEpoch, 10, 64)
 		if err != nil {
-			return Reward{}, fmt.Errorf("parsing locked until epoch  '%v': %w", pr.LockedUntilEpoch, err)
+			return Reward{}, fmt.Errorf("parsing locked until epoch %q: %w", pr.LockedUntilEpoch, err)
 		}
+	}
+
+	var gameID *GameID
+	if pr.GameId != nil {
+		gameID = ptr.From(GameID(*pr.GameId))
 	}
 
 	reward := Reward{
@@ -115,6 +149,7 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		AssetID:            AssetID(pr.Asset),
 		EpochID:            epochID,
 		Amount:             amount,
+		QuantumAmount:      quantumAmount,
 		PercentOfTotal:     percentOfTotal,
 		Timestamp:          NanosToPostgresTimestamp(pr.Timestamp),
 		MarketID:           MarketID(marketID),
@@ -123,6 +158,9 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		VegaTime:           vegaTime,
 		SeqNum:             seqNum,
 		LockedUntilEpochID: lockedUntilEpochID,
+		GameID:             gameID,
+		// We are not expecting TeamID to be set in the proto from core, but the API will populate it
+		// if the reward is for a team game.
 	}
 
 	return reward, nil

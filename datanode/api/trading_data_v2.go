@@ -128,6 +128,7 @@ type TradingDataServiceV2 struct {
 	partyVestingBalances          *service.PartyVestingBalances
 	vestingStats                  *service.VestingStats
 	transactionResults            *service.TransactionResults
+	gamesService                  *service.Games
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -1626,7 +1627,7 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination)
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -4565,18 +4566,16 @@ func listTeam(ctx context.Context, teamsService *service.Teams, teamID entities.
 		return nil, formatE(err)
 	}
 
-	connection := &v2.TeamConnection{
-		Edges: edges,
-		PageInfo: &v2.PageInfo{
-			HasNextPage:     false,
-			HasPreviousPage: false,
-			StartCursor:     team.Cursor().Encode(),
-			EndCursor:       team.Cursor().Encode(),
-		},
-	}
-
 	return &v2.ListTeamsResponse{
-		Teams: connection,
+		Teams: &v2.TeamConnection{
+			Edges: edges,
+			PageInfo: &v2.PageInfo{
+				HasNextPage:     false,
+				HasPreviousPage: false,
+				StartCursor:     team.Cursor().Encode(),
+				EndCursor:       team.Cursor().Encode(),
+			},
+		},
 	}, nil
 }
 
@@ -4596,6 +4595,42 @@ func listTeams(ctx context.Context, teamsService *service.Teams, pagination enti
 
 	return &v2.ListTeamsResponse{
 		Teams: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamsStatistics(ctx context.Context, req *v2.ListTeamsStatisticsRequest) (*v2.ListTeamsStatisticsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamsStatistics")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListTeamsStatisticsFilters{
+		AggregationEpochs: 10,
+	}
+	if req.TeamId != nil {
+		filters.TeamID = ptr.From(entities.TeamID(*req.TeamId))
+	}
+	if req.AggregationEpochs != nil {
+		filters.AggregationEpochs = *req.AggregationEpochs
+	}
+
+	stats, pageInfo, err := t.teamsService.ListTeamsStatistics(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListTeamReferees, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamStatisticsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListTeamsStatisticsResponse{
+		Statistics: &v2.TeamsStatisticsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 
@@ -4789,6 +4824,11 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 ) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimateTransferFee")()
 
+	amount, overflow := num.UintFromString(req.Amount, 10)
+	if overflow || amount.IsNegative() {
+		return nil, formatE(ErrInvalidTransferAmount)
+	}
+
 	transferFeeMaxQuantumAmountParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeMaxQuantumAmount)
 	if err != nil {
 		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeMaxQuantumAmount))
@@ -4807,8 +4847,6 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
-
-	amount := num.MustUintFromString(req.Amount, 10)
 
 	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
 		ctx,
@@ -4855,5 +4893,30 @@ func (t *TradingDataServiceV2) GetTotalTransferFeeDiscount(ctx context.Context, 
 	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
 	return &v2.GetTotalTransferFeeDiscountResponse{
 		TotalDiscount: accumulatedDiscount.String(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesRequest) (*v2.ListGamesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGames")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, pagination)
+	if err != nil {
+		return nil, formatE(ErrListGames, err)
+	}
+
+	edges, err := makeEdges[*v2.GameEdge](games)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	return &v2.ListGamesResponse{
+		Games: &v2.GamesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
