@@ -45,8 +45,8 @@ func TestSingleStopOrders(t *testing.T) {
 	pool.Insert(newTrailingStopOrder("f", "p2", "", num.MustDecimalFromString("0.5"), types.StopOrderTriggerDirectionRisesAbove))
 
 	// mixing around both, will be triggered by the end
-	pool.Insert(newPricedStopOrderWithOverride("g", "p2", "", "", num.NewUint(20), types.StopOrderTriggerDirectionFallsBelow))
-	pool.Insert(newTrailingStopOrderWithOverride("h", "p2", "", "", num.MustDecimalFromString("1"), types.StopOrderTriggerDirectionRisesAbove))
+	pool.Insert(newPricedStopOrderWithOverride("g", "p2", "", num.MustDecimalFromString("1.0"), num.NewUint(20), types.StopOrderTriggerDirectionFallsBelow))
+	pool.Insert(newTrailingStopOrderWithOverride("h", "p2", "", num.MustDecimalFromString("1.0"), num.MustDecimalFromString("1"), types.StopOrderTriggerDirectionRisesAbove))
 
 	assert.Equal(t, pool.Len(), 8)
 
@@ -313,7 +313,8 @@ func newPricedStopOrder(
 }
 
 func newPricedStopOrderWithOverride(
-	id, party, ocoLinkID, sizeOverride string,
+	id, party, ocoLinkID string,
+	sizeOverrideScale num.Decimal,
 	price *num.Uint,
 	direction types.StopOrderTriggerDirection,
 ) *types.StopOrder {
@@ -334,8 +335,8 @@ func newPricedStopOrderWithOverride(
 			TimeInForce: types.OrderTimeInForceIOC,
 			Side:        types.SideBuy,
 		},
-		SizeOverrideSetting: types.StopOrderSizeOverrideSettingOrder,
-		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{OrderID: sizeOverride},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingPosition,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{PercentageSize: sizeOverrideScale},
 	}
 }
 
@@ -367,7 +368,8 @@ func newTrailingStopOrder(
 
 //nolint:unparam
 func newTrailingStopOrderWithOverride(
-	id, party, ocoLinkID, sizeOverride string,
+	id, party, ocoLinkID string,
+	sizeOverrideScale num.Decimal,
 	offset num.Decimal,
 	direction types.StopOrderTriggerDirection,
 ) *types.StopOrder {
@@ -388,7 +390,7 @@ func newTrailingStopOrderWithOverride(
 			TimeInForce: types.OrderTimeInForceIOC,
 			Side:        types.SideBuy,
 		},
-		SizeOverrideSetting: types.StopOrderSizeOverrideSettingOrder,
-		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{OrderID: sizeOverride},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingPosition,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{PercentageSize: sizeOverrideScale},
 	}
 }
