@@ -8,7 +8,6 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -30,7 +29,9 @@ const (
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
+
 type Collateral interface {
+	GetAssetQuantum(asset string) (num.Decimal, error)
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	SubAccountUpdate(
@@ -47,10 +48,6 @@ type Collateral interface {
 
 type Broker interface {
 	Send(events.Event)
-}
-
-type Assets interface {
-	Get(assetID string) (*assets.Asset, error)
 }
 
 type Market interface {
@@ -111,8 +108,6 @@ type Engine struct {
 	subAccounts map[string]string
 
 	minCommitmentQuantum *num.Uint
-
-	assets Assets
 }
 
 func New(
@@ -120,7 +115,6 @@ func New(
 	broker Broker,
 	collateral Collateral,
 	market Market,
-	assets Assets,
 	risk Risk,
 	position Position,
 ) *Engine {
@@ -143,12 +137,11 @@ func NewFromProto(
 	broker Broker,
 	collateral Collateral,
 	market Market,
-	assets Assets,
 	risk Risk,
 	position Position,
 	state *v1.AmmState,
 ) *Engine {
-	e := New(log, broker, collateral, market, assets, risk, position)
+	e := New(log, broker, collateral, market, risk, position)
 
 	for _, v := range state.SubAccounts {
 		e.subAccounts[v.Key] = v.Value
@@ -353,8 +346,7 @@ func (e *Engine) ensureCommitmentAmount(
 	ctx context.Context,
 	commitmentAmount *num.Uint,
 ) error {
-	asset, _ := e.assets.Get(e.market.GetSettlementAsset())
-	quantum := asset.Type().Details.Quantum
+	quantum, _ := e.collateral.GetAssetQuantum(e.market.GetSettlementAsset())
 	quantumCommitment := commitmentAmount.ToDecimal().Div(quantum)
 
 	if quantumCommitment.LessThan(e.minCommitmentQuantum.ToDecimal()) {

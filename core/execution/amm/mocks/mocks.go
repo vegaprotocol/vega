@@ -13,6 +13,7 @@ import (
 	num "code.vegaprotocol.io/vega/libs/num"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockCollateral is a mock of Collateral interface.
@@ -52,6 +53,21 @@ func (m *MockCollateral) CreatePartyAMMsSubAccounts(arg0 context.Context, arg1, 
 func (mr *MockCollateralMockRecorder) CreatePartyAMMsSubAccounts(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyAMMsSubAccounts", reflect.TypeOf((*MockCollateral)(nil).CreatePartyAMMsSubAccounts), arg0, arg1, arg2, arg3, arg4)
+}
+
+// GetAssetQuantum mocks base method.
+func (m *MockCollateral) GetAssetQuantum(arg0 string) (decimal.Decimal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssetQuantum", arg0)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetQuantum indicates an expected call of GetAssetQuantum.
+func (mr *MockCollateralMockRecorder) GetAssetQuantum(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetQuantum", reflect.TypeOf((*MockCollateral)(nil).GetAssetQuantum), arg0)
 }
 
 // GetPartyGeneralAccount mocks base method.
