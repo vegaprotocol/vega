@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -199,26 +199,50 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: "",
+					MarginRatioAtUpperBound: "",
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is required)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is required)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: "abc",
+					MarginRatioAtUpperBound: "abc",
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (is not a valid number)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtBounds: "-10",
+					MarginRatioAtUpperBound: "-10",
 				},
 			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_bounds (must be positive)",
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (must be positive)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: "",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is required)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: "abc",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: "-10",
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (must be positive)",
 		},
 		{
 			submission: commandspb.SubmitAMM{
@@ -244,10 +268,11 @@ func TestCheckSubmitAMM(t *testing.T) {
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  "10000",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					Base:                "20000",
-					UpperBound:          "30000",
-					LowerBound:          "10000",
-					MarginRatioAtBounds: "0.1",
+					Base:                    "20000",
+					UpperBound:              "30000",
+					LowerBound:              "10000",
+					MarginRatioAtUpperBound: "0.1",
+					MarginRatioAtLowerBound: "0.1",
 				},
 			},
 		},
