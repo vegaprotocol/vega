@@ -280,3 +280,58 @@ Feature: Test pegged order amend under isolated margin mode
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 0      | 90846   | 9154         |
 
+    Scenario: When the party increases the pegged order size and the party's general account does not contain sufficient funds to cover any increases to the order margin account to be equal to side margin then the order should be stopped (0019-MCAL-052)
+        # pegged order
+        Given the parties submit update margin mode:
+            | party      | market    | margin_mode     | margin_factor | error |
+            | test_party | ETH/FEB23 | isolated margin | 0.50          |       |
+        When the parties place the following pegged orders:
+            | party      | market id | side | volume | pegged reference | offset | reference |
+            | test_party | ETH/FEB23 | sell | 5      | ASK              | -5     | sell_peg  |
+        Then the parties should have the following margin levels:
+            | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.5           | 2500  |
+
+        Given the parties should have the following account balances:
+            | party      | asset | market id | margin | general | order margin |
+            | test_party | USD   | ETH/FEB23 | 0      | 97500   | 2500         |
+        When the parties amend the following orders:
+            | party      | reference | size | tif     | error               |
+            | test_party | sell_peg  | 201  | TIF_GTC | margin check failed |
+        Then the parties should have the following margin levels:
+            | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.5           | 0     |
+        And the parties should have the following account balances:
+            | party      | asset | market id | margin | general | order margin |
+            | test_party | USD   | ETH/FEB23 | 0      | 100000  | 0            |
+        And the orders should have the following status:
+            | party      | reference | status         |
+            | test_party | sell_peg  | STATUS_STOPPED |
+
+    Scenario: When the party increases the pegged order size and the party's general account does not contain sufficient funds to cover any increases to the order margin account to be equal to side margin then the order should be stopped (0019-MCAL-052)
+        # pegged iceberg order
+        Given the parties submit update margin mode:
+            | party      | market    | margin_mode     | margin_factor | error |
+            | test_party | ETH/FEB23 | isolated margin | 0.50          |       |
+        When the parties place the following pegged iceberg orders:
+            | party      | market id | peak size | minimum visible size | side | reference    | pegged reference | volume | offset |
+            | test_party | ETH/FEB23 | 5         | 4                    | sell | sell_ice_peg | ASK              | 5      | -5     |
+        Then the parties should have the following margin levels:
+            | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.50          | 2500  |
+
+        Given the parties should have the following account balances:
+            | party      | asset | market id | margin | general | order margin |
+            | test_party | USD   | ETH/FEB23 | 0      | 97500   | 2500         |
+        When the parties amend the following pegged iceberg orders:
+            | party      | reference    | size | tif     | error               |
+            | test_party | sell_ice_peg | 2001 | TIF_GTC | margin check failed |
+        Then the parties should have the following margin levels:
+            | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+            | test_party | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.50          | 0     |
+        And the parties should have the following account balances:
+            | party      | asset | market id | margin | general | order margin |
+            | test_party | USD   | ETH/FEB23 | 0      | 100000  | 0            |
+        And the orders should have the following status:
+            | party      | reference    | status         |
+            | test_party | sell_ice_peg | STATUS_STOPPED |
