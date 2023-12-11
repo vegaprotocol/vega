@@ -28,7 +28,7 @@ type BlockExplorerServiceClient interface {
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
 	// List transactions
 	//
-	// List transactions from the Vega blockchain
+	// List transactions from the Vega blockchain from the newest to the oldest transactions.
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 	// Info
 	//
@@ -82,7 +82,7 @@ type BlockExplorerServiceServer interface {
 	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
 	// List transactions
 	//
-	// List transactions from the Vega blockchain
+	// List transactions from the Vega blockchain from the newest to the oldest transactions.
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	// Info
 	//

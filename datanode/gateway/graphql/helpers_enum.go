@@ -31,12 +31,22 @@ func convertDataNodeIntervalToProto(interval string) (types.Interval, error) {
 		return types.Interval_INTERVAL_I5M, nil
 	case "15 minutes":
 		return types.Interval_INTERVAL_I15M, nil
+	case "30 minutes":
+		return types.Interval_INTERVAL_I30M, nil
 	case "1 hour":
 		return types.Interval_INTERVAL_I1H, nil
+	case "4 hours":
+		return types.Interval_INTERVAL_I4H, nil
 	case "6 hours":
 		return types.Interval_INTERVAL_I6H, nil
+	case "8 hours":
+		return types.Interval_INTERVAL_I8H, nil
+	case "12 hours":
+		return types.Interval_INTERVAL_I12H, nil
 	case "1 day":
 		return types.Interval_INTERVAL_I1D, nil
+	case "7 days":
+		return types.Interval_INTERVAL_I7D, nil
 	default:
 		err := fmt.Errorf("failed to convert Interval from GraphQL to Proto: %v", interval)
 		return types.Interval_INTERVAL_UNSPECIFIED, err

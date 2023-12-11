@@ -525,6 +525,14 @@ func (r *VegaResolverRoot) Team() TeamResolver {
 	return (*teamResolver)(r)
 }
 
+func (r *VegaResolverRoot) TeamStatistics() TeamStatisticsResolver {
+	return (*teamStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolver {
+	return (*quantumRewardsPerEpochResolver)(r)
+}
+
 func (r *VegaResolverRoot) TeamReferee() TeamRefereeResolver {
 	return (*teamRefereeResolver)(r)
 }
@@ -1769,6 +1777,24 @@ func (r *myQueryResolver) Teams(ctx context.Context, teamID *string, partyID *st
 	}
 
 	return teams.Teams, nil
+}
+
+func (r *myQueryResolver) TeamsStatistics(ctx context.Context, teamID *string, aggregationEpochs *int, pagination *v2.Pagination) (*v2.TeamsStatisticsConnection, error) {
+	filters := &v2.ListTeamsStatisticsRequest{
+		TeamId:     teamID,
+		Pagination: pagination,
+	}
+
+	if aggregationEpochs != nil {
+		filters.AggregationEpochs = ptr.From(uint64(*aggregationEpochs))
+	}
+
+	stats, err := r.tradingDataClientV2.ListTeamsStatistics(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats.Statistics, nil
 }
 
 func (r *myQueryResolver) TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error) {

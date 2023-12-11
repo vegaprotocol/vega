@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 
 ### 🗑️ Deprecation
 
@@ -22,14 +23,18 @@
 - [9516](https://github.com/vegaprotocol/vega/issues/9516) - Add filter by transfer ID for ledger entries API.
 - [9943](https://github.com/vegaprotocol/vega/issues/9943) - Support amending the order size by defining the target size.
 - [9231](https://github.com/vegaprotocol/vega/issues/9231) - Add a `JoinTeam API`
+- [10222](https://github.com/vegaprotocol/vega/issues/10222) - Supply bootstrap peers after starting the `IPFS` node to increase reliability.
 - [10097](https://github.com/vegaprotocol/vega/issues/10097) - Add funding rate modifiers to perpetual product definition.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on epoch range on transfers.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on status on transfers.
 - [10104](https://github.com/vegaprotocol/vega/issues/10104) - Add network position tracking.
 - [9981](https://github.com/vegaprotocol/vega/issues/9981) - Support filtering on scope on transfers.
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
+- [9980](https://github.com/vegaprotocol/vega/issues/9980) - Add teams statistics API.
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
+- [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
+- [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 
 ### 🐛 Fixes
 
@@ -65,6 +70,10 @@
 - [10211](https://github.com/vegaprotocol/vega/issues/10211) - Ensure infra fees don't get counted for vesting.
 - [10217](https://github.com/vegaprotocol/vega/issues/10217) - Game ID for reward entity should be optional
 - [10238](https://github.com/vegaprotocol/vega/issues/10238) - Fix logic when a user firsts requests spam information
+- [10227](https://github.com/vegaprotocol/vega/issues/10227) - Make the wallet errors on spam stats meaningful.
+- [10193](https://github.com/vegaprotocol/vega/issues/10193) - Denormalize `tx_results` to avoid joins with blocks when queried.
+- [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
+- [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
 
 ## 0.73.0
 

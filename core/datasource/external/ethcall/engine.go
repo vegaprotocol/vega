@@ -239,7 +239,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	// Instead call methods on the engine that take the mutex for a small time where needed.
 	// We do need to make use direct use of of e.log, e.client and e.forwarder; but these are static after creation
 	// and the methods used are safe for concurrent access.
-	lastEthBlock, err := e.client.BlockByNumber(ctx, nil)
+	lastEthBlock, err := e.client.HeaderByNumber(ctx, nil)
 	if err != nil {
 		e.log.Error("failed to get current block header", logging.Error(err))
 		return
@@ -247,41 +247,43 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 
 	e.log.Info("tick",
 		logging.Time("wallTime", wallTime),
-		logging.BigInt("ethBlock", lastEthBlock.Number()),
-		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time()), 0)))
+		logging.BigInt("ethBlock", lastEthBlock.Number),
+		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time), 0)))
 
 	// If the previous eth block has not been set, set it to the current eth block
 	if e.prevEthBlock == nil {
-		e.prevEthBlock = blockIndex{number: lastEthBlock.NumberU64(), time: lastEthBlock.Time()}
+		e.prevEthBlock = blockIndex{number: lastEthBlock.Number.Uint64(), time: lastEthBlock.Time}
 	}
 
 	// Go through an eth blocks one at a time until we get to the most recent one
-	for prevEthBlock := e.prevEthBlock; prevEthBlock.NumberU64() < lastEthBlock.NumberU64(); prevEthBlock = e.prevEthBlock {
+	for prevEthBlock := e.prevEthBlock; prevEthBlock.NumberU64() < lastEthBlock.Number.Uint64(); prevEthBlock = e.prevEthBlock {
 		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + 1)
-		nextEthBlock, err := e.client.BlockByNumber(ctx, nextBlockNum)
+		nextEthBlock, err := e.client.HeaderByNumber(ctx, nextBlockNum)
 		if err != nil {
 			e.log.Error("failed to get next block header", logging.Error(err))
 			return
 		}
 
+		nextEthBlockIsh := blockIndex{number: nextEthBlock.Number.Uint64(), time: nextEthBlock.Time}
+
 		for specID, call := range e.getCalls() {
-			if call.triggered(prevEthBlock, nextEthBlock) {
-				res, err := call.Call(ctx, e.client, nextEthBlock.NumberU64())
+			if call.triggered(prevEthBlock, nextEthBlockIsh) {
+				res, err := call.Call(ctx, e.client, nextEthBlock.Number.Uint64())
 				if err != nil {
 					e.log.Error("failed to call contract", logging.Error(err))
-					event := makeErrorChainEvent(err.Error(), specID, nextEthBlock)
+					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh)
 					e.forwarder.ForwardFromSelf(event)
 					continue
 				}
 
 				if res.PassesFilters {
-					event := makeChainEvent(res, specID, nextEthBlock)
+					event := makeChainEvent(res, specID, nextEthBlockIsh)
 					e.forwarder.ForwardFromSelf(event)
 				}
 			}
 		}
 
-		e.prevEthBlock = blockIndex{nextEthBlock.NumberU64(), nextEthBlock.Time()}
+		e.prevEthBlock = nextEthBlockIsh
 	}
 }
 

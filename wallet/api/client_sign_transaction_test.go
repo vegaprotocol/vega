@@ -628,7 +628,7 @@ func testFailingToGetSpamStatsDoesNotSignTransaction(t *testing.T) {
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(types.SpamStatistics{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkErrorType, fmt.Errorf("could not get the latest block information from the node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkErrorType, fmt.Errorf("could not get the latest spam statistics for the public key from the node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
@@ -641,7 +641,7 @@ func testFailingToGetSpamStatsDoesNotSignTransaction(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, "Network error", errorDetails.Message)
-	assert.Equal(t, api.ErrCouldNotGetLastBlockInformation.Error(), errorDetails.Data)
+	assert.Equal(t, api.ErrCouldNotGetSpamStatistics.Error(), errorDetails.Data)
 	assert.Empty(t, result)
 }
 
