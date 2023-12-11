@@ -349,7 +349,7 @@ func NewMarket(
 		}
 	}
 
-	market.amm = amm.New(log, broker, collateralEngine, market, nil, riskEngine, positionEngine)
+	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine)
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
