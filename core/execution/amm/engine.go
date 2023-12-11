@@ -27,6 +27,7 @@ const (
 	version = "AMMv1"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/amm Collateral,Position
 type Collateral interface {
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
@@ -56,11 +57,36 @@ type Market interface {
 	GetSettlementAsset() string
 }
 
-type Pool struct {
-	ID         string
-	SubAccount string
-	Commitment *num.Uint
-	Parameters *types.ConcentratedLiquidityParameters
+type Risk interface {
+	GetRiskFactors() *types.RiskFactor
+	GetScalingFactors() *types.ScalingFactors
+	GetSlippage() num.Decimal
+}
+
+type Position interface {
+	GetPositionByPartyID(partyID string) (events.MarketPosition, bool)
+}
+
+type sqrtFn func(*num.Uint) *num.Uint
+
+// Sqrter calculates sqrt's of Uints and caches the results. We want this cache to be shared across all pools for a market.
+type Sqrter struct {
+	cache map[string]*num.Uint
+}
+
+// sqrt calculates the square root of the uint and caches it.
+func (s *Sqrter) sqrt(u *num.Uint) *num.Uint {
+	if r := s.cache[u.String()]; r != nil {
+		return r.Clone()
+	}
+
+	// for now lets just use the sqrt algo in the uint256 library and if its slow
+	// we can work something out later
+	r := num.UintOne().Sqrt(u)
+
+	// we can also maybe be more clever here and use a LRU but whatever
+	s.cache[u.String()] = r
+	return r.Clone()
 }
 
 type Engine struct {
@@ -68,11 +94,17 @@ type Engine struct {
 
 	broker Broker
 
+	risk       Risk
 	collateral Collateral
+	position   Position
 	market     Market
 
 	// map of party -> pool
 	pools map[string]*Pool
+
+	// sqrt calculator with cache
+	rooter *Sqrter
+
 	// a mapping of all sub accounts to the party owning them.
 	subAccounts map[string]string
 
@@ -87,15 +119,20 @@ func New(
 	collateral Collateral,
 	market Market,
 	assets Assets,
+	risk Risk,
+	position Position,
 ) *Engine {
 	return &Engine{
 		log:                  log,
 		broker:               broker,
+		risk:                 risk,
 		collateral:           collateral,
+		position:             position,
 		market:               market,
 		pools:                map[string]*Pool{},
 		subAccounts:          map[string]string{},
 		minCommitmentQuantum: num.UintZero(),
+		rooter:               &Sqrter{cache: map[string]*num.Uint{}},
 	}
 }
 
@@ -158,13 +195,20 @@ func (e *Engine) SubmitAMM(
 		return err
 	}
 
-	e.pools[submit.Party] = &Pool{
-		ID:         deterministicID,
-		SubAccount: subAccount,
-		Commitment: submit.CommitmentAmount,
-		Parameters: submit.Parameters,
-	}
+	pool := NewPool(
+		deterministicID,
+		subAccount,
+		e.market.GetSettlementAsset(),
+		submit,
+		e.rooter.sqrt,
+		e.collateral,
+		e.position,
+		e.risk.GetRiskFactors(),
+		e.risk.GetScalingFactors(),
+		e.risk.GetSlippage(),
+	)
 
+	e.pools[submit.Party] = pool
 	events.NewAMMPoolEvent(
 		ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
 		submit.CommitmentAmount, submit.Parameters,
@@ -194,8 +238,7 @@ func (e *Engine) AmendAMM(
 		return err
 	}
 
-	pool.Commitment = amend.CommitmentAmount
-	pool.Parameters.ApplyUpdate(amend.Parameters)
+	pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
 
 	e.broker.Send(
 		events.NewAMMPoolEvent(
