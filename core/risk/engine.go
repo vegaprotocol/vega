@@ -249,6 +249,14 @@ func (e *Engine) GetRiskFactors() *types.RiskFactor {
 	return e.factors
 }
 
+func (e *Engine) GetScalingFactors() *types.ScalingFactors {
+	return e.marginCalculator.ScalingFactors
+}
+
+func (e *Engine) GetSlippage() num.Decimal {
+	return e.linearSlippageFactor
+}
+
 func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint, increment num.Decimal) ([]events.Risk, []events.Margin) {
 	if len(evts) == 0 {
 		return nil, nil
