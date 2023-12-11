@@ -3311,7 +3311,8 @@ type Proposal struct {
 	RequiredLiquidityProviderMajority *string `protobuf:"bytes,13,opt,name=required_liquidity_provider_majority,json=requiredLiquidityProviderMajority,proto3,oneof" json:"required_liquidity_provider_majority,omitempty"`
 	// Batch proposal terms.
 	BatchTerms *BatchProposalTerms `protobuf:"bytes,14,opt,name=batch_terms,json=batchTerms,proto3,oneof" json:"batch_terms,omitempty"`
-	BatchId    *string             `protobuf:"bytes,15,opt,name=batch_id,json=batchId,proto3,oneof" json:"batch_id,omitempty"`
+	// ID of a batch proposal that this proposal is part of.
+	BatchId *string `protobuf:"bytes,15,opt,name=batch_id,json=batchId,proto3,oneof" json:"batch_id,omitempty"`
 }
 
 func (x *Proposal) Reset() {

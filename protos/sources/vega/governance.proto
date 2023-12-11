@@ -514,6 +514,7 @@ message Proposal {
   optional string required_liquidity_provider_majority = 13;
   // Batch proposal terms.
   optional BatchProposalTerms batch_terms = 14;
+  // ID of a batch proposal that this proposal is part of.
   optional string batch_id = 15;
 }
 
