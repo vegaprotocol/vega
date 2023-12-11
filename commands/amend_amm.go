@@ -102,6 +102,13 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 			}
 		}
 
+		if len(cmd.SlippageTolerance) <= 0 {
+			errs.AddForProperty("submit_amm.slippage_tolerance", ErrIsRequired)
+		} else if slippageTolerance, err := num.DecimalFromString(cmd.SlippageTolerance); err != nil {
+			errs.AddForProperty("submit_amm.slippage_tolerance", ErrIsNotValidNumber)
+		} else if slippageTolerance.LessThan(num.DecimalZero()) {
+			errs.AddForProperty("submit_amm.slippage_tolerance", ErrMustBePositive)
+		}
 	}
 
 	// no update, but also no error, invalid
