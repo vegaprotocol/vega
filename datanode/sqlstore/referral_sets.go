@@ -66,7 +66,7 @@ func (rs *ReferralSets) AddReferralSet(ctx context.Context, referralSet *entitie
 	defer metrics.StartSQLQuery("ReferralSets", "AddReferralSet")()
 	_, err := rs.Connection.Exec(
 		ctx,
-		"INSERT INTO referral_sets(id, referrer, created_at, updated_at, vega_time) values ($1, $2, $3, $4, $5)",
+		"INSERT INTO referral_sets(id, referrer, created_at, updated_at, vega_time) VALUES ($1, $2, $3, $4, $5)",
 		referralSet.ID,
 		referralSet.Referrer,
 		referralSet.CreatedAt,
@@ -81,7 +81,7 @@ func (rs *ReferralSets) RefereeJoinedReferralSet(ctx context.Context, referee *e
 	defer metrics.StartSQLQuery("ReferralSets", "AddReferralSetReferee")()
 	_, err := rs.Connection.Exec(
 		ctx,
-		"INSERT INTO referral_set_referees(referral_set_id, referee, joined_at, at_epoch, vega_time) values ($1, $2, $3, $4, $5)",
+		"INSERT INTO referral_set_referees(referral_set_id, referee, joined_at, at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5)",
 		referee.ReferralSetID,
 		referee.Referee,
 		referee.JoinedAt,
@@ -103,9 +103,9 @@ func (rs *ReferralSets) ListReferralSets(ctx context.Context, referralSetID *ent
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT DISTINCT rs.id as id, rs.referrer as referrer, rs.created_at as created_at, rs.updated_at as updated_at, rs.vega_time as vega_time
+	query := `SELECT DISTINCT rs.id AS id, rs.referrer AS referrer, rs.created_at AS created_at, rs.updated_at AS updated_at, rs.vega_time AS vega_time
 			  FROM referral_sets rs
-			  LEFT JOIN referral_set_referees r on rs.id = r.referral_set_id` // LEFT JOIN because a referral set may not have any referees joined yet.
+			  LEFT JOIN referral_set_referees r ON rs.id = r.referral_set_id` // LEFT JOIN because a referral set may not have any referees joined yet.
 
 	// we only allow one of the following to be used as the filter
 	if referralSetID != nil {
@@ -151,7 +151,7 @@ func (rs *ReferralSets) AddReferralSetStats(ctx context.Context, stats *entities
 			   reward_factor,
 			   rewards_multiplier,
 			   rewards_factor_multiplier)
-			values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		stats.SetID,
 		stats.AtEpoch,
 		stats.WasEligible,
@@ -182,12 +182,12 @@ func (rs *ReferralSets) GetReferralSetStats(ctx context.Context, setID *entities
        				referral_set_running_notional_taker_volume,
        				referrer_taker_volume,
        				reward_factor,
-       				referee_stats->>'party_id' as party_id,
-       				referee_stats->>'discount_factor' as discount_factor,
-       				referee_stats->>'epoch_notional_taker_volume' as epoch_notional_taker_volume,
+       				referee_stats->>'party_id' AS party_id,
+       				referee_stats->>'discount_factor' AS discount_factor,
+       				referee_stats->>'epoch_notional_taker_volume' AS epoch_notional_taker_volume,
 					rewards_multiplier,
     				rewards_factor_multiplier
-			  FROM referral_set_stats, jsonb_array_elements(referees_stats) AS referee_stats`
+			  FROM referral_set_stats, JSONB_ARRAY_ELEMENTS(referees_stats) AS referee_stats`
 
 	whereClauses := []string{}
 
@@ -278,13 +278,13 @@ func (rs *ReferralSets) ListReferralSetReferees(ctx context.Context, referralSet
 
 func getSelectQuery(aggregationEpochs uint32) string {
 	return fmt.Sprintf(`
-with epoch_range as (select coalesce(max(id) - %d, 0) as start_epoch, coalesce(max(id), 0) as end_epoch
+with epoch_range as (select GREATEST(max(id) - %d, 0) as start_epoch, GREATEST(max(id), 0) as end_epoch
                      from epochs
                      where end_time is not null
 ), ref_period_volume (party, period_volume) as (
     select decode(ref_stats->>'party_id', 'hex'), sum((ref_stats->>'epoch_notional_taker_volume')::numeric) as period_volume
     from referral_set_stats, jsonb_array_elements(referees_stats) as ref_stats, epoch_range
-    where at_epoch >= epoch_range.start_epoch and at_epoch <= epoch_range.end_epoch
+    where at_epoch > epoch_range.start_epoch and at_epoch <= epoch_range.end_epoch
     and   jsonb_typeof(referees_stats) != 'null'
     group by ref_stats->>'party_id'
 ), ref_period_rewards (party, period_rewards) as (
@@ -293,7 +293,7 @@ with epoch_range as (select coalesce(max(id) - %d, 0) as start_epoch, coalesce(m
          jsonb_array_elements(referrer_rewards_generated) as ref_rewards,
          jsonb_array_elements(ref_rewards->'generated_reward') as gen_rewards,
 	     epoch_range
-    where epoch_seq >= epoch_range.start_epoch and epoch_seq <= epoch_range.end_epoch
+    where epoch_seq > epoch_range.start_epoch and epoch_seq <= epoch_range.end_epoch
     and jsonb_typeof(referrer_rewards_generated) != 'null'
     group by gen_rewards->>'party'
 )

@@ -5,6 +5,7 @@
 ### 🐛 Fixes
 
 - [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
+- [10241](https://github.com/vegaprotocol/vega/issues/10241) - Do not include start epoch on referees set statistics.
 
 ## 0.73.9
 
