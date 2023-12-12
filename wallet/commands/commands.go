@@ -51,6 +51,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckLiquidityProvisionSubmission(cmd.LiquidityProvisionSubmission)
 	case *walletpb.SubmitTransactionRequest_ProposalSubmission:
 		cmdErr = commands.CheckProposalSubmission(cmd.ProposalSubmission)
+	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
+		cmdErr = commands.CheckBatchProposalSubmission(cmd.BatchProposalSubmission)
 	case *walletpb.SubmitTransactionRequest_AnnounceNode:
 		cmdErr = commands.CheckAnnounceNode(cmd.AnnounceNode)
 	case *walletpb.SubmitTransactionRequest_NodeVote:
@@ -147,6 +149,10 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_ProposalSubmission:
 		data.Command = &commandspb.InputData_ProposalSubmission{
 			ProposalSubmission: req.GetProposalSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
+		data.Command = &commandspb.InputData_BatchProposalSubmission{
+			BatchProposalSubmission: req.GetBatchProposalSubmission(),
 		}
 	case *walletpb.SubmitTransactionRequest_AnnounceNode:
 		data.Command = &commandspb.InputData_AnnounceNode{

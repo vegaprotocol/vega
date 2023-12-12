@@ -208,6 +208,8 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkLiquidityProvisionAmendment(cmd.LiquidityProvisionAmendment))
 		case *commandspb.InputData_ProposalSubmission:
 			errs.Merge(checkProposalSubmission(cmd.ProposalSubmission))
+		case *commandspb.InputData_BatchProposalSubmission:
+			errs.Merge(checkBatchProposalSubmission(cmd.BatchProposalSubmission))
 		case *commandspb.InputData_AnnounceNode:
 			errs.Merge(checkAnnounceNode(cmd.AnnounceNode))
 		case *commandspb.InputData_NodeVote:

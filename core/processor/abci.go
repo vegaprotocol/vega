@@ -50,6 +50,7 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	verrors "code.vegaprotocol.io/vega/libs/errors"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -363,6 +364,7 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
+		HandleCheckTx(txn.BatchProposeCommand, addDeterministicID(app.CheckBatchPropose)).
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
 		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
 
@@ -437,6 +439,13 @@ func NewApp(
 			app.SendTransactionResult(
 				app.CheckProposeW(
 					addDeterministicID(app.DeliverPropose),
+				),
+			),
+		).
+		HandleDeliverTx(txn.BatchProposeCommand,
+			app.SendTransactionResult(
+				app.CheckProposeW(
+					addDeterministicID(app.DeliverBatchPropose),
 				),
 			),
 		).
@@ -1728,6 +1737,41 @@ func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	}
 }
 
+func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx, deterministicBatchID string) error {
+	p := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(p); err != nil {
+		return err
+	}
+
+	idgen := idgeneration.New(deterministicBatchID)
+	ids := make([]string, 0, len(p.Terms.Changes))
+
+	for i := 0; i < len(p.Terms.Changes); i++ {
+		ids = append(ids, idgen.NextID())
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p, ids)
+	if err != nil {
+		return err
+	}
+
+	errs := verrors.NewCumulatedErrors()
+	for _, change := range propSubmission.Terms.Changes {
+		switch term := change.Change.(type) {
+		case *types.ProposalTermsUpdateNetworkParameter:
+			if err := app.netp.IsUpdateAllowed(term.UpdateNetworkParameter.Changes.Key); err != nil {
+				errs.Add(errs)
+			}
+		}
+	}
+
+	if errs.HasAny() {
+		return errs
+	}
+
+	return nil
+}
+
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
@@ -1792,6 +1836,99 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 					logging.Error(err))
 			}
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicBatchID string) (err error) {
+	prop := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(prop); err != nil {
+		return err
+	}
+
+	party := tx.Party()
+
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("submitting batch proposal",
+			logging.ProposalID(deterministicBatchID),
+			logging.String("proposal-reference", prop.Reference),
+			logging.String("proposal-party", party),
+			logging.String("proposal-terms", prop.Terms.String()))
+	}
+
+	idgen := idgeneration.New(deterministicBatchID)
+	ids := make([]string, 0, len(prop.Terms.Changes))
+
+	for i := 0; i < len(prop.Terms.Changes); i++ {
+		ids = append(ids, idgen.NextID())
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop, ids)
+	if err != nil {
+		return err
+	}
+	toSubmits, err := app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
+	if err != nil {
+		app.log.Debug("could not submit batch proposal",
+			logging.ProposalID(deterministicBatchID),
+			logging.Error(err))
+		return err
+	}
+
+	var submittedMarketIDs []string
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		// an error happened when submitting the market
+		// we should cancel this proposal now
+		if err := app.gov.RejectBatchProposal(ctx, deterministicBatchID,
+			types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+			// this should never happen
+			app.log.Panic("tried to reject a nonexistent batch proposal",
+				logging.String("proposal-id", deterministicBatchID),
+				logging.Error(err))
+		}
+
+		for _, marketID := range submittedMarketIDs {
+			if err := app.exec.RejectMarket(ctx, marketID); err != nil {
+				// this should never happen
+				app.log.Panic("unable to submit reject submitted market",
+					logging.ProposalID(marketID),
+					logging.Error(err))
+			}
+		}
+	}()
+
+	for _, toSubmit := range toSubmits {
+		if toSubmit.IsNewMarket() {
+			// opening auction start
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewMarket()
+
+			// @TODO pass in parent and insurance pool share if required
+			if err = app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new market with liquidity submission",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
+		} else if toSubmit.IsNewSpotMarket() {
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewSpotMarket()
+			if err = app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new spot market",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
 		}
 	}
 

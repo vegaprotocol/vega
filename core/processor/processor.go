@@ -110,10 +110,12 @@ type ExecutionEngine interface {
 
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	SubmitBatchProposal(context.Context, types.BatchProposalSubmission, string, string) ([]*governance.ToSubmit, error)
 	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnTick(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
+	RejectBatchProposal(context.Context, string, types.ProposalError, error) error
 	Hash() []byte
 }
 

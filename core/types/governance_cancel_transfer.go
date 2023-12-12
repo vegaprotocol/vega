@@ -33,23 +33,25 @@ func (a ProposalTermsCancelTransfer) String() string {
 	)
 }
 
-func (a ProposalTermsCancelTransfer) IntoProto() *vegapb.ProposalTerms_CancelTransfer {
+func (a ProposalTermsCancelTransfer) isPTerm() {}
+
+func (a ProposalTermsCancelTransfer) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_CancelTransfer{
 		CancelTransfer: a.CancelTransfer.IntoProto(),
 	}
 }
 
-func (a ProposalTermsCancelTransfer) isPTerm() {}
-
-func (a ProposalTermsCancelTransfer) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsCancelTransfer) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_CancelTransfer{
+		CancelTransfer: a.CancelTransfer.IntoProto(),
+	}
 }
 
 func (a ProposalTermsCancelTransfer) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeCancelTransfer
 }
 
-func (a ProposalTermsCancelTransfer) DeepClone() proposalTerm {
+func (a ProposalTermsCancelTransfer) DeepClone() ProposalTerm {
 	if a.CancelTransfer == nil {
 		return &ProposalTermsCancelTransfer{}
 	}
@@ -58,14 +60,14 @@ func (a ProposalTermsCancelTransfer) DeepClone() proposalTerm {
 	}
 }
 
-func NewCancelGovernanceTransferFromProto(p *vegapb.ProposalTerms_CancelTransfer) (*ProposalTermsCancelTransfer, error) {
+func NewCancelGovernanceTransferFromProto(cancelTransferProto *vegapb.CancelTransfer) (*ProposalTermsCancelTransfer, error) {
 	var cancelTransfer *CancelTransfer
-	if p.CancelTransfer != nil {
+	if cancelTransferProto != nil {
 		cancelTransfer = &CancelTransfer{}
 
-		if p.CancelTransfer.Changes != nil {
+		if cancelTransferProto.Changes != nil {
 			cancelTransfer.Changes = &CancelTransferConfiguration{
-				TransferID: p.CancelTransfer.Changes.TransferId,
+				TransferID: cancelTransferProto.Changes.TransferId,
 			}
 		}
 	}

@@ -219,6 +219,7 @@ func TestGetPriority(t *testing.T) {
 		txn.AmendOrderCommand,
 		txn.WithdrawCommand,
 		txn.ProposeCommand,
+		txn.BatchProposeCommand,
 		txn.VoteCommand,
 		txn.AnnounceNodeCommand,
 		txn.NodeVoteCommand,
@@ -247,7 +248,7 @@ func TestGetPriority(t *testing.T) {
 		expected := uint64(1)
 		if c.IsValidatorCommand() {
 			expected = uint64(10000)
-		} else if c == txn.ProposeCommand || c == txn.VoteCommand {
+		} else if c == txn.ProposeCommand || c == txn.VoteCommand || c == txn.BatchProposeCommand {
 			expected = uint64(100)
 		}
 		require.Equal(t, expected, gastimator.GetPriority(&testTx{command: c}), c)

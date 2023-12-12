@@ -352,6 +352,76 @@ message ProposalTerms {
   }
 }
 
+// Terms change for a batch governance proposal
+message BatchProposalTermsChange {
+  // Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
+  // constrained by `minEnact` and `maxEnact` network parameters.
+  int64 enactment_timestamp = 1;
+  // Changes being proposed.
+  oneof change {
+    // Proposal change for modifying an existing futures market.
+    UpdateMarket update_market = 101;
+    // Proposal change for creating new futures market.
+    NewMarket new_market = 102;
+    // Proposal change for updating Vega network parameters.
+    UpdateNetworkParameter update_network_parameter = 103;
+    // Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system,
+    // and can be used to gauge community sentiment.
+    NewFreeform new_freeform = 104;
+    // Proposal change for updating an asset.
+    UpdateAsset update_asset = 105;
+    // Proposal change for creating new spot market.
+    NewSpotMarket new_spot_market = 106;
+    // Proposal change for modifying an existing spot market.
+    UpdateSpotMarket update_spot_market = 107;
+    // Proposal change for a governance initiated transfer.
+    NewTransfer new_transfer = 108;
+    // Proposal change to cancel a governance initiated transfe.
+    CancelTransfer cancel_transfer = 109;
+    // Proposal change for updating the state of a market.
+    UpdateMarketState update_market_state = 110;
+    // Proposal change for updating the referral program.
+    UpdateReferralProgram update_referral_program = 111;
+    // Proposal change for updating the volume discount program.
+    UpdateVolumeDiscountProgram update_volume_discount_program = 112;
+  }
+}
+
+message ProposalParameters {
+  // Represents the minimum time before a proposal can be closed for voting.
+  int64 min_close = 1;
+  // Represents the maximum time that a proposal can be open for voting.
+  int64 max_close = 2;
+  // Represents the minimum time before an enacted proposal takes effect.
+  int64 min_enact = 3;
+  // Represents the maximum time before an enacted proposal must take effect.
+  int64 max_enact = 4;
+  // Specifies the required percentage of eligible participants that must partake in the proposal for it to be valid.
+  string required_participation = 5;
+  // Specifies the required percentage of votes a proposal needs to be approved.
+  string required_majority = 6;
+  // Specifies the minimum governance token balance a proposer must hold to initiate a proposal.
+  string min_proposer_balance = 7;
+  // Specifies the minimum governance token balance a voter must hold to participate in voting.
+  string min_voter_balance = 8;
+  // Specifies the required percentage of participation from liquidity providers for the proposal to be valid.
+  string required_participation_lp = 9;
+  // Specifies the required majority percentage from liquidity providers for a proposal to be approved.
+  string required_majority_lp = 10;
+  // Specifies the minimum share that is akin to equity, which a participant must hold for their vote to be eligible.
+  string min_equity_like_share = 11;
+}
+
+// Terms for a batch governance proposal on Vega
+message BatchProposalTerms {
+  // Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
+  int64 closing_timestamp = 1;
+  // Specific parameters defining the proposal's characteristics used for validation.
+  ProposalParameters proposal_params = 2;
+  // List of individual changes included in the batch proposal.
+  repeated BatchProposalTermsChange changes = 3;
+}
+
 // Rationale behind a proposal.
 message ProposalRationale {
   reserved 2, 3;
@@ -405,7 +475,7 @@ message Proposal {
     STATE_REJECTED = 4;
     // Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
     STATE_DECLINED = 5;
-    // Proposal enacted
+    // Proposal enacted.
     STATE_ENACTED = 6;
     // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
@@ -426,7 +496,8 @@ message Proposal {
   // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
-  ProposalTerms terms = 6;
+  // Single proposal term.
+  optional ProposalTerms terms = 6;
   // Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   optional ProposalError reason = 7;
   // Detailed error associated to the reason.
@@ -441,6 +512,10 @@ message Proposal {
   optional string required_liquidity_provider_participation = 12;
   // Required majority from liquidity providers, optional but is required for market update proposal.
   optional string required_liquidity_provider_majority = 13;
+  // Batch proposal terms.
+  optional BatchProposalTerms batch_terms = 14;
+  // ID of a batch proposal that this proposal is part of.
+  optional string batch_id = 15;
 }
 
 // List of possible errors that can cause a proposal to be in state rejected or failed
@@ -550,6 +625,10 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM = 56;
   // Volume discount program proposal is invalid
   PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM = 57;
+  // One or more proposals in a batch has been rejected
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED = 58;
+  // One or more proposals in a batch has been declined
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
 }
 
 // Governance vote

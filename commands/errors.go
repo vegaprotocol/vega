@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -121,6 +123,20 @@ func (e Errors) AddForProperty(prop string, err error) {
 	}
 
 	e[prop] = append(errs, err)
+}
+
+// AddPrefix adds prefix to each property.
+func (e Errors) AddPrefix(prefix string) Errors {
+	keys := maps.Keys(e)
+	for _, key := range keys {
+		// Skip general error
+		if key == "*" {
+			continue
+		}
+		e[fmt.Sprintf("%s%s", prefix, key)] = e[key]
+		delete(e, key)
+	}
+	return e
 }
 
 // FinalAddForProperty behaves like AddForProperty, but is meant to be called in

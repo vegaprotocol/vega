@@ -296,6 +296,10 @@ func PartyID(id string) zap.Field {
 	return zap.String("party", id)
 }
 
+func ProposalBatchID(id string) zap.Field {
+	return zap.String("proposal-batch-id", id)
+}
+
 func ProposalID(id string) zap.Field {
 	return zap.String("proposal-id", id)
 }

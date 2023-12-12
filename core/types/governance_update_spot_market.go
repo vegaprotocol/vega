@@ -24,7 +24,9 @@ import (
 )
 
 type ProposalTermsUpdateSpotMarket struct {
-	UpdateSpotMarket *UpdateSpotMarket
+	BatchProposalID    string
+	EnactmentTimestamp int64
+	UpdateSpotMarket   *UpdateSpotMarket
 }
 
 func (a ProposalTermsUpdateSpotMarket) String() string {
@@ -42,15 +44,23 @@ func (a ProposalTermsUpdateSpotMarket) IntoProto() *vegapb.ProposalTerms_UpdateS
 
 func (a ProposalTermsUpdateSpotMarket) isPTerm() {}
 
-func (a ProposalTermsUpdateSpotMarket) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateSpotMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_UpdateSpotMarket{
+		UpdateSpotMarket: a.UpdateSpotMarket.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateSpotMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateSpotMarket{
+		UpdateSpotMarket: a.UpdateSpotMarket.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateSpotMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateSpotMarket
 }
 
-func (a ProposalTermsUpdateSpotMarket) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateSpotMarket) DeepClone() ProposalTerm {
 	if a.UpdateSpotMarket == nil {
 		return &ProposalTermsUpdateSpotMarket{}
 	}
@@ -59,14 +69,14 @@ func (a ProposalTermsUpdateSpotMarket) DeepClone() proposalTerm {
 	}
 }
 
-func UpdateSpotMarketFromProto(p *vegapb.ProposalTerms_UpdateSpotMarket) (*ProposalTermsUpdateSpotMarket, error) {
+func UpdateSpotMarketFromProto(updateSpotMarketProto *vegapb.UpdateSpotMarket) (*ProposalTermsUpdateSpotMarket, error) {
 	var updateSpotMarket *UpdateSpotMarket
-	if p.UpdateSpotMarket != nil {
+	if updateSpotMarketProto != nil {
 		updateSpotMarket = &UpdateSpotMarket{}
-		updateSpotMarket.MarketID = p.UpdateSpotMarket.MarketId
-		if p.UpdateSpotMarket.Changes != nil {
+		updateSpotMarket.MarketID = updateSpotMarketProto.MarketId
+		if updateSpotMarketProto.Changes != nil {
 			var err error
-			updateSpotMarket.Changes, err = UpdateSpotMarketConfigurationFromProto(p.UpdateSpotMarket.Changes)
+			updateSpotMarket.Changes, err = UpdateSpotMarketConfigurationFromProto(updateSpotMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}

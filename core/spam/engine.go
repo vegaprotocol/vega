@@ -130,6 +130,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
+	e.transactionTypeToPolicy[txn.BatchProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
@@ -325,7 +326,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 
 	for txType, policy := range e.transactionTypeToPolicy {
 		switch txType {
-		case txn.ProposeCommand:
+		case txn.ProposeCommand, txn.BatchProposeCommand:
 			stats.Proposals = policy.GetSpamStats(partyID)
 		case txn.DelegateCommand:
 			stats.Delegations = policy.GetSpamStats(partyID)

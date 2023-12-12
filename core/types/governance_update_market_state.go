@@ -38,23 +38,25 @@ func (a ProposalTermsUpdateMarketState) String() string {
 	)
 }
 
-func (a ProposalTermsUpdateMarketState) IntoProto() *vegapb.ProposalTerms_UpdateMarketState {
+func (a ProposalTermsUpdateMarketState) isPTerm() {}
+
+func (a ProposalTermsUpdateMarketState) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_UpdateMarketState{
 		UpdateMarketState: a.UpdateMarketState.IntoProto(),
 	}
 }
 
-func (a ProposalTermsUpdateMarketState) isPTerm() {}
-
-func (a ProposalTermsUpdateMarketState) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateMarketState) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateMarketState{
+		UpdateMarketState: a.UpdateMarketState.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateMarketState) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateMarketState
 }
 
-func (a ProposalTermsUpdateMarketState) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateMarketState) DeepClone() ProposalTerm {
 	if a.UpdateMarketState == nil {
 		return &ProposalTermsUpdateMarketState{}
 	}
@@ -63,20 +65,20 @@ func (a ProposalTermsUpdateMarketState) DeepClone() proposalTerm {
 	}
 }
 
-func NewTerminateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarketState) (*ProposalTermsUpdateMarketState, error) {
+func NewTerminateMarketFromProto(updateMarketStateProto *vegapb.UpdateMarketState) (*ProposalTermsUpdateMarketState, error) {
 	var terminateMarket *UpdateMarketState
-	if p.UpdateMarketState != nil {
+	if updateMarketStateProto != nil {
 		terminateMarket = &UpdateMarketState{}
 
 		var price *num.Uint
-		if p.UpdateMarketState.Changes.Price != nil {
-			price, _ = num.UintFromString(*p.UpdateMarketState.Changes.Price, 10)
+		if updateMarketStateProto.Changes.Price != nil {
+			price, _ = num.UintFromString(*updateMarketStateProto.Changes.Price, 10)
 		}
 
-		if p.UpdateMarketState.Changes != nil {
+		if updateMarketStateProto.Changes != nil {
 			terminateMarket.Changes = &MarketStateUpdateConfiguration{
-				MarketID:        p.UpdateMarketState.Changes.MarketId,
-				UpdateType:      p.UpdateMarketState.Changes.UpdateType,
+				MarketID:        updateMarketStateProto.Changes.MarketId,
+				UpdateType:      updateMarketStateProto.Changes.UpdateType,
 				SettlementPrice: price,
 			}
 		}

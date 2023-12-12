@@ -41,15 +41,23 @@ func (a ProposalTermsUpdateNetworkParameter) IntoProto() *vegapb.ProposalTerms_U
 
 func (a ProposalTermsUpdateNetworkParameter) isPTerm() {}
 
-func (a ProposalTermsUpdateNetworkParameter) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateNetworkParameter) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_UpdateNetworkParameter{
+		UpdateNetworkParameter: a.UpdateNetworkParameter.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateNetworkParameter) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateNetworkParameter{
+		UpdateNetworkParameter: a.UpdateNetworkParameter.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateNetworkParameter) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateNetworkParameter
 }
 
-func (a ProposalTermsUpdateNetworkParameter) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateNetworkParameter) DeepClone() ProposalTerm {
 	if a.UpdateNetworkParameter == nil {
 		return &ProposalTermsUpdateNetworkParameter{}
 	}
@@ -59,14 +67,14 @@ func (a ProposalTermsUpdateNetworkParameter) DeepClone() proposalTerm {
 }
 
 func NewUpdateNetworkParameterFromProto(
-	p *vegapb.ProposalTerms_UpdateNetworkParameter,
+	updateNetworkParamProto *vegapb.UpdateNetworkParameter,
 ) *ProposalTermsUpdateNetworkParameter {
 	var updateNP *UpdateNetworkParameter
-	if p.UpdateNetworkParameter != nil {
+	if updateNetworkParamProto != nil {
 		updateNP = &UpdateNetworkParameter{}
 
-		if p.UpdateNetworkParameter.Changes != nil {
-			updateNP.Changes = NetworkParameterFromProto(p.UpdateNetworkParameter.Changes)
+		if updateNetworkParamProto.Changes != nil {
+			updateNP.Changes = NetworkParameterFromProto(updateNetworkParamProto.Changes)
 		}
 	}
 

@@ -37,23 +37,25 @@ func (a ProposalTermsUpdateMarket) String() string {
 	)
 }
 
-func (a ProposalTermsUpdateMarket) IntoProto() *vegapb.ProposalTerms_UpdateMarket {
+func (a ProposalTermsUpdateMarket) isPTerm() {}
+
+func (a ProposalTermsUpdateMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_UpdateMarket{
 		UpdateMarket: a.UpdateMarket.IntoProto(),
 	}
 }
 
-func (a ProposalTermsUpdateMarket) isPTerm() {}
-
-func (a ProposalTermsUpdateMarket) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateMarket{
+		UpdateMarket: a.UpdateMarket.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateMarket
 }
 
-func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateMarket) DeepClone() ProposalTerm {
 	if a.UpdateMarket == nil {
 		return &ProposalTermsUpdateMarket{}
 	}
@@ -62,16 +64,16 @@ func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
 	}
 }
 
-func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) (*ProposalTermsUpdateMarket, error) {
+func UpdateMarketFromProto(updateMarketProto *vegapb.UpdateMarket) (*ProposalTermsUpdateMarket, error) {
 	var updateMarket *UpdateMarket
-	if p.UpdateMarket != nil {
+	if updateMarketProto != nil {
 		updateMarket = &UpdateMarket{}
 
-		updateMarket.MarketID = p.UpdateMarket.MarketId
+		updateMarket.MarketID = updateMarketProto.MarketId
 
-		if p.UpdateMarket.Changes != nil {
+		if updateMarketProto.Changes != nil {
 			var err error
-			updateMarket.Changes, err = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+			updateMarket.Changes, err = UpdateMarketConfigurationFromProto(updateMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}
