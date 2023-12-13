@@ -24,7 +24,7 @@ import (
 // Intended for generic use.
 type CloseOnLimitOperation bool
 
-// Settings for receiving closed/open sets on different parts of the outputs of LedgerEntries.
+// LedgerEntryFilter settings for receiving closed/open sets on different parts of the outputs of LedgerEntries.
 // Any kind of relation between the data types on logical and practical level in the set is the `limit operation`.
 // We close or not the set of output items on the limit operation via the `CloseOnOperation` set values.
 type LedgerEntryFilter struct {

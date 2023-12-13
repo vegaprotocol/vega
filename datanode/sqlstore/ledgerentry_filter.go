@@ -18,84 +18,81 @@ package sqlstore
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
 	ErrLedgerEntryFilterForParty = errors.New("filtering ledger entries should be limited to a single party")
-
 	ErrLedgerEntryExportForParty = errors.New("exporting ledger entries should be limited to a single party")
 )
 
 // Return an SQL query string and corresponding bind arguments to return
 // ledger entries rows resulting from different filter options.
-func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter) ([4]string, []interface{}, error) {
-	err := handlePartiesFiltering(filter)
-	if err != nil {
-		return [4]string{}, nil, err
+func filterLedgerEntriesQuery(filter *entities.LedgerEntryFilter, args *[]interface{}, whereClauses *[]string) error {
+	if err := handlePartiesFiltering(filter); err != nil {
+		return err
 	}
 
-	var args []interface{}
-	filterQueries := [4]string{}
-
-	// FromAccount filter
-	fromAccountDBQuery, nargs, err := accountFilterToDBQuery(filter.FromAccountFilter, &args, "account_from_")
+	fromAccountDBQuery, err := accountFilterToDBQuery(filter.FromAccountFilter, args, "account_from.")
 	if err != nil {
-		return [4]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
+		return fmt.Errorf("invalid fromAccount filters: %w", err)
 	}
-	args = *nargs
 
-	// ToAccount filter
-	toAccountDBQuery, nargs, err := accountFilterToDBQuery(filter.ToAccountFilter, &args, "account_to_")
+	toAccountDBQuery, err := accountFilterToDBQuery(filter.ToAccountFilter, args, "account_to.")
 	if err != nil {
-		return [4]string{}, nil, fmt.Errorf("error parsing fromAccount filter values: %w", err)
+		return fmt.Errorf("invalid toAccount filters: %w", err)
 	}
-	args = *nargs
 
-	// TransferTypeFilters
-	accountTransferTypeDBQuery := transferTypeFilterToDBQuery(filter.TransferTypes, &args)
+	accountTransferTypeDBQuery := transferTypeFilterToDBQuery(filter.TransferTypes)
 
-	transfersDBQuery, nargs := transfersFilterToDBQuery(filter.TransferID, &args)
+	if fromAccountDBQuery != "" {
+		if toAccountDBQuery != "" {
+			if filter.CloseOnAccountFilters {
+				*whereClauses = append(*whereClauses, fromAccountDBQuery, toAccountDBQuery)
+			} else {
+				*whereClauses = append(*whereClauses, fmt.Sprintf("((%s) OR (%s))", fromAccountDBQuery, toAccountDBQuery))
+			}
+		} else {
+			*whereClauses = append(*whereClauses, fromAccountDBQuery)
+		}
+	} else if toAccountDBQuery != "" {
+		*whereClauses = append(*whereClauses, toAccountDBQuery)
+	}
 
-	args = *nargs
+	if accountTransferTypeDBQuery != "" {
+		*whereClauses = append(*whereClauses, accountTransferTypeDBQuery)
+	}
 
-	filterQueries[0] = fromAccountDBQuery
-	filterQueries[1] = toAccountDBQuery
-	filterQueries[2] = accountTransferTypeDBQuery
-	filterQueries[3] = transfersDBQuery
-
-	return filterQueries, args, nil
+	return nil
 }
 
 // accountFilterToDBQuery creates a DB query section string from the given account filter values.
-func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, prefix string) (string, *[]interface{}, error) {
-	var (
-		singleAccountFilter string
-		err                 error
-	)
+func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, prefix string) (string, error) {
+	var err error
+
+	whereClauses := []string{}
 
 	// Asset filtering
 	if af.AssetID.String() != "" {
 		assetIDAsBytes, err := af.AssetID.Bytes()
 		if err != nil {
-			return "", nil, fmt.Errorf("invalid asset id: %w", err)
+			return "", fmt.Errorf("invalid asset id: %w", err)
 		}
-		singleAccountFilter = fmt.Sprintf("%sasset_id=%s", singleAccountFilter, nextBindVar(args, assetIDAsBytes))
+		whereClauses = append(whereClauses, fmt.Sprintf("account_from.asset_id=%s", nextBindVar(args, assetIDAsBytes)))
 	}
 
 	// Party filtering
 	if len(af.PartyIDs) == 1 {
 		partyIDAsBytes, err := af.PartyIDs[0].Bytes()
 		if err != nil {
-			return "", nil, fmt.Errorf("invalid party id: %w", err)
+			return "", fmt.Errorf("invalid party id: %w", err)
 		}
-		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND %sparty_id=%s`, singleAccountFilter, prefix, nextBindVar(args, partyIDAsBytes))
-		} else {
-			singleAccountFilter = fmt.Sprintf(`%sparty_id=%s`, prefix, nextBindVar(args, partyIDAsBytes))
-		}
+		whereClauses = append(whereClauses, fmt.Sprintf(`%sparty_id=%s`, prefix, nextBindVar(args, partyIDAsBytes)))
 	}
 
 	// Market filtering
@@ -104,29 +101,19 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, pref
 		for i, market := range af.MarketIDs {
 			marketIds[i], err = market.Bytes()
 			if err != nil {
-				return "", nil, fmt.Errorf("invalid market id: %w", err)
+				return "", fmt.Errorf("invalid market id: %w", err)
 			}
 		}
 
-		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND %smarket_id=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, marketIds))
-		} else {
-			singleAccountFilter = fmt.Sprintf(`%smarket_id=ANY(%s)`, prefix, nextBindVar(args, marketIds))
-		}
+		whereClauses = append(whereClauses, fmt.Sprintf("%smarket_id=ANY(%s)", prefix, nextBindVar(args, marketIds)))
 	}
 
 	// Account types filtering
 	if len(af.AccountTypes) > 0 {
-		acTypes := getUniqueAccountTypes(af.AccountTypes)
-
-		if singleAccountFilter != "" {
-			singleAccountFilter = fmt.Sprintf(`%s AND %saccount_type=ANY(%s)`, singleAccountFilter, prefix, nextBindVar(args, acTypes))
-		} else {
-			singleAccountFilter = fmt.Sprintf(`%saccount_type=ANY(%s)`, prefix, nextBindVar(args, acTypes))
-		}
+		whereClauses = append(whereClauses, fmt.Sprintf(`%stype=ANY(%s)`, prefix, nextBindVar(args, getUniqueAccountTypes(af.AccountTypes))))
 	}
 
-	return singleAccountFilter, args, nil
+	return strings.Join(whereClauses, " AND "), nil
 }
 
 func getUniqueAccountTypes(accountTypes []vega.AccountType) []vega.AccountType {
@@ -144,43 +131,38 @@ func getUniqueAccountTypes(accountTypes []vega.AccountType) []vega.AccountType {
 	return accountTypesList
 }
 
-func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementType, args *[]interface{}) string {
-	transferTypeFilterString := ""
-	if len(transferTypeFilter) > 0 {
-		transferTypesMap := map[entities.LedgerMovementType]struct{}{}
-
-		for _, transferType := range transferTypeFilter {
-			_, ok := transferTypesMap[transferType]
-			if ok {
-				continue
-			}
-			transferTypesMap[transferType] = struct{}{}
-		}
-
-		for v := range transferTypesMap {
-			_, ok := vega.TransferType_name[int32(v)]
-			if !ok {
-				continue
-			}
-
-			if transferTypeFilterString == "" {
-				transferTypeFilterString = fmt.Sprintf(`%stransfer_type=%s`, transferTypeFilterString, nextBindVar(args, v))
-			} else {
-				transferTypeFilterString = fmt.Sprintf(`%s OR transfer_type=%s`, transferTypeFilterString, nextBindVar(args, v))
-			}
-		}
+func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementType) string {
+	if len(transferTypeFilter) == 0 {
+		return ""
 	}
 
-	return transferTypeFilterString
+	transferTypesMap := map[entities.LedgerMovementType]string{}
+	for _, transferType := range transferTypeFilter {
+		if _, alreadyRegistered := transferTypesMap[transferType]; alreadyRegistered {
+			continue
+		}
+		value, valid := vega.TransferType_name[int32(transferType)]
+		if !valid {
+			continue
+		}
+
+		transferTypesMap[transferType] = "'" + value + "'"
+	}
+
+	if len(transferTypesMap) == 0 {
+		return ""
+	}
+
+	return "ledger.type IN (" + strings.Join(maps.Values(transferTypesMap), ", ") + ")"
 }
 
-func transfersFilterToDBQuery(transfersFilter entities.TransferID, args *[]interface{}) (string, *[]interface{}) {
+func transfersFilterToDBQuery(transfersFilter entities.TransferID, args *[]interface{}) string {
 	if transfersFilter == "" {
-		return "", args
+		return ""
 	}
 
-	transfersFilterString := fmt.Sprintf(`transfer_id=%s`, nextBindVar(args, transfersFilter))
-	return transfersFilterString, args
+	transfersFilterString := fmt.Sprintf(`ledger.transfer_id=%s`, nextBindVar(args, transfersFilter))
+	return transfersFilterString
 }
 
 func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {

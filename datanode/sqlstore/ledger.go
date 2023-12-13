@@ -19,9 +19,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -29,7 +29,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/shopspring/decimal"
 )
 
 var aggregateLedgerEntriesOrdering = TableOrdering{
@@ -133,8 +132,8 @@ func (ls *Ledger) validateDateRange(dateRange entities.DateRange) entities.DateR
 	return dateRange
 }
 
-// This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
-// It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+// Query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
+// It returns a time-series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 // the summed ledger entries of the set of specified accounts changes.
 // Listed queries should be limited to a single party from each side only. If no or more than one parties are provided
 // for sending and receiving accounts - the query returns error.
@@ -150,36 +149,69 @@ func (ls *Ledger) Query(
 	dateRange entities.DateRange,
 	pagination entities.CursorPagination,
 ) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
-	var pageInfo entities.PageInfo
-
-	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, ls.validateDateRange(dateRange))
-	if err != nil {
-		return nil, pageInfo, err
-	}
-
-	pageQuery, args, err := PaginateQuery[entities.AggregatedLedgerEntriesCursor](
-		whereQuery, args, aggregateLedgerEntriesOrdering, pagination)
-	if err != nil {
-		return nil, pageInfo, err
-	}
-
-	query := fmt.Sprintf("%s %s", dynamicQuery, pageQuery)
-
 	defer metrics.StartSQLQuery("Ledger", "Query")()
-	rows, err := ls.Connection.Query(ctx, query, args...)
+
+	var (
+		pageInfo     entities.PageInfo
+		entries      []entities.AggregatedLedgerEntry
+		args         []interface{}
+		whereClauses []string
+	)
+
+	dateRange = ls.validateDateRange(dateRange)
+
+	// If filtering by the transfer id, we skip any other filters.
+	if filter.TransferID != "" {
+		transfersDBQuery := transfersFilterToDBQuery(filter.TransferID, &args)
+		whereClauses = []string{transfersDBQuery}
+	} else {
+		if err := filterLedgerEntriesQuery(filter, &args, &whereClauses); err != nil {
+			return nil, pageInfo, fmt.Errorf("invalid filters: %w", err)
+		}
+
+		if dateRange.Start != nil {
+			whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339))))
+		}
+
+		if dateRange.End != nil {
+			whereClauses = append(whereClauses, fmt.Sprintf("ledger.ledger_entry_time < %s", nextBindVar(&args, dateRange.End.Format(time.RFC3339))))
+		}
+	}
+
+	query := fmt.Sprintf(`SELECT
+				ledger.quantity AS quantity,
+				ledger.type AS transfer_type,
+				ledger.account_from_balance AS from_account_balance,
+				ledger.account_to_balance AS to_account_balance,
+				account_from.asset_id AS asset_id,
+				account_from.party_id AS from_account_party_id,
+				account_from.market_id AS from_account_market_id,
+				account_from.type AS from_account_type,
+				account_to.party_id AS to_account_party_id,
+				account_to.market_id AS to_account_market_id,
+				account_to.type AS to_account_type,
+				ledger.ledger_entry_time AS vega_time,
+				ledger.transfer_id AS transfer_id
+			FROM ledger
+			INNER JOIN accounts AS account_from
+			ON ledger.account_from_id=account_from.id
+			INNER JOIN accounts AS account_to
+			ON ledger.account_to_id=account_to.id
+			WHERE %s`, strings.Join(whereClauses, " AND "),
+	)
+
+	query, args, err := PaginateQuery[entities.AggregatedLedgerEntriesCursor](query, args, aggregateLedgerEntriesOrdering, pagination)
 	if err != nil {
-		return nil, pageInfo, fmt.Errorf("querying ledger entries: %w", err)
-	}
-	defer rows.Close()
-
-	var results []ledgerEntriesScanned
-	if err = pgxscan.ScanAll(&results, rows); err != nil {
-		return nil, pageInfo, fmt.Errorf("scanning ledger entries: %w", err)
+		return nil, pageInfo, err
 	}
 
-	ledgerEntries := parseScanned(results)
-	res, pageInfo := entities.PageEntities[*v2.AggregatedLedgerEntriesEdge](ledgerEntries, pagination)
-	return &res, pageInfo, nil
+	if err := pgxscan.Select(ctx, ls.Connection, &entries, query, args...); err != nil {
+		return nil, pageInfo, err
+	}
+
+	entries, pageInfo = entities.PageEntities[*v2.AggregatedLedgerEntriesEdge](entries, pagination)
+
+	return &entries, pageInfo, nil
 }
 
 func (ls *Ledger) Export(
@@ -210,11 +242,11 @@ func (ls *Ledger) Export(
 				ELSE 0
 			END AS effect,
 			l.type AS transfer_type,
-			encode(fa.asset_id, 'hex') AS asset_id,
-			encode(fa.market_id, 'hex') AS account_from_market_id,
+			ENCODE(fa.asset_id, 'hex') AS asset_id,
+			ENCODE(fa.market_id, 'hex') AS account_from_market_id,
 			CASE
 				WHEN fa.party_id='\x03' THEN 'network'
-				ELSE encode(fa.party_id, 'hex')
+				ELSE ENCODE(fa.party_id, 'hex')
 				END AS account_from_party_id,
 			CASE
 				WHEN fa.type=0 THEN 'UNSPECIFIED'
@@ -248,10 +280,10 @@ func (ls *Ledger) Export(
 				WHEN fa.type=29 THEN 'ORDER_MARGIN'
 				ELSE 'UNKNOWN' END AS account_from_account_type,
 			l.account_from_balance AS account_from_balance,
-			encode(ta.market_id, 'hex') AS account_to_market_id,
+			ENCODE(ta.market_id, 'hex') AS account_to_market_id,
 			CASE
 				WHEN ta.party_id='\x03' THEN 'network'
-				ELSE encode(ta.party_id, 'hex')
+				ELSE ENCODE(ta.party_id, 'hex')
 				END AS account_to_party_id,
 			CASE
 				WHEN ta.type=0 THEN 'UNSPECIFIED'
@@ -319,175 +351,4 @@ func (ls *Ledger) Export(
 
 	ls.log.Debug("copy to CSV", logging.Int64("rows affected", tag.RowsAffected()))
 	return nil
-}
-
-func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entities.DateRange) (string, string, []any, error) {
-	filterQueries, args, err := filterLedgerEntriesQuery(filter)
-	if err != nil {
-		return "", "", nil, fmt.Errorf("filtering ledger entries: %w", err)
-	}
-
-	// We shouldn't limit the date range if we're querying for a specific transfer ID
-	whereDate := ""
-	if dateRange.Start != nil && filter.TransferID == "" {
-		whereDate = fmt.Sprintf("WHERE ledger_entry_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
-	}
-
-	if dateRange.End != nil && filter.TransferID == "" {
-		if whereDate != "" {
-			whereDate = fmt.Sprintf("%s AND", whereDate)
-		} else {
-			whereDate = "WHERE "
-		}
-		whereDate = fmt.Sprintf("%s ledger_entry_time < %s", whereDate, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
-	}
-
-	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
-
-	whereQuery := fmt.Sprintf(`SELECT
-			ledger_entry_time as vega_time, quantity, transfer_type, asset_id,
-			account_from_market_id, account_from_party_id, account_from_account_type,
-			account_to_market_id, account_to_party_id, account_to_account_type,
-			account_from_balance, account_to_balance
-		FROM entries
-		%s`, whereDate)
-	return dynamicQuery, whereQuery, args, nil
-}
-
-// ledgerEntriesScanned is a local type used as a mediator between pgxscan scanner
-// and the AggregatedLedgerEntries types.
-// Needed to manually transfer to needed data types that are not accepted by the scanner.
-type ledgerEntriesScanned struct {
-	VegaTime     time.Time
-	Quantity     decimal.Decimal
-	TransferType entities.LedgerMovementType
-	AssetID      entities.AssetID
-
-	AccountFromPartyID     entities.PartyID
-	AccountToPartyID       entities.PartyID
-	AccountFromAccountType types.AccountType
-	AccountToAccountType   types.AccountType
-
-	AccountFromMarketID entities.MarketID
-	AccountToMarketID   entities.MarketID
-	AccountFromBalance  decimal.Decimal
-	AccountToBalance    decimal.Decimal
-}
-
-func parseScanned(scanned []ledgerEntriesScanned) []entities.AggregatedLedgerEntry {
-	ledgerEntries := []entities.AggregatedLedgerEntry{}
-	if len(scanned) > 0 {
-		for i := range scanned {
-			ledgerEntries = append(ledgerEntries, entities.AggregatedLedgerEntry{
-				VegaTime:            scanned[i].VegaTime,
-				Quantity:            scanned[i].Quantity,
-				AssetID:             &scanned[i].AssetID,
-				FromAccountPartyID:  &scanned[i].AccountFromPartyID,
-				ToAccountPartyID:    &scanned[i].AccountToPartyID,
-				FromAccountType:     &scanned[i].AccountFromAccountType,
-				ToAccountType:       &scanned[i].AccountToAccountType,
-				FromAccountMarketID: &scanned[i].AccountFromMarketID,
-				ToAccountMarketID:   &scanned[i].AccountToMarketID,
-				FromAccountBalance:  scanned[i].AccountFromBalance,
-				ToAccountBalance:    scanned[i].AccountToBalance,
-			})
-
-			tt := scanned[i].TransferType
-			ledgerEntries[i].TransferType = &tt
-		}
-	}
-
-	return ledgerEntries
-}
-
-// createDynamicQuery creates a dynamic query depending on the query cases:
-//   - lising all ledger entries without filtering
-//   - listing ledger entries with filtering on the sending account
-//   - listing ledger entries with filtering on the receiving account
-//   - listing ledger entries with filtering on the sending AND receiving account
-//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
-//   - listing ledger entries with filtering on the transfer id
-func createDynamicQuery(filterQueries [4]string, closeOnAccountFilters entities.CloseOnLimitOperation) string {
-	whereClause := ""
-
-	tableNameFromAccountQuery := "ledger_entries_from_account_filter"
-	query := `
-		%s AS (
-			SELECT
-				ledger.vega_time AS vega_time, ledger.quantity, ledger.type AS transfer_type,
-				ledger.account_from_id, ledger.account_to_id,
-				ledger.account_from_balance, ledger.account_to_balance,
-				account_from.asset_id AS asset_id,
-				account_from.party_id AS account_from_party_id,
-				account_from.market_id AS account_from_market_id,
-				account_from.type AS account_from_account_type,
-				account_to.party_id AS account_to_party_id,
-				account_to.market_id AS account_to_market_id,
-				account_to.type AS account_to_account_type,
-				ledger.ledger_entry_time,
-				ledger.transfer_id
-			FROM ledger
-			INNER JOIN accounts AS account_from
-			ON ledger.account_from_id=account_from.id
-			INNER JOIN accounts AS account_to
-			ON ledger.account_to_id=account_to.id
-		),
-		entries AS (
-			SELECT vega_time, quantity, transfer_type, asset_id,
-				account_from_market_id, account_from_party_id, account_from_account_type,
-				account_to_market_id, account_to_party_id, account_to_account_type,
-				account_from_balance, account_to_balance, ledger_entry_time,
-				transfer_id
-			FROM %s
-			%s
-		)
-	`
-
-	tableNameToAccountQuery := "ledger_entries_to_account_filter"
-	tableNameCloseOnFilterQuery := "ledger_entries_closed_on_account_filters"
-	tableNameOpenOnFilterQuery := "ledger_entries_open_on_account_filters"
-	tableNameTransferType := "ledger_entries_transfer_type_filter"
-	tableNameTransferID := "ledger_entries_transfer_id_filter"
-
-	tableName := ""
-
-	if filterQueries[0] != "" {
-		tableName = tableNameFromAccountQuery
-		whereClause = fmt.Sprintf("WHERE %s", filterQueries[0])
-
-		if filterQueries[1] != "" {
-			if closeOnAccountFilters {
-				tableName = tableNameCloseOnFilterQuery
-				whereClause = fmt.Sprintf("WHERE (%s) AND (%s)", filterQueries[0], filterQueries[1])
-			} else {
-				tableName = tableNameOpenOnFilterQuery
-				whereClause = fmt.Sprintf("WHERE ((%s) OR (%s))", filterQueries[0], filterQueries[1])
-			}
-		}
-	} else {
-		if filterQueries[1] != "" {
-			tableName = tableNameToAccountQuery
-			whereClause = fmt.Sprintf("WHERE %s", filterQueries[1])
-		}
-	}
-
-	if filterQueries[2] != "" {
-		tableName = tableNameTransferType
-		if whereClause != "" {
-			whereClause = fmt.Sprintf("%s AND (%s)", whereClause, filterQueries[2])
-		} else {
-			whereClause = fmt.Sprintf("WHERE %s", filterQueries[2])
-		}
-	}
-
-	// We only want to filter by the transfer id, regardless of any other filter parameters
-	if filterQueries[3] != "" {
-		tableName = tableNameTransferID
-		whereClause = fmt.Sprintf("WHERE %s", filterQueries[3])
-	}
-
-	query = fmt.Sprintf(query, tableName, tableName, whereClause)
-	query = fmt.Sprintf(`WITH %s`, query)
-
-	return query
 }
