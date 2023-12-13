@@ -76,6 +76,7 @@
 - [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
 - [10241](https://github.com/vegaprotocol/vega/issues/10241) - Do not include start epoch on referees set statistics.
+- [10219](https://github.com/vegaprotocol/vega/issues/10219) - Candles API should fill gaps when there are periods with no trades.
 
 ## 0.73.0
 

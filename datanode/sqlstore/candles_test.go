@@ -137,7 +137,7 @@ func TestNotional(t *testing.T) {
 	}
 
 	assert.Equal(t, uint64(40), candles[0].Notional)
-	assert.Equal(t, uint64(160), candles[1].Notional)
+	assert.Equal(t, uint64(160), candles[len(candles)-1].Notional)
 }
 
 func TestCandlesGetForEmptyInterval(t *testing.T) {
@@ -170,15 +170,26 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 		t.Fatalf("failed to get candles:%s", err)
 	}
 
-	assert.Equal(t, 2, len(candles))
+	assert.Equal(t, 11, len(candles)) // 11 now because we are filling in the gaps
 
 	firstCandle := createCandle(startTime,
 		startTime.Add(3*time.Microsecond), 1, 2, 2, 1, 20, 30)
 	assert.Equal(t, firstCandle, candles[0])
+	// Fill gaps should carry over the last candle's prices
+	gapPeriodStart := firstCandle.PeriodStart.Add(1 * time.Minute)
+
+	assert.Equal(t, gapPeriodStart, candles[1].PeriodStart)
+	assert.True(t, decimal.Zero.Equal(candles[1].Open))
+	assert.True(t, decimal.Zero.Equal(candles[1].High))
+	assert.True(t, decimal.Zero.Equal(candles[1].Low))
+	assert.True(t, decimal.Zero.Equal(candles[1].Close))
+	assert.Equal(t, uint64(0), candles[1].Volume)
+	assert.Equal(t, uint64(0), candles[1].Notional)
+	assert.True(t, firstCandle.LastUpdateInPeriod.Equal(candles[1].LastUpdateInPeriod))
 
 	secondCandle := createCandle(startTime.Add(10*time.Minute),
 		startTime.Add(10*time.Minute).Add(5*time.Microsecond), 3, 4, 4, 3, 40, 140)
-	assert.Equal(t, secondCandle, candles[1])
+	assert.Equal(t, secondCandle, candles[len(candles)-1])
 }
 
 func TestCandlesGetLatest(t *testing.T) {
