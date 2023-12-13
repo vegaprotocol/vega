@@ -348,8 +348,7 @@ func NewMarket(
 			market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 		}
 	}
-
-	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine)
+	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor)
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
@@ -4970,12 +4969,17 @@ func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error)
 	return m.matching.GetFillPrice(volume, side)
 }
 
-func (m *Market) SubmitAMM(context.Context, *types.SubmitAMM, string) error {
-	return nil
+func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, deterministicID string) error {
+	target := m.getCurrentMarkPrice()
+	if m.as.InAuction() {
+		target = nil
+	}
+	err := m.amm.SubmitAMM(ctx, submit, deterministicID, target)
+	return err
 }
 
-func (m *Market) AmendAMM(context.Context, *types.AmendAMM) error {
-	return nil
+func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM) error {
+	return m.amm.AmendAMM(ctx, amend)
 }
 
 func (m *Market) CancelAMM(context.Context, *types.CancelAMM) error {
