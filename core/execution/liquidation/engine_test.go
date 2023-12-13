@@ -31,6 +31,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -553,7 +554,7 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 	tSvc := cmocks.NewMockTimeService(ctrl)
 	pe := mocks.NewMockPositions(ctrl)
 	se := mocks.NewMockSettlement(ctrl)
-	engine := liquidation.New(config, marketID, broker, book, as, tSvc, ml, pe, se)
+	engine := liquidation.New(logging.NewDevLogger(), config, marketID, broker, book, as, tSvc, ml, pe, se)
 	return &tstEngine{
 		Engine: engine,
 		ctrl:   ctrl,

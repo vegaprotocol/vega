@@ -29,6 +29,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions,Settlement
@@ -56,6 +57,7 @@ type Settlement interface {
 
 type Engine struct {
 	// settings, orderbook, network pos data
+	log      *logging.Logger
 	cfg      *types.LiquidationStrategy
 	broker   common.Broker
 	mID      string
@@ -101,12 +103,13 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, se Settlement) *Engine {
+func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, se Settlement) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
 	}
 	return &Engine{
+		log:      log,
 		cfg:      cfg,
 		broker:   broker,
 		mID:      mktID,
@@ -206,8 +209,13 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	trades := make([]events.Event, 0, len(closed))
 	netTrades := make([]*types.Trade, 0, len(closed))
 	now := e.tSvc.GetTimeNow()
+	e.log.Debugf("Position before close-out: %d", e.pos.open)
+	e.log.Debug("Position before close-out", logging.Int64("network-pos", e.pos.open))
 	for _, cp := range closed {
+		e.log.Debugf("Closed position: %d", cp.Size())
+		e.log.Debug("Position closed", logging.Int64("closed-pos", cp.Size()), logging.String("party", cp.Party()))
 		e.pos.open += cp.Size()
+		e.log.Debug("Position after close-out", logging.Int64("network-pos", e.pos.open))
 		// get the orders and trades so we can send events to update the datanode
 		o1, o2, t := e.getOrdersAndTrade(ctx, cp, idgen, now, mp, mmp)
 		orders = append(orders, events.NewOrderEvent(ctx, o1), events.NewOrderEvent(ctx, o2))
