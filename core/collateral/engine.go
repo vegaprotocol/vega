@@ -3547,23 +3547,22 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
 	party, subAccount, asset, market string,
 ) (general *types.Account, margin *types.Account, err error) {
-
-	generalID := e.accountID(noMarket, party, asset, types.AccountTypeGeneral)
+	generalID := e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral)
 	if _, ok := e.accs[generalID]; ok {
 		return nil, nil, errors.New("general sub account already exists")
 	}
 
-	marginID := e.accountID(market, party, asset, types.AccountTypeMargin)
+	marginID := e.accountID(market, subAccount, asset, types.AccountTypeMargin)
 	if _, ok := e.accs[marginID]; ok {
 		return nil, nil, errors.New("general sub account already exists")
 	}
 
-	_, err = e.CreatePartyGeneralAccount(ctx, party, asset)
+	_, err = e.CreatePartyGeneralAccount(ctx, subAccount, asset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	_, err = e.CreatePartyMarginAccount(ctx, party, market, asset)
+	_, err = e.CreatePartyMarginAccount(ctx, subAccount, market, asset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -3588,10 +3587,10 @@ func (e *Engine) getSubAccountTransferRequest(
 	}
 
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	partySubAccount, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
+	partySubAccount, err := e.GetAccountByID(e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral))
 	if err != nil {
 		e.log.Error(
-			"Failed to get the party sub account account",
+			"Failed to get the party sub account",
 			logging.String("owner-id", party),
 			logging.String("market-id", market),
 			logging.Error(err),
@@ -3600,7 +3599,7 @@ func (e *Engine) getSubAccountTransferRequest(
 	}
 
 	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	partySubAccountMargin, err := e.GetAccountByID(e.accountID(market, party, asset, types.AccountTypeMargin))
+	partySubAccountMargin, err := e.GetAccountByID(e.accountID(market, subAccount, asset, types.AccountTypeMargin))
 	if err != nil {
 		e.log.Error(
 			"Failed to get the party margin sub account",
