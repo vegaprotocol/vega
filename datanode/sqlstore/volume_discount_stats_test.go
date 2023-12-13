@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -197,12 +198,12 @@ func flattenVolumeDiscountStatsForEpoch(flattenStats []entities.FlattenVolumeDis
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) int {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			return strings.Compare(a.PartyID, b.PartyID)
 		}
 
-		return a.AtEpoch < b.AtEpoch
+		return compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats
@@ -217,12 +218,12 @@ func flattenVolumeDiscountStatsForParty(flattenStats []entities.FlattenVolumeDis
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) int {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			return strings.Compare(a.PartyID, b.PartyID)
 		}
 
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats

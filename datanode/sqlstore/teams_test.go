@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -676,8 +677,8 @@ func testShouldReturnPageOfRefereeHistoryIfNoPaginationProvidedNewestFirst(t *te
 	require.NoError(t, err)
 
 	refereeHistory := historyForReferee(teamsHistory, referee.PartyID)
-	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) bool {
-		return a.JoinedAtEpoch > b.JoinedAtEpoch
+	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) int {
+		return -compareUint64(a.JoinedAtEpoch, b.JoinedAtEpoch)
 	})
 
 	assert.Equal(t, refereeHistory, got)
@@ -930,8 +931,8 @@ func TestListTeamStatistics(t *testing.T) {
 				GamesPlayed:      []entities.GameID{gameIDs[3]},
 			},
 		}
-		slices.SortStableFunc(expectedStats, func(a, b entities.TeamsStatistics) bool {
-			return a.TeamID < b.TeamID
+		slices.SortStableFunc(expectedStats, func(a, b entities.TeamsStatistics) int {
+			return strings.Compare(string(a.TeamID), string(b.TeamID))
 		})
 
 		// Ugly hack to bypass deep-equal limitation with assert.Equal().
