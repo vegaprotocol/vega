@@ -43,44 +43,43 @@ func testVolumeBetweenPrices(t *testing.T) {
 		price2         *num.Uint
 		position       int64
 		side           types.Side
-		expectedVolume string
+		expectedVolume uint64
 	}{
 		{
 			name:           "full volume upper curve",
 			price1:         num.NewUint(2000),
-			price2:         num.NewUint(3000),
-			side:           types.SideBuy,
-			expectedVolume: "2597996",
+			price2:         num.NewUint(2200),
+			side:           types.SideSell,
+			expectedVolume: 3049821,
 		},
 		{
 			name:           "full volume upper curve with bound creep",
 			price1:         num.NewUint(1500),
 			price2:         num.NewUint(3500),
-			side:           types.SideBuy,
-			expectedVolume: "2597996",
+			side:           types.SideSell,
+			expectedVolume: 3049821,
 		},
 		{
 			name:           "full volume lower curve",
-			price1:         num.NewUint(1000),
+			price1:         num.NewUint(1800),
 			price2:         num.NewUint(2000),
-			side:           types.SideSell,
-			expectedVolume: "4525542",
+			side:           types.SideBuy,
+			expectedVolume: 3340281,
 		},
 		{
 			name:           "full volume lower curve with bound creep",
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(2500),
-			side:           types.SideSell,
-			expectedVolume: "4525542",
+			side:           types.SideBuy,
+			expectedVolume: 3340281,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ensurePosition(t, p, tt.position, nil)
-			order := &types.Order{Side: tt.side}
-			volume := p.pool.VolumeBetweenPrices(order, tt.price1, tt.price2)
-			assert.Equal(t, tt.expectedVolume, volume.String())
+			volume := p.pool.VolumeBetweenPrices(tt.side, tt.price1, tt.price2)
+			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
 	}
 }
@@ -104,21 +103,21 @@ func testTradePrice(t *testing.T) {
 		},
 		{
 			name:              "fair price positive position",
-			expectedPrice:     "5721",
+			expectedPrice:     "881",
 			position:          100,
 			balance:           100000000000,
 			averageEntryPrice: num.NewUint(2000),
 		},
 		{
 			name:              "fair price negative position",
-			expectedPrice:     "5617",
+			expectedPrice:     "96",
 			position:          -100,
-			balance:           1000000000000,
-			averageEntryPrice: num.NewUint(3000),
+			balance:           100000000000,
+			averageEntryPrice: num.NewUint(2000),
 		},
 		{
 			name:              "trade price incoming buy",
-			expectedPrice:     "5722",
+			expectedPrice:     "882",
 			position:          100,
 			balance:           100000000000,
 			averageEntryPrice: num.NewUint(2000),
@@ -129,7 +128,7 @@ func testTradePrice(t *testing.T) {
 		},
 		{
 			name:              "trade price incoming buy",
-			expectedPrice:     "5720",
+			expectedPrice:     "880",
 			position:          100,
 			balance:           100000000000,
 			averageEntryPrice: num.NewUint(2000),
@@ -207,8 +206,8 @@ func newTestPool(t *testing.T) *tstPool {
 		CommitmentAmount: num.NewUint(10000000000),
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                    num.NewUint(2000),
-			LowerBound:              num.NewUint(1000),
-			UpperBound:              num.NewUint(3000),
+			LowerBound:              num.NewUint(1800),
+			UpperBound:              num.NewUint(2200),
 			MarginRatioAtLowerBound: nil,
 			MarginRatioAtUpperBound: nil,
 		},
@@ -230,6 +229,7 @@ func newTestPool(t *testing.T) *tstPool {
 			InitialMargin: num.DecimalFromFloat(1.5),
 		},
 		num.DecimalOne(),
+		num.UintOne(),
 	)
 
 	return &tstPool{

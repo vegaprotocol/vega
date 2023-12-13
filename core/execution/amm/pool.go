@@ -35,10 +35,12 @@ type Pool struct {
 	Commitment *num.Uint
 	Parameters *types.ConcentratedLiquidityParameters
 
-	asset      string
-	market     string
-	collateral Collateral
-	position   Position
+	asset       string
+	market      string
+	party       string
+	collateral  Collateral
+	position    Position
+	priceFactor *num.Uint
 
 	// sqrt function to use.
 	sqrt sqrtFn
@@ -60,17 +62,20 @@ func NewPool(
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
+	priceFactor *num.Uint,
 ) *Pool {
 	pool := &Pool{
-		ID:         id,
-		SubAccount: subAccount,
-		Commitment: submit.CommitmentAmount,
-		Parameters: submit.Parameters,
-		market:     submit.MarketID,
-		asset:      asset,
-		sqrt:       sqrt,
-		collateral: collateral,
-		position:   position,
+		ID:          id,
+		SubAccount:  subAccount,
+		Commitment:  submit.CommitmentAmount,
+		Parameters:  submit.Parameters,
+		market:      submit.MarketID,
+		party:       submit.Party,
+		asset:       asset,
+		sqrt:        sqrt,
+		collateral:  collateral,
+		position:    position,
+		priceFactor: priceFactor,
 	}
 	pool.setCurves(rf, sf, linearSlippage)
 	return pool
@@ -177,11 +182,16 @@ func (p *Pool) setCurves(
 	sfs *types.ScalingFactors,
 	linearSlippage num.Decimal,
 ) {
+	// convert the bounds into asset precision
+	lowerBound := num.UintZero().Mul(p.Parameters.LowerBound, p.priceFactor)
+	base := num.UintZero().Mul(p.Parameters.Base, p.priceFactor)
+	upperBound := num.UintZero().Mul(p.Parameters.UpperBound, p.priceFactor)
+
 	l, rf := calculateVirtualLiquidity(
 		p.sqrt,
 		p.Commitment.Clone(),
-		p.Parameters.LowerBound.Clone(),
-		p.Parameters.Base.Clone(),
+		lowerBound,
+		base,
 		rfs.Long,
 		sfs.InitialMargin,
 		linearSlippage,
@@ -190,15 +200,15 @@ func (p *Pool) setCurves(
 	p.lower = &curve{
 		l:    l,
 		rf:   rf,
-		low:  p.Parameters.LowerBound.Clone(),
-		high: p.Parameters.Base.Clone(),
+		low:  lowerBound,
+		high: base,
 	}
 
 	l, rf = calculateVirtualLiquidity(
 		p.sqrt,
 		p.Commitment.Clone(),
-		p.Parameters.Base.Clone(),
-		p.Parameters.UpperBound.Clone(),
+		base.Clone(),
+		upperBound,
 		rfs.Short,
 		sfs.InitialMargin,
 		linearSlippage,
@@ -207,14 +217,14 @@ func (p *Pool) setCurves(
 	p.upper = &curve{
 		l:    l,
 		rf:   rf,
-		low:  p.Parameters.Base.Clone(),
-		high: p.Parameters.UpperBound.Clone(),
+		low:  base,
+		high: upperBound,
 	}
 }
 
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
 // the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
-// price to caluclate the position for, and higher boundary of the curve.
+// price to calculate the position for, and higher boundary of the curve.
 func impliedPosition(sqrtPrice, sqrtHigh, l *num.Uint) *num.Uint {
 	// L * (sqrt(high) - sqrt(price))
 	numer := num.UintZero().Sub(sqrtHigh, sqrtPrice)
@@ -227,8 +237,9 @@ func impliedPosition(sqrtPrice, sqrtHigh, l *num.Uint) *num.Uint {
 	return numer.Div(numer, denom)
 }
 
-// VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for the given order.
-func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 *num.Uint) *num.Uint {
+// VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
+// being placed by the pool.
+func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
 	var pos int64
 	if pp := p.position.GetPositionsByParty(p.SubAccount); len(pp) > 0 {
 		pos = pp[0].Size()
@@ -236,7 +247,7 @@ func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 
 
 	st, nd := price1, price2
 	if st.EQ(nd) {
-		return num.UintZero()
+		return 0
 	}
 
 	if st.GT(nd) {
@@ -244,9 +255,9 @@ func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 
 	}
 
 	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with a buy order will make the pool short, so we take the upper curve.
+	// e.g trading with a sell order will make the pool short, so we take the upper curve.
 	var cu *curve
-	if pos < 0 || (pos == 0 && order.Side == types.SideBuy) {
+	if pos < 0 || (pos == 0 && side == types.SideSell) {
 		cu = p.upper
 	} else {
 		cu = p.lower
@@ -261,7 +272,7 @@ func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 
 		impliedPosition(p.sqrt(st), p.sqrt(cu.high), cu.l),
 		impliedPosition(p.sqrt(nd), p.sqrt(cu.high), cu.l),
 	)
-	return volume
+	return volume.Uint64()
 }
 
 // virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
@@ -293,9 +304,10 @@ func (p *Pool) virtualBalances(pos int64, ae *num.Uint) (*num.Uint, *num.Uint) {
 
 	// P
 	term1x := num.NewUint(uint64(-pos))
+
 	// cc * rf / pu
 	// TODO is cc here the balance, or initial commitment? Asked on spec.
-	term2x, _ := num.UintFromDecimal(cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(cu.high)))
+	term2x, _ := num.UintFromDecimal(cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(p.sqrt(cu.high))))
 
 	// L / sqrt(pl)
 	term3x := num.UintOne().Div(cu.l, p.sqrt(cu.low))
@@ -306,7 +318,7 @@ func (p *Pool) virtualBalances(pos int64, ae *num.Uint) (*num.Uint, *num.Uint) {
 	term1y := ae.Mul(ae, num.NewUint(uint64(-pos)))
 
 	// L * pl
-	term2y := num.UintZero().Mul(cu.l, cu.low)
+	term2y := num.UintZero().Mul(cu.l, p.sqrt(cu.low))
 	// abs(P) * average-entry + L * pl
 	y := num.UintZero().AddSum(term1y, term2y)
 	return x, y
@@ -322,7 +334,7 @@ func (p *Pool) TradePrice(order *types.Order) *num.Uint {
 	}
 
 	if pos == 0 {
-		return p.Parameters.Base.Clone()
+		return p.lower.high.Clone() // the base price
 	}
 
 	x, y := p.virtualBalances(pos, ae)
