@@ -22,7 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/libs/test"
-	types "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -60,7 +60,7 @@ func testBatchProposalSubmissionWithoutTermsFails(t *testing.T) {
 
 func testBatchProposalSubmissionWithoutChangesFails(t *testing.T) {
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Terms: &types.BatchProposalTerms{},
+		Terms: &commandspb.BatchProposalSubmissionTerms{},
 	})
 
 	assert.Contains(t, err.Get("batch_proposal_submission.terms.changes"), commands.ErrIsRequired)
@@ -74,7 +74,7 @@ func testBatchProposalSubmissionWithoutRationalFails(t *testing.T) {
 
 func testBatchProposalSubmissionWithRationalSucceeds(t *testing.T) {
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Rationale: &types.ProposalRationale{},
+		Rationale: &vegapb.ProposalRationale{},
 	})
 
 	assert.Empty(t, err.Get("batch_proposal_submission.rationale"))
@@ -97,7 +97,7 @@ func testBatchProposalSubmissionWithRationalDescriptionSucceeds(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Description: tc.description,
 				},
 			})
@@ -131,7 +131,7 @@ func testBatchProposalSubmissionWithIncorrectRationalDescriptionFails(t *testing
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Description: tc.description,
 				},
 			})
@@ -150,14 +150,14 @@ func testBatchProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testi
 		{
 			name: "NewMarket with rational Title and Description",
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_NewMarket{},
+							Change: &vegapb.BatchProposalTermsChange_NewMarket{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -166,26 +166,26 @@ func testBatchProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testi
 			name:      "NewMarket without rational Title and Description",
 			shouldErr: true,
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_NewMarket{},
+							Change: &vegapb.BatchProposalTermsChange_NewMarket{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{},
+				Rationale: &vegapb.ProposalRationale{},
 			},
 		}, {
 			name: "with UpdateMarket with rational Title and Description",
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_UpdateMarket{},
+							Change: &vegapb.BatchProposalTermsChange_UpdateMarket{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -194,26 +194,26 @@ func testBatchProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testi
 			name:      "with UpdateMarket without rational Title and Description",
 			shouldErr: true,
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_UpdateMarket{},
+							Change: &vegapb.BatchProposalTermsChange_UpdateMarket{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{},
+				Rationale: &vegapb.ProposalRationale{},
 			},
 		}, {
 			name: "with UpdateNetworkParameter with rational Title and Description",
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_UpdateNetworkParameter{},
+							Change: &vegapb.BatchProposalTermsChange_UpdateNetworkParameter{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -222,26 +222,26 @@ func testBatchProposalSubmissionWithRationalDescriptionAndTitleSucceeds(t *testi
 			name:      "with UpdateNetworkParameter without rational Title and Description",
 			shouldErr: true,
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_UpdateNetworkParameter{},
+							Change: &vegapb.BatchProposalTermsChange_UpdateNetworkParameter{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{},
+				Rationale: &vegapb.ProposalRationale{},
 			},
 		}, {
 			name: "with NewFreeform with rational Title and Description",
 			submission: &commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
-					Changes: []*types.BatchProposalTermsChange{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
+					Changes: []*vegapb.BatchProposalTermsChange{
 						{
-							Change: &types.BatchProposalTermsChange_NewFreeform{},
+							Change: &vegapb.BatchProposalTermsChange_NewFreeform{},
 						},
 					},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -279,11 +279,11 @@ func testBatchProposalSubmissionWithNonPositiveClosingTimestampFails(t *testing.
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
 					ClosingTimestamp: tc.value,
-					Changes:          []*types.BatchProposalTermsChange{{}},
+					Changes:          []*vegapb.BatchProposalTermsChange{{}},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -296,11 +296,11 @@ func testBatchProposalSubmissionWithNonPositiveClosingTimestampFails(t *testing.
 
 func testBatchProposalSubmissionWithPositiveClosingTimestampSucceeds(t *testing.T) {
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Terms: &types.BatchProposalTerms{
+		Terms: &commandspb.BatchProposalSubmissionTerms{
 			ClosingTimestamp: test.RandomPositiveI64(),
-			Changes:          []*types.BatchProposalTermsChange{{}},
+			Changes:          []*vegapb.BatchProposalTermsChange{{}},
 		},
-		Rationale: &types.ProposalRationale{
+		Rationale: &vegapb.ProposalRationale{
 			Title:       vgrand.RandomStr(10),
 			Description: vgrand.RandomStr(10),
 		},
@@ -325,13 +325,13 @@ func testBatchProposalSubmissionWithNonPositiveEnactmentTimestampFails(t *testin
 	for _, tc := range testCases {
 		t.Run(tc.msg, func(t *testing.T) {
 			err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-				Terms: &types.BatchProposalTerms{
+				Terms: &commandspb.BatchProposalSubmissionTerms{
 					ClosingTimestamp: test.RandomPositiveI64(),
-					Changes: []*types.BatchProposalTermsChange{{
+					Changes: []*vegapb.BatchProposalTermsChange{{
 						EnactmentTimestamp: tc.value,
 					}},
 				},
-				Rationale: &types.ProposalRationale{
+				Rationale: &vegapb.ProposalRationale{
 					Title:       vgrand.RandomStr(10),
 					Description: vgrand.RandomStr(10),
 				},
@@ -344,13 +344,13 @@ func testBatchProposalSubmissionWithNonPositiveEnactmentTimestampFails(t *testin
 
 func testBatchProposalSubmissionWithPositiveEnactmentTimestampSucceeds(t *testing.T) {
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Terms: &types.BatchProposalTerms{
+		Terms: &commandspb.BatchProposalSubmissionTerms{
 			ClosingTimestamp: test.RandomPositiveI64(),
-			Changes: []*types.BatchProposalTermsChange{{
+			Changes: []*vegapb.BatchProposalTermsChange{{
 				EnactmentTimestamp: test.RandomPositiveI64(),
 			}},
 		},
-		Rationale: &types.ProposalRationale{
+		Rationale: &vegapb.ProposalRationale{
 			Title:       vgrand.RandomStr(10),
 			Description: vgrand.RandomStr(10),
 		},
@@ -363,13 +363,13 @@ func testBatchProposalSubmissionWithClosingTimestampAfterEnactmentTimestampFails
 	closingTime := test.RandomPositiveI64()
 	enactmentTime := test.RandomPositiveI64Before(closingTime)
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Terms: &types.BatchProposalTerms{
+		Terms: &commandspb.BatchProposalSubmissionTerms{
 			ClosingTimestamp: closingTime,
-			Changes: []*types.BatchProposalTermsChange{{
+			Changes: []*vegapb.BatchProposalTermsChange{{
 				EnactmentTimestamp: enactmentTime,
 			}},
 		},
-		Rationale: &types.ProposalRationale{
+		Rationale: &vegapb.ProposalRationale{
 			Title:       vgrand.RandomStr(10),
 			Description: vgrand.RandomStr(10),
 		},
@@ -385,13 +385,13 @@ func testBatchProposalSubmissionWithClosingTimestampBeforeEnactmentTimestampSucc
 	closingTime := test.RandomPositiveI64Before(enactmentTime)
 
 	err := checkBatchProposalSubmission(&commandspb.BatchProposalSubmission{
-		Terms: &types.BatchProposalTerms{
+		Terms: &commandspb.BatchProposalSubmissionTerms{
 			ClosingTimestamp: closingTime,
-			Changes: []*types.BatchProposalTermsChange{{
+			Changes: []*vegapb.BatchProposalTermsChange{{
 				EnactmentTimestamp: enactmentTime,
 			}},
 		},
-		Rationale: &types.ProposalRationale{
+		Rationale: &vegapb.ProposalRationale{
 			Title:       vgrand.RandomStr(10),
 			Description: vgrand.RandomStr(10),
 		},

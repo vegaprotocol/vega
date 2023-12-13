@@ -30,9 +30,9 @@ type BatchProposalSubmission struct {
 }
 
 func (p BatchProposalSubmission) IntoProto() *commandspb.BatchProposalSubmission {
-	var terms *vegapb.BatchProposalTerms
+	var terms *commandspb.BatchProposalSubmissionTerms
 	if p.Terms != nil {
-		terms = p.Terms.IntoProto()
+		terms = p.Terms.IntoSubmissionProto()
 	}
 	return &commandspb.BatchProposalSubmission{
 		Reference: p.Reference,
@@ -48,7 +48,7 @@ func NewBatchProposalSubmissionFromProto(p *commandspb.BatchProposalSubmission, 
 	var pterms *BatchProposalTerms
 	if p.Terms != nil {
 		var err error
-		pterms, err = BatchProposalTermsFromProto(p.Terms, ids)
+		pterms, err = BatchProposalTermsSubmissionFromProto(p.Terms, ids)
 		if err != nil {
 			return nil, err
 		}

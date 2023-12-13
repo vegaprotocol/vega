@@ -150,10 +150,6 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_ProposalSubmission{
 			ProposalSubmission: req.GetProposalSubmission(),
 		}
-	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
-		data.Command = &commandspb.InputData_BatchProposalSubmission{
-			BatchProposalSubmission: req.GetBatchProposalSubmission(),
-		}
 	case *walletpb.SubmitTransactionRequest_AnnounceNode:
 		data.Command = &commandspb.InputData_AnnounceNode{
 			AnnounceNode: req.GetAnnounceNode(),
@@ -245,6 +241,10 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_JoinTeam:
 		data.Command = &commandspb.InputData_JoinTeam{
 			JoinTeam: req.GetJoinTeam(),
+		}
+	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
+		data.Command = &commandspb.InputData_BatchProposalSubmission{
+			BatchProposalSubmission: req.GetBatchProposalSubmission(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

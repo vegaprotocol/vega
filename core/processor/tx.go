@@ -243,6 +243,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.UpdateMarginMode
 	case *commandspb.InputData_JoinTeam:
 		return cmd.JoinTeam
+	case *commandspb.InputData_BatchProposalSubmission:
+		return cmd.BatchProposalSubmission
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -442,6 +444,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to UpdateMarginMode")
 		}
 		*underlyingCmd = *cmd.UpdateMarginMode
+	case *commandspb.InputData_BatchProposalSubmission:
+		underlyingCmd, ok := i.(*commandspb.BatchProposalSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to BatchProposalSubmission")
+		}
+		*underlyingCmd = *cmd.BatchProposalSubmission
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

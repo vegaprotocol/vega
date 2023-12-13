@@ -190,6 +190,10 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_JoinTeam{
 			JoinTeam: tv,
 		}
+	case *commandspb.BatchProposalSubmission:
+		t.evt.Transaction = &eventspb.TransactionResult_BatchProposal{
+			BatchProposal: tv,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported command %T", tv))
 	}
