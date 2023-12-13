@@ -209,13 +209,8 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	trades := make([]events.Event, 0, len(closed))
 	netTrades := make([]*types.Trade, 0, len(closed))
 	now := e.tSvc.GetTimeNow()
-	e.log.Debugf("Position before close-out: %d", e.pos.open)
-	e.log.Debug("Position before close-out", logging.Int64("network-pos", e.pos.open))
 	for _, cp := range closed {
-		e.log.Debugf("Closed position: %d", cp.Size())
-		e.log.Debug("Position closed", logging.Int64("closed-pos", cp.Size()), logging.String("party", cp.Party()))
 		e.pos.open += cp.Size()
-		e.log.Debug("Position after close-out", logging.Int64("network-pos", e.pos.open))
 		// get the orders and trades so we can send events to update the datanode
 		o1, o2, t := e.getOrdersAndTrade(ctx, cp, idgen, now, mp, mmp)
 		orders = append(orders, events.NewOrderEvent(ctx, o1), events.NewOrderEvent(ctx, o2))
@@ -231,6 +226,7 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	// send trade events
 	e.broker.SendBatch(trades)
 	// the network has no (more) remaining open position -> no need for the e.nextStep to be set
+	e.log.Info("network position after close-out", logging.Int64("network-position", e.pos.open))
 	if e.pos.open == 0 {
 		e.nextStep = time.Time{}
 	}
