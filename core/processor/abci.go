@@ -87,7 +87,7 @@ var (
 	ErrOracleNoSubscribers         = errors.New("there are no subscribes to the oracle data")
 	ErrSpotMarketProposalDisabled  = errors.New("spot market proposal disabled")
 	ErrPerpsMarketProposalDisabled = errors.New("perps market proposal disabled")
-	ErrAMMPoolDisabled             = errors.New("amm pooll disabled")
+	ErrAMMPoolDisabled             = errors.New("amm pool disabled")
 	ErrOracleDataNormalization     = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -1353,7 +1353,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return ErrTradingDisabled
 		}
 	case txn.SubmitAMMCommand, txn.AmendAMMCommand, txn.CancelAMMCommand:
-		if !app.limits.CanProposePerpsMarket() {
+		if !app.limits.CanUseAMMPool() {
 			return ErrAMMPoolDisabled
 		}
 	case txn.ProposeCommand:
