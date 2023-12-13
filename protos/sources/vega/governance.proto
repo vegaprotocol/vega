@@ -437,6 +437,11 @@ message ProposalRationale {
 
 // Governance data
 message GovernanceData {
+  enum Type {
+    TYPE_SINGLE = 0;
+    TYPE_BATCH = 1;
+  }
+
   // Governance proposal that is being voted on.
   Proposal proposal = 1;
   // All YES votes in favour of the proposal above.
@@ -451,6 +456,9 @@ message GovernanceData {
   // where key (string) is the party ID i.e. public key and
   // value (Vote) is the vote cast by the given party.
   map<string, Vote> no_party = 5;
+
+  Type proposal_type = 6;
+  repeated proposal proposals = 7;
 }
 
 // Governance proposal
