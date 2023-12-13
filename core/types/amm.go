@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package types
 
 import (
@@ -8,7 +23,7 @@ import (
 )
 
 // AMMBaseCommand these 3 parameters should be always specified
-// in both the the submit and amend commands
+// in both the the submit and amend commands.
 type AMMBaseCommand struct {
 	MarketID          string
 	Party             string
@@ -171,13 +186,14 @@ func NewCancelAMMFromProto(
 type AMMPoolStatusReason = eventspb.AMMPool_StatusReason
 
 const (
-	AMMPoolStatusReasonUnspecified          AMMPoolStatusReason = eventspb.AMMPool_STATUS_REASON_UNSPECIFIED
-	AMMPoolStatusReasonCancelledByParty                         = eventspb.AMMPool_STATUS_REASON_CANCELLED_BY_PARTY
-	AMMPoolStatusReasonCannotFillCommitment                     = eventspb.AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT
-	AMMPoolStatusReasonPartyAlreadyOwnAPool                     = eventspb.AMMPool_STATUS_REASON_PARTY_ALREADY_OWN_A_POOL
-	AMMPoolStatusReasonPartyClosedOut                           = eventspb.AMMPool_STATUS_REASON_PARTY_CLOSED_OUT
-	AMMPoolStatusReasonMarketClosed                             = eventspb.AMMPool_STATUS_REASON_MARKET_CLOSED
-	AMMPoolStatusReasonCommitmentTooLow                         = eventspb.AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW
+	AMMPoolStatusReasonUnspecified           AMMPoolStatusReason = eventspb.AMMPool_STATUS_REASON_UNSPECIFIED
+	AMMPoolStatusReasonCancelledByParty                          = eventspb.AMMPool_STATUS_REASON_CANCELLED_BY_PARTY
+	AMMPoolStatusReasonCannotFillCommitment                      = eventspb.AMMPool_STATUS_REASON_CANNOT_FILL_COMMITMENT
+	AMMPoolStatusReasonPartyAlreadyOwnsAPool                     = eventspb.AMMPool_STATUS_REASON_PARTY_ALREADY_OWNS_A_POOL
+	AMMPoolStatusReasonPartyClosedOut                            = eventspb.AMMPool_STATUS_REASON_PARTY_CLOSED_OUT
+	AMMPoolStatusReasonMarketClosed                              = eventspb.AMMPool_STATUS_REASON_MARKET_CLOSED
+	AMMPoolStatusReasonCommitmentTooLow                          = eventspb.AMMPool_STATUS_REASON_COMMITMENT_TOO_LOW
+	AMMPoolStatusReasonCannotRebase                              = eventspb.AMMPool_STATUS_REASON_CANNOT_REBASE
 )
 
 type AMMPoolStatus = eventspb.AMMPool_Status
