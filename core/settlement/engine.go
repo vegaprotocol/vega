@@ -204,21 +204,20 @@ func (e *Engine) addNetworkTrade(trade *types.Trade) {
 		tSize *= -1
 	}
 
-	// get the current settled position (or zero if no settled position was found)
-	oldSize := e.settledPosition[types.NetworkParty]
-	// for any other change in the position, this could have happened at a different mark price, and we will need to mark this trade to market
-	// e.g. parties getting distressed after a funding payment.
-	if trades, ok := e.trades[types.NetworkParty]; ok && len(trades) > 0 {
-		oldSize = trades[len(trades)-1].newSize
-	} else if !ok {
-		e.trades[types.NetworkParty] = []*settlementTrade{}
+	// the trade happens at the current mark price, so it is considered a settled position
+	e.settledPosition[types.NetworkParty] += tSize
+	// any unsettled trades (though this slice should be empty) should be updated accordingly
+	trades, ok := e.trades[types.NetworkParty]
+	if !ok {
+		return
 	}
-	e.trades[types.NetworkParty] = append(e.trades[types.NetworkParty], &settlementTrade{
-		price:       trade.Price.Clone(),
-		marketPrice: trade.MarketPrice.Clone(),
-		size:        tSize,
-		newSize:     oldSize + tSize,
-	})
+	// meaning that the size and new size should be updated to include the wash trade
+	for i, t := range trades {
+		t.size += tSize
+		t.newSize += tSize
+		trades[i] = t
+	}
+	e.trades[types.NetworkParty] = trades
 }
 
 func (e *Engine) HasTraded() bool {
@@ -382,6 +381,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 				price: markPrice.Clone(),
 			},
 		}
+		appendLargest = true
 	}
 	if !delta.IsZero() {
 		if zeroAmts {
@@ -439,6 +439,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 		key := v.Party()
 		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
 		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.timeService.GetTimeNow().UnixNano()))
+		// @TODO check network trades, resolve to drop from MTM settlement
 		delete(e.settledPosition, key)
 		delete(e.trades, key)
 	}
