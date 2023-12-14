@@ -1744,7 +1744,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	// if the stop order links to a position, see if we are scaling the size
 	if fallsBelow != nil && fallsBelow.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 		if fallsBelow.SizeOverrideValue != nil {
-			if fallsBelow.SizeOverrideValue.PercentageSize.LessThan(num.DecimalFromFloat(0.0)) ||
+			if fallsBelow.SizeOverrideValue.PercentageSize.LessThanOrEqual(num.DecimalFromFloat(0.0)) ||
 				fallsBelow.SizeOverrideValue.PercentageSize.GreaterThan(num.DecimalFromFloat(1.0)) {
 				rejectStopOrders(types.StopOrderRejectionLinkedPercentageInvalid, fallsBelow, risesAbove)
 				return nil, common.ErrStopOrderSizeOverridePercentageInvalid
@@ -1754,7 +1754,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	if risesAbove != nil && risesAbove.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 		if risesAbove.SizeOverrideValue != nil {
-			if risesAbove.SizeOverrideValue.PercentageSize.LessThan(num.DecimalFromFloat(0.0)) ||
+			if risesAbove.SizeOverrideValue.PercentageSize.LessThanOrEqual(num.DecimalFromFloat(0.0)) ||
 				risesAbove.SizeOverrideValue.PercentageSize.GreaterThan(num.DecimalFromFloat(1.0)) {
 				rejectStopOrders(types.StopOrderRejectionLinkedPercentageInvalid, fallsBelow, risesAbove)
 				return nil, common.ErrStopOrderSizeOverridePercentageInvalid
@@ -3414,12 +3414,21 @@ func (m *Market) submitStopOrders(
 			if v.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
 				// Update the order size to match that of the party's position
 				pos, _ := m.position.GetPositionByPartyID(v.Party)
-				if pos.Size() == 0 {
+
+				// Scale this size if required
+				scaledPos := num.DecimalFromInt64(pos.Size())
+				if v.SizeOverrideValue != nil {
+					scaledPos = scaledPos.Mul(v.SizeOverrideValue.PercentageSize)
+					scaledPos = scaledPos.Round(0)
+				}
+				orderSize := scaledPos.IntPart()
+
+				if orderSize == 0 {
 					// Nothing to do
 					m.log.Error("position is flat so no order required",
 						logging.StopOrderSubmission(v))
 					continue
-				} else if pos.Size() > 0 {
+				} else if orderSize > 0 {
 					// We are long so need to sell
 					if v.OrderSubmission.Side != types.SideSell {
 						// Don't send an order as we are the wrong direction
@@ -3427,7 +3436,7 @@ func (m *Market) submitStopOrders(
 							logging.StopOrderSubmission(v))
 						continue
 					}
-					v.OrderSubmission.Size = uint64(pos.Size())
+					v.OrderSubmission.Size = uint64(orderSize)
 				} else {
 					// We are short so need to buy
 					if v.OrderSubmission.Side != types.SideBuy {
@@ -3436,7 +3445,7 @@ func (m *Market) submitStopOrders(
 							logging.StopOrderSubmission(v))
 						continue
 					}
-					v.OrderSubmission.Size = uint64(-pos.Size())
+					v.OrderSubmission.Size = uint64(-orderSize)
 				}
 			}
 

@@ -56,8 +56,8 @@ Feature: linked stop orders
 
     # Place a buy position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting |
-      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override percentage |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 | 1.0                         |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -86,8 +86,8 @@ Feature: linked stop orders
 
     # Place a sell position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting |
-      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage |
+      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 1.0                         | 
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -115,8 +115,8 @@ Feature: linked stop orders
 
     # Place a buy position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting |
-      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override percentage |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 | 1.0                         |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -145,8 +145,8 @@ Feature: linked stop orders
 
     # Place a sell position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting |
-      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage |
+      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 1.0                         |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -175,8 +175,8 @@ Feature: linked stop orders
 
     # Place a buy position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting |
-      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override percentage |
+      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 | 1.0                         |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -205,8 +205,8 @@ Feature: linked stop orders
 
     # Place a sell position linked stop order
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting |
-      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage |
+      | party1| ETH/DEC19 | sell | 10     |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 1.0                         |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
@@ -218,10 +218,99 @@ Feature: linked stop orders
       | party2| ETH/DEC19 | buy  | 30     | 48    | 0                | TYPE_LIMIT | TIF_GTC | 
       | party3| ETH/DEC19 | sell | 1      | 48    | 1                | TYPE_LIMIT | TIF_GTC | 
 
-    # Stop order should have been cancelled
+    # Stop order should have been triggered
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
 
 
+  Scenario: A linked stop order with position size override and scaling will partially flatten the position after being triggered
 
+    # party1 will start 10 short
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | sellorder |
+      | party2| ETH/DEC19 | buy  | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buyorder  |
+
+    # Place a buy position linked stop order with a size scaling
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | reference | ra size override setting | ra size override percentage |
+      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 52               | stop1     | POSITION                 | 0.333333                    |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
+
+    # Place some orders on the book to give liquidity and to move the last price to trigger the stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party3| ETH/DEC19 | sell | 30     | 52    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party2| ETH/DEC19 | buy  | 1      | 52    | 1                | TYPE_LIMIT | TIF_GTC | 
+
+    # Stop order should have triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+
+    # Check we have created a trade matching the scaled size of the position
+    And the following trades should be executed:
+      | buyer   | seller  | price  | size |
+      | party1  | party3  | 52     | 3    |
+
+
+  Scenario: A linked stop order with position size override and scaling will partially flattened the position when the stop order is triggered
+
+    # party1 will start 10 long
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1| ETH/DEC19 | buy  | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder  |
+      | party2| ETH/DEC19 | sell | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | sellorder |
+
+    # Place a sell position linked stop order with size scaling
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage |
+      | party1| ETH/DEC19 | sell | 2      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 0.6666666                   |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop1     |
+
+    # Now let add some liquidity to the book and move the last price to trigger the stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party2| ETH/DEC19 | buy  | 30     | 48    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | party3| ETH/DEC19 | sell | 1      | 48    | 1                | TYPE_LIMIT | TIF_GTC | 
+
+    # Stop order should have been triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+
+    # Check we have created a trade matching the scaled size of the position
+    And the following trades should be executed:
+      | buyer   | seller  | price  | size |
+      | party2  | party1  | 48     | 7    |
+
+
+  Scenario: A linked stop order with position size override and scaling will be validated for correct scaling value
+
+    # party1 will start 10 long
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1| ETH/DEC19 | buy  | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buyorder  |
+      | party2| ETH/DEC19 | sell | 11     | 50    | 1                | TYPE_LIMIT | TIF_GTC | sellorder |
+
+    # Place a stop order with invalid size scaling
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage | error                                                |
+      | party1| ETH/DEC19 | sell | 2      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 0.0                         | stop order size override percentage value is invalid |
+
+    # Place a stop order with invalid size scaling
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage | error                                                |
+      | party1| ETH/DEC19 | sell | 2      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | 1.000001                    | stop order size override percentage value is invalid |
+
+    # Place a stop order with invalid size scaling
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | reference | fb size override setting | fb size override percentage | error                                                |
+      | party1| ETH/DEC19 | sell | 2      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce | 48               | stop1     | POSITION                 | -0.000001                   | stop order size override percentage value is invalid |
