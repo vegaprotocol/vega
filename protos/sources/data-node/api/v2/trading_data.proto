@@ -819,6 +819,14 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
   }
 
+  // List team members' statistics
+  //
+  // Get the statistics for all members of a given team, or for a specific member by using party ID, over a number of epochs.
+  // If a team does not have at least the number of epochs' worth of data, it is ignored.
+  rpc ListTeamMembersStatistics(ListTeamMembersStatisticsRequest) returns (ListTeamMembersStatisticsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Teams"};
+  }
+
   // List team referees
   //
   // Get a list of all referees for a given team ID
@@ -4024,7 +4032,7 @@ message GetReferralSetStatsRequest {
   optional string referral_set_id = 1;
   // Epoch to get referral set statistics for. If not set, the last complete epoch is used.
   optional uint64 at_epoch = 2;
-  // Restrict referral set statisitcs to those for the given referee.
+  // Restrict referral set statistics to those for the given referee.
   optional string referee = 3;
   // Pagination controls.
   optional Pagination pagination = 4;
@@ -4176,7 +4184,7 @@ message TeamStatistics {
   // value for each epoch.
   repeated QuantumRewardsPerEpoch quantum_rewards = 4;
   // Total of games played.
-  uint64 total_game_played = 5;
+  uint64 total_games_played = 5;
   // List of games played over the requested epoch period.
   repeated string games_played = 6;
 }
@@ -4186,6 +4194,60 @@ message QuantumRewardsPerEpoch {
   uint64 epoch = 1;
   // Total rewards accumulated over the epoch period, expressed in quantum value.
   string total_quantum_rewards = 2;
+}
+
+// Request to list all team members' statistics.
+message ListTeamMembersStatisticsRequest {
+  // Restrict team statistics to those with the given team ID.
+  string team_id = 1;
+  // Restrict team members' statistics to those with the given party ID.
+  optional string party_id = 2;
+  // Defines the number of past epochs to aggregate data from. By default, it takes
+  // the last 10 epochs.
+  optional uint64 aggregation_epochs = 3;
+  // Pagination controls.
+  optional Pagination pagination = 4;
+}
+
+// Response for the list team members' statistics request containing the statistics.
+message ListTeamMembersStatisticsResponse {
+  // Page of team members' statistics data and corresponding page information.
+  TeamMembersStatisticsConnection statistics = 1;
+}
+
+// Page of team members' statistics and corresponding page information.
+message TeamMembersStatisticsConnection {
+  // Page of team member data and their corresponding cursors.
+  repeated TeamMemberStatisticsEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Team member data item with the corresponding cursor.
+message TeamMemberStatisticsEdge {
+  // Team member's statistics data.
+  TeamMemberStatistics node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Team member's statistics record containing the team member's information.
+message TeamMemberStatistics {
+  // Party ID the statistics are related to.
+  string party_id = 1;
+  // Total of volume accumulated over the requested epoch period, expressed in
+  // quantum value.
+  string total_quantum_volume = 2;
+  // Total of rewards accumulated over the requested epoch period, expressed in
+  // quantum value.
+  string total_quantum_rewards = 3;
+  // List of rewards over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumRewardsPerEpoch quantum_rewards = 4;
+  // Total number of games played.
+  uint64 total_games_played = 5;
+  // List of games played over the requested epoch period.
+  repeated string games_played = 6;
 }
 
 // Request that is sent when listing the referees for a given team.
