@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.10
+
+### 🐛 Fixes
+
+- [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
+
 ## 0.73.9
 
 ### 🐛 Fixes
