@@ -549,3 +549,28 @@ func TestCandlesCursorPagination(t *testing.T) {
 		}, pageInfo)
 	})
 }
+
+func TestCandlesBlockInterval(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+
+	tradeStore := sqlstore.NewTrades(connectionSource)
+
+	startTime := time.Unix(StartTime, 0)
+	insertCandlesTestData(t, ctx, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, time.Minute)
+
+	candles, err := candleStore.GetCandlesForMarket(ctx, testMarket)
+	require.NoError(t, err)
+	first := int32(10)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	candleData, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candles["block"], nil,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles with pagination:%s", err)
+	}
+
+	assert.Equal(t, 10, len(candleData))
+}

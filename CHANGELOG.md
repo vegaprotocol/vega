@@ -80,6 +80,7 @@
 - [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
 - [9882](https://github.com/vegaprotocol/vega/issues/9882) - Fix `net params` sent on closed channel.
 - [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
+- [10260](https://github.com/vegaprotocol/vega/issues/10260) - `ListCandleData` errors when interval is `block`
 
 ## 0.73.0
 
