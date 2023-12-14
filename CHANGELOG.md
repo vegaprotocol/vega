@@ -443,6 +443,7 @@
 - [9916](https://github.com/vegaprotocol/vega/issues/9916) - Fix activity streak locked account until epoch.
 - [9924](https://github.com/vegaprotocol/vega/issues/9924) - Referral set referees `API` should aggregate by number of epochs.
 - [9922](https://github.com/vegaprotocol/vega/issues/9922) - Ensure the factors in referral program account for set eligibility.
+- [10249](https://github.com/vegaprotocol/vega/issues/10249) - Upgrade `cometbft` to 0.38.2
 
 ## 0.72.1
 
