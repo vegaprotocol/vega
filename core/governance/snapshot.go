@@ -254,7 +254,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			invalidVotes: votesAsMap(p.Invalid),
 		}
 
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.9") {
 			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
 				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
@@ -312,23 +312,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 		}
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
-
 		for _, p := range bp.BatchProposal.Proposals {
-			if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
-				if nm := p.Terms.GetNewMarket(); nm != nil {
-					e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", bp.ID))
-					nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
-						Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
-					}
-				}
-				if nm := p.Terms.GetUpdateMarket(); nm != nil {
-					e.log.Info("migrating liquidity fee settings update market proposal", logging.String("pid", bp.ID))
-					nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
-						Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
-					}
-				}
-			}
-
 			evts = append(evts, events.NewProposalEvent(ctx, *p))
 		}
 
