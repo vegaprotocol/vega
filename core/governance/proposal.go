@@ -173,8 +173,9 @@ func (p *proposal) computeVoteStateUsingEquityLikeShare(markets Markets) (types.
 	yes := p.countEquityLikeShare(p.yes, markets)
 	no := p.countEquityLikeShare(p.no, markets)
 	totalEquityLikeShare := yes.Add(no)
+	threshold := totalEquityLikeShare.Mul(p.RequiredLPMajority)
 
-	if yes.GreaterThanOrEqual(p.RequiredLPMajority) && totalEquityLikeShare.GreaterThanOrEqual(p.RequiredLPParticipation) {
+	if yes.GreaterThanOrEqual(threshold) && totalEquityLikeShare.GreaterThanOrEqual(p.RequiredLPParticipation) {
 		return types.ProposalStatePassed, types.ProposalErrorUnspecified
 	}
 
