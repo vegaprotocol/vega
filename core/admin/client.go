@@ -69,7 +69,7 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 
 	resp, err := s.http.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("failed to contact vega socket: %w", err)
+		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -104,7 +104,7 @@ func (s *Client) UpgradeStatus(ctx context.Context) (*types.UpgradeStatus, error
 	var reply types.UpgradeStatus
 
 	if err := s.call(ctx, "protocolupgrade.UpgradeStatus", nil, &reply); err != nil {
-		return nil, fmt.Errorf("failed to call protocolupgrade.UpgradeStatus method: %w", err)
+		return nil, fmt.Errorf("failed to get protocol update status: %w", err)
 	}
 
 	return &reply, nil
