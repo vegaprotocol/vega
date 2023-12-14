@@ -18,6 +18,7 @@ package entities
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -26,27 +27,42 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type PerMarketELSWeight struct {
+	Market string `json:"market"`
+	ELS    string `json:"els"`
+}
+
 type Vote struct {
-	PartyID                     PartyID
-	ProposalID                  ProposalID
-	Value                       VoteValue
-	TotalGovernanceTokenBalance decimal.Decimal
-	TotalGovernanceTokenWeight  decimal.Decimal
-	TotalEquityLikeShareWeight  decimal.Decimal
-	InitialTime                 time.Time // First vote for this party/proposal
-	TxHash                      TxHash
-	VegaTime                    time.Time // Time of last vote update
+	PartyID                        PartyID
+	ProposalID                     ProposalID
+	Value                          VoteValue
+	TotalGovernanceTokenBalance    decimal.Decimal
+	TotalGovernanceTokenWeight     decimal.Decimal
+	TotalEquityLikeShareWeight     decimal.Decimal
+	PerMarketEquityLikeShareWeight []PerMarketELSWeight
+	InitialTime                    time.Time // First vote for this party/proposal
+	TxHash                         TxHash
+	VegaTime                       time.Time // Time of last vote update
 }
 
 func (v Vote) ToProto() *vega.Vote {
+	perMarketELSWeight := make(map[string]string)
+
+	if len(v.PerMarketEquityLikeShareWeight) > 0 {
+		for _, w := range v.PerMarketEquityLikeShareWeight {
+			perMarketELSWeight[w.Market] = w.ELS
+		}
+	}
+
 	return &vega.Vote{
-		PartyId:                     v.PartyID.String(),
-		ProposalId:                  v.ProposalID.String(),
-		Value:                       vega.Vote_Value(v.Value),
-		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.String(),
-		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
-		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
-		Timestamp:                   v.InitialTime.UnixNano(),
+		PartyId:                        v.PartyID.String(),
+		ProposalId:                     v.ProposalID.String(),
+		Value:                          vega.Vote_Value(v.Value),
+		TotalGovernanceTokenBalance:    v.TotalGovernanceTokenBalance.String(),
+		TotalGovernanceTokenWeight:     v.TotalGovernanceTokenWeight.String(),
+		TotalEquityLikeShareWeight:     v.TotalEquityLikeShareWeight.String(),
+		Timestamp:                      v.InitialTime.UnixNano(),
+		PerMarketEquityLikeShareWeight: perMarketELSWeight,
 	}
 }
 
@@ -66,15 +82,30 @@ func VoteFromProto(pv *vega.Vote, txHash TxHash) (Vote, error) {
 		return Vote{}, err
 	}
 
+	// We need deterministic ordering of the share weights to prevent network history segment hashes from diverting
+	perMarketELSWeight := make([]PerMarketELSWeight, 0)
+
+	for k, v := range pv.PerMarketEquityLikeShareWeight {
+		perMarketELSWeight = append(perMarketELSWeight, PerMarketELSWeight{
+			Market: k,
+			ELS:    v,
+		})
+	}
+
+	sort.Slice(perMarketELSWeight, func(i, j int) bool {
+		return perMarketELSWeight[i].Market < perMarketELSWeight[j].Market
+	})
+
 	v := Vote{
-		PartyID:                     PartyID(pv.PartyId),
-		ProposalID:                  ProposalID(pv.ProposalId),
-		Value:                       VoteValue(pv.Value),
-		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
-		TotalGovernanceTokenWeight:  totalGovernanceTokenWeight,
-		TotalEquityLikeShareWeight:  totalEquityLikeShareWeight,
-		InitialTime:                 NanosToPostgresTimestamp(pv.Timestamp),
-		TxHash:                      txHash,
+		PartyID:                        PartyID(pv.PartyId),
+		ProposalID:                     ProposalID(pv.ProposalId),
+		Value:                          VoteValue(pv.Value),
+		TotalGovernanceTokenBalance:    totalGovernanceTokenBalance,
+		TotalGovernanceTokenWeight:     totalGovernanceTokenWeight,
+		TotalEquityLikeShareWeight:     totalEquityLikeShareWeight,
+		InitialTime:                    NanosToPostgresTimestamp(pv.Timestamp),
+		PerMarketEquityLikeShareWeight: perMarketELSWeight,
+		TxHash:                         txHash,
 	}
 
 	return v, nil

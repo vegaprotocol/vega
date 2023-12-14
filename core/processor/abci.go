@@ -518,7 +518,7 @@ func generateDeterministicID(tx abci.Tx) string {
 	return hex.EncodeToString(vgcrypto.Hash(tx.Signature()))
 }
 
-// addDeterministicID decorates give function with deterministic ID
+// addDeterministicID decorates give function with deterministic ID.
 func addDeterministicID(
 	f func(context.Context, abci.Tx, string) error,
 ) func(context.Context, abci.Tx) error {
@@ -1910,6 +1910,9 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	}
 
 	idgen := idgeneration.New(deterministicBatchID)
+
+	// Burn one so the first proposal doesn't have the same ID as the batch ID
+	idgen.NextID()
 	ids := make([]string, 0, len(prop.Terms.Changes))
 
 	for i := 0; i < len(prop.Terms.Changes); i++ {
