@@ -41,12 +41,18 @@ func (t teamRefereeHistoryResolver) JoinedAtEpoch(_ context.Context, obj *v2.Tea
 
 type teamStatsResolver VegaResolverRoot
 
-func (t teamStatsResolver) TotalGamePlayed(ctx context.Context, obj *v2.TeamStatistics) (int, error) {
-	return int(obj.TotalGamePlayed), nil
+func (t teamStatsResolver) TotalGamesPlayed(_ context.Context, obj *v2.TeamStatistics) (int, error) {
+	return int(obj.TotalGamesPlayed), nil
 }
 
 type quantumRewardsPerEpochResolver VegaResolverRoot
 
-func (q quantumRewardsPerEpochResolver) Epoch(ctx context.Context, obj *v2.QuantumRewardsPerEpoch) (int, error) {
+func (q quantumRewardsPerEpochResolver) Epoch(_ context.Context, obj *v2.QuantumRewardsPerEpoch) (int, error) {
 	return int(obj.Epoch), nil
+}
+
+type teamMemberStatsResolver VegaResolverRoot
+
+func (t teamMemberStatsResolver) TotalGamesPlayed(_ context.Context, obj *v2.TeamMemberStatistics) (int, error) {
+	return int(obj.TotalGamesPlayed), nil
 }

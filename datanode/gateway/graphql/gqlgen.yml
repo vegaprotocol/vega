@@ -696,6 +696,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatisticsEdge
   TeamsStatisticsConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamsStatisticsConnection
+  TeamMemberStatistics:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMemberStatistics
+  TeamMemberStatisticsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMemberStatisticsEdge
+  TeamMembersStatisticsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMembersStatisticsConnection
   TeamReferee:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamReferee
   TeamRefereeEdge:
