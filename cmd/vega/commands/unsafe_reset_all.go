@@ -17,12 +17,10 @@ package commands
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 
+	"code.vegaprotocol.io/vega/core/checkpoint"
 	"code.vegaprotocol.io/vega/core/config"
-	metadatadb "code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
-	snapshotdb "code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
+	snapshotdbs "code.vegaprotocol.io/vega/core/snapshot/databases"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
@@ -42,70 +40,18 @@ func (cmd *UnsafeResetAllCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
-	clearSnapshotDatabases(vegaPaths, log)
-
-	checkpointsPath := vegaPaths.StatePathFor(paths.CheckpointStateHome)
-	if err := deleteAll(log, checkpointsPath); err != nil {
-		log.Error("Unable to remove checkpoint state", logging.Error(err))
+	if err := snapshotdbs.RemoveAll(vegaPaths); err != nil {
+		log.Error("Could not remove local snapshots databases", logging.Error(err))
+		log.Error("Skipping removal of the local snapshots")
 	} else {
-		log.Info("Removed checkpoint state", logging.String("path", checkpointsPath))
+		log.Info("Local snapshots have been removed")
 	}
-	return nil
-}
 
-func clearSnapshotDatabases(vegaPaths paths.Paths, log *logging.Logger) {
-	snapshotDB, err := snapshotdb.NewLevelDBDatabase(vegaPaths)
-	if err != nil {
-		log.Error("Could not initialize the local snapshot database", logging.Error(err))
-		log.Error("Skipping clear up of the local snapshot database")
+	if err := checkpoint.RemoveAll(vegaPaths); err != nil {
+		log.Error("Could not remove local checkpoints", logging.Error(err))
+		log.Error("Skipping removal of the local checkpoints")
 	} else {
-		defer func() {
-			if err := snapshotDB.Close(); err != nil {
-				log.Warn("Could not close the local snapshot database cleanly", logging.Error(err))
-			}
-		}()
-		if err := snapshotDB.Clear(); err != nil {
-			log.Error("Could not clear up the local snapshot database", logging.Error(err))
-		} else {
-			log.Info("Removed local snapshots")
-		}
-	}
-
-	metadataDB, err := metadatadb.NewLevelDBDatabase(vegaPaths)
-	if err != nil {
-		log.Error("Could not initialize the local snapshot metadata database adapter", logging.Error(err))
-		log.Error("Skipping clear up of the local snapshot metadata database")
-		return
-	} else {
-		defer func() {
-			if err := metadataDB.Close(); err != nil {
-				log.Warn("Could not close the local snapshot metadata database cleanly", logging.Error(err))
-			}
-		}()
-		if err := metadataDB.Clear(); err != nil {
-			log.Error("Could not clear the local snapshot metadata database", logging.Error(err))
-		} else {
-			log.Info("Removed local snapshot metadata")
-		}
-	}
-}
-
-func deleteAll(log *logging.Logger, dir string) error {
-	d, err := os.Open(dir)
-	if err != nil {
-		return err
-	}
-	files, err := d.Readdir(0)
-	if err != nil {
-		return err
-	}
-
-	for _, f := range files {
-		filePath := filepath.Join(dir, f.Name())
-		if err := os.RemoveAll(filePath); err != nil {
-			return err
-		}
-		log.Info("Removed file", logging.String("path", filePath))
+		log.Info("Local checkpoints have been removed")
 	}
 
 	return nil
@@ -113,7 +59,7 @@ func deleteAll(log *logging.Logger, dir string) error {
 
 var unsafeResetCmd UnsafeResetAllCmd
 
-func UnsafeResetAll(ctx context.Context, parser *flags.Parser) error {
+func UnsafeResetAll(_ context.Context, parser *flags.Parser) error {
 	unsafeResetCmd = UnsafeResetAllCmd{}
 
 	_, err := parser.AddCommand("unsafe_reset_all", "(unsafe) Remove all application state", "(unsafe) Remove all vega application state (checkpoints and snapshots)", &unsafeResetCmd)

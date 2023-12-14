@@ -22,11 +22,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 )
 
 var (
@@ -376,4 +378,14 @@ func (e *Engine) onCheckpointLoaded(ctx context.Context) {
 	if e.onCheckpointLoadedCB != nil {
 		e.onCheckpointLoadedCB(ctx)
 	}
+}
+
+func RemoveAll(vegaPaths paths.Paths) error {
+	dbDirectory := vegaPaths.StatePathFor(paths.CheckpointStateHome)
+
+	if err := os.RemoveAll(dbDirectory); err != nil {
+		return fmt.Errorf("an error occurred while removing directory %q: %w", dbDirectory, err)
+	}
+
+	return nil
 }
