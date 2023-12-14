@@ -609,6 +609,10 @@ func (r *VegaResolverRoot) Game() GameResolver {
 	return (*gameResolver)(r)
 }
 
+func (r *VegaResolverRoot) PerpetualData() PerpetualDataResolver {
+	return (*perpetualDataResolver)(r)
+}
+
 type protocolUpgradeProposalResolver VegaResolverRoot
 
 func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {

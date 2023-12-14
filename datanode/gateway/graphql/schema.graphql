@@ -202,6 +202,10 @@ type PerpetualData {
   externalTwap: String
   "Time-weighted average price calculated from data points for this period from the internal data source."
   internalTwap: String
+  "Funding period sequence number"
+  seqNum: Int!
+  "Time at which the funding period started"
+  startTime: Timestamp!
 }
 
 union ProductData = PerpetualData
