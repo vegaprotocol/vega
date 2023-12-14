@@ -85,6 +85,8 @@ message InputData {
     IssueSignatures issue_signatures = 2010;
     // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
+    // Command to submit a batch governance proposal.
+    BatchProposalSubmission batch_proposal_submission = 3002;
   }
 }
 

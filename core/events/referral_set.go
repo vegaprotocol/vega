@@ -17,6 +17,7 @@ package events
 
 import (
 	"context"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -117,8 +118,8 @@ func NewReferralSetStatsUpdatedEvent(ctx context.Context, update *types.Referral
 		})
 	}
 
-	slices.SortStableFunc(refereesStats, func(a, b *eventspb.RefereeStats) bool {
-		return a.PartyId < b.PartyId
+	slices.SortStableFunc(refereesStats, func(a, b *eventspb.RefereeStats) int {
+		return strings.Compare(a.PartyId, b.PartyId)
 	})
 
 	return &ReferralSetStatsUpdated{

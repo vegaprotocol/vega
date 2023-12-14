@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -183,8 +184,8 @@ func (e *SnapshottedEngine) serialiseDiscountVolumeProgram() ([]byte, error) {
 			DiscountFactor: discountStats.DiscountFactor.String(),
 		})
 	}
-	slices.SortStableFunc(stats, func(a, b *snapshotpb.VolumeDiscountStats) bool {
-		return a.Party < b.Party
+	slices.SortStableFunc(stats, func(a, b *snapshotpb.VolumeDiscountStats) int {
+		return strings.Compare(a.Party, b.Party)
 	})
 
 	payload := &snapshotpb.Payload{

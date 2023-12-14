@@ -140,6 +140,8 @@ func (t Tx) Command() txn.Command {
 		return txn.ApplyReferralCodeCommand
 	case *commandspb.InputData_JoinTeam:
 		return txn.JoinTeamCommand
+	case *commandspb.InputData_BatchProposalSubmission:
+		return txn.BatchProposeCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}

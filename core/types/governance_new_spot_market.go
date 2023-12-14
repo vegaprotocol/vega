@@ -34,23 +34,25 @@ func (a ProposalTermsNewSpotMarket) String() string {
 	)
 }
 
-func (a ProposalTermsNewSpotMarket) IntoProto() *vegapb.ProposalTerms_NewSpotMarket {
+func (a ProposalTermsNewSpotMarket) isPTerm() {}
+
+func (a ProposalTermsNewSpotMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_NewSpotMarket{
 		NewSpotMarket: a.NewSpotMarket.IntoProto(),
 	}
 }
 
-func (a ProposalTermsNewSpotMarket) isPTerm() {}
-
-func (a ProposalTermsNewSpotMarket) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsNewSpotMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_NewSpotMarket{
+		NewSpotMarket: a.NewSpotMarket.IntoProto(),
+	}
 }
 
 func (a ProposalTermsNewSpotMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewSpotMarket
 }
 
-func (a ProposalTermsNewSpotMarket) DeepClone() proposalTerm {
+func (a ProposalTermsNewSpotMarket) DeepClone() ProposalTerm {
 	if a.NewSpotMarket == nil {
 		return &ProposalTermsNewSpotMarket{}
 	}
@@ -59,14 +61,14 @@ func (a ProposalTermsNewSpotMarket) DeepClone() proposalTerm {
 	}
 }
 
-func NewNewSpotMarketFromProto(p *vegapb.ProposalTerms_NewSpotMarket) (*ProposalTermsNewSpotMarket, error) {
+func NewNewSpotMarketFromProto(newSpotMarketProto *vegapb.NewSpotMarket) (*ProposalTermsNewSpotMarket, error) {
 	var newSpotMarket *NewSpotMarket
-	if p.NewSpotMarket != nil {
+	if newSpotMarketProto != nil {
 		newSpotMarket = &NewSpotMarket{}
 
-		if p.NewSpotMarket.Changes != nil {
+		if newSpotMarketProto.Changes != nil {
 			var err error
-			newSpotMarket.Changes, err = NewSpotMarketConfigurationFromProto(p.NewSpotMarket.Changes)
+			newSpotMarket.Changes, err = NewSpotMarketConfigurationFromProto(newSpotMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}

@@ -181,6 +181,10 @@ type PayloadDelegationLastReconTime struct {
 	LastReconcilicationTime time.Time
 }
 
+type PayloadGovernanceBatchActive struct {
+	GovernanceBatchActive *GovernanceBatchActive
+}
+
 type PayloadGovernanceActive struct {
 	GovernanceActive *GovernanceActive
 }
@@ -680,6 +684,10 @@ type DelegationAuto struct {
 	Parties []string
 }
 
+type GovernanceBatchActive struct {
+	BatchProposals []*snapshot.BatchProposalData
+}
+
 type GovernanceActive struct {
 	Proposals []*ProposalData
 }
@@ -967,6 +975,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityV2PaidFeesStatsFromProto(dt)
 	case *snapshot.Payload_Liquidation:
 		ret.Data = PayloadLiquidationNodeFromProto(dt)
+	case *snapshot.Payload_GovernanceBatchActive:
+		ret.Data = PayloadGovernanceBatchActiveFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1147,6 +1157,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityV2PaidFeesStats:
 		ret.Data = dt
 	case *snapshot.Payload_Liquidation:
+		ret.Data = dt
+	case *snapshot.Payload_GovernanceBatchActive:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -2092,6 +2104,34 @@ func (*PayloadDelegationPending) Namespace() SnapshotNamespace {
 	return DelegationSnapshot
 }
 
+func PayloadGovernanceBatchActiveFromProto(ga *snapshot.Payload_GovernanceBatchActive) *PayloadGovernanceBatchActive {
+	return &PayloadGovernanceBatchActive{
+		GovernanceBatchActive: GovernanceBatchActiveFromProto(ga.GovernanceBatchActive),
+	}
+}
+
+func (p PayloadGovernanceBatchActive) IntoProto() *snapshot.Payload_GovernanceBatchActive {
+	return &snapshot.Payload_GovernanceBatchActive{
+		GovernanceBatchActive: &snapshot.GovernanceBatchActive{
+			BatchProposals: p.GovernanceBatchActive.BatchProposals,
+		},
+	}
+}
+
+func (*PayloadGovernanceBatchActive) Key() string {
+	return "batch_active"
+}
+
+func (*PayloadGovernanceBatchActive) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
+func (*PayloadGovernanceBatchActive) isPayload() {}
+
+func (p *PayloadGovernanceBatchActive) plToProto() interface{} {
+	return p.IntoProto()
+}
+
 func PayloadGovernanceActiveFromProto(ga *snapshot.Payload_GovernanceActive) *PayloadGovernanceActive {
 	return &PayloadGovernanceActive{
 		GovernanceActive: GovernanceActiveFromProto(ga.GovernanceActive),
@@ -2994,6 +3034,12 @@ func (p ProposalData) IntoProto() *snapshot.ProposalData {
 		ret.Invalid = append(ret.Invalid, v.IntoProto())
 	}
 	return &ret
+}
+
+func GovernanceBatchActiveFromProto(ga *snapshot.GovernanceBatchActive) *GovernanceBatchActive {
+	return &GovernanceBatchActive{
+		BatchProposals: ga.BatchProposals,
+	}
 }
 
 func GovernanceActiveFromProto(ga *snapshot.GovernanceActive) *GovernanceActive {

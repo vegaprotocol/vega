@@ -18,6 +18,7 @@ package sqlstore_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -132,8 +133,8 @@ func historyForReferee(teamsHistory []entities.TeamMember, party entities.PartyI
 			})
 		}
 	}
-	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) bool {
-		return a.JoinedAtEpoch < b.JoinedAtEpoch
+	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) int {
+		return compareUint64(a.JoinedAtEpoch, b.JoinedAtEpoch)
 	})
 
 	return refereeHistory
@@ -149,8 +150,8 @@ func currentRefereesForTeam(teamsHistory []entities.TeamMember, teamID entities.
 		}
 	}
 
-	slices.SortStableFunc(currentTeamReferees, func(a, b entities.TeamMember) bool {
-		return a.PartyID < b.PartyID
+	slices.SortStableFunc(currentTeamReferees, func(a, b entities.TeamMember) int {
+		return strings.Compare(string(a.PartyID), string(b.PartyID))
 	})
 
 	return currentTeamReferees

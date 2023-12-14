@@ -1,0 +1,4 @@
+package vega
+
+type ProposalOneOffTermChangeType = isProposalTerms_Change
+type ProposalOneOffTermBatchChangeType = isBatchProposalTermsChange_Change

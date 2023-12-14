@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -249,8 +250,8 @@ func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time, epoc
 	for partyID := range e.teamSwitches {
 		sortedPartyID = append(sortedPartyID, partyID)
 	}
-	slices.SortStableFunc(sortedPartyID, func(a, b types.PartyID) bool {
-		return a < b
+	slices.SortStableFunc(sortedPartyID, func(a, b types.PartyID) int {
+		return strings.Compare(string(a), string(b))
 	})
 
 	for _, partyID := range sortedPartyID {

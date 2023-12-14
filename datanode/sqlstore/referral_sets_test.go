@@ -21,6 +21,7 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -671,18 +672,26 @@ func flattenReferralSetStatsForEpoch(flattenStats []entities.FlattenReferralSetS
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) int {
 		if a.AtEpoch == b.AtEpoch {
 			if a.SetID == b.SetID {
-				return a.PartyID < b.PartyID
+				return strings.Compare(a.PartyID, b.PartyID)
 			}
-			return a.SetID < b.SetID
+			return strings.Compare(string(a.SetID), string(b.SetID))
 		}
-
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats
+}
+
+func compareUint64(a, b uint64) int {
+	if a < b {
+		return -1
+	} else if a > b {
+		return 1
+	}
+	return 0
 }
 
 func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetStats, party string) []entities.FlattenReferralSetStats {
@@ -694,15 +703,15 @@ func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetS
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) int {
 		if a.AtEpoch == b.AtEpoch {
 			if a.SetID == b.SetID {
-				return a.PartyID < b.PartyID
+				return strings.Compare(a.PartyID, b.PartyID)
 			}
-			return a.SetID < b.SetID
+			return strings.Compare(string(a.SetID), string(b.SetID))
 		}
 
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats

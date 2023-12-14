@@ -208,7 +208,7 @@ func ProposalFromProto(pp *vega.Proposal, txHash TxHash) (Proposal, error) {
 		PartyID:                 PartyID(pp.PartyId),
 		State:                   ProposalState(pp.State),
 		Rationale:               ProposalRationale{pp.Rationale},
-		Terms:                   ProposalTerms{pp.Terms},
+		Terms:                   ProposalTerms{pp.GetTerms()},
 		Reason:                  reason,
 		ErrorDetails:            errDetails,
 		ProposalTime:            time.Unix(0, pp.Timestamp),

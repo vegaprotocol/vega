@@ -27,7 +27,7 @@ var (
 	ErrEmptyNetParamValue = errors.New("empty network parameter value")
 )
 
-func (e *Engine) getNewSpotMarketProposalParameters() *ProposalParameters {
+func (e *Engine) getNewSpotMarketProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalMarketMinClose,
 		netparams.GovernanceProposalMarketMaxClose,
@@ -43,7 +43,7 @@ func (e *Engine) getNewSpotMarketProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
+func (e *Engine) getNewMarketProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalMarketMinClose,
 		netparams.GovernanceProposalMarketMaxClose,
@@ -59,7 +59,7 @@ func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getUpdateMarketProposalParameters() *ProposalParameters {
+func (e *Engine) getUpdateMarketProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateMarketMinClose,
 		netparams.GovernanceProposalUpdateMarketMaxClose,
@@ -75,7 +75,7 @@ func (e *Engine) getUpdateMarketProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getUpdateSpotMarketProposalParameters() *ProposalParameters {
+func (e *Engine) getUpdateSpotMarketProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateMarketMinClose,
 		netparams.GovernanceProposalUpdateMarketMaxClose,
@@ -92,7 +92,7 @@ func (e *Engine) getUpdateSpotMarketProposalParameters() *ProposalParameters {
 }
 
 // getUpdatetMarketStateProposalParameters is reusing the net params defined for market update!
-func (e *Engine) getUpdateMarketStateProposalParameters() *ProposalParameters {
+func (e *Engine) getUpdateMarketStateProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(netparams.GovernanceProposalUpdateMarketMinClose,
 		netparams.GovernanceProposalUpdateMarketMaxClose,
 		netparams.GovernanceProposalUpdateMarketMinEnact,
@@ -107,7 +107,7 @@ func (e *Engine) getUpdateMarketStateProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getReferralProgramNetworkParameters() *ProposalParameters {
+func (e *Engine) getReferralProgramNetworkParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalReferralProgramMinClose,
 		netparams.GovernanceProposalReferralProgramMaxClose,
@@ -123,7 +123,7 @@ func (e *Engine) getReferralProgramNetworkParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getVolumeDiscountProgramNetworkParameters() *ProposalParameters {
+func (e *Engine) getVolumeDiscountProgramNetworkParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalVolumeDiscountProgramMinClose,
 		netparams.GovernanceProposalVolumeDiscountProgramMaxClose,
@@ -139,7 +139,7 @@ func (e *Engine) getVolumeDiscountProgramNetworkParameters() *ProposalParameters
 	)
 }
 
-func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
+func (e *Engine) getNewAssetProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,
 		netparams.GovernanceProposalAssetMaxClose,
@@ -155,7 +155,7 @@ func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getUpdateAssetProposalParameters() *ProposalParameters {
+func (e *Engine) getUpdateAssetProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateAssetMinClose,
 		netparams.GovernanceProposalUpdateAssetMaxClose,
@@ -171,7 +171,7 @@ func (e *Engine) getUpdateAssetProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getUpdateNetworkParameterProposalParameters() *ProposalParameters {
+func (e *Engine) getUpdateNetworkParameterProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateNetParamMinClose,
 		netparams.GovernanceProposalUpdateNetParamMaxClose,
@@ -187,7 +187,7 @@ func (e *Engine) getUpdateNetworkParameterProposalParameters() *ProposalParamete
 	)
 }
 
-func (e *Engine) getNewFreeformProposalParameters() *ProposalParameters {
+func (e *Engine) getNewFreeformProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalFreeformMinClose,
 		netparams.GovernanceProposalFreeformMaxClose,
@@ -203,7 +203,7 @@ func (e *Engine) getNewFreeformProposalParameters() *ProposalParameters {
 	)
 }
 
-func (e *Engine) getNewTransferProposalParameters() *ProposalParameters {
+func (e *Engine) getNewTransferProposalParameters() *types.ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalTransferMinClose,
 		netparams.GovernanceProposalTransferMaxClose,
@@ -223,8 +223,8 @@ func (e *Engine) getProposalParametersFromNetParams(
 	minCloseKey, maxCloseKey, minEnactKey, maxEnactKey, requiredParticipationKey,
 	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey,
 	requiredParticipationLPKey, requiredMajorityLPKey, minEquityLikeShareKey string,
-) *ProposalParameters {
-	pp := ProposalParameters{}
+) *types.ProposalParameters {
+	pp := types.ProposalParameters{}
 	pp.MinClose, _ = e.netp.GetDuration(minCloseKey)
 	pp.MaxClose, _ = e.netp.GetDuration(maxCloseKey)
 	pp.MinEnact, _ = e.netp.GetDuration(minEnactKey)

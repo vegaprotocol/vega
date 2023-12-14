@@ -204,7 +204,7 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	case *protoTypes.ProposalTerms_UpdateMarketState:
 		errs.Merge(checkMarketUpdateState(c))
 	case *protoTypes.ProposalTerms_UpdateReferralProgram:
-		errs.Merge(checkReferralProgram(terms, c))
+		errs.Merge(checkUpdateReferralProgram(terms, c))
 	case *protoTypes.ProposalTerms_UpdateVolumeDiscountProgram:
 		errs.Merge(checkVolumeDiscountProgram(terms, c))
 	default:
@@ -225,16 +225,19 @@ func checkNetworkParameterUpdateChanges(change *protoTypes.ProposalTerms_UpdateN
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_network_parameter.changes", ErrIsRequired)
 	}
 
-	parameter := change.UpdateNetworkParameter.Changes
+	return checkNetworkParameterUpdate(change.UpdateNetworkParameter.Changes).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkNetworkParameterUpdate(parameter *vegapb.NetworkParameter) Errors {
+	errs := NewErrors()
 
 	if len(parameter.Key) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_network_parameter.changes.key", ErrIsRequired)
+		errs.AddForProperty("update_network_parameter.changes.key", ErrIsRequired)
 	}
 
 	if len(parameter.Value) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_network_parameter.changes.value", ErrIsRequired)
+		errs.AddForProperty("update_network_parameter.changes.value", ErrIsRequired)
 	}
-
 	return errs
 }
 
@@ -306,7 +309,7 @@ func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer)
 	return errs
 }
 
-func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateReferralProgram) Errors {
+func checkUpdateReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTerms_UpdateReferralProgram) Errors {
 	errs := NewErrors()
 	if change.UpdateReferralProgram == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program", ErrIsRequired)
@@ -314,18 +317,25 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 	if change.UpdateReferralProgram.Changes == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_referral_program.changes", ErrIsRequired)
 	}
-	changes := change.UpdateReferralProgram.Changes
+
+	return checkReferralProgramChanges(change.UpdateReferralProgram.Changes, terms.EnactmentTimestamp).
+		AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkReferralProgramChanges(changes *vegapb.ReferralProgramChanges, enactmentTimestamp int64) Errors {
+	errs := NewErrors()
+
 	if changes.EndOfProgramTimestamp == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrIsRequired)
+		errs.AddForProperty("update_referral_program.changes.end_of_program_timestamp", ErrIsRequired)
 	} else if changes.EndOfProgramTimestamp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBePositive)
-	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
-		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+		errs.AddForProperty("update_referral_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < enactmentTimestamp {
+		errs.AddForProperty("update_referral_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
 	}
 	if changes.WindowLength == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrIsRequired)
+		errs.AddForProperty("update_referral_program.changes.window_length", ErrIsRequired)
 	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("proposal_submission.terms.change.update_referral_program.changes.window_length", ErrMustBeAtMost100)
+		errs.AddForProperty("update_referral_program.changes.window_length", ErrMustBeAtMost100)
 	}
 
 	tiers := map[string]struct{}{}
@@ -333,7 +343,7 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 		errs.Merge(checkBenefitTier(i, tier))
 		k := tier.MinimumEpochs + "_" + tier.MinimumRunningNotionalTakerVolume
 		if _, ok := tiers[k]; ok {
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", i), fmt.Errorf("duplicate benefit tier"))
+			errs.AddForProperty(fmt.Sprintf("update_referral_program.changes.benefit_tiers.%d", i), fmt.Errorf("duplicate benefit tier"))
 		}
 		tiers[k] = struct{}{}
 	}
@@ -343,7 +353,7 @@ func checkReferralProgram(terms *vegapb.ProposalTerms, change *vegapb.ProposalTe
 		errs.Merge(checkStakingTier(i, tier))
 		k := tier.MinimumStakedTokens
 		if _, ok := tiers[k]; ok {
-			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
+			errs.AddForProperty(fmt.Sprintf("update_referral_program.changes.staking_tiers.%d", i), fmt.Errorf("duplicate staking tier"))
 		}
 		tiers[k] = struct{}{}
 	}
@@ -358,18 +368,25 @@ func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.Prop
 	if change.UpdateVolumeDiscountProgram.Changes == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes", ErrIsRequired)
 	}
-	changes := change.UpdateVolumeDiscountProgram.Changes
+
+	return checkVolumeDiscountProgramChanges(change.UpdateVolumeDiscountProgram.Changes, terms.EnactmentTimestamp).
+		AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkVolumeDiscountProgramChanges(changes *vegapb.VolumeDiscountProgramChanges, enactmentTimestamp int64) Errors {
+	errs := NewErrors()
+
 	if changes.EndOfProgramTimestamp == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrIsRequired)
+		errs.AddForProperty("update_volume_discount_program.changes.end_of_program_timestamp", ErrIsRequired)
 	} else if changes.EndOfProgramTimestamp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBePositive)
-	} else if changes.EndOfProgramTimestamp < terms.EnactmentTimestamp {
-		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
+		errs.AddForProperty("update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBePositive)
+	} else if changes.EndOfProgramTimestamp < enactmentTimestamp {
+		errs.AddForProperty("update_volume_discount_program.changes.end_of_program_timestamp", ErrMustBeGreaterThanEnactmentTimestamp)
 	}
 	if changes.WindowLength == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrIsRequired)
+		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrIsRequired)
 	} else if changes.WindowLength > 100 {
-		errs.AddForProperty("proposal_submission.terms.change.update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
+		errs.AddForProperty("update_volume_discount_program.changes.window_length", ErrMustBeAtMost100)
 	}
 	for i, tier := range changes.BenefitTiers {
 		errs.Merge(checkVolumeBenefitTier(i, tier))
@@ -380,7 +397,7 @@ func checkVolumeDiscountProgram(terms *vegapb.ProposalTerms, change *vegapb.Prop
 
 func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
 	errs := NewErrors()
-	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_volume_discount_program.changes.benefit_tiers.%d", index)
+	propertyPath := fmt.Sprintf("update_volume_discount_program.changes.benefit_tiers.%d", index)
 	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
 		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
 	} else {
@@ -407,7 +424,7 @@ func checkVolumeBenefitTier(index int, tier *vegapb.VolumeBenefitTier) Errors {
 func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 	errs := NewErrors()
 
-	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.benefit_tiers.%d", index)
+	propertyPath := fmt.Sprintf("update_referral_program.changes.benefit_tiers.%d", index)
 
 	if len(tier.MinimumRunningNotionalTakerVolume) == 0 {
 		errs.AddForProperty(propertyPath+".minimum_running_notional_taker_volume", ErrIsRequired)
@@ -459,7 +476,7 @@ func checkBenefitTier(index int, tier *vegapb.BenefitTier) Errors {
 func checkStakingTier(index int, tier *vegapb.StakingTier) Errors {
 	errs := NewErrors()
 
-	propertyPath := fmt.Sprintf("proposal_submission.terms.change.update_referral_program.changes.staking_tiers.%d", index)
+	propertyPath := fmt.Sprintf("update_referral_program.changes.staking_tiers.%d", index)
 
 	if len(tier.MinimumStakedTokens) == 0 {
 		errs.AddForProperty(propertyPath+".minimum_staked_tokens", ErrIsRequired)
@@ -494,23 +511,28 @@ func checkMarketUpdateState(change *protoTypes.ProposalTerms_UpdateMarketState) 
 	if change.UpdateMarketState.Changes == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes", ErrIsRequired)
 	}
-	changes := change.UpdateMarketState.Changes
+	return checkMarketUpdateConfiguration(change.UpdateMarketState.Changes).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkMarketUpdateConfiguration(changes *vegapb.UpdateMarketStateConfiguration) Errors {
+	errs := NewErrors()
+
 	if len(changes.MarketId) == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.marketId", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market_state.changes.marketId", ErrIsRequired)
 	}
 	if changes.UpdateType == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.updateType", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market_state.changes.updateType", ErrIsRequired)
 	}
 	// if the update type is not terminate, price must be empty
 	if changes.UpdateType != vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrMustBeEmpty)
+		return errs.FinalAddForProperty("update_market_state.changes.price", ErrMustBeEmpty)
 	}
 
 	// if termination and price is provided it must be a valid uint
 	if changes.UpdateType == vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil && len(*changes.Price) > 0 {
 		n, overflow := num.UintFromString(*changes.Price, 10)
 		if overflow || n.IsNegative() {
-			return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrIsNotValid)
+			return errs.FinalAddForProperty("update_market_state.changes.price", ErrIsNotValid)
 		}
 	}
 	return errs
@@ -526,80 +548,85 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes", ErrIsRequired)
 	}
 
-	changes := change.NewTransfer.Changes
+	return checkNewTransferConfiguration(change.NewTransfer.Changes).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkNewTransferConfiguration(changes *vegapb.NewTransferConfiguration) Errors {
+	errs := NewErrors()
+
 	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.source_type", ErrIsRequired)
 	}
 	validDest, ok := validTransfers[changes.SourceType]
 	// source account type may be one of the following:
 	if !ok {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.source_type", ErrIsNotValid)
 	}
 	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.destination_type", ErrIsRequired)
 	}
 
 	if _, ok := validDest[changes.DestinationType]; !ok {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 	}
 	dest := changes.DestinationType
 
 	// party accounts: check pubkey
 	if dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL && !IsVegaPublicKey(changes.Destination) {
-		errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
+		errs.AddForProperty("new_transfer.changes.destination", ErrShouldBeAValidVegaPublicKey)
 	}
 
 	// insurance account type requires a source, other sources are global
 	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
 		if len(changes.Source) == 0 {
-			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
+			return errs.FinalAddForProperty("new_transfer.changes.source", ErrIsNotValid)
 		}
 		// destination == source
 		if dest == changes.SourceType && changes.Source == changes.Destination {
-			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+			return errs.FinalAddForProperty("new_transfer.changes.destination", ErrIsNotValid)
 		}
 	} else if len(changes.Source) > 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.source", ErrIsNotValid)
 	}
 
 	// global destination accounts == no source
 	if (dest == protoTypes.AccountType_ACCOUNT_TYPE_GENERAL ||
 		dest == protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE) &&
 		len(changes.Destination) == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.destination", ErrIsNotValid)
 	}
 
 	if changes.TransferType == protoTypes.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.transfer_type", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.transfer_type", ErrIsRequired)
 	}
 
 	if len(changes.Amount) == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.amount", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.amount", ErrIsRequired)
 	}
 
 	n, overflow := num.UintFromString(changes.Amount, 10)
 	if overflow || n.IsNegative() {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.amount", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.amount", ErrIsNotValid)
 	}
 
 	if len(changes.Asset) == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.asset", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.asset", ErrIsRequired)
 	}
 
 	if len(changes.FractionOfBalance) == 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.fraction_of_balance", ErrIsRequired)
 	}
 
 	fraction, err := num.DecimalFromString(changes.FractionOfBalance)
 	if err != nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrIsNotValid)
+		return errs.FinalAddForProperty("new_transfer.changes.fraction_of_balance", ErrIsNotValid)
 	}
 	if !fraction.IsPositive() {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBePositive)
+		return errs.FinalAddForProperty("new_transfer.changes.fraction_of_balance", ErrMustBePositive)
 	}
 
 	if fraction.GreaterThan(num.DecimalOne()) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
+		return errs.FinalAddForProperty("new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
 	}
 
 	if oneoff := changes.GetOneOff(); oneoff != nil {
@@ -611,29 +638,29 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RELATIVE_RETURN ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_RETURN_VOLATILITY ||
 			changes.DestinationType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
-			errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+			errs.AddForProperty("new_transfer.changes.destination_type", ErrIsNotValid)
 		}
 		if oneoff.DeliverOn < 0 {
-			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.oneoff.deliveron", ErrMustBePositiveOrZero)
+			return errs.FinalAddForProperty("new_transfer.changes.oneoff.deliveron", ErrMustBePositiveOrZero)
 		}
 	}
 
 	if recurring := changes.GetRecurring(); recurring != nil {
 		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
-			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
+			return errs.FinalAddForProperty("new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
 		}
 
 		if recurring.DispatchStrategy != nil {
 			if len(changes.Destination) > 0 {
-				errs.AddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+				errs.AddForProperty("new_transfer.changes.destination", ErrIsNotValid)
 			}
 
-			validateDispatchStrategy(changes.DestinationType, recurring.DispatchStrategy, errs, "proposal_submission.terms.change.new_transfer.changes.recurring.dispatch_strategy", "proposal_submission.terms.change.new_transfer.changes.destination_type")
+			validateDispatchStrategy(changes.DestinationType, recurring.DispatchStrategy, errs, "new_transfer.changes.recurring.dispatch_strategy", "new_transfer.changes.destination_type")
 		}
 	}
 
 	if changes.GetRecurring() == nil && changes.GetOneOff() == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.kind", ErrIsRequired)
+		return errs.FinalAddForProperty("new_transfer.changes.kind", ErrIsRequired)
 	}
 
 	return errs
@@ -706,33 +733,39 @@ func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset", ErrIsRequired)
 	}
 
-	if len(change.UpdateAsset.AssetId) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrIsRequired)
-	} else if !IsVegaID(change.UpdateAsset.AssetId) {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.asset_id", ErrShouldBeAValidVegaID)
+	return checkUpdateAsset(change.UpdateAsset).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkUpdateAsset(updateAsset *vegapb.UpdateAsset) Errors {
+	errs := NewErrors()
+
+	if len(updateAsset.AssetId) == 0 {
+		errs.AddForProperty("update_asset.asset_id", ErrIsRequired)
+	} else if !IsVegaID(updateAsset.AssetId) {
+		errs.AddForProperty("update_asset.asset_id", ErrShouldBeAValidVegaID)
 	}
 
-	if change.UpdateAsset.Changes == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes", ErrIsRequired)
+	if updateAsset.Changes == nil {
+		return errs.FinalAddForProperty("update_asset.changes", ErrIsRequired)
 	}
 
-	if len(change.UpdateAsset.Changes.Quantum) <= 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsRequired)
-	} else if quantum, err := num.DecimalFromString(change.UpdateAsset.Changes.Quantum); err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrIsNotValidNumber)
+	if len(updateAsset.Changes.Quantum) <= 0 {
+		errs.AddForProperty("update_asset.changes.quantum", ErrIsRequired)
+	} else if quantum, err := num.DecimalFromString(updateAsset.Changes.Quantum); err != nil {
+		errs.AddForProperty("update_asset.changes.quantum", ErrIsNotValidNumber)
 	} else if quantum.LessThanOrEqual(num.DecimalZero()) {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.quantum", ErrMustBePositive)
+		errs.AddForProperty("update_asset.changes.quantum", ErrMustBePositive)
 	}
 
-	if change.UpdateAsset.Changes.Source == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsRequired)
+	if updateAsset.Changes.Source == nil {
+		return errs.FinalAddForProperty("update_asset.changes.source", ErrIsRequired)
 	}
 
-	switch s := change.UpdateAsset.Changes.Source.(type) {
+	switch s := updateAsset.Changes.Source.(type) {
 	case *protoTypes.AssetDetailsUpdate_Erc20:
 		errs.Merge(checkERC20UpdateAssetSource(s))
 	default:
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsNotValid)
+		return errs.FinalAddForProperty("update_asset.changes.source", ErrIsNotValid)
 	}
 
 	return errs
@@ -742,31 +775,31 @@ func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors 
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20", ErrIsRequired)
+		return errs.FinalAddForProperty("update_asset.changes.source.erc20", ErrIsRequired)
 	}
 
 	asset := s.Erc20
 
 	if len(asset.LifetimeLimit) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.lifetime_limit", ErrIsRequired)
+		errs.AddForProperty("update_asset.changes.source.erc20.lifetime_limit", ErrIsRequired)
 	} else {
 		if lifetimeLimit, ok := big.NewInt(0).SetString(asset.LifetimeLimit, 10); !ok {
-			errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.lifetime_limit", ErrIsNotValidNumber)
+			errs.AddForProperty("update_asset.changes.source.erc20.lifetime_limit", ErrIsNotValidNumber)
 		} else {
 			if lifetimeLimit.Cmp(big.NewInt(0)) <= 0 {
-				errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.lifetime_limit", ErrMustBePositive)
+				errs.AddForProperty("update_asset.changes.source.erc20.lifetime_limit", ErrMustBePositive)
 			}
 		}
 	}
 
 	if len(asset.WithdrawThreshold) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.withdraw_threshold", ErrIsRequired)
+		errs.AddForProperty("update_asset.changes.source.erc20.withdraw_threshold", ErrIsRequired)
 	} else {
 		if withdrawThreshold, ok := big.NewInt(0).SetString(asset.WithdrawThreshold, 10); !ok {
-			errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.withdraw_threshold", ErrIsNotValidNumber)
+			errs.AddForProperty("update_asset.changes.source.erc20.withdraw_threshold", ErrIsNotValidNumber)
 		} else {
 			if withdrawThreshold.Cmp(big.NewInt(0)) <= 0 {
-				errs.AddForProperty("proposal_submission.terms.change.update_asset.changes.source.erc20.withdraw_threshold", ErrMustBePositive)
+				errs.AddForProperty("update_asset.changes.source.erc20.withdraw_threshold", ErrMustBePositive)
 			}
 		}
 	}
@@ -785,15 +818,20 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes", ErrIsRequired)
 	}
 
-	changes := change.NewSpotMarket.Changes
+	return checkNewSpotMarketConfiguration(change.NewSpotMarket.Changes).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration) Errors {
+	errs := NewErrors()
+
 	isCorrectProduct := false
 
 	if changes.Instrument == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.instrument", ErrIsRequired)
 	}
 
 	if changes.Instrument.Product == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.instrument.product", ErrIsRequired)
 	}
 
 	switch changes.Instrument.Product.(type) {
@@ -804,20 +842,20 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 	}
 
 	if !isCorrectProduct {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product", ErrIsMismatching)
+		return errs.FinalAddForProperty("new_spot_market.changes.instrument.product", ErrIsMismatching)
 	}
 	if changes.DecimalPlaces >= 150 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.decimal_places", ErrMustBeLessThan150)
+		errs.AddForProperty("new_spot_market.changes.decimal_places", ErrMustBeLessThan150)
 	}
 
 	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.position_decimal_places", ErrMustBeWithinRange7)
+		errs.AddForProperty("new_spot_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
-	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_spot_market.changes"))
-	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.new_spot_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument"))
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_spot_market.changes"))
+	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "new_spot_market.changes"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
-	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.new_spot_market.changes.sla_params"))
+	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -832,46 +870,50 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes", ErrIsRequired)
 	}
 
-	changes := change.NewMarket.Changes
+	return checkNewMarketChangesConfiguration(change.NewMarket.Changes).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) Errors {
+	errs := NewErrors()
 
 	if changes.DecimalPlaces >= 150 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.decimal_places", ErrMustBeLessThan150)
+		errs.AddForProperty("new_market.changes.decimal_places", ErrMustBeLessThan150)
 	}
 
 	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.position_decimal_places", ErrMustBeWithinRange7)
+		errs.AddForProperty("new_market.changes.position_decimal_places", ErrMustBeWithinRange7)
 	}
 
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+			errs.AddForProperty("new_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
 		} else if linearSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+			errs.AddForProperty("new_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
 		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+			errs.AddForProperty("new_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
 		}
 	}
 
 	if successor := changes.Successor; successor != nil {
 		if len(successor.InsurancePoolFraction) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsRequired)
+			errs.AddForProperty("new_market.changes.successor.insurance_pool_fraction", ErrIsRequired)
 		} else {
 			if ipf, err := num.DecimalFromString(successor.InsurancePoolFraction); err != nil {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsNotValidNumber)
+				errs.AddForProperty("new_market.changes.successor.insurance_pool_fraction", ErrIsNotValidNumber)
 			} else if ipf.IsNegative() || ipf.GreaterThan(num.DecimalFromInt64(1)) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrMustBeWithinRange01)
+				errs.AddForProperty("new_market.changes.successor.insurance_pool_fraction", ErrMustBeWithinRange01)
 			}
 		}
 	}
 
-	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.new_market.changes"))
-	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
-	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "new_market.changes"))
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "new_market.changes"))
+	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "new_market.changes"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
-	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.new_market.changes.sla_params"))
-	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "proposal_submission.terms.change.new_market.changes.liquidity_fee_settings"))
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
 	return errs
 }
 
@@ -882,37 +924,42 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market", ErrIsRequired)
 	}
 
-	if len(change.UpdateMarket.MarketId) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrIsRequired)
-	} else if !IsVegaID(change.UpdateMarket.MarketId) {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.market_id", ErrShouldBeAValidVegaID)
+	return checkUpdateMarket(change.UpdateMarket).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkUpdateMarket(updateMarket *vegapb.UpdateMarket) Errors {
+	errs := NewErrors()
+
+	if len(updateMarket.MarketId) == 0 {
+		errs.AddForProperty("update_market.market_id", ErrIsRequired)
+	} else if !IsVegaID(updateMarket.MarketId) {
+		errs.AddForProperty("update_market.market_id", ErrShouldBeAValidVegaID)
 	}
 
-	if change.UpdateMarket.Changes == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes", ErrIsRequired)
+	if updateMarket.Changes == nil {
+		return errs.FinalAddForProperty("update_market.changes", ErrIsRequired)
 	}
 
-	changes := change.UpdateMarket.Changes
+	changes := updateMarket.Changes
 
 	if len(changes.LinearSlippageFactor) > 0 {
 		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
 		if err != nil {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+			errs.AddForProperty("update_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
 		} else if linearSlippage.IsNegative() {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+			errs.AddForProperty("update_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
 		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+			errs.AddForProperty("update_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
 		}
 	}
 
-	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "proposal_submission.terms.change.update_market.changes"))
-	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
-	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
+	errs.Merge(checkLiquidationStrategy(changes.LiquidationStrategy, "update_market.changes"))
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "update_market.changes"))
+	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
-	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "proposal_submission.terms.change.update_market.changes.sla_params"))
-	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "proposal_submission.terms.change.update_market.changes.liquidity_fee_settings"))
-
+	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "update_market.changes.sla_params"))
+	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_market.changes.liquidity_fee_settings"))
 	return errs
 }
 
@@ -923,21 +970,27 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market", ErrIsRequired)
 	}
 
-	if len(change.UpdateSpotMarket.MarketId) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrIsRequired)
-	} else if !IsVegaID(change.UpdateSpotMarket.MarketId) {
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrShouldBeAValidVegaID)
+	return checkUpdateSpotMarket(change.UpdateSpotMarket).AddPrefix("proposal_submission.terms.change.")
+}
+
+func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
+	errs := NewErrors()
+
+	if len(updateSpotMarket.MarketId) == 0 {
+		errs.AddForProperty("update_spot_market.market_id", ErrIsRequired)
+	} else if !IsVegaID(updateSpotMarket.MarketId) {
+		errs.AddForProperty("update_spot_market.market_id", ErrShouldBeAValidVegaID)
 	}
 
-	if change.UpdateSpotMarket.Changes == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes", ErrIsRequired)
+	if updateSpotMarket.Changes == nil {
+		return errs.FinalAddForProperty("update_spot_market.changes", ErrIsRequired)
 	}
 
-	changes := change.UpdateSpotMarket.Changes
-	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_spot_market.changes"))
-	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.update_spot_market.changes"))
+	changes := updateSpotMarket.Changes
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "update_spot_market.changes"))
+	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
-	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.update_spot_market.changes.sla_params"))
+	errs.Merge(checkSLAParams(changes.SlaParams, "update_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -1089,24 +1142,24 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	errs := NewErrors()
 
 	if instrument == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.instrument", ErrIsRequired)
 	}
 
 	if len(instrument.Code) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.code", ErrIsRequired)
+		errs.AddForProperty("update_market.changes.instrument.code", ErrIsRequired)
 	}
 
 	if instrument.Product == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.instrument.product", ErrIsRequired)
 	}
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
 	case *protoTypes.UpdateInstrumentConfiguration_Perpetual:
-		errs.Merge(checkUpdatePerps(product.Perpetual, "proposal_submission.terms.change.update_market.changes.instrument.product"))
+		errs.Merge(checkUpdatePerps(product.Perpetual, "update_market.changes.instrument.product"))
 	default:
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
+		return errs.FinalAddForProperty("update_market.changes.instrument.product", ErrIsNotValid)
 	}
 
 	return errs
@@ -1116,18 +1169,18 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future", ErrIsRequired)
+		return errs.FinalAddForProperty("new_market.changes.instrument.product.future", ErrIsRequired)
 	}
 
 	if len(future.SettlementAsset) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.settlement_asset", ErrIsRequired)
+		errs.AddForProperty("new_market.changes.instrument.product.future.settlement_asset", ErrIsRequired)
 	}
 	if len(future.QuoteName) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+		errs.AddForProperty("new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", true))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "new_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
 
 	return errs
@@ -1244,20 +1297,20 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	errs := NewErrors()
 
 	if spot == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.instrument.product.spot", ErrIsRequired)
 	}
 
 	if len(spot.BaseAsset) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.base_asset", ErrIsRequired)
+		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.base_asset", ErrIsRequired)
 	}
 	if len(spot.QuoteAsset) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsRequired)
+		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsRequired)
 	}
 	if spot.BaseAsset == spot.QuoteAsset {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsNotValid)
+		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsNotValid)
 	}
 	if len(spot.Name) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
+		errs.AddForProperty("new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
 	}
 	return errs
 }
@@ -1266,15 +1319,15 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.instrument.product.future", ErrIsRequired)
 	}
 
 	if len(future.QuoteName) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+		errs.AddForProperty("update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "update_market.changes.instrument.product.future", false))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
@@ -1632,22 +1685,22 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+			errs.AddForProperty("new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
 			if !isBindingMatchingSpec(future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+				errs.AddForProperty("new_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 
 		if len(future.DataSourceSpecBinding.TradingTerminationProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
+			errs.AddForProperty("new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
 		} else {
 			if future.DataSourceSpecForTradingTermination == nil || future.DataSourceSpecForTradingTermination.GetExternal() != nil && !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
+				errs.AddForProperty("new_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
+		errs.AddForProperty("new_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
@@ -1658,14 +1711,14 @@ func checkNewPerpsOracleBinding(perps *protoTypes.PerpetualProduct) Errors {
 
 	if perps.DataSourceSpecBinding != nil {
 		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+			errs.AddForProperty("new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
 			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+				errs.AddForProperty("new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+		errs.AddForProperty("new_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
@@ -1675,22 +1728,22 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+			errs.AddForProperty("update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
 			if !isBindingMatchingSpec(future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+				errs.AddForProperty("update_market.changes.instrument.product.future.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 
 		if len(future.DataSourceSpecBinding.TradingTerminationProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
+			errs.AddForProperty("update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsRequired)
 		} else {
 			if !isBindingMatchingSpec(future.DataSourceSpecForTradingTermination, future.DataSourceSpecBinding.TradingTerminationProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
+				errs.AddForProperty("update_market.changes.instrument.product.future.data_source_spec_binding.trading_termination_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
+		errs.AddForProperty("update_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
@@ -1700,14 +1753,14 @@ func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpetualProduct) Err
 	errs := NewErrors()
 	if perps.DataSourceSpecBinding != nil {
 		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
-			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+			errs.AddForProperty("update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
 		} else {
 			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
-				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+				errs.AddForProperty("update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
 			}
 		}
 	} else {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+		errs.AddForProperty("update_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs
@@ -1717,7 +1770,7 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsRequired)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters", ErrIsRequired)
 	}
 
 	switch parameters := config.RiskParameters.(type) {
@@ -1726,7 +1779,7 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	case *protoTypes.NewMarketConfiguration_LogNormal:
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsNotValid)
+		errs.AddForProperty("new_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs
@@ -1824,7 +1877,7 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters", ErrIsRequired)
 	}
 
 	switch parameters := config.RiskParameters.(type) {
@@ -1833,7 +1886,7 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	case *protoTypes.UpdateMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateLogNormalRiskParameters(parameters))
 	default:
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters", ErrIsNotValid)
+		errs.AddForProperty("update_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs
@@ -1843,7 +1896,7 @@ func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfigurat
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters", ErrIsRequired)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters", ErrIsRequired)
 	}
 
 	switch parameters := config.RiskParameters.(type) {
@@ -1852,7 +1905,7 @@ func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfigurat
 	case *protoTypes.UpdateSpotMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateSpotLogNormalRiskParameters(parameters))
 	default:
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters", ErrIsNotValid)
+		errs.AddForProperty("update_spot_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs
@@ -1862,19 +1915,19 @@ func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) 
 	errs := NewErrors()
 
 	if params.Simple == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.simple", ErrIsRequired)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.simple", ErrIsRequired)
 	}
 
 	if params.Simple.MinMoveDown > 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+		errs.AddForProperty("new_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
 	}
 
 	if params.Simple.MaxMoveUp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+		errs.AddForProperty("new_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
 	}
 
 	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.simple.probability_of_trading",
+		errs.AddForProperty("new_market.changes.risk_parameters.simple.probability_of_trading",
 			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
 		)
 	}
@@ -1886,19 +1939,19 @@ func checkNewSpotSimpleParameters(params *protoTypes.NewSpotMarketConfiguration_
 	errs := NewErrors()
 
 	if params.Simple == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.simple", ErrIsRequired)
 	}
 
 	if params.Simple.MinMoveDown > 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+		errs.AddForProperty("new_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
 	}
 
 	if params.Simple.MaxMoveUp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+		errs.AddForProperty("new_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
 	}
 
 	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.probability_of_trading",
+		errs.AddForProperty("new_spot_market.changes.risk_parameters.simple.probability_of_trading",
 			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
 		)
 	}
@@ -1910,19 +1963,19 @@ func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Si
 	errs := NewErrors()
 
 	if params.Simple == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.simple", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.simple", ErrIsRequired)
 	}
 
 	if params.Simple.MinMoveDown > 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+		errs.AddForProperty("update_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
 	}
 
 	if params.Simple.MaxMoveUp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+		errs.AddForProperty("update_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
 	}
 
 	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
-		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.simple.probability_of_trading",
+		errs.AddForProperty("update_market.changes.risk_parameters.simple.probability_of_trading",
 			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
 		)
 	}
@@ -1934,19 +1987,19 @@ func checkUpdateSpotSimpleParameters(params *protoTypes.UpdateSpotMarketConfigur
 	errs := NewErrors()
 
 	if params.Simple == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple", ErrIsRequired)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.simple", ErrIsRequired)
 	}
 
 	if params.Simple.MinMoveDown > 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+		errs.AddForProperty("update_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
 	}
 
 	if params.Simple.MaxMoveUp < 0 {
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+		errs.AddForProperty("update_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
 	}
 
 	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
-		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.probability_of_trading",
+		errs.AddForProperty("update_spot_market.changes.risk_parameters.simple.probability_of_trading",
 			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
 		)
 	}
@@ -1958,43 +2011,43 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal", ErrIsRequired)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal", ErrIsRequired)
 	}
 
 	if params.LogNormal.Params == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
 	}
 
 	if params.LogNormal.RiskAversionParameter < 1e-8 || params.LogNormal.RiskAversionParameter > 0.1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 0.1]"))
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 0.1]"))
 	}
 
 	if params.LogNormal.Tau < 1e-8 || params.LogNormal.Tau > 1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.tau", errors.New("must be between [1e-8, 1]"))
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.tau", errors.New("must be between [1e-8, 1]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Mu) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Mu < -1e-6 || params.LogNormal.Params.Mu > 1e-6 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-1e-6,1e-6]"))
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-1e-6,1e-6]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Sigma) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 50 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.R < -1 || params.LogNormal.Params.R > 1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
+		return errs.FinalAddForProperty("new_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
 	}
 
 	return errs
@@ -2004,35 +2057,35 @@ func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfigura
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal", ErrIsRequired)
 	}
 
 	if params.LogNormal.Params == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
 	}
 
 	if params.LogNormal.RiskAversionParameter <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
 	}
 
 	if params.LogNormal.Tau <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Mu) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Sigma) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Sigma <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
 	}
 
 	return errs
@@ -2042,43 +2095,43 @@ func checkNewSpotLogNormalRiskParameters(params *protoTypes.NewSpotMarketConfigu
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
 	}
 
 	if params.LogNormal.Params == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
 	}
 
 	if params.LogNormal.RiskAversionParameter < 1e-8 || params.LogNormal.RiskAversionParameter > 0.1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 0.1]"))
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 0.1]"))
 	}
 
 	if params.LogNormal.Tau < 1e-8 || params.LogNormal.Tau > 1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.tau", errors.New("must be between [1e-8, 1]"))
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.tau", errors.New("must be between [1e-8, 1]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Mu) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Mu < -1e-6 || params.LogNormal.Params.Mu > 1e-6 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-1e-6,1e-6]"))
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-1e-6,1e-6]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Sigma) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 50 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.R < -1 || params.LogNormal.Params.R > 1 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
 	}
 
 	return errs
@@ -2088,35 +2141,35 @@ func checkUpdateSpotLogNormalRiskParameters(params *protoTypes.UpdateSpotMarketC
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
 	}
 
 	if params.LogNormal.Params == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
 	}
 
 	if params.LogNormal.RiskAversionParameter <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
 	}
 
 	if params.LogNormal.Tau <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Mu) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.Sigma) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
 	}
 
 	if params.LogNormal.Params.Sigma <= 0 {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
 	}
 
 	if math.IsNaN(params.LogNormal.Params.R) {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+		return errs.FinalAddForProperty("update_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
 	}
 
 	return errs

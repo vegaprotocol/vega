@@ -35,6 +35,7 @@
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
+- [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
 
 ### 🐛 Fixes
 
@@ -75,6 +76,10 @@
 - [10233](https://github.com/vegaprotocol/vega/issues/10233) - Fix expiring stop orders panic.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Rework pagination to align with the natural reverse-chronological order of the block explorer.
 - [10241](https://github.com/vegaprotocol/vega/issues/10241) - Do not include start epoch on referees set statistics.
+- [10219](https://github.com/vegaprotocol/vega/issues/10219) - Candles API should fill gaps when there are periods with no trades.
+- [10050](https://github.com/vegaprotocol/vega/issues/10050) - Cleanup `mempool` cache on commit.
+- [9882](https://github.com/vegaprotocol/vega/issues/9882) - Fix `net params` sent on closed channel.
+- [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
 
 ## 0.73.0
 
@@ -439,6 +444,7 @@
 - [9916](https://github.com/vegaprotocol/vega/issues/9916) - Fix activity streak locked account until epoch.
 - [9924](https://github.com/vegaprotocol/vega/issues/9924) - Referral set referees `API` should aggregate by number of epochs.
 - [9922](https://github.com/vegaprotocol/vega/issues/9922) - Ensure the factors in referral program account for set eligibility.
+- [10249](https://github.com/vegaprotocol/vega/issues/10249) - Upgrade `cometbft` to 0.38.2
 
 ## 0.72.1
 
