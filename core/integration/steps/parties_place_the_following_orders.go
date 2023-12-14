@@ -396,11 +396,23 @@ func buildStopOrder(
 	if row.row.HasColumn("ra size override setting") {
 		value := row.RisesAboveSizeOverrideSetting()
 		sub.RisesAbove.SizeOverrideSetting = value
+
+		if row.row.HasColumn("ra size override percentage") {
+			percentage := row.RisesAboveSizeOverridePercentage()
+			percentageValue := num.MustDecimalFromString(percentage)
+			sub.RisesAbove.SizeOverrideValue = &types.StopOrderSizeOverrideValue{PercentageSize: percentageValue}
+		}
 	}
 
 	if row.row.HasColumn("fb size override setting") {
 		value := row.FallsBelowSizeOverrideSetting()
 		sub.FallsBelow.SizeOverrideSetting = value
+
+		if row.row.HasColumn("fb size override percentage") {
+			percentage := row.FallsBelowSizeOverridePercentage()
+			percentageValue := num.MustDecimalFromString(percentage)
+			sub.FallsBelow.SizeOverrideValue = &types.StopOrderSizeOverrideValue{PercentageSize: percentageValue}
+		}
 	}
 
 	return sub, nil
@@ -430,9 +442,9 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"pegged reference",
 		"pegged offset",
 		"ra size override setting",
-		"ra size override reference",
+		"ra size override percentage",
 		"fb size override setting",
-		"fb size override reference",
+		"fb size override percentage",
 	})
 }
 
@@ -603,8 +615,8 @@ func (r submitOrderRow) RisesAboveSizeOverrideSetting() types.StopOrderSizeOverr
 	return r.row.MustSizeOverrideSetting("ra size override setting")
 }
 
-func (r submitOrderRow) RisesAboveSizeOverrideReference() string {
-	return r.row.MustStr("ra size override reference")
+func (r submitOrderRow) RisesAboveSizeOverridePercentage() string {
+	return r.row.MustStr("ra size override percentage")
 }
 
 func (r submitOrderRow) FallsBelowSizeOverrideSetting() types.StopOrderSizeOverrideSetting {
@@ -614,6 +626,6 @@ func (r submitOrderRow) FallsBelowSizeOverrideSetting() types.StopOrderSizeOverr
 	return r.row.MustSizeOverrideSetting("fb size override setting")
 }
 
-func (r submitOrderRow) FallsBelowSizeOverrideReference() string {
-	return r.row.MustStr("fb size override reference")
+func (r submitOrderRow) FallsBelowSizeOverridePercentage() string {
+	return r.row.MustStr("fb size override percentage")
 }
