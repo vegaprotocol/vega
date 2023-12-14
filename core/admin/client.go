@@ -24,29 +24,19 @@ import (
 	"net/url"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/gorilla/rpc/json"
 )
 
 // Client implement a socket client allowing to run simple RPC commands.
 type Client struct {
-	log  *logging.Logger
 	cfg  Config
 	http *http.Client
 }
 
 // NewClient returns a new instance of the RPC socket client.
-func NewClient(
-	log *logging.Logger,
-	config Config,
-) *Client {
-	// setup logger
-	log = log.Named(clientNamedLogger)
-	log.SetLevel(config.Level.Get())
-
+func NewClient(config Config) *Client {
 	return &Client{
-		log: log,
 		cfg: config,
 		http: &http.Client{
 			Transport: &http.Transport{
@@ -79,7 +69,7 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 
 	resp, err := s.http.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("failed to post data %q: %w", string(req), err)
+		return fmt.Errorf("failed to contact vega socket: %w", err)
 	}
 	defer resp.Body.Close()
 

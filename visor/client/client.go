@@ -20,7 +20,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
 )
 
 type AdminClient interface {
@@ -31,18 +30,14 @@ type Factory interface {
 	GetClient(socketPath, httpPath string) AdminClient
 }
 
-type clientFactory struct {
-	log *logging.Logger
-}
+type clientFactory struct{}
 
-func NewClientFactory(log *logging.Logger) Factory {
-	return &clientFactory{
-		log: log,
-	}
+func NewClientFactory() Factory {
+	return &clientFactory{}
 }
 
 func (cf *clientFactory) GetClient(socketPath, httpPath string) AdminClient {
-	return admin.NewClient(cf.log, admin.Config{
+	return admin.NewClient(admin.Config{
 		Server: admin.ServerConfig{
 			SocketPath: socketPath,
 			HTTPPath:   httpPath,
