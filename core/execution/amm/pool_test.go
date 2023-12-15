@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -50,28 +51,28 @@ func testVolumeBetweenPrices(t *testing.T) {
 			price1:         num.NewUint(2000),
 			price2:         num.NewUint(2200),
 			side:           types.SideSell,
-			expectedVolume: 3049821,
+			expectedVolume: 1818,
 		},
 		{
 			name:           "full volume upper curve with bound creep",
 			price1:         num.NewUint(1500),
 			price2:         num.NewUint(3500),
 			side:           types.SideSell,
-			expectedVolume: 3049821,
+			expectedVolume: 1818,
 		},
 		{
 			name:           "full volume lower curve",
 			price1:         num.NewUint(1800),
 			price2:         num.NewUint(2000),
 			side:           types.SideBuy,
-			expectedVolume: 3340281,
+			expectedVolume: 2222,
 		},
 		{
 			name:           "full volume lower curve with bound creep",
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(2500),
 			side:           types.SideBuy,
-			expectedVolume: 3340281,
+			expectedVolume: 2222,
 		},
 	}
 
@@ -103,23 +104,23 @@ func testTradePrice(t *testing.T) {
 		},
 		{
 			name:              "fair price positive position",
-			expectedPrice:     "881",
-			position:          100,
-			balance:           100000000000,
+			expectedPrice:     "1999",
+			position:          1,
+			balance:           1000000,
 			averageEntryPrice: num.NewUint(2000),
 		},
 		{
 			name:              "fair price negative position",
-			expectedPrice:     "96",
-			position:          -100,
-			balance:           100000000000,
+			expectedPrice:     "1409",
+			position:          -1,
+			balance:           1000000,
 			averageEntryPrice: num.NewUint(2000),
 		},
 		{
 			name:              "trade price incoming buy",
-			expectedPrice:     "882",
-			position:          100,
-			balance:           100000000000,
+			expectedPrice:     "2000",
+			position:          1,
+			balance:           1000000,
 			averageEntryPrice: num.NewUint(2000),
 			order: &types.Order{
 				Side: types.SideBuy,
@@ -128,9 +129,9 @@ func testTradePrice(t *testing.T) {
 		},
 		{
 			name:              "trade price incoming buy",
-			expectedPrice:     "880",
-			position:          100,
-			balance:           100000000000,
+			expectedPrice:     "1998",
+			position:          1,
+			balance:           1000000,
 			averageEntryPrice: num.NewUint(2000),
 			order: &types.Order{
 				Side: types.SideSell,
@@ -142,14 +143,9 @@ func testTradePrice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			order := tt.order
-			if tt.order == nil {
-				// size zero means we asking for a fair price
-				order = &types.Order{Side: types.SideBuy, Size: 0}
-			}
-
 			ensurePosition(t, p, tt.position, tt.averageEntryPrice)
 
-			if tt.position != 0 {
+			if tt.position < 0 {
 				ensureBalances(t, p, tt.balance)
 			}
 			fairPrice := p.pool.TradePrice(order)
@@ -182,6 +178,48 @@ func ensureBalances(t *testing.T, p *tstPool, balance uint64) {
 	p.col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(mar, nil)
 }
 
+func TestNotebook(t *testing.T) {
+	// Note that these were verified using Tom's jupyter notebook, so don't go arbitrarily changing the numbers
+	// without re-verifying!
+
+	p := newTestPool(t)
+	defer p.ctrl.Finish()
+
+	base := num.NewUint(2000)
+	low := num.NewUint(1800)
+	up := num.NewUint(2200)
+
+	pos := int64(0)
+
+	ensurePosition(t, p, pos, nil)
+	volume := p.pool.VolumeBetweenPrices(types.SideBuy, base, low)
+	assert.Equal(t, int(2222), int(volume))
+
+	ensurePosition(t, p, pos, nil)
+	volume = p.pool.VolumeBetweenPrices(types.SideSell, up, base)
+	assert.Equal(t, int(1818), int(volume))
+
+	lowmid := num.NewUint(1900)
+	upmid := num.NewUint(2100)
+
+	ensurePosition(t, p, pos, nil)
+	volume = p.pool.VolumeBetweenPrices(types.SideBuy, low, lowmid)
+	assert.Equal(t, int(1155), int(volume))
+
+	ensurePosition(t, p, pos, nil)
+	volume = p.pool.VolumeBetweenPrices(types.SideSell, upmid, up)
+	assert.Equal(t, int(876), int(volume))
+
+	ensurePosition(t, p, -876, upmid.Clone())
+	ensureBalances(t, p, 100000)
+	fairPrice := p.pool.TradePrice(nil)
+	assert.Equal(t, "2094", fairPrice.String())
+
+	ensurePosition(t, p, 1154, lowmid.Clone())
+	fairPrice = p.pool.TradePrice(nil)
+	assert.Equal(t, "1893", fairPrice.String())
+}
+
 type tstPool struct {
 	pool *Pool
 	col  *mocks.MockCollateral
@@ -195,7 +233,7 @@ func newTestPool(t *testing.T) *tstPool {
 	col := mocks.NewMockCollateral(ctrl)
 	pos := mocks.NewMockPosition(ctrl)
 
-	sqrter := &Sqrter{cache: map[string]*num.Uint{}}
+	sqrter := &Sqrter{cache: map[string]num.Decimal{}}
 
 	submit := &types.SubmitAMM{
 		AMMBaseCommand: types.AMMBaseCommand{
@@ -203,13 +241,14 @@ func newTestPool(t *testing.T) *tstPool {
 			MarketID:          vgcrypto.RandomHash(),
 			SlippageTolerance: num.DecimalFromFloat(0.1),
 		},
-		CommitmentAmount: num.NewUint(10000000000),
+		// 0000000000000
+		CommitmentAmount: num.NewUint(100000),
 		Parameters: &types.ConcentratedLiquidityParameters{
 			Base:                    num.NewUint(2000),
 			LowerBound:              num.NewUint(1800),
 			UpperBound:              num.NewUint(2200),
-			MarginRatioAtLowerBound: nil,
-			MarginRatioAtUpperBound: nil,
+			MarginRatioAtLowerBound: ptr.From(num.DecimalFromFloat(0.02)),
+			MarginRatioAtUpperBound: ptr.From(num.DecimalFromFloat(0.02)),
 		},
 	}
 
@@ -222,13 +261,13 @@ func newTestPool(t *testing.T) *tstPool {
 		col,
 		pos,
 		&types.RiskFactor{
-			Short: num.DecimalFromFloat(0.08),
-			Long:  num.DecimalFromFloat(0.08),
+			Short: num.DecimalFromFloat(0.02),
+			Long:  num.DecimalFromFloat(0.02),
 		},
 		&types.ScalingFactors{
-			InitialMargin: num.DecimalFromFloat(1.5),
+			InitialMargin: num.DecimalFromFloat(1.25), // this is 1/0.8 which is margin_usage_at_bound_above in the note-book
 		},
-		num.DecimalOne(),
+		num.DecimalZero(),
 		num.UintOne(),
 	)
 

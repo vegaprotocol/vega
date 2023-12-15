@@ -152,29 +152,43 @@ func (p *Pool) Update(
 	p.setCurves(rf, sf, linearSlippage)
 }
 
-func calculateVirtualLiquidity(
+// generateCurve creates the curve details and calculates its virtual liquidity.
+func generateCurve(
 	sqrt sqrtFn,
 	commitment,
 	low, high *num.Uint,
+	p *num.Uint,
 	riskFactor,
 	marginFactor,
 	linearSlippage num.Decimal,
 	marginRatio *num.Decimal,
-) (*num.Uint, num.Decimal) {
+) *curve {
+	// rf = 1 / ( mf * ( risk-factor + slippage ) )
 	rf := num.DecimalOne().Div(marginFactor.Mul(riskFactor.Add(linearSlippage)))
 	if marginRatio != nil {
-		// min(rf, 1/margin-ratio)
+		// rf = min(rf, 1/margin-ratio)
 		rf = num.MinD(rf, num.DecimalOne().Div(*marginRatio))
 	}
 
-	// v_worst = rf * commitment
-	vw, _ := num.UintFromDecimal(rf.Mul(num.DecimalFromUint(commitment)))
+	// calculate the theoretical volume at the extreme i.e upper-bound for high curve, lower bound for low curve
+	// pv = rf * commitment / p
+	pv := rf.Mul(commitment.ToDecimal()).Div(p.ToDecimal())
 
-	// L = v_worst / ( sqrt(high) - sqrt(low) )
-	// where if calculating for the lower curve high = base, low = lower_bound
-	// and if the upper curve, high = upper_bound, low = base
-	denom := num.UintZero().Sub(sqrt(high), sqrt(low))
-	return num.UintOne().Div(vw, denom), rf
+	// pv * sqrt(high) * sqrt(low)
+	term1 := pv.Mul(sqrt(high).Mul(sqrt(low)))
+
+	// sqrt(high) - sqrt(low)
+	term2 := sqrt(high).Sub(sqrt(low))
+
+	// L = pv * sqrt(high) * sqrt(low) / ( sqrt(high) - sqrt(low) )
+	l := term1.Div(term2)
+	ld, _ := num.UintFromDecimal(l)
+	return &curve{
+		l:    ld,
+		rf:   rf,
+		low:  low,
+		high: high,
+	}
 }
 
 func (p *Pool) setCurves(
@@ -187,54 +201,44 @@ func (p *Pool) setCurves(
 	base := num.UintZero().Mul(p.Parameters.Base, p.priceFactor)
 	upperBound := num.UintZero().Mul(p.Parameters.UpperBound, p.priceFactor)
 
-	l, rf := calculateVirtualLiquidity(
+	p.lower = generateCurve(
 		p.sqrt,
 		p.Commitment.Clone(),
 		lowerBound,
 		base,
+		lowerBound,
 		rfs.Long,
 		sfs.InitialMargin,
 		linearSlippage,
 		p.Parameters.MarginRatioAtLowerBound,
 	)
-	p.lower = &curve{
-		l:    l,
-		rf:   rf,
-		low:  lowerBound,
-		high: base,
-	}
 
-	l, rf = calculateVirtualLiquidity(
+	p.upper = generateCurve(
 		p.sqrt,
 		p.Commitment.Clone(),
 		base.Clone(),
+		upperBound,
 		upperBound,
 		rfs.Short,
 		sfs.InitialMargin,
 		linearSlippage,
 		p.Parameters.MarginRatioAtUpperBound,
 	)
-	p.upper = &curve{
-		l:    l,
-		rf:   rf,
-		low:  base,
-		high: upperBound,
-	}
 }
 
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
 // the virtual liquidity of the pool, and `sqrtPrice` and `sqrtHigh` are, the square-roots of the
 // price to calculate the position for, and higher boundary of the curve.
-func impliedPosition(sqrtPrice, sqrtHigh, l *num.Uint) *num.Uint {
+func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l *num.Uint) *num.Uint {
 	// L * (sqrt(high) - sqrt(price))
-	numer := num.UintZero().Sub(sqrtHigh, sqrtPrice)
-	numer.Mul(numer, l)
+	numer := sqrtHigh.Sub(sqrtPrice).Mul(l.ToDecimal())
 
 	// sqrt(high) * sqrt(price)
-	denom := num.UintOne().Mul(sqrtHigh, sqrtPrice)
+	denom := sqrtHigh.Mul(sqrtPrice)
 
 	// L * (sqrt(high) - sqrt(price)) / sqrt(high) * sqrt(price)
-	return numer.Div(numer, denom)
+	res, _ := num.UintFromDecimal(numer.Div(denom))
+	return res
 }
 
 // VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
@@ -275,73 +279,117 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 	return volume.Uint64()
 }
 
-// virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
-func (p *Pool) virtualBalances(pos int64, ae *num.Uint) (*num.Uint, *num.Uint) {
-	// lets gets the pool current balance
-	balance := num.UintZero()
-	general, _ := p.collateral.GetPartyGeneralAccount(p.SubAccount, p.asset)
-	margin, _ := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
-	balance.AddSum(general.Balance, margin.Balance)
-
-	if pos > 0 {
-		// get the lower curve
-		cu := p.lower
-
-		// x_v = P + (L / sqrt(base))
-		x := num.UintZero()
-		pp := num.NewUint(uint64(pos))
-		x.AddSum(pp, num.UintOne().Div(cu.l, p.sqrt(cu.high)))
-
-		// y_v = cc * rf + (L / sqrt(pl))
-		y, _ := num.UintFromDecimal(num.DecimalFromUint(balance).Mul(cu.rf))
-		term2 := num.UintZero().Div(cu.l, p.sqrt(cu.low))
-		y.AddSum(term2)
-		return x, y
+// getBalance returns the total balance of the pool i.e it's general account + it's margin account.
+func (p *Pool) getBalance() *num.Uint {
+	general, err := p.collateral.GetPartyGeneralAccount(p.SubAccount, p.asset)
+	if err != nil {
+		panic("general account not created")
 	}
 
-	// get the upper curve
+	margin, _ := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
+	if err != nil {
+		panic("margin account not created")
+	}
+
+	return num.UintZero().AddSum(general.Balance, margin.Balance)
+}
+
+// getPosition gets the pools current position an average-entry price.
+func (p *Pool) getPosition() (int64, *num.Uint) {
+	if pos := p.position.GetPositionsByParty(p.SubAccount); len(pos) != 0 {
+		return pos[0].Size(), pos[0].AverageEntryPrice()
+	}
+	return 0, num.UintZero()
+}
+
+// virtualBalancesLong returns the pools x, y balances when the pool has a negative position, where
+//
+// x = P + (cc * rf) / sqrt(pl) + L / sqrt(pl),
+// y = abs(P) * average-entry + L * sqrt(pl).
+func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.upper
+	balance := p.getBalance()
+
+	// lets start with x
 
 	// P
-	term1x := num.NewUint(uint64(-pos))
+	term1x := num.DecimalFromInt64(-pos)
 
 	// cc * rf / pu
-	// TODO is cc here the balance, or initial commitment? Asked on spec.
-	term2x, _ := num.UintFromDecimal(cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(p.sqrt(cu.high))))
+	term2x := cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(cu.high))
 
 	// L / sqrt(pl)
-	term3x := num.UintOne().Div(cu.l, p.sqrt(cu.low))
-	// x_v = P + (cc * rf / pu) + (L / sqrt(pl))
-	x := num.UintZero().AddSum(term1x, term2x, term3x)
+	term3x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
+
+	// x = P + (cc * rf / pu) + (L / sqrt(pl))
+	x := term2x.Add(term3x).Sub(term1x)
+
+	// now lets get y
 
 	// abs(P) * average-entry
 	term1y := ae.Mul(ae, num.NewUint(uint64(-pos)))
 
-	// L * pl
-	term2y := num.UintZero().Mul(cu.l, p.sqrt(cu.low))
-	// abs(P) * average-entry + L * pl
-	y := num.UintZero().AddSum(term1y, term2y)
+	// L * sqrt(pl)
+	term2y := cu.l.ToDecimal().Mul(p.sqrt(cu.low))
+
+	// y = abs(P) * average-entry + L * pl
+	y := term1y.ToDecimal().Add(term2y)
 	return x, y
+}
+
+// virtualBalancesLong returns the pools x, y balances when the pool has a positive position, where
+//
+// x = P + (L / sqrt(pu)),
+// y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
+func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
+	cu := p.lower
+	// balance := p.getBalance()
+
+	// lets start with x
+
+	// P
+	term1x := num.DecimalFromInt64(pos)
+
+	// L / sqrt(pu)
+	term2x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
+	x := term1x.Add(term2x)
+
+	// now lets move to y
+
+	// L * (sqrt(pu) - sqrt(pl)) + (L * sqrt(pl)) => L * sqrt(pu)
+	term1y := cu.l.ToDecimal().Mul(p.sqrt(cu.high))
+
+	// P * average-entry
+	term2y := ae.Mul(ae, num.NewUint(uint64(pos)))
+
+	y := term1y.Sub(term2y.ToDecimal())
+	return x, y
+}
+
+// virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
+func (p *Pool) fairPrice() *num.Uint {
+	fairPrice := num.UintZero()
+	pos, ae := p.getPosition()
+
+	switch {
+	case pos == 0:
+		fairPrice = p.lower.high.Clone()
+	case pos < 0:
+		x, y := p.virtualBalancesShort(pos, ae)
+		fairPrice, _ = num.UintFromDecimal(y.Div(x))
+	case pos > 0:
+		x, y := p.virtualBalancesLong(pos, ae)
+		fairPrice, _ = num.UintFromDecimal(y.Div(x))
+	}
+
+	return fairPrice
 }
 
 // TradePrice returns the price that the pool is willing to trade for the given order and its volume.
 func (p *Pool) TradePrice(order *types.Order) *num.Uint {
-	var pos int64
-	ae := num.UintZero()
-	if pp := p.position.GetPositionsByParty(p.SubAccount); len(pp) > 0 {
-		pos = pp[0].Size()
-		ae = pp[0].AverageEntryPrice()
-	}
-
-	if pos == 0 {
-		return p.lower.high.Clone() // the base price
-	}
-
-	x, y := p.virtualBalances(pos, ae)
-
-	fairPrice := y.Div(y, x)
+	fairPrice := p.fairPrice()
 	switch {
-	case order.Size == 0:
+	case order == nil:
 		// special case where we've been asked for a fair price
 		return fairPrice
 	case order.Side == types.SideBuy:
