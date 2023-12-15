@@ -78,6 +78,12 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 	// We only carry forward the last_update_in_period value to indicate when we last received a trade that would have updated the candle.
 	// It doesn't matter what aggregation function we use as long as we're using the view corresponding to the interval, there should
 	// only ever be 1 row to aggregate.
+
+	interval := descriptor.interval
+	if interval == "block" {
+		interval = "1 minute"
+	}
+
 	query := fmt.Sprintf(`SELECT
 		time_bucket_gapfill('%s', period_start) as period_start,
 		first(open) as open,
@@ -88,7 +94,7 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 		first(notional) as notional,
 		locf(first(last_update_in_period)) as last_update_in_period
 	FROM %s WHERE market_id = $1`,
-		descriptor.interval, descriptor.view)
+		interval, descriptor.view)
 
 	// As a result of having to use the time_bucket_gapfill function we have to provide and start and finish date to the query.
 	// The documentation suggests using the where clause for better performance as the query planner can use it to optimise performance
@@ -120,7 +126,7 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 		query = fmt.Sprintf("%s AND period_start <= %s", query, nextBindVar(&args, candlesDateRange.EndDate))
 	}
 
-	query = fmt.Sprintf("%s GROUP BY time_bucket_gapfill('%s', period_start)", query, descriptor.interval)
+	query = fmt.Sprintf("%s GROUP BY time_bucket_gapfill('%s', period_start)", query, interval)
 
 	return query, args, nil
 }
