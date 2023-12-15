@@ -730,10 +730,12 @@ func (p *Perpetual) GetData(t int64) *types.ProductData {
 	r := p.calculateFundingPayment(t)
 	return &types.ProductData{
 		Data: &types.PerpetualData{
-			FundingPayment: r.fundingPayment.String(),
 			FundingRate:    r.fundingRate.String(),
-			ExternalTWAP:   r.externalTWAP.String(),
+			FundingPayment: r.fundingPayment.String(),
 			InternalTWAP:   r.internalTWAP.String(),
+			ExternalTWAP:   r.externalTWAP.String(),
+			SeqNum:         p.seq,
+			StartTime:      p.startedAt,
 		},
 	}
 }

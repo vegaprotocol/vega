@@ -292,6 +292,8 @@ func testConstantDifferenceLongPaysShort(t *testing.T) {
 	assert.Equal(t, "116", perpData.ExternalTWAP)
 	assert.Equal(t, "106", perpData.InternalTWAP)
 	assert.Equal(t, "-0.0862068965517241", perpData.FundingRate)
+	assert.Equal(t, uint64(0), perpData.SeqNum)
+	assert.Equal(t, int64(3600000000000), perpData.StartTime)
 }
 
 func testDataPointsOutsidePeriod(t *testing.T) {
