@@ -36,6 +36,7 @@
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 - [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
+- [10159](https://github.com/vegaprotocol/vega/issues/10159) - Add additional funding period data to market data API to allow streaming funding period data.
 
 ### 🐛 Fixes
 
