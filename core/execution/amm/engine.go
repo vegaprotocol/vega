@@ -86,26 +86,36 @@ type Position interface {
 	GetPositionsByParty(ids ...string) []events.MarketPosition
 }
 
-type sqrtFn func(*num.Uint) *num.Uint
+type sqrtFn func(*num.Uint) num.Decimal
 
 // Sqrter calculates sqrt's of Uints and caches the results. We want this cache to be shared across all pools for a market.
 type Sqrter struct {
-	cache map[string]*num.Uint
+	cache map[string]num.Decimal
 }
 
 // sqrt calculates the square root of the uint and caches it.
-func (s *Sqrter) sqrt(u *num.Uint) *num.Uint {
-	if r := s.cache[u.String()]; r != nil {
-		return r.Clone()
+func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
+	if r, ok := s.cache[u.String()]; ok {
+		return r
 	}
 
-	// for now lets just use the sqrt algo in the uint256 library and if its slow
-	// we can work something out later
-	r := num.UintOne().Sqrt(u)
+	// TODO that we may need to re-visit this depending on the performance impact
+	// but for now lets do it "properly" in full decimals and work out how we can
+	// improve it once we have reg-tests and performance data.
 
-	// we can also maybe be more clever here and use a LRU but whatever
+	// integer sqrt is a good approximation
+	r := num.UintOne().Sqrt(u).ToDecimal()
+
+	// so now lets do a few iterations using Heron's Method to get closer
+	// x_i = (x + u/x) / 2
+	ud := u.ToDecimal()
+	for i := 0; i < 6; i++ {
+		r = r.Add(ud.Div(r)).Div(num.DecimalFromInt64(2))
+	}
+
+	// and cache it -- we can also maybe be more clever here and use a LRU but thats for later
 	s.cache[u.String()] = r
-	return r.Clone()
+	return r
 }
 
 type Engine struct {
@@ -152,7 +162,7 @@ func New(
 		pools:                map[string]*Pool{},
 		subAccounts:          map[string]string{},
 		minCommitmentQuantum: num.UintZero(),
-		rooter:               &Sqrter{cache: map[string]*num.Uint{}},
+		rooter:               &Sqrter{cache: map[string]num.Decimal{}},
 		priceFactor:          priceFactor,
 	}
 }
@@ -173,8 +183,9 @@ func NewFromProto(
 		e.subAccounts[v.Key] = v.Value
 	}
 
+	// TODO consider whether we want the cache in the snapshot, it might be pretty large/slow and I'm not sure what we gain
 	for _, v := range state.Sqrter {
-		e.rooter.cache[v.Key] = num.MustUintFromString(v.Value, 10)
+		e.rooter.cache[v.Key] = num.MustDecimalFromString(v.Value)
 	}
 
 	for _, v := range state.Pools {
@@ -347,7 +358,7 @@ func (e *Engine) AmendAMM(
 		return err
 	}
 
-	fairPrice := pool.TradePrice(&types.Order{})
+	fairPrice := pool.TradePrice(nil)
 	oldCommitment := pool.Commitment.Clone()
 
 	err := e.updateSubAccountBalance(
@@ -482,7 +493,7 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	}
 
 	// get the pools current fair-price
-	fairPrice := pool.TradePrice(&types.Order{})
+	fairPrice := pool.TradePrice(nil)
 	e.log.Debug("rebasing pool",
 		logging.String("id", pool.ID),
 		logging.String("fair-price", fairPrice.String()),
