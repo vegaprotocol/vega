@@ -1166,6 +1166,10 @@ message PerpetualData {
   string internal_twap = 3;
   // Time-weighted-average the external data points for the in-progress funding period.
   string external_twap = 4;
+  // Funding period sequence number
+  uint64 seq_num = 5;
+  // Funding period start time
+  int64 start_time = 6;
 }
 
 // Represents market data specific to a particular product type.

@@ -820,6 +820,8 @@ type PerpetualData struct {
 	FundingPayment string
 	InternalTWAP   string
 	ExternalTWAP   string
+	SeqNum         uint64
+	StartTime      int64
 }
 
 func (p PerpetualData) IntoProto() *vegapb.ProductData {
@@ -830,6 +832,8 @@ func (p PerpetualData) IntoProto() *vegapb.ProductData {
 				FundingPayment: p.FundingPayment,
 				InternalTwap:   p.InternalTWAP,
 				ExternalTwap:   p.ExternalTWAP,
+				SeqNum:         p.SeqNum,
+				StartTime:      p.StartTime,
 			},
 		},
 	}
