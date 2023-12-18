@@ -10982,56 +10982,57 @@ var file_vega_vega_proto_depIdxs = []int32{
 	57,  // 48: vega.PostTransferBalance.account:type_name -> vega.AccountDetails
 	58,  // 49: vega.LedgerMovement.entries:type_name -> vega.LedgerEntry
 	59,  // 50: vega.LedgerMovement.balances:type_name -> vega.PostTransferBalance
-	62,  // 51: vega.ProductData.perpetual_data:type_name -> vega.PerpetualData
-	105, // 52: vega.MarketData.market_trading_mode:type_name -> vega.Market.TradingMode
-	3,   // 53: vega.MarketData.trigger:type_name -> vega.AuctionTrigger
-	3,   // 54: vega.MarketData.extension_trigger:type_name -> vega.AuctionTrigger
-	67,  // 55: vega.MarketData.price_monitoring_bounds:type_name -> vega.PriceMonitoringBounds
-	65,  // 56: vega.MarketData.liquidity_provider_fee_share:type_name -> vega.LiquidityProviderFeeShare
-	106, // 57: vega.MarketData.market_state:type_name -> vega.Market.State
-	63,  // 58: vega.MarketData.product_data:type_name -> vega.ProductData
-	66,  // 59: vega.MarketData.liquidity_provider_sla:type_name -> vega.LiquidityProviderSLA
-	107, // 60: vega.PriceMonitoringBounds.trigger:type_name -> vega.PriceMonitoringTrigger
-	4,   // 61: vega.LiquidityOrder.reference:type_name -> vega.PeggedReference
-	71,  // 62: vega.LiquidityOrderReference.liquidity_order:type_name -> vega.LiquidityOrder
-	72,  // 63: vega.LiquidityProvision.sells:type_name -> vega.LiquidityOrderReference
-	72,  // 64: vega.LiquidityProvision.buys:type_name -> vega.LiquidityOrderReference
-	28,  // 65: vega.LiquidityProvision.status:type_name -> vega.LiquidityProvision.Status
-	75,  // 66: vega.EthereumConfig.collateral_bridge_contract:type_name -> vega.EthereumContractConfig
-	75,  // 67: vega.EthereumConfig.staking_bridge_contract:type_name -> vega.EthereumContractConfig
-	75,  // 68: vega.EthereumConfig.token_vesting_contract:type_name -> vega.EthereumContractConfig
-	75,  // 69: vega.EthereumConfig.multisig_control_contract:type_name -> vega.EthereumContractConfig
-	76,  // 70: vega.Epoch.timestamps:type_name -> vega.EpochTimestamps
-	82,  // 71: vega.Epoch.validators:type_name -> vega.Node
-	85,  // 72: vega.Epoch.delegations:type_name -> vega.Delegation
-	77,  // 73: vega.EpochParticipation.epoch:type_name -> vega.Epoch
-	15,  // 74: vega.RankingScore.previous_status:type_name -> vega.ValidatorNodeStatus
-	15,  // 75: vega.RankingScore.status:type_name -> vega.ValidatorNodeStatus
-	15,  // 76: vega.RewardScore.validator_status:type_name -> vega.ValidatorNodeStatus
-	79,  // 77: vega.Node.epoch_data:type_name -> vega.EpochData
-	13,  // 78: vega.Node.status:type_name -> vega.NodeStatus
-	85,  // 79: vega.Node.delegations:type_name -> vega.Delegation
-	81,  // 80: vega.Node.reward_score:type_name -> vega.RewardScore
-	80,  // 81: vega.Node.ranking_score:type_name -> vega.RankingScore
-	83,  // 82: vega.NodeData.tendermint_nodes:type_name -> vega.NodeSet
-	83,  // 83: vega.NodeData.ersatz_nodes:type_name -> vega.NodeSet
-	83,  // 84: vega.NodeData.pending_nodes:type_name -> vega.NodeSet
-	90,  // 85: vega.StateValueProposal.kvb:type_name -> vega.KeyValueBundle
-	91,  // 86: vega.KeyValueBundle.value:type_name -> vega.StateVarValue
-	92,  // 87: vega.StateVarValue.scalar_val:type_name -> vega.ScalarValue
-	93,  // 88: vega.StateVarValue.vector_val:type_name -> vega.VectorValue
-	94,  // 89: vega.StateVarValue.matrix_val:type_name -> vega.MatrixValue
-	93,  // 90: vega.MatrixValue.value:type_name -> vega.VectorValue
-	97,  // 91: vega.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
-	100, // 92: vega.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
-	99,  // 93: vega.VestingBenefitTiers.tiers:type_name -> vega.VestingBenefitTier
-	96,  // 94: vega.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
-	103, // 95: vega.ActivityStreakBenefitTiers.tiers:type_name -> vega.ActivityStreakBenefitTier
-	96,  // [96:96] is the sub-list for method output_type
-	96,  // [96:96] is the sub-list for method input_type
-	96,  // [96:96] is the sub-list for extension type_name
-	96,  // [96:96] is the sub-list for extension extendee
-	0,   // [0:96] is the sub-list for field type_name
+	16,  // 51: vega.MarginLevels.margin_mode:type_name -> vega.MarginMode
+	62,  // 52: vega.ProductData.perpetual_data:type_name -> vega.PerpetualData
+	105, // 53: vega.MarketData.market_trading_mode:type_name -> vega.Market.TradingMode
+	3,   // 54: vega.MarketData.trigger:type_name -> vega.AuctionTrigger
+	3,   // 55: vega.MarketData.extension_trigger:type_name -> vega.AuctionTrigger
+	67,  // 56: vega.MarketData.price_monitoring_bounds:type_name -> vega.PriceMonitoringBounds
+	65,  // 57: vega.MarketData.liquidity_provider_fee_share:type_name -> vega.LiquidityProviderFeeShare
+	106, // 58: vega.MarketData.market_state:type_name -> vega.Market.State
+	63,  // 59: vega.MarketData.product_data:type_name -> vega.ProductData
+	66,  // 60: vega.MarketData.liquidity_provider_sla:type_name -> vega.LiquidityProviderSLA
+	107, // 61: vega.PriceMonitoringBounds.trigger:type_name -> vega.PriceMonitoringTrigger
+	4,   // 62: vega.LiquidityOrder.reference:type_name -> vega.PeggedReference
+	71,  // 63: vega.LiquidityOrderReference.liquidity_order:type_name -> vega.LiquidityOrder
+	72,  // 64: vega.LiquidityProvision.sells:type_name -> vega.LiquidityOrderReference
+	72,  // 65: vega.LiquidityProvision.buys:type_name -> vega.LiquidityOrderReference
+	28,  // 66: vega.LiquidityProvision.status:type_name -> vega.LiquidityProvision.Status
+	75,  // 67: vega.EthereumConfig.collateral_bridge_contract:type_name -> vega.EthereumContractConfig
+	75,  // 68: vega.EthereumConfig.staking_bridge_contract:type_name -> vega.EthereumContractConfig
+	75,  // 69: vega.EthereumConfig.token_vesting_contract:type_name -> vega.EthereumContractConfig
+	75,  // 70: vega.EthereumConfig.multisig_control_contract:type_name -> vega.EthereumContractConfig
+	76,  // 71: vega.Epoch.timestamps:type_name -> vega.EpochTimestamps
+	82,  // 72: vega.Epoch.validators:type_name -> vega.Node
+	85,  // 73: vega.Epoch.delegations:type_name -> vega.Delegation
+	77,  // 74: vega.EpochParticipation.epoch:type_name -> vega.Epoch
+	15,  // 75: vega.RankingScore.previous_status:type_name -> vega.ValidatorNodeStatus
+	15,  // 76: vega.RankingScore.status:type_name -> vega.ValidatorNodeStatus
+	15,  // 77: vega.RewardScore.validator_status:type_name -> vega.ValidatorNodeStatus
+	79,  // 78: vega.Node.epoch_data:type_name -> vega.EpochData
+	13,  // 79: vega.Node.status:type_name -> vega.NodeStatus
+	85,  // 80: vega.Node.delegations:type_name -> vega.Delegation
+	81,  // 81: vega.Node.reward_score:type_name -> vega.RewardScore
+	80,  // 82: vega.Node.ranking_score:type_name -> vega.RankingScore
+	83,  // 83: vega.NodeData.tendermint_nodes:type_name -> vega.NodeSet
+	83,  // 84: vega.NodeData.ersatz_nodes:type_name -> vega.NodeSet
+	83,  // 85: vega.NodeData.pending_nodes:type_name -> vega.NodeSet
+	90,  // 86: vega.StateValueProposal.kvb:type_name -> vega.KeyValueBundle
+	91,  // 87: vega.KeyValueBundle.value:type_name -> vega.StateVarValue
+	92,  // 88: vega.StateVarValue.scalar_val:type_name -> vega.ScalarValue
+	93,  // 89: vega.StateVarValue.vector_val:type_name -> vega.VectorValue
+	94,  // 90: vega.StateVarValue.matrix_val:type_name -> vega.MatrixValue
+	93,  // 91: vega.MatrixValue.value:type_name -> vega.VectorValue
+	97,  // 92: vega.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
+	100, // 93: vega.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
+	99,  // 94: vega.VestingBenefitTiers.tiers:type_name -> vega.VestingBenefitTier
+	96,  // 95: vega.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
+	103, // 96: vega.ActivityStreakBenefitTiers.tiers:type_name -> vega.ActivityStreakBenefitTier
+	97,  // [97:97] is the sub-list for method output_type
+	97,  // [97:97] is the sub-list for method input_type
+	97,  // [97:97] is the sub-list for extension type_name
+	97,  // [97:97] is the sub-list for extension extendee
+	0,   // [0:97] is the sub-list for field type_name
 }
 
 func init() { file_vega_vega_proto_init() }
