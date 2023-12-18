@@ -24,6 +24,7 @@ import (
 type marginUpdate struct {
 	events.MarketPosition
 	margin          *types.Account
+	orderMargin     *types.Account
 	general         *types.Account
 	lock            *types.Account
 	bond            *types.Account
@@ -51,6 +52,13 @@ func (n marginUpdate) MarginBalance() *num.Uint {
 	return n.margin.Balance.Clone()
 }
 
+func (n marginUpdate) OrderMarginBalance() *num.Uint {
+	if n.orderMargin == nil {
+		return num.UintZero()
+	}
+	return n.orderMargin.Balance.Clone()
+}
+
 // GeneralBalance here we cumulate both the general
 // account and bon account so other package do not have
 // to worry about how much funds are available in both
@@ -66,6 +74,13 @@ func (n marginUpdate) GeneralBalance() *num.Uint {
 		bond = n.bond.Balance
 	}
 	return num.Sum(bond, gen)
+}
+
+func (n marginUpdate) GeneralAccountBalance() *num.Uint {
+	if n.general != nil && n.general.Balance != nil {
+		return n.general.Balance
+	}
+	return num.UintZero()
 }
 
 func (n marginUpdate) MarginShortFall() *num.Uint {

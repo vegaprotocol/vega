@@ -523,6 +523,12 @@ message Market {
   repeated vega.Order expiring_stop_orders = 25;
   Product product = 26;
   vega.events.v1.FeesStats fees_stats = 27;
+  repeated PartyMarginFactor party_margin_factor = 28;
+}
+
+message PartyMarginFactor {
+  string party = 1;
+  string margin_factor = 2;
 }
 
 // eventually support multiple products

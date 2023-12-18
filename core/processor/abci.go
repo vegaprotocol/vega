@@ -1428,7 +1428,7 @@ func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) erro
 	}
 
 	maxBatchSize := app.maxBatchSize.Load()
-	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
+	size := uint64(len(bmi.UpdateMarginMode) + len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
 	if size > maxBatchSize {
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}

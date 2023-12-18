@@ -186,6 +186,9 @@ func (m *Market) updateMargins(ctx context.Context, partiesPos map[string]events
 	)
 	// now we can check parties positions
 	for party, pos := range partiesPos {
+		if m.getMarginMode(pos.Party()) == types.MarginModeIsolatedMargin {
+			continue
+		}
 		positions = append(positions, pos)
 		mar, err := m.collateral.GetPartyMarginAccount(id, party, m.settlementAsset)
 		if err != nil {

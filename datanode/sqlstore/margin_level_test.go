@@ -165,10 +165,13 @@ func getMarginLevelWithMaintenanceProto(maintenanceMargin, partyID, marketID str
 		SearchLevel:            "1000",
 		InitialMargin:          "1000",
 		CollateralReleaseLevel: "1000",
+		OrderMargin:            "0",
 		PartyId:                partyID,
 		MarketId:               marketID,
 		Asset:                  testAssetID,
 		Timestamp:              timestamp,
+		MarginMode:             vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		MarginFactor:           "0",
 	}
 }
 

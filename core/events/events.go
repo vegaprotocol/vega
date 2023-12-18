@@ -81,10 +81,14 @@ type Margin interface {
 	MarketPosition
 	Asset() string
 	MarginBalance() *num.Uint
+	OrderMarginBalance() *num.Uint
 	GeneralBalance() *num.Uint
 	BondBalance() *num.Uint
 	MarketID() string
 	MarginShortFall() *num.Uint
+	// as opposed to the GeneralBalance() which actually returns the available balance (general+bond)
+	// this returns the actual balance of the general account
+	GeneralAccountBalance() *num.Uint
 }
 
 // Risk is an event that summarizes everything and an eventual update to margin account.

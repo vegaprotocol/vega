@@ -478,6 +478,10 @@ enum OrderError {
   ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE = 49;
   // Post order would trade
   ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION = 50;
+  // Isolated margin check failed
+  ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED = 51;
+  // In isolated margin pegged orders are rejected
+  ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE = 52;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -977,6 +981,14 @@ enum TransferType {
   TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY = 39;
   // Fee referrer reward received into general account of the referrer.
   TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE = 44;
+  // Funds transferred from general account to meet order margin requirement in isolated margin mode.
+  TRANSFER_TYPE_ORDER_MARGIN_LOW = 45;
+  // Excess order margin amount returned to general account.
+  TRANSFER_TYPE_ORDER_MARGIN_HIGH = 46;
+  // Transfer from order margin account to margin account due to increase of position.
+  TRANSFER_TYPE_ISOLATED_MARGIN_LOW = 47;
+  // Transfer from excess order margin account to general account.
+  TRANSFER_TYPE_ISOLATED_MARGIN_HIGH = 48;
 }
 
 // Represents a financial transfer within Vega
@@ -1154,6 +1166,12 @@ message MarginLevels {
   string asset = 7;
   // Timestamp in Unix nanoseconds for when the ledger entry was created.
   int64 timestamp = 8;
+  // Margin required to cover orders in isolated margin mode.
+  string order_margin = 9;
+  // Margin mode for the party, cross margin or isolated margin.
+  MarginMode margin_mode = 10;
+  // Margin factor, relevant only for isolated margin, 0 otherwise.
+  string margin_factor = 11;
 }
 
 // Represents market data specific to a perpetual market.
