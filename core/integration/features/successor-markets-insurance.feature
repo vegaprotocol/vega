@@ -144,13 +144,13 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     ## Insurance pool for closed market is distributed
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC20"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     ## Cancel ETH/DEC19
     When the market states are updated through governance:
@@ -160,9 +160,9 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     ## Insurance pool for closed market is distributed as two equal parts to the remaining successor
     ## and the global insurance pool
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "3250" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
 
-    And the global insurance pool balance should be "1750" for the asset "USD"
+    And the global insurance pool balance should be "3500" for the asset "USD"
 
     And the network moves ahead "1" blocks
 
@@ -181,8 +181,8 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC20"
     And then the network moves ahead "1" blocks
 
-    And the insurance pool balance should be "3250" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "1750" for the asset "USD"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "3500" for the asset "USD"
 
     And the network moves ahead "10" blocks
 
@@ -257,12 +257,12 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     ## The balance from the settled parent market gets distributed equally among the remaining
     ## 4 successor markets in TRADING_MODE_OPENING_AUCTION and the global insurance pool
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "200" for the asset "USD"
+    And the global insurance pool balance should be "1000" for the asset "USD"
 
     ## Get one of the successors into continous mode
     And the parties place the following orders:
@@ -283,31 +283,32 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
     ## Insurance pool balances are not changed at this point
-    And the insurance pool balance should be "1200" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
+    And the global insurance pool balance should be "1000" for the asset "USD"
 
     ## Cancel ETH/DEC20
     When the market states are updated through governance:
       | market id | state                              | settlement price |
       | ETH/DEC20 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 150              |
 
-    And the insurance pool balance should be "1200" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
     And the network moves ahead "10" blocks
 
-    ## Insurance balance from ETH/DEC20 is distributed amond existing successor markets
+    ## Insurance balance from ETH/DEC20 is moved to global insurance account
     ## and the global insurance pool
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "500" for the asset "USD"
+    And the global insurance pool balance should be "2000" for the asset "USD"
 
     ## Now we need to cancel the remaining successor markets one by one.
     ## Cancel ETH/DEC21
@@ -318,10 +319,10 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the network moves ahead "10" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC22"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     ## Cancel ETH/DEC22
     When the market states are updated through governance:
@@ -332,9 +333,9 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
-    And the insurance pool balance should be "3000" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "2000" for the asset "USD"
+    And the global insurance pool balance should be "4000" for the asset "USD"
 
     ## Cancel ETH/DEC23
     When the market states are updated through governance:
@@ -431,12 +432,12 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
 
     ## Insurance pool balances for canceled successors got distributed as:
     ## 50% to the enacted successor, remaining amount in two parts 1:2 to the parent and global insurance pool
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     And the network moves ahead "10" blocks
 
@@ -456,26 +457,25 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     And the network moves ahead "10" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    ## After ETH/DEC21 was canceled it distributed its insurance pool balance as
-    ## 1250 to parent and 1250 to the global insurance pool
-    And the insurance pool balance should be "2750" for the market "ETH/DEC19"
+    ## After ETH/DEC21 was canceled its insurance pool balance is moved into the global insurance account
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "2250" for the asset "USD"
+    And the global insurance pool balance should be "4500" for the asset "USD"
 
     ## Cancel ETH/DEC19
     When the market states are updated through governance:
@@ -571,13 +571,13 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     ## Insurance pool balances for canceled successors got distributed as:
-    ## 50% to the enacted successor, remaining amount in two parts 1:2 to the parent and global insurance pool
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    ## 50% to the enacted successor, remaining amount in two parts 1:2 to the parent and global insurance account
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     And the network moves ahead "10" blocks
 
@@ -605,26 +605,25 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     And the network moves ahead "10" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    ## After ETH/DEC21 was canceled it distributed its insurance pool balance as
-    ## 1250 to parent and 1250 to the global insurance pool
-    And the insurance pool balance should be "2750" for the market "ETH/DEC19"
+    ## After ETH/DEC21 was canceled - its insurance pool balance is moved into the global insruance account
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "2250" for the asset "USD"
+    And the global insurance pool balance should be "4500" for the asset "USD"
 
     ## Cancel ETH/DEC19
     When the market states are updated through governance:
@@ -767,14 +766,14 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC22"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
-    ## Settled successor distributed its insurance pool balance across in 5 equal parts.
-    And the insurance pool balance should be "1200" for the market "ETH/DEC19"
+    ## Settled successor moved into global insurnace account
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "200" for the asset "USD"
+    And the global insurance pool balance should be "1000" for the asset "USD"
 
     ## Settle another of the successors that initially had orders
     Then the oracles broadcast data signed with "0xCAFECACC":
@@ -792,13 +791,13 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
-    ## Settled successor distributed its insurance pool balance across in 4 equal parts.
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    ## Settled successor moved into the global insurance account.
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "500" for the asset "USD"
+    And the global insurance pool balance should be "2000" for the asset "USD"
 
     And the network moves ahead "10" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -818,23 +817,23 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "500" for the asset "USD"
+    And the global insurance pool balance should be "2000" for the asset "USD"
     ## wait until successor window expires
     When the network moves ahead "9" blocks
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC23"
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     ## Cancel the last successor
     When the market states are updated through governance:
@@ -843,11 +842,11 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "3000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "2000" for the asset "USD"
+    And the global insurance pool balance should be "4000" for the asset "USD"
 
     ## Cancel the ETH/DEC20 successor
     When the market states are updated through governance:
@@ -969,14 +968,14 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC22"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC23"
 
-    ## Settled successor distributed its insurance pool balance across in 5 equal parts.
-    And the insurance pool balance should be "1200" for the market "ETH/DEC19"
+    ## Settled successor moved into global insurance account
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1200" for the market "ETH/DEC23"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "200" for the asset "USD"
+    And the global insurance pool balance should be "1000" for the asset "USD"
 
     ## Settle the other of the successors that had orders - ETH/DEC23
     Then the oracles broadcast data signed with "0xCAFECADD":
@@ -993,14 +992,14 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
-    ## Settled successor distributed its insurance pool balance across in 3 equal parts.
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    ## Settled successor remaining insurance pool balance is moved into the global insurance account.
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC22"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "500" for the asset "USD"
+    And the global insurance pool balance should be "2000" for the asset "USD"
 
     And the network moves ahead "10" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -1020,22 +1019,22 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "500" for the asset "USD"
+    And the global insurance pool balance should be "2000" for the asset "USD"
 
     And the network moves ahead "10" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "2000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     ## Cancel the ETH/DEC20 successor
     When the market states are updated through governance:
@@ -1045,10 +1044,10 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
-    And the insurance pool balance should be "3000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
 
-    And the global insurance pool balance should be "2000" for the asset "USD"
+    And the global insurance pool balance should be "4000" for the asset "USD"
 
     ## Cancel the ETH/DEC22 successor
     When the market states are updated through governance:
@@ -1151,14 +1150,13 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
 
     And the network moves ahead "10" blocks
 
-    ## Remaining successor markets redistributed their insurance pool balances as:
-    ## 3 x 500 to ETH/DEC23, 500 to ETH/DEC19 and 1000 to the global insurance pool
-    And the insurance pool balance should be "1500" for the market "ETH/DEC19"
+    ## Remaining successor markets moved into the global insurance account 
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC23"
-    And the global insurance pool balance should be "1000" for the asset "USD"
+    And the insurance pool balance should be "1500" for the market "ETH/DEC23"
+    And the global insurance pool balance should be "3000" for the asset "USD"
 
     ## Settle ETH/DEC23
     Then the oracles broadcast data signed with "0xCAFECADD":
@@ -1178,7 +1176,7 @@ Feature: Successor markets: Global insurance pool account collects all outstandi
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     ## Settled successor distributed its insurance pool balance across in 2 equal parts.
-    And the insurance pool balance should be "2750" for the market "ETH/DEC19"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
