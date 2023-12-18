@@ -252,7 +252,6 @@ func testInterval(t *testing.T, ctx context.Context, tradeDataStartTime time.Tim
 	intervalDur := time.Duration(intervalSeconds) * time.Second
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
-	// entities.OffsetPagination{}
 	_, candleID, _ := candleStore.GetCandleIDForIntervalAndMarket(ctx, interval, testMarket)
 	candles, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candleID, fromTime,
 		toTime, pagination)
@@ -573,4 +572,24 @@ func TestCandlesBlockInterval(t *testing.T) {
 	}
 
 	assert.Equal(t, 10, len(candleData))
+}
+
+func TestCandlesFillBeforeFirstCandle(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+
+	candles, err := candleStore.GetCandlesForMarket(ctx, testMarket)
+	require.NoError(t, err)
+	first := int32(10)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	candleData, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candles["block"], nil,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles with pagination:%s", err)
+	}
+
+	assert.Equal(t, 0, len(candleData))
 }
