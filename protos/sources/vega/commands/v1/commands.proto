@@ -46,6 +46,10 @@ message StopOrderSetup {
   optional int64 expires_at = 2;
   // Strategy to adopt if the expiry time is reached.
   optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
+  // Is this order linked to something to derive the order size
+  optional vega.StopOrder.SizeOverrideSetting size_override_setting = 4;
+  // If this order is linked to a position, give an optional scaling factor
+  optional vega.StopOrder.SizeOverrideValue size_override_value = 5;
 
   // Trigger that will need to be breached for the order to be submitted to the book.
   oneof trigger {
