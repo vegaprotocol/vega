@@ -221,10 +221,28 @@ func StopOrderSetupFromProto(
 		expiry.ExpiryStrategy = psetup.ExpiryStrategy
 	}
 
+	var sizeOverrideValue StopOrderSizeOverrideValue
+	var sizeOverrideSetting StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED
+
+	if psetup.SizeOverrideValue != nil {
+		if psetup.SizeOverrideValue.Percentage != nil {
+			value, err := num.DecimalFromString(*psetup.SizeOverrideValue.Percentage)
+			if err != nil {
+				return nil, err
+			}
+			sizeOverrideValue = StopOrderSizeOverrideValue{PercentageSize: value}
+		}
+	}
+
+	if psetup.SizeOverrideSetting != nil {
+		sizeOverrideSetting = *psetup.SizeOverrideSetting
+	}
 	return &StopOrderSetup{
-		OrderSubmission: orderSubmission,
-		Expiry:          expiry,
-		Trigger:         trigger,
+		OrderSubmission:     orderSubmission,
+		Expiry:              expiry,
+		Trigger:             trigger,
+		SizeOverrideSetting: sizeOverrideSetting,
+		SizeOverrideValue:   &sizeOverrideValue,
 	}, nil
 }
 
