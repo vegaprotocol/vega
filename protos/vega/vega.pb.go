@@ -1728,7 +1728,7 @@ const (
 	StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION StopOrder_RejectionReason = 5
 	// This stop order does not close the position
 	StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION StopOrder_RejectionReason = 6
-	// The percentage value for the linked order is invalid
+	// The percentage value for the linked stop order is invalid
 	StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID StopOrder_RejectionReason = 7
 )
 
