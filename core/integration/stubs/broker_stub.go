@@ -823,6 +823,17 @@ func (b *BrokerStub) GetMarketInfrastructureFeePoolAccount(asset string) (vegapb
 	return vegapb.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetPartyOrderMarginAccount(party, market string) (vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_ORDER_MARGIN && v.MarketId == market {
+			return v, nil
+		}
+	}
+	return vegapb.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetPartyMarginAccount(party, market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {

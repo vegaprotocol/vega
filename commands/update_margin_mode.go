@@ -33,7 +33,11 @@ func checkUpdateMarginMode(cmd *commandspb.UpdateMarginMode) Errors {
 		return errs.FinalAddForProperty("update_margin_mode", ErrIsRequired)
 	}
 
-	if cmd.Mode == commandspb.UpdateMarginMode_MODE_CROSS_UNSPECIFIED {
+	if cmd.Mode == commandspb.UpdateMarginMode_MODE_UNSPECIFIED {
+		errs.AddForProperty("update_margin_mode.margin_mode", ErrIsNotValid)
+	}
+
+	if _, ok := commandspb.UpdateMarginMode_Mode_name[int32(cmd.Mode)]; !ok {
 		errs.AddForProperty("update_margin_mode.margin_mode", ErrIsNotValid)
 	}
 

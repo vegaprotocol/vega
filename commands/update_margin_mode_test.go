@@ -51,7 +51,7 @@ func TestUpdateMarginMode(t *testing.T) {
 		{
 			"unspecified mode",
 			&commandspb.UpdateMarginMode{
-				Mode: commandspb.UpdateMarginMode_MODE_CROSS_UNSPECIFIED,
+				Mode: commandspb.UpdateMarginMode_MODE_UNSPECIFIED,
 			},
 			"update_margin_mode.margin_mode",
 			commands.ErrIsNotValid,

@@ -940,7 +940,7 @@ func testTransferLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
@@ -1011,7 +1011,7 @@ func testTransferComplexLoss(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
@@ -1049,7 +1049,7 @@ func testTransferLossMissingPartyAccounts(t *testing.T) {
 			Type: types.TransferTypeLoss,
 		},
 	}
-	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.Nil(t, resp)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
@@ -1128,7 +1128,7 @@ func testProcessBoth(t *testing.T) {
 			assert.Equal(t, int64(2000), acc.Balance)
 		}
 	})
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 	resp := responses[0]
@@ -1237,7 +1237,7 @@ func TestLossSocialization(t *testing.T) {
 			assert.Equal(t, 534, stringToInt(acc.Balance))
 		}
 	})
-	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers, num.UintOne())
+	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers, num.UintOne(), func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 
@@ -1308,7 +1308,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 		r := recover()
 		require.NotNil(t, r)
 	}()
-	_, _, _ = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	_, _, _ = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	// this should return an error
 }
 
@@ -1377,7 +1377,7 @@ func testProcessBothProRated(t *testing.T) {
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
 
@@ -1466,7 +1466,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	// quickly get the interface mocked for this test
 	transfers := getMTMTransfer(pos)
-	responses, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	responses, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err, "was error")
 	assert.NotEmpty(t, raw)
@@ -1516,7 +1516,7 @@ func testRemoveDistressedBalance(t *testing.T) {
 			assert.Equal(t, num.UintZero().Add(insBalance, num.NewUint(100)).String(), acc.Balance)
 		}
 	})
-	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
+	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset, func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(resp.Entries))
 
@@ -1552,7 +1552,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 			party: party,
 		},
 	}
-	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
+	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset, func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(resp.Entries))
 
@@ -1644,7 +1644,7 @@ func testPerpFundingSuccess(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.PerpsFundingSettlement(context.Background(), testMarketID, transfers, testMarketAsset, nil)
+	evts, raw, err := eng.PerpsFundingSettlement(context.Background(), testMarketID, transfers, testMarketAsset, nil, func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
@@ -1741,7 +1741,7 @@ func testPerpFundingSuccessWithRound(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.PerpsFundingSettlement(context.Background(), testMarketID, transfers, testMarketAsset, round)
+	evts, raw, err := eng.PerpsFundingSettlement(context.Background(), testMarketID, transfers, testMarketAsset, round, func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(raw))
 	assert.NotEmpty(t, evts)
@@ -1847,7 +1847,7 @@ func testMTMSuccess(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
@@ -1885,7 +1885,7 @@ func TestInvalidMarketID(t *testing.T) {
 	transfers := eng.getTestMTMTransfer(pos)
 
 	invalidMarketID := testMarketID + "invalid"
-	evts, raw, err := eng.MarkToMarket(context.Background(), invalidMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), invalidMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Empty(t, evts)
@@ -1922,7 +1922,7 @@ func TestEmptyTransfer(t *testing.T) {
 	}
 	transfers := eng.getTestMTMTransfer(pos)
 
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Empty(t, evts)
@@ -1957,7 +1957,7 @@ func TestNoMarginAccount(t *testing.T) {
 	}
 	transfers := eng.getTestMTMTransfer(pos)
 
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Empty(t, evts)
@@ -1988,7 +1988,7 @@ func TestNoGeneralAccount(t *testing.T) {
 	}
 	transfers := eng.getTestMTMTransfer(pos)
 
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Empty(t, evts)
@@ -2010,7 +2010,7 @@ func TestMTMNoTransfers(t *testing.T) {
 	transfers := eng.getTestMTMTransfer(pos)
 
 	// Empty list of transfers
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Empty(t, evts)
@@ -2021,7 +2021,7 @@ func TestMTMNoTransfers(t *testing.T) {
 		party: "test-party",
 	}
 	transfers = append(transfers, mt)
-	evts, raw, err = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err = eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(raw))
 	assert.Equal(t, len(evts), 1)
@@ -2041,7 +2041,7 @@ func TestFinalSettlementNoTransfers(t *testing.T) {
 
 	pos := []*types.Transfer{}
 
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -2069,7 +2069,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 		},
 	}
 
-	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), "invalidMarketID", pos, num.UintOne(), func(string) bool { return true })
 	assert.Error(t, err)
 	assert.Equal(t, 0, len(responses))
 }
@@ -2112,7 +2112,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 
 	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne())
+	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos, num.UintOne(), func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
 
@@ -2273,7 +2273,7 @@ func TestMTMLossSocialization(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
@@ -3145,8 +3145,10 @@ func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }
 func (m riskFake) MarginBalance() *num.Uint          { return num.UintZero() }
 func (m riskFake) GeneralBalance() *num.Uint         { return num.UintZero() }
+func (m riskFake) GeneralAccountBalance() *num.Uint  { return num.UintZero() }
 func (m riskFake) BondBalance() *num.Uint            { return num.UintZero() }
 func (m riskFake) MarginShortFall() *num.Uint        { return m.marginShortFall }
+func (m riskFake) OrderMarginBalance() *num.Uint     { return num.UintZero() }
 
 type transferFees struct {
 	tfs []*types.Transfer

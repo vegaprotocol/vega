@@ -25,7 +25,7 @@ type UpdateMarginMode_Mode int32
 
 const (
 	// Never valid.
-	UpdateMarginMode_MODE_CROSS_UNSPECIFIED UpdateMarginMode_Mode = 0
+	UpdateMarginMode_MODE_UNSPECIFIED UpdateMarginMode_Mode = 0
 	// Cross margin mode - margin is dynamically acquired and released as a position is marked to market
 	UpdateMarginMode_MODE_CROSS_MARGIN UpdateMarginMode_Mode = 1
 	// Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
@@ -35,14 +35,14 @@ const (
 // Enum value maps for UpdateMarginMode_Mode.
 var (
 	UpdateMarginMode_Mode_name = map[int32]string{
-		0: "MODE_CROSS_UNSPECIFIED",
+		0: "MODE_UNSPECIFIED",
 		1: "MODE_CROSS_MARGIN",
 		2: "MODE_ISOLATED_MARGIN",
 	}
 	UpdateMarginMode_Mode_value = map[string]int32{
-		"MODE_CROSS_UNSPECIFIED": 0,
-		"MODE_CROSS_MARGIN":      1,
-		"MODE_ISOLATED_MARGIN":   2,
+		"MODE_UNSPECIFIED":     0,
+		"MODE_CROSS_MARGIN":    1,
+		"MODE_ISOLATED_MARGIN": 2,
 	}
 )
 
@@ -146,6 +146,8 @@ type BatchMarketInstructions struct {
 	StopOrdersCancellation []*StopOrdersCancellation `protobuf:"bytes,4,rep,name=stop_orders_cancellation,json=stopOrdersCancellation,proto3" json:"stop_orders_cancellation,omitempty"`
 	// List of stop order submissions to be processed sequentially.
 	StopOrdersSubmission []*StopOrdersSubmission `protobuf:"bytes,5,rep,name=stop_orders_submission,json=stopOrdersSubmission,proto3" json:"stop_orders_submission,omitempty"`
+	// Update margin mode instruction
+	UpdateMarginMode []*UpdateMarginMode `protobuf:"bytes,6,rep,name=update_margin_mode,json=updateMarginMode,proto3" json:"update_margin_mode,omitempty"`
 }
 
 func (x *BatchMarketInstructions) Reset() {
@@ -211,6 +213,13 @@ func (x *BatchMarketInstructions) GetStopOrdersCancellation() []*StopOrdersCance
 func (x *BatchMarketInstructions) GetStopOrdersSubmission() []*StopOrdersSubmission {
 	if x != nil {
 		return x.StopOrdersSubmission
+	}
+	return nil
+}
+
+func (x *BatchMarketInstructions) GetUpdateMarginMode() []*UpdateMarginMode {
+	if x != nil {
+		return x.UpdateMarginMode
 	}
 	return nil
 }
@@ -732,7 +741,7 @@ func (x *UpdateMarginMode) GetMode() UpdateMarginMode_Mode {
 	if x != nil {
 		return x.Mode
 	}
-	return UpdateMarginMode_MODE_CROSS_UNSPECIFIED
+	return UpdateMarginMode_MODE_UNSPECIFIED
 }
 
 func (x *UpdateMarginMode) GetMarginFactor() string {
@@ -2305,7 +2314,7 @@ var file_vega_commands_v1_commands_proto_rawDesc = []byte{
 	0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15,
 	0x76, 0x65, 0x67, 0x61, 0x2f, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x76, 0x65, 0x67, 0x61,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xad, 0x03, 0x0a, 0x17, 0x42, 0x61, 0x74, 0x63, 0x68,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xff, 0x03, 0x0a, 0x17, 0x42, 0x61, 0x74, 0x63, 0x68,
 	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f,
 	0x6e, 0x73, 0x12, 0x49, 0x0a, 0x0d, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x76, 0x65, 0x67, 0x61,

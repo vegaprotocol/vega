@@ -200,3 +200,7 @@ func (n noopValidation) CheckStopOrdersCancellation(cancel *commandspb.StopOrder
 func (n noopValidation) CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmission) error {
 	return nil
 }
+
+func (n noopValidation) CheckUpdateMarginMode(order *commandspb.UpdateMarginMode) error {
+	return nil
+}

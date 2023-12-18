@@ -167,6 +167,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the margin calculator named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
+	s.Step(`^the parties submit update margin mode:$`, func(table *godog.Table) error {
+		return steps.ThePartiesUpdateMarginMode(execsetup.executionEngine, table)
+	})
+
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
 		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets

@@ -69,6 +69,7 @@ type testMargin struct {
 	transfer        *types.Transfer
 	asset           string
 	margin          uint64
+	orderMargin     uint64
 	general         uint64
 	market          string
 	buySumProduct   uint64
@@ -1927,7 +1928,11 @@ func getMarginCalculator() *types.MarginCalculator {
 }
 
 func (m testMargin) AverageEntryPrice() *num.Uint {
-	return num.UintZero()
+	absSize := m.size
+	if absSize < 0 {
+		absSize = -absSize
+	}
+	return num.UintZero().Mul(m.Price(), num.NewUint(uint64(absSize)))
 }
 
 func (m testMargin) Party() string {
@@ -1946,7 +1951,15 @@ func (m testMargin) MarginBalance() *num.Uint {
 	return num.NewUint(m.margin)
 }
 
+func (m testMargin) OrderMarginBalance() *num.Uint {
+	return num.NewUint(m.orderMargin)
+}
+
 func (m testMargin) GeneralBalance() *num.Uint {
+	return num.NewUint(m.general)
+}
+
+func (m testMargin) GeneralAccountBalance() *num.Uint {
 	return num.NewUint(m.general)
 }
 
