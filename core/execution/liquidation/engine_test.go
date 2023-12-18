@@ -518,7 +518,15 @@ func (m *marginStub) MarginBalance() *num.Uint {
 	return nil
 }
 
+func (m *marginStub) OrderMarginBalance() *num.Uint {
+	return nil
+}
+
 func (m *marginStub) GeneralBalance() *num.Uint {
+	return nil
+}
+
+func (m *marginStub) GeneralAccountBalance() *num.Uint {
 	return nil
 }
 

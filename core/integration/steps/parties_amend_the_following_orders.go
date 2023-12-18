@@ -50,13 +50,14 @@ func PartiesAmendTheFollowingOrders(
 		}
 
 		amend := types.OrderAmendment{
-			OrderID:     o.Id,
-			MarketID:    o.MarketId,
-			Price:       row.Price(),
-			SizeDelta:   row.SizeDelta(),
-			Size:        row.Size(),
-			ExpiresAt:   row.ExpirationDate(),
-			TimeInForce: row.TimeInForce(),
+			OrderID:      o.Id,
+			MarketID:     o.MarketId,
+			Price:        row.Price(),
+			SizeDelta:    row.SizeDelta(),
+			Size:         row.Size(),
+			ExpiresAt:    row.ExpirationDate(),
+			TimeInForce:  row.TimeInForce(),
+			PeggedOffset: row.PeggedOffset(),
 		}
 
 		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)
@@ -83,6 +84,7 @@ func parseAmendOrderTable(table *godog.Table) []RowWrapper {
 		"size",
 		"error",
 		"expiration date",
+		"pegged offset",
 	})
 }
 
@@ -132,4 +134,8 @@ func (r amendOrderRow) Error() string {
 
 func (r amendOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
+}
+
+func (r amendOrderRow) PeggedOffset() *num.Uint {
+	return r.row.MaybeUint("pegged offset")
 }

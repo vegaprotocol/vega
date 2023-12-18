@@ -245,6 +245,7 @@ func (ls *Ledger) Export(
 				WHEN fa.type=26 THEN 'REWARD_RETURN_VOLATILITY'
 				WHEN fa.type=27 THEN 'REWARD_VALIDATOR_RANKING'
 				WHEN fa.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'
+				WHEN fa.type=29 THEN 'ORDER_MARGIN'
 				ELSE 'UNKNOWN' END AS account_from_account_type,
 			l.account_from_balance AS account_from_balance,
 			encode(ta.market_id, 'hex') AS account_to_market_id,
@@ -281,6 +282,7 @@ func (ls *Ledger) Export(
 				WHEN ta.type=26 THEN 'REWARD_RETURN_VOLATILITY'
 				WHEN ta.type=27 THEN 'REWARD_VALIDATOR_RANKING'
 				WHEN ta.type=28 THEN 'PENDING_FEE_REFERRAL_REWARD'
+				WHEN ta.type=29 THEN 'ORDER_MARGIN'
 				ELSE 'UNKNOWN' END AS account_to_account_type,
 			l.account_to_balance AS account_to_balance
 		FROM

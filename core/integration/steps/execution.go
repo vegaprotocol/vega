@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped
@@ -52,4 +53,5 @@ type Execution interface {
 	ProcessBatch(ctx context.Context, party string) error
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
+	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
 }

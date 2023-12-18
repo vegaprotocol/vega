@@ -900,9 +900,11 @@ const (
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = proto.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 	// Unable to submit pegged order, temporarily too many pegged orders across all markets.
-	OrderErrorTooManyPeggedOrders                   OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
-	OrderErrorPostOnlyOrderWouldTrade               OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
-	OrderErrorReduceOnlyOrderWouldNotReducePosition OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
+	OrderErrorTooManyPeggedOrders                    OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
+	OrderErrorPostOnlyOrderWouldTrade                OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
+	OrderErrorReduceOnlyOrderWouldNotReducePosition  OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
+	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
+	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 )
 
 var (
@@ -930,6 +932,7 @@ var (
 	ErrTooManyPeggedOrders                         = OrderErrorTooManyPeggedOrders
 	ErrPostOnlyOrderWouldTrade                     = OrderErrorPostOnlyOrderWouldTrade
 	ErrReduceOnlyOrderWouldNotReducePosition       = OrderErrorReduceOnlyOrderWouldNotReducePosition
+	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -940,5 +943,7 @@ func IsOrderError(err error) (OrderError, bool) {
 func IsStoppingOrder(o OrderError) bool {
 	return o == OrderErrorNonPersistentOrderOutOfPriceBounds ||
 		o == ErrPostOnlyOrderWouldTrade ||
-		o == ErrReduceOnlyOrderWouldNotReducePosition
+		o == ErrReduceOnlyOrderWouldNotReducePosition ||
+		o == OrderErrorIsolatedMarginCheckFailed ||
+		o == OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 }

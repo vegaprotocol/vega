@@ -23,8 +23,10 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -50,12 +52,17 @@ func (v Validate) CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmissi
 	return commands.CheckStopOrdersSubmission(order)
 }
 
+func (v Validate) CheckUpdateMarginMode(order *commandspb.UpdateMarginMode) error {
+	return commands.CheckUpdateMarginMode(order)
+}
+
 type Validator interface {
 	CheckOrderCancellation(cancel *commandspb.OrderCancellation) error
 	CheckOrderAmendment(amend *commandspb.OrderAmendment) error
 	CheckOrderSubmission(order *commandspb.OrderSubmission) error
 	CheckStopOrdersCancellation(cancel *commandspb.StopOrdersCancellation) error
 	CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmission) error
+	CheckUpdateMarginMode(update *commandspb.UpdateMarginMode) error
 }
 
 type BMIProcessor struct {
@@ -124,10 +131,28 @@ func (p *BMIProcessor) ProcessBatch(
 	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
 
+	failedMarkets := map[string]error{}
+	for _, umm := range batch.UpdateMarginMode {
+		err := p.validator.CheckUpdateMarginMode(umm)
+		if err == nil {
+			var marginFactor num.Decimal
+			if umm.MarginFactor == nil || len(*umm.MarginFactor) == 0 {
+				marginFactor = num.DecimalZero()
+			} else {
+				marginFactor = num.MustDecimalFromString(*umm.MarginFactor)
+			}
+			err = p.exec.UpdateMarginMode(ctx, party, umm.MarketId, vega.MarginMode(umm.Mode), marginFactor)
+		}
+		if err != nil {
+			errs.AddForProperty("updateMarginMode", err)
+			errCnt++
+			failedMarkets[umm.MarketId] = fmt.Errorf("Update margin mode transaction failed for market %s. Ignoring all transactions for the market", umm.MarketId)
+		}
+	}
+
 	// each order will need a new ID, and each stop order can contain up to two orders (rises above, falls below)
 	// but a stop order could also be invalid and have neither, so we pre-generate the maximum ids we might need
 	nIDs := len(batch.Submissions) + (2 * len(batch.StopOrdersSubmission))
-
 	submissionsIDs := make([]string, 0, nIDs)
 	for i := 0; i < nIDs; i++ {
 		submissionsIDs = append(submissionsIDs, idgen.NextID())
@@ -137,6 +162,12 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, cancel := range batch.Cancellations {
 		err := p.validator.CheckOrderCancellation(cancel)
 		if err == nil {
+			if err, ok := failedMarkets[cancel.MarketId]; ok {
+				errs.AddForProperty(fmt.Sprintf("%d", i), err)
+				errCnt++
+				idx++
+				continue
+			}
 			stats.IncTotalCancelOrder()
 			_, err = p.exec.CancelOrder(
 				ctx, types.OrderCancellationFromProto(cancel), party, idgen)
@@ -162,6 +193,12 @@ func (p *BMIProcessor) ProcessBatch(
 		} else {
 			err = p.validator.CheckOrderAmendment(protoAmend)
 			if err == nil {
+				if err, ok := failedMarkets[protoAmend.MarketId]; ok {
+					errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+					errCnt++
+					idx++
+					continue
+				}
 				stats.IncTotalAmendOrder()
 				var amend *types.OrderAmendment
 				amend, err = types.NewOrderAmendmentFromProto(protoAmend)
@@ -188,6 +225,12 @@ func (p *BMIProcessor) ProcessBatch(
 		err := p.validator.CheckOrderSubmission(protoSubmit)
 		if err == nil {
 			var submit *types.OrderSubmission
+			if err, ok := failedMarkets[protoSubmit.MarketId]; ok {
+				errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+				errCnt++
+				idx++
+				continue
+			}
 			stats.IncTotalCreateOrder()
 			if submit, err = types.NewOrderSubmissionFromProto(protoSubmit); err == nil {
 				var conf *types.OrderConfirmation
@@ -213,6 +256,12 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, cancel := range batch.StopOrdersCancellation {
 		err := p.validator.CheckStopOrdersCancellation(cancel)
 		if err == nil {
+			if err, ok := failedMarkets[*cancel.MarketId]; ok {
+				errs.AddForProperty(fmt.Sprintf("%d", i), err)
+				errCnt++
+				idx++
+				continue
+			}
 			stats.IncTotalCancelOrder()
 			err = p.exec.CancelStopOrders(
 				ctx, types.NewStopOrderCancellationFromProto(cancel), party, idgen)
@@ -229,6 +278,22 @@ func (p *BMIProcessor) ProcessBatch(
 		err := p.validator.CheckStopOrdersSubmission(protoSubmit)
 		if err == nil {
 			var submit *types.StopOrdersSubmission
+			if protoSubmit.RisesAbove != nil && protoSubmit.RisesAbove.OrderSubmission != nil {
+				if err, ok := failedMarkets[protoSubmit.RisesAbove.OrderSubmission.MarketId]; ok {
+					errs.AddForProperty(fmt.Sprintf("%d", i), err)
+					errCnt++
+					idx++
+					continue
+				}
+			}
+			if protoSubmit.FallsBelow != nil && protoSubmit.FallsBelow.OrderSubmission != nil {
+				if err, ok := failedMarkets[protoSubmit.FallsBelow.OrderSubmission.MarketId]; ok {
+					errs.AddForProperty(fmt.Sprintf("%d", i), err)
+					errCnt++
+					idx++
+					continue
+				}
+			}
 			stats.IncTotalCreateOrder()
 			if submit, err = types.NewStopOrderSubmissionFromProto(protoSubmit); err == nil {
 				var id1, id2 *string
@@ -261,7 +326,7 @@ func (p *BMIProcessor) ProcessBatch(
 		idx++
 	}
 
-	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
+	errs.isPartial = errCnt != len(batch.UpdateMarginMode)+len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
 
 	return errs.ErrorOrNil()
 }

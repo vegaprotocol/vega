@@ -70,6 +70,25 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 			}
 		}
 
+		if row.ExpectOrderMarginAccountBalance() && len(row.OrderMarginAccountBalance()) > 0 {
+			if !row.ExpectMarketID() {
+				return fmt.Errorf("market id must be specified when expected order margin account balance is supplied")
+			}
+			orderMarginAccount, err := broker.GetPartyOrderMarginAccount(row.Party(), row.MarketID())
+			if err != nil {
+				return errCannotGetPartyOrderMarginAccount(row.Party(), row.MarketID(), err)
+			}
+			if orderMarginAccount.GetAsset() != expectedAsset {
+				return errWrongMarketAccountAsset(orderMarginAccount.GetType().String(), row.Party(), row.MarketID(), expectedAsset, orderMarginAccount.GetAsset())
+			}
+			foundBalance := orderMarginAccount.GetBalance()
+			expectedBalance := row.OrderMarginAccountBalance()
+			if foundBalance != expectedBalance {
+				expectedValues["order margin"] = expectedBalance
+				foundValues["order margin"] = foundBalance
+			}
+		}
+
 		// check bond
 		if row.ExpectBondAccountBalance() && len(row.BondAccountBalance()) > 0 {
 			if !row.ExpectMarketID() {
@@ -141,6 +160,12 @@ func errCannotGetPartyGeneralAccount(party, asset string, err error) error {
 	)
 }
 
+func errCannotGetPartyOrderMarginAccount(party, market string, err error) error {
+	return fmt.Errorf("couldn't get order margin account for party(%s) and market(%s): %w",
+		party, market, err,
+	)
+}
+
 func errCannotGetPartyMarginAccount(party, market string, err error) error {
 	return fmt.Errorf("couldn't get margin account for party(%s) and market(%s): %w",
 		party, market, err,
@@ -188,6 +213,7 @@ func parseAccountBalancesTable(table *godog.Table) []RowWrapper {
 		"bond",
 		"vesting",
 		"vested",
+		"order margin",
 	})
 }
 
@@ -211,6 +237,10 @@ func (r accountBalancesRow) MarginAccountBalance() string {
 	return r.row.MustStr("margin")
 }
 
+func (r accountBalancesRow) OrderMarginAccountBalance() string {
+	return r.row.MustStr("order margin")
+}
+
 func (r accountBalancesRow) GeneralAccountBalance() string {
 	return r.row.MustStr("general")
 }
@@ -225,6 +255,10 @@ func (r accountBalancesRow) ExpectGeneralAccountBalance() bool {
 
 func (r accountBalancesRow) ExpectMarginAccountBalance() bool {
 	return r.row.HasColumn("margin")
+}
+
+func (r accountBalancesRow) ExpectOrderMarginAccountBalance() bool {
+	return r.row.HasColumn("order margin")
 }
 
 func (r accountBalancesRow) ExpectAsset() bool {

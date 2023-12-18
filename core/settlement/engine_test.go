@@ -56,8 +56,8 @@ type posValue struct {
 
 type marginVal struct {
 	events.MarketPosition
-	asset, marketID                  string
-	margin, general, marginShortFall uint64
+	asset, marketID                               string
+	margin, orderMargin, general, marginShortFall uint64
 }
 
 func TestMarketExpiry(t *testing.T) {
@@ -1587,7 +1587,15 @@ func (m marginVal) MarginBalance() *num.Uint {
 	return num.NewUint(m.margin)
 }
 
+func (m marginVal) OrderMarginBalance() *num.Uint {
+	return num.NewUint(m.orderMargin)
+}
+
 func (m marginVal) GeneralBalance() *num.Uint {
+	return num.NewUint(m.general)
+}
+
+func (m marginVal) GeneralAccountBalance() *num.Uint {
 	return num.NewUint(m.general)
 }
 

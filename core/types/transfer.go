@@ -214,4 +214,8 @@ const (
 
 	TransferTypeFeeReferrerRewardPay        TransferType = proto.TransferType_TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY
 	TransferTypeFeeReferrerRewardDistribute TransferType = proto.TransferType_TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE
+
+	TransferTypeOrderMarginLow    TransferType = proto.TransferType_TRANSFER_TYPE_ORDER_MARGIN_LOW
+	TransferTypeOrderMarginHigh   TransferType = proto.TransferType_TRANSFER_TYPE_ORDER_MARGIN_HIGH
+	TransferTypeIsolatedMarginLow TransferType = proto.TransferType_TRANSFER_TYPE_ISOLATED_MARGIN_LOW
 )
