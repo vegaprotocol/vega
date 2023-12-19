@@ -39,6 +39,7 @@
 - [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
 - [10159](https://github.com/vegaprotocol/vega/issues/10159) - Add additional funding period data to market data API to allow streaming funding period data.
 - [9948](https://github.com/vegaprotocol/vega/issues/9948) - Add support for linked stop orders.
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
 
 ### 🐛 Fixes
 
@@ -85,6 +86,7 @@
 - [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
 - [10260](https://github.com/vegaprotocol/vega/issues/10260) - `ListCandleData` errors when interval is `block`
 - [9677](https://github.com/vegaprotocol/vega/issues/9677) - Removing snapshots and checkpoints do not fail on missing or corrupt state.
+- [10267](https://github.com/vegaprotocol/vega/issues/10267) - `ListCandleData` errors when market is in opening auction
 
 ## 0.73.0
 

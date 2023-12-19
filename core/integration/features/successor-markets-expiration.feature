@@ -116,8 +116,8 @@ Feature: Simple example of successor markets
     And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the last market state should be "STATE_PENDING" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "500" for the asset "ETH"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1000" for the asset "ETH"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -146,6 +146,6 @@ Feature: Simple example of successor markets
     And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the last market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "500" for the asset "ETH"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1000" for the asset "ETH"
 

@@ -3294,24 +3294,10 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 		return nil, nil
 	}
 
-	// get all other market insurance accounts for the same asset
-	sortedAccKeys := maps.Keys(e.accs)
-	sort.Strings(sortedAccKeys)
-
-	var insuranceAccounts []*types.Account
-	for _, accKey := range sortedAccKeys {
-		acc := e.accs[accKey]
-		if acc.ID != marketInsuranceID && acc.Asset == asset && acc.Type == types.AccountTypeInsurance {
-			insuranceAccounts = append(insuranceAccounts, acc.Clone())
-		}
-	}
-
-	// add the global insurance account
 	globalIns, _ := e.GetGlobalInsuranceAccount(asset)
-	insuranceAccounts = append(insuranceAccounts, globalIns)
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
-	req.ToAccount = insuranceAccounts
+	req.ToAccount[0] = globalIns
 	req.Amount = marketInsuranceAcc.Balance.Clone()
 	insuranceLedgerEntries, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
@@ -3327,7 +3313,6 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 	}
 	resp = append(resp, insuranceLedgerEntries)
 	e.removeAccount(marketInsuranceID)
-
 	return resp, nil
 }
 

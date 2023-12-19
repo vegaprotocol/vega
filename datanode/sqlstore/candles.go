@@ -84,6 +84,7 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 		interval = "1 minute"
 	}
 
+	groupBy := true
 	query := fmt.Sprintf(`SELECT
 		time_bucket_gapfill('%s', period_start) as period_start,
 		first(open) as open,
@@ -99,8 +100,8 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 	// As a result of having to use the time_bucket_gapfill function we have to provide and start and finish date to the query.
 	// The documentation suggests using the where clause for better performance as the query planner can use it to optimise performance
 	candlesDateRange := struct {
-		StartDate time.Time
-		EndDate   time.Time
+		StartDate *time.Time
+		EndDate   *time.Time
 	}{}
 
 	if from == nil || to == nil {
@@ -112,21 +113,30 @@ func (cs *Candles) getCandlesSubquery(ctx context.Context, descriptor candleDesc
 		}
 	}
 
+	// These can only be nil if there is no candle data so there's no gaps to fill and just return an empty row set
+	if candlesDateRange.StartDate == nil && candlesDateRange.EndDate == nil {
+		query = fmt.Sprintf("select period_start, open, close, high, low, volume, notional, last_update_in_period from %s where market_id = $1",
+			descriptor.view)
+		groupBy = false
+	}
+
 	if from != nil {
 		query = fmt.Sprintf("%s AND period_start >= %s", query, nextBindVar(&args, from))
-	} else {
-		query = fmt.Sprintf("%s AND period_start >= %s", query, nextBindVar(&args, candlesDateRange.StartDate))
+	} else if candlesDateRange.StartDate != nil {
+		query = fmt.Sprintf("%s AND period_start >= %s", query, nextBindVar(&args, *candlesDateRange.StartDate))
 	}
 
 	if to != nil {
 		query = fmt.Sprintf("%s AND period_start < %s", query, nextBindVar(&args, to))
-	} else {
+	} else if candlesDateRange.EndDate != nil {
 		// as no end time has been specified, we want the end time to be inclusive rather than exclusive
 		// otherwise we will always miss the last candle when the user does not specify an end time.
 		query = fmt.Sprintf("%s AND period_start <= %s", query, nextBindVar(&args, candlesDateRange.EndDate))
 	}
 
-	query = fmt.Sprintf("%s GROUP BY time_bucket_gapfill('%s', period_start)", query, interval)
+	if groupBy {
+		query = fmt.Sprintf("%s GROUP BY time_bucket_gapfill('%s', period_start)", query, interval)
+	}
 
 	return query, args, nil
 }

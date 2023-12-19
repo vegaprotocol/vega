@@ -177,12 +177,12 @@ Feature: Test the transfers to and from the insurance pools when markets termina
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC22"
     And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC23"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "200000" for the asset "ETH"
+    And the global insurance pool balance should be "1000000" for the asset "ETH"
 
     # OK, let's terminate a market via governance that is in continuous trading
     # The successor time window now comes in to play
@@ -195,12 +195,12 @@ Feature: Test the transfers to and from the insurance pools when markets termina
     And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC22"
     And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC23"
     # insurance pool is not yet distributed
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1200000" for the market "ETH/DEC22"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "200000" for the asset "ETH"
+    And the global insurance pool balance should be "1000000" for the asset "ETH"
     # pass the successor time window
     When the network moves ahead "10" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -209,13 +209,13 @@ Feature: Test the transfers to and from the insurance pools when markets termina
     #And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC22"
     #And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC23"
     ## now we should see the update
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC21"
     ## Nothing in the drained pool, nothing goes to the insurance pool of the old market
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "500000" for the asset "ETH"
+    And the global insurance pool balance should be "2000000" for the asset "ETH"
 
     ## Now settle a market via the oracle
     When the oracles broadcast data signed with "0xCAFECAFE2":
@@ -223,36 +223,36 @@ Feature: Test the transfers to and from the insurance pools when markets termina
       | trading.terminated | true  |
     And the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC21"
     ## Nothing in the drained pool, nothing goes to the insurance pool of the old market
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "500000" for the asset "ETH"
+    And the global insurance pool balance should be "2000000" for the asset "ETH"
     # Moving past the successor window means nothing here, market is not settled
     When the network moves ahead "10" blocks
     Then the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC21"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1500000" for the market "ETH/DEC21"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC21"
     ## Nothing in the drained pool, nothing goes to the insurance pool of the old market
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "500000" for the asset "ETH"
+    And the global insurance pool balance should be "2000000" for the asset "ETH"
 
     ## Now settle the terminated market
     When the oracles broadcast data signed with "0xCAFECAFE2":
       | name             | value |
       | prices.ETH.value | 150   |
     And the network moves ahead "10" blocks
-    Then the insurance pool balance should be "2000000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2000000" for the market "ETH/DEC20"
+    Then the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     ## Nothing in the drained pool, nothing goes to the insurance pool of the old market
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
     And the insurance pool balance should be "0" for the market "ETH/DEC23"
-	And the global insurance pool balance should be "1000000" for the asset "ETH"
+    And the global insurance pool balance should be "3000000" for the asset "ETH"
 
     ## Now terminate both of the other markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
@@ -263,17 +263,17 @@ Feature: Test the transfers to and from the insurance pools when markets termina
       | trading.terminated | true  |
     Then the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2000000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2000000" for the market "ETH/DEC20"
-	And the global insurance pool balance should be "1000000" for the asset "ETH"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "3000000" for the asset "ETH"
 
     ## Now settle one market, pass the successor window and ensure the insurance pool is divided between the global insurance pool and the terminated market
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 150   |
     And the network moves ahead "10" blocks
-    Then the insurance pool balance should be "3000000" for the market "ETH/DEC19"
-	And the global insurance pool balance should be "2000000" for the asset "ETH"
+    Then the insurance pool balance should be "1000000" for the market "ETH/DEC19"
+    And the global insurance pool balance should be "4000000" for the asset "ETH"
     ## the insurance pools from the settled/cancelled markets are all drained
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
@@ -285,7 +285,7 @@ Feature: Test the transfers to and from the insurance pools when markets termina
       | name             | value |
       | prices.ETH.value | 150   |
     And the network moves ahead "10" blocks
-	And the global insurance pool balance should be "5000000" for the asset "ETH"
+    And the global insurance pool balance should be "5000000" for the asset "ETH"
     ## the insurance pools from the settled/cancelled markets are all drained
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
