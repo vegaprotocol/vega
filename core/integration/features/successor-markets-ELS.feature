@@ -221,8 +221,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7085" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4669" for the asset "USD"
+    And the insurance pool balance should be "2416" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "9338" for the asset "USD"
 
   @SuccessorMarketSimple @Liquidation
   Scenario: 002 Successor market enacted with parent market still active, ELS is copied over and both states can change independently. 0042-LIQF-031, 0042-LIQF-048, 0042-LIQF-033
@@ -318,8 +318,8 @@ Feature: Simple example of successor markets
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "9403" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "2351" for the asset "USD"
+    And the insurance pool balance should be "7052" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "4702" for the asset "USD"
 
 #this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -472,8 +472,8 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.8               | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "7085" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "4669" for the asset "USD"
+    And the insurance pool balance should be "2416" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "9338" for the asset "USD"
 
 
   @SuccessorMarketExpires2 @Liquidation
@@ -549,8 +549,8 @@ Feature: Simple example of successor markets
     And the successor market "ETH/DEC20" is enacted
     When the network moves ahead "5" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    Then the insurance pool balance should be "5877" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "5877" for the asset "USD"
+    Then the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "11754" for the asset "USD"
 
 # make LP commitment while market is still pending
     Then the parties submit the following liquidity provision:
@@ -571,8 +571,8 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "5877" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "5877" for the asset "USD"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "11754" for the asset "USD"    
 
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
@@ -594,5 +594,5 @@ Feature: Simple example of successor markets
       | lpprov2 | 0.7272727272727273 | 10000                   |
     When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "5877" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "5877" for the asset "USD"
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "11754" for the asset "USD"
