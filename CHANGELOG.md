@@ -84,6 +84,7 @@
 - [10257](https://github.com/vegaprotocol/vega/issues/10257) - Fix equity like share votes count on update market proposal.
 - [10260](https://github.com/vegaprotocol/vega/issues/10260) - `ListCandleData` errors when interval is `block`
 - [9677](https://github.com/vegaprotocol/vega/issues/9677) - Removing snapshots and checkpoints do not fail on missing or corrupt state.
+- [10267](https://github.com/vegaprotocol/vega/issues/10267) - `ListCandleData` errors when market is in opening auction
 
 ## 0.73.0
 
