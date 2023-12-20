@@ -46,7 +46,7 @@ var runCmd = &cobra.Command{
 
 		log := logging.NewDevLogger()
 
-		runner, err := visor.NewVisor(cmd.Context(), log, client.NewClientFactory(log), homePath)
+		runner, err := visor.NewVisor(cmd.Context(), log, client.NewClientFactory(), homePath)
 		if err != nil {
 			return fmt.Errorf("failed to create new runner: %w", err)
 		}
