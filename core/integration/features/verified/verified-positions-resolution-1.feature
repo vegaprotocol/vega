@@ -121,6 +121,7 @@ Feature: Position resolution case 1
 
     And then the network moves ahead "10" blocks
 
+    #Then debug all events as JSON file "all_evts.json"
     Then the parties should have the following profit and loss:
       | party            | volume | realised pnl | unrealised pnl |
       | designatedLooser | 0      | -11600       | 0              |
