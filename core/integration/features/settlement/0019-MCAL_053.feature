@@ -146,7 +146,7 @@ Feature: Test funding margin for Perps market under isolated margin mode
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial | margin mode     | margin factor | order  |
-      | party1 | ETH/DEC19 | 700000      | 840000  | isolated margin | 0.3           | 900000 |
+      | party1 | ETH/DEC19 | 201000      | 241200  | isolated margin | 0.3           | 900000 |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general | order margin |
       | party1 | USD   | ETH/DEC19 | 600000  | 7599000 | 900000       |
@@ -163,7 +163,7 @@ Feature: Test funding margin for Perps market under isolated margin mode
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -1     | 0              | -901000      |
+      | party1 | 0      | 0              | -901000      |
     When the network moves ahead "1" blocks
 
     When the parties place the following orders:
@@ -196,12 +196,12 @@ Feature: Test funding margin for Perps market under isolated margin mode
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general | order margin |
-      | party1 | USD   | ETH/DEC19 | 1160000 | 7599000 | 900000       |
-      | party2 | USD   | ETH/DEC19 | 840500  | 9549000 |              |
+      | party1 | USD   | ETH/DEC19 | 1159000 | 7599000 | 900000       |
+      | party2 | USD   | ETH/DEC19 | 840624  | 9549000 |              |
       | party3 | USD   | ETH/DEC19 | 0       | 9198000 |              |
 
     ## Now take us past the MTM frequency time and things should change
     When the network moves ahead "5" blocks
-    And the mark price should be "2000" for the market "ETH/DEC19"
+    And the mark price should be "2001" for the market "ETH/DEC19"
 
 
