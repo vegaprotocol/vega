@@ -139,7 +139,7 @@ WITH
     SELECT team_id,
            party_id,
            SUM(total_quantum_reward) AS total_in_quantum,
-           JSONB_AGG(JSONB_BUILD_OBJECT('epoch', at_epoch, 'total', total_quantum_reward)) AS quantum_rewards
+           JSONB_AGG(JSONB_BUILD_OBJECT('epoch', at_epoch, 'total', total_quantum_reward) ORDER BY at_epoch, total_quantum_reward) AS quantum_rewards
     FROM eligible_stats
     GROUP BY
       team_id,
