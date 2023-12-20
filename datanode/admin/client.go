@@ -75,7 +75,7 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 
 	resp, err := s.http.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("failed to post data %q: %w", string(req), err)
+		return fmt.Errorf("failed to contact vega socket: %w", err)
 	}
 	defer resp.Body.Close()
 

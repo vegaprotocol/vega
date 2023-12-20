@@ -51,12 +51,13 @@ func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Fac
 	}
 
 	if !homeExists {
-		return nil, fmt.Errorf("home folder %q does not exists, it can initiated with init command", homePath)
+		return nil, fmt.Errorf("visor is not initialized, call the `init` command first")
 	}
 
 	visorConf, err := config.NewVisorConfig(log, homePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get config: %w", err)
+		// Do not wrap error as underlying errors are meaningful enough.
+		return nil, err
 	}
 
 	currentFolderExists, err := utils.PathExists(visorConf.CurrentRunConfigPath())
@@ -171,8 +172,11 @@ func (v *Visor) Run(ctx context.Context) error {
 						}
 					}
 
-					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
+					v.log.Debug("Failed to get upgrade status from API", logging.Error(err))
+
 					numOfUpgradeStatusErrs++
+
+					v.log.Info("Still waiting for vega to start...", logging.Int("attemptLeft", maxUpgradeStatusErrs-numOfUpgradeStatusErrs))
 
 					break
 				}

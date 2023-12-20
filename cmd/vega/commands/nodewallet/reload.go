@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/core/admin"
 	"code.vegaprotocol.io/vega/core/config"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
@@ -43,9 +42,6 @@ func (opts *reloadCmd) Execute(_ []string) error {
 		return err
 	}
 
-	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
-	defer log.AtExit()
-
 	vegaPaths := paths.New(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
@@ -59,7 +55,7 @@ func (opts *reloadCmd) Execute(_ []string) error {
 		return err
 	}
 
-	sc := admin.NewClient(log, opts.Config)
+	sc := admin.NewClient(opts.Config)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
