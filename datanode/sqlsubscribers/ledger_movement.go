@@ -35,7 +35,7 @@ type Ledger interface {
 	Flush(ctx context.Context) error
 }
 
-type TransferResponseEvent interface {
+type LedgerMovementEvents interface {
 	events.Event
 	LedgerMovements() []*vega.LedgerMovement
 }
@@ -63,10 +63,10 @@ func (t *TransferResponse) Flush(ctx context.Context) error {
 }
 
 func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
-	return t.consume(ctx, evt.(TransferResponseEvent))
+	return t.consume(ctx, evt.(LedgerMovementEvents))
 }
 
-func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
+func (t *TransferResponse) consume(ctx context.Context, e LedgerMovementEvents) error {
 	var errs strings.Builder
 	for _, tr := range e.LedgerMovements() {
 		t.ledger.AddTransferResponse(tr)

@@ -33,17 +33,18 @@ import (
 type AggregatedLedgerEntry struct {
 	VegaTime     time.Time
 	Quantity     decimal.Decimal
-	TransferType *LedgerMovementType
-	AssetID      *AssetID
+	TransferType LedgerMovementType
+	AssetID      AssetID
 
-	FromAccountPartyID  *PartyID
-	ToAccountPartyID    *PartyID
-	FromAccountMarketID *MarketID
-	ToAccountMarketID   *MarketID
-	FromAccountType     *types.AccountType
-	ToAccountType       *types.AccountType
+	FromAccountPartyID  PartyID
+	ToAccountPartyID    PartyID
+	FromAccountMarketID MarketID
+	ToAccountMarketID   MarketID
+	FromAccountType     types.AccountType
+	ToAccountType       types.AccountType
 	FromAccountBalance  decimal.Decimal
 	ToAccountBalance    decimal.Decimal
+	TransferID          TransferID
 }
 
 func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry {
@@ -52,53 +53,35 @@ func (ledgerEntries *AggregatedLedgerEntry) ToProto() *v2.AggregatedLedgerEntry 
 	lep.Quantity = ledgerEntries.Quantity.String()
 	lep.Timestamp = ledgerEntries.VegaTime.UnixNano()
 
-	if ledgerEntries.TransferType != nil {
-		lep.TransferType = vega.TransferType(*ledgerEntries.TransferType)
+	lep.TransferType = vega.TransferType(ledgerEntries.TransferType)
+
+	assetIDString := ledgerEntries.AssetID.String()
+	if assetIDString != "" {
+		lep.AssetId = &assetIDString
 	}
 
-	if ledgerEntries.AssetID != nil {
-		assetIDString := ledgerEntries.AssetID.String()
-		if assetIDString != "" {
-			lep.AssetId = &assetIDString
-		}
+	fromPartyIDString := ledgerEntries.FromAccountPartyID.String()
+	if fromPartyIDString != "" {
+		lep.FromAccountPartyId = &fromPartyIDString
 	}
 
-	if ledgerEntries.FromAccountPartyID != nil {
-		partyIDString := ledgerEntries.FromAccountPartyID.String()
-		if partyIDString != "" {
-			lep.FromAccountPartyId = &partyIDString
-		}
+	toPartyIDString := ledgerEntries.ToAccountPartyID.String()
+	if toPartyIDString != "" {
+		lep.ToAccountPartyId = &toPartyIDString
 	}
 
-	if ledgerEntries.ToAccountPartyID != nil {
-		partyIDString := ledgerEntries.ToAccountPartyID.String()
-		if partyIDString != "" {
-			lep.ToAccountPartyId = &partyIDString
-		}
+	fromMarketIDString := ledgerEntries.FromAccountMarketID.String()
+	if fromMarketIDString != "" {
+		lep.FromAccountMarketId = &fromMarketIDString
 	}
 
-	if ledgerEntries.FromAccountMarketID != nil {
-		marketIDString := ledgerEntries.FromAccountMarketID.String()
-		if marketIDString != "" {
-			lep.FromAccountMarketId = &marketIDString
-		}
+	toMarketIDString := ledgerEntries.ToAccountMarketID.String()
+	if toMarketIDString != "" {
+		lep.ToAccountMarketId = &toMarketIDString
 	}
 
-	if ledgerEntries.ToAccountMarketID != nil {
-		marketIDString := ledgerEntries.ToAccountMarketID.String()
-		if marketIDString != "" {
-			lep.ToAccountMarketId = &marketIDString
-		}
-	}
-
-	if ledgerEntries.FromAccountType != nil {
-		lep.FromAccountType = *ledgerEntries.FromAccountType
-	}
-
-	if ledgerEntries.ToAccountType != nil {
-		lep.ToAccountType = *ledgerEntries.ToAccountType
-	}
-
+	lep.FromAccountType = ledgerEntries.FromAccountType
+	lep.ToAccountType = ledgerEntries.ToAccountType
 	lep.FromAccountBalance = ledgerEntries.FromAccountBalance.String()
 	lep.ToAccountBalance = ledgerEntries.ToAccountBalance.String()
 

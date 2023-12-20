@@ -239,20 +239,20 @@ func TestLedger(t *testing.T) {
 	t.Run("get all ledger records", func(t *testing.T) {
 		// Account store should be empty to begin with
 		ledgerEntries, err := ledgerStore.GetAll(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, ledgerEntries)
 	})
 
 	_, err := ledgerStore.Flush(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("get by tx hash", func(t *testing.T) {
 		fetchedEntries, err := ledgerStore.GetByTxHash(ctx, ledgerEntries[0].TxHash)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		ledgerEntryEqual(t, ledgerEntries[0], fetchedEntries[0])
 
 		fetchedEntries2, err := ledgerStore.GetByTxHash(ctx, ledgerEntries[2].TxHash)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		ledgerEntryEqual(t, ledgerEntries[2], fetchedEntries2[0])
 	})
 
@@ -277,7 +277,7 @@ func TestLedger(t *testing.T) {
 
 	t.Run("query ledger entries with filters", func(t *testing.T) {
 		t.Run("by fromAccount filter", func(t *testing.T) {
-			// Set filters for FromAccount and AcountTo IDs
+			// Set filters for FromAccount and AccountTo IDs
 			filter := &entities.LedgerEntryFilter{
 				FromAccountFilter: entities.AccountFilter{
 					AssetID: asset1.ID,
@@ -303,7 +303,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// 0
 			assert.NotNil(t, entries)
@@ -316,35 +316,35 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// 6->7, 6->7, 6->7
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 
 			for _, e := range *entries {
-				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				if e.Quantity.Abs().String() == strconv.Itoa(80) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(9) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(41) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2260), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17050), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
+				assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, e.ToAccountMarketID, markets[4].ID)
 			}
 
 			filter.FromAccountFilter.PartyIDs = append(filter.FromAccountFilter.PartyIDs, parties[4].ID)
@@ -391,34 +391,34 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// 6->7, 6->7, 6->7
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
-				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				if e.Quantity.Abs().String() == strconv.Itoa(80) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(9) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(41) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2260), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17050), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
+				assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, e.ToAccountMarketID, markets[4].ID)
 			}
 
 			filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
@@ -429,7 +429,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// None
 			assert.NotNil(t, entries)
@@ -457,28 +457,28 @@ func TestLedger(t *testing.T) {
 				cursor,
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// 6->7, 6->7, 6->7
 			assert.NotNil(t, entries)
 			assert.Equal(t, 2, len(*entries))
 			for _, e := range *entries {
-				assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+				assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				if e.Quantity.Abs().String() == strconv.Itoa(80) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 					assert.Equal(t, strconv.Itoa(2310), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17000), e.ToAccountBalance.Abs().String())
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(9) {
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 					assert.Equal(t, strconv.Itoa(2301), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17009), e.ToAccountBalance.Abs().String())
 				}
 
-				assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-				assert.Equal(t, *e.ToAccountMarketID, markets[4].ID)
+				assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+				assert.Equal(t, e.ToAccountMarketID, markets[4].ID)
 			}
 
 			filter.ToAccountFilter.AccountTypes = []vega.AccountType{vega.AccountType_ACCOUNT_TYPE_GENERAL, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY}
@@ -489,7 +489,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// None
 			assert.NotNil(t, entries)
@@ -526,30 +526,30 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Output entries for accounts positions:
 				// 0->1, 2->3
 				assert.NotNil(t, entries)
 				assert.Equal(t, 2, len(*entries))
 				for _, e := range *entries {
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 
 					if e.Quantity.Abs().String() == strconv.Itoa(15) {
-						assert.Equal(t, *e.FromAccountPartyID, parties[0].ID)
-						assert.Equal(t, *e.ToAccountPartyID, parties[0].ID)
-						assert.Equal(t, *e.FromAccountMarketID, markets[0].ID)
-						assert.Equal(t, *e.ToAccountMarketID, markets[1].ID)
+						assert.Equal(t, e.FromAccountPartyID, parties[0].ID)
+						assert.Equal(t, e.ToAccountPartyID, parties[0].ID)
+						assert.Equal(t, e.FromAccountMarketID, markets[0].ID)
+						assert.Equal(t, e.ToAccountMarketID, markets[1].ID)
 						assert.Equal(t, strconv.Itoa(500), e.FromAccountBalance.Abs().String())
 						assert.Equal(t, strconv.Itoa(115), e.ToAccountBalance.Abs().String())
 					}
 
 					if e.Quantity.Abs().String() == strconv.Itoa(10) {
-						assert.Equal(t, *e.FromAccountPartyID, parties[1].ID)
-						assert.Equal(t, *e.ToAccountPartyID, parties[1].ID)
-						assert.Equal(t, *e.FromAccountMarketID, markets[1].ID)
-						assert.Equal(t, *e.ToAccountMarketID, markets[2].ID)
+						assert.Equal(t, e.FromAccountPartyID, parties[1].ID)
+						assert.Equal(t, e.ToAccountPartyID, parties[1].ID)
+						assert.Equal(t, e.FromAccountMarketID, markets[1].ID)
+						assert.Equal(t, e.ToAccountMarketID, markets[2].ID)
 						assert.Equal(t, strconv.Itoa(170), e.FromAccountBalance.Abs().String())
 						assert.Equal(t, strconv.Itoa(17890), e.ToAccountBalance.Abs().String())
 					}
@@ -562,30 +562,30 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Output entries for accounts positions:
 				// 0->1, 2->3
 				assert.NotNil(t, entries)
 				assert.Equal(t, 2, len(*entries))
 				for _, e := range *entries {
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 
 					if e.Quantity.Abs().String() == strconv.Itoa(15) {
-						assert.Equal(t, *e.FromAccountPartyID, parties[0].ID)
-						assert.Equal(t, *e.ToAccountPartyID, parties[0].ID)
-						assert.Equal(t, *e.FromAccountMarketID, markets[0].ID)
-						assert.Equal(t, *e.ToAccountMarketID, markets[1].ID)
+						assert.Equal(t, e.FromAccountPartyID, parties[0].ID)
+						assert.Equal(t, e.ToAccountPartyID, parties[0].ID)
+						assert.Equal(t, e.FromAccountMarketID, markets[0].ID)
+						assert.Equal(t, e.ToAccountMarketID, markets[1].ID)
 						assert.Equal(t, strconv.Itoa(500), e.FromAccountBalance.Abs().String())
 						assert.Equal(t, strconv.Itoa(115), e.ToAccountBalance.Abs().String())
 					}
 
 					if e.Quantity.Abs().String() == strconv.Itoa(10) {
-						assert.Equal(t, *e.FromAccountPartyID, parties[1].ID)
-						assert.Equal(t, *e.ToAccountPartyID, parties[1].ID)
-						assert.Equal(t, *e.FromAccountMarketID, markets[1].ID)
-						assert.Equal(t, *e.ToAccountMarketID, markets[2].ID)
+						assert.Equal(t, e.FromAccountPartyID, parties[1].ID)
+						assert.Equal(t, e.ToAccountPartyID, parties[1].ID)
+						assert.Equal(t, e.FromAccountMarketID, markets[1].ID)
+						assert.Equal(t, e.ToAccountMarketID, markets[2].ID)
 						assert.Equal(t, strconv.Itoa(170), e.FromAccountBalance.Abs().String())
 						assert.Equal(t, strconv.Itoa(17890), e.ToAccountBalance.Abs().String())
 					}
@@ -620,21 +620,21 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Output entries for accounts positions -> should output transfers for asset2 only:
 				// 10->11
 				assert.NotNil(t, entries)
 				assert.Equal(t, 1, len(*entries))
 				for _, e := range *entries {
 					assert.Equal(t, e.Quantity.Abs().String(), strconv.Itoa(40))
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeDeposit)
 
-					assert.Equal(t, *e.FromAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(1500), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(5680), e.ToAccountBalance.Abs().String())
 				}
@@ -647,7 +647,7 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Output entries for accounts positions:
 				// None
 				assert.NotNil(t, entries)
@@ -662,21 +662,21 @@ func TestLedger(t *testing.T) {
 					entities.CursorPagination{},
 				)
 
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// Output entries for accounts positions:
 				// 14->16
 				assert.NotNil(t, entries)
 				assert.Equal(t, 1, len(*entries))
 				for _, e := range *entries {
 					assert.Equal(t, e.Quantity.Abs().String(), strconv.Itoa(12))
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeDeposit)
 
-					assert.Equal(t, *e.FromAccountPartyID, parties[7].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[8].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[7].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[7].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[8].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[7].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[8].ID)
 					assert.Equal(t, strconv.Itoa(5000), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(9100), e.ToAccountBalance.Abs().String())
 				}
@@ -705,45 +705,45 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions -> should output transfers for asset3 only:
 			// 14->16, 17->15, 21->15
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(12) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[7].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[8].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[7].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[7].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[8].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[7].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[8].ID)
 					assert.Equal(t, strconv.Itoa(5000), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(9100), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(14) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[8].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[7].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[9].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[8].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[7].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[9].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[8].ID)
 					assert.Equal(t, strconv.Itoa(180), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(1410), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(28) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[10].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[7].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[10].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[7].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[9].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[8].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[9].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[8].ID)
 					assert.Equal(t, strconv.Itoa(2180), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(1438), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
 				}
 
-				assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
-				assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeDeposit)
+				assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
+				assert.Equal(t, e.TransferType, entities.LedgerMovementTypeDeposit)
 			}
 
 			// closed on account filters
@@ -754,7 +754,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// None
 			assert.NotNil(t, entries)
@@ -771,7 +771,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions:
 			// 0
 			assert.NotNil(t, entries)
@@ -825,42 +825,42 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 			}
 
@@ -871,45 +871,45 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// Output entries for accounts positions -> should output transfers for asset3 only:
 			// 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
-				assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+				assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 			}
 
 			filter = &entities.LedgerEntryFilter{
@@ -930,42 +930,42 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 			}
 
@@ -988,7 +988,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, entries)
 			assert.Equal(t, 0, len(*entries))
 
@@ -1011,7 +1011,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// List transfers:
 			// accounts 5->11 - 3 - ACCOUNT_TYPE_INSURANCE ACCOUNT_TYPE_GENERAL
 			// accounts 5->10 - 5 - ACCOUNT_TYPE_INSURANCE ACCOUNT_TYPE_GENERAL
@@ -1021,53 +1021,53 @@ func TestLedger(t *testing.T) {
 			assert.Equal(t, 4, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2587), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(5683), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
 					assert.Equal(t, strconv.Itoa(2582), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(1510), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(25) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[2].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[3].ID)
 					assert.Equal(t, strconv.Itoa(1700), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(2590), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 				}
 			}
 
@@ -1092,7 +1092,7 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// List transfers:
 			// 0
 			assert.NotNil(t, entries)
@@ -1118,42 +1118,42 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
 			assert.Equal(t, 3, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 			}
 
@@ -1179,55 +1179,55 @@ func TestLedger(t *testing.T) {
 				entities.CursorPagination{},
 			)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			// 4->5, 5->10, 5->11, 4->11
 			assert.NotNil(t, entries)
 			assert.Equal(t, 4, len(*entries))
 			for _, e := range *entries {
 				if e.Quantity.Abs().String() == strconv.Itoa(3) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(5) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
-					assert.Equal(t, *e.FromAccountMarketID, markets[3].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[5].ID)
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[5].ID)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(25) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[2].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[3].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[3].ID)
 					assert.Equal(t, strconv.Itoa(1700), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(2590), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeBondSlashing)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeBondSlashing)
 				}
 
 				if e.Quantity.Abs().String() == strconv.Itoa(72) {
-					assert.Equal(t, *e.FromAccountPartyID, parties[2].ID)
-					assert.Equal(t, *e.ToAccountPartyID, parties[5].ID)
+					assert.Equal(t, e.FromAccountPartyID, parties[2].ID)
+					assert.Equal(t, e.ToAccountPartyID, parties[5].ID)
 
-					assert.Equal(t, *e.FromAccountMarketID, markets[2].ID)
-					assert.Equal(t, *e.ToAccountMarketID, markets[6].ID)
+					assert.Equal(t, e.FromAccountMarketID, markets[2].ID)
+					assert.Equal(t, e.ToAccountMarketID, markets[6].ID)
 					assert.Equal(t, strconv.Itoa(2188), e.FromAccountBalance.Abs().String())
 					assert.Equal(t, strconv.Itoa(17122), e.ToAccountBalance.Abs().String())
-					assert.Equal(t, *e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
-					assert.Equal(t, *e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
-					assert.Equal(t, *e.TransferType, entities.LedgerMovementTypeRewardPayout)
+					assert.Equal(t, e.FromAccountType, vega.AccountType_ACCOUNT_TYPE_INSURANCE)
+					assert.Equal(t, e.ToAccountType, vega.AccountType_ACCOUNT_TYPE_GENERAL)
+					assert.Equal(t, e.TransferType, entities.LedgerMovementTypeRewardPayout)
 				}
 			}
 		})
