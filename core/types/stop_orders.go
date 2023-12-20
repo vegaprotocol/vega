@@ -225,13 +225,11 @@ func StopOrderSetupFromProto(
 	var sizeOverrideSetting StopOrderSizeOverrideSetting = vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED
 
 	if psetup.SizeOverrideValue != nil {
-		if psetup.SizeOverrideValue.Percentage != nil {
-			value, err := num.DecimalFromString(*psetup.SizeOverrideValue.Percentage)
-			if err != nil {
-				return nil, err
-			}
-			sizeOverrideValue = StopOrderSizeOverrideValue{PercentageSize: value}
+		value, err := num.DecimalFromString(psetup.SizeOverrideValue.Percentage)
+		if err != nil {
+			return nil, err
 		}
+		sizeOverrideValue = StopOrderSizeOverrideValue{PercentageSize: value}
 	}
 
 	if psetup.SizeOverrideSetting != nil {

@@ -8,7 +8,8 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 message StopOrder {
   message SizeOverrideValue {
-    optional string percentage = 1;
+    // Scaling percentage of the current positions size
+    string percentage = 1;
   }
 
   enum SizeOverrideSetting {
