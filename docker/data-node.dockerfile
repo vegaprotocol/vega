@@ -1,4 +1,4 @@
-FROM golang:1.20.8-alpine3.18 AS builder
+FROM golang:1.21.5-alpine3.18 AS builder
 RUN apk add --no-cache git
 ENV CGO_ENABLED=0
 WORKDIR /src
