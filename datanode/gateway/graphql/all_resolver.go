@@ -98,8 +98,11 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*vegapb.Mar
 }
 
 func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *apipb.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *eventspb.Transfer_Status, scope *apipb.ListTransfersRequest_Scope) (*apipb.TransferConnection, error) {
-	// if direction is nil just default to ToOrFrom
-	if direction == nil {
+	// if direction is nil just default to ToOrFrom, except when isReward is not nil and true, and partyID is not nil, in which case the API requires the direction to be FROM
+	if direction == nil && (isReward != nil && *isReward && partyID != nil) {
+		d := TransferDirectionFrom
+		direction = &d
+	} else if direction == nil {
 		d := TransferDirectionToOrFrom
 		direction = &d
 	}
