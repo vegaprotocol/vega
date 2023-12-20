@@ -124,7 +124,6 @@ Feature: Test closeout under isolated margin mode when party has bond account
       | party1 | party1 | ACCOUNT_TYPE_BOND   | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 1000   | USD   |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_INSURANCE  | ETH/FEB23 | 98920  | USD   |
 
-
   Scenario: 002 closeout when party has open position, order, and bond account(0019-MCAL-073)
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount       |
@@ -231,7 +230,7 @@ Feature: Test closeout under isolated margin mode when party has bond account
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin | bond |
-      | party1 | USD   | ETH/FEB23 | 119900 |         | 0            | 100  |
+      | party1 | USD   | ETH/FEB23 | 120000 |         | 0            | 100  |
 
     And the insurance pool balance should be "0" for the market "ETH/FEB23"
 

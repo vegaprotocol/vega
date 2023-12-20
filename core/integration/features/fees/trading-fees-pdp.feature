@@ -1408,6 +1408,7 @@ Feature: Fees calculations
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | sell | 10000  | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 30000  | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    And the network moves ahead "1" blocks
 
     Then the following trades should be executed:
       | buyer | price | size  | seller   |

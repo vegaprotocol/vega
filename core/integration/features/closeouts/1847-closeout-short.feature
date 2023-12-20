@@ -54,6 +54,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | tt_16 | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |            |
       | tt_15 | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-2   |            |
       | tt_16 | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-2   |            |
+    And the network moves ahead "1" blocks
 
 
     And the mark price should be "20" for the market "ETH/DEC19"

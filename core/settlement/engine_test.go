@@ -761,10 +761,11 @@ func TestNetworkPartyCloseout(t *testing.T) {
 	currentMP := num.NewUint(1000)
 	// network trade
 	nTrade := &types.Trade{
-		Buyer:  types.NetworkParty,
-		Seller: types.NetworkParty,
-		Price:  currentMP.Clone(),
-		Size:   10,
+		Buyer:       types.NetworkParty,
+		Seller:      types.NetworkParty,
+		Price:       currentMP.Clone(),
+		MarketPrice: currentMP.Clone(),
+		Size:        10,
 	}
 	nPosition := testPos{
 		party: types.NetworkParty,
@@ -813,10 +814,11 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	currentMP := num.NewUint(1000)
 	// network trade
 	nTrade := &types.Trade{
-		Buyer:  types.NetworkParty,
-		Seller: types.NetworkParty,
-		Price:  currentMP.Clone(),
-		Size:   10,
+		Buyer:       types.NetworkParty,
+		Seller:      types.NetworkParty,
+		Price:       currentMP.Clone(),
+		MarketPrice: currentMP.Clone(),
+		Size:        10,
 	}
 	nPosition := testPos{
 		party: types.NetworkParty,
@@ -938,10 +940,11 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	assert.NotEmpty(t, transfers)
 	// now make it look like party2 got distressed because of this MTM settlement
 	nTrade = &types.Trade{
-		Price:  newMP.Clone(),
-		Size:   1,
-		Buyer:  types.NetworkParty,
-		Seller: types.NetworkParty,
+		Price:       newMP.Clone(),
+		MarketPrice: newMP.Clone(),
+		Size:        1,
+		Buyer:       types.NetworkParty,
+		Seller:      types.NetworkParty,
 	}
 	positions = []events.MarketPosition{
 		testPos{
@@ -962,7 +965,7 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	}
 	engine.AddTrade(nTrade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions) // amounts are zero here (was trade only)
-	assert.NotEmpty(t, transfers)
+	assert.Empty(t, transfers)
 	newMP = num.NewUint(995)
 	positions = []events.MarketPosition{
 		testPos{

@@ -127,9 +127,8 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    And the network moves ahead "1" blocks
+    And the network moves ahead "2" blocks
 
-    Then debug trades
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
       | network         | 150   | 290  | designatedLoser  |
@@ -139,7 +138,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider | 120   | 54   | network          |
       | buySideProvider | 140   | 1    | sellSideProvider |
 
-    Then the following network trades should be executed:
+    And the following network trades should be executed:
       | party           | aggressor side | volume |
       | designatedLoser | buy            | 290    |
       | buySideProvider | sell           | 1      |
@@ -149,7 +148,7 @@ Feature: Position resolution case 5 lognormal risk model
       | buySideProvider | buy            | 1      |
 
     # check positions
-    Then the parties should have the following profit and loss:
+    And the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | designatedLoser  | 0      | 0              | -17650       |
       | sellSideProvider | -291   | 2900           | 0            |
@@ -157,13 +156,13 @@ Feature: Position resolution case 5 lognormal risk model
       | aux              | 11     | 1380           | -541         |
       | aux2             | -1     | 10             | 0            |
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
       | designatedLoser  | USD   | ETH/DEC19 | 0      | 0            |
       | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
       | buySideProvider  | USD   | ETH/DEC19 | 24057  | 999999975387 |
       | aux              | USD   | ETH/DEC19 | 1219   | 999999999620 |
-      | aux2             | USD   | ETH/DEC19 | 271    | 999999999739 |
+      | aux2             | USD   | ETH/DEC19 | 259    | 999999999751 |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -233,7 +232,7 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054  |
       | buySideProvider  | USD   | ETH/DEC19 | 22937  | 999999975387  |
       | aux              | USD   | ETH/DEC19 | 607    | 1000000000000 |
-      | aux2             | USD   | ETH/DEC19 | 291    | 999999999739  |
+      | aux2             | USD   | ETH/DEC19 | 279    | 999999999751  |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -309,6 +308,7 @@ Feature: Position resolution case 5 lognormal risk model
     When the parties place the following orders with ticks:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLoser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the network moves ahead "1" blocks
 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |

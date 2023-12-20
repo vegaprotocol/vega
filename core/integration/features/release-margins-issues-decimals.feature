@@ -260,6 +260,7 @@ Feature: Test margin release on order cancel
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party2 | ETH/DEC19 | buy  | 1      | 9999  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the network moves ahead "1" blocks
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -273,4 +274,4 @@ Feature: Test margin release on order cancel
     # TODO: FIX THIS -> PnL bug when dealing with decimal places...
     And the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
-      | partyGuyGood | 0      | 0              | -990001      |
+      | partyGuyGood | 0      | 0              | 8999000      |

@@ -1535,6 +1535,10 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 			)
 			return nil, nil, err
 		}
+		if req == nil {
+			// nil transfer encountered
+			continue
+		}
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
@@ -2686,6 +2690,9 @@ func (e *Engine) getTransferFundsFeesTransferRequest(ctx context.Context, t *typ
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument.
 func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate, useGeneralAccountForMarginSearch bool) (*types.TransferRequest, error) {
+	if p == nil || p.Amount == nil {
+		return nil, nil
+	}
 	var (
 		asset = p.Amount.Asset
 		err   error

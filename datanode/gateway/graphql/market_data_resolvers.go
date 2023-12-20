@@ -228,6 +228,13 @@ func (r *myMarketDataResolver) NextMarkToMarket(_ context.Context, m *types.Mark
 	return vegatime.Format(vegatime.UnixNano(m.NextMarkToMarket)), nil
 }
 
+func (r *myMarketDataResolver) NextNetworkCloseout(_ context.Context, m *types.MarketData) (string, error) {
+	if m.NextNetworkCloseout == 0 {
+		return "", nil
+	}
+	return vegatime.Format(vegatime.UnixNano(m.NextNetworkCloseout)), nil
+}
+
 func (r *myMarketDataResolver) MarketGrowth(_ context.Context, m *types.MarketData) (string, error) {
 	return m.MarketGrowth, nil
 }
@@ -373,6 +380,10 @@ func (r *myObservableMarketDataResolver) LiquidityProviderSLA(ctx context.Contex
 
 func (r *myObservableMarketDataResolver) NextMarkToMarket(ctx context.Context, m *types.MarketData) (string, error) {
 	return (*myMarketDataResolver)(r).NextMarkToMarket(ctx, m)
+}
+
+func (r *myObservableMarketDataResolver) NextNetworkCloseout(ctx context.Context, m *types.MarketData) (string, error) {
+	return (*myMarketDataResolver)(r).NextNetworkCloseout(ctx, m)
 }
 
 func (r *myObservableMarketDataResolver) MarketGrowth(ctx context.Context, m *types.MarketData) (string, error) {

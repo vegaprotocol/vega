@@ -98,7 +98,7 @@ Feature: Same as 1847-closeout-long test, but with a custom liquidation strategy
       | tt_4  | 4      | -200           | 0            |
       | tt_5  | 0      | 0              | -100         |
       | tt_6  | -4     | 200            | -27          |
-      | tt_10 | 30     | 0              | 0            |
+      | tt_10 | 26     | 0              | 0            |
       | tt_11 | -30    | 200            | -65          |
     And debug trades
     And the following network trades should be executed:

@@ -575,6 +575,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugAllEvents(execsetup.broker, execsetup.log)
 		return nil
 	})
+	s.Step(`^debug all events as JSON file "([^"]+)"$`, func(fname string) error {
+		return steps.DebugAllEventsJSONFile(execsetup.broker, execsetup.log, fname)
+	})
 	s.Step(`^debug auction events$`, func() error {
 		steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
 		return nil

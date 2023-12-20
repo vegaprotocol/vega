@@ -68,6 +68,7 @@ Feature: Test mark to market settlement with insurance pool
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | sell | 1      | 6000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+    And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
