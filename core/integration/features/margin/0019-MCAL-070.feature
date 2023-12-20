@@ -242,11 +242,11 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 25540 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 25540 | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And the network moves ahead "1" blocks
+    And the network moves ahead "2" blocks
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -1     | 174460         | -269960      |
+      | party1 | -1     | 174460         | -269860      |
 
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
@@ -254,7 +254,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 119900 | 100     | 0            |
+      | party1 | USD   | ETH/FEB23 | 120000 | 100     | 0            |
 
   Scenario: 003 When a party (who holds open positions and bond account) gets distressed, open positions will be closed, the bond account will be emptied (0019-MCAL-072)
     Given the parties deposit on asset's general account the following amount:
@@ -309,7 +309,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 18285 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 18285 | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
       | 18285      | TRADING_MODE_CONTINUOUS |
@@ -376,7 +376,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 18385 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 18385 | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
       | 18385      | TRADING_MODE_CONTINUOUS |
@@ -440,7 +440,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 18385 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 18385 | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
       | 18385      | TRADING_MODE_CONTINUOUS |

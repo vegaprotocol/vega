@@ -1271,6 +1271,8 @@ message MarketData {
   optional ProductData product_data = 31;
   // SLA performance for each liquidity provider.
   repeated LiquidityProviderSLA liquidity_provider_sla = 32;
+  // Time in Unix nanoseconds when the market will next submit a trade to reduce its position.
+  int64 next_network_closeout = 33;
 }
 
 // Equity like share of liquidity fee for each liquidity provider

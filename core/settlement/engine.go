@@ -203,10 +203,17 @@ func (e *Engine) addNetworkTrade(trade *types.Trade) {
 	if trade.Aggressor == types.SideSell {
 		tSize *= -1
 	}
+
+	// the trade happens at the current mark price, so it is considered a settled position
 	e.settledPosition[types.NetworkParty] += tSize
-	trades := e.trades[types.NetworkParty]
-	// all trades should be based on the new settled position size
+	// any unsettled trades (though this slice should be empty) should be updated accordingly
+	trades, ok := e.trades[types.NetworkParty]
+	if !ok {
+		return
+	}
+	// meaning that the size and new size should be updated to include the wash trade
 	for i, t := range trades {
+		t.size += tSize
 		t.newSize += tSize
 		trades[i] = t
 	}
@@ -364,6 +371,10 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			lossTotalDec = lossTotalDec.Add(mtmDShare)
 		}
 	}
+	// no need for this lock anymore
+	e.mu.Unlock()
+	delta := num.UintZero().Sub(lossTotal, winTotal)
+	// make sure largests share is never nil
 	if largestShare == nil {
 		largestShare = &mtmTransfer{
 			MarketPosition: &npos{
@@ -372,15 +383,13 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		}
 		appendLargest = true
 	}
-	// no need for this lock anymore
-	e.mu.Unlock()
-	delta := num.UintZero().Sub(lossTotal, winTotal)
 	if !delta.IsZero() {
 		if zeroAmts {
 			if appendLargest {
 				zeroShares = append(zeroShares, largestShare)
 			}
 			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
+			zeroShares = append(zeroShares, largestShare)
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
 			if winTotalDec.LessThan(lossTotalDec) && winTotalDec.LessThan(lossTotalDec.Sub(zRound)) {
@@ -430,6 +439,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 		key := v.Party()
 		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
 		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.timeService.GetTimeNow().UnixNano()))
+		// @TODO check network trades, resolve to drop from MTM settlement
 		delete(e.settledPosition, key)
 		delete(e.trades, key)
 	}

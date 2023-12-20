@@ -108,6 +108,8 @@ type MarketData struct {
 	LastTradedPrice num.Decimal
 	// Data specific to the product type
 	ProductData *ProductData
+	// NextNetworkCloseout is the time at which the network will attempt its next closeout order.
+	NextNetworkCloseout time.Time
 }
 
 type PriceMonitoringTrigger struct {
@@ -171,6 +173,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		return nil, err
 	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
+	nextNC := time.Unix(0, data.NextNetworkCloseout)
 
 	marketData := &MarketData{
 		LastTradedPrice:            lastTradedPrice,
@@ -204,6 +207,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
+		NextNetworkCloseout:        nextNC,
 	}
 
 	if data.ProductData != nil {
@@ -266,7 +270,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
 		md.MarketGrowth.Equal(other.MarketGrowth) &&
-		bytes.Equal(productData1, productData2)
+		bytes.Equal(productData1, productData2) &&
+		md.NextNetworkCloseout.Equal(other.NextNetworkCloseout)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -364,6 +369,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		LiquidityProviderSla:      md.LiquidityProviderSLA,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
+		NextNetworkCloseout:       md.NextNetworkCloseout.UnixNano(),
 	}
 
 	if md.ProductData != nil {

@@ -103,10 +103,11 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-4     |
+    And the network moves ahead "1" blocks
 
-    And the mark price should be "140" for the market "ETH/DEC19"
+    Then the mark price should be "140" for the market "ETH/DEC19"
 
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
 
@@ -124,9 +125,8 @@ Feature: Position resolution case 5 lognormal risk model
       | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market          | lpprov          | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
       | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 17631  | USD   |
-      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16716  | USD   |
-      | market          | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 15760  | USD   |
-      | market          | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 0      | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16710  | USD   |
+      | market          | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 15979  | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

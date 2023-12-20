@@ -16,7 +16,7 @@ Feature: Position resolution case 1
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @Liquidation
+  @Liquidation @LiquidationCurrent
   Scenario: close out when there is not enough orders on the orderbook to cover the position (0007-POSN-009, 0008-TRAD-001, 0008-TRAD-002, 0008-TRAD-005)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -48,6 +48,7 @@ Feature: Position resolution case 1
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the network moves ahead "1" blocks
 
     # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (150-(1*10+140*1)/11) = 290*137 = 39700
 
@@ -120,6 +121,7 @@ Feature: Position resolution case 1
 
     And then the network moves ahead "10" blocks
 
+    #Then debug all events as JSON file "all_evts.json"
     Then the parties should have the following profit and loss:
       | party            | volume | realised pnl | unrealised pnl |
       | designatedLooser | 0      | -11600       | 0              |
@@ -127,4 +129,4 @@ Feature: Position resolution case 1
       | buySideProvider  | 3      | 60           | 0              |
       | aux              | 11     | 1160         | 0              |
       | aux2             | -1     | 30           | 0              |
-      | network          | 278    | -9950        | 0              |
+      | network          | -12    | -1250        | 0              |

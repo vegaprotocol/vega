@@ -29,6 +29,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions,Settlement
@@ -56,6 +57,7 @@ type Settlement interface {
 
 type Engine struct {
 	// settings, orderbook, network pos data
+	log      *logging.Logger
 	cfg      *types.LiquidationStrategy
 	broker   common.Broker
 	mID      string
@@ -101,12 +103,13 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, se Settlement) *Engine {
+func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, se Settlement) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
 	}
 	return &Engine{
+		log:      log,
 		cfg:      cfg,
 		broker:   broker,
 		mID:      mktID,
@@ -223,6 +226,7 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	// send trade events
 	e.broker.SendBatch(trades)
 	// the network has no (more) remaining open position -> no need for the e.nextStep to be set
+	e.log.Info("network position after close-out", logging.Int64("network-position", e.pos.open))
 	if e.pos.open == 0 {
 		e.nextStep = time.Time{}
 	}
@@ -323,8 +327,15 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 	}
 	// settlement engine should see this as a wash trade
 	e.settle.AddTrade(&trade)
-	// the for the rest of the core, this should not seem like a wash trade though...
 	trade.Buyer, trade.Seller = buyParty, sellParty
+	// the for the rest of the core, this should not seem like a wash trade though...
 	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade
+}
+
+func (e *Engine) GetNextCloseoutTS() int64 {
+	if e.nextStep.IsZero() {
+		return 0
+	}
+	return e.nextStep.UnixNano()
 }

@@ -78,16 +78,15 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 	}
 	// Now that the fees have been taken care of, get the current last traded price:
 	lastTraded := m.getLastTradedPrice()
+	tradeType := types.TradeTypeNetworkCloseOutGood
 	// now handle the confirmation like you would any other order/trade confirmation
-	m.handleConfirmation(ctx, conf)
+	m.handleConfirmation(ctx, conf, &tradeType)
 	// restore the last traded price, the network trades do not count towards the mark price
 	// nor do they factor in to the price monitoring logic.
 	m.lastTradedPrice = lastTraded
 	// update the liquidation engine to reflect the trades have happened
 	m.liquidation.UpdateNetworkPosition(conf.Trades)
 
-	// perform a MTM settlement after the trades
-	m.confirmMTM(ctx, false)
 	// check for reference moves again? We should've already done this
 	// This can probably be removed
 	m.checkForReferenceMoves(ctx, conf.PassiveOrdersAffected, false)

@@ -873,6 +873,7 @@ type MarketData struct {
 	NextMTM      int64
 	MarketGrowth num.Decimal
 	ProductData  *ProductData
+	NextNetClose int64
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -940,6 +941,7 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		LiquidityProviderSla:      make([]*vegapb.LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
+		NextNetworkCloseout:       m.NextNetClose,
 	}
 
 	for _, pmb := range m.PriceMonitoringBounds {
@@ -961,7 +963,7 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 
 func (m MarketData) String() string {
 	return fmt.Sprintf(
-		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v)",
+		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v) NextNetworkCloseout(%v)",
 		stringer.PtrToString(m.MarkPrice),
 		stringer.PtrToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
@@ -993,6 +995,7 @@ func (m MarketData) String() string {
 		LiquidityProviderSLAs(m.LiquidityProviderSLA).String(),
 		m.NextMTM,
 		m.MarketGrowth,
+		m.NextNetClose,
 	)
 }
 

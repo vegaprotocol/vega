@@ -192,7 +192,7 @@ func NewMarketFromSnapshot(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {
