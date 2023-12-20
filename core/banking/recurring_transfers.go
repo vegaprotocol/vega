@@ -41,9 +41,9 @@ func (e *Engine) recurringTransfer(
 ) (err error) {
 	defer func() {
 		if err != nil {
-			e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, err.Error()))
+			e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, err.Error(), e.getGameID(transfer)))
 		} else {
-			e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
+			e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer, e.getGameID(transfer)))
 		}
 	}()
 
@@ -110,6 +110,14 @@ func (e *Engine) recurringTransfer(
 	e.registerDispatchStrategy(transfer.DispatchStrategy)
 
 	return nil
+}
+
+func (e *Engine) getGameID(transfer *types.RecurringTransfer) *string {
+	if transfer.DispatchStrategy == nil {
+		return nil
+	}
+	gameID := e.hashDispatchStrategy(transfer.DispatchStrategy)
+	return &gameID
 }
 
 func (e *Engine) hashDispatchStrategy(ds *vegapb.DispatchStrategy) string {
@@ -241,7 +249,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		if err = e.ensureMinimalTransferAmount(a, amount, v.FromAccountType, v.From); err != nil {
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error(), e.getGameID(v)))
 			doneIDs = append(doneIDs, v.ID)
 			continue
 		}
@@ -310,7 +318,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 			e.log.Info("transferred stopped", logging.Error(err))
 			v.Status = types.TransferStatusStopped
 			transfersDone = append(transfersDone,
-				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error()))
+				events.NewRecurringTransferFundsEventWithReason(ctx, v, err.Error(), e.getGameID(v)))
 			doneIDs = append(doneIDs, v.ID)
 			continue
 		}
@@ -320,7 +328,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		// if we don't have anymore
 		if v.EndEpoch != nil && *v.EndEpoch == e.currentEpoch {
 			v.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
+			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v, e.getGameID(v)))
 			doneIDs = append(doneIDs, v.ID)
 		}
 	}

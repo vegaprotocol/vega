@@ -52,7 +52,7 @@ func (e *Engine) CancelTransferFunds(
 
 	// send an event because we are nice with the data-node
 	transfer.Status = types.TransferStatusCancelled
-	e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, "transfer cancelled"))
+	e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, "transfer cancelled", e.getGameID(transfer)))
 
 	return nil
 }
@@ -64,6 +64,6 @@ func (e *Engine) CancelGovTransfer(ctx context.Context, ID string) error {
 	}
 	e.deleteGovTransfer(ID)
 	gTransfer.Status = types.TransferStatusCancelled
-	e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, num.UintZero()))
+	e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, num.UintZero(), e.getGovGameID(gTransfer)))
 	return nil
 }

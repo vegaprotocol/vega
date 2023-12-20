@@ -29,7 +29,7 @@ type RewardPayout struct {
 	Party                   string
 	EpochSeq                string
 	Asset                   string
-	Market                  string
+	GameID                  *string
 	PercentageOfTotalReward string
 	Amount                  *num.Uint
 	QuantumAmount           num.Decimal
@@ -38,7 +38,7 @@ type RewardPayout struct {
 	LockedUntilEpoch        string
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, assetQuantum, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string, lockedUntilEpoch string) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, assetQuantum, percentageOfTotalReward num.Decimal, rewardType types.AccountType, gameID *string, lockedUntilEpoch string) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
@@ -49,7 +49,7 @@ func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asse
 		QuantumAmount:           amount.ToDecimal().Div(assetQuantum).Truncate(6),
 		Timestamp:               timestamp,
 		RewardType:              rewardType,
-		Market:                  market,
+		GameID:                  gameID,
 		LockedUntilEpoch:        lockedUntilEpoch,
 	}
 }
@@ -68,7 +68,7 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 		PercentOfTotalReward: rp.PercentageOfTotalReward,
 		Timestamp:            rp.Timestamp,
 		RewardType:           vegapb.AccountType_name[int32(rp.RewardType)],
-		Market:               rp.Market,
+		GameId:               rp.GameID,
 		LockedUntilEpoch:     rp.LockedUntilEpoch,
 	}
 }
@@ -100,7 +100,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Amount:                  amount,
 		QuantumAmount:           quantumAmount,
 		Timestamp:               rp.Timestamp,
-		Market:                  rp.Market,
+		GameID:                  rp.GameId,
 		LockedUntilEpoch:        rp.LockedUntilEpoch,
 		RewardType:              types.AccountType(vegapb.AccountType_value[rp.RewardType]),
 	}
