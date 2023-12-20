@@ -328,3 +328,10 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade
 }
+
+func (e *Engine) GetNextCloseoutTS() int64 {
+	if e.nextStep.IsZero() {
+		return 0
+	}
+	return e.nextStep.UnixNano()
+}

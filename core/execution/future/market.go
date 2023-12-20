@@ -739,6 +739,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		NextMTM:                   m.nextMTM.UnixNano(),
 		MarketGrowth:              m.equityShares.GetMarketGrowth(),
 		ProductData:               m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano()),
+		NextNetClose:              m.liquidation.GetNextCloseoutTS(),
 	}
 }
 

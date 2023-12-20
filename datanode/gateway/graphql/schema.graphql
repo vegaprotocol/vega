@@ -301,6 +301,8 @@ type MarketData {
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
   productData: ProductData
+  "RFC3339Nano time indicating the next time the network will attempt to close part of its position"
+  nextNetworkCloseout: String!
 }
 
 "Live data of a Market"
