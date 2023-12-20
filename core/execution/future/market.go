@@ -1351,7 +1351,7 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 		}
 
 		// then do the confirmation
-		m.handleConfirmation(ctx, uncrossedOrder)
+		m.handleConfirmation(ctx, uncrossedOrder, nil)
 
 		if uncrossedOrder.Order.Remaining == 0 {
 			uncrossedOrder.Order.Status = types.OrderStatusFilled
@@ -2173,7 +2173,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// below might trigger an action that can change the order details.
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
-	orderUpdates := m.handleConfirmation(ctx, confirmation)
+	orderUpdates := m.handleConfirmation(ctx, confirmation, nil)
 	return confirmation, orderUpdates, nil
 }
 
@@ -2303,7 +2303,7 @@ func (m *Market) handleConfirmationPassiveOrders(
 	}
 }
 
-func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) []*types.Order {
+func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation, tradeT *types.TradeType) []*types.Order {
 	// When re-submitting liquidity order, it happen that the pricing is putting
 	// the order at a price which makes it uncross straight away.
 	// then triggering this handleConfirmation flow, etc.
@@ -2335,6 +2335,10 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
+		if tradeT != nil {
+			trade.Type = *tradeT
+		}
+
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
 			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
@@ -3517,7 +3521,7 @@ func (m *Market) orderCancelReplace(
 			return
 		}
 
-		orders = m.handleConfirmation(ctx, conf)
+		orders = m.handleConfirmation(ctx, conf, nil)
 		m.broker.Send(events.NewOrderEvent(ctx, conf.Order))
 	}()
 
