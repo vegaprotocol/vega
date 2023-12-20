@@ -51,6 +51,8 @@ type (
 		TxHash               TxHash
 		Submission           *commandspb.OrderSubmission
 		RejectionReason      StopOrderRejectionReason
+		SizeOverrideSetting  int32
+		SizeOverrideValue    *string
 	}
 )
 
@@ -79,6 +81,8 @@ var StopOrderColumns = []string{
 	"tx_hash",
 	"submission",
 	"rejection_reason",
+	"size_override_setting",
+	"size_override_value",
 }
 
 func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
@@ -120,19 +124,29 @@ func (o StopOrder) ToProto() *pbevents.StopOrderEvent {
 		rejectionReason = ptr.From(vega.StopOrder_RejectionReason(o.RejectionReason))
 	}
 
+	var sizeOVerrideValue *vega.StopOrder_SizeOverrideValue
+
+	if o.SizeOverrideValue != nil {
+		sizeOVerrideValue = &vega.StopOrder_SizeOverrideValue{
+			Percentage: *o.SizeOverrideValue,
+		}
+	}
+
 	stopOrder := &vega.StopOrder{
-		Id:               o.ID.String(),
-		OcoLinkId:        ocoLinkID,
-		ExpiresAt:        expiresAt,
-		ExpiryStrategy:   expiryStrategy,
-		TriggerDirection: vega.StopOrder_TriggerDirection(o.TriggerDirection),
-		Status:           vega.StopOrder_Status(o.Status),
-		CreatedAt:        o.CreatedAt.UnixNano(),
-		UpdatedAt:        updatedAt,
-		OrderId:          o.OrderID.String(),
-		PartyId:          o.PartyID.String(),
-		MarketId:         o.MarketID.String(),
-		RejectionReason:  rejectionReason,
+		Id:                  o.ID.String(),
+		OcoLinkId:           ocoLinkID,
+		ExpiresAt:           expiresAt,
+		ExpiryStrategy:      expiryStrategy,
+		TriggerDirection:    vega.StopOrder_TriggerDirection(o.TriggerDirection),
+		Status:              vega.StopOrder_Status(o.Status),
+		CreatedAt:           o.CreatedAt.UnixNano(),
+		UpdatedAt:           updatedAt,
+		OrderId:             o.OrderID.String(),
+		PartyId:             o.PartyID.String(),
+		MarketId:            o.MarketID.String(),
+		RejectionReason:     rejectionReason,
+		SizeOverrideSetting: vega.StopOrder_SizeOverrideSetting(o.SizeOverrideSetting),
+		SizeOverrideValue:   sizeOVerrideValue,
 	}
 
 	if triggerPrice != nil {
@@ -238,6 +252,12 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		rejectionReason = StopOrderRejectionReason(*so.StopOrder.RejectionReason)
 	}
 
+	var sizeOverrideValue *string
+
+	if so.StopOrder.SizeOverrideValue != nil && so.StopOrder.SizeOverrideValue.Percentage != "" {
+		sizeOverrideValue = ptr.From(so.StopOrder.SizeOverrideValue.Percentage)
+	}
+
 	stopOrder := StopOrder{
 		ID:                   StopOrderID(so.StopOrder.Id),
 		OCOLinkID:            ocoLinkID,
@@ -257,6 +277,8 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		TxHash:               txHash,
 		Submission:           so.Submission,
 		RejectionReason:      rejectionReason,
+		SizeOverrideSetting:  int32(so.StopOrder.SizeOverrideSetting),
+		SizeOverrideValue:    sizeOverrideValue,
 	}
 
 	return stopOrder, nil
@@ -282,6 +304,8 @@ func (so StopOrder) ToRow() []interface{} {
 		so.TxHash,
 		so.Submission,
 		so.RejectionReason,
+		so.SizeOverrideSetting,
+		so.SizeOverrideValue,
 	}
 }
 
