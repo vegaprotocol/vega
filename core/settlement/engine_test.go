@@ -965,7 +965,7 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	}
 	engine.AddTrade(nTrade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions) // amounts are zero here (was trade only)
-	assert.NotEmpty(t, transfers)
+	assert.Empty(t, transfers)
 	newMP = num.NewUint(995)
 	positions = []events.MarketPosition{
 		testPos{
