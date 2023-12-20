@@ -2632,11 +2632,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	currentMP := m.getCurrentMarkPrice()
 	mCmp := m.priceToMarketPrecision(currentMP)
-	closedMPs, closedParties, netTrades := m.liquidation.ClearDistressedParties(ctx, m.idgen, closed, currentMP, mCmp)
-	// @TODO support AddTrades in settlement engine
-	for _, t := range netTrades {
-		m.settlement.AddTrade(t)
-	}
+	closedMPs, closedParties, _ := m.liquidation.ClearDistressedParties(ctx, m.idgen, closed, currentMP, mCmp)
 	dp, sp := m.position.MarkDistressed(closedParties)
 	if len(dp) > 0 || len(sp) > 0 {
 		m.broker.Send(events.NewDistressedPositionsEvent(ctx, m.GetID(), dp, sp))

@@ -274,4 +274,4 @@ Feature: Test margin release on order cancel
     # TODO: FIX THIS -> PnL bug when dealing with decimal places...
     And the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
-      | partyGuyGood | 0      | 0              | -990001      |
+      | partyGuyGood | 0      | 0              | 8999000      |
