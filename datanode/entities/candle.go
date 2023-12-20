@@ -52,13 +52,31 @@ func (c *Candle) ToV1CandleProto(interval vega.Interval) (*vega.Candle, error) {
 }
 
 func (c *Candle) ToV2CandleProto() *v2.Candle {
+	var openPx, highPx, lowPx, closePx string
+
+	if c.Open.GreaterThan(decimal.Zero) {
+		openPx = c.Open.String()
+	}
+
+	if c.High.GreaterThan(decimal.Zero) {
+		highPx = c.High.String()
+	}
+
+	if c.Low.GreaterThan(decimal.Zero) {
+		lowPx = c.Low.String()
+	}
+
+	if c.Close.GreaterThan(decimal.Zero) {
+		closePx = c.Close.String()
+	}
+
 	return &v2.Candle{
 		Start:      c.PeriodStart.UnixNano(),
 		LastUpdate: c.LastUpdateInPeriod.UnixNano(),
-		High:       c.High.String(),
-		Low:        c.Low.String(),
-		Open:       c.Open.String(),
-		Close:      c.Close.String(),
+		High:       highPx,
+		Low:        lowPx,
+		Open:       openPx,
+		Close:      closePx,
 		Volume:     c.Volume,
 		Notional:   c.Notional,
 	}
