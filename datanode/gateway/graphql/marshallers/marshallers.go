@@ -615,6 +615,24 @@ func UnmarshalStopOrderTriggerDirection(v interface{}) (vega.StopOrder_TriggerDi
 	return vega.StopOrder_TriggerDirection(t), nil
 }
 
+func MarshalStopOrderSizeOverrideSetting(s vega.StopOrder_SizeOverrideSetting) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderSizeOverrideSetting(v interface{}) (vega.StopOrder_SizeOverrideSetting, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED, fmt.Errorf("expected stop order size override setting to be a string")
+	}
+	t, ok := vega.StopOrder_SizeOverrideSetting_value[s]
+	if !ok {
+		return vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED, fmt.Errorf("failed to convert stop order size override setting to Proto: %v", s)
+	}
+	return vega.StopOrder_SizeOverrideSetting(t), nil
+}
+
 func MarshalFundingPeriodDataPointSource(s eventspb.FundingPeriodDataPoint_Source) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
