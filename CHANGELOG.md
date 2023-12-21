@@ -10,6 +10,7 @@
 ### 🗑️ Deprecation
 
 - [9881](https://github.com/vegaprotocol/vega/issues/9881) - Liquidity monitoring auctions to be removed.
+- [10000](https://github.com/vegaprotocol/vega/issues/9881) - Commands `tm` and `tendermint` are deprecated in favour of `cometbft`.
 
 ### 🛠 Improvements
 
@@ -42,6 +43,7 @@
 - [10266](https://github.com/vegaprotocol/vega/issues/10266) - Deprecated `marketID` and populate `gameID` in reward API
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10155](https://github.com/vegaprotocol/vega/issues/10155) - Add next network close-out timestamp to market data.
+- [10000](https://github.com/vegaprotocol/vega/issues/10000) - Introduce `cometbtf` command to replace `tendermint`.
 
 ### 🐛 Fixes
 

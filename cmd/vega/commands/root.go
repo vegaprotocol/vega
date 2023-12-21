@@ -47,8 +47,8 @@ func Main(ctx context.Context) error {
 	// special case for the tendermint subcommand, so we bypass the command line
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "tendermint", "tm":
-			return (&tmCmd{}).Execute(nil)
+		case "tendermint", "tm", "cometbft":
+			return (&cometbftCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
 		case "datanode":
@@ -73,6 +73,7 @@ func Main(ctx context.Context) error {
 		Watch,
 		Tm,
 		Tendermint,
+		CometBFT,
 		Query,
 		Bridge,
 		paths.Paths,

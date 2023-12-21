@@ -103,7 +103,7 @@ func isValidParty(party string) bool {
 	return err == nil
 }
 
-func isValidTMKey(key string) bool {
+func isValidCometBFTKey(key string) bool {
 	keybytes, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return false
