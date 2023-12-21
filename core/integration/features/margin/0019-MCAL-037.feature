@@ -109,6 +109,7 @@ Feature: Test magin under isolated margin mode when there is not enough collater
       | party | USD   | ETH/FEB23 | 23880  | 350     | 23850        |
 
     #trigger more MTM with party has both short position and short orders
+    #AC 0019-MCAL-067:When the mark price moves, the margin account should be updated while order margin account should not
     And the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     |
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 15850 | 0                | TYPE_LIMIT | TIF_GTC |

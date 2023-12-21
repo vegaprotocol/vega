@@ -11,8 +11,8 @@ Feature: Test order margin during continuous
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.2   | 100         | -100          | 0.2                    |
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | position decimal places | sla params      |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | 1                       | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -27,15 +27,15 @@ Feature: Test order margin during continuous
       | party1           | USD   | 48050        |
     And the parties place the following orders:
       | party            | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party1           | ETH/FEB23 | buy  | 2      | 15800  | 0                | TYPE_LIMIT | TIF_GFA | b-GFA-1   |
-      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | sellSideProvider | ETH/FEB23 | sell | 1      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party1           | ETH/FEB23 | sell | 2      | 15910  | 0                | TYPE_LIMIT | TIF_GTC | s-GTC-2   |
-      | party1           | ETH/FEB23 | sell | 1      | 15920  | 0                | TYPE_LIMIT | TIF_GTC | s-GTC-1   |
-      | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider  | ETH/FEB23 | buy  | 100    | 14900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider  | ETH/FEB23 | buy  | 10     | 15000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1           | ETH/FEB23 | buy  | 20     | 15800  | 0                | TYPE_LIMIT | TIF_GFA | b-GFA-1   |
+      | buySideProvider  | ETH/FEB23 | buy  | 10     | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider | ETH/FEB23 | sell | 10     | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1           | ETH/FEB23 | sell | 20     | 15910  | 0                | TYPE_LIMIT | TIF_GTC | s-GTC-2   |
+      | party1           | ETH/FEB23 | sell | 10     | 15920  | 0                | TYPE_LIMIT | TIF_GTC | s-GTC-1   |
+      | sellSideProvider | ETH/FEB23 | sell | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider | ETH/FEB23 | sell | 100    | 100100 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     When the network moves ahead "3" blocks
 
@@ -79,10 +79,11 @@ Feature: Test order margin during continuous
       | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14317 |
 
     #AC: 0019-MCAL-224,When the party decreases the order volume during continunous, order margin should decrease
+    #AC: 0019-MCAL-090,A feature test that checks margin in case market PDP > 0 is created and passes.
     #order margin short: (1*15902+1*15920)*0.3=9546
     When the parties amend the following orders:
       | party  | reference | price | size delta | tif     | error |
-      | party1 | s-GTC-2   | 15902 | -1         | TIF_GTC |       |
+      | party1 | s-GTC-2   | 15902 | -10        | TIF_GTC |       |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -92,7 +93,7 @@ Feature: Test order margin during continuous
     #order margin short: (4*15900+1*15920)*0.3=23856
     When the parties amend the following orders:
       | party  | reference | price | size delta | tif     | error |
-      | party1 | s-GTC-2   | 15900 | 3          | TIF_GTC |       |
+      | party1 | s-GTC-2   | 15900 | 30          | TIF_GTC |       |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -102,7 +103,7 @@ Feature: Test order margin during continuous
     #order margin short: (3*15900+1*15920)*0.3=19086
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 1      | 15900 | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider | ETH/FEB23 | buy  | 10     | 15900 | 1               | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -114,7 +115,7 @@ Feature: Test order margin during continuous
     #order margin short: (3*15900+0*15920)*0.3=14310
     When the parties amend the following orders:
       | party  | reference | size delta | tif     | error |
-      | party1 | s-GTC-1   | -1         | TIF_GTC |       |
+      | party1 | s-GTC-1   | -10        | TIF_GTC |       |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -123,7 +124,7 @@ Feature: Test order margin during continuous
     #AC: 0019-MCAL-228, place a GFA order duing continuous, order should be rejected
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                        |
-      | party1 | ETH/FEB23 | buy  | 1      | 15800 | 0                | TYPE_LIMIT | TIF_GFA | GFA-1     | gfa order received during continuous trading |
+      | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GFA | GFA-1     | gfa order received during continuous trading |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -133,7 +134,7 @@ Feature: Test order margin during continuous
     #order margin short: 3*15900*0.3=14310
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/FEB23 | buy  | 1      | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -143,7 +144,7 @@ Feature: Test order margin during continuous
     #order margin short: 3*15900*0.3=14310
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/FEB23 | buy  | 1      | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
@@ -154,7 +155,7 @@ Feature: Test order margin during continuous
     #order margin short: 3*15800*0.3=14220
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1 | ETH/FEB23 | buy  | 1      | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
