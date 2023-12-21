@@ -5295,7 +5295,7 @@ type Reward {
   "The asset this reward is paid in"
   asset: Asset!
   "The market ID for which this reward is paid if any"
-  marketId: ID!
+  marketId: ID! @deprecated(reason: "Use gameId")
   "The type of reward"
   rewardType: AccountType!
   "Party receiving the reward"
