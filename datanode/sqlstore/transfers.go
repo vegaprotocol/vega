@@ -53,7 +53,7 @@ func NewTransfers(connectionSource *ConnectionSource) *Transfers {
 
 func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) error {
 	defer metrics.StartSQLQuery("Transfers", "Upsert")()
-	query := `insert into transfers(
+	query := `INSERT INTO transfers(
 				id,
 				tx_hash,
 				vega_time,
@@ -72,24 +72,24 @@ func (t *Transfers) Upsert(ctx context.Context, transfer *entities.Transfer) err
 				reason,
 				game_id
 			)
-					values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-					on conflict (id, vega_time) do update
-					set
-				from_account_id=EXCLUDED.from_account_id,
-				to_account_id=EXCLUDED.to_account_id,
-				asset_id=EXCLUDED.asset_id,
-				amount=EXCLUDED.amount,
-				reference=EXCLUDED.reference,
-				status=EXCLUDED.status,
-				transfer_type=EXCLUDED.transfer_type,
-				deliver_on=EXCLUDED.deliver_on,
-				start_epoch=EXCLUDED.start_epoch,
-				end_epoch=EXCLUDED.end_epoch,
-				factor=EXCLUDED.factor,
-				dispatch_strategy=EXCLUDED.dispatch_strategy,
-				reason=EXCLUDED.reason,
-				tx_hash=EXCLUDED.tx_hash,
-				game_id=EXCLUDED.game_id
+					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+					ON CONFLICT (id, vega_time) DO UPDATE
+					SET
+				from_account_id=excluded.from_account_id,
+				to_account_id=excluded.to_account_id,
+				asset_id=excluded.asset_id,
+				amount=excluded.amount,
+				reference=excluded.reference,
+				status=excluded.status,
+				transfer_type=excluded.transfer_type,
+				deliver_on=excluded.deliver_on,
+				start_epoch=excluded.start_epoch,
+				end_epoch=excluded.end_epoch,
+				factor=excluded.factor,
+				dispatch_strategy=excluded.dispatch_strategy,
+				reason=excluded.reason,
+				tx_hash=excluded.tx_hash,
+				game_id=excluded.game_id
 				;`
 
 	if _, err := t.Connection.Exec(ctx, query, transfer.ID, transfer.TxHash, transfer.VegaTime, transfer.FromAccountID, transfer.ToAccountID,
@@ -214,6 +214,7 @@ func (t *Transfers) GetByID(ctx context.Context, id string) (entities.TransferDe
 	if err != nil || len(details) == 0 {
 		return entities.TransferDetails{}, err
 	}
+
 	return details[0], nil
 }
 
@@ -298,7 +299,7 @@ func (t *Transfers) GetCurrentTransferFeeDiscount(
 
 func (t *Transfers) getCurrentTransfers(ctx context.Context, pagination entities.CursorPagination, filters ListTransfersFilters, where []string, args []any) ([]entities.Transfer, entities.PageInfo, error) {
 	whereStr, args := t.buildWhereClause(filters, where, args)
-	query := "select * from transfers_current " + whereStr
+	query := "SELECT * FROM transfers_current " + whereStr
 
 	return t.selectTransfers(ctx, pagination, query, args)
 }

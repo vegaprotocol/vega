@@ -1123,7 +1123,7 @@ type Query {
   ): TransferConnection
 
   "Find a transfer using its ID"
-  transfer("ID of the transfer" id: ID!): Transfer
+  transfer("ID of the transfer" id: ID!): TransferNode
 
   "Get volume discount statistics"
   volumeDiscountStats(

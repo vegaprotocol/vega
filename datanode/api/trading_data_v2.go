@@ -2389,8 +2389,10 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 		fees = append(fees, f.ToProto())
 	}
 	return &v2.GetTransferResponse{
-		Transfer: tp,
-		Fees:     fees,
+		TransferNode: &v2.TransferNode{
+			Transfer: tp,
+			Fees:     fees,
+		},
 	}, nil
 }
 
