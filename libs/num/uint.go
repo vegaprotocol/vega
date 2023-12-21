@@ -16,6 +16,8 @@
 package num
 
 import (
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -140,6 +142,52 @@ func UintFromUint64(ui uint64) *Uint {
 	}
 	u.u.SetUint64(ui)
 	return u
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (u *Uint) UnmarshalJSON(numericBytes []byte) error {
+	if string(numericBytes) == "null" {
+		return nil
+	}
+
+	str, err := unquoteIfQuoted(numericBytes)
+	if err != nil {
+		return fmt.Errorf("error decoding string '%s': %s", numericBytes, err)
+	}
+
+	numeric, overflown := UintFromString(str, 10)
+	if overflown {
+		return errors.New("overflowing value")
+	}
+	*u = *numeric
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (u Uint) MarshalJSON() ([]byte, error) {
+	return []byte(u.String()), nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface. As a string representation
+// is already used when encoding to text, this method stores that string as []byte.
+func (u *Uint) UnmarshalBinary(data []byte) error {
+	u.u.SetBytes(data)
+	return nil
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (u Uint) MarshalBinary() (data []byte, err error) {
+	return u.u.Bytes(), nil
+}
+
+// Scan implements the sql.Scanner interface for database deserialization.
+func (u *Uint) Scan(value interface{}) error {
+	return u.u.Scan(value)
+}
+
+// Value implements the driver.Valuer interface for database serialization.
+func (u Uint) Value() (driver.Value, error) {
+	return u.String(), nil
 }
 
 // ToDecimal returns the value of the Uint as a Decimal.
@@ -483,4 +531,24 @@ func UintToString(u *Uint) string {
 		return u.String()
 	}
 	return "0"
+}
+
+func unquoteIfQuoted(value interface{}) (string, error) {
+	var bytes []byte
+
+	switch v := value.(type) {
+	case string:
+		bytes = []byte(v)
+	case []byte:
+		bytes = v
+	default:
+		return "", fmt.Errorf("could not convert value '%+v' to byte array of type '%T'",
+			value, value)
+	}
+
+	// If the amount is quoted, strip the quotes
+	if len(bytes) > 2 && bytes[0] == '"' && bytes[len(bytes)-1] == '"' {
+		bytes = bytes[1 : len(bytes)-1]
+	}
+	return string(bytes), nil
 }

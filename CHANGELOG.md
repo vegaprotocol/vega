@@ -46,6 +46,7 @@
 - [10155](https://github.com/vegaprotocol/vega/issues/10155) - Add next network close-out timestamp to market data.
 - [10000](https://github.com/vegaprotocol/vega/issues/10000) - Introduce `cometbtf` command to replace `tendermint`.
 - [9948](https://github.com/vegaprotocol/vega/issues/9948) - Add support for linked stop orders.
+- [9849](https://github.com/vegaprotocol/vega/issues/9849) - Add database support for `num.Uint`.
 
 ### 🐛 Fixes
 

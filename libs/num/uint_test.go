@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUint256Constructors(t *testing.T) {
@@ -43,6 +44,47 @@ func TestUint256Constructors(t *testing.T) {
 		n, overflow := num.UintFromBig(big.NewInt(int64(expected)))
 		assert.False(t, overflow)
 		assert.Equal(t, expected, n.Uint64())
+	})
+}
+
+func TestUint256Serialization(t *testing.T) {
+	t.Run("JSON", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.MarshalJSON()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.UnmarshalJSON(serialized))
+		assert.Equal(t, origin, n.String())
+	})
+
+	t.Run("Binary", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.MarshalBinary()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.UnmarshalBinary(serialized))
+		assert.Equal(t, origin, n.String())
+	})
+
+	t.Run("Database", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.Value()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.Scan(serialized))
+		assert.Equal(t, origin, n.String())
 	})
 }
 
