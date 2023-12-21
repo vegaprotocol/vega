@@ -80,7 +80,6 @@ func (r Reward) ToProto() *vega.Reward {
 		QuantumAmount:     r.QuantumAmount.String(),
 		PercentageOfTotal: fmt.Sprintf("%v", r.PercentOfTotal),
 		ReceivedAt:        r.Timestamp.UnixNano(),
-		MarketId:          r.MarketID.String(),
 		RewardType:        r.RewardType,
 		LockedUntilEpoch:  uint64(r.LockedUntilEpochID),
 		GameId:            gameID,
@@ -126,11 +125,6 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		return Reward{}, fmt.Errorf("could not parse the amount of reward %q: %w", pr.QuantumAmount, err)
 	}
 
-	marketID := pr.Market
-	if marketID == "!" {
-		marketID = ""
-	}
-
 	lockedUntilEpochID := epochID
 	if len(pr.LockedUntilEpoch) > 0 {
 		lockedUntilEpochID, err = strconv.ParseInt(pr.LockedUntilEpoch, 10, 64)
@@ -152,7 +146,6 @@ func RewardFromProto(pr eventspb.RewardPayoutEvent, txHash TxHash, vegaTime time
 		QuantumAmount:      quantumAmount,
 		PercentOfTotal:     percentOfTotal,
 		Timestamp:          NanosToPostgresTimestamp(pr.Timestamp),
-		MarketID:           MarketID(marketID),
 		RewardType:         pr.RewardType,
 		TxHash:             txHash,
 		VegaTime:           vegaTime,

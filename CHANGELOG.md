@@ -39,6 +39,8 @@
 - [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
 - [10159](https://github.com/vegaprotocol/vega/issues/10159) - Add additional funding period data to market data API to allow streaming funding period data.
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
+- [10266](https://github.com/vegaprotocol/vega/issues/10266) - Deprecated `marketID` and populate `gameID` in reward API
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10155](https://github.com/vegaprotocol/vega/issues/10155) - Add next network close-out timestamp to market data.
 
 ### 🐛 Fixes

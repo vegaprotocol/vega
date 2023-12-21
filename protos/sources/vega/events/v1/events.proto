@@ -423,7 +423,7 @@ message RewardPayoutEvent {
   string percent_of_total_reward = 5;
   int64 timestamp = 6;
   string reward_type = 7;
-  string market = 8;
+  reserved 8;
   string locked_until_epoch = 9;
   string quantum_amount = 10;
   optional string game_id = 11;

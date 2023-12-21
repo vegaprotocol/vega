@@ -133,7 +133,7 @@ type payout struct {
 	totalReward      *num.Uint
 	epochSeq         string
 	timestamp        int64
-	market           string
+	gameID           *string
 	lockedForEpochs  uint64
 	lockedUntilEpoch string
 }
@@ -319,7 +319,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
 					po.rewardType = rewardType
-					po.market = account.MarketID
+					if account.MarketID != "!" {
+						po.gameID = &account.MarketID
+					}
 					po.timestamp = now.UnixNano()
 					payouts = append(payouts, po)
 					e.distributePayout(ctx, po)
@@ -400,7 +402,7 @@ func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, 
 	for party, amount := range po.partyToAmount {
 		proportion := amount.ToDecimal().Div(totalReward)
 		pct := proportion.Mul(num.DecimalFromInt64(100))
-		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, assetQuantum, pct, po.rewardType, po.market, po.lockedUntilEpoch)
+		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, assetQuantum, pct, po.rewardType, po.gameID, po.lockedUntilEpoch)
 		parties = append(parties, party)
 	}
 	sort.Strings(parties)

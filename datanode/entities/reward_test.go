@@ -29,7 +29,7 @@ import (
 func TestRewardFromProto(t *testing.T) {
 	now := time.Now()
 	timestamp := now.Add(-1 * time.Second)
-
+	gameID := "Test"
 	pbReward := eventspb.RewardPayoutEvent{
 		Party:                "a0b1",
 		EpochSeq:             "42",
@@ -38,7 +38,7 @@ func TestRewardFromProto(t *testing.T) {
 		PercentOfTotalReward: "3.14",
 		Timestamp:            timestamp.UnixNano(),
 		RewardType:           "Some Type",
-		Market:               "Test",
+		GameId:               &gameID,
 		LockedUntilEpoch:     "44",
 		QuantumAmount:        "292929",
 	}

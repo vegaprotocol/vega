@@ -195,7 +195,7 @@ func (e *Engine) loadScheduledGovernanceTransfers(ctx context.Context, r []*chec
 		for _, g := range v.Transfers {
 			transfer := types.GovernanceTransferFromProto(g)
 			transfers = append(transfers, transfer)
-			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
 		}
 		e.scheduledGovernanceTransfers[v.DeliverOn] = transfers
 	}
@@ -238,7 +238,7 @@ func (e *Engine) loadRecurringTransfers(
 			}
 			e.registerDispatchStrategy(transfer.DispatchStrategy)
 		}
-		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
+		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer, e.getGameID(transfer)))
 	}
 	return evts
 }
@@ -259,7 +259,7 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
 			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
 		}
-		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
 	}
 	return evts
 }
@@ -278,7 +278,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	}
 
 	for _, v := range e.recurringTransfers {
-		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil))
+		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil, e.getGameID(v)))
 	}
 
 	return out
