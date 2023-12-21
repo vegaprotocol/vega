@@ -66,6 +66,14 @@ disable = [
     "dupword",
     "depguard",
     "revive",
+
+    ## new with 1.55.2, need to evaluate
+    "testifylint",
+    "inamedparam",
+    "perfsprint",
+    "typecheck",
+    "protogetter",
+
     ## Disabled on-pupose.
     "exhaustruct", # We often make incomplete structs.
     "lll", # We don't have a line length.
