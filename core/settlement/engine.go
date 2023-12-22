@@ -279,6 +279,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		winTotal     = num.UintZero()
 		lossTotalDec = num.NewDecimalFromFloat(0)
 		winTotalDec  = num.NewDecimalFromFloat(0)
+		// appendLargest = false
 	)
 
 	// network is treated as a regular party
@@ -346,8 +347,21 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	// no need for this lock anymore
 	e.mu.Unlock()
 	delta := num.UintZero().Sub(lossTotal, winTotal)
+	// make sure largests share is never nil
+	/*
+		if largestShare == nil {
+			largestShare = &mtmTransfer{
+				MarketPosition: &npos{
+					price: markPrice.Clone(),
+				},
+			}
+			appendLargest = true
+		}*/
 	if !delta.IsZero() {
 		if zeroAmts {
+			// if appendLargest {
+			// zeroShares = append(zeroShares, largestShare)
+			// }
 			zRound := num.DecimalFromInt64(int64(len(zeroShares)))
 			// there are more transfers from losses than we pay out to wins, but some winning parties have zero transfers
 			// this delta should == combined win decimals, let's sanity check this!
@@ -379,6 +393,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	}
 	// append wins after loss transfers
 	transfers = append(transfers, wins...)
+	// if len(transfers) > 0 && appendLargest && largestShare.transfer != nil {
+	// transfers = append(transfers, largestShare)
+	// }
 	if len(evts) > 0 {
 		e.broker.SendBatch(evts)
 	}
