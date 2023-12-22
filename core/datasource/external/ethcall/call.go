@@ -38,6 +38,7 @@ type Call struct {
 	abi     abi.ABI
 	abiJSON []byte
 	filters dscommon.Filters
+	chainID uint64
 }
 
 func NewCall(spec ethcallcommon.Spec) (Call, error) {
@@ -85,6 +86,7 @@ func NewCall(spec ethcallcommon.Spec) (Call, error) {
 		abiJSON: abiJSON,
 		spec:    spec,
 		filters: filters,
+		chainID: spec.L2ChainID,
 	}, nil
 }
 

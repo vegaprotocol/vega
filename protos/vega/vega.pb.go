@@ -6878,6 +6878,132 @@ func (x *LiquidityProvision) GetReference() string {
 	return ""
 }
 
+type EthereumL2Config struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Network ID of this Ethereum L2 network.
+	NetworkId string `protobuf:"bytes,1,opt,name=network_id,json=networkId,proto3" json:"network_id,omitempty"`
+	// Chain ID of this Ethereum L2 network.
+	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	// Number of block confirmations to wait to consider an Ethereum transaction trusted.
+	// An Ethereum block is trusted when there are at least "n" blocks confirmed by the
+	// network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
+	// and the current block to be forged (or mined) on the L2 is block 14, block
+	// 10 would be considered as trusted, but not block 11.
+	Confirmations uint32 `protobuf:"varint,3,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+	// Display name of this network
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (x *EthereumL2Config) Reset() {
+	*x = EthereumL2Config{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_vega_proto_msgTypes[47]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EthereumL2Config) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EthereumL2Config) ProtoMessage() {}
+
+func (x *EthereumL2Config) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_vega_proto_msgTypes[47]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EthereumL2Config.ProtoReflect.Descriptor instead.
+func (*EthereumL2Config) Descriptor() ([]byte, []int) {
+	return file_vega_vega_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *EthereumL2Config) GetNetworkId() string {
+	if x != nil {
+		return x.NetworkId
+	}
+	return ""
+}
+
+func (x *EthereumL2Config) GetChainId() string {
+	if x != nil {
+		return x.ChainId
+	}
+	return ""
+}
+
+func (x *EthereumL2Config) GetConfirmations() uint32 {
+	if x != nil {
+		return x.Confirmations
+	}
+	return 0
+}
+
+func (x *EthereumL2Config) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type EthereumL2Configs struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Configs []*EthereumL2Config `protobuf:"bytes,1,rep,name=configs,proto3" json:"configs,omitempty"`
+}
+
+func (x *EthereumL2Configs) Reset() {
+	*x = EthereumL2Configs{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_vega_vega_proto_msgTypes[48]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EthereumL2Configs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EthereumL2Configs) ProtoMessage() {}
+
+func (x *EthereumL2Configs) ProtoReflect() protoreflect.Message {
+	mi := &file_vega_vega_proto_msgTypes[48]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EthereumL2Configs.ProtoReflect.Descriptor instead.
+func (*EthereumL2Configs) Descriptor() ([]byte, []int) {
+	return file_vega_vega_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *EthereumL2Configs) GetConfigs() []*EthereumL2Config {
+	if x != nil {
+		return x.Configs
+	}
+	return nil
+}
+
 // Ethereum configuration details.
 type EthereumConfig struct {
 	state         protoimpl.MessageState
@@ -6907,7 +7033,7 @@ type EthereumConfig struct {
 func (x *EthereumConfig) Reset() {
 	*x = EthereumConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[47]
+		mi := &file_vega_vega_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6920,7 +7046,7 @@ func (x *EthereumConfig) String() string {
 func (*EthereumConfig) ProtoMessage() {}
 
 func (x *EthereumConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[47]
+	mi := &file_vega_vega_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6933,7 +7059,7 @@ func (x *EthereumConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EthereumConfig.ProtoReflect.Descriptor instead.
 func (*EthereumConfig) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{47}
+	return file_vega_vega_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *EthereumConfig) GetNetworkId() string {
@@ -6999,7 +7125,7 @@ type EthereumContractConfig struct {
 func (x *EthereumContractConfig) Reset() {
 	*x = EthereumContractConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[48]
+		mi := &file_vega_vega_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7012,7 +7138,7 @@ func (x *EthereumContractConfig) String() string {
 func (*EthereumContractConfig) ProtoMessage() {}
 
 func (x *EthereumContractConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[48]
+	mi := &file_vega_vega_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7025,7 +7151,7 @@ func (x *EthereumContractConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EthereumContractConfig.ProtoReflect.Descriptor instead.
 func (*EthereumContractConfig) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{48}
+	return file_vega_vega_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *EthereumContractConfig) GetAddress() string {
@@ -7063,7 +7189,7 @@ type EpochTimestamps struct {
 func (x *EpochTimestamps) Reset() {
 	*x = EpochTimestamps{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[49]
+		mi := &file_vega_vega_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7076,7 +7202,7 @@ func (x *EpochTimestamps) String() string {
 func (*EpochTimestamps) ProtoMessage() {}
 
 func (x *EpochTimestamps) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[49]
+	mi := &file_vega_vega_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7089,7 +7215,7 @@ func (x *EpochTimestamps) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochTimestamps.ProtoReflect.Descriptor instead.
 func (*EpochTimestamps) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{49}
+	return file_vega_vega_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *EpochTimestamps) GetStartTime() int64 {
@@ -7145,7 +7271,7 @@ type Epoch struct {
 func (x *Epoch) Reset() {
 	*x = Epoch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[50]
+		mi := &file_vega_vega_proto_msgTypes[52]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7158,7 +7284,7 @@ func (x *Epoch) String() string {
 func (*Epoch) ProtoMessage() {}
 
 func (x *Epoch) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[50]
+	mi := &file_vega_vega_proto_msgTypes[52]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7171,7 +7297,7 @@ func (x *Epoch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Epoch.ProtoReflect.Descriptor instead.
 func (*Epoch) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{50}
+	return file_vega_vega_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *Epoch) GetSeq() uint64 {
@@ -7216,7 +7342,7 @@ type EpochParticipation struct {
 func (x *EpochParticipation) Reset() {
 	*x = EpochParticipation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[51]
+		mi := &file_vega_vega_proto_msgTypes[53]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7229,7 +7355,7 @@ func (x *EpochParticipation) String() string {
 func (*EpochParticipation) ProtoMessage() {}
 
 func (x *EpochParticipation) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[51]
+	mi := &file_vega_vega_proto_msgTypes[53]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7242,7 +7368,7 @@ func (x *EpochParticipation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochParticipation.ProtoReflect.Descriptor instead.
 func (*EpochParticipation) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{51}
+	return file_vega_vega_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *EpochParticipation) GetEpoch() *Epoch {
@@ -7289,7 +7415,7 @@ type EpochData struct {
 func (x *EpochData) Reset() {
 	*x = EpochData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[52]
+		mi := &file_vega_vega_proto_msgTypes[54]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7302,7 +7428,7 @@ func (x *EpochData) String() string {
 func (*EpochData) ProtoMessage() {}
 
 func (x *EpochData) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[52]
+	mi := &file_vega_vega_proto_msgTypes[54]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7315,7 +7441,7 @@ func (x *EpochData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochData.ProtoReflect.Descriptor instead.
 func (*EpochData) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{52}
+	return file_vega_vega_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *EpochData) GetTotal() int32 {
@@ -7361,7 +7487,7 @@ type RankingScore struct {
 func (x *RankingScore) Reset() {
 	*x = RankingScore{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[53]
+		mi := &file_vega_vega_proto_msgTypes[55]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7374,7 +7500,7 @@ func (x *RankingScore) String() string {
 func (*RankingScore) ProtoMessage() {}
 
 func (x *RankingScore) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[53]
+	mi := &file_vega_vega_proto_msgTypes[55]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7387,7 +7513,7 @@ func (x *RankingScore) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RankingScore.ProtoReflect.Descriptor instead.
 func (*RankingScore) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{53}
+	return file_vega_vega_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *RankingScore) GetStakeScore() string {
@@ -7454,7 +7580,7 @@ type RewardScore struct {
 func (x *RewardScore) Reset() {
 	*x = RewardScore{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[54]
+		mi := &file_vega_vega_proto_msgTypes[56]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7467,7 +7593,7 @@ func (x *RewardScore) String() string {
 func (*RewardScore) ProtoMessage() {}
 
 func (x *RewardScore) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[54]
+	mi := &file_vega_vega_proto_msgTypes[56]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7480,7 +7606,7 @@ func (x *RewardScore) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardScore.ProtoReflect.Descriptor instead.
 func (*RewardScore) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{54}
+	return file_vega_vega_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *RewardScore) GetRawValidatorScore() string {
@@ -7571,7 +7697,7 @@ type Node struct {
 func (x *Node) Reset() {
 	*x = Node{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[55]
+		mi := &file_vega_vega_proto_msgTypes[57]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7584,7 +7710,7 @@ func (x *Node) String() string {
 func (*Node) ProtoMessage() {}
 
 func (x *Node) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[55]
+	mi := &file_vega_vega_proto_msgTypes[57]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7597,7 +7723,7 @@ func (x *Node) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Node.ProtoReflect.Descriptor instead.
 func (*Node) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{55}
+	return file_vega_vega_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *Node) GetId() string {
@@ -7747,7 +7873,7 @@ type NodeSet struct {
 func (x *NodeSet) Reset() {
 	*x = NodeSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[56]
+		mi := &file_vega_vega_proto_msgTypes[58]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7760,7 +7886,7 @@ func (x *NodeSet) String() string {
 func (*NodeSet) ProtoMessage() {}
 
 func (x *NodeSet) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[56]
+	mi := &file_vega_vega_proto_msgTypes[58]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7773,7 +7899,7 @@ func (x *NodeSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeSet.ProtoReflect.Descriptor instead.
 func (*NodeSet) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{56}
+	return file_vega_vega_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *NodeSet) GetTotal() uint32 {
@@ -7835,7 +7961,7 @@ type NodeData struct {
 func (x *NodeData) Reset() {
 	*x = NodeData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[57]
+		mi := &file_vega_vega_proto_msgTypes[59]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7848,7 +7974,7 @@ func (x *NodeData) String() string {
 func (*NodeData) ProtoMessage() {}
 
 func (x *NodeData) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[57]
+	mi := &file_vega_vega_proto_msgTypes[59]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7861,7 +7987,7 @@ func (x *NodeData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeData.ProtoReflect.Descriptor instead.
 func (*NodeData) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{57}
+	return file_vega_vega_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *NodeData) GetStakedTotal() string {
@@ -7931,7 +8057,7 @@ type Delegation struct {
 func (x *Delegation) Reset() {
 	*x = Delegation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[58]
+		mi := &file_vega_vega_proto_msgTypes[60]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -7944,7 +8070,7 @@ func (x *Delegation) String() string {
 func (*Delegation) ProtoMessage() {}
 
 func (x *Delegation) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[58]
+	mi := &file_vega_vega_proto_msgTypes[60]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7957,7 +8083,7 @@ func (x *Delegation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Delegation.ProtoReflect.Descriptor instead.
 func (*Delegation) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{58}
+	return file_vega_vega_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *Delegation) GetParty() string {
@@ -8025,7 +8151,7 @@ type Reward struct {
 func (x *Reward) Reset() {
 	*x = Reward{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[59]
+		mi := &file_vega_vega_proto_msgTypes[61]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8038,7 +8164,7 @@ func (x *Reward) String() string {
 func (*Reward) ProtoMessage() {}
 
 func (x *Reward) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[59]
+	mi := &file_vega_vega_proto_msgTypes[61]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8051,7 +8177,7 @@ func (x *Reward) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Reward.ProtoReflect.Descriptor instead.
 func (*Reward) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{59}
+	return file_vega_vega_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *Reward) GetAssetId() string {
@@ -8155,7 +8281,7 @@ type RewardSummary struct {
 func (x *RewardSummary) Reset() {
 	*x = RewardSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[60]
+		mi := &file_vega_vega_proto_msgTypes[62]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8168,7 +8294,7 @@ func (x *RewardSummary) String() string {
 func (*RewardSummary) ProtoMessage() {}
 
 func (x *RewardSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[60]
+	mi := &file_vega_vega_proto_msgTypes[62]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8181,7 +8307,7 @@ func (x *RewardSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardSummary.ProtoReflect.Descriptor instead.
 func (*RewardSummary) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{60}
+	return file_vega_vega_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *RewardSummary) GetAssetId() string {
@@ -8226,7 +8352,7 @@ type EpochRewardSummary struct {
 func (x *EpochRewardSummary) Reset() {
 	*x = EpochRewardSummary{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[61]
+		mi := &file_vega_vega_proto_msgTypes[63]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8239,7 +8365,7 @@ func (x *EpochRewardSummary) String() string {
 func (*EpochRewardSummary) ProtoMessage() {}
 
 func (x *EpochRewardSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[61]
+	mi := &file_vega_vega_proto_msgTypes[63]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8252,7 +8378,7 @@ func (x *EpochRewardSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochRewardSummary.ProtoReflect.Descriptor instead.
 func (*EpochRewardSummary) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{61}
+	return file_vega_vega_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *EpochRewardSummary) GetEpoch() uint64 {
@@ -8306,7 +8432,7 @@ type StateValueProposal struct {
 func (x *StateValueProposal) Reset() {
 	*x = StateValueProposal{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[62]
+		mi := &file_vega_vega_proto_msgTypes[64]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8319,7 +8445,7 @@ func (x *StateValueProposal) String() string {
 func (*StateValueProposal) ProtoMessage() {}
 
 func (x *StateValueProposal) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[62]
+	mi := &file_vega_vega_proto_msgTypes[64]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8332,7 +8458,7 @@ func (x *StateValueProposal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateValueProposal.ProtoReflect.Descriptor instead.
 func (*StateValueProposal) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{62}
+	return file_vega_vega_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *StateValueProposal) GetStateVarId() string {
@@ -8369,7 +8495,7 @@ type KeyValueBundle struct {
 func (x *KeyValueBundle) Reset() {
 	*x = KeyValueBundle{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[63]
+		mi := &file_vega_vega_proto_msgTypes[65]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8382,7 +8508,7 @@ func (x *KeyValueBundle) String() string {
 func (*KeyValueBundle) ProtoMessage() {}
 
 func (x *KeyValueBundle) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[63]
+	mi := &file_vega_vega_proto_msgTypes[65]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8395,7 +8521,7 @@ func (x *KeyValueBundle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyValueBundle.ProtoReflect.Descriptor instead.
 func (*KeyValueBundle) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{63}
+	return file_vega_vega_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *KeyValueBundle) GetKey() string {
@@ -8435,7 +8561,7 @@ type StateVarValue struct {
 func (x *StateVarValue) Reset() {
 	*x = StateVarValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[64]
+		mi := &file_vega_vega_proto_msgTypes[66]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8448,7 +8574,7 @@ func (x *StateVarValue) String() string {
 func (*StateVarValue) ProtoMessage() {}
 
 func (x *StateVarValue) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[64]
+	mi := &file_vega_vega_proto_msgTypes[66]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8461,7 +8587,7 @@ func (x *StateVarValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateVarValue.ProtoReflect.Descriptor instead.
 func (*StateVarValue) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{64}
+	return file_vega_vega_proto_rawDescGZIP(), []int{66}
 }
 
 func (m *StateVarValue) GetValue() isStateVarValue_Value {
@@ -8525,7 +8651,7 @@ type ScalarValue struct {
 func (x *ScalarValue) Reset() {
 	*x = ScalarValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[65]
+		mi := &file_vega_vega_proto_msgTypes[67]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8538,7 +8664,7 @@ func (x *ScalarValue) String() string {
 func (*ScalarValue) ProtoMessage() {}
 
 func (x *ScalarValue) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[65]
+	mi := &file_vega_vega_proto_msgTypes[67]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8551,7 +8677,7 @@ func (x *ScalarValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScalarValue.ProtoReflect.Descriptor instead.
 func (*ScalarValue) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{65}
+	return file_vega_vega_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ScalarValue) GetValue() string {
@@ -8572,7 +8698,7 @@ type VectorValue struct {
 func (x *VectorValue) Reset() {
 	*x = VectorValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[66]
+		mi := &file_vega_vega_proto_msgTypes[68]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8585,7 +8711,7 @@ func (x *VectorValue) String() string {
 func (*VectorValue) ProtoMessage() {}
 
 func (x *VectorValue) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[66]
+	mi := &file_vega_vega_proto_msgTypes[68]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8598,7 +8724,7 @@ func (x *VectorValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VectorValue.ProtoReflect.Descriptor instead.
 func (*VectorValue) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{66}
+	return file_vega_vega_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *VectorValue) GetValue() []string {
@@ -8619,7 +8745,7 @@ type MatrixValue struct {
 func (x *MatrixValue) Reset() {
 	*x = MatrixValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[67]
+		mi := &file_vega_vega_proto_msgTypes[69]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8632,7 +8758,7 @@ func (x *MatrixValue) String() string {
 func (*MatrixValue) ProtoMessage() {}
 
 func (x *MatrixValue) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[67]
+	mi := &file_vega_vega_proto_msgTypes[69]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8645,7 +8771,7 @@ func (x *MatrixValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MatrixValue.ProtoReflect.Descriptor instead.
 func (*MatrixValue) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{67}
+	return file_vega_vega_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *MatrixValue) GetValue() []*VectorValue {
@@ -8680,7 +8806,7 @@ type ReferralProgram struct {
 func (x *ReferralProgram) Reset() {
 	*x = ReferralProgram{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[68]
+		mi := &file_vega_vega_proto_msgTypes[70]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8693,7 +8819,7 @@ func (x *ReferralProgram) String() string {
 func (*ReferralProgram) ProtoMessage() {}
 
 func (x *ReferralProgram) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[68]
+	mi := &file_vega_vega_proto_msgTypes[70]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8706,7 +8832,7 @@ func (x *ReferralProgram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralProgram.ProtoReflect.Descriptor instead.
 func (*ReferralProgram) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{68}
+	return file_vega_vega_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *ReferralProgram) GetVersion() uint64 {
@@ -8766,7 +8892,7 @@ type VolumeBenefitTier struct {
 func (x *VolumeBenefitTier) Reset() {
 	*x = VolumeBenefitTier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[69]
+		mi := &file_vega_vega_proto_msgTypes[71]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8779,7 +8905,7 @@ func (x *VolumeBenefitTier) String() string {
 func (*VolumeBenefitTier) ProtoMessage() {}
 
 func (x *VolumeBenefitTier) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[69]
+	mi := &file_vega_vega_proto_msgTypes[71]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8792,7 +8918,7 @@ func (x *VolumeBenefitTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeBenefitTier.ProtoReflect.Descriptor instead.
 func (*VolumeBenefitTier) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{69}
+	return file_vega_vega_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *VolumeBenefitTier) GetMinimumRunningNotionalTakerVolume() string {
@@ -8829,7 +8955,7 @@ type BenefitTier struct {
 func (x *BenefitTier) Reset() {
 	*x = BenefitTier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[70]
+		mi := &file_vega_vega_proto_msgTypes[72]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8842,7 +8968,7 @@ func (x *BenefitTier) String() string {
 func (*BenefitTier) ProtoMessage() {}
 
 func (x *BenefitTier) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[70]
+	mi := &file_vega_vega_proto_msgTypes[72]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8855,7 +8981,7 @@ func (x *BenefitTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BenefitTier.ProtoReflect.Descriptor instead.
 func (*BenefitTier) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{70}
+	return file_vega_vega_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *BenefitTier) GetMinimumRunningNotionalTakerVolume() string {
@@ -8897,7 +9023,7 @@ type VestingBenefitTiers struct {
 func (x *VestingBenefitTiers) Reset() {
 	*x = VestingBenefitTiers{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[71]
+		mi := &file_vega_vega_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8910,7 +9036,7 @@ func (x *VestingBenefitTiers) String() string {
 func (*VestingBenefitTiers) ProtoMessage() {}
 
 func (x *VestingBenefitTiers) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[71]
+	mi := &file_vega_vega_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8923,7 +9049,7 @@ func (x *VestingBenefitTiers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VestingBenefitTiers.ProtoReflect.Descriptor instead.
 func (*VestingBenefitTiers) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{71}
+	return file_vega_vega_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *VestingBenefitTiers) GetTiers() []*VestingBenefitTier {
@@ -8945,7 +9071,7 @@ type VestingBenefitTier struct {
 func (x *VestingBenefitTier) Reset() {
 	*x = VestingBenefitTier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[72]
+		mi := &file_vega_vega_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8958,7 +9084,7 @@ func (x *VestingBenefitTier) String() string {
 func (*VestingBenefitTier) ProtoMessage() {}
 
 func (x *VestingBenefitTier) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[72]
+	mi := &file_vega_vega_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8971,7 +9097,7 @@ func (x *VestingBenefitTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VestingBenefitTier.ProtoReflect.Descriptor instead.
 func (*VestingBenefitTier) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{72}
+	return file_vega_vega_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *VestingBenefitTier) GetMinimumQuantumBalance() string {
@@ -9004,7 +9130,7 @@ type StakingTier struct {
 func (x *StakingTier) Reset() {
 	*x = StakingTier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[73]
+		mi := &file_vega_vega_proto_msgTypes[75]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9017,7 +9143,7 @@ func (x *StakingTier) String() string {
 func (*StakingTier) ProtoMessage() {}
 
 func (x *StakingTier) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[73]
+	mi := &file_vega_vega_proto_msgTypes[75]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9030,7 +9156,7 @@ func (x *StakingTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakingTier.ProtoReflect.Descriptor instead.
 func (*StakingTier) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{73}
+	return file_vega_vega_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *StakingTier) GetMinimumStakedTokens() string {
@@ -9069,7 +9195,7 @@ type VolumeDiscountProgram struct {
 func (x *VolumeDiscountProgram) Reset() {
 	*x = VolumeDiscountProgram{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[74]
+		mi := &file_vega_vega_proto_msgTypes[76]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9082,7 +9208,7 @@ func (x *VolumeDiscountProgram) String() string {
 func (*VolumeDiscountProgram) ProtoMessage() {}
 
 func (x *VolumeDiscountProgram) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[74]
+	mi := &file_vega_vega_proto_msgTypes[76]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9095,7 +9221,7 @@ func (x *VolumeDiscountProgram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeDiscountProgram.ProtoReflect.Descriptor instead.
 func (*VolumeDiscountProgram) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{74}
+	return file_vega_vega_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *VolumeDiscountProgram) GetVersion() uint64 {
@@ -9146,7 +9272,7 @@ type ActivityStreakBenefitTiers struct {
 func (x *ActivityStreakBenefitTiers) Reset() {
 	*x = ActivityStreakBenefitTiers{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[75]
+		mi := &file_vega_vega_proto_msgTypes[77]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9159,7 +9285,7 @@ func (x *ActivityStreakBenefitTiers) String() string {
 func (*ActivityStreakBenefitTiers) ProtoMessage() {}
 
 func (x *ActivityStreakBenefitTiers) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[75]
+	mi := &file_vega_vega_proto_msgTypes[77]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9172,7 +9298,7 @@ func (x *ActivityStreakBenefitTiers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivityStreakBenefitTiers.ProtoReflect.Descriptor instead.
 func (*ActivityStreakBenefitTiers) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{75}
+	return file_vega_vega_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *ActivityStreakBenefitTiers) GetTiers() []*ActivityStreakBenefitTier {
@@ -9199,7 +9325,7 @@ type ActivityStreakBenefitTier struct {
 func (x *ActivityStreakBenefitTier) Reset() {
 	*x = ActivityStreakBenefitTier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[76]
+		mi := &file_vega_vega_proto_msgTypes[78]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9212,7 +9338,7 @@ func (x *ActivityStreakBenefitTier) String() string {
 func (*ActivityStreakBenefitTier) ProtoMessage() {}
 
 func (x *ActivityStreakBenefitTier) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[76]
+	mi := &file_vega_vega_proto_msgTypes[78]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9225,7 +9351,7 @@ func (x *ActivityStreakBenefitTier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivityStreakBenefitTier.ProtoReflect.Descriptor instead.
 func (*ActivityStreakBenefitTier) Descriptor() ([]byte, []int) {
-	return file_vega_vega_proto_rawDescGZIP(), []int{76}
+	return file_vega_vega_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *ActivityStreakBenefitTier) GetMinimumActivityStreak() uint64 {
@@ -9261,7 +9387,7 @@ type StopOrder_SizeOverrideValue struct {
 func (x *StopOrder_SizeOverrideValue) Reset() {
 	*x = StopOrder_SizeOverrideValue{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_vega_proto_msgTypes[77]
+		mi := &file_vega_vega_proto_msgTypes[79]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9274,7 +9400,7 @@ func (x *StopOrder_SizeOverrideValue) String() string {
 func (*StopOrder_SizeOverrideValue) ProtoMessage() {}
 
 func (x *StopOrder_SizeOverrideValue) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_vega_proto_msgTypes[77]
+	mi := &file_vega_vega_proto_msgTypes[79]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10230,7 +10356,20 @@ var file_vega_vega_proto_rawDesc = []byte{
 	0x0f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x52, 0x45, 0x4a, 0x45, 0x43, 0x54, 0x45, 0x44,
 	0x10, 0x04, 0x12, 0x15, 0x0a, 0x11, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x44,
 	0x45, 0x50, 0x4c, 0x4f, 0x59, 0x45, 0x44, 0x10, 0x05, 0x12, 0x12, 0x0a, 0x0e, 0x53, 0x54, 0x41,
-	0x54, 0x55, 0x53, 0x5f, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x06, 0x22, 0xd0, 0x03,
+	0x54, 0x55, 0x53, 0x5f, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x06, 0x22, 0x86, 0x01,
+	0x0a, 0x10, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x4c, 0x32, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x12, 0x1d, 0x0a, 0x0a, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x49,
+	0x64, 0x12, 0x19, 0x0a, 0x08, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x24, 0x0a, 0x0d,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0d, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x45, 0x0a, 0x11, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65,
+	0x75, 0x6d, 0x4c, 0x32, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x12, 0x30, 0x0a, 0x07, 0x63,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x4c, 0x32, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x22, 0xd0, 0x03,
 	0x0a, 0x0e, 0x45, 0x74, 0x68, 0x65, 0x72, 0x65, 0x75, 0x6d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
 	0x12, 0x1d, 0x0a, 0x0a, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x69, 0x64, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x49, 0x64, 0x12,
@@ -11056,7 +11195,7 @@ func file_vega_vega_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_vega_proto_enumTypes = make([]protoimpl.EnumInfo, 29)
-var file_vega_vega_proto_msgTypes = make([]protoimpl.MessageInfo, 78)
+var file_vega_vega_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
 var file_vega_vega_proto_goTypes = []interface{}{
 	(Side)(0),                             // 0: vega.Side
 	(Interval)(0),                         // 1: vega.Interval
@@ -11134,41 +11273,43 @@ var file_vega_vega_proto_goTypes = []interface{}{
 	(*LiquidityOrder)(nil),                // 73: vega.LiquidityOrder
 	(*LiquidityOrderReference)(nil),       // 74: vega.LiquidityOrderReference
 	(*LiquidityProvision)(nil),            // 75: vega.LiquidityProvision
-	(*EthereumConfig)(nil),                // 76: vega.EthereumConfig
-	(*EthereumContractConfig)(nil),        // 77: vega.EthereumContractConfig
-	(*EpochTimestamps)(nil),               // 78: vega.EpochTimestamps
-	(*Epoch)(nil),                         // 79: vega.Epoch
-	(*EpochParticipation)(nil),            // 80: vega.EpochParticipation
-	(*EpochData)(nil),                     // 81: vega.EpochData
-	(*RankingScore)(nil),                  // 82: vega.RankingScore
-	(*RewardScore)(nil),                   // 83: vega.RewardScore
-	(*Node)(nil),                          // 84: vega.Node
-	(*NodeSet)(nil),                       // 85: vega.NodeSet
-	(*NodeData)(nil),                      // 86: vega.NodeData
-	(*Delegation)(nil),                    // 87: vega.Delegation
-	(*Reward)(nil),                        // 88: vega.Reward
-	(*RewardSummary)(nil),                 // 89: vega.RewardSummary
-	(*EpochRewardSummary)(nil),            // 90: vega.EpochRewardSummary
-	(*StateValueProposal)(nil),            // 91: vega.StateValueProposal
-	(*KeyValueBundle)(nil),                // 92: vega.KeyValueBundle
-	(*StateVarValue)(nil),                 // 93: vega.StateVarValue
-	(*ScalarValue)(nil),                   // 94: vega.ScalarValue
-	(*VectorValue)(nil),                   // 95: vega.VectorValue
-	(*MatrixValue)(nil),                   // 96: vega.MatrixValue
-	(*ReferralProgram)(nil),               // 97: vega.ReferralProgram
-	(*VolumeBenefitTier)(nil),             // 98: vega.VolumeBenefitTier
-	(*BenefitTier)(nil),                   // 99: vega.BenefitTier
-	(*VestingBenefitTiers)(nil),           // 100: vega.VestingBenefitTiers
-	(*VestingBenefitTier)(nil),            // 101: vega.VestingBenefitTier
-	(*StakingTier)(nil),                   // 102: vega.StakingTier
-	(*VolumeDiscountProgram)(nil),         // 103: vega.VolumeDiscountProgram
-	(*ActivityStreakBenefitTiers)(nil),    // 104: vega.ActivityStreakBenefitTiers
-	(*ActivityStreakBenefitTier)(nil),     // 105: vega.ActivityStreakBenefitTier
-	(*StopOrder_SizeOverrideValue)(nil),   // 106: vega.StopOrder.SizeOverrideValue
-	(CompositePriceType)(0),               // 107: vega.CompositePriceType
-	(Market_TradingMode)(0),               // 108: vega.Market.TradingMode
-	(Market_State)(0),                     // 109: vega.Market.State
-	(*PriceMonitoringTrigger)(nil),        // 110: vega.PriceMonitoringTrigger
+	(*EthereumL2Config)(nil),              // 76: vega.EthereumL2Config
+	(*EthereumL2Configs)(nil),             // 77: vega.EthereumL2Configs
+	(*EthereumConfig)(nil),                // 78: vega.EthereumConfig
+	(*EthereumContractConfig)(nil),        // 79: vega.EthereumContractConfig
+	(*EpochTimestamps)(nil),               // 80: vega.EpochTimestamps
+	(*Epoch)(nil),                         // 81: vega.Epoch
+	(*EpochParticipation)(nil),            // 82: vega.EpochParticipation
+	(*EpochData)(nil),                     // 83: vega.EpochData
+	(*RankingScore)(nil),                  // 84: vega.RankingScore
+	(*RewardScore)(nil),                   // 85: vega.RewardScore
+	(*Node)(nil),                          // 86: vega.Node
+	(*NodeSet)(nil),                       // 87: vega.NodeSet
+	(*NodeData)(nil),                      // 88: vega.NodeData
+	(*Delegation)(nil),                    // 89: vega.Delegation
+	(*Reward)(nil),                        // 90: vega.Reward
+	(*RewardSummary)(nil),                 // 91: vega.RewardSummary
+	(*EpochRewardSummary)(nil),            // 92: vega.EpochRewardSummary
+	(*StateValueProposal)(nil),            // 93: vega.StateValueProposal
+	(*KeyValueBundle)(nil),                // 94: vega.KeyValueBundle
+	(*StateVarValue)(nil),                 // 95: vega.StateVarValue
+	(*ScalarValue)(nil),                   // 96: vega.ScalarValue
+	(*VectorValue)(nil),                   // 97: vega.VectorValue
+	(*MatrixValue)(nil),                   // 98: vega.MatrixValue
+	(*ReferralProgram)(nil),               // 99: vega.ReferralProgram
+	(*VolumeBenefitTier)(nil),             // 100: vega.VolumeBenefitTier
+	(*BenefitTier)(nil),                   // 101: vega.BenefitTier
+	(*VestingBenefitTiers)(nil),           // 102: vega.VestingBenefitTiers
+	(*VestingBenefitTier)(nil),            // 103: vega.VestingBenefitTier
+	(*StakingTier)(nil),                   // 104: vega.StakingTier
+	(*VolumeDiscountProgram)(nil),         // 105: vega.VolumeDiscountProgram
+	(*ActivityStreakBenefitTiers)(nil),    // 106: vega.ActivityStreakBenefitTiers
+	(*ActivityStreakBenefitTier)(nil),     // 107: vega.ActivityStreakBenefitTier
+	(*StopOrder_SizeOverrideValue)(nil),   // 108: vega.StopOrder.SizeOverrideValue
+	(CompositePriceType)(0),               // 109: vega.CompositePriceType
+	(Market_TradingMode)(0),               // 110: vega.Market.TradingMode
+	(Market_State)(0),                     // 111: vega.Market.State
+	(*PriceMonitoringTrigger)(nil),        // 112: vega.PriceMonitoringTrigger
 }
 var file_vega_vega_proto_depIdxs = []int32{
 	30,  // 0: vega.PartyProfile.metadata:type_name -> vega.Metadata
@@ -11177,7 +11318,7 @@ var file_vega_vega_proto_depIdxs = []int32{
 	20,  // 3: vega.StopOrder.status:type_name -> vega.StopOrder.Status
 	21,  // 4: vega.StopOrder.rejection_reason:type_name -> vega.StopOrder.RejectionReason
 	17,  // 5: vega.StopOrder.size_override_setting:type_name -> vega.StopOrder.SizeOverrideSetting
-	106, // 6: vega.StopOrder.size_override_value:type_name -> vega.StopOrder.SizeOverrideValue
+	108, // 6: vega.StopOrder.size_override_value:type_name -> vega.StopOrder.SizeOverrideValue
 	30,  // 7: vega.Party.metadata:type_name -> vega.Metadata
 	4,   // 8: vega.PeggedOrder.reference:type_name -> vega.PeggedReference
 	0,   // 9: vega.Order.side:type_name -> vega.Side
@@ -11225,58 +11366,59 @@ var file_vega_vega_proto_depIdxs = []int32{
 	60,  // 51: vega.LedgerMovement.entries:type_name -> vega.LedgerEntry
 	61,  // 52: vega.LedgerMovement.balances:type_name -> vega.PostTransferBalance
 	16,  // 53: vega.MarginLevels.margin_mode:type_name -> vega.MarginMode
-	107, // 54: vega.PerpetualData.index_price_type:type_name -> vega.CompositePriceType
+	109, // 54: vega.PerpetualData.index_price_type:type_name -> vega.CompositePriceType
 	64,  // 55: vega.ProductData.perpetual_data:type_name -> vega.PerpetualData
-	108, // 56: vega.MarketData.market_trading_mode:type_name -> vega.Market.TradingMode
+	110, // 56: vega.MarketData.market_trading_mode:type_name -> vega.Market.TradingMode
 	3,   // 57: vega.MarketData.trigger:type_name -> vega.AuctionTrigger
 	3,   // 58: vega.MarketData.extension_trigger:type_name -> vega.AuctionTrigger
 	69,  // 59: vega.MarketData.price_monitoring_bounds:type_name -> vega.PriceMonitoringBounds
 	67,  // 60: vega.MarketData.liquidity_provider_fee_share:type_name -> vega.LiquidityProviderFeeShare
-	109, // 61: vega.MarketData.market_state:type_name -> vega.Market.State
+	111, // 61: vega.MarketData.market_state:type_name -> vega.Market.State
 	65,  // 62: vega.MarketData.product_data:type_name -> vega.ProductData
 	68,  // 63: vega.MarketData.liquidity_provider_sla:type_name -> vega.LiquidityProviderSLA
-	107, // 64: vega.MarketData.mark_price_type:type_name -> vega.CompositePriceType
-	110, // 65: vega.PriceMonitoringBounds.trigger:type_name -> vega.PriceMonitoringTrigger
+	109, // 64: vega.MarketData.mark_price_type:type_name -> vega.CompositePriceType
+	112, // 65: vega.PriceMonitoringBounds.trigger:type_name -> vega.PriceMonitoringTrigger
 	4,   // 66: vega.LiquidityOrder.reference:type_name -> vega.PeggedReference
 	73,  // 67: vega.LiquidityOrderReference.liquidity_order:type_name -> vega.LiquidityOrder
 	74,  // 68: vega.LiquidityProvision.sells:type_name -> vega.LiquidityOrderReference
 	74,  // 69: vega.LiquidityProvision.buys:type_name -> vega.LiquidityOrderReference
 	28,  // 70: vega.LiquidityProvision.status:type_name -> vega.LiquidityProvision.Status
-	77,  // 71: vega.EthereumConfig.collateral_bridge_contract:type_name -> vega.EthereumContractConfig
-	77,  // 72: vega.EthereumConfig.staking_bridge_contract:type_name -> vega.EthereumContractConfig
-	77,  // 73: vega.EthereumConfig.token_vesting_contract:type_name -> vega.EthereumContractConfig
-	77,  // 74: vega.EthereumConfig.multisig_control_contract:type_name -> vega.EthereumContractConfig
-	78,  // 75: vega.Epoch.timestamps:type_name -> vega.EpochTimestamps
-	84,  // 76: vega.Epoch.validators:type_name -> vega.Node
-	87,  // 77: vega.Epoch.delegations:type_name -> vega.Delegation
-	79,  // 78: vega.EpochParticipation.epoch:type_name -> vega.Epoch
-	15,  // 79: vega.RankingScore.previous_status:type_name -> vega.ValidatorNodeStatus
-	15,  // 80: vega.RankingScore.status:type_name -> vega.ValidatorNodeStatus
-	15,  // 81: vega.RewardScore.validator_status:type_name -> vega.ValidatorNodeStatus
-	81,  // 82: vega.Node.epoch_data:type_name -> vega.EpochData
-	13,  // 83: vega.Node.status:type_name -> vega.NodeStatus
-	87,  // 84: vega.Node.delegations:type_name -> vega.Delegation
-	83,  // 85: vega.Node.reward_score:type_name -> vega.RewardScore
-	82,  // 86: vega.Node.ranking_score:type_name -> vega.RankingScore
-	85,  // 87: vega.NodeData.tendermint_nodes:type_name -> vega.NodeSet
-	85,  // 88: vega.NodeData.ersatz_nodes:type_name -> vega.NodeSet
-	85,  // 89: vega.NodeData.pending_nodes:type_name -> vega.NodeSet
-	92,  // 90: vega.StateValueProposal.kvb:type_name -> vega.KeyValueBundle
-	93,  // 91: vega.KeyValueBundle.value:type_name -> vega.StateVarValue
-	94,  // 92: vega.StateVarValue.scalar_val:type_name -> vega.ScalarValue
-	95,  // 93: vega.StateVarValue.vector_val:type_name -> vega.VectorValue
-	96,  // 94: vega.StateVarValue.matrix_val:type_name -> vega.MatrixValue
-	95,  // 95: vega.MatrixValue.value:type_name -> vega.VectorValue
-	99,  // 96: vega.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
-	102, // 97: vega.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
-	101, // 98: vega.VestingBenefitTiers.tiers:type_name -> vega.VestingBenefitTier
-	98,  // 99: vega.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
-	105, // 100: vega.ActivityStreakBenefitTiers.tiers:type_name -> vega.ActivityStreakBenefitTier
-	101, // [101:101] is the sub-list for method output_type
-	101, // [101:101] is the sub-list for method input_type
-	101, // [101:101] is the sub-list for extension type_name
-	101, // [101:101] is the sub-list for extension extendee
-	0,   // [0:101] is the sub-list for field type_name
+	76,  // 71: vega.EthereumL2Configs.configs:type_name -> vega.EthereumL2Config
+	79,  // 72: vega.EthereumConfig.collateral_bridge_contract:type_name -> vega.EthereumContractConfig
+	79,  // 73: vega.EthereumConfig.staking_bridge_contract:type_name -> vega.EthereumContractConfig
+	79,  // 74: vega.EthereumConfig.token_vesting_contract:type_name -> vega.EthereumContractConfig
+	79,  // 75: vega.EthereumConfig.multisig_control_contract:type_name -> vega.EthereumContractConfig
+	80,  // 76: vega.Epoch.timestamps:type_name -> vega.EpochTimestamps
+	86,  // 77: vega.Epoch.validators:type_name -> vega.Node
+	89,  // 78: vega.Epoch.delegations:type_name -> vega.Delegation
+	81,  // 79: vega.EpochParticipation.epoch:type_name -> vega.Epoch
+	15,  // 80: vega.RankingScore.previous_status:type_name -> vega.ValidatorNodeStatus
+	15,  // 81: vega.RankingScore.status:type_name -> vega.ValidatorNodeStatus
+	15,  // 82: vega.RewardScore.validator_status:type_name -> vega.ValidatorNodeStatus
+	83,  // 83: vega.Node.epoch_data:type_name -> vega.EpochData
+	13,  // 84: vega.Node.status:type_name -> vega.NodeStatus
+	89,  // 85: vega.Node.delegations:type_name -> vega.Delegation
+	85,  // 86: vega.Node.reward_score:type_name -> vega.RewardScore
+	84,  // 87: vega.Node.ranking_score:type_name -> vega.RankingScore
+	87,  // 88: vega.NodeData.tendermint_nodes:type_name -> vega.NodeSet
+	87,  // 89: vega.NodeData.ersatz_nodes:type_name -> vega.NodeSet
+	87,  // 90: vega.NodeData.pending_nodes:type_name -> vega.NodeSet
+	94,  // 91: vega.StateValueProposal.kvb:type_name -> vega.KeyValueBundle
+	95,  // 92: vega.KeyValueBundle.value:type_name -> vega.StateVarValue
+	96,  // 93: vega.StateVarValue.scalar_val:type_name -> vega.ScalarValue
+	97,  // 94: vega.StateVarValue.vector_val:type_name -> vega.VectorValue
+	98,  // 95: vega.StateVarValue.matrix_val:type_name -> vega.MatrixValue
+	97,  // 96: vega.MatrixValue.value:type_name -> vega.VectorValue
+	101, // 97: vega.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
+	104, // 98: vega.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
+	103, // 99: vega.VestingBenefitTiers.tiers:type_name -> vega.VestingBenefitTier
+	100, // 100: vega.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
+	107, // 101: vega.ActivityStreakBenefitTiers.tiers:type_name -> vega.ActivityStreakBenefitTier
+	102, // [102:102] is the sub-list for method output_type
+	102, // [102:102] is the sub-list for method input_type
+	102, // [102:102] is the sub-list for extension type_name
+	102, // [102:102] is the sub-list for extension extendee
+	0,   // [0:102] is the sub-list for field type_name
 }
 
 func init() { file_vega_vega_proto_init() }
@@ -11851,7 +11993,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EthereumConfig); i {
+			switch v := v.(*EthereumL2Config); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11863,7 +12005,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EthereumContractConfig); i {
+			switch v := v.(*EthereumL2Configs); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11875,7 +12017,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochTimestamps); i {
+			switch v := v.(*EthereumConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11887,7 +12029,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Epoch); i {
+			switch v := v.(*EthereumContractConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11899,7 +12041,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochParticipation); i {
+			switch v := v.(*EpochTimestamps); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11911,7 +12053,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochData); i {
+			switch v := v.(*Epoch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11923,7 +12065,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RankingScore); i {
+			switch v := v.(*EpochParticipation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11935,7 +12077,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardScore); i {
+			switch v := v.(*EpochData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11947,7 +12089,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Node); i {
+			switch v := v.(*RankingScore); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11959,7 +12101,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeSet); i {
+			switch v := v.(*RewardScore); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11971,7 +12113,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeData); i {
+			switch v := v.(*Node); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11983,7 +12125,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Delegation); i {
+			switch v := v.(*NodeSet); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11995,7 +12137,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Reward); i {
+			switch v := v.(*NodeData); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12007,7 +12149,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[60].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardSummary); i {
+			switch v := v.(*Delegation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12019,7 +12161,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[61].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochRewardSummary); i {
+			switch v := v.(*Reward); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12031,7 +12173,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[62].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StateValueProposal); i {
+			switch v := v.(*RewardSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12043,7 +12185,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyValueBundle); i {
+			switch v := v.(*EpochRewardSummary); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12055,7 +12197,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StateVarValue); i {
+			switch v := v.(*StateValueProposal); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12067,7 +12209,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ScalarValue); i {
+			switch v := v.(*KeyValueBundle); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12079,7 +12221,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VectorValue); i {
+			switch v := v.(*StateVarValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12091,7 +12233,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MatrixValue); i {
+			switch v := v.(*ScalarValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12103,7 +12245,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[68].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralProgram); i {
+			switch v := v.(*VectorValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12115,7 +12257,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[69].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeBenefitTier); i {
+			switch v := v.(*MatrixValue); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12127,7 +12269,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[70].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BenefitTier); i {
+			switch v := v.(*ReferralProgram); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12139,7 +12281,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[71].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VestingBenefitTiers); i {
+			switch v := v.(*VolumeBenefitTier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12151,7 +12293,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[72].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VestingBenefitTier); i {
+			switch v := v.(*BenefitTier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12163,7 +12305,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakingTier); i {
+			switch v := v.(*VestingBenefitTiers); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12175,7 +12317,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeDiscountProgram); i {
+			switch v := v.(*VestingBenefitTier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12187,7 +12329,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[75].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ActivityStreakBenefitTiers); i {
+			switch v := v.(*StakingTier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12199,7 +12341,7 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ActivityStreakBenefitTier); i {
+			switch v := v.(*VolumeDiscountProgram); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -12211,6 +12353,30 @@ func file_vega_vega_proto_init() {
 			}
 		}
 		file_vega_vega_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ActivityStreakBenefitTiers); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_vega_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ActivityStreakBenefitTier); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_vega_vega_proto_msgTypes[79].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*StopOrder_SizeOverrideValue); i {
 			case 0:
 				return &v.state
@@ -12237,9 +12403,9 @@ func file_vega_vega_proto_init() {
 		(*ProductData_PerpetualData)(nil),
 	}
 	file_vega_vega_proto_msgTypes[37].OneofWrappers = []interface{}{}
-	file_vega_vega_proto_msgTypes[56].OneofWrappers = []interface{}{}
-	file_vega_vega_proto_msgTypes[59].OneofWrappers = []interface{}{}
-	file_vega_vega_proto_msgTypes[64].OneofWrappers = []interface{}{
+	file_vega_vega_proto_msgTypes[58].OneofWrappers = []interface{}{}
+	file_vega_vega_proto_msgTypes[61].OneofWrappers = []interface{}{}
+	file_vega_vega_proto_msgTypes[66].OneofWrappers = []interface{}{
 		(*StateVarValue_ScalarVal)(nil),
 		(*StateVarValue_VectorVal)(nil),
 		(*StateVarValue_MatrixVal)(nil),
@@ -12250,7 +12416,7 @@ func file_vega_vega_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_vega_proto_rawDesc,
 			NumEnums:      29,
-			NumMessages:   78,
+			NumMessages:   80,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

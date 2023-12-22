@@ -176,6 +176,8 @@ const (
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
+	// blockchain specifics?
+	BlockchainsEthereumL2Configs = "blockchains.ethereumL2Configs"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
@@ -439,4 +441,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxApplyReferralCode:                           {},
 	SpamProtectionBalanceSnapshotFrequency:                       {},
 	SpamProtectionApplyReferralMinFunds:                          {},
+	BlockchainsEthereumL2Configs:                                 {},
 }

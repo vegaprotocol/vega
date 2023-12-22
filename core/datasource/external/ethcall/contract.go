@@ -30,6 +30,7 @@ type ContractCallEvent struct {
 	SpecId      string
 	Result      []byte
 	Error       *string
+	L2ChainID   *uint64
 }
 
 func EthereumContractCallResultFromProto(
@@ -46,6 +47,7 @@ func EthereumContractCallResultFromProto(
 		BlockTime:   qr.BlockTime,
 		Result:      qr.Result,
 		Error:       qr.Error,
+		L2ChainID:   qr.L2ChainId,
 	}, nil
 }
 
@@ -56,6 +58,7 @@ func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 		BlockTime:   q.BlockTime,
 		Result:      q.Result,
 		Error:       q.Error,
+		L2ChainId:   q.L2ChainID,
 	}
 }
 

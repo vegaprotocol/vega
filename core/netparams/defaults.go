@@ -234,6 +234,7 @@ func defaultNetParams() map[string]value {
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"collateral_bridge_contract\": { \"address\": \"0xXXX\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }}"),
+		BlockchainsEthereumL2Configs: NewJSON(&proto.EthereumL2Configs{}, types.CheckUntypedEthereumL2Configs).Mutable(true).MustUpdate(`{"configs": []}`),
 
 		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 

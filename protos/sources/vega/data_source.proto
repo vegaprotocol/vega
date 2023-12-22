@@ -103,6 +103,12 @@ message EthCallSpec {
   // in the second result returned from the contract for a structure with a key
   // called 'price' and use that if it exists.
   repeated Normaliser normalisers = 8;
+
+  // an optional ethereum L2 chain id, if not specified this EthCallSpec is
+  // to be used against ethereum mainnet, if set the matching L2 network
+  // for the chain_id is to be used, the network must have been registered via governance
+  // first.
+  optional uint64 l2_chain_id = 9;
 }
 
 message Normaliser {
