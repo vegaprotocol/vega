@@ -60,7 +60,7 @@ Feature:  switch to isolated margin with position and without orders during cont
 
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-      | party1 | ETH/FEB23 | isolated margin | 0.1           | Margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
 
     #AC0019-MCAL-108: switch to isolated margin with position and with orders with margin factor such that position margin is < initial should fail in continuous
     And the parties submit update margin mode:
