@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -939,7 +938,6 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	engine.AddTrade(trade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions)
 	assert.NotEmpty(t, transfers)
-	engine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	p2ME := marginVal{
 		MarketPosition: positions[2],
 		asset:          "asset",
@@ -973,7 +971,8 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	}
 	engine.AddTrade(nTrade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions) // amounts are zero here (was trade only)
-	assert.Empty(t, transfers, fmt.Sprintf("%#v\n", transfers[0].Transfer()))
+	assert.Len(t, transfers, 1)
+	assert.Nil(t, transfers[0].Transfer())
 	newMP = num.NewUint(995)
 	positions = []events.MarketPosition{
 		testPos{
