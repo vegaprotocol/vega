@@ -64,7 +64,8 @@ type (
 	TransactionResults struct {
 		*sqlsubscribers.TransactionResults
 	}
-	Games struct{ *sqlstore.Games }
+	Games       struct{ *sqlstore.Games }
+	MarginModes struct{ *sqlstore.MarginModes }
 )
 
 type (
@@ -206,4 +207,8 @@ func NewTransactionResults(subscriber *sqlsubscribers.TransactionResults) *Trans
 
 func NewGames(store *sqlstore.Games) *Games {
 	return &Games{Games: store}
+}
+
+func NewMarginModes(store *sqlstore.MarginModes) *MarginModes {
+	return &MarginModes{MarginModes: store}
 }

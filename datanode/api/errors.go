@@ -329,6 +329,8 @@ var (
 
 	// Transfer fee estimates.
 	ErrInvalidTransferAmount = newInvalidArgumentError("invalid transfer amount")
+
+	ErrListPartyMarginModes = errors.New("failed to list parties margin modes")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
