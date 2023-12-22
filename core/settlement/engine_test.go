@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -938,13 +939,20 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	engine.AddTrade(trade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions)
 	assert.NotEmpty(t, transfers)
+	engine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	p2ME := marginVal{
+		MarketPosition: positions[2],
+		asset:          "asset",
+		marketID:       "market",
+	}
+	engine.RemoveDistressed(context.Background(), []events.Margin{p2ME})
 	// now make it look like party2 got distressed because of this MTM settlement
 	nTrade = &types.Trade{
 		Price:       newMP.Clone(),
 		MarketPrice: newMP.Clone(),
 		Size:        1,
 		Buyer:       types.NetworkParty,
-		Seller:      types.NetworkParty,
+		Seller:      "party2",
 	}
 	positions = []events.MarketPosition{
 		testPos{
@@ -965,7 +973,7 @@ func TestNetworkCloseoutZero(t *testing.T) {
 	}
 	engine.AddTrade(nTrade)
 	transfers = engine.SettleMTM(context.Background(), newMP, positions) // amounts are zero here (was trade only)
-	assert.Empty(t, transfers)
+	assert.Empty(t, transfers, fmt.Sprintf("%#v\n", transfers[0].Transfer()))
 	newMP = num.NewUint(995)
 	positions = []events.MarketPosition{
 		testPos{

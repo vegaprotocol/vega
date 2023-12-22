@@ -227,9 +227,6 @@ func (e *Engine) ClearDistressedParties(ctx context.Context, idgen IDGen, closed
 	e.broker.SendBatch(trades)
 	// the network has no (more) remaining open position -> no need for the e.nextStep to be set
 	e.log.Info("network position after close-out", logging.Int64("network-position", e.pos.open))
-	if e.pos.open == 0 {
-		e.nextStep = time.Time{}
-	}
 	return mps, parties, netTrades
 }
 
@@ -250,11 +247,7 @@ func (e *Engine) UpdateNetworkPosition(trades []*types.Trade) {
 		delta := int64(t.Size) * sign
 		e.pos.open -= delta
 	}
-	if e.pos.open == 0 {
-		e.nextStep = time.Time{}
-	} else if e.nextStep.IsZero() {
-		e.nextStep = e.tSvc.GetTimeNow().Add(e.cfg.DisposalTimeStep)
-	}
+	e.nextStep = e.tSvc.GetTimeNow().Add(e.cfg.DisposalTimeStep)
 }
 
 func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen IDGen, now time.Time, price, dpPrice *num.Uint) (*types.Order, *types.Order, *types.Trade) {
@@ -326,8 +319,8 @@ func (e *Engine) getOrdersAndTrade(ctx context.Context, pos events.Margin, idgen
 		BuyerFee:    types.NewFee(),
 	}
 	// settlement engine should see this as a wash trade
-	e.settle.AddTrade(&trade)
 	trade.Buyer, trade.Seller = buyParty, sellParty
+	e.settle.AddTrade(&trade)
 	// the for the rest of the core, this should not seem like a wash trade though...
 	e.position.Update(ctx, &trade, &order, &partyOrder)
 	return &order, &partyOrder, &trade

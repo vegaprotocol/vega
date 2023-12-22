@@ -16,7 +16,7 @@ Feature: Position resolution case 1
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  @Liquidation @LiquidationCurrent
+  @Liquidation
   Scenario: close out when there is not enough orders on the orderbook to cover the position (0007-POSN-009, 0008-TRAD-001, 0008-TRAD-002, 0008-TRAD-005)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -129,4 +129,4 @@ Feature: Position resolution case 1
       | buySideProvider  | 3      | 60           | 0              |
       | aux              | 11     | 1160         | 0              |
       | aux2             | -1     | 30           | 0              |
-      | network          | -12    | -1250        | 0              |
+      | network          | 278    | -9950        | 0              |

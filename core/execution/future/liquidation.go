@@ -78,9 +78,12 @@ func (m *Market) checkNetwork(ctx context.Context, now time.Time) error {
 	}
 	// Now that the fees have been taken care of, get the current last traded price:
 	lastTraded := m.getLastTradedPrice()
-	tradeType := types.TradeTypeNetworkCloseOutGood
+	// ensure the trade types are set correctly
+	for _, tr := range conf.Trades {
+		tr.Type = types.TradeTypeNetworkCloseOutGood
+	}
 	// now handle the confirmation like you would any other order/trade confirmation
-	m.handleConfirmation(ctx, conf, &tradeType)
+	m.handleConfirmation(ctx, conf)
 	// restore the last traded price, the network trades do not count towards the mark price
 	// nor do they factor in to the price monitoring logic.
 	m.lastTradedPrice = lastTraded

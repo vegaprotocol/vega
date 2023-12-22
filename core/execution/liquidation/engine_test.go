@@ -86,7 +86,7 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	}
 	totalSize := uint64(50)
 	now := time.Now()
-	eng.tSvc.EXPECT().GetTimeNow().Times(2).Return(now)
+	eng.tSvc.EXPECT().GetTimeNow().Times(3).Return(now)
 	idCount := len(closed) * 3
 	eng.idgen.EXPECT().NextID().Times(idCount).Return("nextID")
 	// 2 orders per closed position

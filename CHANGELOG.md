@@ -94,6 +94,7 @@
 - [10267](https://github.com/vegaprotocol/vega/issues/10267) - `ListCandleData` errors when market is in opening auction
 - [10276](https://github.com/vegaprotocol/vega/issues/10276) - `ListCandleData` should return empty strings instead of zero for prices when being gap filled.
 - [10278](https://github.com/vegaprotocol/vega/issues/10278) - Transfers connection filtering by `isReward` and party causes error
+- [10285](https://github.com/vegaprotocol/vega/issues/10285) - Fix network position values and panic, clean `handleConfirmation`.
 
 ## 0.73.0
 
