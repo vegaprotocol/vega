@@ -159,8 +159,6 @@ type Market struct {
 
 	// party ID to isolated margin factor
 	partyMarginFactor map[string]num.Decimal
-	// Store information about all orders used as a reference in live stop orders
-	stopOrderReferences map[string]*types.Order
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -331,7 +329,6 @@ func NewMarket(
 		partyMarginFactor:             map[string]num.Decimal{},
 		liquidation:                   le,
 		banking:                       banking,
-		stopOrderReferences:           map[string]*types.Order{},
 	}
 
 	assets, _ := mkt.GetAssets()

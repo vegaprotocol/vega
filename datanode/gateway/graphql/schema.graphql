@@ -3134,7 +3134,7 @@ enum StopOrderRejectionReason {
 enum StopOrderSizeOverrideSetting {
   "The size override has not been specified, this should never happen!"
   SIZE_OVERRIDE_SETTING_UNSPECIFIED
-  "No size override"
+  "No size override, the size within the contained normal order submission will be used"
   SIZE_OVERRIDE_SETTING_NONE
   "Use the total position of the trader"
   SIZE_OVERRIDE_SETTING_POSITION

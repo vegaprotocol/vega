@@ -296,9 +296,9 @@ type StopOrderSetup struct {
 	ExpiresAt *int64 `protobuf:"varint,2,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
 	// Strategy to adopt if the expiry time is reached.
 	ExpiryStrategy *vega.StopOrder_ExpiryStrategy `protobuf:"varint,3,opt,name=expiry_strategy,json=expiryStrategy,proto3,enum=vega.StopOrder_ExpiryStrategy,oneof" json:"expiry_strategy,omitempty"`
-	// Is this order linked to something to derive the order size
+	// Indicates if this order is linked to an order or position to derive the order size
 	SizeOverrideSetting *vega.StopOrder_SizeOverrideSetting `protobuf:"varint,4,opt,name=size_override_setting,json=sizeOverrideSetting,proto3,enum=vega.StopOrder_SizeOverrideSetting,oneof" json:"size_override_setting,omitempty"`
-	// If this order is linked to a position, give an optional scaling factor
+	// If this order is linked to a position, provide an optional scaling factor
 	SizeOverrideValue *vega.StopOrder_SizeOverrideValue `protobuf:"bytes,5,opt,name=size_override_value,json=sizeOverrideValue,proto3,oneof" json:"size_override_value,omitempty"`
 	// Trigger that will need to be breached for the order to be submitted to the book.
 	//

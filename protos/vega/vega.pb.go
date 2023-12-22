@@ -1492,7 +1492,7 @@ type StopOrder_SizeOverrideSetting int32
 const (
 	// Never valid
 	StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED StopOrder_SizeOverrideSetting = 0
-	// No override
+	// No override, the size within the contained normal order submission will be used
 	StopOrder_SIZE_OVERRIDE_SETTING_NONE StopOrder_SizeOverrideSetting = 1
 	// Use the total position of the trader
 	StopOrder_SIZE_OVERRIDE_SETTING_POSITION StopOrder_SizeOverrideSetting = 2
@@ -9065,7 +9065,7 @@ type StopOrder_SizeOverrideValue struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Scaling percentage of the current positions size
+	// Scaling percentage of the current position’s size
 	Percentage string `protobuf:"bytes,1,opt,name=percentage,proto3" json:"percentage,omitempty"`
 }
 

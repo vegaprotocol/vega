@@ -8,14 +8,14 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 message StopOrder {
   message SizeOverrideValue {
-    // Scaling percentage of the current positions size
+    // Scaling percentage of the current position’s size
     string percentage = 1;
   }
 
   enum SizeOverrideSetting {
     // Never valid
     SIZE_OVERRIDE_SETTING_UNSPECIFIED = 0;
-    // No override
+    // No override, the size within the contained normal order submission will be used
     SIZE_OVERRIDE_SETTING_NONE = 1;
     // Use the total position of the trader
     SIZE_OVERRIDE_SETTING_POSITION = 2;
