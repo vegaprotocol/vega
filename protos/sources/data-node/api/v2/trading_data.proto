@@ -1826,7 +1826,7 @@ message GetTransferRequest {
 // Response that is received when querying transfers by ID
 message GetTransferResponse {
   // Transfer and its fees requested by ID.
-    TransferNode transfer_node = 1;
+  TransferNode transfer_node = 1;
 }
 
 // -- Network Limits --
