@@ -3515,10 +3515,24 @@ func (t *TradingDataServiceV2) proposalToGovernanceData(ctx context.Context, pro
 		return nil, errors.Wrap(err, "getting no votes for proposal")
 	}
 
+	var subProposals []*vega.Proposal
+	if proposal.IsBatch() {
+		for _, p := range proposal.Proposals {
+			subProposals = append(subProposals, p.ToProto())
+		}
+	}
+
+	proposalType := vega.GovernanceData_TYPE_SINGLE_OR_UNSPECIFIED
+	if proposal.IsBatch() {
+		proposalType = vega.GovernanceData_TYPE_BATCH
+	}
+
 	return &vega.GovernanceData{
-		Proposal: proposal.ToProto(),
-		Yes:      voteListToProto(yesVotes),
-		No:       voteListToProto(noVotes),
+		Proposal:     proposal.ToProto(),
+		Yes:          voteListToProto(yesVotes),
+		No:           voteListToProto(noVotes),
+		ProposalType: proposalType,
+		Proposals:    subProposals,
 	}, nil
 }
 

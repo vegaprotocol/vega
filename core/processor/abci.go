@@ -444,7 +444,7 @@ func NewApp(
 		).
 		HandleDeliverTx(txn.BatchProposeCommand,
 			app.SendTransactionResult(
-				app.CheckProposeW(
+				app.CheckBatchProposeW(
 					addDeterministicID(app.DeliverBatchPropose),
 				),
 			),
@@ -510,15 +510,20 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uin
 	return nil
 }
 
-// addDeterministicID will build the command ID
+// generateDeterministicID will build the command ID
 // the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded.
+func generateDeterministicID(tx abci.Tx) string {
+	return hex.EncodeToString(vgcrypto.Hash(tx.Signature()))
+}
+
+// addDeterministicID decorates give function with deterministic ID.
 func addDeterministicID(
 	f func(context.Context, abci.Tx, string) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
-		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+		return f(ctx, tx, generateDeterministicID(tx))
 	}
 }
 
@@ -527,6 +532,17 @@ func (app *App) CheckProposeW(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := app.CheckPropose(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
+}
+
+func (app *App) CheckBatchProposeW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := addDeterministicID(app.CheckBatchPropose)(ctx, tx); err != nil {
 			return err
 		}
 		return f(ctx, tx)
@@ -1316,9 +1332,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
 				return ErrPerpsMarketProposalDisabled
 			}
-			return validateUseOfEthOracles(p.Terms, app.netp)
+			return validateUseOfEthOracles(p.Terms.Change, app.netp)
 		case types.ProposalTermsTypeUpdateMarket:
-			return validateUseOfEthOracles(p.Terms, app.netp)
+			return validateUseOfEthOracles(p.Terms.Change, app.netp)
 
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
@@ -1329,19 +1345,57 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 				return ErrSpotMarketProposalDisabled
 			}
 		}
+	case txn.BatchProposeCommand:
+		ps := &commandspb.BatchProposalSubmission{}
+		if err := tx.Unmarshal(ps); err != nil {
+			return fmt.Errorf("could not unmarshal batch proposal submission: %w", err)
+		}
+
+		idgen := idgeneration.New(generateDeterministicID(tx))
+		ids := make([]string, 0, len(ps.Terms.Changes))
+
+		for i := 0; i < len(ps.Terms.Changes); i++ {
+			ids = append(ids, idgen.NextID())
+		}
+
+		p, err := types.NewBatchProposalSubmissionFromProto(ps, ids)
+		if err != nil {
+			return fmt.Errorf("invalid batch proposal submission: %w", err)
+		}
+		if p.Terms == nil || len(p.Terms.Changes) == 0 {
+			return errors.New("invalid batch proposal submission")
+		}
+
+		for _, batchChange := range p.Terms.Changes {
+			switch c := batchChange.Change.(type) {
+			case *types.ProposalTermsNewMarket:
+				if !app.limits.CanProposeMarket() {
+					return ErrMarketProposalDisabled
+				}
+
+				if c.NewMarket.Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
+					return ErrPerpsMarketProposalDisabled
+				}
+				return validateUseOfEthOracles(c, app.netp)
+			case *types.ProposalTermsUpdateMarket:
+				return validateUseOfEthOracles(c, app.netp)
+
+			case *types.ProposalTermsNewSpotMarket:
+				if !app.limits.CanProposeSpotMarket() {
+					return ErrSpotMarketProposalDisabled
+				}
+			}
+		}
 	}
 	return nil
 }
 
-func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters) error {
+func validateUseOfEthOracles(change types.ProposalTerm, netp NetworkParameters) error {
 	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
 
-	switch terms.Change.GetTermType() {
-	case types.ProposalTermsTypeNewMarket:
-		m := terms.GetNewMarket()
-		if m == nil {
-			return nil
-		}
+	switch c := change.(type) {
+	case *types.ProposalTermsNewMarket:
+		m := c.NewMarket
 
 		if m.Changes == nil {
 			return nil
@@ -1368,11 +1422,8 @@ func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters)
 			}
 		}
 
-	case types.ProposalTermsTypeUpdateMarket:
-		m := terms.GetUpdateMarket()
-		if m == nil {
-			return nil
-		}
+	case *types.ProposalTermsUpdateMarket:
+		m := c.UpdateMarket
 
 		if m.Changes == nil {
 			return nil
@@ -1859,6 +1910,9 @@ func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, determinist
 	}
 
 	idgen := idgeneration.New(deterministicBatchID)
+
+	// Burn one so the first proposal doesn't have the same ID as the batch ID
+	idgen.NextID()
 	ids := make([]string, 0, len(prop.Terms.Changes))
 
 	for i := 0; i < len(prop.Terms.Changes); i++ {

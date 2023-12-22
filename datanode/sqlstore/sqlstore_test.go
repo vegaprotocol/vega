@@ -36,6 +36,7 @@ import (
 var (
 	connectionSource *sqlstore.ConnectionSource
 	testDBPort       int
+	testConfig       sqlstore.Config
 )
 
 func TestMain(m *testing.M) {
@@ -51,6 +52,7 @@ func TestMain(m *testing.M) {
 	) {
 		testDBPort = cfg.ConnectionConfig.Port
 		connectionSource = source
+		testConfig = cfg
 	}, postgresRuntimePath, sqlstore.EmbedMigrations)
 }
 

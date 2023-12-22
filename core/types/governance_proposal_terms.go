@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type ProposalTerm interface {
@@ -375,8 +376,21 @@ func (p BatchProposalTerms) String() string {
 func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 	terms := &vegapb.BatchProposalTerms{
 		ClosingTimestamp: p.ClosingTimestamp,
-		Changes:          make([]*vegapb.BatchProposalTermsChange, 0, len(p.Changes)),
+		Changes:          p.changesToProto(),
 	}
+
+	return terms
+}
+
+func (p BatchProposalTerms) IntoSubmissionProto() *commandspb.BatchProposalSubmissionTerms {
+	return &commandspb.BatchProposalSubmissionTerms{
+		ClosingTimestamp: p.ClosingTimestamp,
+		Changes:          p.changesToProto(),
+	}
+}
+
+func (p BatchProposalTerms) changesToProto() []*vegapb.BatchProposalTermsChange {
+	out := make([]*vegapb.BatchProposalTermsChange, 0, len(p.Changes))
 
 	for _, c := range p.Changes {
 		change := c.Change.oneOfBatchProto()
@@ -412,10 +426,10 @@ func (p BatchProposalTerms) IntoProto() *vegapb.BatchProposalTerms {
 			termsChange.Change = ch
 		}
 
-		terms.Changes = append(terms.Changes, termsChange)
+		out = append(out, termsChange)
 	}
 
-	return terms
+	return out
 }
 
 func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
@@ -433,7 +447,7 @@ func (p BatchProposalTerms) DeepClone() *BatchProposalTerms {
 	return &cpy
 }
 
-func BatchProposalTermsFromProto(p *vegapb.BatchProposalTerms, ids []string) (*BatchProposalTerms, error) {
+func BatchProposalTermsSubmissionFromProto(p *commandspb.BatchProposalSubmissionTerms, ids []string) (*BatchProposalTerms, error) {
 	changesLen := len(p.Changes)
 
 	if changesLen != len(ids) {

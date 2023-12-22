@@ -34,6 +34,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	testProposals       []entities.Proposal
+	proposalTestParties []entities.Party
+)
+
 func addTestProposal(
 	t *testing.T,
 	ctx context.Context,
@@ -46,13 +51,23 @@ func addTestProposal(
 	rationale entities.ProposalRationale,
 	terms entities.ProposalTerms,
 	reason entities.ProposalError,
+	batchID *string,
+	batchTerms entities.BatchProposalTerms,
 ) entities.Proposal {
 	t.Helper()
+
+	var batchProposalID entities.ProposalID
+	if batchID != nil {
+		batchProposalID = entities.ProposalID(*batchID)
+	}
+
 	p := entities.Proposal{
 		ID:                      entities.ProposalID(id),
+		BatchID:                 batchProposalID,
 		PartyID:                 party.ID,
 		Reference:               reference,
 		Terms:                   terms,
+		BatchTerms:              batchTerms,
 		State:                   state,
 		VegaTime:                block.VegaTime,
 		ProposalTime:            block.VegaTime,
@@ -75,7 +90,17 @@ func proposalLessThan(x, y entities.Proposal) bool {
 func assertProposalsMatch(t *testing.T, expected, actual []entities.Proposal) {
 	t.Helper()
 	sortProposals := cmpopts.SortSlices(proposalLessThan)
-	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{}, vega.ProposalRationale{}, vega.NewMarket{}, vega.NewAsset{})
+	ignoreProtoState := cmpopts.IgnoreUnexported(
+		vega.ProposalTerms{},
+		vega.BatchProposalTerms{},
+		vega.BatchProposalTermsChange{},
+		vega.ProposalRationale{},
+		vega.NewMarket{},
+		vega.NewAsset{},
+		vega.UpdateAsset{},
+		vega.NewMarketConfiguration{},
+		vega.SuccessorConfiguration{},
+	)
 	assert.Empty(t, cmp.Diff(actual, expected, sortProposals, ignoreProtoState))
 }
 
@@ -83,9 +108,12 @@ func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 	t.Helper()
 	ignoreProtoState := cmpopts.IgnoreUnexported(
 		vega.ProposalTerms{},
+		vega.BatchProposalTerms{},
+		vega.BatchProposalTermsChange{},
 		vega.ProposalRationale{},
 		vega.NewMarket{},
 		vega.NewAsset{},
+		vega.UpdateAsset{},
 		vega.NewMarketConfiguration{},
 		vega.SuccessorConfiguration{},
 	)
@@ -111,8 +139,8 @@ func TestProposals(t *testing.T) {
 
 	reference1 := GenerateID()
 	reference2 := GenerateID()
-	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
-	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -168,7 +196,162 @@ func TestProposals(t *testing.T) {
 
 	t.Run("Add with proposal error", func(t *testing.T) {
 		propError := entities.ProposalInvalidPerpetualProduct
-		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError)
+		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, propError, nil, entities.BatchProposalTerms{})
+		actual, err := propStore.GetByID(ctx, string(expected.ID))
+		require.NoError(t, err)
+		assert.Equal(t, expected.Reason, actual.Reason)
+	})
+}
+
+func newBatchProposalProposal() entities.BatchProposalTerms {
+	return entities.BatchProposalTerms{
+		BatchProposalTerms: &vega.BatchProposalTerms{
+			ClosingTimestamp: 10,
+			Changes: []*vega.BatchProposalTermsChange{
+				{
+					EnactmentTimestamp: 20,
+					Change:             &vega.BatchProposalTermsChange_NewMarket{NewMarket: &vega.NewMarket{}},
+				},
+				{
+					EnactmentTimestamp: 30,
+					Change:             &vega.BatchProposalTermsChange_UpdateAsset{UpdateAsset: &vega.UpdateAsset{}},
+				},
+			},
+		},
+	}
+}
+
+func TestBatchProposals(t *testing.T) {
+	ctx := context.Background()
+	// We cannot use the tempTransaction for this test due to the fact that the connection gets blocked when
+	// we recursively look for proposals that belong in a batch. The use of the transaction prevents another connection being
+	// taken from the connection pool, and causes a conn is busy error, we therefore just use a background context for these
+	// tests, and make sure we clean up after ourselves instead of rolling back the transaction.
+	defer cleanupTestProposals(t)
+
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	block1 := addTestBlock(t, ctx, blockStore)
+
+	party1 := addTestParty(t, ctx, partyStore, block1)
+	party2 := addTestParty(t, ctx, partyStore, block1)
+	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
+	terms1 := newBatchProposalProposal()
+	terms2 := newBatchProposalProposal()
+	id1 := GenerateID()
+	id2 := GenerateID()
+	subId1 := GenerateID()
+	subId2 := GenerateID()
+	subId3 := GenerateID()
+	subId4 := GenerateID()
+
+	now := time.Now()
+
+	reference1 := GenerateID()
+	reference2 := GenerateID()
+	reference3 := GenerateID()
+	reference4 := GenerateID()
+	reference5 := GenerateID()
+	reference6 := GenerateID()
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1,
+		entities.ProposalTerms{}, entities.ProposalErrorUnspecified, nil, terms1)
+	prop1.Proposals = append(prop1.Proposals,
+		addTestProposal(t, ctx, propStore, subId1, party2, reference3, block1, entities.ProposalStateEnacted, rationale2,
+			entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{EnactmentTimestamp: now.Unix(), Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
+			entities.ProposalErrorUnspecified, &id1, entities.BatchProposalTerms{},
+		),
+		addTestProposal(t, ctx, propStore, subId2, party2, reference4, block1, entities.ProposalStateEnacted, rationale2,
+			entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{EnactmentTimestamp: now.Add(time.Second).Unix(), Change: &vega.ProposalTerms_UpdateAsset{UpdateAsset: &vega.UpdateAsset{}}}},
+			entities.ProposalErrorUnspecified, &id1, entities.BatchProposalTerms{},
+		),
+	)
+
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2,
+		entities.ProposalTerms{}, entities.ProposalErrorUnspecified, nil, terms2)
+	prop2.Proposals = append(prop2.Proposals,
+		addTestProposal(
+			t, ctx, propStore, subId3, party2, reference5, block1, entities.ProposalStateEnacted, rationale2,
+			entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{EnactmentTimestamp: now.Unix(), Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
+			entities.ProposalErrorUnspecified, &id2, entities.BatchProposalTerms{},
+		),
+		addTestProposal(
+			t, ctx, propStore, subId4, party2, reference6, block1, entities.ProposalStateEnacted, rationale2,
+			entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{EnactmentTimestamp: now.Add(time.Second).Unix(), Change: &vega.ProposalTerms_UpdateAsset{UpdateAsset: &vega.UpdateAsset{}}}},
+			entities.ProposalErrorUnspecified, &id2, entities.BatchProposalTerms{},
+		),
+	)
+
+	party1ID := party1.ID.String()
+	prop1ID := prop1.ID.String()
+	propType := &entities.ProposalTypeNewMarket
+
+	t.Run("GetById batch", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByID(ctx, prop1ID)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetById proposal from batch returns the whole batch", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByID(ctx, string(expected.Proposals[0].ID))
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
+
+		expected = prop2
+		actual, err = propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
+	})
+
+	t.Run("GetByReference batch", func(t *testing.T) {
+		expected := prop2
+		actual, err := propStore.GetByReference(ctx, expected.Reference)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetByReference proposal from batch returns the whole batch", func(t *testing.T) {
+		expected := prop2
+		actual, err := propStore.GetByReference(ctx, expected.Proposals[0].Reference)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetInState", func(t *testing.T) {
+		enacted := entities.ProposalStateEnacted
+		expected := []entities.Proposal{prop1, prop2}
+		actual, _, err := propStore.Get(ctx, &enacted, nil, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByParty", func(t *testing.T) {
+		expected := []entities.Proposal{prop1}
+		actual, _, err := propStore.Get(ctx, nil, &party1ID, nil, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByType", func(t *testing.T) {
+		expected := []entities.Proposal{prop1, prop2}
+		actual, _, err := propStore.Get(ctx, nil, nil, propType, entities.CursorPagination{})
+		require.NoError(t, err)
+		assertProposalsMatch(t, expected, actual)
+	})
+
+	t.Run("Add with proposal error", func(t *testing.T) {
+		propError := entities.ProposalInvalidPerpetualProduct
+		expected := addTestProposal(t, ctx, propStore, GenerateID(), party1, reference1, block1, entities.ProposalStateEnacted, rationale1, entities.ProposalTerms{}, propError, nil, terms1)
 		actual, err := propStore.GetByID(ctx, string(expected.ID))
 		require.NoError(t, err)
 		assert.Equal(t, expected.Reason, actual.Reason)
@@ -176,6 +359,15 @@ func TestProposals(t *testing.T) {
 }
 
 func TestProposalCursorPagination(t *testing.T) {
+	ctx := context.Background()
+	ps := sqlstore.NewProposals(connectionSource)
+	testProposals, proposalTestParties = createPaginationTestProposals(t, ctx, ps)
+	// We cannot use the tempTransaction for this test due to the fact that the connection gets blocked when
+	// we recursively look for proposals that belong in a batch. The use of the transaction prevents another connection being
+	// taken from the connection pool, and causes a conn is busy error, we therefore just use a background context for these
+	// tests, and make sure we clean up after ourselves instead of rolling back the transaction.
+	defer cleanupTestProposals(t)
+
 	t.Run("should return all proposals when no paging is provided", testProposalCursorPaginationNoPagination)
 	t.Run("should return only the first page of proposals when first is provided", testProposalCursorPaginationWithFirst)
 	t.Run("should return only the requested page of proposals when first and after is provided", testProposalCursorPaginationWithFirstAndAfter)
@@ -205,10 +397,8 @@ func TestProposalCursorPagination(t *testing.T) {
 }
 
 func testProposalCursorPaginationNoPagination(t *testing.T) {
-	ctx := tempTransaction(t)
-
+	ctx := context.Background()
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -216,41 +406,40 @@ func testProposalCursorPaginationNoPagination(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[10],
-		proposals[1],
-		proposals[11],
-		proposals[2],
-		proposals[12],
-		proposals[8],
-		proposals[18],
-		proposals[3],
-		proposals[13],
-		proposals[4],
-		proposals[14],
-		proposals[5],
-		proposals[15],
-		proposals[6],
-		proposals[16],
-		proposals[7],
-		proposals[17],
-		proposals[9],
-		proposals[19],
+		testProposals[0],
+		testProposals[10],
+		testProposals[1],
+		testProposals[11],
+		testProposals[2],
+		testProposals[12],
+		testProposals[8],
+		testProposals[18],
+		testProposals[3],
+		testProposals[13],
+		testProposals[4],
+		testProposals[14],
+		testProposals[5],
+		testProposals[15],
+		testProposals[6],
+		testProposals[16],
+		testProposals[7],
+		testProposals[17],
+		testProposals[9],
+		testProposals[19],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[19].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[19].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
@@ -259,26 +448,25 @@ func testProposalCursorPaginationWithFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[10],
-		proposals[1],
+		testProposals[0],
+		testProposals[10],
+		testProposals[1],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[1].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[1].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(8)
-	after := proposals[1].Cursor().Encode()
+	after := testProposals[1].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
@@ -286,29 +474,28 @@ func testProposalCursorPaginationWithFirstAndAfter(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[11],
-		proposals[2],
-		proposals[12],
-		proposals[8],
-		proposals[18],
-		proposals[3],
-		proposals[13],
-		proposals[4],
+		testProposals[11],
+		testProposals[2],
+		testProposals[12],
+		testProposals[8],
+		testProposals[18],
+		testProposals[3],
+		testProposals[13],
+		testProposals[4],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[11].Cursor().Encode(),
-		EndCursor:       proposals[4].Cursor().Encode(),
+		StartCursor:     testProposals[11].Cursor().Encode(),
+		EndCursor:       testProposals[4].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLast(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
@@ -317,26 +504,25 @@ func testProposalCursorPaginationWithLast(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[17],
-		proposals[9],
-		proposals[19],
+		testProposals[17],
+		testProposals[9],
+		testProposals[19],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor:     proposals[17].Cursor().Encode(),
-		EndCursor:       proposals[19].Cursor().Encode(),
+		StartCursor:     testProposals[17].Cursor().Encode(),
+		EndCursor:       testProposals[19].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(8)
-	before := proposals[5].Cursor().Encode()
+	before := testProposals[5].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
@@ -344,29 +530,28 @@ func testProposalCursorPaginationWithLastAndBefore(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[2],
-		proposals[12],
-		proposals[8],
-		proposals[18],
-		proposals[3],
-		proposals[13],
-		proposals[4],
-		proposals[14],
+		testProposals[2],
+		testProposals[12],
+		testProposals[8],
+		testProposals[18],
+		testProposals[3],
+		testProposals[13],
+		testProposals[4],
+		testProposals[14],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[2].Cursor().Encode(),
-		EndCursor:       proposals[14].Cursor().Encode(),
+		StartCursor:     testProposals[2].Cursor().Encode(),
+		EndCursor:       testProposals[14].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
@@ -374,41 +559,40 @@ func testProposalCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[18],
-		proposals[8],
-		proposals[12],
-		proposals[2],
-		proposals[11],
-		proposals[1],
-		proposals[10],
-		proposals[0],
-		proposals[19],
-		proposals[9],
-		proposals[17],
-		proposals[7],
-		proposals[16],
-		proposals[6],
-		proposals[15],
-		proposals[5],
-		proposals[14],
-		proposals[4],
-		proposals[13],
-		proposals[3],
+		testProposals[18],
+		testProposals[8],
+		testProposals[12],
+		testProposals[2],
+		testProposals[11],
+		testProposals[1],
+		testProposals[10],
+		testProposals[0],
+		testProposals[19],
+		testProposals[9],
+		testProposals[17],
+		testProposals[7],
+		testProposals[16],
+		testProposals[6],
+		testProposals[15],
+		testProposals[5],
+		testProposals[14],
+		testProposals[4],
+		testProposals[13],
+		testProposals[3],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     proposals[18].Cursor().Encode(),
-		EndCursor:       proposals[3].Cursor().Encode(),
+		StartCursor:     testProposals[18].Cursor().Encode(),
+		EndCursor:       testProposals[3].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
@@ -417,26 +601,25 @@ func testProposalCursorPaginationWithFirstNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[18],
-		proposals[8],
-		proposals[12],
+		testProposals[18],
+		testProposals[8],
+		testProposals[12],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     proposals[18].Cursor().Encode(),
-		EndCursor:       proposals[12].Cursor().Encode(),
+		StartCursor:     testProposals[18].Cursor().Encode(),
+		EndCursor:       testProposals[12].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	first := int32(8)
-	after := proposals[12].Cursor().Encode()
+	after := testProposals[12].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
@@ -444,29 +627,28 @@ func testProposalCursorPaginationWithFirstAndAfterNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[2],
-		proposals[11],
-		proposals[1],
-		proposals[10],
-		proposals[0],
-		proposals[19],
-		proposals[9],
-		proposals[17],
+		testProposals[2],
+		testProposals[11],
+		testProposals[1],
+		testProposals[10],
+		testProposals[0],
+		testProposals[19],
+		testProposals[9],
+		testProposals[17],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[2].Cursor().Encode(),
-		EndCursor:       proposals[17].Cursor().Encode(),
+		StartCursor:     testProposals[2].Cursor().Encode(),
+		EndCursor:       testProposals[17].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
@@ -475,26 +657,25 @@ func testProposalCursorPaginationWithLastNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[4],
-		proposals[13],
-		proposals[3],
+		testProposals[4],
+		testProposals[13],
+		testProposals[3],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor:     proposals[4].Cursor().Encode(),
-		EndCursor:       proposals[3].Cursor().Encode(),
+		StartCursor:     testProposals[4].Cursor().Encode(),
+		EndCursor:       testProposals[3].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	last := int32(8)
-	before := proposals[16].Cursor().Encode()
+	before := testProposals[16].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
@@ -502,324 +683,313 @@ func testProposalCursorPaginationWithLastAndBeforeNewestFirst(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[11],
-		proposals[1],
-		proposals[10],
-		proposals[0],
-		proposals[19],
-		proposals[9],
-		proposals[17],
-		proposals[7],
+		testProposals[11],
+		testProposals[1],
+		testProposals[10],
+		testProposals[0],
+		testProposals[19],
+		testProposals[9],
+		testProposals[17],
+		testProposals[7],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[11].Cursor().Encode(),
-		EndCursor:       proposals[7].Cursor().Encode(),
+		StartCursor:     testProposals[11].Cursor().Encode(),
+		EndCursor:       testProposals[7].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationNoPaginationByParty(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[1],
-		proposals[2],
-		proposals[8],
-		proposals[3],
-		proposals[4],
-		proposals[5],
-		proposals[6],
-		proposals[7],
-		proposals[9],
+		testProposals[0],
+		testProposals[1],
+		testProposals[2],
+		testProposals[8],
+		testProposals[3],
+		testProposals[4],
+		testProposals[5],
+		testProposals[6],
+		testProposals[7],
+		testProposals[9],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[9].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstByParty(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[1],
-		proposals[2],
+		testProposals[0],
+		testProposals[1],
+		testProposals[2],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[2].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[2].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByParty(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
-	after := proposals[2].Cursor().Encode()
+	after := testProposals[2].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[8],
-		proposals[3],
-		proposals[4],
+		testProposals[8],
+		testProposals[3],
+		testProposals[4],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[8].Cursor().Encode(),
-		EndCursor:       proposals[4].Cursor().Encode(),
+		StartCursor:     testProposals[8].Cursor().Encode(),
+		EndCursor:       testProposals[4].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastByParty(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, false)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[6],
-		proposals[7],
-		proposals[9],
+		testProposals[6],
+		testProposals[7],
+		testProposals[9],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor:     proposals[6].Cursor().Encode(),
-		EndCursor:       proposals[9].Cursor().Encode(),
+		StartCursor:     testProposals[6].Cursor().Encode(),
+		EndCursor:       testProposals[9].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByParty(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(5)
-	before := proposals[6].Cursor().Encode()
+	before := testProposals[6].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[2],
-		proposals[8],
-		proposals[3],
-		proposals[4],
-		proposals[5],
+		testProposals[2],
+		testProposals[8],
+		testProposals[3],
+		testProposals[4],
+		testProposals[5],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[2].Cursor().Encode(),
-		EndCursor:       proposals[5].Cursor().Encode(),
+		StartCursor:     testProposals[2].Cursor().Encode(),
+		EndCursor:       testProposals[5].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationNoPaginationByPartyNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[8],
-		proposals[2],
-		proposals[1],
-		proposals[0],
-		proposals[9],
-		proposals[7],
-		proposals[6],
-		proposals[5],
-		proposals[4],
-		proposals[3],
+		testProposals[8],
+		testProposals[2],
+		testProposals[1],
+		testProposals[0],
+		testProposals[9],
+		testProposals[7],
+		testProposals[6],
+		testProposals[5],
+		testProposals[4],
+		testProposals[3],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     proposals[8].Cursor().Encode(),
-		EndCursor:       proposals[3].Cursor().Encode(),
+		StartCursor:     testProposals[8].Cursor().Encode(),
+		EndCursor:       testProposals[3].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstByPartyNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
 	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[8],
-		proposals[2],
-		proposals[1],
+		testProposals[8],
+		testProposals[2],
+		testProposals[1],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: false,
-		StartCursor:     proposals[8].Cursor().Encode(),
-		EndCursor:       proposals[1].Cursor().Encode(),
+		StartCursor:     testProposals[8].Cursor().Encode(),
+		EndCursor:       testProposals[1].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithFirstAndAfterByPartyNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	first := int32(3)
-	after := proposals[1].Cursor().Encode()
+	after := testProposals[1].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[9],
-		proposals[7],
+		testProposals[0],
+		testProposals[9],
+		testProposals[7],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[7].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[7].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastByPartyNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(3)
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[5],
-		proposals[4],
-		proposals[3],
+		testProposals[5],
+		testProposals[4],
+		testProposals[3],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: true,
-		StartCursor:     proposals[5].Cursor().Encode(),
-		EndCursor:       proposals[3].Cursor().Encode(),
+		StartCursor:     testProposals[5].Cursor().Encode(),
+		EndCursor:       testProposals[3].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationWithLastAndBeforeByPartyNewestFirst(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, parties := createPaginationTestProposals(t, ctx, ps)
 	last := int32(5)
-	before := proposals[5].Cursor().Encode()
+	before := testProposals[5].Cursor().Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
 
-	partyID := parties[0].ID.String()
+	partyID := proposalTestParties[0].ID.String()
 
 	got, pageInfo, err := ps.Get(ctx, nil, &partyID, nil, pagination)
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[1],
-		proposals[0],
-		proposals[9],
-		proposals[7],
-		proposals[6],
+		testProposals[1],
+		testProposals[0],
+		testProposals[9],
+		testProposals[7],
+		testProposals[6],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     true,
 		HasPreviousPage: true,
-		StartCursor:     proposals[1].Cursor().Encode(),
-		EndCursor:       proposals[6].Cursor().Encode(),
+		StartCursor:     testProposals[1].Cursor().Encode(),
+		EndCursor:       testProposals[6].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationOpenOnly(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -828,29 +998,28 @@ func testProposalCursorPaginationOpenOnly(t *testing.T) {
 	require.NoError(t, err)
 	// Proposals should be listed in order of their status, then time, then id
 	want := []entities.Proposal{
-		proposals[0],
-		proposals[10],
-		proposals[1],
-		proposals[11],
-		proposals[2],
-		proposals[12],
-		proposals[8],
-		proposals[18],
+		testProposals[0],
+		testProposals[10],
+		testProposals[1],
+		testProposals[11],
+		testProposals[2],
+		testProposals[12],
+		testProposals[8],
+		testProposals[18],
 	}
 	assert.Equal(t, want, got)
 	assert.Equal(t, entities.PageInfo{
 		HasNextPage:     false,
 		HasPreviousPage: false,
-		StartCursor:     proposals[0].Cursor().Encode(),
-		EndCursor:       proposals[18].Cursor().Encode(),
+		StartCursor:     testProposals[0].Cursor().Encode(),
+		EndCursor:       testProposals[18].Cursor().Encode(),
 	}, pageInfo)
 }
 
 func testProposalCursorPaginationGivenState(t *testing.T) {
-	ctx := tempTransaction(t)
+	ctx := context.Background()
 
 	ps := sqlstore.NewProposals(connectionSource)
-	proposals, _ := createPaginationTestProposals(t, ctx, ps)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
 	require.NoError(t, err)
 
@@ -860,19 +1029,19 @@ func testProposalCursorPaginationGivenState(t *testing.T) {
 		require.NoError(t, err)
 		// Proposals should be listed in order of their status, then time, then id
 		want := []entities.Proposal{
-			proposals[3],
-			proposals[13],
-			proposals[6],
-			proposals[16],
-			proposals[9],
-			proposals[19],
+			testProposals[3],
+			testProposals[13],
+			testProposals[6],
+			testProposals[16],
+			testProposals[9],
+			testProposals[19],
 		}
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: false,
-			StartCursor:     proposals[3].Cursor().Encode(),
-			EndCursor:       proposals[19].Cursor().Encode(),
+			StartCursor:     testProposals[3].Cursor().Encode(),
+			EndCursor:       testProposals[19].Cursor().Encode(),
 		}, pageInfo)
 	})
 
@@ -882,17 +1051,17 @@ func testProposalCursorPaginationGivenState(t *testing.T) {
 		require.NoError(t, err)
 		// Proposals should be listed in order of their status, then time, then id
 		want := []entities.Proposal{
-			proposals[4],
-			proposals[14],
-			proposals[5],
-			proposals[15],
+			testProposals[4],
+			testProposals[14],
+			testProposals[5],
+			testProposals[15],
 		}
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
 			HasNextPage:     false,
 			HasPreviousPage: false,
-			StartCursor:     proposals[4].Cursor().Encode(),
-			EndCursor:       proposals[15].Cursor().Encode(),
+			StartCursor:     testProposals[4].Cursor().Encode(),
+			EndCursor:       testProposals[15].Cursor().Encode(),
 		}, pageInfo)
 	})
 }
@@ -902,7 +1071,7 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 	ps := sqlstore.NewParties(connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 
-	proposals := make([]entities.Proposal, 20)
+	testProposals := make([]entities.Proposal, 20)
 
 	blockTime := time.Date(2022, 7, 15, 8, 0, 0, 0, time.Local)
 	block := addTestBlockForTime(t, ctx, bs, blockTime)
@@ -940,12 +1109,23 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 		terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 		terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
 
-		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1, entities.ProposalErrorUnspecified)
-		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2, entities.ProposalErrorUnspecified)
+		testProposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+		testProposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
 		i++
 	}
 
-	return proposals, parties
+	return testProposals, parties
+}
+
+func cleanupTestProposals(t *testing.T) {
+	t.Helper()
+	// Remove the proposals, then the parties and then the blocks
+	_, err := connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE proposals`)
+	require.NoError(t, err)
+	_, err = connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE parties`)
+	require.NoError(t, err)
+	_, err = connectionSource.Connection.Exec(context.Background(), `TRUNCATE TABLE blocks`)
+	require.NoError(t, err)
 }
 
 func TestProposeSuccessorMarket(t *testing.T) {
@@ -995,8 +1175,8 @@ func TestProposeSuccessorMarket(t *testing.T) {
 
 	reference1 := GenerateID()
 	reference2 := GenerateID()
-	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
-	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified, nil, entities.BatchProposalTerms{})
+	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket, nil, entities.BatchProposalTerms{})
 
 	t.Run("GetByID", func(t *testing.T) {
 		want := prop1

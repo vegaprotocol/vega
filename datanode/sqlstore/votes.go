@@ -54,18 +54,20 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 			initial_time,
 			total_governance_token_balance,
 			total_governance_token_weight,
-			total_equity_like_share_weight
+			total_equity_like_share_weight,
+			per_market_equity_like_share_weight
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9, $10)
 		 ON CONFLICT (proposal_id, party_id, vega_time) DO UPDATE SET
 			value = EXCLUDED.value,
 			total_governance_token_balance =EXCLUDED.total_governance_token_balance,
 			total_governance_token_weight = EXCLUDED.total_governance_token_weight,
 			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight,
+			per_market_equity_like_share_weight = EXCLUDED.per_market_equity_like_share_weight,
 			tx_hash = EXCLUDED.tx_hash;
 		`,
 		v.ProposalID, v.PartyID, v.Value, v.TxHash, v.VegaTime, v.InitialTime,
-		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight)
+		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight, v.PerMarketEquityLikeShareWeight)
 	return err
 }
 

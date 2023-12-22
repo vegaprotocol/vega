@@ -314,10 +314,18 @@ func (e *Engine) startBatchProposal(p *types.BatchProposal) {
 func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal, cmd types.VoteSubmission, party string) error {
 	validationErrs := vgerrors.NewCumulatedErrors()
 
+	perMarketELS := map[string]num.Decimal{}
 	for _, proposal := range batchProposal.Proposals {
 		if err := e.canVote(proposal, batchProposal.ProposalParameters, party); err != nil {
 			validationErrs.Add(fmt.Errorf("proposal term %q has failed with: %w", proposal.Terms.Change.GetTermType(), err))
 			continue
+		}
+
+		if proposal.IsMarketUpdate() {
+			marketID := proposal.MarketUpdate().MarketID
+			els, _ := e.markets.GetEquityLikeShareForMarketAndParty(marketID, party)
+
+			perMarketELS[marketID] = els
 		}
 	}
 
@@ -331,13 +339,14 @@ func (e *Engine) addBatchVote(ctx context.Context, batchProposal *batchProposal,
 	}
 
 	vote := types.Vote{
-		PartyID:                     party,
-		ProposalID:                  cmd.ProposalID,
-		Value:                       cmd.Value,
-		Timestamp:                   e.timeService.GetTimeNow().UnixNano(),
-		TotalGovernanceTokenBalance: getTokensBalance(e.accs, party),
-		TotalGovernanceTokenWeight:  num.DecimalZero(),
-		TotalEquityLikeShareWeight:  num.DecimalZero(),
+		PartyID:                        party,
+		ProposalID:                     cmd.ProposalID,
+		Value:                          cmd.Value,
+		Timestamp:                      e.timeService.GetTimeNow().UnixNano(),
+		TotalGovernanceTokenBalance:    getTokensBalance(e.accs, party),
+		TotalGovernanceTokenWeight:     num.DecimalZero(),
+		TotalEquityLikeShareWeight:     num.DecimalZero(),
+		PerMarketEquityLikeShareWeight: perMarketELS,
 	}
 
 	if err := batchProposal.AddVote(vote); err != nil {

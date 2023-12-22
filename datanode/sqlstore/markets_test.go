@@ -1704,7 +1704,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	props := []entities.Proposal{}
 	for _, p := range proposals {
 		p := addTestProposal(t, ctx, ps, p.id, p.party, p.reference, p.block, p.state,
-			p.rationale, p.terms, p.reason)
+			p.rationale, p.terms, p.reason, nil, entities.BatchProposalTerms{})
 
 		props = append(props, p)
 	}

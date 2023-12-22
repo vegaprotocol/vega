@@ -437,6 +437,14 @@ message ProposalRationale {
 
 // Governance data
 message GovernanceData {
+  // Proposal type
+  enum Type {
+    // Single proposal only. In case it has not been specified, for example in older proposals, then this is the default.
+    TYPE_SINGLE_OR_UNSPECIFIED = 0;
+    // Proposal contains a batch of proposals or a proposal that should be treated as part of a batch.
+    TYPE_BATCH = 1;
+  }
+
   // Governance proposal that is being voted on.
   Proposal proposal = 1;
   // All YES votes in favour of the proposal above.
@@ -451,6 +459,10 @@ message GovernanceData {
   // where key (string) is the party ID i.e. public key and
   // value (Vote) is the vote cast by the given party.
   map<string, Vote> no_party = 5;
+  // Type of proposal this data is for.
+  Type proposal_type = 6;
+  // If proposal type is batch, proposals will contain all the proposals that are make up the batch.
+  repeated Proposal proposals = 7;
 }
 
 // Governance proposal
@@ -659,8 +671,10 @@ message Vote {
   string total_governance_token_balance = 5;
   // The weight of this vote based on the total number of governance tokens.
   string total_governance_token_weight = 6;
-  // The weight of the vote compared to the total amount of equity-like share on the market.
+  // The weight of the vote compared to the total amount of equity-like share on the market. It is only populated if the vote is for a single type proposal.
   string total_equity_like_share_weight = 7;
+  // The per market weight of the vote compared to the total amount of equity-like share on the market.. It is only populated if the vote is for a batch type proposal.
+  map<string, string> per_market_equity_like_share_weight = 8;
 }
 
 message UpdateVolumeDiscountProgram {
