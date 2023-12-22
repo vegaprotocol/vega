@@ -72,6 +72,7 @@ type Command struct {
 
 	ethClient        *ethclient.Client
 	ethConfirmations *ethclient.EthereumConfirmations
+	l2Clients        *ethclient.L2Clients
 
 	abciApp  *appW
 	protocol *protocol.Protocol
@@ -128,7 +129,9 @@ func (n *Command) Run(
 		n.ethConfirmations,
 		n.blockchainClient,
 		vegaPaths,
-		n.stats)
+		n.stats,
+		n.l2Clients,
+	)
 	if err != nil {
 		return err
 	}
@@ -452,6 +455,11 @@ func (n *Command) startBlockchainClients() error {
 	}
 
 	var err error
+	n.l2Clients, err = ethclient.NewL2Clients(n.ctx, n.Log, n.conf.Ethereum)
+	if err != nil {
+		return fmt.Errorf("could not instantiate ethereum l2 clients: %w", err)
+	}
+
 	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 	if err != nil {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)

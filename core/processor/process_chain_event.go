@@ -141,7 +141,19 @@ func (app *App) processChainEvent(
 			app.log.Error("received invalid contract call", logging.Error(err), logging.String("call", c.ContractCall.String()))
 			return err
 		}
-		return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
+
+		chainID := uint64(1)
+		if callResult.L2ChainID != nil {
+			chainID = *callResult.L2ChainID
+		}
+
+		if chainID == 1 {
+			return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
+		}
+
+		// use l2 then
+		return app.oracles.EthereumL2OraclesVerifier.ProcessEthereumContractCallResult(callResult)
+
 	default:
 		return ErrUnsupportedChainEvent
 	}

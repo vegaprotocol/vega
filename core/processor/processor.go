@@ -237,9 +237,10 @@ type NetworkParameters interface {
 }
 
 type Oracle struct {
-	Engine                  OraclesEngine
-	Adaptors                OracleAdaptors
-	EthereumOraclesVerifier EthereumOracleVerifier
+	Engine                    OraclesEngine
+	Adaptors                  OracleAdaptors
+	EthereumOraclesVerifier   EthereumOracleVerifier
+	EthereumL2OraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {
