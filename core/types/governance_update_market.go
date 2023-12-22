@@ -298,6 +298,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 
 type UpdateInstrumentConfiguration struct {
 	Code string
+	Name string
 	// *UpdateInstrumentConfigurationFuture
 	Product updateInstrumentConfigurationProduct
 }
@@ -305,6 +306,7 @@ type UpdateInstrumentConfiguration struct {
 func (i UpdateInstrumentConfiguration) DeepClone() *UpdateInstrumentConfiguration {
 	cpy := UpdateInstrumentConfiguration{
 		Code: i.Code,
+		Name: i.Name,
 	}
 	if i.Product != nil {
 		cpy.Product = i.Product.DeepClone()
@@ -316,6 +318,7 @@ func (i UpdateInstrumentConfiguration) IntoProto() *vegapb.UpdateInstrumentConfi
 	p := i.Product.icpIntoProto()
 	r := &vegapb.UpdateInstrumentConfiguration{
 		Code: i.Code,
+		Name: i.Name,
 	}
 	switch pr := p.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
@@ -328,8 +331,9 @@ func (i UpdateInstrumentConfiguration) IntoProto() *vegapb.UpdateInstrumentConfi
 
 func (i UpdateInstrumentConfiguration) String() string {
 	return fmt.Sprintf(
-		"code(%s) product(%s)",
+		"code(%s) name(%s) product(%s)",
 		i.Code,
+		i.Name,
 		stringer.ObjToString(i.Product),
 	)
 }
@@ -408,6 +412,7 @@ func (i UpdateInstrumentConfigurationPerps) IntoProto() *vegapb.UpdateInstrument
 func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) (*UpdateInstrumentConfiguration, error) {
 	r := &UpdateInstrumentConfiguration{
 		Code: p.Code,
+		Name: p.Name,
 	}
 
 	switch pr := p.Product.(type) {

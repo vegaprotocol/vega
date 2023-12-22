@@ -1818,6 +1818,7 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 			Changes: &types.UpdateMarketConfiguration{
 				Instrument: &types.UpdateInstrumentConfiguration{
 					Code: "CRYPTO:GBPVUSD/JUN20",
+					Name: "UPDATED_MARKET_NAME",
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",

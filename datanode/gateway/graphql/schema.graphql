@@ -4524,6 +4524,7 @@ type UpdateMarketConfiguration {
 
 type UpdateInstrumentConfiguration {
   code: String!
+  name: String!
   product: UpdateProductConfiguration!
 }
 

@@ -63,6 +63,7 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 
 	updateInstrumentConfiguration := &UpdateInstrumentConfiguration{
 		Code:    protoInstrument.Code,
+		Name:    protoInstrument.Name,
 		Product: product,
 	}
 
