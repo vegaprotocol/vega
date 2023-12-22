@@ -33,6 +33,7 @@ var (
 	ErrUnsupportedCollateralBridgeDeploymentBlockHeight   = errors.New("setting collateral bridge contract deployment block height in Ethereum config is not supported")
 	ErrAtLeastOneOfStakingOrVestingBridgeAddressMustBeSet = errors.New("at least one of the stacking bridge or token vesting contract addresses must be specified")
 	ErrConfirmationsMustBeHigherThan0                     = errors.New("confirmation must be > 0 in Ethereum config")
+	ErrMissingNetworkName                                 = errors.New("missing network name")
 )
 
 type EthereumConfig struct {
@@ -171,6 +172,15 @@ func CheckUntypedEthereumConfig(v interface{}) error {
 	return CheckEthereumConfig(cfg)
 }
 
+func CheckUntypedEthereumL2Configs(v interface{}) error {
+	cfg, err := toEthereumL2ConfigsProto(v)
+	if err != nil {
+		return err
+	}
+
+	return CheckEthereumL2Configs(cfg)
+}
+
 // CheckEthereumConfig verifies the proto.EthereumConfig is valid.
 func CheckEthereumConfig(cfgProto *proto.EthereumConfig) error {
 	if len(cfgProto.NetworkId) == 0 {
@@ -213,4 +223,78 @@ func toEthereumConfigProto(v interface{}) (*proto.EthereumConfig, error) {
 		return nil, fmt.Errorf("type \"%s\" is not a EthereumConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
+}
+
+type EthereumL2Configs struct {
+	Configs []EthereumL2Config
+}
+
+type EthereumL2Config struct {
+	ChainID       string
+	NetworkID     string
+	Confirmations uint64
+	Name          string
+}
+
+func toEthereumL2ConfigsProto(v interface{}) (*proto.EthereumL2Configs, error) {
+	cfg, ok := v.(*proto.EthereumL2Configs)
+	if !ok {
+		return nil, fmt.Errorf("type \"%s\" is not a EthereumL2Configs proto", vgreflect.TypeName(v))
+	}
+	return cfg, nil
+}
+
+func EthereumL2ConfigsFromUntypedProto(v interface{}) (*EthereumL2Configs, error) {
+	cfg, err := toEthereumL2ConfigsProto(v)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't convert untyped proto to EthereumL2Configs proto: %w", err)
+	}
+
+	ethConfig, err := EthereumL2ConfigsFromProto(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't build EthereumL2Configs: %w", err)
+	}
+
+	return ethConfig, nil
+}
+
+func EthereumL2ConfigsFromProto(cfgProto *proto.EthereumL2Configs) (*EthereumL2Configs, error) {
+	if err := CheckEthereumL2Configs(cfgProto); err != nil {
+		return nil, fmt.Errorf("invalid Ethereum configuration: %w", err)
+	}
+
+	cfg := &EthereumL2Configs{}
+	for _, v := range cfgProto.Configs {
+		cfg.Configs = append(cfg.Configs, EthereumL2Config{
+			NetworkID:     v.NetworkId,
+			ChainID:       v.ChainId,
+			Name:          v.Name,
+			Confirmations: uint64(v.Confirmations),
+		})
+	}
+
+	return cfg, nil
+}
+
+// CheckEthereumConfig verifies the proto.EthereumConfig is valid.
+func CheckEthereumL2Configs(cfgProto *proto.EthereumL2Configs) error {
+	for _, v := range cfgProto.Configs {
+		if len(v.NetworkId) == 0 {
+			return ErrMissingNetworkID
+		}
+
+		if len(v.ChainId) == 0 {
+			return ErrMissingChainID
+		}
+
+		if v.Confirmations == 0 {
+			return ErrConfirmationsMustBeHigherThan0
+		}
+
+		if len(v.Name) == 0 {
+			return ErrMissingNetworkName
+		}
+	}
+
+	return nil
 }

@@ -66,6 +66,7 @@ func New(
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
+	l2Clients *ethclient.L2Clients,
 ) (p *Protocol, err error) {
 	log = log.Named(namedLogger)
 
@@ -82,7 +83,7 @@ func New(
 	}()
 
 	svcs, err := newServices(
-		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats,
+		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats, l2Clients,
 	)
 	if err != nil {
 		return nil, err
@@ -110,9 +111,10 @@ func New(
 			svcs.topology,
 			svcs.netParams,
 			&processor.Oracle{
-				Engine:                  svcs.oracle,
-				Adaptors:                svcs.oracleAdaptors,
-				EthereumOraclesVerifier: svcs.ethereumOraclesVerifier,
+				Engine:                    svcs.oracle,
+				Adaptors:                  svcs.oracleAdaptors,
+				EthereumOraclesVerifier:   svcs.ethereumOraclesVerifier,
+				EthereumL2OraclesVerifier: svcs.l2Verifiers,
 			},
 			svcs.delegation,
 			svcs.limits,

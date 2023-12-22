@@ -154,6 +154,12 @@ type allServices struct {
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
 	volumeDiscount *volumediscount.SnapshottedEngine
+
+	// l2 stuff
+	// TODO: instantiate
+	l2Clients     *ethclient.L2Clients
+	l2Verifiers   *ethverifier.L2Verifiers
+	l2CallEngines *L2EthCallEngines
 }
 
 func newServices(
@@ -167,6 +173,8 @@ func newServices(
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
+
+	l2CLients *ethclient.L2Clients,
 ) (_ *allServices, err error) {
 	svcs := &allServices{
 		ctx:              ctx,
@@ -239,8 +247,13 @@ func newServices(
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
 
+	svcs.l2CallEngines = NewL2EthCallEngines(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.l2Clients, svcs.eventForwarder, svcs.oracle.AddSpecActivationListener)
+
 	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.l2Clients)
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
@@ -462,6 +475,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.limits.OnTick,
 
 		svcs.ethereumOraclesVerifier.OnTick,
+		svcs.l2Verifiers.OnTick,
 	)
 }
 
@@ -839,6 +853,27 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		},
+		{
+			Param: netparams.BlockchainsEthereumL2Configs,
+			Watcher: func(ctx context.Context, cfg interface{}) error {
+				// nothing to do if not a validator
+				if !svcs.conf.HaveEthClient() {
+					return nil
+				}
+				ethCfg, err := types.EthereumL2ConfigsFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum l2 configuration: %w", err)
+				}
+
+				svcs.l2Clients.UpdateConfirmations(ethCfg)
+				svcs.l2CallEngines.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+				svcs.l2Verifiers.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+
 				return nil
 			},
 		},
