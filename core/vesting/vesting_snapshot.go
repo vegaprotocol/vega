@@ -78,7 +78,7 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	}
 }
 
-func (e *SnapshotEngine) loadStateFromSnapshot(ctx context.Context, state *snapshotpb.Vesting) {
+func (e *SnapshotEngine) loadStateFromSnapshot(_ context.Context, state *snapshotpb.Vesting) {
 	for _, entry := range state.PartiesReward {
 		for _, v := range entry.InVesting {
 			balance, underflow := num.UintFromString(v.Balance, 10)
