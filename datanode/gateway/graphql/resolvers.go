@@ -840,7 +840,7 @@ func (r *myQueryResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
-func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
+func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*v2.TransferNode, error) {
 	req := v2.GetTransferRequest{
 		TransferId: id,
 	}
@@ -848,7 +848,7 @@ func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Tr
 	if err != nil {
 		return nil, err
 	}
-	return resp.Transfer, nil
+	return resp.TransferNode, nil
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {

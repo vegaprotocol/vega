@@ -6,6 +6,7 @@
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
+- [8056](https://github.com/vegaprotocol/vega/issues/8056) - Getting a transfer by ID now returns a `TransferNode`.
 
 ### 🗑️ Deprecation
 
