@@ -609,6 +609,20 @@ func peggedReference(rawValue string) types.PeggedReference {
 	return types.PeggedReferenceUnspecified
 }
 
+func (r RowWrapper) MustSizeOverrideSetting(name string) types.StopOrderSizeOverrideSetting {
+	return sizeOverrideSetting(r.MustStr(name))
+}
+
+func sizeOverrideSetting(rawValue string) types.StopOrderSizeOverrideSetting {
+	switch rawValue {
+	case "NONE":
+		return types.StopOrderSizeOverrideSettingNone
+	case "POSITION":
+		return types.StopOrderSizeOverrideSettingPosition
+	}
+	return types.StopOrderSizeOverrideSettingUnspecified
+}
+
 func (r RowWrapper) MustOracleSpecPropertyType(name string) datav1.PropertyKey_Type {
 	ty, err := OracleSpecPropertyType(r.MustStr(name))
 	panicW(name, err)

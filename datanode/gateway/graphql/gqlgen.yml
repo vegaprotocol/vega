@@ -125,6 +125,9 @@ models:
   StopOrderTriggerDirection:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderTriggerDirection
+  StopOrderSizeOverrideSetting:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderSizeOverrideSetting
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   OrderUpdate:

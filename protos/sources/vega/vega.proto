@@ -7,6 +7,20 @@ import "vega/markets.proto";
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 message StopOrder {
+  message SizeOverrideValue {
+    // Scaling percentage of the current position’s size
+    string percentage = 1;
+  }
+
+  enum SizeOverrideSetting {
+    // Never valid
+    SIZE_OVERRIDE_SETTING_UNSPECIFIED = 0;
+    // No override, the size within the contained normal order submission will be used
+    SIZE_OVERRIDE_SETTING_NONE = 1;
+    // Use the total position of the trader
+    SIZE_OVERRIDE_SETTING_POSITION = 2;
+  }
+
   enum ExpiryStrategy {
     // Never valid
     EXPIRY_STRATEGY_UNSPECIFIED = 0;
@@ -57,6 +71,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
     // This stop order does not close the position
     REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
+    // The percentage value for the linked stop order is invalid
+    REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID = 7;
   }
 
   // ID of this stop order
@@ -84,6 +100,10 @@ message StopOrder {
   string market_id = 11;
   // An optional reason for why a stop order was rejected
   optional RejectionReason rejection_reason = 12;
+  // Size override setting
+  SizeOverrideSetting size_override_setting = 13;
+  // Size override value
+  optional SizeOverrideValue size_override_value = 14;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -125,6 +126,17 @@ func (s stopOrderResolver) Order(ctx context.Context, obj *eventspb.StopOrderEve
 
 func (s stopOrderResolver) RejectionReason(ctx context.Context, obj *eventspb.StopOrderEvent) (*vega.StopOrder_RejectionReason, error) {
 	return obj.StopOrder.RejectionReason, nil
+}
+
+func (s stopOrderResolver) SizeOverrideSetting(_ context.Context, obj *eventspb.StopOrderEvent) (vega.StopOrder_SizeOverrideSetting, error) {
+	return obj.StopOrder.SizeOverrideSetting, nil
+}
+
+func (s stopOrderResolver) SizeOverrideValue(_ context.Context, obj *eventspb.StopOrderEvent) (*string, error) {
+	if obj.StopOrder.SizeOverrideValue == nil {
+		return nil, nil
+	}
+	return ptr.From(obj.StopOrder.SizeOverrideValue.Percentage), nil
 }
 
 type stopOrderFilterResolver VegaResolverRoot

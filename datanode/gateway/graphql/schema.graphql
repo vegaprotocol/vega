@@ -174,7 +174,7 @@ type MarginLevels {
   marginMode: MarginMode!
 
   "Margin factor, only relevant for isolated margin mode, else 0"
-  marginFactor: String! 
+  marginFactor: String!
 }
 
 enum MarginMode {
@@ -212,7 +212,7 @@ type MarginLevelsUpdate {
   marginMode: MarginMode!
 
   "Margin factor, only relevant for isolated margin mode, else 0"
-  marginFactor: String! 
+  marginFactor: String!
 }
 
 "Details of a  perpetual product."
@@ -3130,6 +3130,16 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
 }
 
+"Stop order size override settings"
+enum StopOrderSizeOverrideSetting {
+  "The size override has not been specified, this should never happen!"
+  SIZE_OVERRIDE_SETTING_UNSPECIFIED
+  "No size override, the size within the contained normal order submission will be used"
+  SIZE_OVERRIDE_SETTING_NONE
+  "Use the total position of the trader"
+  SIZE_OVERRIDE_SETTING_POSITION
+}
+
 "A stop order in Vega"
 type StopOrder {
   "Hash of the stop order data"
@@ -3160,6 +3170,10 @@ type StopOrder {
   order: Order
   "Optional rejection reason for an order"
   rejectionReason: StopOrderRejectionReason
+  "Size override setting"
+  sizeOverrideSetting: StopOrderSizeOverrideSetting!
+  "Size override value"
+  sizeOverrideValue: String
 }
 
 "Details of the order that will be submitted when the stop order is triggered."
