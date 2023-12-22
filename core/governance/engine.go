@@ -1202,7 +1202,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 	newMarket := &types.NewMarket{
 		Changes: &types.NewMarketConfiguration{
 			Instrument: &types.InstrumentConfiguration{
-				Name: existingMarket.TradableInstrument.Instrument.Name,
+				Name: terms.Changes.Instrument.Name,
 				Code: terms.Changes.Instrument.Code,
 			},
 			DecimalPlaces:                 existingMarket.DecimalPlaces,

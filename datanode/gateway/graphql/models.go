@@ -868,6 +868,7 @@ func (UpdateErc20) IsUpdateAssetSource() {}
 
 type UpdateInstrumentConfiguration struct {
 	Code    string                     `json:"code"`
+	Name    string                     `json:"name"`
 	Product UpdateProductConfiguration `json:"product"`
 }
 

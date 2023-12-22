@@ -1149,6 +1149,10 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 		errs.AddForProperty("update_market.changes.instrument.code", ErrIsRequired)
 	}
 
+	if len(instrument.Name) == 0 {
+		errs.AddForProperty("update_market.changes.instrument.name", ErrIsRequired)
+	}
+
 	if instrument.Product == nil {
 		return errs.FinalAddForProperty("update_market.changes.instrument.product", ErrIsRequired)
 	}

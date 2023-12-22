@@ -238,6 +238,8 @@ message UpdateSpotMarketConfiguration {
 message UpdateInstrumentConfiguration {
   // Instrument code, human-readable shortcode used to describe the instrument.
   string code = 1;
+  // Instrument name
+  string name = 2;
   // Product specification.
   oneof product {
     // Future.

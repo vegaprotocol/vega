@@ -225,6 +225,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName: "VUSD",
@@ -363,6 +364,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -441,6 +443,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -567,6 +570,7 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -670,6 +674,7 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -836,7 +841,8 @@ func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
+
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
@@ -951,6 +957,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFail
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -1052,6 +1059,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -1298,7 +1306,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
@@ -1414,7 +1422,7 @@ func testPreEnactmentOfMarketUpdateWithInternalTimeTerminationSucceeds(t *testin
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
