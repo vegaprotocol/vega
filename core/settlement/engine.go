@@ -153,11 +153,6 @@ func (e *Engine) Settle(t time.Time, settlementData *num.Uint) ([]*types.Transfe
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	// network registers a wash trade to update its position
-	if trade.Buyer == types.NetworkParty && trade.Buyer == trade.Seller {
-		e.addNetworkTrade(trade)
-		return
-	}
 	var buyerSize, sellerSize int64
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
@@ -195,29 +190,6 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		size:        -size,
 		newSize:     sellerSize - size,
 	})
-}
-
-func (e *Engine) addNetworkTrade(trade *types.Trade) {
-	tSize := int64(trade.Size)
-	// sell wash trade, the settled position of the network decreases.
-	if trade.Aggressor == types.SideSell {
-		tSize *= -1
-	}
-
-	// the trade happens at the current mark price, so it is considered a settled position
-	e.settledPosition[types.NetworkParty] += tSize
-	// any unsettled trades (though this slice should be empty) should be updated accordingly
-	trades, ok := e.trades[types.NetworkParty]
-	if !ok {
-		return
-	}
-	// meaning that the size and new size should be updated to include the wash trade
-	for i, t := range trades {
-		t.size += tSize
-		t.newSize += tSize
-		trades[i] = t
-	}
-	e.trades[types.NetworkParty] = trades
 }
 
 func (e *Engine) HasTraded() bool {
@@ -435,14 +407,40 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	devts := make([]events.Event, 0, len(evts))
 	e.mu.Lock()
+	netSize := e.settledPosition[types.NetworkParty]
+	netTradeSize := netSize
+	netTrades := e.trades[types.NetworkParty]
+	if len(netTrades) > 0 {
+		netTradeSize = netTrades[len(netTrades)-1].newSize
+	}
 	for _, v := range evts {
 		key := v.Party()
 		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
 		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.timeService.GetTimeNow().UnixNano()))
-		// @TODO check network trades, resolve to drop from MTM settlement
+		settled := e.settledPosition[key]
+		// first, set the base size for all trades to include the settled position
+		for i, t := range netTrades {
+			t.newSize += settled
+			netTrades[i] = t
+		}
+		// the last trade or settled position should include this value
+		netTradeSize += settled
+		// transfer trades from the distressed party over to the network
+		// update the new sizes accordingly
+		if trades := e.trades[key]; len(trades) > 0 {
+			for _, t := range trades {
+				t.newSize = netTradeSize + t.size
+				netTradeSize += t.size
+				netTrades = append(netTrades, t)
+			}
+		}
+		// the network settled size should be updated
+		netSize += settled
 		delete(e.settledPosition, key)
 		delete(e.trades, key)
 	}
+	e.settledPosition[types.NetworkParty] = netSize
+	e.trades[types.NetworkParty] = netTrades
 	e.mu.Unlock()
 	e.broker.SendBatch(devts)
 }
