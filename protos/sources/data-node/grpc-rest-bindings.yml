@@ -203,6 +203,8 @@ http:
       get: "/api/v2/transfers/estimate-fee"
     - selector: datanode.api.v2.TradingDataService.ListGames
       get: "/api/v2/games"
+    - selector: datanode.api.v2.TradingDataService.ListPartyMarginModes
+      get: "/api/v2/margin-modes"
 
     # websockets
 

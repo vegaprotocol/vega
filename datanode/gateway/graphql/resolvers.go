@@ -609,6 +609,10 @@ func (r *VegaResolverRoot) Game() GameResolver {
 	return (*gameResolver)(r)
 }
 
+func (r *VegaResolverRoot) PartyMarginMode() PartyMarginModeResolver {
+	return (*marginModeResolver)(r)
+}
+
 func (r *VegaResolverRoot) PerpetualData() PerpetualDataResolver {
 	return (*perpetualDataResolver)(r)
 }
@@ -719,6 +723,20 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error) {
+	req := v2.ListPartyMarginModesRequest{
+		MarketId:   marketID,
+		PartyId:    partyID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListPartyMarginModes(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.PartyMarginModes, nil
+}
 
 func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, pagination *v2.Pagination) (*v2.GamesConnection, error) {
 	var from *uint64

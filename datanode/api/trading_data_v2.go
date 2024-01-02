@@ -129,6 +129,7 @@ type TradingDataServiceV2 struct {
 	vestingStats                  *service.VestingStats
 	transactionResults            *service.TransactionResults
 	gamesService                  *service.Games
+	marginModesService            *service.MarginModes
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -4968,6 +4969,40 @@ func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesR
 	}
 	return &v2.ListGamesResponse{
 		Games: &v2.GamesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListPartyMarginModes(ctx context.Context, req *v2.ListPartyMarginModesRequest) (*v2.ListPartyMarginModesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPartyMarginModes")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListPartyMarginModesFilters{}
+	if req.MarketId != nil {
+		filters.MarketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+	if req.PartyId != nil {
+		filters.PartyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+
+	modes, pageInfo, err := t.marginModesService.ListPartyMarginModes(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListPartyMarginModes, err)
+	}
+
+	edges, err := makeEdges[*v2.PartyMarginModeEdge](modes)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListPartyMarginModesResponse{
+		PartyMarginModes: &v2.PartyMarginModesConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},
