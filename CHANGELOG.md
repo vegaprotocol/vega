@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.74.0
+## 0.74.0
 
 ### 🚨 Breaking changes
 
@@ -40,10 +40,10 @@
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 - [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
 - [10159](https://github.com/vegaprotocol/vega/issues/10159) - Add additional funding period data to market data API to allow streaming funding period data.
-- [10143](https://github.com/vegaprotocol/vega/issues/10143) - Allow changing the market name in update market governance proposal. 
-- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
+- [10143](https://github.com/vegaprotocol/vega/issues/10143) - Allow changing the market name in update market governance proposal.
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
-- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10266](https://github.com/vegaprotocol/vega/issues/10266) - Deprecated `marketID` and populate `gameID` in reward API
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
