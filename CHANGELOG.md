@@ -101,6 +101,7 @@
 - [10276](https://github.com/vegaprotocol/vega/issues/10276) - `ListCandleData` should return empty strings instead of zero for prices when being gap filled.
 - [10278](https://github.com/vegaprotocol/vega/issues/10278) - Transfers connection filtering by `isReward` and party causes error
 - [10251](https://github.com/vegaprotocol/vega/issues/10251) - Add batch proposal API and fix batch proposal submission.
+- [10285](https://github.com/vegaprotocol/vega/issues/10285) - Fix `MTM` settlement panic.
 
 ## 0.73.0
 

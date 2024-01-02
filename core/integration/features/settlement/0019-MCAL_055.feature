@@ -183,16 +183,16 @@ Feature: Test funding margin for Perps market in isolated margin mode
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
       | party1 | USD   | ETH/DEC19 | 0       | 9100000 |
-      | party2 | USD   | ETH/DEC19 | 1080042 | 9549000 |
+      | party2 | USD   | ETH/DEC19 | 1080082 | 9549000 |
       | party3 | USD   | ETH/DEC19 | 0       | 9198000 |
 
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
       | market | market | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 483000 | USD   |
-      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 120679 | USD   |
-      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 40     | USD   |
-      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 42     | USD   |
-      | market | lpprov | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 362239 | USD   |
+      | market | aux    | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 241339 | USD   |
+      | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 80     | USD   |
+      | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 82     | USD   |
+      | market | lpprov | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 241499 | USD   |
 
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
