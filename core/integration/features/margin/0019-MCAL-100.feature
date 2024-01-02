@@ -147,7 +147,7 @@ Feature: Test switch between margin mode
     #AC0019-MCAL-115:switch to isolate margin with out of range margin factor
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-      | party1 | ETH/FEB23 | isolated margin | 0.1           | Margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
 
     #this number should be validated with correct message
     And the parties submit update margin mode:
@@ -156,7 +156,7 @@ Feature: Test switch between margin mode
 
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                                                      |
-      | party1 | ETH/FEB23 | isolated margin | -0.2          | Margin factor (-0.2) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party1 | ETH/FEB23 | isolated margin | -0.2          | margin factor (-0.2) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
 
     #AC0019-MCAL-114:switch to isolated margin with position and with orders with margin factor such that there is insufficient balance in the general account in continuous mode
     And the parties submit update margin mode:

@@ -1054,6 +1054,23 @@ message PaidLiquidityFeesStats {
   repeated PartyAmount fees_paid_per_party = 5;
 }
 
+message PartyMarginModeUpdated {
+  // Unique ID of the market in whichma the update happened.
+  string market_id = 1;
+  // Unique ID of the party that updated their margin mode.
+  string party_id = 2;
+  // Updated margin mode.
+  vega.MarginMode margin_mode = 3;
+  // Margin factor for the market. Isolated mode only.
+  optional string margin_factor = 4;
+  // Minimum theoretical margin factor for the market. Isolated mode only.
+  optional string min_theoretical_margin_factor = 5;
+  // Maximum theoretical leverage for the market. Isolated mode only.
+  optional string max_theoretical_leverage = 6;
+  // Epoch at which the update happened.
+  uint64 at_epoch = 7;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1258,6 +1275,9 @@ enum BusEventType {
   // Event indicating that a party's available transfer fee discount has changed, per asset.
   BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED = 84;
 
+  // Event indicating that a party updated their margin mode on a market.
+  BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED = 85;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1435,6 +1455,8 @@ message BusEvent {
     TransferFees transfer_fees = 181;
     // Event notifying of a party's available discounts for transfer fees, per asset.
     TransferFeesDiscount transfer_fees_discount = 182;
+    // Event notifying of a party's margin mode update on a market.
+    PartyMarginModeUpdated party_margin_mode_updated = 183;
 
     // Market tick events
     MarketEvent market = 1001;

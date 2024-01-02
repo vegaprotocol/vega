@@ -1895,7 +1895,7 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 		riskFactors := market.GetRiskFactors()
 		rf := num.MaxD(riskFactors.Long, riskFactors.Short)
 		if marginFactor.LessThanOrEqual(rf) {
-			return fmt.Errorf("Margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
+			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
 		}
 	}
 

@@ -66,11 +66,11 @@ Feature:  pegged order in isoalted margin is not supported
         #switch to isolated margin
         And the parties submit update margin mode:
             | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-            | party1 | ETH/FEB23 | isolated margin | 0.1           | Margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.2)) |
+            | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.2)) |
 
         And the parties submit update margin mode:
             | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-            | party1 | ETH/FEB23 | isolated margin | 0.2           | Margin factor (0.2) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.2)) |
+            | party1 | ETH/FEB23 | isolated margin | 0.2           | margin factor (0.2) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.2)) |
 
         And the parties submit update margin mode:
             | party  | market    | margin_mode     | margin_factor | error                                                        |

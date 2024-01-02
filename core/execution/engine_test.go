@@ -140,7 +140,7 @@ func TestUpdateMarginUpdate(t *testing.T) {
 	require.NoError(t, engine.SubmitMarket(context.Background(), mkt, "zohar", time.Now()))
 
 	// rfShort, rfLong = 1
-	require.Equal(t, "Margin factor (0.5) must be greater than max(riskFactorLong (1), riskFactorShort (1))", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(0.5)).Error())
+	require.Equal(t, "margin factor (0.5) must be greater than max(riskFactorLong (1), riskFactorShort (1))", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(0.5)).Error())
 
 	// all good, just not supported yet
 	require.Error(t, errors.New("Unsupported"), engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(1)))
