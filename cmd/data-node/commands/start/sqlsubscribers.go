@@ -81,7 +81,7 @@ type SQLSubscribers struct {
 	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
 	gamesStore                  *sqlstore.Games
 	marginModesStore            *sqlstore.MarginModes
-	
+
 	// Services
 	candleService                 *candlesv2.Svc
 	marketDepthService            *service.MarketDepth
