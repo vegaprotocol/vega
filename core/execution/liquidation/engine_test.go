@@ -191,7 +191,7 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		order, err := eng.OnTick(ctx, now)
 		require.NoError(t, err)
 		require.NotNil(t, order)
-		require.Equal(t, totalSize/10, order.Size)
+		require.Equal(t, uint64(num.DecimalFromFloat(float64(totalSize)).Div(num.DecimalFromFloat(float64(10))).Ceil().IntPart()), order.Size)
 	})
 
 	t.Run("Updating the config changes the time left until the next step", func(t *testing.T) {
@@ -213,7 +213,7 @@ func TestNetworkReducesOverTime(t *testing.T) {
 		order, err = eng.OnTick(ctx, now)
 		require.NoError(t, err)
 		require.NotNil(t, order)
-		require.Equal(t, totalSize/10, order.Size)
+		require.Equal(t, uint64(num.DecimalFromFloat(float64(totalSize)).Div(num.DecimalFromFloat(float64(10))).Ceil().IntPart()), order.Size)
 	})
 
 	t.Run("Once the remaining volume of the network is LTE full disposal position, the network creates an order for its full position", func(t *testing.T) {
