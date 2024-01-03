@@ -59,7 +59,7 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	}
 
 	for i := 0; i < len(expected); i++ {
-		t.Run(fmt.Sprintf("team %d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("team #%d", i), func(tt *testing.T) {
 			expectedTeam := expected[i]
 			actualTeam := actual[i]
 			assert.Equal(tt, expectedTeam.ID, actualTeam.ID)
@@ -69,8 +69,13 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 			assert.Equal(tt, expectedTeam.CreatedAt.UnixNano(), actualTeam.CreatedAt.UnixNano())
 			assertEqualMembership(tt, expectedTeam.Referrer, actualTeam.Referrer)
 
+			if len(expectedTeam.Referees) != len(actualTeam.Referees) {
+				assert.Fail(tt, fmt.Sprintf("number of referees in expected and actual results mismatch, expecting %d but got %d", len(expectedTeam.Referees), len(actualTeam.Referees)))
+				return
+			}
+
 			for j := 0; j < len(expectedTeam.Referees); j++ {
-				tt.Run(fmt.Sprintf("referee %d", j), func(ttt *testing.T) {
+				tt.Run(fmt.Sprintf("referee #%d", j), func(ttt *testing.T) {
 					assertEqualMembership(ttt, expectedTeam.Referees[j], actualTeam.Referees[j])
 				})
 			}
@@ -218,7 +223,7 @@ func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.Cr
 	}
 }
 
-func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *commandspb.UpdateReferralSet_Team {
+func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool, allowList []string) *commandspb.UpdateReferralSet_Team {
 	t.Helper()
 
 	return &commandspb.UpdateReferralSet_Team{
@@ -226,6 +231,7 @@ func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
 		Closed:    ptr.From(closed),
+		AllowList: allowList,
 	}
 }
 

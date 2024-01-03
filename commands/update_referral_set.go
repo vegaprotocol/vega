@@ -53,6 +53,14 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 		if cmd.Team.TeamUrl != nil && len(*cmd.Team.TeamUrl) > 200 {
 			errs.AddForProperty("update_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
+
+		if cmd.Team.Closed == nil && len(cmd.Team.AllowList) > 0 {
+			errs.AddForProperty("update_referral_set.team.allow_list", ErrSettingAllowListRequireSettingClosedState)
+		}
+
+		if cmd.Team.Closed != nil && !*cmd.Team.Closed && len(cmd.Team.AllowList) > 0 {
+			errs.AddForProperty("update_referral_set.team.allow_list", ErrCannotSetAllowListWhenTeamIsOpened)
+		}
 	}
 
 	return errs

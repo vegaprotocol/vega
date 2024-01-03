@@ -37,6 +37,7 @@ type Team struct {
 	TeamURL        *string
 	AvatarURL      *string
 	Closed         bool
+	AllowList      []string
 	CreatedAt      time.Time
 	CreatedAtEpoch uint64
 	VegaTime       time.Time
@@ -59,6 +60,7 @@ func (t Team) ToProto() *v2.Team {
 		AvatarUrl:      t.AvatarURL,
 		CreatedAt:      t.CreatedAt.UnixNano(),
 		Closed:         t.Closed,
+		AllowList:      t.AllowList,
 		CreatedAtEpoch: t.CreatedAtEpoch,
 	}
 }
@@ -81,6 +83,7 @@ func TeamCreatedFromProto(created *eventspb.TeamCreated, vegaTime time.Time) *Te
 		CreatedAtEpoch: created.AtEpoch,
 		VegaTime:       vegaTime,
 		Closed:         created.Closed,
+		AllowList:      created.AllowList,
 	}
 }
 
@@ -90,6 +93,7 @@ type TeamUpdated struct {
 	TeamURL   *string
 	AvatarURL *string
 	Closed    bool
+	AllowList []string
 	VegaTime  time.Time
 }
 
@@ -100,6 +104,7 @@ func TeamUpdatedFromProto(updated *eventspb.TeamUpdated, vegaTime time.Time) *Te
 		TeamURL:   updated.TeamUrl,
 		AvatarURL: updated.AvatarUrl,
 		Closed:    updated.Closed,
+		AllowList: updated.AllowList,
 		VegaTime:  vegaTime,
 	}
 }

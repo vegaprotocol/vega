@@ -890,6 +890,8 @@ message TeamCreated {
   bool closed = 7;
   // Epoch at which the team was created.
   uint64 at_epoch = 8;
+  // List of public keys that are allowed to join the team.
+  repeated string allow_list = 9;
 }
 
 message TeamUpdated {
@@ -903,6 +905,8 @@ message TeamUpdated {
   optional string avatar_url = 4;
   // Tells if a party can join the team or not.
   bool closed = 5;
+  // List of public keys that are allowed to join the team.
+  repeated string allow_list = 6;
 }
 
 message RefereeSwitchedTeam {
@@ -1048,14 +1052,14 @@ message PaidLiquidityFeesStats {
   string asset = 2;
   // Epoch for which these stats where valid.
   uint64 epoch_seq = 3;
-  // Total fees paid accross all parties.
+  // Total fees paid across all parties.
   string total_fees_paid = 4;
   // Fees paid per party.
   repeated PartyAmount fees_paid_per_party = 5;
 }
 
 message PartyMarginModeUpdated {
-  // Unique ID of the market in whichma the update happened.
+  // Unique ID of the market in which the update happened.
   string market_id = 1;
   // Unique ID of the party that updated their margin mode.
   string party_id = 2;
