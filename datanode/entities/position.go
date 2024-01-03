@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -95,12 +96,27 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
+func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool) {
+	size := int64(trade.Size)
+	if seller {
+		size *= -1
+	}
+	p.PendingOpenVolume += size
+}
+
 func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		p.updateWithBadTrade(trade, seller)
+		return
+	}
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
 	}
+	// close out trade doesn't require the MTM calculation to be performed
+	// the distressed trader will be handled through a settle distressed event, the network
+	// open volume should just be updated, the average entry price is unchanged.
 	assetPrice, _ := num.DecimalFromString(trade.AssetPrice)
 	marketPrice, _ := num.DecimalFromString(trade.Price)
 
