@@ -9,8 +9,8 @@ Feature: Network disposing position
       | market.value.windowLength               | 1h    |
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the following assets are registered:
-      | id  | decimal places | quantum |
-      | USD | 0              | 10      |
+      | id       | decimal places | quantum |
+      | USD.0.10 | 0              | 10      |
 
     Given the liquidation strategies:
       | name             | disposal step | disposal fraction | full disposal size | max fraction consumed |
@@ -25,18 +25,19 @@ Feature: Network disposing position
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1           | 0.85                         | 1                             | 0.5                    |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | liquidation strategy |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        | disposal-strat-1     |
+      | id        | quote name | asset    | risk model              | margin calculator         | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | liquidation strategy |
+      | ETH/MAR22 | ETH        | USD.0.10 | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        | disposal-strat-1     |
 
 
+  @NoPerp
   Scenario: Network takes over distressed position and disposes position over time
 
     Given the parties deposit on asset's general account the following amount:
-      | party       | asset | amount       |
-      | lp1         | USD   | 100000000000 |
-      | aux1        | USD   | 10000000000  |
-      | aux2        | USD   | 10000000000  |
-      | atRiskParty | USD   | 180          |
+      | party       | asset    | amount       |
+      | lp1         | USD.0.10 | 100000000000 |
+      | aux1        | USD.0.10 | 10000000000  |
+      | aux2        | USD.0.10 | 10000000000  |
+      | atRiskParty | USD.0.10 | 180          |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
       | lp1 | lp1   | ETH/MAR22 | 500000            | 0   | submission |
@@ -66,8 +67,8 @@ Feature: Network disposing position
       | party       | market id | maintenance | search | initial | release |
       | atRiskParty | ETH/MAR22 | 156         | 171    | 187     | 218     |
     And the parties should have the following account balances:
-      | party       | asset | market id | margin | general |
-      | atRiskParty | USD   | ETH/MAR22 | 175    | 5       |
+      | party       | asset    | market id | margin | general |
+      | atRiskParty | USD.0.10 | ETH/MAR22 | 175    | 5       |
 
     Given the parties amend the following orders:
       | party | reference | price | size delta | tif     |
@@ -96,6 +97,7 @@ Feature: Network disposing position
     And the following network trades should be executed:
       | party | aggressor side | volume |
       | lp1   | buy            | 2      |
+    Then debug trades
     And clear trade events
 
     # Position size is 8, next disposal should be ceil(8*0.2)=ceil(1.6)=2
