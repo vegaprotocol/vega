@@ -33,6 +33,7 @@ var (
 		"defaults/liquidation-config/legacy-liquidation-strategy.json",
 		"defaults/liquidation-config/default-liquidation-strat.json",
 		"defaults/liquidation-config/slow-liquidation-strat.json",
+		"defaults/liquidation-config/AC-013-strat.json",
 	}
 
 	defaultStrat = "legacy-liquidation-strategy"
