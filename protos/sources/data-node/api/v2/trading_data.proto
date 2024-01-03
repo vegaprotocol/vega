@@ -912,6 +912,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Games"};
   }
 
+  // List margin modes per party per market
+  //
+  // Get a list of all margin modes, or for a specific market ID, or party ID.
+  rpc ListPartyMarginModes(ListPartyMarginModesRequest) returns (ListPartyMarginModesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "MarginModes"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -4616,4 +4623,54 @@ message IndividualGameEntity {
   string reward_earned = 5;
   // Total rewards earned by the individual for the game
   string total_rewards_earned = 6;
+}
+
+// Request to retrieve party margin modes.
+message ListPartyMarginModesRequest {
+  // Market ID to filter for.
+  optional string market_id = 1;
+  // Party ID to filter for.
+  optional string party_id = 2;
+  // Pagination controls.
+  optional Pagination pagination = 5;
+}
+
+// Response containing party margin modes.
+message ListPartyMarginModesResponse {
+  // Page of party margin modes data and corresponding page information.
+  PartyMarginModesConnection party_margin_modes = 1;
+}
+
+// Page of party margin modes data and corresponding page information.
+message PartyMarginModesConnection {
+  // Page of party margin modes data and their corresponding cursors.
+  repeated PartyMarginModeEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Party margin mode information and corresponding cursor.
+message PartyMarginModeEdge {
+  // Party margin mode data.
+  PartyMarginMode node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Margin mode selected for the given party and market.
+message PartyMarginMode {
+  // Unique ID of the market.
+  string market_id = 1;
+  // Unique ID of the party.
+  string party_id = 2;
+  // Selected margin mode.
+  vega.MarginMode margin_mode = 3;
+  // Margin factor for the market. Isolated mode only.
+  optional string margin_factor = 4;
+  // Minimum theoretical margin factor for the market. Isolated mode only.
+  optional string min_theoretical_margin_factor = 5;
+  // Maximum theoretical leverage for the market. Isolated mode only.
+  optional string max_theoretical_leverage = 6;
+  // Epoch at which the update happened.
+  uint64 at_epoch = 7;
 }

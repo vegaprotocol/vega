@@ -21,7 +21,6 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -79,20 +78,7 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	}
 }
 
-func (e *SnapshotEngine) recoverVesting736() {
-	e.upgradeHackActivated = true
-	accs := e.c.GetVestingAccounts()
-	for _, a := range accs {
-		e.increaseVestingBalance(a.Owner, a.Asset, a.Balance)
-	}
-}
-
-func (e *SnapshotEngine) loadStateFromSnapshot(ctx context.Context, state *snapshotpb.Vesting) {
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
-		e.recoverVesting736()
-		return
-	}
-
+func (e *SnapshotEngine) loadStateFromSnapshot(_ context.Context, state *snapshotpb.Vesting) {
 	for _, entry := range state.PartiesReward {
 		for _, v := range entry.InVesting {
 			balance, underflow := num.UintFromString(v.Balance, 10)

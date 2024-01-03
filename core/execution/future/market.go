@@ -50,6 +50,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"golang.org/x/exp/maps"
 )
@@ -285,7 +286,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, settleEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine)
 
 	marketType := mkt.MarketType()
 	market := &Market{
@@ -1573,7 +1574,10 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 
 	// from this point we know the party have a margin account
 	// we had it to the list of parties.
-	m.addParty(order.Party)
+	if m.addParty(order.Party) {
+		// First time seeing the party, we report his margin mode.
+		m.emitPartyMarginModeUpdated(ctx, order.Party, m.getMarginMode(order.Party), m.getMarginFactor(order.Party))
+	}
 	return nil
 }
 
@@ -2237,10 +2241,13 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	return trades, nil
 }
 
-func (m *Market) addParty(party string) {
-	if _, ok := m.parties[party]; !ok {
+// addParty returns true if the party is new to the market, false otherwise.
+func (m *Market) addParty(party string) bool {
+	_, registered := m.parties[party]
+	if !registered {
 		m.parties[party] = struct{}{}
 	}
+	return !registered
 }
 
 func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
@@ -4369,7 +4376,13 @@ func (m *Market) GetRiskFactors() *types.RiskFactor {
 }
 
 func (m *Market) UpdateMarginMode(ctx context.Context, party string, marginMode types.MarginMode, marginFactor num.Decimal) error {
-	return m.switchMarginMode(ctx, party, marginMode, marginFactor)
+	if err := m.switchMarginMode(ctx, party, marginMode, marginFactor); err != nil {
+		return err
+	}
+
+	m.emitPartyMarginModeUpdated(ctx, party, marginMode, marginFactor)
+
+	return nil
 }
 
 func (m *Market) getMarginMode(party string) types.MarginMode {
@@ -4413,6 +4426,8 @@ func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode 
 		return nil
 	}
 
+	_ = m.addParty(party)
+
 	pos, ok := m.position.GetPositionByPartyID(party)
 	if !ok {
 		pos = positions.NewMarketPosition(party)
@@ -4451,7 +4466,7 @@ func (m *Market) switchMarginMode(ctx context.Context, party string, marginMode 
 		if err != nil {
 			return err
 		}
-		// ensure we have an order margiin account set up
+		// ensure we have an order margin account set up
 		m.collateral.GetOrCreatePartyOrderMarginAccount(ctx, party, m.mkt.ID, m.settlementAsset)
 		if len(risk) > 0 {
 			for _, r := range risk {
@@ -4493,4 +4508,19 @@ func (m *Market) getPartyParkedPeggedOrders(party string) []*types.Order {
 		}
 	}
 	return partyParkedPegged
+}
+
+func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, mode types.MarginMode, factor num.Decimal) {
+	e := &eventspb.PartyMarginModeUpdated{
+		MarketId:   m.mkt.ID,
+		PartyId:    party,
+		MarginMode: mode,
+		AtEpoch:    m.epoch.Seq,
+	}
+
+	if mode == types.MarginModeIsolatedMargin {
+		e.MarginFactor = ptr.From(factor.String())
+	}
+
+	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }

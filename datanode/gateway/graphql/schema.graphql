@@ -1145,6 +1145,20 @@ type Query {
     "Pagination options"
     pagination: Pagination
   ): WithdrawalsConnection
+
+  """
+  List margin modes per party per market
+
+  Get a list of all margin modes, or for a specific market ID, or party ID.
+  """
+  partyMarginModes(
+    "Optional team ID to filter for"
+    marketId: ID
+    "Optional referrer, or team referee to filter for"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): PartyMarginModesConnection
 }
 
 "Defines the types of a dispatch strategy's scope the API can filter on."
@@ -6906,4 +6920,36 @@ type GamesConnection {
   edges: [GameEdge]
   "Current page information"
   pageInfo: PageInfo
+}
+
+"Connection type for retrieving cursor-based paginated party margin modes information"
+type  PartyMarginModesConnection {
+  "The party margin modes"
+  edges: [PartyMarginModeEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the deposit and cursor information returned by a PartyMarginModeConnection"
+type PartyMarginModeEdge {
+  node: PartyMarginMode!
+  cursor: String!
+}
+
+"Margin mode selected for the given party and market."
+type PartyMarginMode{
+  "Unique ID of the market."
+  marketId: ID!
+  "Unique ID of the party."
+  partyId: ID!
+  "Selected margin mode."
+  marginMode: MarginMode!
+  "Margin factor for the market. Isolated mode only."
+  margin_factor: String
+  "Minimum theoretical margin factor for the market. Isolated mode only."
+  min_theoretical_margin_factor: String
+  "Maximum theoretical leverage for the market. Isolated mode only."
+  max_theoretical_leverage: String
+  "Epoch at which the update happened."
+  atEpoch: Int!
 }

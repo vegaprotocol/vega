@@ -546,6 +546,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of games and corresponding game data, given the provided filters
 	ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error)
+	// List margin modes per party per market
+	//
+	// Get a list of all margin modes, or for a specific market ID, or party ID.
+	ListPartyMarginModes(ctx context.Context, in *ListPartyMarginModesRequest, opts ...grpc.CallOption) (*ListPartyMarginModesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2035,6 +2039,15 @@ func (c *tradingDataServiceClient) ListGames(ctx context.Context, in *ListGamesR
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListPartyMarginModes(ctx context.Context, in *ListPartyMarginModesRequest, opts ...grpc.CallOption) (*ListPartyMarginModesResponse, error) {
+	out := new(ListPartyMarginModesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPartyMarginModes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2603,6 +2616,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of games and corresponding game data, given the provided filters
 	ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error)
+	// List margin modes per party per market
+	//
+	// Get a list of all margin modes, or for a specific market ID, or party ID.
+	ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -3023,6 +3040,9 @@ func (UnimplementedTradingDataServiceServer) GetTotalTransferFeeDiscount(context
 }
 func (UnimplementedTradingDataServiceServer) ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGames not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPartyMarginModes not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5184,6 +5204,24 @@ func _TradingDataService_ListGames_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListPartyMarginModes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPartyMarginModesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListPartyMarginModes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListPartyMarginModes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListPartyMarginModes(ctx, req.(*ListPartyMarginModesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5629,6 +5667,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListGames",
 			Handler:    _TradingDataService_ListGames_Handler,
+		},
+		{
+			MethodName: "ListPartyMarginModes",
+			Handler:    _TradingDataService_ListPartyMarginModes_Handler,
 		},
 		{
 			MethodName: "Ping",

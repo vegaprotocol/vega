@@ -84,8 +84,8 @@ func NewMarketFromSnapshot(
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.6") {
-		// protocol upgrade from v0.73.4, lets populate the new liquidity-fee-settings with a default marginal-cost method
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.10") {
+		// protocol upgrade from v0.73.9, lets populate the new liquidity-fee-settings with a default marginal-cost method
 		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
 		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
 			Method: types.LiquidityFeeMethodMarginalCost,
@@ -192,7 +192,7 @@ func NewMarketFromSnapshot(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine, settleEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine)
 
 	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
 	for _, pmf := range em.PartyMarginFactors {

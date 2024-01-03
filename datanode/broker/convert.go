@@ -186,6 +186,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.TransferFeesEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED:
 		return events.TransferFeesDiscountUpdatedFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED:
+		return events.PartyMarginModeUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

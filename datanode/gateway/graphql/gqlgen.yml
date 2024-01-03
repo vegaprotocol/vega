@@ -767,3 +767,9 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameEdge
   GamesConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamesConnection
+  PartyMarginMode:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginMode
+  PartyMarginModeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModeEdge
+  PartyMarginModesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModesConnection

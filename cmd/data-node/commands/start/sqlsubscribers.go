@@ -80,6 +80,7 @@ type SQLSubscribers struct {
 	partyLockedBalancesStore    *sqlstore.PartyLockedBalance
 	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
 	gamesStore                  *sqlstore.Games
+	marginModesStore            *sqlstore.MarginModes
 
 	// Services
 	candleService                 *candlesv2.Svc
@@ -134,6 +135,7 @@ type SQLSubscribers struct {
 	partyVestingBalancesService   *service.PartyVestingBalances
 	transactionResultsService     *service.TransactionResults
 	gamesService                  *service.Games
+	marginModesService            *service.MarginModes
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -184,6 +186,7 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
 	transactionResultsSub     *sqlsubscribers.TransactionResults
+	marginModesSub            *sqlsubscribers.MarginModes
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -351,6 +354,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
 	s.gamesService = service.NewGames(s.gamesStore)
+	s.marginModesService = service.NewMarginModes(s.marginModesStore)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
@@ -418,4 +422,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
+	s.marginModesSub = sqlsubscribers.NewMarginModes(s.marginModesService)
 }
