@@ -3,36 +3,16 @@ DROP TYPE IF EXISTS margin_mode_type;
 create type margin_mode_type as enum('MARGIN_MODE_UNSPECIFIED', 'MARGIN_MODE_CROSS_MARGIN', 'MARGIN_MODE_ISOLATED_MARGIN');
 
 alter table margin_levels
-    add column if not exists margin_mode margin_mode_type,
-    add column if not exists margin_factor NUMERIC,
-    add column if not exists order_margin HUGEINT,
+    add column if not exists margin_mode margin_mode_type not null default ('MARGIN_MODE_CROSS_MARGIN'),
+    add column if not exists margin_factor NUMERIC not null default (0),
+    add column if not exists order_margin HUGEINT not null default (0),
     add column if not exists order_margin_account_id bytea;
 
-update margin_levels
-    set margin_mode='MARGIN_MODE_CROSS_MARGIN',
-        margin_factor=0,
-        order_margin=0;
-
-alter table margin_levels
-    ALTER COLUMN margin_mode SET NOT NULL,
-    ALTER COLUMN margin_factor SET NOT NULL,
-    ALTER COLUMN order_margin SET NOT NULL;
-
 alter table current_margin_levels
-    add column if not exists margin_mode margin_mode_type,
-    add column if not exists margin_factor NUMERIC,
-    add column if not exists order_margin HUGEINT,
+    add column if not exists margin_mode margin_mode_type not null default ('MARGIN_MODE_CROSS_MARGIN'),
+    add column if not exists margin_factor NUMERIC not null default (0),
+    add column if not exists order_margin HUGEINT not null default (0),
     add column if not exists order_margin_account_id bytea;
-
-update current_margin_levels
-    set margin_mode='MARGIN_MODE_CROSS_MARGIN',
-        margin_factor=0,
-        order_margin=0;
-
-alter table current_margin_levels
-    ALTER COLUMN margin_mode SET NOT NULL,
-    ALTER COLUMN margin_factor SET NOT NULL,
-    ALTER COLUMN order_margin SET NOT NULL;
 
 -- +goose StatementBegin
 drop trigger if exists update_current_margin_levels on margin_levels;
