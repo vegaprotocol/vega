@@ -1,7 +1,6 @@
 Feature: When a party is distressed and gets closed out the network's position gets modified to reflect that it's now the network party that holds that volume. (0012-POSR-009)
 
   Background:
-   # disposal strategy every 5 seconds, 20% until 10 or less, max 10% of the book used
     Given the liquidation strategies:
       | name           | disposal step | disposal fraction | full disposal size | max fraction consumed |
       | disposal-strat | 10            | 1.0               | 1000               | 1.0                   |
