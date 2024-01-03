@@ -193,7 +193,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		MarketID: existing.ID,
 		Changes:  &types.UpdateMarketConfiguration{},
 	}
-	var liqStrat *types.LiquidationStrategy
+	liqStrat := existing.LiquidationStrategy
 	if ls, ok := row.liquidationStrat(); ok {
 		lqs, err := config.LiquidationStrat.Get(ls)
 		if err != nil {
@@ -203,8 +203,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			panic(err)
 		}
 	}
-
 	update.Changes.LiquidationStrategy = liqStrat
+	existing.LiquidationStrategy = liqStrat
+
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
 		// update product -> use type switch even though currently only futures exist
