@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -222,6 +223,12 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	if !ok {
 		return fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
 	}
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		pos := p.getNetworkPosition(ctx, trade.MarketId)
+		seller := trade.Seller == types.NetworkParty
+		pos.UpdateWithTrade(trade, seller, sf)
+		return p.updatePosition(ctx, pos)
+	}
 	buyer, seller := p.getPositionsByTrade(ctx, trade)
 	buyer.UpdateWithTrade(trade, false, sf)
 	// this can't really result in an error...
@@ -293,6 +300,19 @@ func (p *Position) getPositionsByTrade(ctx context.Context, trade vega.Trade) (b
 		panic("unable to query for existing position")
 	}
 	return buyer, seller
+}
+
+func (p *Position) getNetworkPosition(ctx context.Context, market string) entities.Position {
+	mID := entities.MarketID(market)
+	pID := entities.PartyID(types.NetworkParty)
+	pos, err := p.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
+	if errors.Is(err, entities.ErrNotFound) {
+		return entities.NewEmptyPosition(mID, pID)
+	}
+	if err != nil {
+		panic("unable to query existing positions")
+	}
+	return pos
 }
 
 func (p *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {

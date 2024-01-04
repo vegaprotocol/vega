@@ -101,14 +101,10 @@ func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool) {
 	if seller {
 		size *= -1
 	}
-	p.PendingOpenVolume += size
+	p.OpenVolume += size
 }
 
 func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
-	if trade.Type == types.TradeTypeNetworkCloseOutBad {
-		p.updateWithBadTrade(trade, seller)
-		return
-	}
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
@@ -133,6 +129,9 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
 	p.pendingMTM(assetPrice, pf)
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		p.updateWithBadTrade(trade, seller)
+	}
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
