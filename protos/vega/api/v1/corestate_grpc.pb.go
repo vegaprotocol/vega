@@ -24,51 +24,51 @@ const _ = grpc.SupportPackageIsVersion7
 type CoreStateServiceClient interface {
 	// Accounts list
 	//
-	// Get a list of accounts
+	// Get a list of accounts. This endpoint may not be exposed by mainnet nodes.
 	ListAccounts(ctx context.Context, in *ListAccountsRequest, opts ...grpc.CallOption) (*ListAccountsResponse, error)
 	// Assets list
 	//
-	// Get a list of assets
+	// Get a list of assets. This endpoint may not be exposed by mainnet nodes.
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	// Network parameters list
 	//
-	// Get a list of network parameters
+	// Get a list of network parameters. This endpoint may not be exposed by mainnet nodes.
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
 	// Network limits list
 	//
-	// Get a list of network limits
+	// Get a list of network limits. This endpoint may not be exposed by mainnet nodes.
 	ListNetworkLimits(ctx context.Context, in *ListNetworkLimitsRequest, opts ...grpc.CallOption) (*ListNetworkLimitsResponse, error)
 	// Parties list
 	//
-	// Get a list of parties
+	// Get a list of parties. This endpoint may not be exposed by mainnet nodes.
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
 	// Validators list
 	//
-	// Get a list of validators
+	// Get a list of validators. This endpoint may not be exposed by mainnet nodes.
 	ListValidators(ctx context.Context, in *ListValidatorsRequest, opts ...grpc.CallOption) (*ListValidatorsResponse, error)
 	// Markets list
 	//
-	// Get a list of markets
+	// Get a list of markets. This endpoint may not be exposed by mainnet nodes.
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
 	// Proposals list
 	//
-	// Get a list of proposals
+	// Get a list of proposals. This endpoint may not be exposed by mainnet nodes.
 	ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error)
 	// Markets data list
 	//
-	// Get a list of markets data
+	// Get a list of markets' data. This endpoint may not be exposed by mainnet nodes.
 	ListMarketsData(ctx context.Context, in *ListMarketsDataRequest, opts ...grpc.CallOption) (*ListMarketsDataResponse, error)
 	// Votes list
 	//
-	// Get a list of votes
+	// Get a list of votes. This endpoint may not be exposed by mainnet nodes.
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
 	// Parties stake list
 	//
-	// Get a list of parties stake
+	// Get a list of parties' stake. This endpoint may not be exposed by mainnet nodes.
 	ListPartiesStake(ctx context.Context, in *ListPartiesStakeRequest, opts ...grpc.CallOption) (*ListPartiesStakeResponse, error)
 	// Delegations list
 	//
-	// Get a list of delegations
+	// Get a list of delegations. This endpoint may not be exposed by mainnet nodes.
 	ListDelegations(ctx context.Context, in *ListDelegationsRequest, opts ...grpc.CallOption) (*ListDelegationsResponse, error)
 }
 
@@ -194,51 +194,51 @@ func (c *coreStateServiceClient) ListDelegations(ctx context.Context, in *ListDe
 type CoreStateServiceServer interface {
 	// Accounts list
 	//
-	// Get a list of accounts
+	// Get a list of accounts. This endpoint may not be exposed by mainnet nodes.
 	ListAccounts(context.Context, *ListAccountsRequest) (*ListAccountsResponse, error)
 	// Assets list
 	//
-	// Get a list of assets
+	// Get a list of assets. This endpoint may not be exposed by mainnet nodes.
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	// Network parameters list
 	//
-	// Get a list of network parameters
+	// Get a list of network parameters. This endpoint may not be exposed by mainnet nodes.
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
 	// Network limits list
 	//
-	// Get a list of network limits
+	// Get a list of network limits. This endpoint may not be exposed by mainnet nodes.
 	ListNetworkLimits(context.Context, *ListNetworkLimitsRequest) (*ListNetworkLimitsResponse, error)
 	// Parties list
 	//
-	// Get a list of parties
+	// Get a list of parties. This endpoint may not be exposed by mainnet nodes.
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
 	// Validators list
 	//
-	// Get a list of validators
+	// Get a list of validators. This endpoint may not be exposed by mainnet nodes.
 	ListValidators(context.Context, *ListValidatorsRequest) (*ListValidatorsResponse, error)
 	// Markets list
 	//
-	// Get a list of markets
+	// Get a list of markets. This endpoint may not be exposed by mainnet nodes.
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
 	// Proposals list
 	//
-	// Get a list of proposals
+	// Get a list of proposals. This endpoint may not be exposed by mainnet nodes.
 	ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error)
 	// Markets data list
 	//
-	// Get a list of markets data
+	// Get a list of markets' data. This endpoint may not be exposed by mainnet nodes.
 	ListMarketsData(context.Context, *ListMarketsDataRequest) (*ListMarketsDataResponse, error)
 	// Votes list
 	//
-	// Get a list of votes
+	// Get a list of votes. This endpoint may not be exposed by mainnet nodes.
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
 	// Parties stake list
 	//
-	// Get a list of parties stake
+	// Get a list of parties' stake. This endpoint may not be exposed by mainnet nodes.
 	ListPartiesStake(context.Context, *ListPartiesStakeRequest) (*ListPartiesStakeResponse, error)
 	// Delegations list
 	//
-	// Get a list of delegations
+	// Get a list of delegations. This endpoint may not be exposed by mainnet nodes.
 	ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error)
 	mustEmbedUnimplementedCoreStateServiceServer()
 }

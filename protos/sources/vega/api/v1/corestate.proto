@@ -25,62 +25,62 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service CoreStateService {
   // Accounts list
   //
-  // Get a list of accounts
+  // Get a list of accounts. This endpoint may not be exposed by mainnet nodes.
   rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
 
   // Assets list
   //
-  // Get a list of assets
+  // Get a list of assets. This endpoint may not be exposed by mainnet nodes.
   rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
   // Network parameters list
   //
-  // Get a list of network parameters
+  // Get a list of network parameters. This endpoint may not be exposed by mainnet nodes.
   rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
 
   // Network limits list
   //
-  // Get a list of network limits
+  // Get a list of network limits. This endpoint may not be exposed by mainnet nodes.
   rpc ListNetworkLimits(ListNetworkLimitsRequest) returns (ListNetworkLimitsResponse);
 
   // Parties list
   //
-  // Get a list of parties
+  // Get a list of parties. This endpoint may not be exposed by mainnet nodes.
   rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
   // Validators list
   //
-  // Get a list of validators
+  // Get a list of validators. This endpoint may not be exposed by mainnet nodes.
   rpc ListValidators(ListValidatorsRequest) returns (ListValidatorsResponse);
 
   // Markets list
   //
-  // Get a list of markets
+  // Get a list of markets. This endpoint may not be exposed by mainnet nodes.
   rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
   // Proposals list
   //
-  // Get a list of proposals
+  // Get a list of proposals. This endpoint may not be exposed by mainnet nodes.
   rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
 
   // Markets data list
   //
-  // Get a list of markets data
+  // Get a list of markets' data. This endpoint may not be exposed by mainnet nodes.
   rpc ListMarketsData(ListMarketsDataRequest) returns (ListMarketsDataResponse);
 
   // Votes list
   //
-  // Get a list of votes
+  // Get a list of votes. This endpoint may not be exposed by mainnet nodes.
   rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
 
   // Parties stake list
   //
-  // Get a list of parties stake
+  // Get a list of parties' stake. This endpoint may not be exposed by mainnet nodes.
   rpc ListPartiesStake(ListPartiesStakeRequest) returns (ListPartiesStakeResponse);
 
   // Delegations list
   //
-  // Get a list of delegations
+  // Get a list of delegations. This endpoint may not be exposed by mainnet nodes.
   rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
 }
 
