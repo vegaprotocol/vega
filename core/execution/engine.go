@@ -60,7 +60,7 @@ var (
 	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
 	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
 
-	// ErrStopOrdersNotAcceptedDuringOpeningAuction is returned if a stop order is submitted when the market is in the opening auction
+	// ErrStopOrdersNotAcceptedDuringOpeningAuction is returned if a stop order is submitted when the market is in the opening auction.
 	ErrStopOrdersNotAcceptedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 )
 
