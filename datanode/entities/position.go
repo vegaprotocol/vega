@@ -96,12 +96,25 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
-func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool) {
+func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool, pf num.Decimal) {
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
 	}
-	p.OpenVolume += size
+	// update the open volume (not pending) directly, otherwise the settle position event resets the network position.
+	price, _ := num.UintFromString(trade.AssetPrice, 10)
+	mPrice, _ := num.UintFromString(trade.Price, 10)
+
+	openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, size)
+	realisedPnlDelta := num.DecimalFromUint(price).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
+	p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
+	p.OpenVolume -= closedVolume
+
+	p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, price)
+	p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, mPrice)
+	p.OpenVolume += openedVolume
+	// no MTM - this isn't a settlement event, we're just adding the trade adding distressed volume to network
+	// for the same reason, no syncPending call.
 }
 
 func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
@@ -130,7 +143,7 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingOpenVolume += opened
 	p.pendingMTM(assetPrice, pf)
 	if trade.Type == types.TradeTypeNetworkCloseOutBad {
-		p.updateWithBadTrade(trade, seller)
+		p.updateWithBadTrade(trade, seller, pf)
 	}
 }
 
