@@ -16,6 +16,7 @@
 package sqlstore
 
 import (
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"context"
 	"errors"
 	"fmt"
@@ -176,6 +177,11 @@ func (md *MarketData) getHistoricMarketData(ctx context.Context, marketID string
 	default:
 		query = fmt.Sprintf(`%s where market = %s`, selectStatement,
 			nextBindVar(&args, market))
+		// We want to restrict to just the last price update so we can override the pagination and force it to return just the 1 result
+		first := ptr.From(int32(1))
+		if pagination, err = entities.NewCursorPagination(first, nil, nil, nil, true); err != nil {
+			return nil, pageInfo, err
+		}
 	}
 
 	query, args, err = PaginateQuery[entities.MarketDataCursor](query, args, marketdataOrdering, pagination)
