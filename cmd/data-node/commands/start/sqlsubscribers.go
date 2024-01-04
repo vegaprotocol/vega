@@ -300,6 +300,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.partyLockedBalancesStore = sqlstore.NewPartyLockedBalances(transactionalConnectionSource)
 	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
 	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
+	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
