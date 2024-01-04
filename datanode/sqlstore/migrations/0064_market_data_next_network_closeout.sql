@@ -1,7 +1,7 @@
 -- +goose Up
 
-alter table market_data add column if not exists next_network_closeout timestamp with time zone;
-alter table current_market_data add column if not exists next_network_closeout timestamp with time zone;
+alter table market_data add column if not exists next_network_closeout timestamp with time zone not null default ('1970-01-01 00:00:00Z');
+alter table current_market_data add column if not exists next_network_closeout timestamp with time zone not null default ('1970-01-01 00:00:00Z');
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_market_data()
@@ -83,4 +83,3 @@ RETURN NULL;
 END;
 $$;
 -- +goose StatementEnd
-
