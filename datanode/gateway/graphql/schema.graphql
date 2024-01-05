@@ -4913,6 +4913,31 @@ type ProposalTerms {
   change: ProposalChange!
 }
 
+"Terms for a batch governance proposal on Vega"
+type BatchProposalTermsChange {
+  """
+  RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  Note: Optional as free form proposals do not require it.
+  """
+  enactmentDatetime: Timestamp
+
+  "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
+  change: ProposalChange!
+}
+
+"The rationale behind the proposal"
+type BatchProposalTerms {
+  """
+  RFC3339Nano time and date when voting closes for this proposal.
+  Constrained by "minClose" and "maxClose" network parameters.
+  """
+  closingDatetime: Timestamp!
+
+  "Actual changes being introduced by the proposal - actions the proposal triggers if passed and enacted."
+  changes: [BatchProposalTermsChange]!
+}
+
 """
 Various proposal types that are supported by Vega
 """
@@ -5000,9 +5025,42 @@ type Proposal {
   requiredLpParticipation: String
 }
 
+type BatchProposal {
+  "Proposal ID that is filled by Vega once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on Vega"
+  reference: String!
+  "Party that prepared the proposal"
+  party: Party!
+  "State of the proposal"
+  state: ProposalState!
+  "RFC3339Nano time and date when the proposal reached Vega network"
+  datetime: Timestamp!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
+  "Votes cast for this proposal"
+  votes: ProposalVotes!
+  "Why the proposal was rejected by the core"
+  rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction that can be converted to a percentage"
+  requiredLpMajority: String
+  "The market share of LPs' equity-like share that must take part in the market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the proposal receives only YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
+  requiredLpParticipation: String
+  "Child proposals that are part of the batch"
+  subProposals: [ProposalDetail]
+}
+
 type ProposalDetail {
   "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
+  "Parent proposal ID that is provided by Vega once proposal reaches the network"
+  batchId: ID
   "A UUID reference to aid tracking proposals on Vega"
   reference: String!
   "Party that prepared the proposal"
@@ -5011,8 +5069,10 @@ type ProposalDetail {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
-  "Terms of the proposal"
-  terms: ProposalTerms!
+  "Terms of the proposal - in case of single proposal"
+  terms: ProposalTerms
+  "Terms of the proposal - in case of batch proposal"
+  batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Why the proposal was rejected by the core"
@@ -5966,10 +6026,12 @@ enum TransferDirection {
   ToOrFrom
 }
 
+union ProposalNode = Proposal | BatchProposal
+
 "Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
-  node: Proposal!
+  node: ProposalNode!
   "Cursor identifying the proposal"
   cursor: String!
 }

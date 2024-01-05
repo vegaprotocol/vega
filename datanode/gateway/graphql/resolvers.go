@@ -191,6 +191,11 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
 }
 
+// Proposal returns the proposal resolver.
+func (r *VegaResolverRoot) ProposalEdge() ProposalEdgeResolver {
+	return (*proposalEdgeResolver)(r)
+}
+
 // ProposalDetail returns the Proposal detail resolver.
 func (r *VegaResolverRoot) ProposalDetail() ProposalDetailResolver {
 	return (*proposalDetailResolver)(r)
@@ -266,6 +271,14 @@ func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
 
 func (r *VegaResolverRoot) ProposalTerms() ProposalTermsResolver {
 	return (*proposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTerms() BatchProposalTermsResolver {
+	return (*batchProposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTermsChange() BatchProposalTermsChangeResolver {
+	return (*batchProposalTermsChangeResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateMarket() UpdateMarketResolver {
