@@ -435,7 +435,7 @@ Feature: stop orders in all market types
 
 
 
-  Scenario:3 Make sure we can send buy side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
+  Scenario:3 Make sure we cannot send buy side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount   |
@@ -473,16 +473,16 @@ Feature: stop orders in all market types
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type        | tif     | expires in | only    | fb price trigger | ra price trigger | reference | error |
-      | party1  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   |    |
-      | party2  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   |    |
-      | party3  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   |    |
-      | party4  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   |    |
-      | party5  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   |    |
-      | party6  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   |    |
-      | party7  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   |    |
-      | party8  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party9  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party10 | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  |    |
+      | party1  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   | stop orders are not accepted during the opening auction   |
+      | party2  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   | stop orders are not accepted during the opening auction   |
+      | party3  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   | stop orders are not accepted during the opening auction   |
+      | party4  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   | stop orders are not accepted during the opening auction   |
+      | party5  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   | stop orders are not accepted during the opening auction   |
+      | party6  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   | stop orders are not accepted during the opening auction   |
+      | party7  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   | stop orders are not accepted during the opening auction   |
+      | party8  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party9  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party10 | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  | stop orders are not accepted during the opening auction   |
 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -501,7 +501,7 @@ Feature: stop orders in all market types
 
 
 
-  Scenario:3b Make sure we can send buy side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
+  Scenario:3b Make sure we cannot send buy side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount   |
@@ -539,16 +539,16 @@ Feature: stop orders in all market types
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type        | tif     | expires in | only    | fb price trigger | ra price trigger | reference | error |
-      | party1  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   |    |
-      | party2  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   |    |
-      | party3  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   |    |
-      | party4  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   |    |
-      | party5  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   |    |
-      | party6  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   |    |
-      | party7  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   |    |
-      | party8  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party9  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party10 | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  |    |
+      | party1  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   | stop orders are not accepted during the opening auction |
+      | party2  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   | stop orders are not accepted during the opening auction |
+      | party3  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   | stop orders are not accepted during the opening auction |
+      | party4  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   | stop orders are not accepted during the opening auction |
+      | party5  | ETH/DEC23 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   | stop orders are not accepted during the opening auction |
+      | party6  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   | stop orders are not accepted during the opening auction |
+      | party7  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   | stop orders are not accepted during the opening auction |
+      | party8  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction |
+      | party9  | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction |
+      | party10 | ETH/DEC23 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  | stop orders are not accepted during the opening auction |
 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -564,7 +564,7 @@ Feature: stop orders in all market types
 
 
 
-  Scenario:4 Make sure we can send sell side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
+  Scenario:4 Make sure we cannot send sell side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount   |
@@ -602,16 +602,16 @@ Feature: stop orders in all market types
 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type        | tif     | expires in | only    | fb price trigger | ra price trigger | reference | error |
-      | party1  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   |    |
-      | party2  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   |    |
-      | party3  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   |    |
-      | party4  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   |    |
-      | party5  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   |    |
-      | party6  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   |    |
-      | party7  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   |    |
-      | party8  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party9  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party10 | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  |    |
+      | party1  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   | stop orders are not accepted during the opening auction   |
+      | party2  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   | stop orders are not accepted during the opening auction   |
+      | party3  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   | stop orders are not accepted during the opening auction   |
+      | party4  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   | stop orders are not accepted during the opening auction   |
+      | party5  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   | stop orders are not accepted during the opening auction   |
+      | party6  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   | stop orders are not accepted during the opening auction   |
+      | party7  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   | stop orders are not accepted during the opening auction   |
+      | party8  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party9  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party10 | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  | stop orders are not accepted during the opening auction   |
 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -626,7 +626,7 @@ Feature: stop orders in all market types
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC23"
 
 
-  Scenario:4b Make sure we can send sell side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
+  Scenario:4b Make sure we cannot send sell side stop orders with all possible TIFs and order types (MARKET/LIMIT) while in auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount   |
@@ -664,16 +664,16 @@ Feature: stop orders in all market types
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type        | tif     | expires in | only    | fb price trigger | ra price trigger | reference | error |
-      | party1  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   |    |
-      | party2  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   |    |
-      | party3  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   |    |
-      | party4  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   |    |
-      | party5  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   |    |
-      | party6  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   |    |
-      | party7  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   |    |
-      | party8  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party9  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   |    |
-      | party10 | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  |    |
+      | party1  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTT | 50         | reduce  | 899              | 1101             | stop1-1   | stop orders are not accepted during the opening auction   |
+      | party2  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC |            | reduce  | 899              | 1101             | stop2-1   | stop orders are not accepted during the opening auction   |
+      | party3  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC |            | reduce  | 899              | 1101             | stop3-1   | stop orders are not accepted during the opening auction   |
+      | party4  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_FOK |            | reduce  | 899              | 1101             | stop4-1   | stop orders are not accepted during the opening auction   |
+      | party5  | ETH/DEC23 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_GFA |            | reduce  | 899              | 1101             | stop5-1   | stop orders are not accepted during the opening auction   |
+      | party6  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTT | 50         | reduce  | 899              | 1101             | stop6-1   | stop orders are not accepted during the opening auction   |
+      | party7  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |            | reduce  | 899              | 1101             | stop7-1   | stop orders are not accepted during the opening auction   |
+      | party8  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_IOC |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party9  | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_FOK |            | reduce  | 899              | 1101             | stop8-1   | stop orders are not accepted during the opening auction   |
+      | party10 | ETH/DEC23 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GFA |            | reduce  | 899              | 1101             | stop10-1  | stop orders are not accepted during the opening auction   |
 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction

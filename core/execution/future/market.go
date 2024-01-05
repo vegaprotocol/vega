@@ -1660,6 +1660,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 	}()
 
+	if m.IsOpeningAuction() {
+		rejectStopOrders(types.StopOrderRejectionNotAllowedDuringOpeningAuction, fallsBelow, risesAbove)
+		return nil, common.ErrStopOrderNotAllowedDuringOpeningAuction
+	}
+
 	if !m.canTrade() {
 		rejectStopOrders(types.StopOrderRejectionTradingNotAllowed, fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed

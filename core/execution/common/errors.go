@@ -76,4 +76,6 @@ var (
 	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
 	ErrStopOrderExpiryInThePast                             = errors.New("stop order expiry in the past")
 	ErrPartyHasNoExistingLiquidityProvision                 = errors.New("party has no existing liquidity provision")
+	// ErrStopOrderNotAllowedDuringOpeningAuction is returned if a trader attempts to send a stop order to a market that is in opening auction.
+	ErrStopOrderNotAllowedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 )

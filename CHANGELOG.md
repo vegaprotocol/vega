@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.11
+
+### 🐛 Fixes
+
+- [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
+
 ## 0.73.10
 
 ### 🐛 Fixes

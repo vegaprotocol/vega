@@ -99,7 +99,7 @@ Feature: stop orders
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -413,8 +413,8 @@ Feature: stop orders
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 5      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -532,7 +532,7 @@ Feature: stop orders
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -590,7 +590,7 @@ Feature: stop orders
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1354,6 +1354,7 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
 
+
   Scenario: If a trader has open stop orders and their position moves to zero whilst they still have open limit orders their stop orders will remain active. (0014-ORDT-067)
 
     # setup accounts
@@ -1374,7 +1375,7 @@ Feature: stop orders
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1652,7 +1653,7 @@ Scenario: A stop order cannot be triggered by orders crossing during an auction.
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC20 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC20 | 2         | 1                    | sell | ASK              | 50         | 100    |
-    
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1799,7 +1800,7 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1867,7 +1868,7 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
       | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
       | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 100    |
       | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 100    |
- 
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
