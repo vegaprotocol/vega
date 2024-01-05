@@ -106,6 +106,7 @@
 - [10285](https://github.com/vegaprotocol/vega/issues/10285) - Fix `MTM` settlement panic.
 - [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
 - [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
+- [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
 
 ## 0.73.0
 

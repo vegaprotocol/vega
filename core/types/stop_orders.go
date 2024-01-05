@@ -83,14 +83,15 @@ type StopOrderRejectionReason = vega.StopOrder_RejectionReason
 
 const (
 	// Never valid.
-	StopOrderRejectionUnspecified                  StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
-	StopOrderRejectionTradingNotAllowed            StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
-	StopOrderRejectionExpiryInThePast              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
-	StopOrderRejectionMustBeReduceOnly             StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
-	StopOrderRejectionMaxStopOrdersPerPartyReached StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
-	StopOrderRejectionNotAllowedWithoutAPosition   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
-	StopOrderRejectionNotClosingThePosition        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
-	StopOrderRejectionLinkedPercentageInvalid      StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID
+	StopOrderRejectionUnspecified                    StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_UNSPECIFIED
+	StopOrderRejectionTradingNotAllowed              StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_TRADING_NOT_ALLOWED
+	StopOrderRejectionExpiryInThePast                StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_EXPIRY_IN_THE_PAST
+	StopOrderRejectionMustBeReduceOnly               StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MUST_BE_REDUCE_ONLY
+	StopOrderRejectionMaxStopOrdersPerPartyReached   StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED
+	StopOrderRejectionNotAllowedWithoutAPosition     StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
+	StopOrderRejectionNotClosingThePosition          StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+	StopOrderRejectionLinkedPercentageInvalid        StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID
+	StopOrderRejectionNotAllowedDuringOpeningAuction StopOrderRejectionReason = vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
 )
 
 type StopOrderExpiry struct {

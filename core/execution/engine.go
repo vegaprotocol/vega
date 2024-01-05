@@ -51,7 +51,7 @@ var (
 	// ErrSuccessorMarketDoesNotExists is returned when SucceedMarket call is made with an invalid successor market ID.
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
 
-	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
+	// ErrParentMarketNotEnactedYet is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
 
 	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
@@ -59,6 +59,9 @@ var (
 
 	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
 	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
+
+	// ErrStopOrdersNotAcceptedDuringOpeningAuction is returned if a stop order is submitted when the market is in the opening auction.
+	ErrStopOrdersNotAcceptedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 )
 
 // Engine is the execution engine.
