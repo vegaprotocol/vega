@@ -986,11 +986,6 @@ func (e *Engine) SubmitStopOrders(
 	}
 
 	if mkt, ok := e.allMarkets[market]; ok {
-		// Stop orders are rejected if the market is in the opening auction
-		if mkt.IsOpeningAuction() {
-			return nil, ErrStopOrdersNotAcceptedDuringOpeningAuction
-		}
-
 		conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 			ctx, submission, party, idgen, fallsBelowID, risesAboveID)
 		if err != nil {

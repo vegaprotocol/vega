@@ -73,6 +73,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
     // The percentage value for the linked stop order is invalid
     REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID = 7;
+    // Stop orders are not allowed during the opening auction
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION = 8;
   }
 
   // ID of this stop order
