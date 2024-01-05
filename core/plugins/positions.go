@@ -180,17 +180,21 @@ func (p *Positions) handleTradeEvent(e TE) {
 		}
 	}
 	if trade.Seller == types.NetworkParty {
-		size -= size
+		size *= -1
 	}
 	opened, closed := calculateOpenClosedVolume(pos.OpenVolume, size)
 	realisedPnlDelta := markPriceDec.Sub(pos.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closed)).Div(posFactor)
 	pos.RealisedPnl = pos.RealisedPnl.Add(realisedPnlDelta)
 	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(realisedPnlDelta)
+	// what was realised is no longer unrealised
+	pos.UnrealisedPnl = pos.UnrealisedPnl.Sub(realisedPnlDelta)
+	pos.UnrealisedPnlFP = pos.UnrealisedPnlFP.Sub(realisedPnlDelta)
 	pos.OpenVolume -= closed
 
 	pos.AverageEntryPriceFP = updateVWAP(pos.AverageEntryPriceFP, pos.OpenVolume, opened, mPrice)
 	pos.AverageEntryPrice, _ = num.UintFromDecimal(pos.AverageEntryPriceFP.Round(0))
 	pos.OpenVolume += opened
+	mtm(&pos, mPrice, posFactor)
 	partyPos[types.NetworkParty] = pos
 	p.data[marketID] = partyPos
 }

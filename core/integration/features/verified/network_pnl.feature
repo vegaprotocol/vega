@@ -20,7 +20,7 @@ Feature: Profit and loss for network a running liquidation strategy
       | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         | liquidation-strat    | default-basic |
 
 
-  @NoPerp
+  @NoPerp @NetPNL
   Scenario: Network liquidates distressed parties and has positive pnl
 
     # Setup the market
