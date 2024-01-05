@@ -95,18 +95,27 @@ type SME interface {
 	TxHash() string
 }
 
+// TE TradeEvent.
+type TE interface {
+	MarketID() string
+	IsParty(id string) bool // we don't use this one, but it's to make sure we identify the event correctly
+	Trade() vega.Trade
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
-	mu   *sync.RWMutex
-	data map[string]map[string]Position
+	mu      *sync.RWMutex
+	data    map[string]map[string]Position
+	factors map[string]num.Decimal
 }
 
 func NewPositions(ctx context.Context) *Positions {
 	return &Positions{
-		Base: subscribers.NewBase(ctx, 10, true),
-		mu:   &sync.RWMutex{},
-		data: map[string]map[string]Position{},
+		Base:    subscribers.NewBase(ctx, 10, true),
+		mu:      &sync.RWMutex{},
+		data:    map[string]map[string]Position{},
+		factors: map[string]num.Decimal{},
 	}
 }
 
@@ -132,9 +141,58 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.handleSettleMarket(te)
 		case FP:
 			p.handleFundingPayments(te)
+		case TE:
+			p.handleTradeEvent(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+// handle trade event closing distressed parties.
+func (p *Positions) handleTradeEvent(e TE) {
+	trade := e.Trade()
+	if trade.Type != types.TradeTypeNetworkCloseOutBad {
+		return
+	}
+	marketID := e.MarketID()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		return
+	}
+	posFactor := num.DecimalOne()
+	// keep track of position factors
+	if pf, ok := p.factors[marketID]; ok {
+		posFactor = pf
+	}
+	mPrice, _ := num.UintFromString(trade.Price, 10)
+	markPriceDec := num.DecimalFromUint(mPrice)
+	size := int64(trade.Size)
+	pos, ok := partyPos[types.NetworkParty]
+	if !ok {
+		pos = Position{
+			Position: types.Position{
+				MarketID: marketID,
+				PartyID:  types.NetworkParty,
+			},
+			AverageEntryPriceFP: num.DecimalZero(),
+			RealisedPnlFP:       num.DecimalZero(),
+			UnrealisedPnlFP:     num.DecimalZero(),
+		}
+	}
+	if trade.Seller == types.NetworkParty {
+		size -= size
+	}
+	opened, closed := calculateOpenClosedVolume(pos.OpenVolume, size)
+	realisedPnlDelta := markPriceDec.Sub(pos.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closed)).Div(posFactor)
+	pos.RealisedPnl = pos.RealisedPnl.Add(realisedPnlDelta)
+	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(realisedPnlDelta)
+	pos.OpenVolume -= closed
+
+	pos.AverageEntryPriceFP = updateVWAP(pos.AverageEntryPriceFP, pos.OpenVolume, opened, mPrice)
+	pos.AverageEntryPrice, _ = num.UintFromDecimal(pos.AverageEntryPriceFP.Round(0))
+	pos.OpenVolume += opened
+	partyPos[types.NetworkParty] = pos
+	p.data[marketID] = partyPos
 }
 
 func (p *Positions) handleFundingPayments(e FP) {
@@ -256,6 +314,10 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 func (p *Positions) handleSettleMarket(e SME) {
 	market := e.MarketID()
 	posFactor := e.PositionFactor()
+	// keep track of position factors
+	if _, ok := p.factors[market]; !ok {
+		p.factors[market] = posFactor
+	}
 	markPriceDec := num.DecimalFromUint(e.SettledPrice())
 	mp, ok := p.data[market]
 	if !ok {
@@ -475,5 +537,6 @@ func (p *Positions) Types() []events.Type {
 		events.DistressedPositionsEvent,
 		events.SettleMarketEvent,
 		events.FundingPaymentsEvent,
+		events.TradeEvent,
 	}
 }

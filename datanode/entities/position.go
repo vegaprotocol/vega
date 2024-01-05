@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -95,12 +96,36 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
+func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool, pf num.Decimal) {
+	size := int64(trade.Size)
+	if seller {
+		size *= -1
+	}
+	// update the open volume (not pending) directly, otherwise the settle position event resets the network position.
+	price, _ := num.UintFromString(trade.AssetPrice, 10)
+	mPrice, _ := num.UintFromString(trade.Price, 10)
+
+	openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, size)
+	realisedPnlDelta := num.DecimalFromUint(price).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
+	p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
+	p.OpenVolume -= closedVolume
+
+	p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, price)
+	p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, mPrice)
+	p.OpenVolume += openedVolume
+	// no MTM - this isn't a settlement event, we're just adding the trade adding distressed volume to network
+	// for the same reason, no syncPending call.
+}
+
 func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
 	}
+	// close out trade doesn't require the MTM calculation to be performed
+	// the distressed trader will be handled through a settle distressed event, the network
+	// open volume should just be updated, the average entry price is unchanged.
 	assetPrice, _ := num.DecimalFromString(trade.AssetPrice)
 	marketPrice, _ := num.DecimalFromString(trade.Price)
 
@@ -117,6 +142,9 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
 	p.pendingMTM(assetPrice, pf)
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		p.updateWithBadTrade(trade, seller, pf)
+	}
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {
