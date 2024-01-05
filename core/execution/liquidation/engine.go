@@ -147,7 +147,7 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error
 	size := uint64(vol)
 	if size > e.cfg.FullDisposalSize {
 		// absolute size of network position * disposal fraction -> rounded
-		size = uint64(num.DecimalFromFloat(float64(size)).Mul(e.cfg.DisposalFraction).Round(0).IntPart())
+		size = uint64(num.DecimalFromFloat(float64(size)).Mul(e.cfg.DisposalFraction).Ceil().IntPart())
 	}
 	available := e.book.GetVolumeAtPrice(bound, bookSide)
 	if available == 0 {
