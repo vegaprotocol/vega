@@ -21,7 +21,7 @@ Feature: Profit and loss for network a running liquidation strategy
 
 
   @NoPerp @NetPNL
-  Scenario: Network liquidates distressed parties and has positive pnl
+  Scenario: Network long then liquidates short positions
 
     # Setup the market
     Given the initial insurance pool balance is "10000" for all the markets
@@ -75,9 +75,7 @@ Feature: Profit and loss for network a running liquidation strategy
       | aux1  | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/MAR22 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" blocks
-    Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            |
-      | 100        | TRADING_MODE_CONTINUOUS |
+    Then the mark price should be "100" for the market "ETH/MAR22"
     And the parties should have the following profit and loss:
       | party       | volume | unrealised pnl | realised pnl |
       | atRiskParty | 0      | 0              | -100         |
@@ -103,7 +101,6 @@ Feature: Profit and loss for network a running liquidation strategy
       | party       | asset    | market id | margin | general |
       | atRiskParty | USD.0.10 | ETH/MAR22 | 18     | 2       |
 
-
     # Market moves against atRiskParty whom is liquidated
     Given the parties amend the following orders:
       | party | reference | price | size delta | tif     |
@@ -114,12 +111,142 @@ Feature: Profit and loss for network a running liquidation strategy
       | aux1  | ETH/MAR22 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/MAR22 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" blocks
-    Then debug trades
-    Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            |
-      | 120        | TRADING_MODE_CONTINUOUS |
+    Then the mark price should be "120" for the market "ETH/MAR22"
     And the parties should have the following profit and loss:
       | party       | volume | unrealised pnl | realised pnl |
       | atRiskParty | 0      | 0              | -140         |
       | network     | -1     | 0              | 20           |
     And the insurance pool balance should be "10000" for the market "ETH/MAR22"
+
+    # Market moves in favour of the network
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-bid  | 59    | 0          | TIF_GTC |
+      | lp1   | best-ask  | 61    | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 60    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 60    | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "60" for the market "ETH/MAR22"
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -140         |
+      | network     | -1     | 60             | 20           |
+    And the insurance pool balance should be "10060" for the market "ETH/MAR22"
+
+
+  @NoPerp @NetPNL
+  Scenario: Network long then liquidates further long positions
+
+    # Setup the market
+    Given the initial insurance pool balance is "10000" for all the markets
+    And the parties deposit on asset's general account the following amount:
+      | party | asset    | amount       |
+      | lp1   | USD.0.10 | 100000000000 |
+      | aux1  | USD.0.10 | 10000000000  |
+      | aux2  | USD.0.10 | 10000000000  |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 500000            | 0   | submission |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp1   | ETH/MAR22 | buy  | 1000   | 199   | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
+      | lp1   | ETH/MAR22 | sell | 1000   | 201   | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/MAR22"
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            |
+      | 200        | TRADING_MODE_CONTINUOUS |
+
+    # atRiskPary opens a long position
+    Given the parties deposit on asset's general account the following amount:
+      | party       | asset    | amount |
+      | atRiskParty | USD.0.10 | 100    |
+    And the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1        | ETH/MAR22 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | atRiskParty | ETH/MAR22 | buy  | 1      | 200   | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 1      | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party       | market id | maintenance | search | initial | release |
+      | atRiskParty | ETH/MAR22 | 15          | 16     | 18      | 21      |
+    And the parties should have the following account balances:
+      | party       | asset    | market id | margin | general |
+      | atRiskParty | USD.0.10 | ETH/MAR22 | 16     | 84      |
+
+    # Market moves against atRiskParty whom is liquidated
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-bid  | 99    | 0          | TIF_GTC |
+      | lp1   | best-ask  | 101   | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "100" for the market "ETH/MAR22"
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -100         |
+      | network     | 1      | 0              | 0            |
+    And the insurance pool balance should be "10000" for the market "ETH/MAR22"
+
+    # atRiskPary opens a long position
+    Given the parties deposit on asset's general account the following amount:
+      | party       | asset    | amount |
+      | atRiskParty | USD.0.10 | 10     |
+    And the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1        | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | atRiskParty | ETH/MAR22 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 1      | 0              | -100         |
+    And the parties should have the following margin levels:
+      | party       | market id | maintenance | search | initial | release |
+      | atRiskParty | ETH/MAR22 | 8           | 8      | 9       | 11      |
+    And the parties should have the following account balances:
+      | party       | asset    | market id | margin | general |
+      | atRiskParty | USD.0.10 | ETH/MAR22 | 8      | 2       |
+
+    # Market moves against atRiskParty whom is liquidated
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-bid  | 89    | 0          | TIF_GTC |
+      | lp1   | best-ask  | 91    | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 90    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 90    | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "90" for the market "ETH/MAR22"
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -110         |
+      | network     | 2      | -10            | 0            |
+    And the insurance pool balance should be "9990" for the market "ETH/MAR22"
+
+    # Market moves against the network
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-bid  | 59    | 0          | TIF_GTC |
+      | lp1   | best-ask  | 61    | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR22 | buy  | 1      | 60    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR22 | sell | 1      | 60    | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "60" for the market "ETH/MAR22"
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -110         |
+      | network     | 2      | -70            | 0            |
+    And the insurance pool balance should be "9930" for the market "ETH/MAR22"
