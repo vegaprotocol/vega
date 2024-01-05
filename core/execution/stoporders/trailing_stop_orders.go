@@ -66,10 +66,9 @@ type TrailingStopOrders struct {
 
 func NewTrailingStopOrders() *TrailingStopOrders {
 	return &TrailingStopOrders{
-		lastSeenPrice: num.UintZero(),
-		orders:        map[string]orderAtOffsetStat{},
-		risesAbove:    btree.NewG(2, lessFuncOffsetsAtPrice),
-		fallsBelow:    btree.NewG(2, lessFuncOffsetsAtPrice),
+		orders:     map[string]orderAtOffsetStat{},
+		risesAbove: btree.NewG(2, lessFuncOffsetsAtPrice),
+		fallsBelow: btree.NewG(2, lessFuncOffsetsAtPrice),
 	}
 }
 
