@@ -847,9 +847,10 @@ func TestGetAllMarketData(t *testing.T) {
 	store, err := setupMarketData(t, ctx)
 	require.NoError(t, err)
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
+	startDate := time.Date(2022, 2, 11, 0, 0, 0, 0, time.UTC)
 
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
-		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, nil, entities.CursorPagination{})
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, &startDate, nil, entities.CursorPagination{})
 		assert.NoError(t, err)
 		assert.Equal(t, 184, len(got))
 		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
@@ -870,7 +871,7 @@ func TestGetAllMarketData(t *testing.T) {
 		first := int32(10)
 		pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
 		require.NoError(t, err)
-		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, nil, pagination)
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, &startDate, nil, pagination)
 		assert.NoError(t, err)
 		assert.Equal(t, 10, len(got))
 		assert.Equal(t, entities.PageInfo{
@@ -882,6 +883,24 @@ func TestGetAllMarketData(t *testing.T) {
 			EndCursor: entities.NewCursor(entities.MarketDataCursor{
 				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o1, 49, 9000, time.UTC).Local(),
 			}.String()).Encode(),
+		}, pageInfo)
+	})
+
+	t.Run("should return the most recent record if no dates and no cursor pagination is provided", func(t *testing.T) {
+		got, pageInfo, err := store.GetHistoricMarketData(ctx, market, nil, nil, entities.CursorPagination{})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(got))
+		wantStartCursor := entities.NewCursor(entities.MarketDataCursor{
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
+		}.String()).Encode()
+		wantEndCursor := entities.NewCursor(entities.MarketDataCursor{
+			SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 41, 183000, time.UTC).Local(),
+		}.String()).Encode()
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     true,
+			HasPreviousPage: false,
+			StartCursor:     wantStartCursor,
+			EndCursor:       wantEndCursor,
 		}, pageInfo)
 	})
 }
