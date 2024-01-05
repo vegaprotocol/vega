@@ -32,6 +32,8 @@ var (
 	defaultLiquidationConfigFileNames = []string{
 		"defaults/liquidation-config/legacy-liquidation-strategy.json",
 		"defaults/liquidation-config/default-liquidation-strat.json",
+		"defaults/liquidation-config/slow-liquidation-strat.json",
+		"defaults/liquidation-config/AC-013-strat.json",
 	}
 
 	defaultStrat = "legacy-liquidation-strategy"
@@ -60,8 +62,8 @@ func newLiquidationConfig(unmarshaler *defaults.Unmarshaler) *liquidationConfig 
 	return config
 }
 
-func (f *liquidationConfig) Add(name string, fees *types.LiquidationStrategy) error {
-	f.config[name] = fees
+func (f *liquidationConfig) Add(name string, strategy *types.LiquidationStrategy) error {
+	f.config[name] = strategy
 	return nil
 }
 
@@ -70,13 +72,13 @@ func (f *liquidationConfig) Get(name string) (*types.LiquidationStrategy, error)
 		// for now, default to the legacy strategy
 		name = defaultStrat
 	}
-	fees, ok := f.config[name]
+	strategy, ok := f.config[name]
 	if !ok {
-		return fees, fmt.Errorf("no liquidation configuration \"%s\" registered", name)
+		return strategy, fmt.Errorf("no liquidation configuration \"%s\" registered", name)
 	}
 	// Copy to avoid modification between tests.
 	copyConfig := &types.LiquidationStrategy{}
-	if err := copier.Copy(copyConfig, fees); err != nil {
+	if err := copier.Copy(copyConfig, strategy); err != nil {
 		panic(fmt.Errorf("failed to deep copy liquidation config: %v", err))
 	}
 	return copyConfig, nil

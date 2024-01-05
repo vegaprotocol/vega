@@ -52,6 +52,7 @@
 - [9948](https://github.com/vegaprotocol/vega/issues/9948) - Add support for linked stop orders.
 - [9849](https://github.com/vegaprotocol/vega/issues/9849) - Add database support for `num.Uint`.
 - [10275](https://github.com/vegaprotocol/vega/issues/10275) - Add API to list party's margin mode.
+- [459](https://github.com/vegaprotocol/core-test-coverage/issues/459) - Add liquidation test coverage with market updates.
 
 ### 🐛 Fixes
 

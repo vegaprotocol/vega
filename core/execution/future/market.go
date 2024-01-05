@@ -567,8 +567,9 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
 	recalcMargins := !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel)
-	// update the liquidation strategy if required.
-	if !m.mkt.LiquidationStrategy.EQ(config.LiquidationStrategy) {
+	// update the liquidation strategy if required, ideally we want to use .LiquidationStrategy.EQ(), but that breaks the integration tests
+	// as the market config pointer is shared
+	if config.LiquidationStrategy != nil {
 		m.liquidation.Update(config.LiquidationStrategy)
 	}
 	m.mkt = config
