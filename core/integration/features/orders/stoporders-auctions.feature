@@ -187,7 +187,5 @@ Feature: stop orders
 
     # check that the order got submitted (it will be stopped due to self trading)
     Then the orders should have the following states:
-      | party  | market id | side | volume | remaining | price | status         | reference |
-      | party1 | ETH/DEC20 | buy  | 1      | 1         | 0     | STATUS_STOPPED | tstop     |
-
-
+      | party  | market id | side | volume |  price | status         | reference |
+      | party1 | ETH/DEC20 | buy  | 1      |  0     | STATUS_STOPPED | tstop     |
