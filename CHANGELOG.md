@@ -104,6 +104,7 @@
 - [10251](https://github.com/vegaprotocol/vega/issues/10251) - Add batch proposal API and fix batch proposal submission.
 - [10285](https://github.com/vegaprotocol/vega/issues/10285) - Fix `MTM` settlement panic.
 - [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
+- [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
 
 ## 0.73.0
 
@@ -3059,6 +3060,7 @@ This release contains a fix (read: large reduction in memory use) around auction
 - [#2596](https://github.com/vegaprotocol/vega/pull/2496) Create liquidity measurement API
 - [#2490](https://github.com/vegaprotocol/vega/pull/2490) GraphQL: Add Withdrawal and Deposit events to event bus
 - [#2476](https://github.com/vegaprotocol/vega/pull/2476) 🔥`MarketData` now uses RFC339 formatted times, not seconds
+-
 - [#2473](https://github.com/vegaprotocol/vega/pull/2473) Add network parameters related to target stake calculation
 - [#2506](https://github.com/vegaprotocol/vega/pull/2506) Network parameters can now contain JSON configuration
 
