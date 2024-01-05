@@ -41,7 +41,10 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
         string( name: 'NODE_LABEL', defaultValue: 'core-build',
                 description: 'Label on which vega build should be run, if empty any any node is used')
+        string( name: 'DOWNSTREAM_NODE_LABEL', defaultValue: 'core-build',
+                description: 'The node label for downstream jobs like system-tests, etc.')
     }
+    
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
@@ -255,20 +258,26 @@ pipeline {
                 }
                 stage('Vegavisor autoinstall and pup') {
                     steps {
+                        visorAutoinstallParams = [
+                            string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases-system-tests'),
+                            string(name: 'VEGA_BRANCH', value: commitHash),
+                            string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
+                            string(name: 'VEGATOOLS_BRANCH', value: params.VEGATOOLS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegatools),
+                            string(name: 'VEGACAPSULE_BRANCH', value: params.VEGACAPSULE_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegaCapsule),
+                            string(name: 'DEVOPSSCRIPTS_BRANCH', value: params.DEVOPSSCRIPTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchDevopsScripts),
+                            booleanParam(name: 'CREATE_RELEASE', value: true),
+                            string(name: 'JENKINS_SHARED_LIB_BRANCH', value: params.JENKINS_SHARED_LIB_BRANCH ?: pipelineDefaults.capsuleSystemTests.jenkinsSharedLib),
+                        ]
+
+                        if (params.DOWNSTREAM_NODE_LABEL && params.DOWNSTREAM_NODE_LABEL.length() > 0) {
+                            visorAutoinstallParams << string(name: 'NODE_LAbel', value: params.DOWNSTREAM_NODE_LABEL)
+                        }
+                        
                         build(
                             job: '/common/visor-autoinstall-and-pup',
                             propagate: true, // fast fail
                             wait: true,
-                            parameters: [
-                                string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases-system-tests'),
-                                string(name: 'VEGA_BRANCH', value: commitHash),
-                                string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
-                                string(name: 'VEGATOOLS_BRANCH', value: params.VEGATOOLS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegatools),
-                                string(name: 'VEGACAPSULE_BRANCH', value: params.VEGACAPSULE_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegaCapsule),
-                                string(name: 'DEVOPSSCRIPTS_BRANCH', value: params.DEVOPSSCRIPTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchDevopsScripts),
-                                booleanParam(name: 'CREATE_RELEASE', value: true),
-                                string(name: 'JENKINS_SHARED_LIB_BRANCH', value: params.JENKINS_SHARED_LIB_BRANCH ?: pipelineDefaults.capsuleSystemTests.jenkinsSharedLib),
-                            ]
+                            parameters: 
                         )
                     }
                 }
@@ -284,7 +293,8 @@ pipeline {
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
-                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH,
+                                downstreamNodeLabel: params.DOWNSTREAM_NODE_LABEL,
                         }
                     }
                 }
