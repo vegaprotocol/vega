@@ -13,28 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package types
+package parties
 
-import vegapb "code.vegaprotocol.io/vega/protos/vega"
+import (
+	"code.vegaprotocol.io/vega/core/events"
+)
 
-type PartyID string
-
-func (p PartyID) String() string {
-	return string(p)
-}
-
-type Party struct {
-	Id string
-}
-
-func (p Party) IntoProto() *vegapb.Party {
-	return &vegapb.Party{
-		Id: p.Id,
-	}
-}
-
-type PartyProfile struct {
-	PartyID  PartyID
-	Alias    string
-	Metadata map[string]string
+// Broker is used to notify administrative actions on parties profiles.
+type Broker interface {
+	Send(event events.Event)
 }

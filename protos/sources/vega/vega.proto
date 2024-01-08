@@ -6,6 +6,25 @@ import "vega/markets.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+// Holds metadata associated to a party.
+message PartyProfile {
+  // Party ID associated to the profile.
+  string party_id = 1;
+  // Alias given to the party.
+  string alias = 2;
+  // Metadata to associate to a party, in a key/value format where the key
+  // describes the type of metadata in the value field.
+  repeated vega.Metadata metadata = 3;
+}
+
+// Generic structure holding a key/value pair.
+message Metadata {
+  // Key of the metadata.
+  string key = 1;
+  // Value of the metadata.
+  string value = 2;
+}
+
 message StopOrder {
   message SizeOverrideValue {
     // Scaling percentage of the current position’s size

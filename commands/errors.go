@@ -86,6 +86,11 @@ var (
 	ErrSizeIsTooLarge                                  = errors.New("size is too large")
 	ErrCannotSetAllowListWhenTeamIsOpened              = errors.New("cannot set allow list when team is opened")
 	ErrSettingAllowListRequireSettingClosedState       = errors.New("setting an allow list requires setting the closed state")
+	ErrIsLimitedTo32Characters                         = errors.New("is limited to 32 characters")
+	ErrIsLimitedTo10Entries                            = errors.New("is limited to 10 entries")
+	ErrIsLimitedTo255Characters                        = errors.New("is limited to 255 characters")
+	ErrCannotBeBlank                                   = errors.New("cannot be blank")
+	ErrIsDuplicated                                    = errors.New("is duplicated")
 )
 
 type Errors map[string][]error

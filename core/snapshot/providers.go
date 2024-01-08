@@ -59,6 +59,7 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.ReferralProgramSnapshot,
 	types.ActivityStreakSnapshot,
 	types.VolumeDiscountProgramSnapshot,
+	types.PartiesSnapshot,
 }
 
 func groupPayloadsPerNamespace(payloads []*types.Payload) map[types.SnapshotNamespace][]*types.Payload {

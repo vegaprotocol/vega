@@ -256,6 +256,8 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkUpdateMarginMode(cmd.UpdateMarginMode))
 		case *commandspb.InputData_JoinTeam:
 			errs.Merge(checkJoinTeam(cmd.JoinTeam))
+		case *commandspb.InputData_UpdatePartyProfile:
+			errs.Merge(checkUpdatePartyProfile(cmd.UpdatePartyProfile))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

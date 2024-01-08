@@ -99,6 +99,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckUpdateMarginMode(cmd.UpdateMarginMode)
 	case *walletpb.SubmitTransactionRequest_JoinTeam:
 		cmdErr = commands.CheckJoinTeam(cmd.JoinTeam)
+	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
+		cmdErr = commands.CheckUpdatePartyProfile(cmd.UpdatePartyProfile)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -245,6 +247,10 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
 		data.Command = &commandspb.InputData_BatchProposalSubmission{
 			BatchProposalSubmission: req.GetBatchProposalSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
+		data.Command = &commandspb.InputData_UpdatePartyProfile{
+			UpdatePartyProfile: req.GetUpdatePartyProfile(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

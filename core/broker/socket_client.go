@@ -262,7 +262,7 @@ func (s *socketClient) Receive(ctx context.Context) (<-chan events.Event, <-chan
 
 			evt := toEvent(ctx, &be)
 			if evt == nil {
-				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
+				s.log.Error("Cannot convert proto event to internal event", logging.String("event_type", be.GetType().String()))
 				continue
 			}
 

@@ -144,6 +144,8 @@ func (t Tx) Command() txn.Command {
 		return txn.JoinTeamCommand
 	case *commandspb.InputData_BatchProposalSubmission:
 		return txn.BatchProposeCommand
+	case *commandspb.InputData_UpdatePartyProfile:
+		return txn.UpdatePartyProfileCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
@@ -245,6 +247,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.JoinTeam
 	case *commandspb.InputData_BatchProposalSubmission:
 		return cmd.BatchProposalSubmission
+	case *commandspb.InputData_UpdatePartyProfile:
+		return cmd.UpdatePartyProfile
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -450,6 +454,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to BatchProposalSubmission")
 		}
 		*underlyingCmd = *cmd.BatchProposalSubmission
+	case *commandspb.InputData_UpdatePartyProfile:
+		underlyingCmd, ok := i.(*commandspb.UpdatePartyProfile)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdatePartyProfile")
+		}
+		*underlyingCmd = *cmd.UpdatePartyProfile
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}

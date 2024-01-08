@@ -134,6 +134,7 @@ func New(
 			svcs.gastimator,
 			svcs.ethCallEngine,
 			svcs.collateral,
+			svcs.partiesEngine,
 		),
 		log:         log,
 		confWatcher: confWatcher,
