@@ -1743,6 +1743,13 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		orderCnt++
 	}
 
+	if risesAbove != nil && fallsBelow != nil {
+		if risesAbove.Expiry.Expires() && fallsBelow.Expiry.Expires() && risesAbove.Expiry.ExpiresAt.Compare(*fallsBelow.Expiry.ExpiresAt) == 0 {
+			rejectStopOrders(types.StopOrderRejectionOCONotAllowedSameExpiryTime, fallsBelow, risesAbove)
+			return nil, common.ErrStopOrderNotAllowedSameExpiry
+		}
+	}
+
 	// now check if that party hasn't exceeded the max amount per market
 	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
 		rejectStopOrders(types.StopOrderRejectionMaxStopOrdersPerPartyReached, fallsBelow, risesAbove)

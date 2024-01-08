@@ -79,4 +79,6 @@ var (
 	ErrPartyHasNoExistingLiquidityProvision                 = errors.New("party has no existing liquidity provision")
 	// ErrStopOrderNotAllowedDuringOpeningAuction is returned if a trader attempts to send a stop order to a market that is in opening auction.
 	ErrStopOrderNotAllowedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
+	// ErrStopOrderNotAllowedSameExpiryTimeForOCO is returned if both sides of an OCO have the same expiry time.
+	ErrStopOrderNotAllowedSameExpiry = errors.New("stop order OCOs must not have the same expiry time")
 )

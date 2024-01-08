@@ -75,6 +75,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID = 7;
     // Stop orders are not allowed during the opening auction
     REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION = 8;
+    // Stops OCO orders cannot have the same expiry timestamp
+    REJECTION_REASON_STOP_ORDER_CANNOT_HAVE_MATCHING_OCO_EXPIRY_TIMES = 9;
   }
 
   // ID of this stop order
