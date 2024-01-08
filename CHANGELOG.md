@@ -107,6 +107,7 @@
 - [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
 - [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
 - [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) -  Add tests for markets expiring in opening auction, fix a bug for future markets.
 
 ## 0.73.0
 

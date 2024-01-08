@@ -13,7 +13,7 @@ Feature: Set up a spot market, with an opening auction, then uncross the book. M
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 5     |
-      | market.auction.maximumDuration | 10    |
+      | market.auction.maximumDuration | 10s   |
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model           | auction duration | fees          | price monitoring | sla params    |
       | BTC/ETH | BTC/ETH | BTC        | ETH         | my-simple-risk-model | 5                | fees-config-1 | default-none     | default-basic |
