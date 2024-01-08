@@ -42,18 +42,25 @@ func (t TeamCreated) TeamCreated() *eventspb.TeamCreated {
 }
 
 func NewTeamCreatedEvent(ctx context.Context, epoch uint64, t *types.Team) *TeamCreated {
+	e := eventspb.TeamCreated{
+		TeamId:    string(t.ID),
+		Referrer:  string(t.Referrer.PartyID),
+		Name:      t.Name,
+		TeamUrl:   ptr.From(t.TeamURL),
+		AvatarUrl: ptr.From(t.AvatarURL),
+		CreatedAt: t.CreatedAt.UnixNano(),
+		AtEpoch:   epoch,
+		Closed:    t.Closed,
+	}
+
+	e.AllowList = make([]string, 0, len(t.AllowList))
+	for _, id := range t.AllowList {
+		e.AllowList = append(e.AllowList, id.String())
+	}
+
 	return &TeamCreated{
 		Base: newBase(ctx, TeamCreatedEvent),
-		e: eventspb.TeamCreated{
-			TeamId:    string(t.ID),
-			Referrer:  string(t.Referrer.PartyID),
-			Name:      t.Name,
-			TeamUrl:   ptr.From(t.TeamURL),
-			AvatarUrl: ptr.From(t.AvatarURL),
-			CreatedAt: t.CreatedAt.UnixNano(),
-			AtEpoch:   epoch,
-			Closed:    t.Closed,
-		},
+		e:    e,
 	}
 }
 
@@ -83,15 +90,22 @@ func (t TeamUpdated) TeamUpdated() *eventspb.TeamUpdated {
 }
 
 func NewTeamUpdatedEvent(ctx context.Context, t *types.Team) *TeamUpdated {
+	e := eventspb.TeamUpdated{
+		TeamId:    string(t.ID),
+		Name:      t.Name,
+		TeamUrl:   ptr.From(t.TeamURL),
+		AvatarUrl: ptr.From(t.AvatarURL),
+		Closed:    t.Closed,
+	}
+
+	e.AllowList = make([]string, 0, len(t.AllowList))
+	for _, id := range t.AllowList {
+		e.AllowList = append(e.AllowList, id.String())
+	}
+
 	return &TeamUpdated{
 		Base: newBase(ctx, TeamUpdatedEvent),
-		e: eventspb.TeamUpdated{
-			TeamId:    string(t.ID),
-			Name:      t.Name,
-			TeamUrl:   ptr.From(t.TeamURL),
-			AvatarUrl: ptr.From(t.AvatarURL),
-			Closed:    t.Closed,
-		},
+		e:    e,
 	}
 }
 

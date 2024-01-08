@@ -53,6 +53,7 @@ func TestTeams_AddTeams(t *testing.T) {
 		CreatedAtEpoch: 1,
 		VegaTime:       block.VegaTime,
 		Closed:         true,
+		AllowList:      []string{GenerateID(), GenerateID()},
 	}
 
 	t.Run("Should add a new if it does not already exist", func(t *testing.T) {
@@ -89,6 +90,7 @@ func TestTeams_UpdateTeam(t *testing.T) {
 		CreatedAt: block.VegaTime,
 		VegaTime:  block.VegaTime,
 		Closed:    true,
+		AllowList: []string{GenerateID(), GenerateID()},
 	}
 
 	err := ts.AddTeam(ctx, &team)
@@ -103,6 +105,8 @@ func TestTeams_UpdateTeam(t *testing.T) {
 			TeamURL:   ptr.From("https://surely-you-cant-be-serio.us"),
 			AvatarURL: ptr.From("https://dont-call-me-shirl.ee"),
 			VegaTime:  nextBlock.VegaTime,
+			Closed:    true,
+			AllowList: []string{GenerateID(), GenerateID()},
 		}
 
 		err := ts.UpdateTeam(ctx, &updateTeam)
@@ -114,9 +118,10 @@ func TestTeams_UpdateTeam(t *testing.T) {
 			Name:      team.Name,
 			TeamURL:   updateTeam.TeamURL,
 			AvatarURL: updateTeam.AvatarURL,
+			Closed:    updateTeam.Closed,
+			AllowList: updateTeam.AllowList,
 			CreatedAt: team.CreatedAt,
 			VegaTime:  team.VegaTime,
-			Closed:    updateTeam.Closed,
 		}
 
 		var got entities.Team

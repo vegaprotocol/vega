@@ -16,6 +16,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -36,7 +37,8 @@ type Team struct {
 	AvatarURL string
 	CreatedAt time.Time
 
-	Closed bool
+	Closed    bool
+	AllowList []PartyID
 }
 
 type Membership struct {
@@ -62,6 +64,32 @@ func (t *Team) RemoveReferee(refereeToRemove PartyID) {
 	t.Referees = t.Referees[:lastIndex]
 }
 
+func (t *Team) EnsureCanJoin(party PartyID) error {
+	if !t.Closed {
+		return nil
+	}
+
+	if len(t.AllowList) == 0 {
+		return ErrTeamIsClosed(t.ID)
+	}
+
+	for _, allowedParty := range t.AllowList {
+		if allowedParty == party {
+			return nil
+		}
+	}
+
+	return ErrRefereeNotAllowedToJoinTeam(t.ID)
+}
+
 func NewTeamID() TeamID {
 	return TeamID(vgrand.RandomStr(teamIDLength))
+}
+
+func ErrTeamIsClosed(id TeamID) error {
+	return fmt.Errorf("team %q is closed", id)
+}
+
+func ErrRefereeNotAllowedToJoinTeam(id TeamID) error {
+	return fmt.Errorf("party is not allowed to join team %q", id)
 }

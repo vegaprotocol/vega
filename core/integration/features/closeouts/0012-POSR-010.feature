@@ -15,7 +15,7 @@ Feature: When the network party holds a non-zero position and there are not enou
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @NoPerp
-  Scenario: Implement trade and order network
+  Scenario: Implement trade and order network. Covers both 0012-POSR-012 and 0012-POSR-011
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
@@ -75,7 +75,13 @@ Feature: When the network party holds a non-zero position and there are not enou
       | aux2             | BTC   | ETH/DEC19 | 999999999964  | 37          |
       | sellSideProvider | BTC   | ETH/DEC19 | 962350000000  | 37650000000 |
       | buySideProvider  | BTC   | ETH/DEC19 | 1000000000000 | 0           |
-
+    And the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | aux2             | 1      | 1              | 0            |
+      | aux              | -1     | -1             | 0            |
+      | sellSideProvider | -250   | 0              | 0            |
+      | designatedLoser  | 0      | 0              | -120         |
+      | network          | 250    | 0              | 0            |
 
     # Move the mark price to make our network trader lose money
     When the parties place the following orders:
@@ -99,4 +105,17 @@ Feature: When the network party holds a non-zero position and there are not enou
       | aux2             | BTC   | ETH/DEC19 | 999999999996  | 0           |
       | sellSideProvider | BTC   | ETH/DEC19 | 962350000000  | 37650000124 |
       | buySideProvider  | BTC   | ETH/DEC19 | 1000000000000 | 0           |
-
+    # This part explicitly covers 0012-POSR-011:
+    # The insurance pool balance is zero, so the network does not meet the required margin balance
+    # Despite this, it can maintain its position, and loss socialisation kicks in during the MTM settlement.
+    And the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | aux2             | 0      | 0              | -4           |
+      | aux              | 0      | 0              | 0            |
+      | sellSideProvider | -250   | 1250           | -1126        |
+      | designatedLoser  | 0      | 0              | -120         |
+      | network          | 250    | -1250          | 0            |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search      | initial     | release     |
+      | network | ETH/DEC19 | 9098750000  | 29116000000 | 36395000000 | 45493750000 |
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"    
