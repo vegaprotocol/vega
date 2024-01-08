@@ -84,6 +84,8 @@ var (
 	ErrMustBeAtMost3600                                = errors.New("must be at most 3600")
 	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
 	ErrSizeIsTooLarge                                  = errors.New("size is too large")
+	ErrCannotSetAllowListWhenTeamIsOpened              = errors.New("cannot set allow list when team is opened")
+	ErrSettingAllowListRequireSettingClosedState       = errors.New("setting an allow list requires setting the closed state")
 )
 
 type Errors map[string][]error

@@ -1158,6 +1158,7 @@ message Team {
   string avatar_url = 6;
   int64 created_at = 7;
   bool closed = 8;
+  repeated string allow_list = 9;
 }
 
 message Membership {

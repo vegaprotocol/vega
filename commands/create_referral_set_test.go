@@ -85,6 +85,7 @@ func testCreatingTeamSucceeds(t *testing.T) {
 					TeamUrl:   ptr.From(vgrand.RandomStr(5)),
 					AvatarUrl: ptr.From(vgrand.RandomStr(5)),
 					Closed:    true,
+					AllowList: []string{vgrand.RandomStr(5), vgrand.RandomStr(5)},
 				},
 			},
 		},
@@ -138,6 +139,16 @@ func testCreateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("create_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkCreateReferralSet(t, &commandspb.CreateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.CreateReferralSet_Team{
+			Closed:    false,
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("create_referral_set.team.allow_list"), commands.ErrCannotSetAllowListWhenTeamIsOpened)
 }
 
 func checkCreateReferralSet(t *testing.T, cmd *commandspb.CreateReferralSet) commands.Errors {

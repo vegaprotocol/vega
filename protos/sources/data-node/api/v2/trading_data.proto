@@ -4104,10 +4104,14 @@ message Team {
   optional string avatar_url = 5;
   // Timestamp in Unix nanoseconds when the team was created.
   int64 created_at = 6;
-  // Whether or not the team is closed to new party members.
+  // Whether or not the team is closed to new party members. When closed, only parties specified in the allow list can
+  // join the team.
   bool closed = 7;
   // Epoch at which the team was created.
   uint64 created_at_epoch = 8;
+  // List of public keys that are allowed to join the team.
+  // Only applicable to closed teams.
+  repeated string allow_list = 9;
 }
 
 // Team data item with the corresponding cursor.
