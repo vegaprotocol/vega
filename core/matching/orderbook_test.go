@@ -159,6 +159,87 @@ func TestGetVolumeAtPrice(t *testing.T) {
 	})
 }
 
+func TestGetVolumeAtPriceIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	buyPrices := []uint64{
+		90,
+		85,
+		80,
+		75,
+		70,
+		65,
+		50,
+	}
+	sellPrices := []uint64{
+		100,
+		105,
+		110,
+		120,
+		125,
+		130,
+		150,
+	}
+	// populate a book with buy orders ranging between 50 and 90
+	// sell orders starting at 100, up to 150. All orders are iceberg orders with a visible size of 2, hidden size of 2.
+	orders := getTestOrders(t, market, 4, buyPrices, sellPrices, nil)
+	for _, o := range orders {
+		// make this an iceberg order
+		o.IcebergOrder = &types.IcebergOrder{
+			PeakSize:           2,
+			MinimumVisibleSize: 2,
+		}
+		_, err := book.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+	t.Run("Getting volume at price with a single price level returns the volume for that price level", func(t *testing.T) {
+		// check the buy side
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]), types.SideBuy)
+		require.Equal(t, uint64(4), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]), types.SideSell)
+		require.Equal(t, uint64(4), v)
+	})
+	t.Run("Getting volume at price containing all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]), types.SideBuy)
+		exp := uint64(len(buyPrices) * 4)
+		require.Equal(t, exp, v)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]), types.SideSell)
+		exp = uint64(len(sellPrices) * 4)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is out of range returns zero volume", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]+1), types.SideBuy)
+		require.Equal(t, uint64(0), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]-1), types.SideSell)
+		require.Equal(t, uint64(0), v)
+	})
+	t.Run("Getting volume at price allowing for more than all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		// lowest buy order -1
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]-1), types.SideBuy)
+		exp := uint64(len(buyPrices) * 4)
+		require.Equal(t, exp, v)
+		// highest sell order on the book +1
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]+1), types.SideSell)
+		exp = uint64(len(sellPrices) * 4)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is somewhere in the middle returns the correct volume", func(t *testing.T) {
+		idx := len(buyPrices) / 2
+		// remember: includes 0 idx
+		exp := uint64(idx*4 + 4)
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[idx]), types.SideBuy)
+		require.Equal(t, exp, v)
+		idx = len(sellPrices) / 2
+		exp = uint64(idx*4 + 4)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[idx]), types.SideSell)
+		require.Equal(t, exp, v)
+	})
+}
+
 func TestHash(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
