@@ -248,7 +248,7 @@ func (r *myMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj 
 	}, nil
 }
 
-func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*types.GovernanceData, error) {
+func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (ProposalNode, error) {
 	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 		ProposalId: &obj.Id,
 	})
@@ -258,6 +258,12 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	if err != nil {
 		return nil, nil //nolint:nilerr
 	}
+
+	resolver := (*proposalEdgeResolver)(r)
+	if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+		return resolver.BatchProposal(ctx, resp.GetData())
+	}
+
 	return resp.Data, nil
 }
 
