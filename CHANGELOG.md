@@ -54,6 +54,7 @@
 - [10275](https://github.com/vegaprotocol/vega/issues/10275) - Add API to list party's margin mode.
 - [459](https://github.com/vegaprotocol/core-test-coverage/issues/459) - Add liquidation test coverage with market updates.
 - [462](https://github.com/vegaprotocol/core-test-coverage/issues/462) - Cover `0012-POSR-011` explicitly
+- [595](https://github.com/vegaprotocol/core-test-coverage/issues/595) - Ensure the full size of iceberg orders is considered when creating a network order.
 
 ### 🐛 Fixes
 
