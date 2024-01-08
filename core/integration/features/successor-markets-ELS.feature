@@ -6,16 +6,16 @@ Feature: Simple example of successor markets
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 0.01             | 10s         | 10             |  
     And the following network parameters are set:
-      | name                                          | value |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.auction.minimumDuration                | 1     |
-      | market.fee.factors.infrastructureFee          | 0.001 |
-      | market.fee.factors.makerFee                   | 0.004 |
-      | market.value.windowLength                     | 60s   |
-      | market.liquidity.bondPenaltyParameter       | 0.1   |
-      | validators.epoch.length                       | 5s    |
-      | market.liquidity.stakeToCcyVolume           | 0.2   |
-      | market.liquidity.successorLaunchWindowLength  | 1h    |
+      | name                                         | value |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.auction.minimumDuration               | 1     |
+      | market.fee.factors.infrastructureFee         | 0.001 |
+      | market.fee.factors.makerFee                  | 0.004 |
+      | market.value.windowLength                    | 60s   |
+      | market.liquidity.bondPenaltyParameter        | 0.1   |
+      | validators.epoch.length                      | 5s    |
+      | market.liquidity.stakeToCcyVolume            | 0.2   |
+      | market.liquidity.successorLaunchWindowLength | 1h    |
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 0              |

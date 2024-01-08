@@ -9,7 +9,7 @@ Feature: Test the transfers to and from the insurance pools when markets termina
     And the following network parameters are set:
       | name                                         | value |
       | market.auction.minimumDuration               | 1     |
-      | market.auction.maximumDuration               | 10    |
+      | market.auction.maximumDuration               | 10s   |
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 5s    |
       | limits.markets.maxPeggedOrders               | 2     |
