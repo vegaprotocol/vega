@@ -1426,14 +1426,21 @@ func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType 
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
-func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*vegapb.GovernanceData, error) {
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (ProposalNode, error) {
 	if id != nil {
+
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 			ProposalId: id,
 		})
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
@@ -1442,6 +1449,12 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	}
 

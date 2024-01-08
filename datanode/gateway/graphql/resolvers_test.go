@@ -671,7 +671,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewMarket
 			asset     *protoTypes.Asset
@@ -679,7 +678,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be for a new market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -731,7 +731,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewSpotMarket
 			asset     *protoTypes.Asset
@@ -739,7 +738,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal should be for a new spot market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -810,7 +810,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewMarket
 			asset     *protoTypes.Asset
@@ -818,7 +817,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be for a new market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -870,14 +870,14 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateMarket
 			product   *protoTypes.UpdateInstrumentConfiguration_Future
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be to update market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -954,13 +954,13 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateSpotMarket
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal should be to update a spot market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -1019,14 +1019,14 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateMarket
 			product   *protoTypes.UpdateInstrumentConfiguration_Perpetual
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be to update market", func(t *testing.T) {
 			// Test the proposal resolver to make sure the terms and underlying changes are correct
