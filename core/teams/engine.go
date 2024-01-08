@@ -97,7 +97,7 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		Closed:    params.Closed,
 	}
 
-	if teamToAdd.AllowList != nil {
+	if len(params.AllowList) > 0 {
 		teamToAdd.AllowList = make([]types.PartyID, 0, len(params.AllowList))
 		for _, key := range params.AllowList {
 			teamToAdd.AllowList = append(teamToAdd.AllowList, types.PartyID(key))
@@ -142,7 +142,7 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, teamID 
 		teamsToUpdate.Closed = ptr.UnBox(params.Closed)
 	}
 
-	if teamsToUpdate != nil {
+	if len(params.AllowList) > 0 {
 		teamsToUpdate.AllowList = make([]types.PartyID, 0, len(params.AllowList))
 		for _, key := range params.AllowList {
 			teamsToUpdate.AllowList = append(teamsToUpdate.AllowList, types.PartyID(key))
@@ -352,9 +352,11 @@ func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {
 			Closed:    teamSnapshot.Closed,
 		}
 
-		t.AllowList = make([]types.PartyID, 0, len(teamSnapshot.AllowList))
-		for _, partyIDStr := range teamSnapshot.AllowList {
-			t.AllowList = append(t.AllowList, types.PartyID(partyIDStr))
+		if len(teamSnapshot.AllowList) > 0 {
+			t.AllowList = make([]types.PartyID, 0, len(teamSnapshot.AllowList))
+			for _, partyIDStr := range teamSnapshot.AllowList {
+				t.AllowList = append(t.AllowList, types.PartyID(partyIDStr))
+			}
 		}
 
 		e.teams[teamID] = t

@@ -127,9 +127,6 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				JoinedAt:       team2CreationDate,
 				StartedAtEpoch: te1.currentEpoch - 1,
 			},
-			Name:      name2,
-			TeamURL:   teamURL2,
-			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
 					PartyID:        referee2,
@@ -142,7 +139,12 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 					StartedAtEpoch: te1.currentEpoch,
 				},
 			},
+			Name:      name2,
+			TeamURL:   teamURL2,
+			AvatarURL: avatarURL2,
 			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee3},
 		},
 	}, te1.engine.ListTeams())
 
@@ -218,6 +220,8 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				},
 			},
 			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee3},
 		},
 	}, te2.engine.ListTeams())
 

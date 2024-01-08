@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,10 +94,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:       team1CreationDate,
 				StartedAtEpoch: te.currentEpoch,
 			},
+			Referees:  nil,
 			Name:      name,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team1CreationDate,
+			Closed:    false,
+			AllowList: nil,
 		},
 	}, te.engine.ListTeams())
 
@@ -542,6 +546,7 @@ func testJoiningTeamSucceeds(t *testing.T) {
 			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 			Closed:    true,
+			AllowList: []types.PartyID{referee2},
 		},
 	}, te.engine.ListTeams())
 
@@ -586,6 +591,81 @@ func testJoiningTeamSucceeds(t *testing.T) {
 			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 			Closed:    true,
+			AllowList: []types.PartyID{referee2},
+		},
+	}, te.engine.ListTeams())
+
+	referee4 := newPartyID(t)
+
+	team3CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team3CreationDate).Times(1)
+	team3Name := vgrand.RandomStr(5)
+	teamID3, referrer3 := newTeamWithCmd(t, ctx, te, &commandspb.CreateReferralSet_Team{
+		Name:      team3Name,
+		Closed:    true,
+		AllowList: []string{referee4.String()},
+	})
+
+	expectRefereeJoinedTeamEvent(t, te)
+	referee4JoiningDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee4JoiningDate).Times(1)
+	require.NoError(t, te.engine.JoinTeam(ctx, referee4, joinTeamCmd(t, teamID3)))
+	require.True(t, te.engine.IsTeamMember(referee4))
+
+	// This shows the referee1 did not moved to team 2.
+	assertEqualTeams(t, []types.Team{
+		{
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te.currentEpoch - 5,
+				},
+			},
+			Name:      team1Name,
+			CreatedAt: team1CreationDate,
+		}, {
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate3,
+					StartedAtEpoch: te.currentEpoch - 1,
+				},
+			},
+			Name:      team2Name,
+			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee2},
+		}, {
+			ID: teamID3,
+			Referrer: &types.Membership{
+				PartyID:        referrer3,
+				JoinedAt:       team3CreationDate,
+				StartedAtEpoch: te.currentEpoch,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee4,
+					JoinedAt:       referee4JoiningDate,
+					StartedAtEpoch: te.currentEpoch,
+				},
+			},
+			Name:      team3Name,
+			CreatedAt: team3CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee4},
 		},
 	}, te.engine.ListTeams())
 }
