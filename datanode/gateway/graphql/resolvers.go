@@ -1428,7 +1428,6 @@ func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType 
 
 func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (ProposalNode, error) {
 	if id != nil {
-
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 			ProposalId: id,
 		})
