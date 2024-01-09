@@ -62,6 +62,16 @@ func (r *VegaResolverRoot) ObservableMarketData() ObservableMarketDataResolver {
 
 type myMarketDataResolver VegaResolverRoot
 
+func (r *myMarketDataResolver) MarkPriceType(_ context.Context, m *types.MarketData) (CompositePriceType, error) {
+	if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
+		return CompositePriceTypeCompositePriceTypeWeighted, nil
+	} else if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
+		return CompositePriceTypeCompositePriceTypeMedian, nil
+	} else {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
+}
+
 func (r *myMarketDataResolver) AuctionStart(_ context.Context, m *types.MarketData) (*string, error) {
 	if m.AuctionStart <= 0 {
 		return nil, nil
@@ -319,6 +329,16 @@ func (r *myObservableMarketDataResolver) StaticMidPrice(ctx context.Context, m *
 
 func (r *myObservableMarketDataResolver) MarkPrice(ctx context.Context, m *types.MarketData) (string, error) {
 	return (*myMarketDataResolver)(r).MarkPrice(ctx, m)
+}
+
+func (r *myObservableMarketDataResolver) MarkPriceType(_ context.Context, m *types.MarketData) (CompositePriceType, error) {
+	if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
+		return CompositePriceTypeCompositePriceTypeWeighted, nil
+	} else if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
+		return CompositePriceTypeCompositePriceTypeMedian, nil
+	} else {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
 }
 
 func (r *myObservableMarketDataResolver) Timestamp(ctx context.Context, m *types.MarketData) (string, error) {

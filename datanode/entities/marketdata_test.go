@@ -215,6 +215,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				TxHash:              generateTxHash(),
 				NextMarkToMarket:    zeroTime,
 				NextNetworkCloseout: zeroTime,
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 			},
 		},
 		{
@@ -231,6 +232,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketState:         "STATE_UNSPECIFIED",
 				MarketTradingMode:   "TRADING_MODE_UNSPECIFIED",
 				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 				NextMarkToMarket:    nextMTM,
 				NextNetworkCloseout: nextNC,
 				TxHash:              generateTxHash(),
@@ -251,6 +253,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode:   "TRADING_MODE_CONTINUOUS",
 				MarketState:         "STATE_UNSPECIFIED",
 				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 				NextMarkToMarket:    nextMTM,
 				NextNetworkCloseout: nextNC,
 				TxHash:              generateTxHash(),
@@ -276,6 +279,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketState:         "STATE_ACTIVE",
 				MarketTradingMode:   "TRADING_MODE_CONTINUOUS",
 				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 				TxHash:              generateTxHash(),
 				NextMarkToMarket:    nextMTM,
 				NextNetworkCloseout: nextNC,
@@ -306,6 +310,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:     "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 				PriceMonitoringBounds: []*types.PriceMonitoringBounds{
 					{
 						MinValidPrice:  "100",

@@ -1069,6 +1069,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			TxHash:                     generateTxHash(),
 			SeqNum:                     0,
 			Market:                     entities.MarketID("cafed00d"),
+			MarkPriceType:              "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 		},
 		{
 			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
@@ -1079,6 +1080,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			TxHash:                     generateTxHash(),
 			SeqNum:                     0,
 			Market:                     entities.MarketID("cafedaad"),
+			MarkPriceType:              "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 		},
 	}
 

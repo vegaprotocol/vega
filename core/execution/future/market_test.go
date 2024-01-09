@@ -808,6 +808,12 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 		},
 		LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 		QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+		MarkPriceConfiguration: &types.CompositePriceConfiguration{
+			DecayWeight:        num.DecimalZero(),
+			DecayPower:         num.DecimalZero(),
+			CashAmount:         num.UintZero(),
+			CompositePriceType: types.CompositePriceTypeByLastTrade,
+		},
 	}
 
 	return mkt

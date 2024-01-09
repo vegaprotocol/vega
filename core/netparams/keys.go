@@ -226,6 +226,8 @@ const (
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
 	// MTM interval.
 	MarkPriceUpdateMaximumFrequency = "network.markPriceUpdateMaximumFrequency"
+	// interval for updating index price for funding payment in perps.
+	IndexPriceUpdateFrequency = "network.indexPriceUpdateFrequency"
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
@@ -419,6 +421,7 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateAssetMinVoterBalance:                 {},
 	SpamProtectionMaxBatchSize:                                   {},
 	MarkPriceUpdateMaximumFrequency:                              {},
+	IndexPriceUpdateFrequency:                                    {},
 	ValidatorPerformanceScalingFactor:                            {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:               {},
 	SpamProtectionMinMultisigUpdates:                             {},

@@ -323,6 +323,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
   LiquidationStrategy:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidationStrategy
+  CompositePriceConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceConfiguration
   LiquidityFeeSettings:
     model: code.vegaprotocol.io/vega/protos/vega.LiquidityFeeSettings
   Asset:
