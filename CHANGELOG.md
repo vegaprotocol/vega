@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.12
+
+### 🐛 Fixes
+
+- [9992](https://github.com/vegaprotocol/vega/issues/9992) - Add configuration to control the number of blocks worth of Ethereum events to read.
+
 ## 0.73.11
 
 ### 🐛 Fixes
