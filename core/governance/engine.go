@@ -1215,6 +1215,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			QuadraticSlippageFactor:       terms.Changes.QuadraticSlippageFactor,
 			LiquidityFeeSettings:          terms.Changes.LiquidityFeeSettings,
 			LiquidationStrategy:           terms.Changes.LiquidationStrategy,
+			MarkPriceConfiguration:        terms.Changes.MarkPriceConfiguration,
 		},
 	}
 

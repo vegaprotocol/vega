@@ -274,6 +274,7 @@ func buildMarketFromProposal(
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 		LiquidationStrategy:           lstrat,
+		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {

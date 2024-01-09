@@ -922,6 +922,52 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type CompositePriceType string
+
+const (
+	// Composite price is calculated as a weighted average of the underlying price sources
+	CompositePriceTypeCompositePriceTypeWeighted CompositePriceType = "COMPOSITE_PRICE_TYPE_WEIGHTED"
+	// Composite price is calculated as a median of the underlying price sources
+	CompositePriceTypeCompositePriceTypeMedian CompositePriceType = "COMPOSITE_PRICE_TYPE_MEDIAN"
+	// Composite price is set to the last trade (legacy)
+	CompositePriceTypeCompositePriceTypeLastTrade CompositePriceType = "COMPOSITE_PRICE_TYPE_LAST_TRADE"
+)
+
+var AllCompositePriceType = []CompositePriceType{
+	CompositePriceTypeCompositePriceTypeWeighted,
+	CompositePriceTypeCompositePriceTypeMedian,
+	CompositePriceTypeCompositePriceTypeLastTrade,
+}
+
+func (e CompositePriceType) IsValid() bool {
+	switch e {
+	case CompositePriceTypeCompositePriceTypeWeighted, CompositePriceTypeCompositePriceTypeMedian, CompositePriceTypeCompositePriceTypeLastTrade:
+		return true
+	}
+	return false
+}
+
+func (e CompositePriceType) String() string {
+	return string(e)
+}
+
+func (e *CompositePriceType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CompositePriceType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CompositePriceType", str)
+	}
+	return nil
+}
+
+func (e CompositePriceType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Describes the status of the data spec
 type DataSourceSpecStatus string
 

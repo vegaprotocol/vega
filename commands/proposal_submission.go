@@ -22,6 +22,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
@@ -914,6 +915,7 @@ func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) 
 	errs.Merge(checkNewRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
+	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "new_market.changes.mark_price_configuration"))
 	return errs
 }
 
@@ -960,6 +962,7 @@ func checkUpdateMarket(updateMarket *vegapb.UpdateMarket) Errors {
 	errs.Merge(checkUpdateRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "update_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_market.changes.liquidity_fee_settings"))
+	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "update_market.changes.mark_price_configuration"))
 	return errs
 }
 
@@ -1294,6 +1297,11 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Er
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", fmt.Sprintf("%s.perps", parentProperty), true))
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", fmt.Sprintf("%s.perps", parentProperty), true))
 	errs.Merge(checkNewPerpsOracleBinding(perps))
+
+	if perps.IndexPriceConfiguration != nil {
+		errs.Merge(checkCompositePriceConfiguration(perps.IndexPriceConfiguration, fmt.Sprintf("%s.perps.index_price_configuration", parentProperty)))
+	}
+
 	return errs
 }
 
@@ -1438,6 +1446,10 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty s
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
 	errs.Merge(checkUpdatePerpsOracleBinding(perps))
+
+	if perps.IndexPriceConfiguration != nil {
+		errs.Merge(checkCompositePriceConfiguration(perps.IndexPriceConfiguration, fmt.Sprintf("%s.perps.index_price_configuration", parentProperty)))
+	}
 
 	return errs
 }
@@ -1852,6 +1864,72 @@ func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent s
 			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrIsNotValidNumber)
 		case fee.IsNegative():
 			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrMustBePositiveOrZero)
+		}
+	}
+
+	return errs
+}
+
+func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfiguration, parent string) Errors {
+	errs := NewErrors()
+	if config == nil {
+		errs.AddForProperty(parent, ErrIsNotValid)
+		return errs
+	}
+	if config.DecayPower > 3 {
+		errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must be in {0, 1, 2, 3}"))
+	}
+	if len(config.DecayWeight) == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsRequired)
+	} else {
+		dw, err := num.DecimalFromString(config.DecayWeight)
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsNotValidNumber)
+		} else {
+			if dw.LessThan(num.DecimalZero()) || dw.GreaterThan(num.DecimalOne()) {
+				errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrMustBeWithinRange01)
+			}
+		}
+	}
+	if len(config.CashAmount) == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsRequired)
+	} else {
+		if n, overflow := num.UintFromString(config.CashAmount, 10); overflow || n.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsNotValidNumber)
+		}
+	}
+
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED {
+		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsRequired)
+	}
+
+	if _, ok := protoTypes.CompositePriceType_name[int32(config.CompositePriceType)]; !ok {
+		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsNotValid)
+	}
+
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) < 4 {
+		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be greater than or equal to 4"))
+	}
+
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.SourceStalenessTolerance) < 4 {
+		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must be greater than or equal to 4"))
+	}
+
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != len(config.SourceStalenessTolerance) {
+		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must have the same length as source_weights"))
+	}
+
+	for i, v := range config.SourceWeights {
+		if d, err := num.DecimalFromString(v); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrIsNotValidNumber)
+		} else if d.LessThan(num.DecimalZero()) {
+			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrMustBePositiveOrZero)
+		}
+	}
+
+	for i, v := range config.SourceStalenessTolerance {
+		if _, err := time.ParseDuration(v); err != nil {
+			errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance.%d", parent, i), fmt.Errorf("must be a valid duration"))
 		}
 	}
 

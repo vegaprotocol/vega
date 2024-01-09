@@ -136,11 +136,12 @@ type UpdateMarketConfiguration struct {
 	QuadraticSlippageFactor       num.Decimal
 	LiquidityFeeSettings          *LiquidityFeeSettings
 	LiquidationStrategy           *LiquidationStrategy
+	MarkPriceConfiguration        *CompositePriceConfiguration
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), markPriceConfiguration(%s)",
 		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		stringer.PtrToString(n.PriceMonitoringParameters),
@@ -148,6 +149,7 @@ func (n UpdateMarketConfiguration) String() string {
 		stringer.ObjToString(n.RiskParameters),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
+		stringer.PtrToString(n.MarkPriceConfiguration),
 	)
 }
 
@@ -178,6 +180,9 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	}
 	if n.LiquidationStrategy != nil {
 		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
+	}
+	if n.MarkPriceConfiguration != nil {
+		cpy.MarkPriceConfiguration = n.MarkPriceConfiguration.DeepClone()
 	}
 	return cpy
 }
@@ -222,6 +227,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
 		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -284,6 +290,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        CompositePriceConfigurationFromProto(p.MarkPriceConfiguration),
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

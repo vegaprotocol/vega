@@ -863,6 +863,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 		{
+			Param:   netparams.IndexPriceUpdateFrequency,
+			Watcher: svcs.executionEngine.OnIndexPriceUpdateFrequency,
+		},
+		{
 			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: svcs.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},

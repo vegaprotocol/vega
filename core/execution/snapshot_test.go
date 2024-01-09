@@ -576,6 +576,14 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0.5),
 		},
 		State: types.MarketStateActive,
+		MarkPriceConfiguration: &types.CompositePriceConfiguration{
+			DecayWeight:              num.DecimalZero(),
+			DecayPower:               num.DecimalZero(),
+			CashAmount:               num.UintZero(),
+			SourceWeights:            []num.Decimal{num.DecimalFromFloat(0.1), num.DecimalFromFloat(0.2), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0.4)},
+			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
+			CompositePriceType:       types.CompositePriceTypeByLastTrade,
+		},
 	}
 }
 

@@ -443,6 +443,7 @@ type ExecMarket struct {
 	FeeSplitter                *FeeSplitter
 	SettlementData             *num.Numeric
 	NextMTM                    int64
+	NextIndexPriceCalc         int64
 	Parties                    []string
 	Closed                     bool
 	IsSucceeded                bool
@@ -451,6 +452,8 @@ type ExecMarket struct {
 	Product                    *snapshot.Product
 	FeesStats                  *eventspb.FeesStats
 	PartyMarginFactors         []*snapshot.PartyMarginFactor
+	MarkPriceCalculator        *snapshot.CompositePriceCalculator
+	IndexPriceCalculator       *snapshot.CompositePriceCalculator
 }
 
 type ExecSpotMarket struct {
@@ -3688,6 +3691,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
 		SettlementData:             sp,
 		NextMTM:                    em.NextMarkToMarket,
+		NextIndexPriceCalc:         em.NextIndexPriceCalc,
 		LastTradedPrice:            lastTradedPrice,
 		Parties:                    em.Parties,
 		Closed:                     em.Closed,
@@ -3696,6 +3700,8 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		Product:                    em.Product,
 		FeesStats:                  em.FeesStats,
 		PartyMarginFactors:         em.PartyMarginFactor,
+		MarkPriceCalculator:        em.MarkPriceCalculator,
+		IndexPriceCalculator:       em.IndexPriceCalculator,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3729,6 +3735,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
+		NextIndexPriceCalc:         e.NextIndexPriceCalc,
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 		Succeeded:                  e.IsSucceeded,
@@ -3736,6 +3743,8 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		Product:                    e.Product,
 		FeesStats:                  e.FeesStats,
 		PartyMarginFactor:          e.PartyMarginFactors,
+		MarkPriceCalculator:        e.MarkPriceCalculator,
+		IndexPriceCalculator:       e.IndexPriceCalculator,
 	}
 
 	if e.CurrentMarkPrice != nil {

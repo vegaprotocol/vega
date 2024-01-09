@@ -19,7 +19,9 @@ import (
 	"errors"
 	"math"
 
+	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type perpetualDataResolver VegaResolverRoot
@@ -29,4 +31,22 @@ func (p perpetualDataResolver) SeqNum(_ context.Context, obj *vega.PerpetualData
 		return 0, errors.New("funding period sequence number is too large")
 	}
 	return int(obj.SeqNum), nil
+}
+
+func (p perpetualDataResolver) IndexPriceType(_ context.Context, obj *vega.PerpetualData) (CompositePriceType, error) {
+	if obj.IndexPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
+		return CompositePriceTypeCompositePriceTypeWeighted, nil
+	} else if obj.IndexPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
+		return CompositePriceTypeCompositePriceTypeMedian, nil
+	} else {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
+}
+
+func (p perpetualDataResolver) IndexPrice(_ context.Context, obj *vega.PerpetualData) (string, error) {
+	return obj.IndexPrice, nil
+}
+
+func (p perpetualDataResolver) NextIndexPriceCalc(_ context.Context, obj *vega.PerpetualData) (string, error) {
+	return vegatime.Format(vegatime.UnixNano(obj.NextIndexPriceCalc)), nil
 }

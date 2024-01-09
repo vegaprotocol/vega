@@ -192,6 +192,8 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	}
 
 	nextMTM := time.Unix(0, em.NextMTM)
+	nextIndexPriceCalc := time.Unix(0, em.NextIndexPriceCalc)
+
 	// create market auction state
 	e.log.Info("restoring market", logging.String("id", em.Market.ID))
 	mkt, err := future.NewMarketFromSnapshot(
@@ -236,6 +238,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	}
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
+	mkt.SetNextIndexPriceCalc(nextIndexPriceCalc)
 
 	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
