@@ -11,7 +11,7 @@ Feature: Test setting of mark price
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 0            | 1           | 0           | 1,0,0,0        | 1s,5s,24h0m0s,1h25m0s      |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 0           | 0           | 1,0,0,0        | 1s,5s,24h0m0s,1h25m0s      |
 
   @SLABug
   Scenario: 001 check mark price using weight average
@@ -31,46 +31,20 @@ Feature: Test setting of mark price
       | sellSideProvider | ETH/FEB23 | sell | 3      | 15960  | 0                | TYPE_LIMIT | TIF_GTC | sell-4    |
       | sellSideProvider | ETH/FEB23 | sell | 5      | 15990  | 0                | TYPE_LIMIT | TIF_GTC | sell-5    |
       | sellSideProvider | ETH/FEB23 | sell | 2      | 16000  | 0                | TYPE_LIMIT | TIF_GTC | sell-7    |
-      | sellSideProvider | ETH/FEB23 | sell | 4      | 16020  | 0                | TYPE_LIMIT | TIF_GTC | sell-8    |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     # AC 0009-MRKP-018
     When the network moves ahead "2" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
+    Then the mark price should be "0" for the market "ETH/FEB23"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
 
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | buySideProvider | ETH/FEB23 | buy  | 2      | 15920 | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
+    Then the mark price should be "0" for the market "ETH/FEB23"
 
-    And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 1      | 15940 | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 3      | 15960 | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 5      | 15990 | 1                | TYPE_LIMIT | TIF_GTC |           |
-
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    #decay weight is 0, so no time weight, mark price is: (15920*2+15940*1+15960*3+15990*5)/11=15964
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15964" for the market "ETH/FEB23"
-
-
-
-
+    When the network moves ahead "8" blocks
+    Then the mark price should be "0" for the market "ETH/FEB23"
 

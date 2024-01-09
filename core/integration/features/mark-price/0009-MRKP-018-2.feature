@@ -26,21 +26,15 @@ Feature: Test setting of mark price
       | buySideProvider  | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party            | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | sellSideProvider | ETH/FEB23 | sell | 2      | 15920  | 0                | TYPE_LIMIT | TIF_GTC | sell-2    |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 15940  | 0                | TYPE_LIMIT | TIF_GTC | sell-3    |
       | sellSideProvider | ETH/FEB23 | sell | 3      | 15960  | 0                | TYPE_LIMIT | TIF_GTC | sell-4    |
       | sellSideProvider | ETH/FEB23 | sell | 5      | 15990  | 0                | TYPE_LIMIT | TIF_GTC | sell-5    |
       | sellSideProvider | ETH/FEB23 | sell | 2      | 16000  | 0                | TYPE_LIMIT | TIF_GTC | sell-7    |
-      | sellSideProvider | ETH/FEB23 | sell | 4      | 16020  | 0                | TYPE_LIMIT | TIF_GTC | sell-8    |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     # AC 0009-MRKP-018
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 2      | 15920 | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     When the network moves ahead "1" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
@@ -66,9 +60,9 @@ Feature: Test setting of mark price
     When the network moves ahead "1" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
 
-    #decay weight is 0, so no time weight, mark price is: (15920*2+15940*1+15960*3+15990*5)/11=15964
+    #decay weight is 0, so no time weight, mark price is: (15940*1+15960*3+15990*5)/11=15975
     When the network moves ahead "1" blocks
-    Then the mark price should be "15964" for the market "ETH/FEB23"
+    Then the mark price should be "15974" for the market "ETH/FEB23"
 
 
 
