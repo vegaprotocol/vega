@@ -1,4 +1,4 @@
-Feature: Test settlement future example paths
+Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), (0002-STTL-013)
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
@@ -222,3 +222,101 @@ Feature: Test settlement future example paths
     Then the network moves ahead "2" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the global insurance pool balance should be "942" for the asset "ETH"
+
+    Scenario: Settlement data to cash settled future is submitted before trading is terminated (0002-STTL-013)
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | aux1   | ETH   | 1000000 |
+      | aux2   | ETH   | 1000000 |
+      | lpprov | ETH   | 100000  |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50         | 10     |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50         | 10     |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the mark price should be "1000" for the market "ETH/DEC19"
+    And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
+    
+    # check bond
+    And the parties should have the following account balances:
+      | party | asset | market id   | margin | general | bond  |
+      | lpprov  | ETH   | ETH/DEC19 | 6600   | 3400    | 90000 |
+    # check margin
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general |
+      | aux1  | ETH   | ETH/DEC19 | 264    | 999736   |
+      | aux2  | ETH   | ETH/DEC19 | 241    | 999759   |
+    # check positions
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | aux1   | 1      | 0              | 0            |
+      | aux2   | -1     | 0              | 0            |
+
+    When the oracles broadcast data signed with "0xCAFECAFE":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2020-01-01T01:01:02Z"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | aux1   | 1000  | 1    | aux2   |
+
+    When the oracles broadcast data signed with "0xCAFECAFE":
+      | name             | value |
+      | prices.ETH.value | 45    |
+    Then time is updated to "2020-01-01T01:01:02Z"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+      | aux2  | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-8     |
+
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | aux1   | 1000  | 1    | aux2   |
+  
+    When the oracles broadcast data signed with "0xCAFECAFE":
+      | name               | value |
+      | trading.terminated | true  |
+    And time is updated to "2020-01-01T01:01:01Z"
+    
+    # check margin
+    And the parties should have the following account balances:
+      | party | asset | market id | margin | general |
+      | aux1  | ETH   | ETH/DEC19 | 0      | 997135  |
+      | aux2  | ETH   | ETH/DEC19 | 0      | 1002665 |
+    # check positions
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | aux1   | 3      | 0              | -2865        |
+      | aux2   | -3     | 0              | 2865         |
+
+    # check bond
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond   |
+      | lpprov  | ETH   | ETH/DEC19 | 0      | 100200  | 0      |
+  
+    And the network moves ahead "2" blocks
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the global insurance pool balance should be "1000" for the asset "ETH"
