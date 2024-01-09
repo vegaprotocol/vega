@@ -230,10 +230,10 @@ type PerpetualData {
   "Time at which the funding period started"
   startTime: Timestamp!
   "The index price used for external VWAP calculation"
-  indexPrice: String! 
-   "The methodology used to calculated index price for perps"
+  indexPrice: String!
+  "The methodology used to calculated index price for perps"
   indexPriceType: CompositePriceType!
-   "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
+  "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
   nextIndexPriceCalc: String!
 }
 
@@ -4912,12 +4912,11 @@ type ProposalTerms {
   change: ProposalChange!
 }
 
-"Terms for a batch governance proposal on Vega"
+"Terms for a batch governance proposal"
 type BatchProposalTermsChange {
   """
-  RFC3339Nano time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
+  RFC3339Nano time and date when this proposal will be executed, if it passes.
   Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-  Note: Optional as free form proposals do not require it.
   """
   enactmentDatetime: Timestamp
 
@@ -4925,7 +4924,7 @@ type BatchProposalTermsChange {
   change: ProposalChange!
 }
 
-"The rationale behind the proposal"
+"The rationale for the proposal"
 type BatchProposalTerms {
   """
   RFC3339Nano time and date when voting closes for this proposal.
@@ -5025,7 +5024,7 @@ type Proposal {
 }
 
 type BatchProposal {
-  "Proposal ID that is filled by Vega once proposal reaches the network"
+  "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on Vega"
   reference: String!
@@ -5033,32 +5032,32 @@ type BatchProposal {
   party: Party!
   "State of the proposal"
   state: ProposalState!
-  "RFC3339Nano time and date when the proposal reached Vega network"
+  "RFC3339Nano time and date when the proposal reached the network"
   datetime: Timestamp!
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Votes cast for this proposal"
   votes: ProposalVotes!
-  "Why the proposal was rejected by the core"
+  "Reason the proposal was rejected"
   rejectionReason: ProposalRejectionReason
-  "Error details of the rejectionReason"
+  "Details of the rejection reason"
   errorDetails: String
   "Required majority for this proposal to succeed"
   requiredMajority: String!
   "Required participation for this proposal to succeed"
   requiredParticipation: String!
-  "Equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction that can be converted to a percentage"
+  "Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted"
   requiredLpMajority: String
-  "The market share of LPs' equity-like share that must take part in the market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the proposal receives only YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
+  "The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
   requiredLpParticipation: String
-  "Child proposals that are part of the batch"
+  "Proposals that are part of the batch"
   subProposals: [ProposalDetail]
 }
 
 type ProposalDetail {
   "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
-  "Parent proposal ID that is provided by Vega once proposal reaches the network"
+  "Batch proposal ID that is provided by Vega once proposal reaches the network"
   batchId: ID
   "A UUID reference to aid tracking proposals on Vega"
   reference: String!
@@ -5068,9 +5067,9 @@ type ProposalDetail {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
-  "Terms of the proposal - in case of single proposal"
+  "Terms of the proposal for proposal"
   terms: ProposalTerms
-  "Terms of the proposal - in case of batch proposal"
+  "Terms of the proposal for a batch proposal"
   batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
