@@ -121,9 +121,11 @@ func (e *SnapshottedEngine) serialiseTeams() ([]byte, error) {
 			Closed:    team.Closed,
 		}
 
-		teamSnapshot.AllowList = make([]string, 0, len(team.AllowList))
-		for _, partyID := range team.AllowList {
-			teamSnapshot.AllowList = append(teamSnapshot.AllowList, partyID.String())
+		if len(team.AllowList) > 0 {
+			teamSnapshot.AllowList = make([]string, 0, len(team.AllowList))
+			for _, partyID := range team.AllowList {
+				teamSnapshot.AllowList = append(teamSnapshot.AllowList, partyID.String())
+			}
 		}
 
 		teamsSnapshot = append(teamsSnapshot, teamSnapshot)
