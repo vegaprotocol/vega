@@ -67,6 +67,8 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 			assert.Equal(tt, expectedTeam.TeamURL, actualTeam.TeamURL)
 			assert.Equal(tt, expectedTeam.AvatarURL, actualTeam.AvatarURL)
 			assert.Equal(tt, expectedTeam.CreatedAt.UnixNano(), actualTeam.CreatedAt.UnixNano())
+			assert.Equal(tt, expectedTeam.Closed, actualTeam.Closed)
+			assert.Equal(tt, expectedTeam.AllowList, actualTeam.AllowList)
 			assertEqualMembership(tt, expectedTeam.Referrer, actualTeam.Referrer)
 
 			if len(expectedTeam.Referees) != len(actualTeam.Referees) {
@@ -211,6 +213,22 @@ func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, t
 	require.True(t, te.engine.IsTeamMember(referrer))
 
 	return teamID, referrer, teamName
+}
+
+func newTeamWithCmd(t *testing.T, ctx context.Context, te *testEngine, cmd *commandspb.CreateReferralSet_Team) (types.TeamID, types.PartyID) {
+	t.Helper()
+
+	teamID := newTeamID(t)
+	referrer := newPartyID(t)
+
+	expectTeamCreatedEvent(t, te)
+
+	err := te.engine.CreateTeam(ctx, referrer, teamID, cmd)
+	require.NoError(t, err)
+	require.NotEmpty(t, teamID)
+	require.True(t, te.engine.IsTeamMember(referrer))
+
+	return teamID, referrer
 }
 
 func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateReferralSet_Team {
