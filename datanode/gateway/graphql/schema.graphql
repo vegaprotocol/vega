@@ -2423,7 +2423,10 @@ type Market {
   state: MarketState!
 
   "The proposal that initiated this market"
-  proposal: ProposalNode
+  proposal: Proposal @deprecated(reason: "Use marketProposal")
+
+  "The proposal that initiated this market"
+  marketProposal: ProposalNode
 
   "Orders on a market"
   ordersConnection(
