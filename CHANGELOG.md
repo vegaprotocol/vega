@@ -49,6 +49,7 @@
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10155](https://github.com/vegaprotocol/vega/issues/10155) - Add next network close-out timestamp to market data.
 - [10000](https://github.com/vegaprotocol/vega/issues/10000) - Introduce `cometbtf` command to replace `tendermint`.
+- [10294](https://github.com/vegaprotocol/vega/issues/10294) - New mark price methodology
 - [9948](https://github.com/vegaprotocol/vega/issues/9948) - Add support for linked stop orders.
 - [9849](https://github.com/vegaprotocol/vega/issues/9849) - Add database support for `num.Uint`.
 - [10275](https://github.com/vegaprotocol/vega/issues/10275) - Add API to list party's margin mode.

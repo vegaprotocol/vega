@@ -168,6 +168,173 @@ func TestMarketFromIntoProto(t *testing.T) {
 		},
 		LinearSlippageFactor:    "0.1",
 		QuadraticSlippageFactor: "0.1",
+		MarkPriceConfiguration: &vegapb.CompositePriceConfiguration{
+			DecayWeight:              "0.5",
+			DecayPower:               1,
+			CashAmount:               "0",
+			CompositePriceType:       2,
+			SourceWeights:            []string{"0.2", "0.3", "0.4", "0.5"},
+			SourceStalenessTolerance: []string{"3h0m0s", "2s", "24h0m0s", "1h25m0s"},
+		},
+	}
+
+	domain, err := types.MarketFromProto(pMarket)
+	require.NoError(t, err)
+
+	// we can check equality of individual fields, but perhaps this is the easiest way:
+	got := domain.IntoProto()
+	require.EqualValues(t, pMarket, got)
+}
+
+func TestPerpMarketFromIntoProto(t *testing.T) {
+	pk := dstypes.CreateSignerFromString("pubkey", dstypes.SignerTypePubKey)
+
+	pMarket := &vegapb.Market{
+		Id: "foo",
+		TradableInstrument: &vegapb.TradableInstrument{
+			Instrument: &vegapb.Instrument{
+				Id:   "bar",
+				Code: "FB",
+				Name: "FooBar",
+				Metadata: &vegapb.InstrumentMetadata{
+					Tags: []string{"test", "foo", "bar", "foobar"},
+				},
+				Product: &vegapb.Instrument_Perpetual{
+					Perpetual: &vegapb.Perpetual{
+						SettlementAsset:     "GBP",
+						QuoteName:           "USD",
+						MarginFundingFactor: "0.5",
+						InterestRate:        "0.2",
+						ClampLowerBound:     "0.1",
+						ClampUpperBound:     "0.6",
+						IndexPriceConfig: &vegapb.CompositePriceConfiguration{
+							DecayWeight:              "0.5",
+							DecayPower:               1,
+							CashAmount:               "0",
+							CompositePriceType:       2,
+							SourceWeights:            []string{"0.2", "0.3", "0.4", "0.5"},
+							SourceStalenessTolerance: []string{"3h0m0s", "2s", "24h0m0s", "1h25m0s"},
+						},
+						DataSourceSpecForSettlementData: &vegapb.DataSourceSpec{
+							Id:        "os1",
+							CreatedAt: 0,
+							UpdatedAt: 1,
+							Data: vegapb.NewDataSourceDefinition(
+								vegapb.DataSourceContentTypeOracle,
+							).SetOracleConfig(
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{testFilter1},
+									},
+								},
+							),
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+						},
+						DataSourceSpecForSettlementSchedule: &vegapb.DataSourceSpec{
+							Id:        "os1",
+							CreatedAt: 0,
+							UpdatedAt: 1,
+							Data: vegapb.NewDataSourceDefinition(
+								vegapb.DataSourceContentTypeOracle,
+							).SetOracleConfig(
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{testFilter1},
+									},
+								},
+							),
+							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+						},
+						DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{
+							SettlementDataProperty: "something",
+						},
+					},
+				},
+			},
+			MarginCalculator: &vegapb.MarginCalculator{
+				ScalingFactors: &vegapb.ScalingFactors{
+					SearchLevel:       0.02,
+					InitialMargin:     0.05,
+					CollateralRelease: 0.1,
+				},
+			},
+			RiskModel: &vegapb.TradableInstrument_LogNormalRiskModel{
+				LogNormalRiskModel: &vegapb.LogNormalRiskModel{
+					RiskAversionParameter: 0.01,
+					Tau:                   0.2,
+					Params: &vegapb.LogNormalModelParams{
+						Mu:    0.12323,
+						R:     0.125,
+						Sigma: 0.3,
+					},
+				},
+			},
+		},
+		DecimalPlaces: 3,
+		Fees: &vegapb.Fees{
+			Factors: &vegapb.FeeFactors{
+				MakerFee:          "0.002",
+				InfrastructureFee: "0.001",
+				LiquidityFee:      "0.003",
+			},
+			LiquidityFeeSettings: &vegapb.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+			},
+		},
+		OpeningAuction: &vegapb.AuctionDuration{
+			Duration: 1,
+			Volume:   0,
+		},
+		PriceMonitoringSettings: &vegapb.PriceMonitoringSettings{
+			Parameters: &vegapb.PriceMonitoringParameters{
+				Triggers: []*vegapb.PriceMonitoringTrigger{
+					{
+						Horizon:          5,
+						Probability:      "0.99",
+						AuctionExtension: 4,
+					},
+					{
+						Horizon:          10,
+						Probability:      "0.95",
+						AuctionExtension: 6,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
+			TargetStakeParameters: &vegapb.TargetStakeParameters{
+				TimeWindow:    20,
+				ScalingFactor: 0.7,
+			},
+			TriggeringRatio:  "0.8",
+			AuctionExtension: 5,
+		},
+		TradingMode: vegapb.Market_TRADING_MODE_CONTINUOUS,
+		State:       vegapb.Market_STATE_ACTIVE,
+		MarketTimestamps: &vegapb.MarketTimestamps{
+			Proposed: 0,
+			Pending:  1,
+			Open:     2,
+			Close:    360,
+		},
+		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
+			PriceRange:                  "0.95",
+			CommitmentMinTimeFraction:   "0.5",
+			PerformanceHysteresisEpochs: 4,
+			SlaCompetitionFactor:        "0.5",
+		},
+		LinearSlippageFactor:    "0.1",
+		QuadraticSlippageFactor: "0.1",
+		MarkPriceConfiguration: &vegapb.CompositePriceConfiguration{
+			DecayWeight:              "0.7",
+			DecayPower:               2,
+			CashAmount:               "100",
+			CompositePriceType:       3,
+			SourceWeights:            []string{"0.5", "0.2", "0.3", "0.1"},
+			SourceStalenessTolerance: []string{"3h0m1s", "3s", "25h0m0s", "2h25m0s"},
+		},
 	}
 
 	domain, err := types.MarketFromProto(pMarket)

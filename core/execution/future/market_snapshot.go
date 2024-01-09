@@ -201,6 +201,8 @@ func NewMarketFromSnapshot(
 
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
+
+	markPriceCalculator := NewCompositePriceCalculatorFromSnapshot(em.CurrentMarkPrice, em.MarkPriceCalculator)
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -230,7 +232,6 @@ func NewMarketFromSnapshot(
 		lastBestAskPrice:              em.LastBestAsk.Clone(),
 		lastMidBuyPrice:               em.LastMidBid.Clone(),
 		lastMidSellPrice:              em.LastMidAsk.Clone(),
-		markPrice:                     em.CurrentMarkPrice,
 		lastTradedPrice:               em.LastTradedPrice,
 		priceFactor:                   priceFactor,
 		lastMarketValueProxy:          em.LastMarketValueProxy,
@@ -245,6 +246,11 @@ func NewMarketFromSnapshot(
 		partyMarginFactor:             partyMargin,
 		liquidation:                   le,
 		banking:                       banking,
+		markPriceCalculator:           markPriceCalculator,
+	}
+
+	if em.IndexPriceCalculator != nil {
+		market.indexPriceCalculator = NewCompositePriceCalculatorFromSnapshot(nil, em.IndexPriceCalculator)
 	}
 
 	for _, p := range em.Parties {
@@ -320,7 +326,6 @@ func (m *Market) GetState() *types.ExecMarket {
 		LastMidBid:                 m.lastMidBuyPrice.Clone(),
 		LastMidAsk:                 m.lastMidSellPrice.Clone(),
 		LastMarketValueProxy:       m.lastMarketValueProxy,
-		CurrentMarkPrice:           m.markPrice,
 		LastTradedPrice:            m.lastTradedPrice,
 		EquityShare:                m.equityShares.GetState(),
 		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
@@ -329,6 +334,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeeSplitter:                m.feeSplitter.GetState(),
 		SettlementData:             sp,
 		NextMTM:                    m.nextMTM.UnixNano(),
+		NextIndexPriceCalc:         m.nextIndexPriceCalc.UnixNano(),
 		Parties:                    parties,
 		Closed:                     m.closed,
 		IsSucceeded:                m.succeeded,
@@ -337,6 +343,10 @@ func (m *Market) GetState() *types.ExecMarket {
 		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
 		FeesStats:                  m.fee.GetState(assetQuantum),
 		PartyMarginFactors:         partyMarginFactors,
+		MarkPriceCalculator:        m.markPriceCalculator.IntoProto(),
+	}
+	if m.perp && m.indexPriceCalculator != nil {
+		em.IndexPriceCalculator = m.indexPriceCalculator.IntoProto()
 	}
 
 	return em

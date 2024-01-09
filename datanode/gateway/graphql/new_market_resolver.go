@@ -111,3 +111,7 @@ func (r *newMarketResolver) LiquidityFeeSettings(ctx context.Context, obj *types
 func (r *newMarketResolver) LiquidationStrategy(ctx context.Context, obj *types.NewMarket) (*types.LiquidationStrategy, error) {
 	return obj.Changes.LiquidationStrategy, nil
 }
+
+func (r *newMarketResolver) MarkPriceConfiguration(ctx context.Context, obj *types.NewMarket) (*types.CompositePriceConfiguration, error) {
+	return obj.Changes.MarkPriceConfiguration, nil
+}

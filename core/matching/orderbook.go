@@ -16,6 +16,7 @@
 package matching
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -1181,4 +1182,43 @@ func (b *OrderBook) cleanup() {
 	b.peggedOrders.Clear()
 	b.peggedCountNotify(-int64(b.peggedOrdersCount))
 	b.peggedOrdersCount = 0
+}
+
+// VWAP returns an error if the total volume for the side of the book is less than the given volume or if there are no levels.
+// Otherwise it returns the volume weighted average price for achieving the given volume.
+func (b *OrderBook) VWAP(volume uint64, side types.Side) (*num.Uint, error) {
+	sidePriceLevels := b.buy
+	if side == types.SideSell {
+		sidePriceLevels = b.sell
+	}
+	dVol := num.DecimalFromInt64(int64(volume))
+	remaining := volume
+	price := num.UintZero()
+	i := len(sidePriceLevels.levels) - 1
+	if i < 0 {
+		return nil, fmt.Errorf("no orders in book for side")
+	}
+
+	if volume == 0 && i >= 0 {
+		return sidePriceLevels.levels[i].price.Clone(), nil
+	}
+
+	for {
+		if i < 0 || remaining == 0 {
+			break
+		}
+		size := remaining
+		if sidePriceLevels.levels[i].volume < remaining {
+			size = sidePriceLevels.levels[i].volume
+		}
+		price.AddSum(num.UintZero().Mul(sidePriceLevels.levels[i].price, num.NewUint(size)))
+		remaining -= size
+		i -= 1
+	}
+
+	if remaining == 0 {
+		res, _ := num.UintFromDecimal(price.ToDecimal().Div(dVol))
+		return res, nil
+	}
+	return nil, fmt.Errorf("insufficient volume in order book")
 }

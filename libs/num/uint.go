@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"github.com/holiman/uint256"
 )
@@ -531,6 +532,32 @@ func UintToString(u *Uint) string {
 		return u.String()
 	}
 	return "0"
+}
+
+// Median calculates the median of the slice of uints.
+// it is assumed that no nils are allowed in the slice or else it panics.
+func Median(nums []*Uint) *Uint {
+	if nums == nil {
+		return nil
+	}
+	numsCopy := make([]*Uint, 0, len(nums))
+	for _, u := range nums {
+		if u != nil {
+			numsCopy = append(numsCopy, u.Clone())
+		}
+	}
+	sort.Slice(numsCopy, func(i, j int) bool {
+		return numsCopy[i].LT(numsCopy[j])
+	})
+	if len(numsCopy) == 0 {
+		return nil
+	}
+
+	mid := len(numsCopy) / 2
+	if len(numsCopy)%2 == 1 {
+		return numsCopy[mid]
+	}
+	return UintZero().Div(Sum(numsCopy[mid], numsCopy[mid-1]), NewUint(2))
 }
 
 func unquoteIfQuoted(value interface{}) (string, error) {

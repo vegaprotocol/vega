@@ -102,6 +102,7 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 		MarketState:       "STATE_ACTIVE",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+		MarkPriceType:     "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 		PriceMonitoringBounds: []*vega.PriceMonitoringBounds{
 			{
 				MinValidPrice: "1",
@@ -158,6 +159,7 @@ func getLatestMarketData(t *testing.T) {
 		MarketState:           "STATE_ACTIVE",
 		AuctionTrigger:        "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
+		MarkPriceType:         "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 		TargetStake:           mustParseDecimal(t, "67499499622"),
 		SuppliedStake:         mustParseDecimal(t, "50000000000"),
 		PriceMonitoringBounds: []*vega.PriceMonitoringBounds{
@@ -183,12 +185,22 @@ func getLatestMarketData(t *testing.T) {
 		},
 		MarketGrowth:    num.DecimalZero(),
 		LastTradedPrice: mustParseDecimal(t, "999992588"),
-		ProductData:     nil,
+		ProductData: &entities.ProductData{
+			ProductData: &vega.ProductData{
+				Data: &vega.ProductData_PerpetualData{
+					PerpetualData: &vega.PerpetualData{
+						IndexPrice:         "100",
+						NextIndexPriceCalc: 200,
+						IndexPriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+					},
+				},
+			},
+		},
 	}
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Truef(t, want.Equal(got), "want: %#v\ngot: %#v\n", want, got)
+	require.Truef(t, want.Equal(got), "want: %#v\ngot: %#v\n", want, got)
 }
 
 func getAllForMarketBetweenDates(t *testing.T) {
@@ -1075,6 +1087,17 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
-		ProductData:                nil,
+		ProductData: &entities.ProductData{
+			ProductData: &vega.ProductData{
+				Data: &vega.ProductData_PerpetualData{
+					PerpetualData: &vega.PerpetualData{
+						IndexPrice:         "100",
+						NextIndexPriceCalc: 200,
+						IndexPriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+					},
+				},
+			},
+		},
+		MarkPriceType: "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 	}
 }

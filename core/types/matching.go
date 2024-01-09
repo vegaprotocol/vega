@@ -675,6 +675,30 @@ func (t *Trade) IntoProto() *proto.Trade {
 	}
 }
 
+func TradeFromProto(t *proto.Trade) *Trade {
+	if t == nil {
+		return nil
+	}
+
+	return &Trade{
+		ID:                 t.Id,
+		MarketID:           t.MarketId,
+		Price:              num.MustUintFromString(t.Price, 10),
+		Size:               t.Size,
+		Buyer:              t.Buyer,
+		Seller:             t.Seller,
+		Aggressor:          t.Aggressor,
+		BuyOrder:           t.BuyOrder,
+		SellOrder:          t.SellOrder,
+		Timestamp:          t.Timestamp,
+		Type:               t.Type,
+		BuyerFee:           FeeFromProto(t.BuyerFee),
+		SellerFee:          FeeFromProto(t.SellerFee),
+		BuyerAuctionBatch:  t.BuyerAuctionBatch,
+		SellerAuctionBatch: t.SellerAuctionBatch,
+	}
+}
+
 func (t Trade) String() string {
 	return fmt.Sprintf(
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",

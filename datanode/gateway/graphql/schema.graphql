@@ -229,9 +229,24 @@ type PerpetualData {
   seqNum: Int!
   "Time at which the funding period started"
   startTime: Timestamp!
+  "The index price used for external VWAP calculation"
+  indexPrice: String! 
+   "The methodology used to calculated index price for perps"
+  indexPriceType: CompositePriceType!
+   "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
+  nextIndexPriceCalc: String!
 }
 
 union ProductData = PerpetualData
+
+enum CompositePriceType {
+  "Composite price is calculated as a weighted average of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_WEIGHTED
+  "Composite price is calculated as a median of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_MEDIAN
+  "Composite price is set to the last trade (legacy)"
+  COMPOSITE_PRICE_TYPE_LAST_TRADE
+}
 
 "Live data of a Market"
 type MarketData {
@@ -239,6 +254,8 @@ type MarketData {
   market: Market!
   "The mark price (an unsigned integer)"
   markPrice: String!
+  "The methodology used for the calculation of the mark price"
+  markPriceType: CompositePriceType!
   "The highest price level on an order book for buy orders."
   bestBidPrice: String!
   "The aggregated volume being bid at the best bid price."
@@ -371,6 +388,8 @@ type ObservableMarketData {
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
   productData: ProductData
+  "The methodology used to calculated mark price"
+  markPriceType: CompositePriceType!
 }
 
 "Timestamps for when the market changes state"
@@ -1982,6 +2001,8 @@ type Perpetual {
   fundingRateLowerBound: String!
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
   fundingRateUpperBound: String!
+  "Optional configuration driving the index price calculation for perpetual product"
+  indexPriceConfig: CompositePriceConfiguration
 }
 
 """
@@ -4498,6 +4519,23 @@ type NewMarket {
   liquidityFeeSettings: LiquidityFeeSettings
   "Liquidation strategy for the market"
   liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration!
+}
+
+type CompositePriceConfiguration {
+  "Decay weight used in calculating time weight for a given trade"
+  decayWeight: String!
+  "Decay power used in calculating time weight for a given trade"
+  decayPower: Int!
+  "Cash amount used in calculating mark price from the order book"
+  cashAmount: String!
+  "Weights for each given price source, first entry is price from trade, then price from book, then first oracle, next oracle, etc. And last entry is for median price"
+  SourceWeights: [String!]
+  "Staleness tolerance duration for each given price sources in the order mentioned above"
+  SourceStalenessTolerance: [String!]!
+  "Composite price calculation methodology"
+  CompositePriceType: CompositePriceType!
 }
 
 type SuccessorConfiguration {
@@ -4538,6 +4576,8 @@ type UpdateMarketConfiguration {
   liquidityFeeSettings: LiquidityFeeSettings
   "Liquidation strategy for the market"
   liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration
 }
 
 type UpdateInstrumentConfiguration {

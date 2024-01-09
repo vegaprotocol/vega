@@ -485,6 +485,10 @@ func (r *VegaResolverRoot) LiquidationStrategy() LiquidationStrategyResolver {
 	return (*liquidationStrategyResolver)(r)
 }
 
+func (r *VegaResolverRoot) CompositePriceConfiguration() CompositePriceConfigurationResolver {
+	return (*compositePriceConfigurationResolver)(r)
+}
+
 func (r *VegaResolverRoot) NewSpotMarket() NewSpotMarketResolver {
 	return (*newSpotMarketResolver)(r)
 }

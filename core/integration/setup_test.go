@@ -436,6 +436,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 		netparams.WatchParam{
+			Param:   netparams.IndexPriceUpdateFrequency,
+			Watcher: execsetup.executionEngine.OnIndexPriceUpdateFrequency,
+		},
+		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
 			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},

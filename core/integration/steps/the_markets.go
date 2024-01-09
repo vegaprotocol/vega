@@ -18,6 +18,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/collateral"
@@ -380,6 +381,27 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LiquidityFeeSettings = s
 	}
 
+	markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
+	if row.row.HasColumn("price type") {
+		markPriceConfig.CompositePriceType = row.markPriceType()
+	}
+	if row.row.HasColumn("decay power") {
+		markPriceConfig.DecayPower = row.decayPower()
+	}
+	if row.row.HasColumn("decay weight") {
+		markPriceConfig.DecayWeight = row.decayWeight()
+	}
+	if row.row.HasColumn("cash amount") {
+		markPriceConfig.CashAmount = row.cashAmount()
+	}
+	if row.row.HasColumn("source weights") {
+		markPriceConfig.SourceWeights = row.priceSourceWeights()
+	}
+	if row.row.HasColumn("source staleness tolerance") {
+		markPriceConfig.SourceStalenessTolerance = row.priceSourceStalnessTolerance()
+	}
+	update.Changes.MarkPriceConfiguration = markPriceConfig
+	existing.MarkPriceConfiguration = markPriceConfig
 	return update, nil
 }
 
@@ -426,6 +448,15 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	markPriceConfig := &types.CompositePriceConfiguration{
+		CompositePriceType:       row.markPriceType(),
+		DecayWeight:              row.decayWeight(),
+		DecayPower:               row.decayPower(),
+		CashAmount:               row.cashAmount(),
+		SourceWeights:            row.priceSourceWeights(),
+		SourceStalenessTolerance: row.priceSourceStalnessTolerance(),
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -456,6 +487,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		MarkPriceConfiguration:        markPriceConfig,
 	}
 
 	if row.isSuccessor() {
@@ -528,6 +560,16 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	if err != nil {
 		panic(err)
 	}
+
+	markPriceConfig := &types.CompositePriceConfiguration{
+		CompositePriceType:       row.markPriceType(),
+		DecayWeight:              row.decayWeight(),
+		DecayPower:               row.decayPower(),
+		CashAmount:               row.cashAmount(),
+		SourceWeights:            row.priceSourceWeights(),
+		SourceStalenessTolerance: row.priceSourceStalnessTolerance(),
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -565,6 +607,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		MarkPriceConfiguration:        markPriceConfig,
 	}
 
 	if row.isSuccessor() {
@@ -619,6 +662,12 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"is passed",
 		"market type",
 		"liquidation strategy",
+		"price type",
+		"decay weight",
+		"decay power",
+		"cash amount",
+		"source weights",
+		"source staleness tolerance",
 	})
 }
 
@@ -635,6 +684,12 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"sla params",
 		"liquidity fee settings",
 		"liquidation strategy",
+		"price type",
+		"decay weight",
+		"decay power",
+		"cash amount",
+		"source weights",
+		"source staleness tolerance",
 	})
 }
 
@@ -688,6 +743,70 @@ func (r marketUpdateRow) liquidationStrat() (string, bool) {
 		return ls, true
 	}
 	return "", false
+}
+
+func (r marketUpdateRow) priceSourceWeights() []num.Decimal {
+	if !r.row.HasColumn("source weights") {
+		return []num.Decimal{num.DecimalZero(), num.DecimalZero(), num.DecimalZero(), num.DecimalZero()}
+	}
+	weights := strings.Split(r.row.mustColumn("source weights"), ",")
+	d := make([]num.Decimal, 0, len(weights))
+	for _, v := range weights {
+		d = append(d, num.MustDecimalFromString(v))
+	}
+	return d
+}
+
+func (r marketUpdateRow) priceSourceStalnessTolerance() []time.Duration {
+	if !r.row.HasColumn("source staleness tolerance") {
+		return []time.Duration{1000, 1000, 1000, 1000}
+	}
+	durations := strings.Split(r.row.mustColumn("source staleness tolerance"), ",")
+	d := make([]time.Duration, 0, len(durations))
+	for _, v := range durations {
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			panic(err)
+		}
+		d = append(d, dur)
+	}
+	return d
+}
+
+func (r marketUpdateRow) cashAmount() *num.Uint {
+	if !r.row.HasColumn("cash amount") {
+		return num.UintZero()
+	}
+	return num.MustUintFromString(r.row.mustColumn("cash amount"), 10)
+}
+
+func (r marketUpdateRow) decayPower() num.Decimal {
+	if !r.row.HasColumn("decay power") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay power"))
+}
+
+func (r marketUpdateRow) decayWeight() num.Decimal {
+	if !r.row.HasColumn("decay weight") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay weight"))
+}
+
+func (r marketUpdateRow) markPriceType() types.CompositePriceType {
+	if !r.row.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.row.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.row.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.row.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
 }
 
 func (r marketRow) id() string {
@@ -781,6 +900,70 @@ func (r marketRow) linearSlippageFactor() float64 {
 		return 0.001
 	}
 	return r.row.MustF64("linear slippage factor")
+}
+
+func (r marketRow) priceSourceWeights() []num.Decimal {
+	if !r.row.HasColumn("source weights") {
+		return []num.Decimal{num.DecimalZero(), num.DecimalZero(), num.DecimalZero(), num.DecimalZero()}
+	}
+	weights := strings.Split(r.row.mustColumn("source weights"), ",")
+	d := make([]num.Decimal, 0, len(weights))
+	for _, v := range weights {
+		d = append(d, num.MustDecimalFromString(v))
+	}
+	return d
+}
+
+func (r marketRow) priceSourceStalnessTolerance() []time.Duration {
+	if !r.row.HasColumn("source staleness tolerance") {
+		return []time.Duration{1000, 1000, 1000, 1000}
+	}
+	durations := strings.Split(r.row.mustColumn("source staleness tolerance"), ",")
+	d := make([]time.Duration, 0, len(durations))
+	for _, v := range durations {
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			panic(err)
+		}
+		d = append(d, dur)
+	}
+	return d
+}
+
+func (r marketRow) cashAmount() *num.Uint {
+	if !r.row.HasColumn("cash amount") {
+		return num.UintZero()
+	}
+	return num.MustUintFromString(r.row.mustColumn("cash amount"), 10)
+}
+
+func (r marketRow) decayPower() num.Decimal {
+	if !r.row.HasColumn("decay power") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay power"))
+}
+
+func (r marketRow) decayWeight() num.Decimal {
+	if !r.row.HasColumn("decay weight") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay weight"))
+}
+
+func (r marketRow) markPriceType() types.CompositePriceType {
+	if !r.row.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.row.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.row.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.row.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
 }
 
 func (r marketRow) quadraticSlippageFactor() float64 {

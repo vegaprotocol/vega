@@ -72,6 +72,8 @@ message Perpetual {
   optional string funding_rate_lower_bound = 11;
   // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
   optional string funding_rate_upper_bound = 12;
+  // Optional configuration for the index price used in funding payment calculation.
+  optional CompositePriceConfiguration index_price_config = 13;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -382,6 +384,8 @@ message Market {
   optional LiquiditySLAParameters liquidity_sla_params = 18;
   // Liquidation strategy used by this market.
   LiquidationStrategy liquidation_strategy = 19;
+  // Mark price calculation configuration.
+  CompositePriceConfiguration mark_price_configuration = 20;
 }
 
 // Time stamps for important times about creating, enacting etc the market
@@ -406,4 +410,32 @@ message LiquidationStrategy {
   uint64 full_disposal_size = 3;
   // Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
   string max_fraction_consumed = 4;
+}
+
+enum CompositePriceType {
+  COMPOSITE_PRICE_TYPE_UNSPECIFIED = 0;
+  // Composite price is calculated as a weighted average of the underlying mark prices.
+  COMPOSITE_PRICE_TYPE_WEIGHTED = 1;
+  // Composite price is calculated as a median of the underlying mark prices.
+  COMPOSITE_PRICE_TYPE_MEDIAN = 2;
+  // Composite price is calculated as the last trade price.
+  COMPOSITE_PRICE_TYPE_LAST_TRADE = 3;
+}
+
+// Mark price configuration parameters.
+message CompositePriceConfiguration {
+  // Decay weight used for calculation of mark price.
+  string decay_weight = 1;
+  // Decay power used for the calculation of mark price.
+  uint64 decay_power = 2;
+  // Cash amount, in asset decimals, used for the calculation of the mark price from the order book.
+  string cash_amount = 3;
+  // Weights for each composite price data source.
+  repeated string source_weights = 4;
+  // For how long a price source is considered valid. One entry for each data source
+  // such that the first is for the trade based mark price, the second is for the book based price
+  // the third is for the first oracle, followed by more oracle data source staleness tolerance.
+  repeated string source_staleness_tolerance = 5;
+  // Which method is used for the calculation of the composite price for the market.
+  CompositePriceType composite_price_type = 6;
 }
