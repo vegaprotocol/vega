@@ -25,7 +25,7 @@ import (
 
 type proposalEdgeResolver VegaResolverRoot
 
-func (r *proposalEdgeResolver) Node(ctx context.Context, data *v2.GovernanceDataEdge) (ProposalNode, error) {
+func (r *proposalEdgeResolver) ProposalNode(ctx context.Context, data *v2.GovernanceDataEdge) (ProposalNode, error) {
 	if data == nil || data.Node == nil || data.Node.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}

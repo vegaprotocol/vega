@@ -6029,7 +6029,9 @@ union ProposalNode = Proposal | BatchProposal
 "Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
-  node: ProposalNode!
+  node: Proposal! @deprecated(reason: "Use proposalNode")
+  "The data of either single or batch proposal"
+  proposalNode: ProposalNode
   "Cursor identifying the proposal"
   cursor: String!
 }
