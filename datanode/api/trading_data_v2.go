@@ -2309,6 +2309,10 @@ func (t *TradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		if err != nil {
 			return nil, formatE(ErrGovernanceServiceGetVotes, errors.Wrapf(err, "proposalID: %s", proposalID))
 		}
+
+		if len(edges[i].Node.Proposals) > 0 {
+			edges[i].Node.ProposalType = vega.GovernanceData_TYPE_BATCH
+		}
 	}
 
 	proposalsConnection := &v2.GovernanceDataConnection{

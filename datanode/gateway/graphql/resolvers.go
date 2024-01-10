@@ -191,6 +191,11 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
 }
 
+// Proposal returns the proposal resolver.
+func (r *VegaResolverRoot) ProposalEdge() ProposalEdgeResolver {
+	return (*proposalEdgeResolver)(r)
+}
+
 // ProposalDetail returns the Proposal detail resolver.
 func (r *VegaResolverRoot) ProposalDetail() ProposalDetailResolver {
 	return (*proposalDetailResolver)(r)
@@ -266,6 +271,14 @@ func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
 
 func (r *VegaResolverRoot) ProposalTerms() ProposalTermsResolver {
 	return (*proposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTerms() BatchProposalTermsResolver {
+	return (*batchProposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTermsChange() BatchProposalTermsChangeResolver {
+	return (*batchProposalTermsChangeResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateMarket() UpdateMarketResolver {
@@ -1413,7 +1426,7 @@ func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType 
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
-func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*vegapb.GovernanceData, error) {
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (ProposalNode, error) {
 	if id != nil {
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 			ProposalId: id,
@@ -1421,6 +1434,12 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
@@ -1429,6 +1448,12 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	}
 

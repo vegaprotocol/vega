@@ -112,8 +112,10 @@
 - [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
 - [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
 - [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
-- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) -  Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) - Add tests for markets expiring in opening auction, fix a bug for future markets.
 - [10354](https://github.com/vegaprotocol/vega/issues/10354) - Renumbered SQL migration scripts 0055-0067 due to 0068 being released as part of a patch without renumbering.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) - Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
 
 ## 0.73.0
 

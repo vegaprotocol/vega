@@ -62,6 +62,10 @@ type ProposalChange interface {
 	IsProposalChange()
 }
 
+type ProposalNode interface {
+	IsProposalNode()
+}
+
 type RiskModel interface {
 	IsRiskModel()
 }
@@ -112,6 +116,39 @@ type AuctionDuration struct {
 	// Target uncrossing trading volume
 	Volume int `json:"volume"`
 }
+
+type BatchProposal struct {
+	// Proposal ID that is provided by Vega once proposal reaches the network
+	ID *string `json:"id"`
+	// A UUID reference to aid tracking proposals on Vega
+	Reference string `json:"reference"`
+	// Party that prepared the proposal
+	Party *vega.Party `json:"party"`
+	// State of the proposal
+	State vega.Proposal_State `json:"state"`
+	// RFC3339Nano time and date when the proposal reached the network
+	Datetime int64 `json:"datetime"`
+	// Rationale behind the proposal
+	Rationale *vega.ProposalRationale `json:"rationale"`
+	// Votes cast for this proposal
+	Votes *ProposalVotes `json:"votes"`
+	// Reason the proposal was rejected
+	RejectionReason *vega.ProposalError `json:"rejectionReason"`
+	// Details of the rejection reason
+	ErrorDetails *string `json:"errorDetails"`
+	// Required majority for this proposal to succeed
+	RequiredMajority string `json:"requiredMajority"`
+	// Required participation for this proposal to succeed
+	RequiredParticipation string `json:"requiredParticipation"`
+	// Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted
+	RequiredLpMajority *string `json:"requiredLpMajority"`
+	// The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass
+	RequiredLpParticipation *string `json:"requiredLpParticipation"`
+	// Proposals that are part of the batch
+	SubProposals []*vega.Proposal `json:"subProposals"`
+}
+
+func (BatchProposal) IsProposalNode() {}
 
 // A Vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {

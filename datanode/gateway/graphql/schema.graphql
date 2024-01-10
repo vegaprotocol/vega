@@ -127,9 +127,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-  @deprecated(
-    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-  )
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -230,10 +230,10 @@ type PerpetualData {
   "Time at which the funding period started"
   startTime: Timestamp!
   "The index price used for external VWAP calculation"
-  indexPrice: String! 
-   "The methodology used to calculated index price for perps"
+  indexPrice: String!
+  "The methodology used to calculated index price for perps"
   indexPriceType: CompositePriceType!
-   "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
+  "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
   nextIndexPriceCalc: String!
 }
 
@@ -632,7 +632,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-  @deprecated(reason: "Use estimateFees and estimatePosition instead")
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -922,7 +922,6 @@ type Query {
     pagination: Pagination
   ): OrderConnection
 
-
   "List statistics about paid liquidity fees"
   paidLiquidityFees(
     "Optional market ID to filter for."
@@ -955,7 +954,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal
+  ): ProposalNode
 
   "All governance proposals in the Vega network"
   proposalsConnection(
@@ -1248,7 +1247,7 @@ type Transfer {
 }
 
 union TransferKind =
-  OneOffTransfer
+    OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -2424,7 +2423,10 @@ type Market {
   state: MarketState!
 
   "The proposal that initiated this market"
-  proposal: Proposal
+  proposal: Proposal @deprecated(reason: "Use marketProposal")
+
+  "The proposal that initiated this market"
+  marketProposal: ProposalNode
 
   "Orders on a market"
   ordersConnection(
@@ -2448,9 +2450,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -2492,7 +2494,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2505,7 +2507,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2683,9 +2685,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2701,7 +2703,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-  @deprecated(reason: "Use root positions query instead of sub-query")
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2766,7 +2768,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -3105,9 +3107,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -4508,7 +4510,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4567,7 +4569,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4619,7 +4621,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-  UpdateMarketSimpleRiskModel
+    UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4700,7 +4702,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-  OneOffGovernanceTransfer
+    OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4861,7 +4863,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -4911,6 +4913,30 @@ type ProposalTerms {
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
+}
+
+"Terms for a batch governance proposal"
+type BatchProposalTermsChange {
+  """
+  RFC3339Nano time and date when this proposal will be executed, if it passes.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
+  enactmentDatetime: Timestamp
+
+  "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
+  change: ProposalChange!
+}
+
+"The rationale for the proposal"
+type BatchProposalTerms {
+  """
+  RFC3339Nano time and date when voting closes for this proposal.
+  Constrained by "minClose" and "maxClose" network parameters.
+  """
+  closingDatetime: Timestamp!
+
+  "Actual changes being introduced by the proposal - actions the proposal triggers if passed and enacted."
+  changes: [BatchProposalTermsChange]!
 }
 
 """
@@ -5000,7 +5026,7 @@ type Proposal {
   requiredLpParticipation: String
 }
 
-type ProposalDetail {
+type BatchProposal {
   "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on Vega"
@@ -5009,10 +5035,45 @@ type ProposalDetail {
   party: Party!
   "State of the proposal"
   state: ProposalState!
+  "RFC3339Nano time and date when the proposal reached the network"
+  datetime: Timestamp!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
+  "Votes cast for this proposal"
+  votes: ProposalVotes!
+  "Reason the proposal was rejected"
+  rejectionReason: ProposalRejectionReason
+  "Details of the rejection reason"
+  errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted"
+  requiredLpMajority: String
+  "The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
+  requiredLpParticipation: String
+  "Proposals that are part of the batch"
+  subProposals: [ProposalDetail]
+}
+
+type ProposalDetail {
+  "Proposal ID that is provided by Vega once proposal reaches the network"
+  id: ID
+  "Batch proposal ID that is provided by Vega once proposal reaches the network"
+  batchId: ID
+  "A UUID reference to aid tracking proposals on Vega"
+  reference: String!
+  "Party that prepared the proposal"
+  party: Party!
+  "State of the proposal"
+  state: ProposalState!
   "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
-  "Terms of the proposal"
-  terms: ProposalTerms!
+  "Terms of the proposal for proposal"
+  terms: ProposalTerms
+  "Terms of the proposal for a batch proposal"
+  batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Why the proposal was rejected by the core"
@@ -5966,10 +6027,14 @@ enum TransferDirection {
   ToOrFrom
 }
 
+union ProposalNode = Proposal | BatchProposal
+
 "Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
-  node: Proposal!
+  node: Proposal! @deprecated(reason: "Use proposalNode")
+  "The data of either single or batch proposal"
+  proposalNode: ProposalNode
   "Cursor identifying the proposal"
   cursor: String!
 }
@@ -6243,7 +6308,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-  DataSourceSpecConfigurationTime
+    DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6265,7 +6330,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-  DataSourceDefinitionInternal
+    DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -6967,7 +7032,7 @@ type GamesConnection {
 }
 
 "Connection type for retrieving cursor-based paginated party margin modes information"
-type  PartyMarginModesConnection {
+type PartyMarginModesConnection {
   "The party margin modes"
   edges: [PartyMarginModeEdge]
   "The pagination information"
@@ -6981,7 +7046,7 @@ type PartyMarginModeEdge {
 }
 
 "Margin mode selected for the given party and market."
-type PartyMarginMode{
+type PartyMarginMode {
   "Unique ID of the market."
   marketId: ID!
   "Unique ID of the party."
