@@ -18,6 +18,7 @@ package future
 import (
 	"context"
 	"sort"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
@@ -44,6 +45,7 @@ type CompositePriceCalculator struct {
 	priceSources []*num.Uint
 	oracles      []*products.CompositePriceOracle
 	scalingFunc  func(context.Context, *num.Numeric) *num.Uint
+	lock         sync.Mutex
 }
 
 const (
@@ -147,6 +149,8 @@ func NewCompositePriceCalculator(ctx context.Context, config *types.CompositePri
 
 func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe excommon.OracleEngine, config *types.CompositePriceConfiguration) error {
 	// special case for only resetting the oracles
+	mpc.lock.Lock()
+	defer mpc.lock.Unlock()
 	if mpc.oracles != nil {
 		for _, cpo := range mpc.oracles {
 			cpo.UnsubAll(ctx)
@@ -205,6 +209,9 @@ func (mpc *CompositePriceCalculator) NewTrade(trade *types.Trade) {
 // UpdateOraclePrice is called when a new oracle price is available.
 func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) func(ctx context.Context, data common.Data) error {
 	return func(ctx context.Context, data common.Data) error {
+		// as oracle update are out of band we need to lock before we update the corresponding price source
+		mpc.lock.Lock()
+		defer mpc.lock.Unlock()
 		oracle := mpc.oracles[oracleIndex]
 		pd, err := oracle.GetData(data)
 		if err != nil {
@@ -254,6 +261,8 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 		mpc.trades = []*types.Trade{}
 		return mpc.price
 	}
+	mpc.lock.Lock()
+	defer mpc.lock.Unlock()
 	if len(mpc.trades) > 0 {
 		if pft := PriceFromTrades(mpc.trades, mpc.config.DecayWeight, num.DecimalFromInt64(markPriceFrequency.Nanoseconds()), mpc.config.DecayPower, t); pft != nil && !pft.IsZero() {
 			mpc.priceSources[TradePriceIndex] = pft
