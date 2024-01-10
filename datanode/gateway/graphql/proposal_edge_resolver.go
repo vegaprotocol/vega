@@ -42,6 +42,10 @@ func (r *proposalEdgeResolver) Proposal(ctx context.Context, data *v2.Governance
 		return nil, ErrInvalidProposal
 	}
 
+	if data.GetNode().ProposalType == vega.GovernanceData_TYPE_BATCH {
+		return nil, nil
+	}
+
 	return data.Node, nil
 }
 
