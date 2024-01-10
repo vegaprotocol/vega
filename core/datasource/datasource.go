@@ -111,6 +111,35 @@ func (s Spec) GetDefinition() definition.Definition {
 	return *s.Data
 }
 
+type SpecBindingForCompositePrice struct {
+	PriceSourceProperty string
+}
+
+func (b SpecBindingForCompositePrice) String() string {
+	return fmt.Sprintf(
+		"priceSource(%s)",
+		b.PriceSourceProperty,
+	)
+}
+
+func (b SpecBindingForCompositePrice) IntoProto() *vegapb.SpecBindingForCompositePrice {
+	return &vegapb.SpecBindingForCompositePrice{
+		PriceSourceProperty: b.PriceSourceProperty,
+	}
+}
+
+func (b SpecBindingForCompositePrice) DeepClone() *SpecBindingForCompositePrice {
+	return &SpecBindingForCompositePrice{
+		PriceSourceProperty: b.PriceSourceProperty,
+	}
+}
+
+func SpecBindingForCompositePriceFromProto(o *vegapb.SpecBindingForCompositePrice) *SpecBindingForCompositePrice {
+	return &SpecBindingForCompositePrice{
+		PriceSourceProperty: o.PriceSourceProperty,
+	}
+}
+
 type SpecBindingForFuture struct {
 	SettlementDataProperty     string
 	TradingTerminationProperty string

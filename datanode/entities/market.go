@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type _Market struct{}
@@ -57,8 +58,9 @@ type Market struct {
 	LiquiditySLAParameters        LiquiditySLAParameters
 	// Not saved in the market table, but used when retrieving data from the database.
 	// This will be populated when a market has a successor
-	SuccessorMarketID   MarketID
-	LiquidationStrategy LiquidationStrategy
+	SuccessorMarketID      MarketID
+	LiquidationStrategy    LiquidationStrategy
+	MarkPriceConfiguration *CompositePriceConfiguration
 }
 
 type MarketCursor struct {
@@ -169,6 +171,8 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		liqStrat = LiquidationStrategyFromProto(market.LiquidationStrategy)
 	}
 
+	mpc := &CompositePriceConfiguration{market.MarkPriceConfiguration}
+
 	return &Market{
 		ID:                            MarketID(market.Id),
 		TxHash:                        txHash,
@@ -191,6 +195,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		InsurancePoolFraction:         insurancePoolFraction,
 		LiquiditySLAParameters:        sla,
 		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        mpc,
 	}, nil
 }
 
@@ -243,6 +248,7 @@ func (m Market) ToProto() *vega.Market {
 		SuccessorMarketId:             successorMarketID,
 		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
 		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
+		MarkPriceConfiguration:        m.MarkPriceConfiguration.CompositePriceConfiguration,
 	}
 }
 
@@ -313,6 +319,23 @@ type LiquiditySLAParameters struct {
 	CommitmentMinTimeFraction   num.Decimal `json:"commitmentMinTimeFraction,omitempty"`
 	PerformanceHysteresisEpochs uint64      `json:"performanceHysteresisEpochs,omitempty"`
 	SlaCompetitionFactor        num.Decimal `json:"slaCompetitionFactor,omitempty"`
+}
+
+type CompositePriceConfiguration struct {
+	*vega.CompositePriceConfiguration
+}
+
+func (cpc CompositePriceConfiguration) MarshalJSON() ([]byte, error) {
+	return protojson.Marshal(cpc)
+}
+
+func (cpc *CompositePriceConfiguration) UnmarshalJSON(data []byte) error {
+	cpc.CompositePriceConfiguration = &vega.CompositePriceConfiguration{}
+	return protojson.Unmarshal(data, cpc)
+}
+
+func (cpc CompositePriceConfiguration) ToProto() *vega.CompositePriceConfiguration {
+	return cpc.CompositePriceConfiguration
 }
 
 type LiquidationStrategy struct {

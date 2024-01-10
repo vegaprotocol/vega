@@ -750,6 +750,12 @@ type Signer struct {
 	Signer SignerKind `json:"signer"`
 }
 
+// Describes which property of the data source data should be
+// used as composite price source.
+type SpecBindingForCompositePrice struct {
+	PriceSourceProperty string `json:"priceSourceProperty"`
+}
+
 // All staking information related to a Party.
 // Contains the current recognised balance by the network and
 // all the StakeLink/Unlink seen by the network

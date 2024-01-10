@@ -4971,150 +4971,7 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 }
 
 func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
-	cases := []struct {
-		mpc   *vega.CompositePriceConfiguration
-		field string
-		err   error
-	}{
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "banana",
-			},
-			field: "decay_weight",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "",
-			},
-			field: "decay_weight",
-			err:   commands.ErrIsRequired,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "-1",
-			},
-			field: "decay_weight",
-			err:   commands.ErrMustBeWithinRange01,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "1.1",
-			},
-			field: "decay_weight",
-			err:   commands.ErrMustBeWithinRange01,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayPower: 4,
-			},
-			field: "decay_power",
-			err:   fmt.Errorf("must be in {0, 1, 2, 3}"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsRequired,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "banana",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "-1",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "1.2",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CompositePriceType: 0,
-			},
-			field: "composite_price_type",
-			err:   commands.ErrIsRequired,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CompositePriceType: 4,
-			},
-			field: "composite_price_type",
-			err:   commands.ErrIsNotValid,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights:      []string{"", "", ""},
-				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
-			},
-			field: "source_weights",
-			err:   fmt.Errorf("must be greater than or equal to 4"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
-				SourceStalenessTolerance: []string{"", "", ""},
-			},
-			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must be greater than or equal to 4"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights:            []string{"", "", "", ""},
-				SourceStalenessTolerance: []string{"", "", "", "", ""},
-				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
-			},
-			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must have the same length as source_weights"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights: []string{"", "banana", "-1", ""},
-			},
-			field: "source_weights.0",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights: []string{"", "banana", "-1", ""},
-			},
-			field: "source_weights.1",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights: []string{"", "banana", "-1", ""},
-			},
-			field: "source_weights.2",
-			err:   commands.ErrMustBePositiveOrZero,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
-			},
-			field: "source_staleness_tolerance.0",
-			err:   fmt.Errorf("must be a valid duration"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
-			},
-			field: "source_staleness_tolerance.1",
-			err:   fmt.Errorf("must be a valid duration"),
-		},
-	}
-
+	cases := getCompositePriceConfigurationCases()
 	for _, c := range cases {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
 			Terms: &vegapb.ProposalTerms{
@@ -5136,7 +4993,15 @@ func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
 				},
 			},
 		})
-		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field), c.err)
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration"), c.err)
+		}
 	}
 }
 
@@ -6269,74 +6134,18 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
 }
 
-func testCompositePriceConfiguration(t *testing.T) {
-	cases := []struct {
-		mpc   *vega.CompositePriceConfiguration
-		field string
-		err   error
-	}{
+type compositePriceConfigCase struct {
+	mpc   *vega.CompositePriceConfiguration
+	field string
+	err   error
+}
+
+func getCompositePriceConfigurationCases() []compositePriceConfigCase {
+	cases := []compositePriceConfigCase{
 		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "banana",
-			},
-			field: "decay_weight",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "",
-			},
-			field: "decay_weight",
+			mpc:   &vega.CompositePriceConfiguration{},
+			field: "composite_price_type",
 			err:   commands.ErrIsRequired,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "-1",
-			},
-			field: "decay_weight",
-			err:   commands.ErrMustBeWithinRange01,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayWeight: "1.1",
-			},
-			field: "decay_weight",
-			err:   commands.ErrMustBeWithinRange01,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				DecayPower: 4,
-			},
-			field: "decay_power",
-			err:   fmt.Errorf("must be in {0, 1, 2, 3}"),
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsRequired,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "banana",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "-1",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
-		},
-		{
-			mpc: &vega.CompositePriceConfiguration{
-				CashAmount: "1.2",
-			},
-			field: "cash_amount",
-			err:   commands.ErrIsNotValidNumber,
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
@@ -6354,6 +6163,126 @@ func testCompositePriceConfiguration(t *testing.T) {
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "banana",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "-1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "1.1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayWeight:        "",
+			},
+			field: "decay_weight",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayPower:         4,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayPower:         0,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayPower:         0,
+			},
+			field: "decay_power",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "banana",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "-1",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "1.2",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				CashAmount:         "",
+			},
+			field: "cash_amount",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"1", "2", "3"},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"1", "2", "3"},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
 				SourceWeights:      []string{"", "", ""},
 				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
 			},
@@ -6362,10 +6291,27 @@ func testCompositePriceConfiguration(t *testing.T) {
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
 				SourceStalenessTolerance: []string{"", "", ""},
 			},
 			field: "source_staleness_tolerance",
 			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceStalenessTolerance: []string{"", "", ""},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+				SourceStalenessTolerance: nil,
+			},
+			field: "source_staleness_tolerance",
+			err:   nil,
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
@@ -6412,6 +6358,16 @@ func testCompositePriceConfiguration(t *testing.T) {
 			err:   fmt.Errorf("must be a valid duration"),
 		},
 	}
+	return cases
+}
+
+func testCompositePriceConfiguration(t *testing.T) {
+	cases := getCompositePriceConfigurationCases()
+	cases = append(cases, compositePriceConfigCase{
+		mpc:   nil,
+		field: "",
+		err:   commands.ErrIsRequired,
+	})
 
 	for _, c := range cases {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -6430,7 +6386,15 @@ func testCompositePriceConfiguration(t *testing.T) {
 				},
 			},
 		})
-		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field), c.err)
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration"), c.err)
+		}
 	}
 }
 

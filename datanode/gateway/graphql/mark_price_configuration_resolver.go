@@ -25,14 +25,23 @@ import (
 type compositePriceConfigurationResolver VegaResolverRoot
 
 func (*compositePriceConfigurationResolver) MarkPriceSourceWeights(ctx context.Context, obj *vega.CompositePriceConfiguration) ([]string, error) {
+	if obj == nil {
+		return []string{}, nil
+	}
 	return obj.SourceWeights, nil
 }
 
 func (*compositePriceConfigurationResolver) MarkPriceSourceStalenessTolerance(ctx context.Context, obj *vega.CompositePriceConfiguration) ([]string, error) {
+	if obj == nil {
+		return []string{}, nil
+	}
 	return obj.SourceStalenessTolerance, nil
 }
 
 func (*compositePriceConfigurationResolver) CompositePriceType(ctx context.Context, obj *vega.CompositePriceConfiguration) (CompositePriceType, error) {
+	if obj == nil {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
 	if obj.CompositePriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
 		return CompositePriceTypeCompositePriceTypeWeighted, nil
 	} else if obj.CompositePriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
@@ -43,5 +52,21 @@ func (*compositePriceConfigurationResolver) CompositePriceType(ctx context.Conte
 }
 
 func (*compositePriceConfigurationResolver) DecayPower(ctx context.Context, obj *vega.CompositePriceConfiguration) (int, error) {
+	if obj == nil {
+		return 0, nil
+	}
 	return int(obj.DecayPower), nil
+}
+
+func (*compositePriceConfigurationResolver) DataSourcesSpecBinding(ctx context.Context, obj *vega.CompositePriceConfiguration) ([]*SpecBindingForCompositePrice, error) {
+	if obj == nil || obj.DataSourcesSpecBinding == nil {
+		return nil, nil
+	}
+	binding := make([]*SpecBindingForCompositePrice, 0, len(obj.DataSourcesSpecBinding))
+	for _, sbfcp := range obj.DataSourcesSpecBinding {
+		binding = append(binding, &SpecBindingForCompositePrice{
+			PriceSourceProperty: sbfcp.PriceSourceProperty,
+		})
+	}
+	return binding, nil
 }
