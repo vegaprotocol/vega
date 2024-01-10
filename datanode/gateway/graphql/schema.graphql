@@ -2022,6 +2022,16 @@ type DataSourceSpecPerpetualBinding {
   settlementScheduleProperty: String!
 }
 
+
+"""
+Describes which property of the data source data should be
+used as composite price source.
+"""
+type SpecBindingForCompositePrice {
+  priceSourceProperty: String!
+}
+
+
 """
 DataSourceSpecToFutureBinding tells on which property data source data should be
 used as settlement data and trading termination.
@@ -2528,6 +2538,9 @@ type Market {
 
   "Optional: Liquidation strategy for the market"
   liquidationStrategy: LiquidationStrategy
+
+  "Configuration driving the mark price for the market"
+  markPriceConfiguration: CompositePriceConfiguration! 
 }
 
 """
@@ -4536,6 +4549,10 @@ type CompositePriceConfiguration {
   SourceStalenessTolerance: [String!]!
   "Composite price calculation methodology"
   CompositePriceType: CompositePriceType!
+  "Oracle configuration for external composite price sources"
+  dataSourcesSpec: [DataSourceDefinition]
+  "Spec bindings for external composite price sources"
+  dataSourcesSpecBinding: [SpecBindingForCompositePrice]
 }
 
 type SuccessorConfiguration {

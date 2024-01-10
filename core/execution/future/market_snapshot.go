@@ -202,7 +202,7 @@ func NewMarketFromSnapshot(
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
 
-	markPriceCalculator := NewCompositePriceCalculatorFromSnapshot(em.CurrentMarkPrice, em.MarkPriceCalculator)
+	markPriceCalculator := NewCompositePriceCalculatorFromSnapshot(ctx, em.CurrentMarkPrice, timeService, oracleEngine, em.MarkPriceCalculator)
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -249,8 +249,11 @@ func NewMarketFromSnapshot(
 		markPriceCalculator:           markPriceCalculator,
 	}
 
+	markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+
 	if em.IndexPriceCalculator != nil {
-		market.indexPriceCalculator = NewCompositePriceCalculatorFromSnapshot(nil, em.IndexPriceCalculator)
+		market.indexPriceCalculator = NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.IndexPriceCalculator)
+		market.indexPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 	}
 
 	for _, p := range em.Parties {

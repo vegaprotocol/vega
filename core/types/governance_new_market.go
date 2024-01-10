@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
+	"code.vegaprotocol.io/vega/core/datasource/definition"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -159,12 +160,14 @@ type SuccessorConfig struct {
 }
 
 type CompositePriceConfiguration struct {
-	DecayWeight              num.Decimal
-	DecayPower               num.Decimal
-	CashAmount               *num.Uint
-	SourceWeights            []num.Decimal
-	SourceStalenessTolerance []time.Duration
-	CompositePriceType       CompositePriceType
+	DecayWeight                  num.Decimal
+	DecayPower                   num.Decimal
+	CashAmount                   *num.Uint
+	SourceWeights                []num.Decimal
+	SourceStalenessTolerance     []time.Duration
+	CompositePriceType           CompositePriceType
+	DataSources                  []*datasource.Spec
+	SpecBindingForCompositePrice []*datasource.SpecBindingForCompositePrice
 }
 
 func (mpc *CompositePriceConfiguration) String() string {
@@ -195,13 +198,26 @@ func (mpc *CompositePriceConfiguration) DeepClone() *CompositePriceConfiguration
 	weights = append(weights, mpc.SourceWeights...)
 	stalenessTolerance := make([]time.Duration, 0, len(mpc.SourceStalenessTolerance))
 	stalenessTolerance = append(stalenessTolerance, mpc.SourceStalenessTolerance...)
+
+	sources := make([]*datasource.Spec, 0, len(mpc.DataSources))
+	for _, s := range mpc.DataSources {
+		specDefinition := s.Data.DeepClone()
+		sources = append(sources, datasource.SpecFromDefinition(*definition.NewWith(specDefinition)))
+	}
+	bindings := make([]*datasource.SpecBindingForCompositePrice, 0, len(mpc.SpecBindingForCompositePrice))
+	for _, sbfcp := range mpc.SpecBindingForCompositePrice {
+		bindings = append(bindings, sbfcp.DeepClone())
+	}
+
 	return &CompositePriceConfiguration{
-		DecayWeight:              mpc.DecayWeight,
-		DecayPower:               mpc.DecayPower,
-		CashAmount:               mpc.CashAmount.Clone(),
-		CompositePriceType:       mpc.CompositePriceType,
-		SourceWeights:            weights,
-		SourceStalenessTolerance: stalenessTolerance,
+		DecayWeight:                  mpc.DecayWeight,
+		DecayPower:                   mpc.DecayPower,
+		CashAmount:                   mpc.CashAmount.Clone(),
+		CompositePriceType:           mpc.CompositePriceType,
+		SourceWeights:                weights,
+		SourceStalenessTolerance:     stalenessTolerance,
+		DataSources:                  sources,
+		SpecBindingForCompositePrice: bindings,
 	}
 }
 
@@ -217,7 +233,20 @@ func (mpc *CompositePriceConfiguration) IntoProto() *vegapb.CompositePriceConfig
 	for _, d := range mpc.SourceStalenessTolerance {
 		stalenessTolerance = append(stalenessTolerance, d.String())
 	}
-
+	var specs []*vegapb.DataSourceDefinition
+	if len(mpc.DataSources) > 0 {
+		specs = make([]*vegapb.DataSourceDefinition, 0, len(mpc.DataSources))
+		for _, source := range mpc.DataSources {
+			specs = append(specs, source.Data.IntoProto())
+		}
+	}
+	var bindings []*vegapb.SpecBindingForCompositePrice
+	if len(mpc.SpecBindingForCompositePrice) > 0 {
+		bindings = make([]*vegapb.SpecBindingForCompositePrice, 0, len(mpc.SpecBindingForCompositePrice))
+		for _, binding := range mpc.SpecBindingForCompositePrice {
+			bindings = append(bindings, binding.IntoProto())
+		}
+	}
 	config := &vegapb.CompositePriceConfiguration{
 		DecayWeight:              mpc.DecayWeight.String(),
 		DecayPower:               uint64(mpc.DecayPower.IntPart()),
@@ -225,6 +254,8 @@ func (mpc *CompositePriceConfiguration) IntoProto() *vegapb.CompositePriceConfig
 		CompositePriceType:       mpc.CompositePriceType,
 		SourceWeights:            weights,
 		SourceStalenessTolerance: stalenessTolerance,
+		DataSourcesSpec:          specs,
+		DataSourcesSpecBinding:   bindings,
 	}
 
 	return config
@@ -246,13 +277,30 @@ func CompositePriceConfigurationFromProto(mpc *vegapb.CompositePriceConfiguratio
 		dur, _ := time.ParseDuration(v)
 		stalenessTolerance = append(stalenessTolerance, dur)
 	}
+
+	dataSources := make([]*datasource.Spec, 0, len(mpc.DataSourcesSpec))
+	for _, spec := range mpc.DataSourcesSpec {
+		specDef, err := definition.FromProto(spec, nil)
+		if err != nil {
+			return nil
+		}
+		dataSources = append(dataSources, datasource.SpecFromDefinition(*definition.NewWith(specDef)))
+	}
+
+	binding := make([]*datasource.SpecBindingForCompositePrice, 0, len(mpc.DataSourcesSpecBinding))
+	for _, spec := range mpc.DataSourcesSpecBinding {
+		binding = append(binding, datasource.SpecBindingForCompositePriceFromProto(spec))
+	}
+
 	return &CompositePriceConfiguration{
-		DecayWeight:              decayWeight,
-		DecayPower:               decayPower,
-		CashAmount:               cashAmount,
-		CompositePriceType:       mpc.CompositePriceType,
-		SourceWeights:            weights,
-		SourceStalenessTolerance: stalenessTolerance,
+		DecayWeight:                  decayWeight,
+		DecayPower:                   decayPower,
+		CashAmount:                   cashAmount,
+		CompositePriceType:           mpc.CompositePriceType,
+		SourceWeights:                weights,
+		SourceStalenessTolerance:     stalenessTolerance,
+		DataSources:                  dataSources,
+		SpecBindingForCompositePrice: binding,
 	}
 }
 
