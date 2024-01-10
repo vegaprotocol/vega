@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.74.0
+## 0.74.0
 
 ### 🚨 Breaking changes
 
@@ -59,7 +59,7 @@
 - [595](https://github.com/vegaprotocol/core-test-coverage/issues/595) - Ensure the full size of iceberg orders is considered when creating a network order.
 - [10308](https://github.com/vegaprotocol/vega/issues/10308) - Support joining to closed teams based on an allow list.
 - [10349](https://github.com/vegaprotocol/vega/issues/10349) - Add oracle support to mark price configuration.
-- [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology. 
+- [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology.
 - [521](https://github.com/vegaprotocol/core-test-coverage/issues/521) - Add tests for allow list functionality when joining teams.
 - [10340](https://github.com/vegaprotocol/core-test-coverage/issues/10340) - Support updating profile for a party.
 
