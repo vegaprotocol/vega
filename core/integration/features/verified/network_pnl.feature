@@ -13,11 +13,15 @@ Feature: Profit and loss for network a running liquidation strategy
 
     # Configure the markets
     Given the liquidation strategies:
-      | name              | disposal step | disposal fraction | full disposal size | max fraction consumed |
-      | liquidation-strat | 3600          | 1                 | 0                  | 1                     |
+      | name                | disposal step | disposal fraction | full disposal size | max fraction consumed |
+      | liquidation-strat-1 | 3600          | 0.5               | 0                  | 1                     |
+      | liquidation-strat-2 | 5             | 0.5               | 0                  | 1                     |
+
     And the markets:
       | id        | quote name | asset    | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | liquidation strategy | sla params    |
-      | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         | liquidation-strat    | default-basic |
+      | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-1  | default-basic |
+      | ETH/MAR23 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-2  | default-basic |
+
 
 
   @NoPerp @NetPNL
@@ -250,3 +254,85 @@ Feature: Profit and loss for network a running liquidation strategy
       | atRiskParty | 0      | 0              | -110         |
       | network     | 2      | -70            | 0            |
     And the insurance pool balance should be "9930" for the market "ETH/MAR22"
+
+  @NoPerp @NetPNL
+  Scenario: Network disposes long position at a loss, loss socialisation applied (0003-MTMK-017)(0012-POSR-018)
+
+    # Setup the market
+    Given the initial insurance pool balance is "0" for all the markets
+    And the parties deposit on asset's general account the following amount:
+      | party       | asset    | amount       |
+      | lp1         | USD.0.10 | 100000000000 |
+      | aux1        | USD.0.10 | 10000000000  |
+      | aux2        | USD.0.10 | 10000000000  |
+      | atRiskParty | USD.0.10 | 100          |
+    And the cumulated balance for all accounts should be worth "120000000100"
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee | lp type    |
+      | lp1 | lp1   | ETH/MAR23 | 500000            | 0   | submission |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | lp1   | ETH/MAR23 | buy  | 1000   | 199   | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
+      | lp1   | ETH/MAR23 | sell | 1000   | 201   | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR23 | buy  | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR23 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/MAR23"
+    Then the market data for the market "ETH/MAR23" should be:
+      | mark price | trading mode            |
+      | 200        | TRADING_MODE_CONTINUOUS |
+
+    # atRiskPary opens a long position
+    Given the parties place the following orders:
+      | party       | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1        | ETH/MAR23 | sell | 2      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | atRiskParty | ETH/MAR23 | buy  | 2      | 200   | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 2      | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party       | market id | maintenance | search | initial | release |
+      | atRiskParty | ETH/MAR23 | 29          | 31     | 34      | 40      |
+    And the parties should have the following account balances:
+      | party       | asset    | market id | margin | general |
+      | atRiskParty | USD.0.10 | ETH/MAR23 | 33     | 67      |
+
+    # Market moves against atRiskParty whom is liquidated
+    Given the parties amend the following orders:
+      | party | reference | price | size delta | tif     |
+      | lp1   | best-bid  | 99    | 0          | TIF_GTC |
+      | lp1   | best-ask  | 101   | 0          | TIF_GTC |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/MAR23 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/MAR23 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "100" for the market "ETH/MAR23"
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -100         |
+      | network     | 2      | 0              | 0            |
+    And the insurance pool balance should be "0" for the market "ETH/MAR23"
+
+    # Network disposes position at a loss, the mark price is not updated, loss socialisation applied cumulated balances unchanged
+    Given the insurance pool balance should be "0" for the market "ETH/MAR23"
+    And the cumulated balance for all accounts should be worth "120000000100"
+    When the network moves ahead "5" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | network | 1      | 0              | -1           |
+    And the mark price should be "100" for the market "ETH/MAR23"
+    And the cumulated balance for all accounts should be worth "120000000100"
+
+    # Network disposes position at a loss, the mark price is not updated, loss socialisation applied cumulated balances unchanged
+    Given the insurance pool balance should be "0" for the market "ETH/MAR23"
+    And the cumulated balance for all accounts should be worth "120000000100"
+    When the network moves ahead "5" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | network | 0      | 0              | -2           |
+    And the mark price should be "100" for the market "ETH/MAR23"
+    And the cumulated balance for all accounts should be worth "120000000100"
+
