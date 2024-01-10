@@ -59,6 +59,8 @@ message PerpetualProduct {
   optional string funding_rate_lower_bound = 11;
   // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
   optional string funding_rate_upper_bound = 12;
+  // Composite price configuration to drive the calculation of the index price used for funding payments. If undefined the default mark price of the market is used.
+  optional CompositePriceConfiguration index_price_configuration = 13;
 }
 
 // Instrument configuration
@@ -142,6 +144,8 @@ message NewMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 13;
   // Liquidation strategy for this market.
   LiquidationStrategy liquidation_strategy = 14;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 15;
 }
 
 // New spot market on Vega
@@ -211,6 +215,8 @@ message UpdateMarketConfiguration {
   LiquidityFeeSettings liquidity_fee_settings = 9;
   // Liquidation strategy parameters
   LiquidationStrategy liquidation_strategy = 10;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 11;
 }
 
 // Configuration to update a spot market on Vega
@@ -285,6 +291,8 @@ message UpdatePerpetualProduct {
   optional string funding_rate_lower_bound = 10;
   // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
   optional string funding_rate_upper_bound = 11;
+  // Configuration for the index price used in funding payment calculation.
+  optional CompositePriceConfiguration index_price_configuration = 13;
 }
 
 // Update network configuration on Vega

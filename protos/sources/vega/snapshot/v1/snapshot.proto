@@ -524,6 +524,9 @@ message Market {
   Product product = 26;
   vega.events.v1.FeesStats fees_stats = 27;
   repeated PartyMarginFactor party_margin_factor = 28;
+  CompositePriceCalculator mark_price_calculator = 29;
+  optional CompositePriceCalculator index_price_calculator = 30;
+  int64 next_index_price_calc = 31;
 }
 
 message PartyMarginFactor {
@@ -1158,6 +1161,7 @@ message Team {
   string avatar_url = 6;
   int64 created_at = 7;
   bool closed = 8;
+  repeated string allow_list = 9;
 }
 
 message Membership {
@@ -1286,4 +1290,13 @@ message PartyAssetAmount {
 
 message BankingTransferFeeDiscounts {
   repeated PartyAssetAmount party_asset_discount = 1;
+}
+
+message CompositePriceCalculator {
+  string composite_price = 1;
+  vega.CompositePriceConfiguration price_configuration = 2;
+  repeated vega.Trade trades = 3;
+  repeated string price_sources = 4;
+  repeated int64 price_source_last_update = 5;
+  repeated TimePrice book_price_at_time = 6;
 }

@@ -51,7 +51,7 @@ var (
 	// ErrSuccessorMarketDoesNotExists is returned when SucceedMarket call is made with an invalid successor market ID.
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
 
-	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
+	// ErrParentMarketNotEnactedYet is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
 
 	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
@@ -59,6 +59,9 @@ var (
 
 	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
 	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
+
+	// ErrStopOrdersNotAcceptedDuringOpeningAuction is returned if a stop order is submitted when the market is in the opening auction.
+	ErrStopOrdersNotAcceptedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 )
 
 // Engine is the execution engine.
@@ -125,6 +128,7 @@ type netParamsValues struct {
 	minLpStakeQuantumMultiple            num.Decimal
 	marketCreationQuantumMultiple        num.Decimal
 	markPriceUpdateMaximumFrequency      time.Duration
+	indexPriceUpdateFrequency            time.Duration
 	marketPartiesMaximumStopOrdersUpdate *num.Uint
 
 	// Liquidity version 2.
@@ -154,6 +158,7 @@ func defaultNetParamsValues() netParamsValues {
 		minLpStakeQuantumMultiple:            num.DecimalFromInt64(-1),
 		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
 		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
+		indexPriceUpdateFrequency:            5 * time.Second,
 		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
 
 		// Liquidity version 2.
@@ -878,6 +883,9 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	if e.npv.markPriceUpdateMaximumFrequency > 0 {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
 	}
+	if e.npv.indexPriceUpdateFrequency > 0 {
+		mkt.OnIndexPriceUpdateFrequency(ctx, e.npv.indexPriceUpdateFrequency)
+	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
 
@@ -1532,6 +1540,14 @@ func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
 	}
 	e.npv.markPriceUpdateMaximumFrequency = d
+	return nil
+}
+
+func (e *Engine) OnIndexPriceUpdateFrequency(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.futureMarkets {
+		mkt.OnIndexPriceUpdateFrequency(ctx, d)
+	}
+	e.npv.indexPriceUpdateFrequency = d
 	return nil
 }
 

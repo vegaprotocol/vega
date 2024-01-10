@@ -162,6 +162,25 @@ func testUpdateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("update_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.allow_list"), commands.ErrSettingAllowListRequireSettingClosedState)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			Closed:    ptr.From(false),
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.allow_list"), commands.ErrCannotSetAllowListWhenTeamIsOpened)
 }
 
 func checkUpdateReferralSet(t *testing.T, cmd *commandspb.UpdateReferralSet) commands.Errors {

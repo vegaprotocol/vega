@@ -73,6 +73,8 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
     // The percentage value for the linked stop order is invalid
     REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID = 7;
+    // Stop orders are not allowed during the opening auction
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION = 8;
   }
 
   // ID of this stop order
@@ -1208,6 +1210,12 @@ message PerpetualData {
   uint64 seq_num = 5;
   // Funding period start time
   int64 start_time = 6;
+  // The index price used for perps.
+  string index_price = 7;
+  // The next time the index price is calculated for perps.
+  int64 next_index_price_calc = 8;
+  // The method used for calculating the index price (perps only).
+  CompositePriceType index_price_type = 9;
 }
 
 // Represents market data specific to a particular product type.
@@ -1293,6 +1301,8 @@ message MarketData {
   repeated LiquidityProviderSLA liquidity_provider_sla = 32;
   // Time in Unix nanoseconds when the market will next submit a trade to reduce its position.
   int64 next_network_closeout = 33;
+  // The method used for calculating the mark price.
+  CompositePriceType mark_price_type = 34;
 }
 
 // Equity like share of liquidity fee for each liquidity provider

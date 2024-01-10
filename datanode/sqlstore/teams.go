@@ -209,15 +209,21 @@ func NewTeams(connectionSource *ConnectionSource) *Teams {
 
 func (t *Teams) AddTeam(ctx context.Context, team *entities.Team) error {
 	defer metrics.StartSQLQuery("Teams", "AddTeam")()
+
+	if team.AllowList == nil {
+		team.AllowList = []string{}
+	}
+
 	if _, err := t.Connection.Exec(
 		ctx,
-		"INSERT INTO teams(id, referrer, name, team_url, avatar_url, closed, created_at, created_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		"INSERT INTO teams(id, referrer, name, team_url, avatar_url, closed, allow_list, created_at, created_at_epoch, vega_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		team.ID,
 		team.Referrer,
 		team.Name,
 		team.TeamURL,
 		team.AvatarURL,
 		team.Closed,
+		team.AllowList,
 		team.CreatedAt,
 		team.CreatedAtEpoch,
 		team.VegaTime,
@@ -242,17 +248,24 @@ func (t *Teams) AddTeam(ctx context.Context, team *entities.Team) error {
 
 func (t *Teams) UpdateTeam(ctx context.Context, team *entities.TeamUpdated) error {
 	defer metrics.StartSQLQuery("Teams", "UpdateTeam")()
+
+	if team.AllowList == nil {
+		team.AllowList = []string{}
+	}
+
 	ct, err := t.Connection.Exec(ctx,
 		`UPDATE teams
         SET name = $1,
             team_url = $2,
             avatar_url = $3,
-            closed = $4
-        WHERE id = $5`,
+            closed = $4,
+            allow_list = $5
+        WHERE id = $6`,
 		team.Name,
 		team.TeamURL,
 		team.AvatarURL,
 		team.Closed,
+		team.AllowList,
 		team.ID,
 	)
 

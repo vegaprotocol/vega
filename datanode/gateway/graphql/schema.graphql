@@ -229,9 +229,24 @@ type PerpetualData {
   seqNum: Int!
   "Time at which the funding period started"
   startTime: Timestamp!
+  "The index price used for external VWAP calculation"
+  indexPrice: String! 
+   "The methodology used to calculated index price for perps"
+  indexPriceType: CompositePriceType!
+   "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
+  nextIndexPriceCalc: String!
 }
 
 union ProductData = PerpetualData
+
+enum CompositePriceType {
+  "Composite price is calculated as a weighted average of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_WEIGHTED
+  "Composite price is calculated as a median of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_MEDIAN
+  "Composite price is set to the last trade (legacy)"
+  COMPOSITE_PRICE_TYPE_LAST_TRADE
+}
 
 "Live data of a Market"
 type MarketData {
@@ -239,6 +254,8 @@ type MarketData {
   market: Market!
   "The mark price (an unsigned integer)"
   markPrice: String!
+  "The methodology used for the calculation of the mark price"
+  markPriceType: CompositePriceType!
   "The highest price level on an order book for buy orders."
   bestBidPrice: String!
   "The aggregated volume being bid at the best bid price."
@@ -371,6 +388,8 @@ type ObservableMarketData {
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
   productData: ProductData
+  "The methodology used to calculated mark price"
+  markPriceType: CompositePriceType!
 }
 
 "Timestamps for when the market changes state"
@@ -1982,6 +2001,8 @@ type Perpetual {
   fundingRateLowerBound: String!
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
   fundingRateUpperBound: String!
+  "Optional configuration driving the index price calculation for perpetual product"
+  indexPriceConfig: CompositePriceConfiguration
 }
 
 """
@@ -3142,6 +3163,8 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
   "This stop order does not close the position"
   REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+  "Stop orders are not allowed during the opening auction"
+  REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
 }
 
 "Stop order size override settings"
@@ -4494,6 +4517,23 @@ type NewMarket {
   liquidityFeeSettings: LiquidityFeeSettings
   "Liquidation strategy for the market"
   liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration!
+}
+
+type CompositePriceConfiguration {
+  "Decay weight used in calculating time weight for a given trade"
+  decayWeight: String!
+  "Decay power used in calculating time weight for a given trade"
+  decayPower: Int!
+  "Cash amount used in calculating mark price from the order book"
+  cashAmount: String!
+  "Weights for each given price source, first entry is price from trade, then price from book, then first oracle, next oracle, etc. And last entry is for median price"
+  SourceWeights: [String!]
+  "Staleness tolerance duration for each given price sources in the order mentioned above"
+  SourceStalenessTolerance: [String!]!
+  "Composite price calculation methodology"
+  CompositePriceType: CompositePriceType!
 }
 
 type SuccessorConfiguration {
@@ -4534,6 +4574,8 @@ type UpdateMarketConfiguration {
   liquidityFeeSettings: LiquidityFeeSettings
   "Liquidation strategy for the market"
   liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration
 }
 
 type UpdateInstrumentConfiguration {
@@ -6560,8 +6602,10 @@ type Team {
   createdAt: Timestamp!
   "Epoch at which the team was created."
   createdAtEpoch: Int!
-  "Tells if a party can join the team or not."
+  "Whether or not the team is closed to new party members. When closed, only parties specified in the allow list can join the team."
   closed: Boolean!
+  "List of public keys that are allowed to join the team. Only applicable to closed teams."
+  allowList: [String!]!
 }
 
 "Edge type containing a team cursor and its associated team data"

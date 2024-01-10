@@ -140,6 +140,20 @@ func (f Fee) IntoProto() *proto.Fee {
 	return fee
 }
 
+func FeeFromProto(f *proto.Fee) *Fee {
+	return &Fee{
+		MakerFee:                          num.MustUintFromString(f.MakerFee, 10),
+		InfrastructureFee:                 num.MustUintFromString(f.InfrastructureFee, 10),
+		LiquidityFee:                      num.MustUintFromString(f.LiquidityFee, 10),
+		MakerFeeVolumeDiscount:            num.MustUintFromString(f.MakerFeeVolumeDiscount, 10),
+		InfrastructureFeeVolumeDiscount:   num.MustUintFromString(f.InfrastructureFeeVolumeDiscount, 10),
+		LiquidityFeeVolumeDiscount:        num.MustUintFromString(f.LiquidityFeeVolumeDiscount, 10),
+		MakerFeeReferrerDiscount:          num.MustUintFromString(f.MakerFeeReferrerDiscount, 10),
+		InfrastructureFeeReferrerDiscount: num.MustUintFromString(f.InfrastructureFeeReferrerDiscount, 10),
+		LiquidityFeeReferrerDiscount:      num.MustUintFromString(f.LiquidityFeeReferrerDiscount, 10),
+	}
+}
+
 func (f Fee) Clone() *Fee {
 	fee := &Fee{
 		MakerFee:          f.MakerFee.Clone(),

@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -42,6 +43,12 @@ var (
 		enactedKey,
 		nodeValidationKey,
 		batchActiveKey,
+	}
+	defaultMarkPriceConfig = &types.CompositePriceConfiguration{
+		DecayWeight:        num.DecimalZero(),
+		DecayPower:         num.DecimalZero(),
+		CashAmount:         num.UintZero(),
+		CompositePriceType: types.CompositePriceTypeByLastTrade,
 	}
 )
 
@@ -254,7 +261,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			invalidVotes: votesAsMap(p.Invalid),
 		}
 
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.10") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
 			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
 				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
@@ -266,6 +273,14 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
 					Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 				}
+			}
+		}
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+			if pp.Terms.IsNewMarket() {
+				pp.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
+			}
+			if pp.Terms.IsMarketUpdate() {
+				pp.Terms.GetUpdateMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
 			}
 		}
 
@@ -313,6 +328,14 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
 		for _, p := range bp.BatchProposal.Proposals {
+			if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+				if p.Terms.IsNewMarket() {
+					p.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
+				}
+				if p.Terms.IsMarketUpdate() {
+					p.Terms.GetUpdateMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
+				}
+			}
 			evts = append(evts, events.NewProposalEvent(ctx, *p))
 		}
 

@@ -118,6 +118,26 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		time.Sleep(10 * time.Millisecond)
 	}
 
+	block := addTestBlock(t, ctx, bs)
+	for i, team := range teams {
+		if i%2 != 0 {
+			continue
+		}
+
+		teamDup := team
+		teamDup.Closed = true
+		teamDup.AllowList = []string{GenerateID(), GenerateID()}
+		teams[i] = teamDup
+
+		require.NoError(t, ts.UpdateTeam(ctx, &entities.TeamUpdated{
+			ID:        teamDup.ID,
+			Name:      teamDup.Name,
+			Closed:    teamDup.Closed,
+			AllowList: teamDup.AllowList,
+			VegaTime:  block.VegaTime,
+		}))
+	}
+
 	return teams, teamsHistory
 }
 

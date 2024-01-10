@@ -179,6 +179,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
+	t.Run("Submitting a perps market change with index price config", testNewPerpsMarketChangeSubmissionWithIndexPriceConfig)
 	t.Run("Submitting a new market with invalid SLA price range fails", testNewMarketChangeSubmissionWithInvalidLpRangeFails)
 	t.Run("Submitting a new market with valid SLA price range succeeds", testNewMarketChangeSubmissionWithValidLpRangeSucceeds)
 	t.Run("Submitting a new market with invalid min time fraction fails", testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails)
@@ -188,6 +189,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with invalid hysteresis epochs fails", testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new market with valid hysteresis epochs succeeds", testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 	t.Run("Submitting a new market with invalid liquidity fee settings", testLiquidityFeeSettings)
+	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -4968,6 +4970,176 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
 
+func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
+	cases := []struct {
+		mpc   *vega.CompositePriceConfiguration
+		field string
+		err   error
+	}{
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "banana",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "-1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "1.1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayPower: 4,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {0, 1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "banana",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "-1",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "1.2",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 0,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 4,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"", "", ""},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"", "", ""},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:            []string{"", "", "", ""},
+				SourceStalenessTolerance: []string{"", "", "", "", ""},
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must have the same length as source_weights"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.0",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.1",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.2",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.0",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.1",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.PerpetualProduct{
+										DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{
+											SettlementDataProperty: "My property",
+										},
+										IndexPriceConfiguration: c.mpc,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field), c.err)
+	}
+}
+
 func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 	cases := []struct {
 		product vegapb.PerpetualProduct
@@ -6095,6 +6267,171 @@ func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed"))
 	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
+}
+
+func testCompositePriceConfiguration(t *testing.T) {
+	cases := []struct {
+		mpc   *vega.CompositePriceConfiguration
+		field string
+		err   error
+	}{
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "banana",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "-1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayWeight: "1.1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				DecayPower: 4,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {0, 1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "banana",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "-1",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CashAmount: "1.2",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 0,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 4,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"", "", ""},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "", ""},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must be greater than or equal to 4"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:            []string{"", "", "", ""},
+				SourceStalenessTolerance: []string{"", "", "", "", ""},
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must have the same length as source_weights"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.0",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.1",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.2",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.0",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.1",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.PerpetualProduct{},
+								},
+							},
+							MarkPriceConfiguration: c.mpc,
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field), c.err)
+	}
 }
 
 func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T) {

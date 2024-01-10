@@ -52,7 +52,7 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 				return err
 			}
 		case netparams.MarketAuctionMaximumDuration:
-			d := row.MustDurationSec("value")
+			d := row.MustDurationStr("value")
 			if err := netParams.Update(ctx, netparams.MarketAuctionMaximumDuration, d.String()); err != nil {
 				return err
 			}
@@ -60,6 +60,12 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			f := row.MustDurationStr("value")
 			str := f.String()
 			if err := netParams.Update(ctx, netparams.MarkPriceUpdateMaximumFrequency, str); err != nil {
+				return err
+			}
+		case netparams.IndexPriceUpdateFrequency:
+			f := row.MustDurationStr("value")
+			str := f.String()
+			if err := netParams.Update(ctx, netparams.IndexPriceUpdateFrequency, str); err != nil {
 				return err
 			}
 		default:

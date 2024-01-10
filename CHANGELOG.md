@@ -35,23 +35,29 @@
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
 - [9980](https://github.com/vegaprotocol/vega/issues/9980) - Add teams statistics API.
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
+- [9992](https://github.com/vegaprotocol/vega/issues/9992) - Add configuration to control the number of blocks worth of Ethereum events to read.
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
 - [9880](https://github.com/vegaprotocol/vega/issues/9880) - Add support for batch proposals.
 - [10159](https://github.com/vegaprotocol/vega/issues/10159) - Add additional funding period data to market data API to allow streaming funding period data.
-- [10143](https://github.com/vegaprotocol/vega/issues/10143) - Allow changing the market name in update market governance proposal. 
-- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
+- [10143](https://github.com/vegaprotocol/vega/issues/10143) - Allow changing the market name in update market governance proposal.
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
-- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance. 
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
+- [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10266](https://github.com/vegaprotocol/vega/issues/10266) - Deprecated `marketID` and populate `gameID` in reward API
 - [10154](https://github.com/vegaprotocol/vega/issues/10154) - Move remaining insurance pool balance into the network treasury rather than splitting between other markets and global insurance.
 - [10155](https://github.com/vegaprotocol/vega/issues/10155) - Add next network close-out timestamp to market data.
 - [10000](https://github.com/vegaprotocol/vega/issues/10000) - Introduce `cometbtf` command to replace `tendermint`.
+- [10294](https://github.com/vegaprotocol/vega/issues/10294) - New mark price methodology
 - [9948](https://github.com/vegaprotocol/vega/issues/9948) - Add support for linked stop orders.
 - [9849](https://github.com/vegaprotocol/vega/issues/9849) - Add database support for `num.Uint`.
 - [10275](https://github.com/vegaprotocol/vega/issues/10275) - Add API to list party's margin mode.
+- [459](https://github.com/vegaprotocol/core-test-coverage/issues/459) - Add liquidation test coverage with market updates.
+- [462](https://github.com/vegaprotocol/core-test-coverage/issues/462) - Cover `0012-POSR-011` explicitly
+- [595](https://github.com/vegaprotocol/core-test-coverage/issues/595) - Ensure the full size of iceberg orders is considered when creating a network order.
+- [10308](https://github.com/vegaprotocol/vega/issues/10308) - Support joining to closed teams based on an allow list.
 
 ### 🐛 Fixes
 
@@ -103,6 +109,11 @@
 - [10278](https://github.com/vegaprotocol/vega/issues/10278) - Transfers connection filtering by `isReward` and party causes error
 - [10251](https://github.com/vegaprotocol/vega/issues/10251) - Add batch proposal API and fix batch proposal submission.
 - [10285](https://github.com/vegaprotocol/vega/issues/10285) - Fix `MTM` settlement panic.
+- [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
+- [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
+- [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) -  Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [10354](https://github.com/vegaprotocol/vega/issues/10354) - Renumbered SQL migration scripts 0055-0067 due to 0068 being released as part of a patch without renumbering.
 
 ## 0.73.0
 
@@ -3058,6 +3069,7 @@ This release contains a fix (read: large reduction in memory use) around auction
 - [#2596](https://github.com/vegaprotocol/vega/pull/2496) Create liquidity measurement API
 - [#2490](https://github.com/vegaprotocol/vega/pull/2490) GraphQL: Add Withdrawal and Deposit events to event bus
 - [#2476](https://github.com/vegaprotocol/vega/pull/2476) 🔥`MarketData` now uses RFC339 formatted times, not seconds
+-
 - [#2473](https://github.com/vegaprotocol/vega/pull/2473) Add network parameters related to target stake calculation
 - [#2506](https://github.com/vegaprotocol/vega/pull/2506) Network parameters can now contain JSON configuration
 

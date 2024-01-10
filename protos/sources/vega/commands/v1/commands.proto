@@ -368,6 +368,10 @@ message CreateReferralSet {
     optional string avatar_url = 12;
     // Whether or not the team is closed to new party members.
     bool closed = 13;
+    // List of public keys that are allowed to join the team.
+    // Only applicable to closed teams. Removing a party from the allow list does not remove
+    // the party from the team.
+    repeated string allow_list = 14;
   }
 }
 
@@ -388,8 +392,13 @@ message UpdateReferralSet {
     optional string team_url = 11;
     // New link to an avatar for the team.
     optional string avatar_url = 12;
-    // Whether or not the team is closed to new party members.
+    // Whether or not the team is closed to new party members. When closed, only parties specified in the allow list can
+    // join the team.
     optional bool closed = 13;
+    // List of public keys that are allowed to join the team.
+    // Only applicable to closed teams. Removing a party from the allow list does not remove
+    // the party from the team.
+    repeated string allow_list = 14;
   }
 }
 

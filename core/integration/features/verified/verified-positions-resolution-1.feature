@@ -129,4 +129,4 @@ Feature: Position resolution case 1
       | buySideProvider  | 3      | 60           | 0              |
       | aux              | 11     | 1160         | 0              |
       | aux2             | -1     | 30           | 0              |
-      | network          | -12    | -1250        | 0              |
+      | network          | 278    | -9950        | 0              |

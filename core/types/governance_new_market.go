@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
@@ -157,6 +158,104 @@ type SuccessorConfig struct {
 	InsurancePoolFraction num.Decimal
 }
 
+type CompositePriceConfiguration struct {
+	DecayWeight              num.Decimal
+	DecayPower               num.Decimal
+	CashAmount               *num.Uint
+	SourceWeights            []num.Decimal
+	SourceStalenessTolerance []time.Duration
+	CompositePriceType       CompositePriceType
+}
+
+func (mpc *CompositePriceConfiguration) String() string {
+	weights := "["
+	for _, d := range mpc.SourceWeights {
+		weights += d.String() + ","
+	}
+	weights += "]"
+	stalenessTolerance := "["
+	for _, d := range mpc.SourceStalenessTolerance {
+		stalenessTolerance += d.String() + ","
+	}
+	stalenessTolerance += "]"
+
+	return fmt.Sprintf(
+		"decayWeight(%s), decayPower(%s), cashAmount(%s), CompositePriceType(%s), weights(%s), stalenessTolerance(%s)",
+		mpc.DecayWeight.String(),
+		mpc.DecayPower.String(),
+		mpc.CashAmount.String(),
+		mpc.CompositePriceType.String(),
+		weights,
+		stalenessTolerance,
+	)
+}
+
+func (mpc *CompositePriceConfiguration) DeepClone() *CompositePriceConfiguration {
+	weights := make([]num.Decimal, 0, len(mpc.SourceWeights))
+	weights = append(weights, mpc.SourceWeights...)
+	stalenessTolerance := make([]time.Duration, 0, len(mpc.SourceStalenessTolerance))
+	stalenessTolerance = append(stalenessTolerance, mpc.SourceStalenessTolerance...)
+	return &CompositePriceConfiguration{
+		DecayWeight:              mpc.DecayWeight,
+		DecayPower:               mpc.DecayPower,
+		CashAmount:               mpc.CashAmount.Clone(),
+		CompositePriceType:       mpc.CompositePriceType,
+		SourceWeights:            weights,
+		SourceStalenessTolerance: stalenessTolerance,
+	}
+}
+
+func (mpc *CompositePriceConfiguration) IntoProto() *vegapb.CompositePriceConfiguration {
+	if mpc == nil {
+		return nil
+	}
+	weights := make([]string, 0, len(mpc.SourceWeights))
+	stalenessTolerance := make([]string, 0, len(mpc.SourceStalenessTolerance))
+	for _, d := range mpc.SourceWeights {
+		weights = append(weights, d.String())
+	}
+	for _, d := range mpc.SourceStalenessTolerance {
+		stalenessTolerance = append(stalenessTolerance, d.String())
+	}
+
+	config := &vegapb.CompositePriceConfiguration{
+		DecayWeight:              mpc.DecayWeight.String(),
+		DecayPower:               uint64(mpc.DecayPower.IntPart()),
+		CashAmount:               mpc.CashAmount.String(),
+		CompositePriceType:       mpc.CompositePriceType,
+		SourceWeights:            weights,
+		SourceStalenessTolerance: stalenessTolerance,
+	}
+
+	return config
+}
+
+func CompositePriceConfigurationFromProto(mpc *vegapb.CompositePriceConfiguration) *CompositePriceConfiguration {
+	if mpc == nil {
+		return nil
+	}
+	weights := make([]num.Decimal, 0, len(mpc.SourceWeights))
+	stalenessTolerance := make([]time.Duration, 0, len(mpc.SourceStalenessTolerance))
+	decayWeight, _ := num.DecimalFromString(mpc.DecayWeight)
+	decayPower := num.DecimalFromInt64(int64(mpc.DecayPower))
+	cashAmount, _ := num.UintFromString(mpc.CashAmount, 10)
+	for _, v := range mpc.SourceWeights {
+		weights = append(weights, num.MustDecimalFromString(v))
+	}
+	for _, v := range mpc.SourceStalenessTolerance {
+		dur, _ := time.ParseDuration(v)
+		stalenessTolerance = append(stalenessTolerance, dur)
+	}
+	return &CompositePriceConfiguration{
+		DecayWeight:              decayWeight,
+		DecayPower:               decayPower,
+		CashAmount:               cashAmount,
+		CompositePriceType:       mpc.CompositePriceType,
+		SourceWeights:            weights,
+		SourceStalenessTolerance: stalenessTolerance,
+	}
+}
+
 type NewMarketConfiguration struct {
 	Instrument                    *InstrumentConfiguration
 	DecimalPlaces                 uint64
@@ -183,7 +282,8 @@ type NewMarketConfiguration struct {
 	//	*NewMarketConfiguration_Continuous
 	//	*NewMarketConfiguration_Discrete
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
-	LiquidationStrategy *LiquidationStrategy
+	LiquidationStrategy    *LiquidationStrategy
+	MarkPriceConfiguration *CompositePriceConfiguration
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -229,6 +329,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		LiquidityFeeSettings:          liquidityFeeSettings,
 		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -273,12 +374,15 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	if n.LiquidationStrategy != nil {
 		cpy.LiquidationStrategy = n.LiquidationStrategy.DeepClone()
 	}
+	if n.MarkPriceConfiguration != nil {
+		cpy.MarkPriceConfiguration = n.MarkPriceConfiguration.DeepClone()
+	}
 	return cpy
 }
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -288,6 +392,7 @@ func (n NewMarketConfiguration) String() string {
 		stringer.ObjToString(n.RiskParameters),
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
+		stringer.PtrToString(n.MarkPriceConfiguration),
 	)
 }
 
@@ -364,6 +469,11 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		}
 	}
 
+	var markPriceConfig *CompositePriceConfiguration
+	if p.MarkPriceConfiguration != nil {
+		markPriceConfig = CompositePriceConfigurationFromProto(p.MarkPriceConfiguration)
+	}
+
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 p.DecimalPlaces,
@@ -376,6 +486,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		LiquidityFeeSettings:          LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings),
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        markPriceConfig,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

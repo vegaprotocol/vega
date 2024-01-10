@@ -82,6 +82,12 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	require.NoError(t, te1.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID2)))
 	require.True(t, te1.engine.IsTeamMember(referee2))
 
+	referee3 := newPartyID(t)
+
+	// Closing the team2 to check the allow list is properly snapshot.
+	expectTeamUpdatedEvent(t, te1)
+	require.NoError(t, te1.engine.UpdateTeam(ctx, referrer2, teamID2, updateTeamCmd(t, name2, teamURL2, avatarURL2, true, []string{referee3.String()})))
+
 	// Take a snapshot.
 	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
@@ -89,6 +95,11 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 	expectRefereeSwitchedTeamEvent(t, te1)
 	referee2JoiningDate2 := time.Now()
 	nextEpoch(t, ctx, te1, referee2JoiningDate2)
+
+	expectRefereeJoinedTeamEvent(t, te1)
+	referee3JoiningDate := time.Now()
+	te1.timeService.EXPECT().GetTimeNow().Return(referee3JoiningDate).Times(1)
+	require.NoError(t, te1.engine.JoinTeam(ctx, referee3, joinTeamCmd(t, teamID2)))
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -116,17 +127,24 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				JoinedAt:       team2CreationDate,
 				StartedAtEpoch: te1.currentEpoch - 1,
 			},
-			Name:      name2,
-			TeamURL:   teamURL2,
-			AvatarURL: avatarURL2,
 			Referees: []*types.Membership{
 				{
 					PartyID:        referee2,
 					JoinedAt:       referee2JoiningDate2,
-					StartedAtEpoch: te1.currentEpoch - 0,
+					StartedAtEpoch: te1.currentEpoch,
+				},
+				{
+					PartyID:        referee3,
+					JoinedAt:       referee3JoiningDate,
+					StartedAtEpoch: te1.currentEpoch,
 				},
 			},
+			Name:      name2,
+			TeamURL:   teamURL2,
+			AvatarURL: avatarURL2,
 			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee3},
 		},
 	}, te1.engine.ListTeams())
 
@@ -155,6 +173,10 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 
 	expectRefereeSwitchedTeamEvent(t, te2)
 	nextEpoch(t, ctx, te2, referee2JoiningDate2)
+
+	expectRefereeJoinedTeamEvent(t, te2)
+	te2.timeService.EXPECT().GetTimeNow().Return(referee3JoiningDate).Times(1)
+	require.NoError(t, te2.engine.JoinTeam(ctx, referee3, joinTeamCmd(t, teamID2)))
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -189,10 +211,17 @@ func TestTakingAndRestoringSnapshotSucceeds(t *testing.T) {
 				{
 					PartyID:        referee2,
 					JoinedAt:       referee2JoiningDate2,
-					StartedAtEpoch: te2.currentEpoch - 0,
+					StartedAtEpoch: te2.currentEpoch,
+				},
+				{
+					PartyID:        referee3,
+					JoinedAt:       referee3JoiningDate,
+					StartedAtEpoch: te2.currentEpoch,
 				},
 			},
 			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee3},
 		},
 	}, te2.engine.ListTeams())
 

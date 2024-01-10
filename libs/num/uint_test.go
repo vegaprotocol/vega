@@ -237,3 +237,10 @@ func TestDeltaI(t *testing.T) {
 	r2 := num.UintZero().DeltaI(n2.Clone(), n1.Clone())
 	assert.Equal(t, "15", r2.String())
 }
+
+func TestMedian(t *testing.T) {
+	require.Nil(t, num.Median(nil))
+	require.Equal(t, "10", num.Median([]*num.Uint{num.NewUint(10)}).String())
+	require.Equal(t, "10", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(17)}).String())
+	require.Equal(t, "11", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(12), num.NewUint(17)}).String())
+}

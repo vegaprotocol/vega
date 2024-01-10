@@ -10,12 +10,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 5     |
-      | market.auction.maximumDuration          | 10    |
+      | market.auction.maximumDuration          | 10s   |
       | network.floatingPointUpdates.delay      | 10s   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @DebugAuctionMax
+  @DebugAuctionMax @Expires
   Scenario: Simple test verifying the market is cancelled if it failes to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -30,8 +30,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lpprov | BTC   | 100000000 |
 
     # Start market with some dead time
-    When the opening auction period ends for market "ETH/DEC19"
-    And the network moves ahead "2" blocks
+    And the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
@@ -52,6 +51,6 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
     When the network moves ahead "10" blocks
-    ## TODO THIS IS BORKED
-    #Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"
-    Then the last market state should be "STATE_PENDING" for the market "ETH/DEC19"
+
+    # Now the market should be cancelled
+    Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"

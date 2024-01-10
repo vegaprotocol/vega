@@ -79,6 +79,10 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	// opening auction
 	if isOpening {
 		if len(trades) == 0 {
+			if checkExceeded && m.as.ExceededMaxOpening(now) {
+				m.log.Debug("Market was cancelled because it failed to leave opening auction in time", logging.MarketID(m.GetID()))
+				m.terminateMarket(ctx, types.MarketStateCancelled, nil)
+			}
 			return
 		}
 
