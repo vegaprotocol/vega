@@ -137,7 +137,7 @@ Feature: Profit and loss for network a running liquidation strategy
 
 
   @NoPerp @NetPNL
-  Scenario: Network long then liquidates further long positions (0012-POSR-017)
+  Scenario: Network long then liquidates further long positions (0003-MTMK-016)(0012-POSR-017)
 
     # Setup the market
     Given the initial insurance pool balance is "10000" for all the markets
