@@ -262,7 +262,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, chunk segm
 func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log snapshot.LoadLog, chunk segment.ContiguousHistory[segment.Full],
 	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (snapshot.LoadResult, error) {
-	maxRetries := 3 // max 2 retries
+	maxRetries := 3
 	// the deadlock error that should trigger a retry
 	status := "deadlock detected (SQLSTATE 40P01)"
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
