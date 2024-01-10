@@ -18,9 +18,11 @@ package validators_test
 import (
 	"context"
 	"encoding/hex"
+	"sync"
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -28,7 +30,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -245,21 +249,30 @@ func TestVoteMajorityCalculation(t *testing.T) {
 	// first wait once for the asset to be validated
 	<-ch
 
+	wg := sync.WaitGroup{}
+	wg.Add(2)
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, _ txn.Command, _ proto.Message, _ func(string, error), _ *backoff.ExponentialBackOff) {
+		wg.Done()
+	})
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
 	pubKey := newPublicKey(selfPubKey)
-	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true).Do(func(_ string) {
+		wg.Done()
+	})
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.NoError(t, err)
 
 	for i := 0; i < 3; i++ {
 		// second vote from another validator
 		othPubKey := newPublicKey(crypto.RandomHash())
-		erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true)
+		wg.Add(1)
+		erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true).Do(func(_ string) {
+			wg.Done()
+		})
 		err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, othPubKey)
 		assert.NoError(t, err)
 	}
@@ -272,6 +285,7 @@ func TestVoteMajorityCalculation(t *testing.T) {
 
 	// block to wait for the result
 	<-ch
+	wg.Wait()
 }
 
 func testOnTick(t *testing.T) {
