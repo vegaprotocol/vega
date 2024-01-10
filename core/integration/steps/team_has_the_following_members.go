@@ -97,7 +97,8 @@ func TheFollowingTeamsWithRefereesAreCreated(
 		}
 		// 3. Create a team
 		teamPB := &commandspb.CreateReferralSet_Team{
-			Name: team,
+			Name:   team,
+			Closed: row.Closed(),
 		}
 		if err := teamsEngine.CreateTeam(ctx, referrer, types.TeamID(team), teamPB); err != nil {
 			return err
@@ -134,7 +135,9 @@ func parseCreateTeamTable(table *godog.Table) []RowWrapper {
 		"referees",
 		"balance",
 		"asset",
-	}, []string{})
+	}, []string{
+		"closed",
+	})
 }
 
 type membersRow struct {
@@ -182,6 +185,13 @@ func (t teamRow) MemberCount() int {
 
 func (t teamRow) Balance() *num.Uint {
 	return t.r.MustUint("balance")
+}
+
+func (t teamRow) Closed() bool {
+	if !t.r.HasColumn("closed") {
+		return false
+	}
+	return t.r.MustBool("closed")
 }
 
 func (t teamRow) Members() []string {

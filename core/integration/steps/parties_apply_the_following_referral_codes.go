@@ -32,18 +32,23 @@ func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teams
 	for _, r := range parseApplyReferralCodeTable(table) {
 		row := newApplyReferralCodeRow(r)
 		err := referralEngine.ApplyReferralCode(ctx, row.Party(), row.Code())
-		if err := checkExpectedError(row, err, nil); err != nil {
-			return err
+		if checkErr := checkExpectedError(row, err, nil); checkErr != nil {
+			if !row.IsTeam() {
+				return checkErr
+			}
+			err = checkErr
 		}
 		// If we have team details, submit a new team
 		if row.IsTeam() {
 			team := &commandspb.JoinTeam{
 				Id: row.Team(),
 			}
-			err = teamsEngine.JoinTeam(ctx, row.Party(), team)
-			if err != nil {
-				return err
+			if joinErr := teamsEngine.JoinTeam(ctx, row.Party(), team); joinErr != nil {
+				err = checkExpectedError(row, joinErr, nil)
 			}
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil
