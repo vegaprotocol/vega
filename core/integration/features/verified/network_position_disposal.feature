@@ -30,7 +30,7 @@ Feature: Network disposing position
 
 
   @NoPerp
-  Scenario: Network takes over distressed position and disposes position over time
+  Scenario: Network takes over distressed position and disposes position over time (0012-POSR-022)(0012-POSR-023)
 
     Given the parties deposit on asset's general account the following amount:
       | party       | asset    | amount       |
