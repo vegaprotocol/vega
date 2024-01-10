@@ -1,10 +1,11 @@
 -- +goose Up
 create type composite_price_type as enum('COMPOSITE_PRICE_TYPE_UNSPECIFIED','COMPOSITE_PRICE_TYPE_WEIGHTED','COMPOSITE_PRICE_TYPE_MEDIAN','COMPOSITE_PRICE_TYPE_LAST_TRADE');
-alter table market_data add column if not exists mark_price_type composite_price_type;
+alter table market_data add column if not exists mark_price_type composite_price_type not null default('COMPOSITE_PRICE_TYPE_LAST_TRADE');
 alter table current_market_data add column if not exists mark_price_type composite_price_type;
 
-update market_data set mark_price_type = 'COMPOSITE_PRICE_TYPE_LAST_TRADE';
 update current_market_data set mark_price_type = 'COMPOSITE_PRICE_TYPE_LAST_TRADE';
+
+alter table current_market_data alter mark_price_type set not null;
 
 -- +goose StatementBegin
 UPDATE proposals
