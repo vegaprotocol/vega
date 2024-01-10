@@ -7,18 +7,18 @@ update market_data set mark_price_type = 'COMPOSITE_PRICE_TYPE_LAST_TRADE';
 update current_market_data set mark_price_type = 'COMPOSITE_PRICE_TYPE_LAST_TRADE';
 
 -- +goose StatementBegin
-UPDATE proposals 
+UPDATE proposals
 SET terms = jsonb_set(
-  terms, 
-  '{terms, updateMarket, changes}', 
+  terms,
+  '{terms, updateMarket, changes}',
   terms #> '{terms, updateMarket, changes}' || '{"markPriceConfiguration": {"decayWeight": "0", "decayPower": 0, "cashAmount":"0","compositePriceType":"COMPOSITE_PRICE_TYPE_LAST_TRADE"}}'
 )
 WHERE terms @> '{"terms": {"updateMarket": {}}}';
 
-UPDATE proposals 
+UPDATE proposals
 SET terms = jsonb_set(
-  terms, 
-  '{terms, newMarket, changes}', 
+  terms,
+  '{terms, newMarket, changes}',
   terms #> '{terms, newMarket, changes}' || '{"markPriceConfiguration": {"decayWeight": "0", "decayPower": 0, "cashAmount":"0","compositePriceType":"COMPOSITE_PRICE_TYPE_LAST_TRADE"}}'
 )
 WHERE terms @> '{"terms": {"newMarket": {}}}';
@@ -106,5 +106,3 @@ RETURN NULL;
 END;
 $$;
 -- +goose StatementEnd
-
-

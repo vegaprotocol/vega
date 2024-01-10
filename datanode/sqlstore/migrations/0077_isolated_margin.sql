@@ -1,6 +1,16 @@
 -- +goose Up
-DROP TYPE IF EXISTS margin_mode_type;
-create type margin_mode_type as enum('MARGIN_MODE_UNSPECIFIED', 'MARGIN_MODE_CROSS_MARGIN', 'MARGIN_MODE_ISOLATED_MARGIN');
+
+-- +goose StatementBegin
+DO
+$$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'margin_mode_type') THEN
+        CREATE TYPE margin_mode_type as enum('MARGIN_MODE_UNSPECIFIED', 'MARGIN_MODE_CROSS_MARGIN', 'MARGIN_MODE_ISOLATED_MARGIN');
+    END IF;
+END;
+$$
+LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 alter table margin_levels
     add column if not exists margin_mode margin_mode_type not null default ('MARGIN_MODE_CROSS_MARGIN'),

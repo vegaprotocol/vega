@@ -73,4 +73,3 @@ RETURN NULL;
 END;
 $$;
 -- +goose StatementEnd
-
