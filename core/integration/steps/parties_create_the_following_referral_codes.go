@@ -38,7 +38,9 @@ func PartiesCreateTheFollowingReferralCode(referralEngine *referral.Engine, team
 
 		if row.IsTeam() {
 			team := &commandspb.CreateReferralSet_Team{
-				Name: row.Team(),
+				Name:      row.Team(),
+				Closed:    row.Closed(),
+				AllowList: row.AllowList(),
 			}
 
 			err = teamsEngine.CreateTeam(ctx, row.Party(), types.TeamID(row.Team()), team)
@@ -59,6 +61,8 @@ func parseCreateReferralCodeTable(table *godog.Table) []RowWrapper {
 		"team",
 		"error",
 		"reference",
+		"closed",
+		"allow list",
 	})
 }
 
@@ -102,4 +106,18 @@ func (r createReferralCodeRow) IsTeam() bool {
 
 func (r createReferralCodeRow) Team() string {
 	return r.row.Str("team")
+}
+
+func (r createReferralCodeRow) AllowList() []string {
+	if !r.row.HasColumn("allow list") {
+		return nil
+	}
+	return r.row.MustStrSlice("allow list", ",")
+}
+
+func (r createReferralCodeRow) Closed() bool {
+	if !r.row.HasColumn("closed") {
+		return false
+	}
+	return r.row.MustBool("closed")
 }
