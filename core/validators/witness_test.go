@@ -233,6 +233,7 @@ func TestVoteMajorityCalculation(t *testing.T) {
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	ch := make(chan struct{}, 1)
+	defer close(ch)
 	res := testRes{"resource-id-1", func() error {
 		ch <- struct{}{}
 		return nil
@@ -300,7 +301,9 @@ func testOnTick(t *testing.T) {
 	erc.top.EXPECT().GetVotingPower(gomock.Any()).AnyTimes().Return(int64(100))
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
 
+	wg := sync.WaitGroup{}
 	ch := make(chan struct{}, 1)
+	defer close(ch)
 	res := testRes{"resource-id-1", func() error {
 		ch <- struct{}{}
 		return nil
@@ -318,19 +321,28 @@ func testOnTick(t *testing.T) {
 	<-ch
 
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	wg.Add(1)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, _ txn.Command, _ proto.Message, _ func(string, error), _ *backoff.ExponentialBackOff) {
+		wg.Done()
+	})
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
 	pubKey := newPublicKey(selfPubKey)
-	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true)
+	wg.Add(1)
+	erc.top.EXPECT().IsValidatorVegaPubKey(pubKey.Hex()).Times(1).Return(true).Do(func(_ string) {
+		wg.Done()
+	})
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, pubKey)
 	assert.NoError(t, err)
 
 	// second vote from another validator
 	othPubKey := newPublicKey("somepubkey")
-	erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true)
+	wg.Add(1)
+	erc.top.EXPECT().IsValidatorVegaPubKey(othPubKey.Hex()).Times(1).Return(true).Do(func(_ string) {
+		wg.Done()
+	})
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id}, othPubKey)
 	assert.NoError(t, err)
 
@@ -341,6 +353,7 @@ func testOnTick(t *testing.T) {
 
 	// block to wait for the result
 	<-ch
+	wg.Wait()
 }
 
 func testOnTickNonValidator(t *testing.T) {
