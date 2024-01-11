@@ -45,6 +45,7 @@ func NewL2Verifiers(
 	broker Broker,
 	oracleBroadcaster OracleDataBroadcaster,
 	clients L2Clients,
+	callEngines EthL2CallEngines,
 ) (sv *L2Verifiers) {
 	return &L2Verifiers{
 		log:               log,
@@ -54,6 +55,7 @@ func NewL2Verifiers(
 		oracleBroadcaster: oracleBroadcaster,
 		clients:           clients,
 		verifiers:         map[string]*Verifier{},
+		ethL2CallEngine:   callEngines,
 	}
 }
 
@@ -67,9 +69,12 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 			continue
 		}
 
-		clt, confs, ok := v.clients.Get(c.ChainID)
+		clt, confs, ok := v.clients.Get(c.NetworkID)
 		if !ok {
-			v.log.Panic("ethereum client not configured for L2", logging.String("chain-id", c.ChainID))
+			v.log.Panic("ethereum client not configured for L2",
+				logging.String("chain-id", c.ChainID),
+				logging.String("network-id", c.NetworkID),
+			)
 		}
 
 		_ = clt

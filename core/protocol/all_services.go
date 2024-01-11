@@ -174,7 +174,7 @@ func newServices(
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
 
-	l2CLients *ethclient.L2Clients,
+	l2Clients *ethclient.L2Clients,
 ) (_ *allServices, err error) {
 	svcs := &allServices{
 		ctx:              ctx,
@@ -182,6 +182,7 @@ func newServices(
 		confWatcher:      conf,
 		conf:             conf.Get(),
 		ethClient:        ethClient,
+		l2Clients:        l2Clients,
 		ethConfirmations: ethConfirmations,
 		blockchainClient: blockchainClient,
 		stats:            stats,
@@ -253,7 +254,7 @@ func newServices(
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 
 	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
-		svcs.oracle, svcs.l2Clients)
+		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines)
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
@@ -498,6 +499,7 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
 	)
 	svcs.timeService.NotifyOnTick(svcs.confWatcher.OnTimeUpdate)
 }
