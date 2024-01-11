@@ -6324,6 +6324,13 @@ func getCompositePriceConfigurationCases() []compositePriceConfigCase {
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"0", "0", "0", "0"},
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must have at least one none zero weight"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
 				SourceWeights: []string{"", "banana", "-1", ""},
 			},
 			field: "source_weights.0",
