@@ -1959,12 +1959,18 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must have the same length as source_weights"))
 	}
 
+	weightSum := num.DecimalZero()
 	for i, v := range config.SourceWeights {
 		if d, err := num.DecimalFromString(v); err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrIsNotValidNumber)
 		} else if d.LessThan(num.DecimalZero()) {
 			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrMustBePositiveOrZero)
+		} else {
+			weightSum = weightSum.Add(d)
 		}
+	}
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && weightSum.IsZero() {
+		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must have at least one none zero weight"))
 	}
 
 	for i, v := range config.SourceStalenessTolerance {

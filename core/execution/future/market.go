@@ -1039,7 +1039,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	// if we do have a separate configuration for the index price and we have a new index price we push it to the perp
 	if m.indexPriceCalculator != nil && (m.nextIndexPriceCalc.IsZero() ||
 		!m.nextIndexPriceCalc.After(t) &&
-			!m.as.InAuction()) { // TODO @zohar do we want to update the mark price and or MTM during auctions?
+			!m.as.InAuction()) {
 		prevIndexPrice := m.indexPriceCalculator.price
 		m.indexPriceCalculator.CalculateMarkPrice(
 			t.UnixNano(),
@@ -1056,7 +1056,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	// if it's time for mtm, let's do it
 	if m.nextMTM.IsZero() ||
 		!m.nextMTM.After(t) &&
-			!m.as.InAuction() { // TODO @zohar do we want to update the mark price and or MTM during auctions?
+			!m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.price
 		m.markPriceCalculator.CalculateMarkPrice(
 			t.UnixNano(),
