@@ -279,6 +279,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalRationale
   ProposalTerms:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
+  BatchProposalTerms:
+    model: code.vegaprotocol.io/vega/protos/vega.BatchProposalTerms
+  BatchProposalTermsChange:
+    model: code.vegaprotocol.io/vega/protos/vega.BatchProposalTermsChange
   ProposalDetail:
     model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:

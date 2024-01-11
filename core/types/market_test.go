@@ -342,5 +342,7 @@ func TestPerpMarketFromIntoProto(t *testing.T) {
 
 	// we can check equality of individual fields, but perhaps this is the easiest way:
 	got := domain.IntoProto()
+
+	require.EqualValues(t, pMarket.MarkPriceConfiguration, got.MarkPriceConfiguration)
 	require.EqualValues(t, pMarket, got)
 }

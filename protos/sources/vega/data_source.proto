@@ -18,6 +18,13 @@ message DataSourceDefinition {
   }
 }
 
+// Describes which property of the data source data is to be
+// used for price source.
+message SpecBindingForCompositePrice {
+  // The property name of price.
+  string price_source_property = 1;
+}
+
 // Internal data source used for emitting timestamps.
 message DataSourceSpecConfigurationTime {
   // Conditions that the timestamps should meet in order to be considered.

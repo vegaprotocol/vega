@@ -334,13 +334,15 @@ func NewMarket(
 		partyMarginFactor:             map[string]num.Decimal{},
 		liquidation:                   le,
 		banking:                       banking,
-		markPriceCalculator:           NewCompositePriceCalculator(mkt.MarkPriceConfiguration),
+		markPriceCalculator:           NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
 	}
+	market.markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 
 	if market.IsPerp() {
 		indexPriceConfig := mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
 		if indexPriceConfig != nil {
-			market.indexPriceCalculator = NewCompositePriceCalculator(indexPriceConfig)
+			market.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, timeService)
+			market.indexPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 		}
 	}
 
@@ -600,13 +602,25 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	m.tsCalc.UpdateParameters(*m.mkt.LiquidityMonitoringParameters.TargetStakeParameters)
 	m.pMonitor.UpdateSettings(m.tradableInstrument.RiskModel, m.mkt.PriceMonitoringSettings)
 	m.liquidity.UpdateMarketConfig(m.tradableInstrument.RiskModel, m.pMonitor)
-	m.markPriceCalculator.UpdateConfig(m.mkt.MarkPriceConfiguration)
+	if err := m.markPriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+		m.markPriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
+		return err
+	}
 	if m.IsPerp() {
 		indexPriceConfig := m.mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
-		if indexPriceConfig == nil {
+		if indexPriceConfig == nil && m.indexPriceCalculator != nil {
+			// unsubscribe existing oracles if any
+			m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, nil)
 			m.indexPriceCalculator = nil
-		} else {
-			m.indexPriceCalculator.UpdateConfig(indexPriceConfig)
+		} else if m.indexPriceCalculator != nil {
+			// there was previously a index price calculator
+			if err := m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+				m.indexPriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
+				return err
+			}
+		} else if indexPriceConfig != nil {
+			// it's a new index calculator
+			m.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, m.timeService)
 		}
 	}
 
@@ -794,7 +808,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		NextNetClose:              m.liquidation.GetNextCloseoutTS(),
 		MarkPriceType:             m.markPriceCalculator.config.CompositePriceType,
 	}
-
 	return md
 }
 
@@ -1023,35 +1036,10 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		m.indexPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
 	}
 
-	if m.nextMTM.IsZero() ||
-		!m.nextMTM.After(t) &&
-			!m.as.InAuction() { // TODO @zohar do we want to update the mark price and or MTM during auctions?
-		prevMarkPrice := m.markPriceCalculator.price
-		m.markPriceCalculator.CalculateMarkPrice(
-			t.UnixNano(),
-			m.matching,
-			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
-		m.nextMTM = t.Add(m.mtmDelta)
-		// TODO @zohar not sure if the hasTraded is needed
-		if (prevMarkPrice == nil || !m.markPriceCalculator.price.EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			m.markPriceCalculator.price != nil && !m.markPriceCalculator.price.IsZero() {
-			if m.perp && m.indexPriceCalculator == nil {
-				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.markPriceCalculator.price, m.timeService.GetTimeNow().UnixNano())
-			}
-			m.confirmMTM(ctx, false)
-			closedPositions := m.position.GetClosedPositions()
-			if len(closedPositions) > 0 {
-				m.releaseExcessMargin(ctx, closedPositions...)
-				// also remove all stop orders
-				m.removeAllStopOrders(ctx, closedPositions...)
-			}
-		}
-	}
-
+	// if we do have a separate configuration for the index price and we have a new index price we push it to the perp
 	if m.indexPriceCalculator != nil && (m.nextIndexPriceCalc.IsZero() ||
 		!m.nextIndexPriceCalc.After(t) &&
-			!m.as.InAuction()) { // TODO @zohar do we want to update the mark price and or MTM during auctions?
+			!m.as.InAuction()) {
 		prevIndexPrice := m.indexPriceCalculator.price
 		m.indexPriceCalculator.CalculateMarkPrice(
 			t.UnixNano(),
@@ -1059,12 +1047,34 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.mtmDelta,
 			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
 		m.nextIndexPriceCalc = t.Add(m.indexConfigFrequency)
-		// TODO @zohar not sure if the hasTraded is needed
 		if (prevIndexPrice == nil || !m.indexPriceCalculator.price.EQ(prevIndexPrice) || m.settlement.HasTraded()) &&
-			m.indexPriceCalculator.price != nil && !m.indexPriceCalculator.price.IsZero() {
-			if m.perp {
-				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.indexPriceCalculator.price, m.timeService.GetTimeNow().UnixNano())
-			}
+			!m.getCurrentIndexPrice().IsZero() {
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+		}
+	}
+
+	// if it's time for mtm, let's do it
+	if m.nextMTM.IsZero() ||
+		!m.nextMTM.After(t) &&
+			!m.as.InAuction() {
+		prevMarkPrice := m.markPriceCalculator.price
+		m.markPriceCalculator.CalculateMarkPrice(
+			t.UnixNano(),
+			m.matching,
+			m.mtmDelta,
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
+		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
+		// on the standard mark price
+		if m.indexPriceCalculator == nil && m.perp &&
+			(prevMarkPrice == nil || !m.markPriceCalculator.price.EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+			!m.getCurrentMarkPrice().IsZero() {
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+		}
+		m.nextMTM = t.Add(m.mtmDelta)
+		// TODO @zohar not sure if the hasTraded is needed
+		if (prevMarkPrice == nil || !m.markPriceCalculator.price.EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+			!m.getCurrentMarkPrice().IsZero() {
+			m.confirmMTM(ctx, false)
 			closedPositions := m.position.GetClosedPositions()
 			if len(closedPositions) > 0 {
 				m.releaseExcessMargin(ctx, closedPositions...)
@@ -1078,7 +1088,11 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	// send position events
 	m.position.FlushPositionEvents(ctx)
 
-	m.liquidity.EndBlock(m.markPriceCalculator.price, m.midPrice(), m.positionFactor)
+	var markPriceCopy *num.Uint
+	if m.markPriceCalculator.price != nil {
+		markPriceCopy = m.markPriceCalculator.price.Clone()
+	}
+	m.liquidity.EndBlock(markPriceCopy, m.midPrice(), m.positionFactor)
 }
 
 func (m *Market) removeAllStopOrders(
@@ -1519,6 +1533,8 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		updatedOrders = append(updatedOrders, conf.Order)
 	}
 
+	wasOpeningAuction := m.IsOpeningAuction()
+
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
@@ -1528,7 +1544,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
-	// TODO - should we calculate mark price at this point? probably so
 	m.markPriceCalculator.CalculateMarkPrice(
 		m.timeService.GetTimeNow().UnixNano(),
 		m.matching,
@@ -1538,15 +1553,28 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.risk.GetRiskFactors().Short,
 		m.risk.GetRiskFactors().Long)
 
-	if m.perp && m.indexPriceCalculator != nil {
-		m.indexPriceCalculator.CalculateMarkPrice(
-			m.timeService.GetTimeNow().UnixNano(),
-			m.matching,
-			m.indexConfigFrequency,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
-			m.mkt.LinearSlippageFactor,
-			m.risk.GetRiskFactors().Short,
-			m.risk.GetRiskFactors().Long)
+	if wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
+		m.markPriceCalculator.overridePrice(m.lastTradedPrice)
+	}
+
+	if m.perp {
+		if m.indexPriceCalculator != nil {
+			m.indexPriceCalculator.CalculateMarkPrice(
+				m.timeService.GetTimeNow().UnixNano(),
+				m.matching,
+				m.indexConfigFrequency,
+				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
+				m.mkt.LinearSlippageFactor,
+				m.risk.GetRiskFactors().Short,
+				m.risk.GetRiskFactors().Long)
+
+			if wasOpeningAuction && (m.getCurrentIndexPrice().IsZero()) {
+				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
+			}
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+		} else {
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+		}
 	}
 
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
@@ -4203,6 +4231,19 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 					m.risk.GetRiskFactors().Long)
 			}
 
+			if m.perp {
+				// if perp and we have an index price (direct or by mark price), feed it to the perp before the mark to market
+				if m.indexPriceCalculator != nil {
+					if indexPrice := m.getCurrentIndexPrice(); !indexPrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+					}
+				} else {
+					if indexPrice := m.getCurrentMarkPrice(); !indexPrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+					}
+				}
+			}
+
 			// send market data event with the updated mark price
 			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
 			m.confirmMTM(ctx, true)
@@ -4245,6 +4286,15 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 		m.log.Debug("could not close market", logging.MarketID(m.GetID()))
 		return
 	}
+}
+
+func (m *Market) scaleOracleData(ctx context.Context, price *num.Numeric) *num.Uint {
+	p, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(price, m.assetDP)
+	if err != nil {
+		m.log.Error(err.Error())
+		return nil
+	}
+	return p
 }
 
 func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric) {
@@ -4358,23 +4408,10 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 		// mark price should be updated here
 		if settlementDataInAsset != nil {
 			m.lastTradedPrice = settlementDataInAsset.Clone()
-			m.markPriceCalculator.CalculateMarkPrice(
-				m.timeService.GetTimeNow().UnixNano(),
-				m.matching,
-				m.mtmDelta,
-				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
-				m.mkt.LinearSlippageFactor,
-				m.risk.GetRiskFactors().Short,
-				m.risk.GetRiskFactors().Long)
+			// the settlement price is the final mark price
+			m.markPriceCalculator.overridePrice(m.lastTradedPrice)
 			if m.indexPriceCalculator != nil {
-				m.indexPriceCalculator.CalculateMarkPrice(
-					m.timeService.GetTimeNow().UnixNano(),
-					m.matching,
-					m.indexConfigFrequency,
-					m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
-					m.mkt.LinearSlippageFactor,
-					m.risk.GetRiskFactors().Short,
-					m.risk.GetRiskFactors().Long)
+				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
 			}
 		}
 
@@ -4492,6 +4529,16 @@ func (m *Market) getReferencePrice() *num.Uint {
 		return m.getCurrentMarkPrice()
 	}
 	return ip
+}
+
+func (m *Market) getCurrentIndexPrice() *num.Uint {
+	if !m.perp || m.indexPriceCalculator == nil {
+		m.log.Panic("trying to get current index price in a market with no index price configuration or not a perp market")
+	}
+	if m.indexPriceCalculator.price == nil {
+		return num.UintZero()
+	}
+	return m.indexPriceCalculator.price.Clone()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {

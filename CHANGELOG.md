@@ -35,6 +35,7 @@
 - [9983](https://github.com/vegaprotocol/vega/issues/9983) - Implement cap and discount for transfer fees.
 - [9980](https://github.com/vegaprotocol/vega/issues/9980) - Add teams statistics API.
 - [9257](https://github.com/vegaprotocol/vega/issues/9257) - Add games details API
+- [9992](https://github.com/vegaprotocol/vega/issues/9992) - Add configuration to control the number of blocks worth of Ethereum events to read.
 - [9260](https://github.com/vegaprotocol/vega/issues/9260) - Enhance rewards API for competitions
 - [10180](https://github.com/vegaprotocol/vega/issues/10180) - Additional candle intervals
 - [10218](https://github.com/vegaprotocol/vega/issues/10218) - Volume discount stats shows volumes even if party doesn't qualify for a discount tier.
@@ -57,6 +58,9 @@
 - [462](https://github.com/vegaprotocol/core-test-coverage/issues/462) - Cover `0012-POSR-011` explicitly
 - [595](https://github.com/vegaprotocol/core-test-coverage/issues/595) - Ensure the full size of iceberg orders is considered when creating a network order.
 - [10308](https://github.com/vegaprotocol/vega/issues/10308) - Support joining to closed teams based on an allow list.
+- [10349](https://github.com/vegaprotocol/vega/issues/10349) - Add oracle support to mark price configuration.
+- [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology. 
+- [521](https://github.com/vegaprotocol/core-test-coverage/issues/521) - Add tests for allow list functionality when joining teams.
 
 ### 🐛 Fixes
 
@@ -111,7 +115,11 @@
 - [10321](https://github.com/vegaprotocol/vega/issues/10321) - Fix `ListPartyMarginModes` panic.
 - [10324](https://github.com/vegaprotocol/vega/issues/10324) - Fix `GetMarketHistoryByID` to only return the most recent market data information when no dates are provided.
 - [10318](https://github.com/vegaprotocol/vega/issues/10318) - Prevent stop orders being placed during opening auction.
-- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) -  Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) - Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [10354](https://github.com/vegaprotocol/vega/issues/10354) - Renumbered SQL migration scripts 0055-0067 due to 0068 being released as part of a patch without renumbering.
+- [476](https://github.com/vegaprotocol/core-test-coverage/issues/476) - Add tests for markets expiring in opening auction, fix a bug for future markets.
+- [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
+- [10326](https://github.com/vegaprotocol/vega/issues/10326) - Fix intermittent test failure.
 
 ## 0.73.0
 

@@ -438,4 +438,8 @@ message CompositePriceConfiguration {
   repeated string source_staleness_tolerance = 5;
   // Which method is used for the calculation of the composite price for the market.
   CompositePriceType composite_price_type = 6;
+  // Additional price sources to be used for index price calculation.
+  repeated vega.DataSourceDefinition data_sources_spec = 7;
+  // List of each price source and its corresponding binding
+  repeated vega.SpecBindingForCompositePrice data_sources_spec_binding = 8;
 }

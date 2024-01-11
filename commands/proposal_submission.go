@@ -1697,6 +1697,22 @@ func isBindingMatchingSpecFilters(spec *vegapb.DataSourceDefinition, bindingProp
 	return bindingPropertyFound
 }
 
+func checkCompositePriceBinding(binding *vegapb.SpecBindingForCompositePrice, definition *vegapb.DataSourceDefinition, property string) Errors {
+	errs := NewErrors()
+
+	if binding == nil {
+		errs.AddForProperty(property, ErrIsRequired)
+		return errs
+	}
+
+	if len(binding.PriceSourceProperty) == 0 {
+		errs.AddForProperty(property, ErrIsRequired)
+	} else if !isBindingMatchingSpec(definition, binding.PriceSourceProperty) {
+		errs.AddForProperty(fmt.Sprintf("%s.price_source_property", property), ErrIsMismatching)
+	}
+	return errs
+}
+
 func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
@@ -1873,38 +1889,62 @@ func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent s
 func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfiguration, parent string) Errors {
 	errs := NewErrors()
 	if config == nil {
-		errs.AddForProperty(parent, ErrIsNotValid)
+		errs.AddForProperty(parent, ErrIsRequired)
 		return errs
 	}
-	if config.DecayPower > 3 {
-		errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must be in {0, 1, 2, 3}"))
-	}
-	if len(config.DecayWeight) == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsRequired)
-	} else {
-		dw, err := num.DecimalFromString(config.DecayWeight)
-		if err != nil {
-			errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsNotValidNumber)
-		} else {
-			if dw.LessThan(num.DecimalZero()) || dw.GreaterThan(num.DecimalOne()) {
-				errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrMustBeWithinRange01)
-			}
-		}
-	}
-	if len(config.CashAmount) == 0 {
-		errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsRequired)
-	} else {
-		if n, overflow := num.UintFromString(config.CashAmount, 10); overflow || n.IsNegative() {
-			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsNotValidNumber)
-		}
-	}
-
 	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED {
 		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsRequired)
 	}
 
 	if _, ok := protoTypes.CompositePriceType_name[int32(config.CompositePriceType)]; !ok {
 		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsNotValid)
+	}
+
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE {
+		if config.DecayPower > 3 || config.DecayPower < 1 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must be in {1, 2, 3}"))
+		}
+		if len(config.DecayWeight) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsRequired)
+		} else {
+			dw, err := num.DecimalFromString(config.DecayWeight)
+			if err != nil {
+				errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrIsNotValidNumber)
+			} else if dw.LessThan(num.DecimalZero()) || dw.GreaterThan(num.DecimalOne()) {
+				errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), ErrMustBeWithinRange01)
+			}
+		}
+		if len(config.CashAmount) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsRequired)
+		} else if n, overflow := num.UintFromString(config.CashAmount, 10); overflow || n.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), ErrIsNotValidNumber)
+		}
+	} else {
+		if config.DecayPower != 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DecayWeight) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.CashAmount) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.SourceStalenessTolerance) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.SourceWeights) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DataSourcesSpec) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DataSourcesSpec) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec_binding", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+	}
+
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) > 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be empty if composite price type is not weighted"))
 	}
 
 	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) < 4 {
@@ -1919,17 +1959,42 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must have the same length as source_weights"))
 	}
 
+	weightSum := num.DecimalZero()
 	for i, v := range config.SourceWeights {
 		if d, err := num.DecimalFromString(v); err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrIsNotValidNumber)
 		} else if d.LessThan(num.DecimalZero()) {
 			errs.AddForProperty(fmt.Sprintf("%s.source_weights.%d", parent, i), ErrMustBePositiveOrZero)
+		} else {
+			weightSum = weightSum.Add(d)
 		}
+	}
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && weightSum.IsZero() {
+		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must have at least one none zero weight"))
 	}
 
 	for i, v := range config.SourceStalenessTolerance {
 		if _, err := time.ParseDuration(v); err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance.%d", parent, i), fmt.Errorf("must be a valid duration"))
+		}
+	}
+	if len(config.DataSourcesSpec) > 0 && len(config.DataSourcesSpec) != len(config.DataSourcesSpecBinding) {
+		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("must be have the same number of elements as the corresponding bindings"))
+	}
+	if len(config.DataSourcesSpec) > 5 {
+		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("too many data source specs - must be less than or equal to 5"))
+	}
+	if len(config.DataSourcesSpec) > 0 && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
+		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must included staleness information for all data sources"))
+	}
+
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.DataSourcesSpec) > 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("are not supported for last trade composite price type"))
+	}
+	if len(config.DataSourcesSpec) > 0 {
+		for i, dsd := range config.DataSourcesSpec {
+			errs.Merge(checkDataSourceSpec(dsd, fmt.Sprintf("data_sources_spec.%d", i), parent, true))
+			errs.Merge(checkCompositePriceBinding(config.DataSourcesSpecBinding[i], dsd, fmt.Sprintf("%s.data_sources_spec_binding.%d", parent, i)))
 		}
 	}
 

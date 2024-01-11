@@ -37,11 +37,16 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/devopsscripts repository')
         string( name: 'VEGA_MARKET_SIM_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
+        string( name: 'DEVOPSTOOLS_BRANCH', defaultValue: 'main',
+                description: 'Git branch, tag or hash of the vegaprotocol/devopstools repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
         string( name: 'NODE_LABEL', defaultValue: 'core-build',
                 description: 'Label on which vega build should be run, if empty any any node is used')
+        string( name: 'DOWNSTREAM_NODE_LABEL', defaultValue: '',
+                description: 'The node label for downstream jobs like system-tests, etc. Ignored if empty')
     }
+    
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
@@ -74,6 +79,10 @@ pipeline {
                     originRepo = pr.getOriginRepo('vegaprotocol/vega')
                 }
                 echo "params (after injection)=${params}"
+
+                script {
+                    sh 'go version'
+                }
             }
         }
 
@@ -248,6 +257,7 @@ pipeline {
                                 vegaVersion: commitHash,
                                 vegaMarketSim: params.VEGA_MARKET_SIM_BRANCH,
                                 jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH,
+                                nodeLabel: params.DOWNSTREAM_NODE_LABEL,
                                 branchRun: isPRBuild(),
                                 parallelWorkers: "4"
                         }
@@ -255,11 +265,8 @@ pipeline {
                 }
                 stage('Vegavisor autoinstall and pup') {
                     steps {
-                        build(
-                            job: '/common/visor-autoinstall-and-pup',
-                            propagate: true, // fast fail
-                            wait: true,
-                            parameters: [
+                        script {
+                            List visorAutoinstallParams = [
                                 string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases-system-tests'),
                                 string(name: 'VEGA_BRANCH', value: commitHash),
                                 string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
@@ -269,9 +276,21 @@ pipeline {
                                 booleanParam(name: 'CREATE_RELEASE', value: true),
                                 string(name: 'JENKINS_SHARED_LIB_BRANCH', value: params.JENKINS_SHARED_LIB_BRANCH ?: pipelineDefaults.capsuleSystemTests.jenkinsSharedLib),
                             ]
-                        )
+
+                            if (params.DOWNSTREAM_NODE_LABEL && params.DOWNSTREAM_NODE_LABEL.length() > 0) {
+                                visorAutoinstallParams << string(name: 'NODE_LABEL', value: params.DOWNSTREAM_NODE_LABEL)
+                            }
+
+                            build(
+                                job: '/common/visor-autoinstall-and-pup',
+                                propagate: true, // fast fail
+                                wait: true,
+                                parameters: visorAutoinstallParams,
+                            )
+                        }
                     }
                 }
+
                 stage('System Tests') {
                     steps {
                         script {
@@ -284,12 +303,16 @@ pipeline {
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 devopsScripts: params.DEVOPSSCRIPTS_BRANCH,
-                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH
+                                jenkinsSharedLib: params.JENKINS_SHARED_LIB_BRANCH,
+                                downstreamNodeLabel: params.DOWNSTREAM_NODE_LABEL,
+                                devopstools: params.DEVOPSTOOLS_BRANCH
                         }
                     }
                 }
                 stage('mocks check') {
                     steps {
+                        sh label: 'print go version', script: 'go version'
+
                         sh label: 'copy vega repo', script: '''#!/bin/bash -e
                                 cp -r ./vega ./vega-mocks-check
                             '''

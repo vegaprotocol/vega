@@ -97,7 +97,9 @@ func TheFollowingTeamsWithRefereesAreCreated(
 		}
 		// 3. Create a team
 		teamPB := &commandspb.CreateReferralSet_Team{
-			Name: team,
+			Name:      team,
+			Closed:    row.Closed(),
+			AllowList: row.AllowList(),
 		}
 		if err := teamsEngine.CreateTeam(ctx, referrer, types.TeamID(team), teamPB); err != nil {
 			return err
@@ -134,7 +136,10 @@ func parseCreateTeamTable(table *godog.Table) []RowWrapper {
 		"referees",
 		"balance",
 		"asset",
-	}, []string{})
+	}, []string{
+		"closed",
+		"allow list",
+	})
 }
 
 type membersRow struct {
@@ -184,6 +189,13 @@ func (t teamRow) Balance() *num.Uint {
 	return t.r.MustUint("balance")
 }
 
+func (t teamRow) Closed() bool {
+	if !t.r.HasColumn("closed") {
+		return false
+	}
+	return t.r.MustBool("closed")
+}
+
 func (t teamRow) Members() []string {
 	cnt := t.MemberCount()
 	ids := make([]string, 0, cnt)
@@ -193,4 +205,16 @@ func (t teamRow) Members() []string {
 		ids = append(ids, fmt.Sprintf(pidFmt, i+1))
 	}
 	return ids
+}
+
+func (t teamRow) AllowList() []string {
+	if !t.Closed() {
+		return nil
+	}
+	generated := t.Members()
+	if !t.r.HasColumn("allow list") {
+		return generated
+	}
+	explicit := t.r.MustStrSlice("allow list", ",")
+	return append(explicit, generated...)
 }

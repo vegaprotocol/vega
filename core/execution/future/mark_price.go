@@ -16,10 +16,14 @@
 package future
 
 import (
+	"context"
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/datasource/common"
+	excommon "code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/matching"
+	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -32,11 +36,14 @@ type CompositePriceCalculator struct {
 	sourceLastUpdate []int64
 	bookPriceAtTime  map[int64]*num.Uint
 	price            *num.Uint
+	timeService      excommon.TimeService
 	// [0] trade mark price
 	// [1] book mark price
 	// [2] first oracel mark price
 	// [2+n] median mark price
 	priceSources []*num.Uint
+	oracles      []*products.CompositePriceOracle
+	scalingFunc  func(context.Context, *num.Numeric) *num.Uint
 }
 
 const (
@@ -45,7 +52,7 @@ const (
 	FirstOraclePriceIndex = 2
 )
 
-func NewCompositePriceCalculatorFromSnapshot(mp *num.Uint, mpc *snapshot.CompositePriceCalculator) *CompositePriceCalculator {
+func NewCompositePriceCalculatorFromSnapshot(ctx context.Context, mp *num.Uint, timeService excommon.TimeService, oe excommon.OracleEngine, mpc *snapshot.CompositePriceCalculator) *CompositePriceCalculator {
 	if mpc == nil {
 		// migration - for existing markets loaded from snapshot, set the configuration to default to use last trade price
 		// for mark price
@@ -60,6 +67,7 @@ func NewCompositePriceCalculatorFromSnapshot(mp *num.Uint, mpc *snapshot.Composi
 			price:            mp,
 			priceSources:     make([]*num.Uint, 1),
 			sourceLastUpdate: make([]int64, 1),
+			timeService:      timeService,
 		}
 	}
 
@@ -86,31 +94,70 @@ func NewCompositePriceCalculatorFromSnapshot(mp *num.Uint, mpc *snapshot.Composi
 		bookPriceAtTime[tp.Time] = num.MustUintFromString(tp.Price, 10)
 	}
 
-	return &CompositePriceCalculator{
+	calc := &CompositePriceCalculator{
 		config:           config,
 		trades:           trades,
 		sourceLastUpdate: mpc.PriceSourceLastUpdate,
 		priceSources:     priceSources,
 		bookPriceAtTime:  bookPriceAtTime,
 		price:            compositePrice,
+		timeService:      timeService,
 	}
+
+	if len(config.DataSources) > 0 {
+		oracles := make([]*products.CompositePriceOracle, 0, len(config.DataSources))
+		for i, s := range config.DataSources {
+			oracle, err := products.NewCompositePriceOracle(ctx, oe, s, config.SpecBindingForCompositePrice[i], calc.GetUpdateOraclePriceFunc(i))
+			if err != nil {
+				return nil
+			}
+			oracles = append(oracles, oracle)
+		}
+		calc.oracles = oracles
+	}
+	return calc
 }
 
-func NewCompositePriceCalculator(config *types.CompositePriceConfiguration) *CompositePriceCalculator {
+func NewCompositePriceCalculator(ctx context.Context, config *types.CompositePriceConfiguration, oe products.OracleEngine, timeService excommon.TimeService) *CompositePriceCalculator {
 	priceSourcesLen := len(config.SourceStalenessTolerance)
 	if priceSourcesLen == 0 {
 		priceSourcesLen = 1
 	}
 
-	return &CompositePriceCalculator{
+	mpc := &CompositePriceCalculator{
 		config:           config,
 		priceSources:     make([]*num.Uint, priceSourcesLen),
 		sourceLastUpdate: make([]int64, priceSourcesLen),
 		bookPriceAtTime:  map[int64]*num.Uint{},
+		timeService:      timeService,
 	}
+	if len(config.DataSources) > 0 {
+		oracles := make([]*products.CompositePriceOracle, 0, len(config.DataSources))
+		for i, s := range config.DataSources {
+			oracle, err := products.NewCompositePriceOracle(ctx, oe, s, config.SpecBindingForCompositePrice[i], mpc.GetUpdateOraclePriceFunc(i))
+			if err != nil {
+				return nil
+			}
+			oracles = append(oracles, oracle)
+		}
+		mpc.oracles = oracles
+	}
+	return mpc
 }
 
-func (mpc *CompositePriceCalculator) UpdateConfig(config *types.CompositePriceConfiguration) {
+func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe excommon.OracleEngine, config *types.CompositePriceConfiguration) error {
+	// special case for only resetting the oracles
+	if mpc.oracles != nil {
+		for _, cpo := range mpc.oracles {
+			cpo.UnsubAll(ctx)
+		}
+		mpc.oracles = nil
+	}
+
+	if config == nil {
+		return nil
+	}
+
 	priceSourcesLen := len(config.SourceStalenessTolerance)
 	if priceSourcesLen == 0 {
 		priceSourcesLen = 1
@@ -118,6 +165,31 @@ func (mpc *CompositePriceCalculator) UpdateConfig(config *types.CompositePriceCo
 	mpc.config = config
 	mpc.priceSources = make([]*num.Uint, priceSourcesLen)
 	mpc.sourceLastUpdate = make([]int64, priceSourcesLen)
+
+	if len(config.DataSources) > 0 {
+		oracles := make([]*products.CompositePriceOracle, 0, len(config.DataSources))
+		for i, s := range config.DataSources {
+			oracle, err := products.NewCompositePriceOracle(ctx, oe, s, config.SpecBindingForCompositePrice[i], mpc.GetUpdateOraclePriceFunc(i))
+			if err != nil {
+				return err
+			}
+			oracles = append(oracles, oracle)
+		}
+		mpc.oracles = oracles
+	}
+	return nil
+}
+
+func (mpc *CompositePriceCalculator) setOraclePriceScalingFunc(f func(context.Context, *num.Numeric) *num.Uint) {
+	mpc.scalingFunc = f
+}
+
+// overridePrice is called to set the price externally. This is used when leaving the opening auction if the
+// methodology yielded no valid price.
+func (mpc *CompositePriceCalculator) overridePrice(p *num.Uint) {
+	if p != nil {
+		mpc.price = p.Clone()
+	}
 }
 
 // NewTrade is called to inform the mark price calculator on a new trade.
@@ -131,13 +203,21 @@ func (mpc *CompositePriceCalculator) NewTrade(trade *types.Trade) {
 }
 
 // UpdateOraclePrice is called when a new oracle price is available.
-// TODO call from market when a new price is received from one of the oracles.
-func (mpc *CompositePriceCalculator) UpdateOraclePrice(oracleIndex int, price *num.Uint, t int64) {
-	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
-		return
+func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) func(ctx context.Context, data common.Data) error {
+	return func(ctx context.Context, data common.Data) error {
+		oracle := mpc.oracles[oracleIndex]
+		pd, err := oracle.GetData(data)
+		if err != nil {
+			return err
+		}
+		p := mpc.scalingFunc(ctx, pd)
+		if p == nil || p.IsZero() {
+			return nil
+		}
+		mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = p.Clone()
+		mpc.sourceLastUpdate[FirstOraclePriceIndex+oracleIndex] = mpc.timeService.GetTimeNow().UnixNano()
+		return nil
 	}
-	mpc.priceSources[FirstOraclePriceIndex+oracleIndex] = price.Clone()
-	mpc.sourceLastUpdate[FirstOraclePriceIndex+oracleIndex] = t
 }
 
 // CalculateBookMarkPriceAtTimeT is called every interval (currently at the end of each block) to calculate
