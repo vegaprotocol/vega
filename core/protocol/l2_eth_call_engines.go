@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
@@ -38,6 +39,16 @@ func NewL2EthCallEngines(log *logging.Logger, cfg ethcall.Config, isValidator bo
 	}
 }
 
+func (v *L2EthCallEngines) GetOrInstantiate(chainID string) (ethverifier.EthCallEngine, error) {
+
+	if e, ok := v.engines[chainID]; ok {
+		return e, nil
+	}
+
+	v.log.Panic("should be instantiated by now really?")
+	return nil, nil
+}
+
 func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 	ctx context.Context, ethCfg *types.EthereumL2Configs,
 ) error {
@@ -48,12 +59,20 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 			continue
 		}
 
-		clt, _, ok := v.clients.Get(c.ChainID)
+		clt, _, ok := v.clients.Get(c.NetworkID)
 		if !ok {
-			v.log.Panic("ethereum client not configured for L2", logging.String("chain-id", c.ChainID))
+			v.log.Panic("ethereum client not configured for L2",
+				logging.String("chain-id", c.ChainID),
+				logging.String("network-id", c.NetworkID),
+			)
 		}
 
-		v.engines[c.ChainID] = ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
+		e := ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
+		v.engines[c.ChainID] = e
+
+		// start it here?
+		e.Start()
+
 		// setup activation listener
 		v.specActivationListener(v.engines[c.ChainID])
 	}

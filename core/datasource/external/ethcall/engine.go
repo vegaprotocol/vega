@@ -88,12 +88,13 @@ func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthRead
 		poller:      newPoller(cfg.PollEvery.Get()),
 	}
 
-	chainID, err := client.ChainID(context.Background())
-	if err != nil {
-		log.Panic("could not load chain ID", logging.Error(err))
+	if isValidator {
+		chainID, err := client.ChainID(context.Background())
+		if err != nil {
+			log.Panic("could not load chain ID", logging.Error(err))
+		}
+		e.chainID = chainID.Uint64()
 	}
-
-	e.chainID = chainID.Uint64()
 
 	return e
 }
@@ -263,6 +264,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	}
 
 	e.log.Info("tick",
+		logging.Uint64("chainID", e.chainID),
 		logging.Time("wallTime", wallTime),
 		logging.BigInt("ethBlock", lastEthBlock.Number),
 		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time), 0)))
