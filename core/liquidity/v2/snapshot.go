@@ -262,6 +262,9 @@ func (e *snapshotV2) serialisePerformances() ([]byte, error) {
 			LastEpochFractionOfTimeOnBook:    partyPerformance.lastEpochTimeBookFraction,
 			LastEpochFeePenalty:              partyPerformance.lastEpochFeePenalty,
 			LastEpochBondPenalty:             partyPerformance.lastEpochBondPenalty,
+			RequiredLiquidity:                partyPerformance.requiredLiquidity,
+			NotionalVolumeBuys:               partyPerformance.notionalVolumeBuys,
+			NotionalVolumeSells:              partyPerformance.notionalVolumeSells,
 		}
 
 		performancePerPartySnapshot = append(performancePerPartySnapshot, partyPerformanceSnapshot)
