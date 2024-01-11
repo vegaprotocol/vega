@@ -226,7 +226,7 @@ pipeline {
                 stage('core/integration tests') {
                     steps {
                         dir('vega/core/integration') {
-                            sh 'godog build -o core_integration.test && ./core_integration.test --format=junit:core-integration-report.xml'
+                            sh 'go test . --godog.format=junit:core-integration-report.xml'
                             junit checksName: 'Core Integration Tests', testResults: 'core-integration-report.xml'
                         }
                     }
