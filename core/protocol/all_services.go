@@ -50,6 +50,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams/dispatch"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/parties"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -123,6 +124,8 @@ type allServices struct {
 	builtinOracle           *spec.Builtin
 	codec                   abci.Codec
 	ethereumOraclesVerifier *ethverifier.Verifier
+
+	partiesEngine *parties.SnapshottedEngine
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -258,6 +261,8 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
+
+	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts)

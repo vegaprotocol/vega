@@ -94,6 +94,7 @@ const (
 	HoldingAccountTrackerSnapshot  SnapshotNamespace = "holdingAccountTracker"
 	EthereumOracleVerifierSnapshot SnapshotNamespace = "ethereumoracleverifier"
 	TeamsSnapshot                  SnapshotNamespace = "teams"
+	PartiesSnapshot                SnapshotNamespace = "parties"
 	VestingSnapshot                SnapshotNamespace = "vesting"
 	ReferralProgramSnapshot        SnapshotNamespace = "referralProgram"
 	ActivityStreakSnapshot         SnapshotNamespace = "activitystreak"

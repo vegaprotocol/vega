@@ -143,6 +143,7 @@ message Payload {
     Liquidation liquidation = 80;
     BankingTransferFeeDiscounts banking_transfer_fee_discounts = 81;
     GovernanceBatchActive governance_batch_active = 82;
+    Parties parties = 83;
   }
 }
 
@@ -1299,4 +1300,14 @@ message CompositePriceCalculator {
   repeated string price_sources = 4;
   repeated int64 price_source_last_update = 5;
   repeated TimePrice book_price_at_time = 6;
+}
+
+message Parties {
+  repeated PartyProfile profiles = 1;
+}
+
+message PartyProfile {
+  string party_id = 1;
+  string alias = 2;
+  repeated vega.Metadata metadata = 3;
 }

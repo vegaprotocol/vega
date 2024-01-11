@@ -13,28 +13,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package types
+package parties
 
-import vegapb "code.vegaprotocol.io/vega/protos/vega"
+import (
+	"strings"
 
-type PartyID string
+	"code.vegaprotocol.io/vega/core/types"
 
-func (p PartyID) String() string {
-	return string(p)
-}
+	"golang.org/x/exp/slices"
+)
 
-type Party struct {
-	Id string
-}
+func (e *Engine) ListProfiles() []types.PartyProfile {
+	profiles := make([]types.PartyProfile, 0, len(e.profiles))
 
-func (p Party) IntoProto() *vegapb.Party {
-	return &vegapb.Party{
-		Id: p.Id,
+	for _, profile := range e.profiles {
+		profiles = append(profiles, *profile)
 	}
+
+	SortByPartyID(profiles)
+
+	return profiles
 }
 
-type PartyProfile struct {
-	PartyID  PartyID
-	Alias    string
-	Metadata map[string]string
+func SortByPartyID(toSort []types.PartyProfile) {
+	slices.SortStableFunc(toSort, func(a, b types.PartyProfile) int {
+		return strings.Compare(string(a.PartyID), string(b.PartyID))
+	})
 }

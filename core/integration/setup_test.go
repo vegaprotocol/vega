@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/parties"
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
@@ -119,6 +120,7 @@ type executionTestSetup struct {
 	stateVarEngine        *stubs.StateVarStub
 	witness               *validators.Witness
 	teamsEngine           *teams.Engine
+	profilesEngine        *parties.Engine
 	referralProgram       *referral.Engine
 	activityStreak        *activitystreak.Engine
 	vesting               *vesting.Engine
@@ -172,6 +174,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
 	execsetup.teamsEngine = teams.NewEngine(execsetup.broker, execsetup.timeService)
+	execsetup.profilesEngine = parties.NewEngine(execsetup.broker)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount)

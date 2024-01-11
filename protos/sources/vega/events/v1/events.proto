@@ -518,6 +518,7 @@ message TransactionResult {
     commands.v1.UpdateMarginMode update_margin_mode = 127;
     commands.v1.JoinTeam join_team = 128;
     commands.v1.BatchProposalSubmission batch_proposal = 129;
+    commands.v1.UpdatePartyProfile update_party_profile = 130;
   }
 
   // extra details about the transaction processing
@@ -1075,6 +1076,11 @@ message PartyMarginModeUpdated {
   uint64 at_epoch = 7;
 }
 
+message PartyProfileUpdated {
+  // Party's profile updated.
+  vega.PartyProfile updated_profile = 1;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1282,6 +1288,9 @@ enum BusEventType {
   // Event indicating that a party updated their margin mode on a market.
   BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED = 85;
 
+  // Event indicating that a party updated their profile.
+  BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1461,6 +1470,8 @@ message BusEvent {
     TransferFeesDiscount transfer_fees_discount = 182;
     // Event notifying of a party's margin mode update on a market.
     PartyMarginModeUpdated party_margin_mode_updated = 183;
+    // Event notifying of a party's profile update.
+    PartyProfileUpdated party_profile_updated = 184;
 
     // Market tick events
     MarketEvent market = 1001;

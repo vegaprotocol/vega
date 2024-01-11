@@ -981,6 +981,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidationNodeFromProto(dt)
 	case *snapshot.Payload_GovernanceBatchActive:
 		ret.Data = PayloadGovernanceBatchActiveFromProto(dt)
+	case *snapshot.Payload_Parties:
+		ret.Data = PayloadPartiesFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1163,6 +1165,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Liquidation:
 		ret.Data = dt
 	case *snapshot.Payload_GovernanceBatchActive:
+		ret.Data = dt
+	case *snapshot.Payload_Parties:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))

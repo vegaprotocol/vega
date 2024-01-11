@@ -194,6 +194,10 @@ func (t *TransactionResult) setTx(tx interface{}) *TransactionResult {
 		t.evt.Transaction = &eventspb.TransactionResult_BatchProposal{
 			BatchProposal: tv,
 		}
+	case *commandspb.UpdatePartyProfile:
+		t.evt.Transaction = &eventspb.TransactionResult_UpdatePartyProfile{
+			UpdatePartyProfile: tv,
+		}
 	default:
 		panic(fmt.Sprintf("unsupported command %T", tv))
 	}

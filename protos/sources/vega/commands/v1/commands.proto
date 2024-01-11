@@ -415,3 +415,14 @@ message JoinTeam {
   // ID of the team to join, this is the same as the referral code used to generate the team.
   string id = 1;
 }
+
+// Command to associate metadata to a public key, known as a party ID.
+// Partial update is not supported, meaning previous values must be included in
+// the update, otherwise they are removed.
+message UpdatePartyProfile {
+  // Alias given to the party. It must be unique network-wide.
+  string alias = 1;
+  // Freeform data to associate to the party.
+  // Support a maximum of 10 entries.
+  repeated vega.Metadata metadata = 2;
+}

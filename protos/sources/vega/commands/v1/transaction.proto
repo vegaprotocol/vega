@@ -87,6 +87,8 @@ message InputData {
     OracleDataSubmission oracle_data_submission = 3001;
     // Command to submit a batch governance proposal.
     BatchProposalSubmission batch_proposal_submission = 3002;
+    // Command to update a party's profile.
+    UpdatePartyProfile update_party_profile = 3003;
   }
 }
 

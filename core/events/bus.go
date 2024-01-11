@@ -167,6 +167,7 @@ const (
 	TransferFeesEvent
 	TransferFeesDiscountUpdatedEvent
 	PartyMarginModeUpdatedEvent
+	PartyProfileUpdatedEvent
 )
 
 var (
@@ -264,6 +265,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID:                TransferFeesEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED:    TransferFeesDiscountUpdatedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED:         PartyMarginModeUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:             PartyProfileUpdatedEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -352,6 +354,7 @@ var (
 		TransferFeesEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID,
 		TransferFeesDiscountUpdatedEvent:  eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED,
 		PartyMarginModeUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED,
+		PartyProfileUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -439,6 +442,7 @@ var (
 		PaidLiquidityFeesStatsEvent:       "LiquidityFeesStatsEvent",
 		VestingBalancesSummaryEvent:       "VestingBalancesSummaryEvent",
 		PartyMarginModeUpdatedEvent:       "PartyMarginModeUpdatedEvent",
+		PartyProfileUpdatedEvent:          "PartyProfileUpdatedEvent",
 	}
 )
 

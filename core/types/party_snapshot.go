@@ -15,26 +15,36 @@
 
 package types
 
-import vegapb "code.vegaprotocol.io/vega/protos/vega"
+import snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-type PartyID string
-
-func (p PartyID) String() string {
-	return string(p)
+type PayloadParties struct {
+	Profiles []*snapshotpb.PartyProfile
 }
 
-type Party struct {
-	Id string
+func (p *PayloadParties) Key() string {
+	return "parties"
 }
 
-func (p Party) IntoProto() *vegapb.Party {
-	return &vegapb.Party{
-		Id: p.Id,
+func (*PayloadParties) Namespace() SnapshotNamespace {
+	return PartiesSnapshot
+}
+
+func (p *PayloadParties) IntoProto() *snapshotpb.Payload_Parties {
+	return &snapshotpb.Payload_Parties{
+		Parties: &snapshotpb.Parties{
+			Profiles: p.Profiles,
+		},
 	}
 }
 
-type PartyProfile struct {
-	PartyID  PartyID
-	Alias    string
-	Metadata map[string]string
+func (*PayloadParties) isPayload() {}
+
+func (p *PayloadParties) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadPartiesFromProto(payload *snapshotpb.Payload_Parties) *PayloadParties {
+	return &PayloadParties{
+		Profiles: payload.Parties.GetProfiles(),
+	}
 }

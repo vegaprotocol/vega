@@ -144,6 +144,10 @@ type TeamsEngine interface {
 	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
 }
 
+type PartiesEngine interface {
+	UpdateProfile(context.Context, types.PartyID, *commandspb.UpdatePartyProfile) error
+}
+
 type ReferralProgram interface {
 	UpdateProgram(program *types.ReferralProgram)
 	SetExists(types.ReferralSetID) bool
@@ -228,6 +232,7 @@ type App struct {
 	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
 	teamsEngine            TeamsEngine
+	partiesEngine          PartiesEngine
 	referralProgram        ReferralProgram
 	volumeDiscountProgram  VolumeDiscountProgram
 	protocolUpgradeService ProtocolUpgradeService
@@ -283,6 +288,7 @@ func NewApp(
 	gastimator *Gastimator,
 	ethCallEngine EthCallEngine,
 	balanceChecker BalanceChecker,
+	partiesEngine PartiesEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -333,6 +339,7 @@ func NewApp(
 		gastimator:             gastimator,
 		ethCallEngine:          ethCallEngine,
 		balanceChecker:         balanceChecker,
+		partiesEngine:          partiesEngine,
 	}
 
 	// setup handlers
@@ -495,6 +502,9 @@ func NewApp(
 		).
 		HandleDeliverTx(txn.JoinTeamCommand,
 			app.SendTransactionResult(app.JoinTeam),
+		).
+		HandleDeliverTx(txn.UpdatePartyProfileCommand,
+			app.SendTransactionResult(app.UpdatePartyProfile),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -2631,6 +2641,21 @@ func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
 	err := app.teamsEngine.JoinTeam(ctx, partyID, params)
 	if err != nil {
 		return fmt.Errorf("couldn't join team: %w", err)
+	}
+
+	return nil
+}
+
+func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdatePartyProfile{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdatePartyProfile command: %w", err)
+	}
+
+	partyID := types.PartyID(tx.Party())
+	err := app.partiesEngine.UpdateProfile(ctx, partyID, params)
+	if err != nil {
+		return fmt.Errorf("couldn't update profile: %w", err)
 	}
 
 	return nil
