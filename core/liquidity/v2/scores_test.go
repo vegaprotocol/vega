@@ -194,9 +194,9 @@ func (tng *testEngine) submitLiquidityProvisionAndCreateOrders(
 	_, err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgeneration.New(crypto.RandomHash()))
 	require.NoError(t, err)
 
-	zero := num.UintOne()
+	price := num.NewUint(100)
 	now := tng.tsvc.GetTimeNow()
-	tng.engine.ResetSLAEpoch(now, zero, zero, num.DecimalZero())
+	tng.engine.ResetSLAEpoch(now, price, price, num.DecimalOne())
 	tng.engine.ApplyPendingProvisions(ctx, now)
 
 	for _, o := range orders {

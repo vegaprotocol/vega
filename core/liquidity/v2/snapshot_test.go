@@ -100,6 +100,9 @@ func TestEngineSnapshotV2(t *testing.T) {
 		"party-4": num.UintFromUint64(3),
 	})
 
+	preStats := originalEngine.engine.LiquidityProviderSLAStats(time.Now())
+	require.Len(t, preStats, 2)
+
 	// Verifying we can salvage the state for each key, and they are a valid
 	// Payload.
 	engine1Keys := originalEngine.engine.V2StateProvider().Keys()
@@ -185,6 +188,14 @@ func TestEngineSnapshotV2(t *testing.T) {
 		s2, ok := feesStats2.FeesPaidPerParty[k]
 		assert.True(t, ok)
 		assert.Equal(t, s1.String(), s2.String())
+	}
+
+	postStats := otherEngine.engine.LiquidityProviderSLAStats(time.Now())
+	require.Len(t, postStats, 2)
+	for i := range preStats {
+		assert.Equal(t, preStats[i].NotionalVolumeBuys, postStats[i].NotionalVolumeBuys)
+		assert.Equal(t, preStats[i].NotionalVolumeSells, postStats[i].NotionalVolumeSells)
+		assert.Equal(t, preStats[i].RequiredLiquidity, postStats[i].RequiredLiquidity)
 	}
 }
 
