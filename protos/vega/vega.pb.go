@@ -1732,7 +1732,7 @@ const (
 	StopOrder_REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID StopOrder_RejectionReason = 7
 	// Stop orders are not allowed during the opening auction
 	StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION StopOrder_RejectionReason = 8
-	// Stops OCO orders cannot have the same expiry timestamp
+	// Stop OCO orders cannot have the same expiry timestamp
 	StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES StopOrder_RejectionReason = 9
 )
 
