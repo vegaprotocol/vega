@@ -558,7 +558,7 @@ Feature: stop orders
     When time is updated to "2019-11-30T00:00:10Z"
     # create party1 stop order, no trade resulting, expires in 10 secs
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | reference | so expires in | so expiry strategy      |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | reference | ra expires in | ra expiry strategy      |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               |       | stop1     | 10            | EXPIRY_STRATEGY_CANCELS |
 
     # add 20 secs, should expire
@@ -617,7 +617,7 @@ Feature: stop orders
     When time is updated to "2019-11-30T00:00:10Z"
     # create party1 stop order, no trade resulting, expires in 10 secs
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | reference | so expires in | so expiry strategy     |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | reference | ra expires in | ra expiry strategy     |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               |       | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
 
     # add 20 secs, should expire
@@ -679,7 +679,7 @@ Feature: stop orders
       | party3 | ETH/DEC19 | buy  | 20     | 20    | 0                | TYPE_LIMIT | TIF_GTC |
     # create party1 stop order, no trade resulting, expires in 10 secs
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference | so expires in | so expiry strategy     |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference | fb expires in | fb expiry strategy     |
       | party1 | ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 25               |       | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
 
     # trigger the stop order
@@ -1620,7 +1620,7 @@ Feature: stop orders
       | party2 | ETH/DEC20 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
     # Place a stop order which will expire during the auction
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | so expires in | so expiry strategy     | reference |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | ra expires in | ra expiry strategy     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 5020             |       | 5             | EXPIRY_STRATEGY_SUBMIT | stop      |
     # Trigger a price-monitoring auction
     When the parties place the following orders:
@@ -1706,7 +1706,7 @@ Feature: stop orders
       | party3 | ETH/DEC19 | buy  | 20     | 20    | 0                | TYPE_LIMIT | TIF_GTC |
     # create party1 stop order, no trade resulting, expires in 10 secs
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | ra price trigger | error | reference | so expires in | so expiry strategy     |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | ra price trigger | error | reference | fb expires in | fb expiry strategy     |
       | party1 | ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 25               | 100              |       | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
 
     # trigger the stop order
@@ -1777,9 +1777,62 @@ Feature: stop orders
     When time is updated to "2019-11-30T00:00:10Z"
     # create party1 stop order, no trade resulting, expires in 10 secs
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error                         | reference | so expires in | so expiry strategy     |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error                         | reference | ra expires in | ra expiry strategy     |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | stop order expiry in the past | stop1     | -10           | EXPIRY_STRATEGY_SUBMIT |
 
     Then the stop orders should have the following states
       | party  | market id | status          | reference |
       | party1 | ETH/DEC19 | STATUS_REJECTED | stop1     |
+
+
+
+  Scenario: An OCO stop order with expiration time T with both sides set to execute at that time will be rejected on submission (0014-ORDT-130)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+
+    When time is updated to "2019-11-30T00:00:10Z"
+    # create party1 stop order, no trade resulting, expires in 10 secs
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | error                                              |
+      | party1 | ETH/DEC19 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT | stop order OCOs must not have the same expiry time |
