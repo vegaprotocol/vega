@@ -18,8 +18,10 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/big"
 	"reflect"
+	"strconv"
 	"sync"
 	"time"
 
@@ -87,16 +89,27 @@ func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthRead
 		calls:       make(map[string]Call),
 		poller:      newPoller(cfg.PollEvery.Get()),
 	}
+	return e
+}
 
-	if isValidator {
-		chainID, err := client.ChainID(context.Background())
+// EnsureChainID tells the engine which chainID it should be related to, and it confirms this against the its client.
+func (e *Engine) EnsureChainID(chainID string) {
+	e.chainID, _ = strconv.ParseUint(chainID, 10, 64)
+
+	// if the node is a validator, we now check the chainID against the chain the client is connected to.
+	if e.isValidator {
+		cid, err := e.client.ChainID(context.Background())
 		if err != nil {
 			log.Panic("could not load chain ID", logging.Error(err))
 		}
-		e.chainID = chainID.Uint64()
-	}
 
-	return e
+		if cid.Uint64() != e.chainID {
+			log.Panic("chain ID mismatch between ethCall engine and EVM client",
+				logging.Uint64("client-chain-id", cid.Uint64()),
+				logging.Uint64("engine-chain-id", e.chainID),
+			)
+		}
+	}
 }
 
 // Start starts the polling of the Ethereum bridges, listens to the events
@@ -284,7 +297,6 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 		}
 
 		nextEthBlockIsh := blockIndex{number: nextEthBlock.Number.Uint64(), time: nextEthBlock.Time}
-
 		for specID, call := range e.getCalls() {
 			if call.triggered(prevEthBlock, nextEthBlockIsh) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.Number.Uint64())

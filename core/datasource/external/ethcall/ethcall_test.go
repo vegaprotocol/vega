@@ -17,6 +17,7 @@ package ethcall_test
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"embed"
 	"fmt"
@@ -37,10 +38,18 @@ var testData embed.FS
 
 type ToyChain struct {
 	key          *ecdsa.PrivateKey
-	client       *backends.SimulatedBackend
+	client       *Client
 	addr         common.Address
 	contractAddr common.Address
 	abiBytes     []byte
+}
+
+type Client struct {
+	*backends.SimulatedBackend
+}
+
+func (c *Client) ChainID(context.Context) (*big.Int, error) {
+	return big.NewInt(1337), nil
 }
 
 func NewToyChain() (*ToyChain, error) {
@@ -92,7 +101,7 @@ func NewToyChain() (*ToyChain, error) {
 
 	return &ToyChain{
 		key:          key,
-		client:       client,
+		client:       &Client{client},
 		addr:         addr,
 		contractAddr: contractAddr,
 		abiBytes:     contractAbiBytes,

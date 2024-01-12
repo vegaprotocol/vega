@@ -84,6 +84,7 @@ type EthCallEngine interface {
 	GetInitialTriggerTime(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
+	EnsureChainID(chainID string)
 }
 
 type allServices struct {
@@ -254,7 +255,7 @@ func newServices(
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 
 	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
-		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines)
+		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines, svcs.conf.IsValidator())
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
@@ -845,13 +846,17 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param: netparams.BlockchainsEthereumConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
-				// nothing to do if not a validator
-				if !svcs.conf.HaveEthClient() {
-					return nil
-				}
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				// now we can set the chainID on the original ethCall engine
+				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID())
+
+				// nothing to do if not a validator
+				if !svcs.conf.HaveEthClient() {
+					return nil
 				}
 
 				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
@@ -861,16 +866,16 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param: netparams.BlockchainsEthereumL2Configs,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
-				// nothing to do if not a validator
-				if !svcs.conf.HaveEthClient() {
-					return nil
-				}
 				ethCfg, err := types.EthereumL2ConfigsFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid ethereum l2 configuration: %w", err)
 				}
 
-				svcs.l2Clients.UpdateConfirmations(ethCfg)
+				if svcs.conf.HaveEthClient() {
+					svcs.l2Clients.UpdateConfirmations(ethCfg)
+				}
+
+				// non-validators still need to create these engine's for consensus reasons
 				svcs.l2CallEngines.OnEthereumL2ConfigsUpdated(
 					ctx, ethCfg)
 				svcs.l2Verifiers.OnEthereumL2ConfigsUpdated(
