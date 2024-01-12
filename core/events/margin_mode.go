@@ -30,6 +30,10 @@ func (e PartyMarginModeUpdated) Proto() eventspb.PartyMarginModeUpdated {
 	return *e.update
 }
 
+func (e *PartyMarginModeUpdated) PartyMarginModeUpdated() *eventspb.PartyMarginModeUpdated {
+	return e.update
+}
+
 func (e PartyMarginModeUpdated) StreamMessage() *eventspb.BusEvent {
 	busEvent := newBusEventFromBase(e.Base)
 	busEvent.Event = &eventspb.BusEvent_PartyMarginModeUpdated{
