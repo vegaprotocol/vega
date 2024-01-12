@@ -2540,7 +2540,7 @@ type Market {
   liquidationStrategy: LiquidationStrategy
 
   "Configuration driving the mark price for the market"
-  markPriceConfiguration: CompositePriceConfiguration! 
+  markPriceConfiguration: CompositePriceConfiguration!
 }
 
 """
@@ -4265,6 +4265,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
   "Holds pending rewards to be paid to the referrer of a party out of fees paid by the taker"
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
+  "Per asset market account for party in isolated margin mode"
+  ACCOUNT_TYPE_ORDER_MARGIN
 }
 
 "Types that describe why a transfer has been made"
