@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package protocol
 
 // circling around import cycle here...
@@ -40,7 +55,6 @@ func NewL2EthCallEngines(log *logging.Logger, cfg ethcall.Config, isValidator bo
 }
 
 func (v *L2EthCallEngines) GetOrInstantiate(chainID string) (ethverifier.EthCallEngine, error) {
-
 	if e, ok := v.engines[chainID]; ok {
 		return e, nil
 	}
@@ -59,15 +73,20 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 			continue
 		}
 
-		clt, _, ok := v.clients.Get(c.NetworkID)
-		if !ok {
-			v.log.Panic("ethereum client not configured for L2",
-				logging.String("chain-id", c.ChainID),
-				logging.String("network-id", c.NetworkID),
-			)
+		var clt *eth.L2Client
+		if v.isValidator {
+			var ok bool
+			clt, _, ok = v.clients.Get(c.NetworkID)
+			if !ok {
+				v.log.Panic("ethereum client not configured for L2",
+					logging.String("chain-id", c.ChainID),
+					logging.String("network-id", c.NetworkID),
+				)
+			}
 		}
 
 		e := ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
+		e.EnsureChainID(c.ChainID)
 		v.engines[c.ChainID] = e
 
 		// start it here?
