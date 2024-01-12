@@ -224,6 +224,18 @@ func (m Market) ToProto() *vega.Market {
 	if m.SuccessorMarketID != "" {
 		successorMarketID = ptr.From(m.SuccessorMarketID.String())
 	}
+	if m.MarkPriceConfiguration == nil {
+		m.MarkPriceConfiguration = &CompositePriceConfiguration{
+			CompositePriceConfiguration: &vega.CompositePriceConfiguration{
+				CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+			},
+		}
+	} else if m.MarkPriceConfiguration.CompositePriceConfiguration == nil {
+		// got to love wrapped types like this
+		m.MarkPriceConfiguration.CompositePriceConfiguration = &vega.CompositePriceConfiguration{
+			CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+		}
+	}
 
 	return &vega.Market{
 		Id:                 m.ID.String(),
