@@ -22,7 +22,6 @@ import (
 	"math"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -226,15 +225,15 @@ func (m Market) ToProto() *vega.Market {
 		successorMarketID = ptr.From(m.SuccessorMarketID.String())
 	}
 	if m.MarkPriceConfiguration == nil {
-		m.MarkPriceConfiguration = types.CompositePriceConfiguration{
-			DecayWeight:                  num.DecimalZero(),
-			DecayPower:                   num.DecimalZero(),
-			CashAmount:                   num.UintZero(),
-			SourceWeights:                nil,
-			SourceStalenessTolerance:     nil,
-			CompositePriceType:           types.CompositePriceTypeByLastTrade,
-			DataSources:                  nil,
-			SpecBindingForCompositePrice: nil,
+		m.MarkPriceConfiguration = &CompositePriceConfiguration{
+			CompositePriceConfiguration: &vega.CompositePriceConfiguration{
+				CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+			},
+		}
+	} else if m.MarkPriceConfiguration.CompositePriceConfiguration == nil {
+		// got to love wrapped types like this
+		m.MarkPriceConfiguration.CompositePriceConfiguration = &vega.CompositePriceConfiguration{
+			CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
 		}
 	}
 
