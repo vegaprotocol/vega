@@ -1844,11 +1844,11 @@ Feature: stop orders
     Given time is updated to "2019-11-30T00:00:00Z"
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
       | aux3   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
@@ -1864,8 +1864,8 @@ Feature: stop orders
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -1881,6 +1881,7 @@ Feature: stop orders
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 10     | 51    | 0                | TYPE_LIMIT | TIF_GTC |
 
 
     When time is updated to "2019-11-30T00:00:10Z"
@@ -1900,3 +1901,21 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party1 | ETH/DEC19 | STATUS_CANCELLED | stop-1    |
       | party1 | ETH/DEC19 | STATUS_EXPIRED   | stop-2    |
+
+    # Now perform the same test but from the other side 
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | 
+      | party2 | ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop2     | 15            | EXPIRY_STRATEGY_SUBMIT | 10            | EXPIRY_STRATEGY_SUBMIT | 
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party2 | ETH/DEC19 | STATUS_PENDING  | stop2-1   |
+      | party2 | ETH/DEC19 | STATUS_PENDING  | stop2-2   |
+
+    Then clear all events
+    When time is updated to "2019-11-30T00:00:30Z"
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party2 | ETH/DEC19 | STATUS_CANCELLED | stop2-2   |
+      | party2 | ETH/DEC19 | STATUS_EXPIRED   | stop2-1   |
