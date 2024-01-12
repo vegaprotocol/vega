@@ -191,7 +191,7 @@ func TestRemoveExpiredStopOrders(t *testing.T) {
 	assert.Equal(t, affectedOrders[0].ID, "b")
 	assert.Equal(t, affectedOrders[0].Status, types.StopOrderStatusExpired)
 	assert.Equal(t, affectedOrders[1].ID, "e")
-	assert.Equal(t, affectedOrders[1].Status, types.StopOrderStatusCancelled)
+	assert.Equal(t, affectedOrders[1].Status, types.StopOrderStatusStopped)
 	assert.Equal(t, affectedOrders[2].ID, "f")
 	assert.Equal(t, affectedOrders[2].Status, types.StopOrderStatusExpired)
 

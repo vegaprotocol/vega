@@ -1899,7 +1899,7 @@ Feature: stop orders
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
-      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop-1    |
+      | party1 | ETH/DEC19 | STATUS_STOPPED   | stop-1    |
       | party1 | ETH/DEC19 | STATUS_EXPIRED   | stop-2    |
 
     # Now perform the same test but from the other side 
@@ -1917,5 +1917,5 @@ Feature: stop orders
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
-      | party2 | ETH/DEC19 | STATUS_CANCELLED | stop2-2   |
+      | party2 | ETH/DEC19 | STATUS_STOPPED   | stop2-2   |
       | party2 | ETH/DEC19 | STATUS_EXPIRED   | stop2-1   |

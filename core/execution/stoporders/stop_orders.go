@@ -319,7 +319,7 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 				// is the OCO link already mapped
 				if _, ok := ordersM[order.OCOLinkID]; !ok {
 					ordersM[order.OCOLinkID] = p.orders[p.orderToParty[id]][order.OCOLinkID]
-					ordersM[order.OCOLinkID].Status = types.StopOrderStatusCancelled
+					ordersM[order.OCOLinkID].Status = types.StopOrderStatusStopped
 				}
 			}
 		}
