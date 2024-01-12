@@ -32,7 +32,7 @@ Feature: Test setting of mark price
       | sellSideProvider | ETH/FEB23 | sell | 2      | 16000  | 0                | TYPE_LIMIT | TIF_GTC | sell-7    |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
-    # AC 0009-MRKP-018
+    # AC 0009-MRKP-112
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
 

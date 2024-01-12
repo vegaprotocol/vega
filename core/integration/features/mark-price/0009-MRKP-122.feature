@@ -30,7 +30,7 @@ Feature: Test setting of mark price
       | sellSideProvider | ETH/FEB23 | sell | 20     | 15940  | 0                | TYPE_LIMIT | TIF_GTC | sell-1    |
       | sellSideProvider | ETH/FEB23 | sell | 20     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
-    #AC 0009-MRKP-014
+    #AC 0009-MRKP-122
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
