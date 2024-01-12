@@ -3234,7 +3234,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
-	if m.getMarginMode(partyID) == types.MarginModeIsolatedMargin {
+	// if the order was found in the book and we're in isolated margin we need to update the
+	// order margin
+	if foundOnBook && m.getMarginMode(partyID) == types.MarginModeIsolatedMargin {
 		pos, _ := m.position.GetPositionByPartyID(partyID)
 		if err := m.updateIsolatedMarginOnOrder(ctx, pos, order); err != nil {
 			m.log.Panic("failed to update order margin after order cancellation", logging.Order(order), logging.String("party", pos.Party()))

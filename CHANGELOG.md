@@ -122,6 +122,7 @@
 - [10362](https://github.com/vegaprotocol/vega/issues/10362) - Include notional volumes in `SLA` snapshot.
 - [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
 - [10326](https://github.com/vegaprotocol/vega/issues/10326) - Fix intermittent test failure.
+- [10382](https://github.com/vegaprotocol/vega/issues/10382) - Fix switch to isolated margin with parked pegged orders. 
 
 ## 0.73.0
 
