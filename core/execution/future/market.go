@@ -3973,7 +3973,7 @@ func (m *Market) removeExpiredStopOrdersInContinuous(
 	filteredOCO := []*types.StopOrder{}
 	for _, v := range stopOrders {
 		v.UpdatedAt = updatedAt
-		if v.Status == types.StopOrderStatusExpired && v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit && len(v.OCOLinkID) > 0 {
+		if v.Status == types.StopOrderStatusExpired && v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit {
 			filteredOCO = append(filteredOCO, v)
 			continue
 		}
