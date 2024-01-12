@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -158,7 +159,6 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 		e.confirmations[v.NetworkID] = NewEthereumConfirmations(
 			cfg, clt, nil)
 	}
-
 }
 
 func DialL2(ctx context.Context, endpoint string) (*L2Client, error) {

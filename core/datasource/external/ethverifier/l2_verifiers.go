@@ -1,3 +1,18 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package ethverifier
 
 import (
@@ -11,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -29,6 +45,8 @@ type L2Verifiers struct {
 	broker            Broker
 	oracleBroadcaster OracleDataBroadcaster
 
+	isValidator bool
+
 	clients L2Clients
 
 	// chain id -> Verifier
@@ -46,6 +64,7 @@ func NewL2Verifiers(
 	oracleBroadcaster OracleDataBroadcaster,
 	clients L2Clients,
 	callEngines EthL2CallEngines,
+	isValidator bool,
 ) (sv *L2Verifiers) {
 	return &L2Verifiers{
 		log:               log,
@@ -56,6 +75,7 @@ func NewL2Verifiers(
 		clients:           clients,
 		verifiers:         map[string]*Verifier{},
 		ethL2CallEngine:   callEngines,
+		isValidator:       isValidator,
 	}
 }
 
@@ -69,15 +89,17 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 			continue
 		}
 
-		clt, confs, ok := v.clients.Get(c.NetworkID)
-		if !ok {
-			v.log.Panic("ethereum client not configured for L2",
-				logging.String("chain-id", c.ChainID),
-				logging.String("network-id", c.NetworkID),
-			)
+		var confs *eth.EthereumConfirmations
+		if v.isValidator {
+			var ok bool
+			_, confs, ok = v.clients.Get(c.NetworkID)
+			if !ok {
+				v.log.Panic("ethereum client not configured for L2",
+					logging.String("chain-id", c.ChainID),
+					logging.String("network-id", c.NetworkID),
+				)
+			}
 		}
-
-		_ = clt
 
 		ethCallEngine, err := v.ethL2CallEngine.GetOrInstantiate(c.ChainID)
 		if err != nil {

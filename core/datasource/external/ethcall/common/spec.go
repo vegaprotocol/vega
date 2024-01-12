@@ -124,6 +124,7 @@ func (s Spec) IntoProto() (*vegapb.EthCallSpec, error) {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
 		Normalisers:           normalisers,
+		L2ChainId:             &s.L2ChainID,
 	}, nil
 }
 
@@ -169,6 +170,7 @@ func (s Spec) DeepClone() common.DataSourceType {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(common.SpecFilters(nil), s.Filters...),
 		Normalisers:           clonedNormalisers,
+		L2ChainID:             s.L2ChainID,
 	}
 }
 
