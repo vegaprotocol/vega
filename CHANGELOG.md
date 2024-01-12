@@ -61,7 +61,8 @@
 - [10349](https://github.com/vegaprotocol/vega/issues/10349) - Add oracle support to mark price configuration.
 - [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology.
 - [521](https://github.com/vegaprotocol/core-test-coverage/issues/521) - Add tests for allow list functionality when joining teams.
-- [10340](https://github.com/vegaprotocol/core-test-coverage/issues/10340) - Support updating profile for a party.
+- [10340](https://github.com/vegaprotocol/vega/issues/10340) - Support updating profile for a party.
+- [10375](https://github.com/vegaprotocol/vega/issues/10375) - Expose party's profile in parties API.
 
 ### 🐛 Fixes
 

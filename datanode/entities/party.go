@@ -42,7 +42,9 @@ func PartyFromProto(pp *vegapb.Party, txHash TxHash) Party {
 }
 
 func (p Party) ToProto() *vegapb.Party {
-	return &vegapb.Party{Id: p.ID.String()}
+	return &vegapb.Party{
+		Id: p.ID.String(),
+	}
 }
 
 func (p Party) Cursor() *Cursor {
@@ -70,4 +72,72 @@ func (p Party) String() string {
 		panic(fmt.Errorf("failed to marshal party: %w", err))
 	}
 	return string(bs)
+}
+
+type PartyProfile struct {
+	PartyID  PartyID
+	Alias    string
+	Metadata []*vegapb.Metadata
+}
+
+func (p PartyProfile) ToProto() *vegapb.PartyProfile {
+	return &vegapb.PartyProfile{
+		PartyId:  p.PartyID.String(),
+		Alias:    p.Alias,
+		Metadata: p.Metadata,
+	}
+}
+
+func (p PartyProfile) Cursor() *Cursor {
+	return NewCursor(p.String())
+}
+
+func (p PartyProfile) ToProtoEdge(_ ...any) (*v2.PartyProfileEdge, error) {
+	return &v2.PartyProfileEdge{
+		Node:   p.ToProto(),
+		Cursor: p.Cursor().Encode(),
+	}, nil
+}
+
+func (p *PartyProfile) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+
+	return json.Unmarshal([]byte(cursorString), p)
+}
+
+func (p PartyProfile) String() string {
+	bs, err := json.Marshal(p)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal party profile: %w", err))
+	}
+	return string(bs)
+}
+
+func PartyProfileFromProto(t *vegapb.PartyProfile) *PartyProfile {
+	return &PartyProfile{
+		PartyID:  PartyID(t.PartyId),
+		Alias:    t.Alias,
+		Metadata: t.Metadata,
+	}
+}
+
+type PartyProfileCursor struct {
+	ID PartyID
+}
+
+func (tc PartyProfileCursor) String() string {
+	bs, err := json.Marshal(tc)
+	if err != nil {
+		panic(fmt.Errorf("could not marshal party profile cursor: %v", err))
+	}
+	return string(bs)
+}
+
+func (tc *PartyProfileCursor) Parse(cursorString string) error {
+	if cursorString == "" {
+		return nil
+	}
+	return json.Unmarshal([]byte(cursorString), tc)
 }

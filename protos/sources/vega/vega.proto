@@ -199,6 +199,11 @@ enum PositionStatus {
 message Party {
   // Unique ID for the party, typically represented by a public key.
   string id = 1;
+  // Alias given to the party.
+  string alias = 2;
+  // Metadata to associate to a party, in a key/value format where the key
+  // describes the type of metadata in the value field.
+  repeated vega.Metadata metadata = 3;
 }
 
 // Risk factors are used to calculate the current risk associated with orders trading on a given market

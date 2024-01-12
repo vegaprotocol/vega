@@ -246,6 +246,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of parties
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
+	// List parties' profiles
+	//
+	// Get a list of profiles for multiple parties
+	ListPartiesProfiles(ctx context.Context, in *ListPartiesProfilesRequest, opts ...grpc.CallOption) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
 	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
@@ -1265,6 +1269,15 @@ func (c *tradingDataServiceClient) GetParty(ctx context.Context, in *GetPartyReq
 func (c *tradingDataServiceClient) ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error) {
 	out := new(ListPartiesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListParties", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListPartiesProfiles(ctx context.Context, in *ListPartiesProfilesRequest, opts ...grpc.CallOption) (*ListPartiesProfilesResponse, error) {
+	out := new(ListPartiesProfilesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPartiesProfiles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2316,6 +2329,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of parties
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
+	// List parties' profiles
+	//
+	// Get a list of profiles for multiple parties
+	ListPartiesProfiles(context.Context, *ListPartiesProfilesRequest) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
 	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
@@ -2830,6 +2847,9 @@ func (UnimplementedTradingDataServiceServer) GetParty(context.Context, *GetParty
 }
 func (UnimplementedTradingDataServiceServer) ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListParties not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListPartiesProfiles(context.Context, *ListPartiesProfilesRequest) (*ListPartiesProfilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPartiesProfiles not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListMarginLevels(context.Context, *ListMarginLevelsRequest) (*ListMarginLevelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMarginLevels not implemented")
@@ -3917,6 +3937,24 @@ func _TradingDataService_ListParties_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListParties(ctx, req.(*ListPartiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListPartiesProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPartiesProfilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListPartiesProfiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListPartiesProfiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListPartiesProfiles(ctx, req.(*ListPartiesProfilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5411,6 +5449,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListParties",
 			Handler:    _TradingDataService_ListParties_Handler,
+		},
+		{
+			MethodName: "ListPartiesProfiles",
+			Handler:    _TradingDataService_ListPartiesProfiles_Handler,
 		},
 		{
 			MethodName: "ListMarginLevels",

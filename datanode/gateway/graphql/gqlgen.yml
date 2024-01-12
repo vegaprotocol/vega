@@ -779,3 +779,11 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModeEdge
   PartyMarginModesConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModesConnection
+  PartiesProfilesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartiesProfilesConnection
+  PartyProfileEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyProfileEdge
+  PartyProfile:
+    model: code.vegaprotocol.io/vega/protos/vega.PartyProfile
+  Metadata:
+    model: code.vegaprotocol.io/vega/protos/vega.Metadata

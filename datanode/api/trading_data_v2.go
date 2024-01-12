@@ -1566,6 +1566,34 @@ func (t *TradingDataServiceV2) ListParties(ctx context.Context, req *v2.ListPart
 	}, nil
 }
 
+func (t *TradingDataServiceV2) ListPartiesProfiles(ctx context.Context, req *v2.ListPartiesProfilesRequest) (*v2.ListPartiesProfilesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPartiesProfiles")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	parties, pageInfo, err := t.partyService.ListProfiles(ctx, req.Parties, pagination)
+	if err != nil {
+		return nil, formatE(ErrPartyServiceListProfiles, err)
+	}
+
+	edges, err := makeEdges[*v2.PartyProfileEdge](parties)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.PartiesProfilesConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListPartiesProfilesResponse{
+		Profiles: connection,
+	}, nil
+}
+
 // ListMarginLevels lists MarginLevels.
 func (t *TradingDataServiceV2) ListMarginLevels(ctx context.Context, req *v2.ListMarginLevelsRequest) (*v2.ListMarginLevelsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarginLevelsV2")()
