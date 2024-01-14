@@ -383,10 +383,10 @@ const oneDayAsSeconds = 60 * 60 * 24
 func getRetentionEntities(db *sql.DB) ([]string, error) {
 	rows, err := db.Query(`
 select view_name as table_name
-from timescaledb_information.continuous_aggregates
+from timescaledb_information.continuous_aggregates WHERE hypertable_schema='public'
 union all
 select hypertable_name
-from timescaledb_information.hypertables
+from timescaledb_information.hypertables WHERE hypertable_schema='public';
 `)
 	if err != nil {
 		return nil, err
