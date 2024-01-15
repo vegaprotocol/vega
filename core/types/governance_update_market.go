@@ -238,7 +238,6 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 	return r
 }
 
-// func (n NewMarketConfiguration) GetPerps() *InstrumentConfigurationPerps {
 func (n UpdateMarketConfiguration) GetPerps() *UpdateInstrumentConfigurationPerps {
 	if n.GetProductType() == ProductTypePerps {
 		ret, _ := n.Instrument.Product.(*UpdateInstrumentConfigurationPerps)

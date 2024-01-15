@@ -256,7 +256,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
 		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
-			e.ensureChainIDSet(ctx, p.Proposal)
+			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
 			Proposal:     p.Proposal,
@@ -325,7 +325,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	for _, bpp := range active.BatchProposals {
 		bpt := types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals)
 		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
-			e.ensureChainIDSet(ctx, bpt.Proposals...)
+			e.ensureChainIDSet(bpt.Proposals...)
 		}
 		bp := &batchProposal{
 			BatchProposal: bpt,
@@ -381,7 +381,7 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
 		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
-			e.ensureChainIDSet(ctx, p.Proposal)
+			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
 			Proposal:     p.Proposal,
@@ -431,8 +431,8 @@ func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.Governanc
 	return err
 }
 
-// ensureChainIDSet can be removed after protocol upgrade
-func (e *Engine) ensureChainIDSet(ctx context.Context, props ...*types.Proposal) {
+// ensureChainIDSet can be removed after protocol upgrade.
+func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 	for _, p := range props {
 		if nm := p.Terms.GetNewMarket(); nm != nil {
 			if perp := nm.Changes.GetPerps(); perp != nil {
