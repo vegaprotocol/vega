@@ -80,7 +80,7 @@ Feature: Test setting of mark price
     Then the mark price should be "15900" for the market "ETH/FEB23"
     Then the mark price should be "15900" for the market "ETH/FEB22"
 
-    #decay weight is 0, so no time weight, mark price is: (15940*1+15960*3+15990*5)/11=15975
+    #decay weight is 0, so no time weight, mark price is: (15940*1+15960*3+15990*5)/9=15974
     When the network moves ahead "1" blocks
     Then the mark price should be "15974" for the market "ETH/FEB23"
     Then the mark price should be "15974" for the market "ETH/FEB22"

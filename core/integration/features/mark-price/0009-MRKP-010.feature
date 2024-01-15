@@ -13,10 +13,9 @@ Feature: Test setting of mark price
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights  | source staleness tolerance |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | last trade | 0.1          | 0.5         | 0           | 0.1,0.2,0.3,0.6 | 3h0m0s,2s,24h0m0s,1h25m0s  |
-      | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | last trade | 0.1          | 0.5         | 0           | 0.1,0.2,0.3,0.6 | 3h0m0s,2s,24h0m0s,1h25m0s  |
-
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance | market type |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | last trade | 0            | 1           | 0           | 1,0,0,0        | 5s,5s,24h0m0s,1h25m0s      | future      |
+      | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle            | 0.25                   | 0                         | default-futures | last trade | 0            | 1           | 0           | 1,0,0,0        | 5s,5s,24h0m0s,1h25m0s      | perp        |
 
   Scenario: 001 when network.markPriceUpdateMaximumFrequency=2s
     Given the parties deposit on asset's general account the following amount:
@@ -38,7 +37,7 @@ Feature: Test setting of mark price
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |              |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |              |
 
-    # AC 0009-MRKP-010 0009-MRKP-011
+    # AC 0009-MRKP-010, 0009-MRKP-011
     When the network moves ahead "2" blocks
     # Check mark-price matches the specification
     Then the mark price should be "15900" for the market "ETH/FEB23"
@@ -57,7 +56,7 @@ Feature: Test setting of mark price
       | buySideProvider | ETH/FEB23 | buy  | 2      | 15902 | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     Then the mark price should be "15900" for the market "ETH/FEB23"
-    When the network moves ahead "1" blocks
+    When the network moves ahead "3" blocks
     Then the mark price should be "15902" for the market "ETH/FEB23"
 
     And the parties place the following orders:
@@ -65,5 +64,5 @@ Feature: Test setting of mark price
       | buySideProvider | ETH/FEB23 | buy  | 1      | 15904 | 1                | TYPE_LIMIT | TIF_GTC |           |
 
     Then the mark price should be "15902" for the market "ETH/FEB23"
-    When the network moves ahead "1" blocks
+    When the network moves ahead "3" blocks
     Then the mark price should be "15904" for the market "ETH/FEB23"
