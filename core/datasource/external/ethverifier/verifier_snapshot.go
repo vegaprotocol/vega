@@ -58,7 +58,6 @@ func (s *Verifier) serialisePendingContractCallEvents() ([]byte, error) {
 
 func (s *Verifier) lastEthBlockPayloadData() *types.PayloadEthOracleLastBlock {
 	if s.lastBlock != nil {
-
 		return &types.PayloadEthOracleLastBlock{
 			EthOracleLastBlock: &types.EthBlock{
 				Height: s.lastBlock.Height,
@@ -124,9 +123,11 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEthContractCallEvent:
-		return nil, s.restorePendingCallEvents(ctx, pl.EthContractCallEvent)
+		s.restorePendingCallEvents(ctx, pl.EthContractCallEvent)
+		return nil, nil
 	case *types.PayloadEthOracleLastBlock:
-		return nil, s.restoreLastEthBlock(pl.EthOracleLastBlock)
+		s.restoreLastEthBlock(pl.EthOracleLastBlock)
+		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -143,15 +144,14 @@ func (s *Verifier) OnStateLoaded(ctx context.Context) error {
 	return nil
 }
 
-func (s *Verifier) restoreLastEthBlock(lastBlock *types.EthBlock) error {
+func (s *Verifier) restoreLastEthBlock(lastBlock *types.EthBlock) {
 	s.log.Info("restoring last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", lastBlock)))
 	s.lastBlock = lastBlock
-
-	return nil
 }
 
 func (s *Verifier) restorePendingCallEvents(_ context.Context,
-	results []*ethcall.ContractCallEvent) error {
+	results []*ethcall.ContractCallEvent,
+) {
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
 	s.pendingCallEvents = make([]*pendingCallEvent, 0, len(results))
 
@@ -182,6 +182,4 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 
 		metrics.DataSourceEthVerifierCallGaugeAdd(1, callEvent.SpecId)
 	}
-
-	return nil
 }

@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -38,7 +39,7 @@ func (s *L2Verifiers) Namespace() types.SnapshotNamespace {
 }
 
 func (s *L2Verifiers) Keys() []string {
-	return hashKeys
+	return l2HashKeys
 }
 
 func (s *L2Verifiers) Stopped() bool {
@@ -85,15 +86,16 @@ func (s *L2Verifiers) LoadState(ctx context.Context, payload *types.Payload) ([]
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadL2EthOracles:
-		return nil, s.restoreState(ctx, pl.L2EthOracles)
+		s.restoreState(ctx, pl.L2EthOracles)
+		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb.L2EthOracles) error {
+func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb.L2EthOracles) {
 	for _, v := range l2EthOracles.ChainIdEthOracles {
-		verifier := s.instanciate(v.SourceChainId)
+		verifier := s.instantiate(v.SourceChainId)
 
 		// might be nil so need proper check first here
 		var lastBlock *types.EthBlock
@@ -116,8 +118,6 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 		}
 		verifier.restorePendingCallEvents(ctx, pending)
 	}
-
-	return nil
 }
 
 func (s *L2Verifiers) OnStateLoaded(ctx context.Context) error {
