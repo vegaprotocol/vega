@@ -1960,6 +1960,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListParties(arg0, arg1 int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListParties", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListParties), varargs...)
 }
 
+// ListPartiesProfiles mocks base method.
+func (m *MockTradingDataServiceClientV2) ListPartiesProfiles(arg0 context.Context, arg1 *v2.ListPartiesProfilesRequest, arg2 ...grpc.CallOption) (*v2.ListPartiesProfilesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListPartiesProfiles", varargs...)
+	ret0, _ := ret[0].(*v2.ListPartiesProfilesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPartiesProfiles indicates an expected call of ListPartiesProfiles.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListPartiesProfiles(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPartiesProfiles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListPartiesProfiles), varargs...)
+}
+
 // ListPartyMarginModes mocks base method.
 func (m *MockTradingDataServiceClientV2) ListPartyMarginModes(arg0 context.Context, arg1 *v2.ListPartyMarginModesRequest, arg2 ...grpc.CallOption) (*v2.ListPartyMarginModesResponse, error) {
 	m.ctrl.T.Helper()
