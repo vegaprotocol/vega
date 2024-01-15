@@ -517,10 +517,11 @@ type UpdateFutureProduct struct {
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
+	// @TODO get chain id
 	return &vegapb.UpdateFutureProduct{
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(1),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(1),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
 	}
 }
@@ -573,6 +574,7 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
 		lowerBound = ptr.From(p.FundingRateUpperBound.String())
 	}
 
+	// @TODO get default chain ID
 	return &vegapb.UpdatePerpetualProduct{
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
@@ -582,8 +584,8 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
 		FundingRateScalingFactor:            scalingFactor,
 		FundingRateLowerBound:               lowerBound,
 		FundingRateUpperBound:               upperBound,
-		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
-		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(1),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(1),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
 	}
 }

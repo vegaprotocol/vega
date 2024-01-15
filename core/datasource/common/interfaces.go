@@ -26,7 +26,7 @@ import (
 type DataSourceType interface {
 	String() string
 	DeepClone() DataSourceType
-	ToDefinitionProto() (*vegapb.DataSourceDefinition, error)
+	ToDefinitionProto(cid uint64) (*vegapb.DataSourceDefinition, error)
 	GetFilters() []*SpecFilter
 }
 

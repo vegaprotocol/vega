@@ -231,7 +231,7 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec datasource.Spec) erro
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	switch d := spec.Data.Content().(type) {
-	case common.Spec:
+	case *common.Spec:
 		id := spec.ID
 		if _, ok := e.calls[id]; ok {
 			return fmt.Errorf("duplicate spec: %s", id)

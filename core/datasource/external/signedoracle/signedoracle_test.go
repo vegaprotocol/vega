@@ -29,8 +29,8 @@ import (
 
 func TestSpecConfigurationIntoProto(t *testing.T) {
 	t.Run("non-empty oracle with empty lists", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(signedoracle.SpecConfiguration{})
-		protoDs := ds.IntoProto()
+		ds := datasource.NewDefinitionWith(&signedoracle.SpecConfiguration{})
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		ext := protoDs.GetExternal()
@@ -41,7 +41,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 	})
 
 	t.Run("non-empty oracle with data", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(signedoracle.SpecConfiguration{
+		ds := datasource.NewDefinitionWith(&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{},
 			},
@@ -55,7 +55,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 			},
 		})
 
-		protoDs := ds.IntoProto()
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		ext := protoDs.GetExternal()
@@ -74,7 +74,7 @@ func TestSpecConfigurationFromProto(t *testing.T) {
 		s := signedoracle.SpecConfigurationFromProto(nil)
 
 		assert.NotNil(t, s)
-		assert.IsType(t, signedoracle.SpecConfiguration{}, s)
+		assert.IsType(t, &signedoracle.SpecConfiguration{}, s)
 
 		assert.Nil(t, s.Signers)
 		assert.Nil(t, s.Filters)
@@ -130,13 +130,13 @@ func TestSpecConfigurationFromProto(t *testing.T) {
 
 func TestSpecConfigurationString(t *testing.T) {
 	t.Run("non-empty oracle with empty lists", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(signedoracle.SpecConfiguration{}).String()
+		ds := datasource.NewDefinitionWith(&signedoracle.SpecConfiguration{}).String()
 
 		assert.Equal(t, "signers() filters()", ds)
 	})
 
 	t.Run("non-empty oracle with data", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(signedoracle.SpecConfiguration{
+		ds := datasource.NewDefinitionWith(&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{},
 			},
@@ -164,7 +164,7 @@ func TestToDataSourceDefinitionProto(t *testing.T) {}
 
 func TestSpecConfigurationGetTimeTriggers(t *testing.T) {
 	ds := datasource.NewDefinitionWith(
-		signedoracle.SpecConfiguration{
+		&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{},
 			},

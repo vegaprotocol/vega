@@ -46,7 +46,7 @@ func TestContractCall(t *testing.T) {
 	argsJson, err := ethcall.AnyArgsToJson(args)
 	require.NoError(t, err)
 
-	spec := ethcallcommon.Spec{
+	spec := &ethcallcommon.Spec{
 		ArgsJson:    argsJson,
 		Address:     tc.contractAddr.Hex(),
 		AbiJson:     tc.abiBytes,
@@ -81,7 +81,7 @@ func TestContractCallWithStaticBool(t *testing.T) {
 	argsJson, err := ethcall.AnyArgsToJson(args)
 	require.NoError(t, err)
 
-	spec := ethcallcommon.Spec{
+	spec := &ethcallcommon.Spec{
 		ArgsJson:    argsJson,
 		Address:     tc.contractAddr.Hex(),
 		AbiJson:     tc.abiBytes,
@@ -116,7 +116,7 @@ func TestContractCall2(t *testing.T) {
 	argsJson, err := ethcall.AnyArgsToJson(args)
 	require.NoError(t, err)
 
-	spec := ethcallcommon.Spec{
+	spec := &ethcallcommon.Spec{
 		ArgsJson: argsJson,
 		Address:  tc.contractAddr.Hex(),
 		AbiJson:  tc.abiBytes,
@@ -156,7 +156,7 @@ func TestContractFilters(t *testing.T) {
 	argsJson, err := ethcall.AnyArgsToJson(args)
 	require.NoError(t, err)
 
-	spec := ethcallcommon.Spec{
+	spec := &ethcallcommon.Spec{
 		ArgsJson:    argsJson,
 		Address:     tc.contractAddr.Hex(),
 		AbiJson:     tc.abiBytes,

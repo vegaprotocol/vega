@@ -56,7 +56,7 @@ func (s *SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfiguration {
 	return dsc
 }
 
-func (s SpecConfiguration) ToDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+func (s *SpecConfiguration) ToDefinitionProto(_ uint64) (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_External{
 			External: &vegapb.DataSourceDefinitionExternal{
@@ -95,7 +95,7 @@ func (s SpecConfiguration) String() string {
 }
 
 func (s SpecConfiguration) DeepClone() common.DataSourceType {
-	return SpecConfiguration{
+	return &SpecConfiguration{
 		Signers: s.Signers,
 		Filters: common.DeepCloneSpecFilters(s.Filters),
 	}
@@ -107,12 +107,12 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 
 // SpecConfigurationFromProto tries to build the SpecConfiguration object
 // from the given proto object.
-func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) SpecConfiguration {
+func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) *SpecConfiguration {
 	if protoConfig == nil {
-		return SpecConfiguration{}
+		return &SpecConfiguration{}
 	}
 
-	return SpecConfiguration{
+	return &SpecConfiguration{
 		Filters: common.SpecFiltersFromProto(protoConfig.Filters),
 		Signers: common.SignersFromProto(protoConfig.Signers),
 	}

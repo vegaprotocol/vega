@@ -74,6 +74,7 @@ var (
 func assignProduct(
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
+	defaultChainID uint64,
 ) (proto.ProposalError, error) {
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfigurationFuture:
@@ -97,8 +98,8 @@ func assignProduct(
 			Future: &types.Future{
 				SettlementAsset:                     product.Future.SettlementAsset,
 				QuoteName:                           product.Future.QuoteName,
-				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination),
+				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Future.DataSourceSpecForSettlementData, defaultChainID),
+				DataSourceSpecForTradingTermination: datasource.SpecFromDefinition(product.Future.DataSourceSpecForTradingTermination, defaultChainID),
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
@@ -130,8 +131,8 @@ func assignProduct(
 				FundingRateScalingFactor:            product.Perps.FundingRateScalingFactor,
 				FundingRateLowerBound:               product.Perps.FundingRateLowerBound,
 				FundingRateUpperBound:               product.Perps.FundingRateUpperBound,
-				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData),
-				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule),
+				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData, defaultChainID),
+				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule, defaultChainID),
 				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
 			},
 		}
@@ -157,6 +158,7 @@ func assignProduct(
 func createInstrument(
 	input *types.InstrumentConfiguration,
 	tags []string,
+	defaultChainID uint64,
 ) (*types.Instrument, types.ProposalError, error) {
 	result := &types.Instrument{
 		Name: input.Name,
@@ -166,7 +168,7 @@ func createInstrument(
 		},
 	}
 
-	if perr, err := assignProduct(input, result); err != nil {
+	if perr, err := assignProduct(input, result, defaultChainID); err != nil {
 		return nil, perr, err
 	}
 	return result, types.ProposalErrorUnspecified, nil
@@ -213,8 +215,9 @@ func buildMarketFromProposal(
 	definition *types.NewMarket,
 	netp NetParams,
 	openingAuctionDuration time.Duration,
+	defaultChainID uint64,
 ) (*types.Market, types.ProposalError, error) {
-	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata, defaultChainID)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -293,7 +296,7 @@ func buildSpotMarketFromProposal(
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 ) (*types.Market, types.ProposalError, error) {
-	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata, 0)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -415,9 +418,9 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepC
 	return validateAssetBasic(spot.BaseAsset, assets, deepCheck)
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
-	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
-	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, defaultChainID uint64) (types.ProposalError, error) {
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et, defaultChainID)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et, defaultChainID)
 
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
@@ -476,7 +479,7 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData, 0))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -495,7 +498,7 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination, 0))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -514,9 +517,9 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool) (types.ProposalError, error) {
-	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
-	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, cid uint64) (types.ProposalError, error) {
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et, cid)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et, cid)
 
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
@@ -550,7 +553,7 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData))
+	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData, cid))
 	if err != nil {
 		return types.ProposalErrorInvalidPerpsProduct, err
 	}
@@ -568,7 +571,7 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule))
+	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule, cid))
 	if err != nil {
 		return types.ProposalErrorInvalidPerpsProduct, err
 	}
@@ -604,14 +607,14 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 	return validateAsset(perps.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, defaultChainID uint64) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, assets, et, deepCheck)
+		return validateFuture(product.Future, decimals, assets, et, deepCheck, defaultChainID)
 	case *types.InstrumentConfigurationPerps:
-		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck)
+		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck, defaultChainID)
 	case *types.InstrumentConfigurationSpot:
 		return validateSpot(product.Spot, decimals, assets, deepCheck)
 	default:
@@ -733,7 +736,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil, 0); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -763,9 +766,10 @@ func validateNewMarketChange(
 	parent *types.Market,
 	currentTime time.Time,
 	restore bool,
+	defaultChainID uint64,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), defaultChainID); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets
@@ -852,8 +856,8 @@ func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.Propos
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time, defaultChainID uint64) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime, defaultChainID); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -874,26 +878,26 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time, defaultChainID uint64) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future, mkt, et)
+		return validateUpdateFuture(product.Future, mkt, et, defaultChainID)
 	case *types.UpdateInstrumentConfigurationPerps:
-		return validateUpdatePerps(product.Perps, mkt, et, currentTime)
+		return validateUpdatePerps(product.Perps, mkt, et, currentTime, defaultChainID)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime, cid uint64) (types.ProposalError, error) {
 	if mkt.GetFuture() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
 	}
 
-	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
-	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
+	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et, cid)
+	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et, cid)
 
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
@@ -954,7 +958,7 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData))
+	ospec, err := spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForSettlementData, cid))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -973,7 +977,7 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination))
+	ospec, err = spec.New(*datasource.SpecFromDefinition(future.DataSourceSpecForTradingTermination, cid))
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
@@ -992,13 +996,13 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time, cid uint64) (types.ProposalError, error) {
 	if mkt.GetPerps() == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
 	}
 
-	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
-	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
+	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et, cid)
+	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et, cid)
 
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
@@ -1032,7 +1036,7 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData))
+	ospec, err := spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementData, 0))
 	if err != nil {
 		return types.ProposalErrorInvalidPerpsProduct, err
 	}
@@ -1050,7 +1054,7 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	}
 
 	// ensure the oracle spec for market termination can be constructed
-	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule))
+	ospec, err = spec.New(*datasource.SpecFromDefinition(perps.DataSourceSpecForSettlementSchedule, 0))
 	if err != nil {
 		return types.ProposalErrorInvalidPerpsProduct, err
 	}
@@ -1086,7 +1090,7 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	return types.ProposalErrorUnspecified, nil
 }
 
-func setDatasourceDefinitionDefaults(def dsdefinition.Definition, et *enactmentTime) dsdefinition.Definition {
+func setDatasourceDefinitionDefaults(def dsdefinition.Definition, et *enactmentTime, cid uint64) dsdefinition.Definition {
 	if def.IsEthCallSpec() {
 		spec := def.GetEthCallSpec()
 		if spec.Trigger != nil {
@@ -1097,6 +1101,9 @@ func setDatasourceDefinitionDefaults(def dsdefinition.Definition, et *enactmentT
 				}
 				spec.Trigger = trigger
 			}
+		}
+		if spec.L2ChainID == 0 && cid != 0 {
+			spec.L2ChainID = cid
 		}
 		def.DataSourceType = spec
 	}

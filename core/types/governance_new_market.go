@@ -202,7 +202,7 @@ func (mpc *CompositePriceConfiguration) DeepClone() *CompositePriceConfiguration
 	sources := make([]*datasource.Spec, 0, len(mpc.DataSources))
 	for _, s := range mpc.DataSources {
 		specDefinition := s.Data.DeepClone()
-		sources = append(sources, datasource.SpecFromDefinition(*definition.NewWith(specDefinition)))
+		sources = append(sources, datasource.SpecFromDefinition(*definition.NewWith(specDefinition), 0))
 	}
 	bindings := make([]*datasource.SpecBindingForCompositePrice, 0, len(mpc.SpecBindingForCompositePrice))
 	for _, sbfcp := range mpc.SpecBindingForCompositePrice {
@@ -237,7 +237,8 @@ func (mpc *CompositePriceConfiguration) IntoProto() *vegapb.CompositePriceConfig
 	if len(mpc.DataSources) > 0 {
 		specs = make([]*vegapb.DataSourceDefinition, 0, len(mpc.DataSources))
 		for _, source := range mpc.DataSources {
-			specs = append(specs, source.Data.IntoProto())
+			// @TODO provide chain ID
+			specs = append(specs, source.Data.IntoProto(1))
 		}
 	}
 	var bindings []*vegapb.SpecBindingForCompositePrice
@@ -278,13 +279,14 @@ func CompositePriceConfigurationFromProto(mpc *vegapb.CompositePriceConfiguratio
 		stalenessTolerance = append(stalenessTolerance, dur)
 	}
 
+	// @TODO chain ID
 	dataSources := make([]*datasource.Spec, 0, len(mpc.DataSourcesSpec))
 	for _, spec := range mpc.DataSourcesSpec {
 		specDef, err := definition.FromProto(spec, nil)
 		if err != nil {
 			return nil
 		}
-		dataSources = append(dataSources, datasource.SpecFromDefinition(*definition.NewWith(specDef)))
+		dataSources = append(dataSources, datasource.SpecFromDefinition(*definition.NewWith(specDef), 0))
 	}
 
 	binding := make([]*datasource.SpecBindingForCompositePrice, 0, len(mpc.DataSourcesSpecBinding))
@@ -908,11 +910,12 @@ type FutureProduct struct {
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {
+	// @TODO get chain ID if possible
 	return &vegapb.FutureProduct{
 		SettlementAsset:                     f.SettlementAsset,
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(1),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(1),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
 	}
 }
@@ -976,6 +979,7 @@ func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
 		lowerBound = ptr.From(p.FundingRateLowerBound.String())
 	}
 
+	// @TODO set chain id if possible
 	return &vegapb.PerpetualProduct{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -986,8 +990,8 @@ func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
 		FundingRateScalingFactor:            scalingFactor,
 		FundingRateLowerBound:               lowerBound,
 		FundingRateUpperBound:               upperBound,
-		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
-		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(1),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(1),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
 	}
 }

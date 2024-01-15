@@ -67,6 +67,7 @@ func TestEngine(t *testing.T) {
 			Every:   20,
 			Until:   0,
 		},
+		L2ChainID: uint64(tc.client.chainID),
 
 		RequiredConfirmations: 0,
 		Filters:               common.SpecFilters{},
@@ -126,6 +127,14 @@ func TestEngine(t *testing.T) {
 
 	e.Poll(ctx, time.Now())
 
+	// somehow, we get one more call here now
+	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
+		cc := ce.GetContractCall()
+		require.NotNil(t, cc)
+		assert.Equal(t, cc.BlockHeight, uint64(9))
+		assert.Equal(t, cc.BlockTime, uint64(90))
+	})
+
 	// Now deactivate the spec and make sure we don't get called again
 	tc.client.Commit()
 	tc.client.Commit()
@@ -163,6 +172,7 @@ func TestEngineWithErrorSpec(t *testing.T) {
 			Every:   20,
 			Until:   0,
 		},
+		L2ChainID: uint64(tc.client.chainID),
 
 		RequiredConfirmations: 0,
 		Filters:               common.SpecFilters{},

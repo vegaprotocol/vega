@@ -49,23 +49,23 @@ func TestNewDefinition(t *testing.T) {
 	ds := definition.New(definition.ContentTypeOracle)
 	assert.NotNil(t, ds)
 	cnt := ds.Content()
-	assert.IsType(t, signedoracle.SpecConfiguration{}, cnt)
+	assert.IsType(t, &signedoracle.SpecConfiguration{}, cnt)
 
 	ds = definition.New(definition.ContentTypeEthOracle)
 	assert.NotNil(t, ds)
 	cnt = ds.Content()
-	assert.IsType(t, ethcallcommon.Spec{}, cnt)
+	assert.IsType(t, &ethcallcommon.Spec{}, cnt)
 
 	ds = definition.New(definition.ContentTypeInternalTimeTermination)
 	assert.NotNil(t, ds)
 	cnt = ds.Content()
-	assert.IsType(t, vegatime.SpecConfiguration{}, cnt)
+	assert.IsType(t, &vegatime.SpecConfiguration{}, cnt)
 }
 
 func TestDefinitionIntoProto(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		ds := &definition.Definition{}
-		protoDs := ds.IntoProto()
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.Nil(t, protoDs.SourceType)
 	})
@@ -73,7 +73,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 	t.Run("external dataSourceDefinition", func(t *testing.T) {
 		t.Run("non-empty but no content", func(t *testing.T) {
 			ds := &definition.Definition{}
-			protoDs := ds.IntoProto()
+			protoDs := ds.IntoProto(1)
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 			assert.Nil(t, protoDs.SourceType)
 		})
@@ -114,7 +114,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 				},
 			)
 
-			dsProto := ds.IntoProto()
+			dsProto := ds.IntoProto(1)
 			assert.NotNil(t, dsProto.SourceType)
 			assert.IsType(t, &vegapb.DataSourceDefinition_External{}, dsProto.SourceType)
 			o := dsProto.GetExternal().GetOracle()
@@ -181,7 +181,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 						},
 					},
 				})
-			dsProto := ds.IntoProto()
+			dsProto := ds.IntoProto(1)
 			assert.NotNil(t, dsProto.SourceType)
 			assert.IsType(t, &vegapb.DataSourceDefinition_External{}, dsProto.SourceType)
 			eo := dsProto.GetExternal().GetEthOracle()
@@ -220,7 +220,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 				},
 			)
 
-			dsProto := ds.IntoProto()
+			dsProto := ds.IntoProto(1)
 			assert.NotNil(t, dsProto.SourceType)
 			assert.IsType(t, &vegapb.DataSourceDefinition_Internal{}, dsProto.SourceType)
 			cond := dsProto.GetInternal().GetTime()
@@ -255,7 +255,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 				},
 			)
 
-			dsProto := ds.IntoProto()
+			dsProto := ds.IntoProto(1)
 			assert.NotNil(t, dsProto.SourceType)
 			assert.IsType(t, &vegapb.DataSourceDefinition_Internal{}, dsProto.SourceType)
 			cond := dsProto.GetInternal().GetTimeTrigger()
@@ -277,7 +277,7 @@ func TestDefinitionIntoProto(t *testing.T) {
 func TestContent(t *testing.T) {
 	t.Run("testContent", func(t *testing.T) {
 		t.Run("non-empty content with time termination source", func(t *testing.T) {
-			d := definition.NewWith(vegatime.SpecConfiguration{
+			d := definition.NewWith(&vegatime.SpecConfiguration{
 				Conditions: []*common.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_EQUALS,
@@ -292,7 +292,7 @@ func TestContent(t *testing.T) {
 
 			c := d.Content()
 			assert.NotNil(t, c)
-			tp, ok := c.(vegatime.SpecConfiguration)
+			tp, ok := c.(*vegatime.SpecConfiguration)
 			assert.True(t, ok)
 			assert.Equal(t, 2, len(tp.Conditions))
 			assert.Equal(t, "ext-test-value-0", tp.Conditions[0].Value)
@@ -301,7 +301,7 @@ func TestContent(t *testing.T) {
 
 		t.Run("non-empty content with ethereum oracle source", func(t *testing.T) {
 			timeNow := time.Now()
-			d := definition.NewWith(ethcallcommon.Spec{
+			d := definition.NewWith(&ethcallcommon.Spec{
 				Address: "some-eth-address",
 				AbiJson: []byte("abi-json-test"),
 				Method:  "method",
@@ -321,8 +321,8 @@ func TestContent(t *testing.T) {
 
 			content := d.Content()
 			assert.NotNil(t, content)
-			assert.IsType(t, ethcallcommon.Spec{}, content)
-			c, ok := content.(ethcallcommon.Spec)
+			assert.IsType(t, &ethcallcommon.Spec{}, content)
+			c, ok := content.(*ethcallcommon.Spec)
 			assert.True(t, ok)
 			assert.Equal(t, "some-eth-address", c.Address)
 			assert.Equal(t, []byte("abi-json-test"), c.AbiJson)
@@ -337,7 +337,7 @@ func TestContent(t *testing.T) {
 		})
 
 		t.Run("non-empty content with oracle", func(t *testing.T) {
-			d := definition.NewWith(signedoracle.SpecConfiguration{
+			d := definition.NewWith(&signedoracle.SpecConfiguration{
 				Signers: []*common.Signer{
 					common.CreateSignerFromString("0xSOMEKEYX", common.SignerTypePubKey),
 					common.CreateSignerFromString("0xSOMEKEYY", common.SignerTypePubKey),
@@ -346,7 +346,7 @@ func TestContent(t *testing.T) {
 
 			c := d.Content()
 			assert.NotNil(t, c)
-			tp, ok := c.(signedoracle.SpecConfiguration)
+			tp, ok := c.(*signedoracle.SpecConfiguration)
 			assert.True(t, ok)
 			assert.Equal(t, 0, len(tp.Filters))
 			assert.Equal(t, 2, len(tp.Signers))
@@ -359,7 +359,7 @@ func TestContent(t *testing.T) {
 func TestGetFilters(t *testing.T) {
 	t.Run("testGetFiltersExternal", func(t *testing.T) {
 		t.Run("NotEmpty Oracle", func(t *testing.T) {
-			dsd := definition.NewWith(signedoracle.SpecConfiguration{
+			dsd := definition.NewWith(&signedoracle.SpecConfiguration{
 				Signers: []*common.Signer{
 					common.CreateSignerFromString("0xSOMEKEYX", common.SignerTypePubKey),
 					common.CreateSignerFromString("0xSOMEKEYY", common.SignerTypePubKey),
@@ -419,7 +419,7 @@ func TestGetFilters(t *testing.T) {
 		})
 
 		t.Run("NotEmpty EthOracle", func(t *testing.T) {
-			dsd := definition.NewWith(ethcallcommon.Spec{
+			dsd := definition.NewWith(&ethcallcommon.Spec{
 				Address: "some-eth-address",
 				AbiJson: []byte("abi-json-test"),
 				Method:  "method",
@@ -448,7 +448,7 @@ func TestGetFilters(t *testing.T) {
 	t.Run("testGetFiltersInternal", func(t *testing.T) {
 		t.Run("NotEmpty", func(t *testing.T) {
 			dsd := definition.NewWith(
-				vegatime.SpecConfiguration{
+				&vegatime.SpecConfiguration{
 					Conditions: []*common.SpecCondition{
 						{
 							Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -782,14 +782,14 @@ func TestUpdateFilters(t *testing.T) {
 
 func TestGetSigners(t *testing.T) {
 	t.Run("empty signers", func(t *testing.T) {
-		ds := definition.NewWith(signedoracle.SpecConfiguration{})
+		ds := definition.NewWith(&signedoracle.SpecConfiguration{})
 
 		signers := ds.GetSigners()
 		assert.Equal(t, 0, len(signers))
 	})
 
 	t.Run("non-empty list but empty signers", func(t *testing.T) {
-		ds := definition.NewWith(signedoracle.SpecConfiguration{
+		ds := definition.NewWith(&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{},
 				{},
@@ -801,7 +801,7 @@ func TestGetSigners(t *testing.T) {
 	})
 
 	t.Run("non-empty signers", func(t *testing.T) {
-		ds := definition.NewWith(signedoracle.SpecConfiguration{
+		ds := definition.NewWith(&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{
 					common.CreateSignerFromString("0xTESTSIGN", common.SignerTypePubKey).Signer,
@@ -819,7 +819,7 @@ func TestGetSigners(t *testing.T) {
 
 func TestGetDataSourceSpecConfiguration(t *testing.T) {
 	ds := definition.NewWith(
-		signedoracle.SpecConfiguration{
+		&signedoracle.SpecConfiguration{
 			Signers: []*common.Signer{
 				{
 					common.CreateSignerFromString("0xTESTSIGN", common.SignerTypePubKey).Signer,
@@ -829,14 +829,14 @@ func TestGetDataSourceSpecConfiguration(t *testing.T) {
 
 	spec := ds.GetSpecConfiguration()
 	assert.NotNil(t, spec)
-	assert.IsType(t, signedoracle.SpecConfiguration{}, spec)
+	assert.IsType(t, &signedoracle.SpecConfiguration{}, spec)
 
-	assert.Equal(t, 1, len(spec.(signedoracle.SpecConfiguration).Signers))
-	assert.Equal(t, "0xTESTSIGN", spec.(signedoracle.SpecConfiguration).Signers[0].GetSignerPubKey().Key)
+	assert.Equal(t, 1, len(spec.(*signedoracle.SpecConfiguration).Signers))
+	assert.Equal(t, "0xTESTSIGN", spec.(*signedoracle.SpecConfiguration).Signers[0].GetSignerPubKey().Key)
 }
 
 func TestGetEthCallSpec(t *testing.T) {
-	ds := definition.NewWith(ethcallcommon.Spec{
+	ds := definition.NewWith(&ethcallcommon.Spec{
 		Address: "some-eth-address",
 		AbiJson: []byte("abi-json-test"),
 		Method:  "method",
@@ -856,7 +856,7 @@ func TestGetEthCallSpec(t *testing.T) {
 
 	dsSpec := ds.GetEthCallSpec()
 	assert.NotNil(t, dsSpec)
-	assert.IsType(t, ethcallcommon.Spec{}, dsSpec)
+	assert.IsType(t, &ethcallcommon.Spec{}, dsSpec)
 	assert.Equal(t, "some-eth-address", dsSpec.Address)
 	assert.Equal(t, []byte("abi-json-test"), dsSpec.AbiJson)
 	assert.Equal(t, "method", dsSpec.Method)
@@ -869,7 +869,7 @@ func TestGetEthCallSpec(t *testing.T) {
 }
 
 func TestGetDataSourceSpecConfigurationTime(t *testing.T) {
-	ds := definition.NewWith(vegatime.SpecConfiguration{
+	ds := definition.NewWith(&vegatime.SpecConfiguration{
 		Conditions: []*common.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
@@ -880,15 +880,15 @@ func TestGetDataSourceSpecConfigurationTime(t *testing.T) {
 
 	spec := ds.GetSpecConfiguration()
 	assert.NotNil(t, spec)
-	assert.IsType(t, vegatime.SpecConfiguration{}, spec)
+	assert.IsType(t, &vegatime.SpecConfiguration{}, spec)
 
-	assert.NotNil(t, spec.(vegatime.SpecConfiguration).Conditions)
-	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.(vegatime.SpecConfiguration).Conditions[0].Operator)
-	assert.Equal(t, "1", spec.(vegatime.SpecConfiguration).Conditions[0].Value)
+	assert.NotNil(t, spec.(*vegatime.SpecConfiguration).Conditions)
+	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.(*vegatime.SpecConfiguration).Conditions[0].Operator)
+	assert.Equal(t, "1", spec.(*vegatime.SpecConfiguration).Conditions[0].Value)
 }
 
 func TestGetDataSourceSpecConfigurationTimeTrigger(t *testing.T) {
-	ds := definition.NewWith(timetrigger.SpecConfiguration{
+	ds := definition.NewWith(&timetrigger.SpecConfiguration{
 		Conditions: []*common.SpecCondition{
 			{
 				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
@@ -902,29 +902,29 @@ func TestGetDataSourceSpecConfigurationTimeTrigger(t *testing.T) {
 
 	spec := ds.GetSpecConfiguration()
 	assert.NotNil(t, spec)
-	assert.IsType(t, timetrigger.SpecConfiguration{}, spec)
+	assert.IsType(t, &timetrigger.SpecConfiguration{}, spec)
 
-	assert.NotNil(t, spec.(timetrigger.SpecConfiguration).Conditions)
-	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.(timetrigger.SpecConfiguration).Conditions[0].Operator)
-	assert.Equal(t, "1", spec.(timetrigger.SpecConfiguration).Conditions[0].Value)
+	assert.NotNil(t, spec.(*timetrigger.SpecConfiguration).Conditions)
+	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.(*timetrigger.SpecConfiguration).Conditions[0].Operator)
+	assert.Equal(t, "1", spec.(*timetrigger.SpecConfiguration).Conditions[0].Value)
 
-	assert.IsType(t, common.InternalTimeTriggers{}, spec.(timetrigger.SpecConfiguration).Triggers)
+	assert.IsType(t, common.InternalTimeTriggers{}, spec.(*timetrigger.SpecConfiguration).Triggers)
 }
 
 func TestIsExternal(t *testing.T) {
-	dsDef := definition.NewWith(signedoracle.SpecConfiguration{})
+	dsDef := definition.NewWith(&signedoracle.SpecConfiguration{})
 
 	res, err := dsDef.IsExternal()
 	assert.NoError(t, err)
 	assert.True(t, res)
 
-	dsDef = definition.NewWith(ethcallcommon.Spec{})
+	dsDef = definition.NewWith(&ethcallcommon.Spec{})
 
 	res, err = dsDef.IsExternal()
 	assert.NoError(t, err)
 	assert.True(t, res)
 
-	dsDef = definition.NewWith(vegatime.SpecConfiguration{
+	dsDef = definition.NewWith(&vegatime.SpecConfiguration{
 		Conditions: []*common.SpecCondition{},
 	})
 
@@ -932,7 +932,7 @@ func TestIsExternal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, res)
 
-	dsDef = definition.NewWith(timetrigger.SpecConfiguration{
+	dsDef = definition.NewWith(&timetrigger.SpecConfiguration{
 		Conditions: []*common.SpecCondition{},
 		Triggers:   common.InternalTimeTriggers{},
 	})
@@ -950,7 +950,7 @@ func TestIsExternal(t *testing.T) {
 
 func TestSetOracleConfig(t *testing.T) {
 	t.Run("non-empty oracle", func(t *testing.T) {
-		dsd := definition.NewWith(signedoracle.SpecConfiguration{})
+		dsd := definition.NewWith(&signedoracle.SpecConfiguration{})
 
 		udsd := dsd.SetOracleConfig(
 			&signedoracle.SpecConfiguration{
@@ -1018,7 +1018,7 @@ func TestSetOracleConfig(t *testing.T) {
 	})
 
 	t.Run("non-empty eth oracle", func(t *testing.T) {
-		dsd := definition.NewWith(ethcallcommon.Spec{})
+		dsd := definition.NewWith(&ethcallcommon.Spec{})
 
 		udsd := dsd.SetOracleConfig(
 			&ethcallcommon.Spec{
@@ -1068,7 +1068,7 @@ func TestSetOracleConfig(t *testing.T) {
 
 		dsSpec := udsd.GetEthCallSpec()
 		assert.NotNil(t, dsSpec)
-		assert.IsType(t, ethcallcommon.Spec{}, dsSpec)
+		assert.IsType(t, &ethcallcommon.Spec{}, dsSpec)
 		assert.Equal(t, "some-eth-address", dsSpec.Address)
 		assert.Equal(t, []byte("abi-json-test"), dsSpec.AbiJson)
 		assert.Equal(t, "method", dsSpec.Method)
@@ -1093,7 +1093,7 @@ func TestSetOracleConfig(t *testing.T) {
 
 	t.Run("try to set oracle config to internal data source", func(t *testing.T) {
 		dsd := definition.NewWith(
-			vegatime.SpecConfiguration{
+			&vegatime.SpecConfiguration{
 				Conditions: []*common.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -1157,7 +1157,7 @@ func TestSetOracleConfig(t *testing.T) {
 }
 
 func TestSetTimeTriggerConditionConfig(t *testing.T) {
-	dsd := definition.NewWith(signedoracle.SpecConfiguration{})
+	dsd := definition.NewWith(&signedoracle.SpecConfiguration{})
 
 	udsd := dsd.SetTimeTriggerConditionConfig(
 		[]*common.SpecCondition{
@@ -1177,7 +1177,7 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 
 	t.Run("try to set time config to internal time data source", func(t *testing.T) {
 		dsd := definition.NewWith(
-			vegatime.SpecConfiguration{
+			&vegatime.SpecConfiguration{
 				Conditions: []*common.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -1216,7 +1216,7 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 
 	t.Run("try to set time trigger config to internal time data source", func(t *testing.T) {
 		dsd := definition.NewWith(
-			timetrigger.SpecConfiguration{
+			&timetrigger.SpecConfiguration{
 				Conditions: []*common.SpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,

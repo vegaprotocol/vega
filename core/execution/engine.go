@@ -110,6 +110,7 @@ type Engine struct {
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
 	skipRestoreSuccessors map[string]struct{}
+	defaultChainID        uint64
 }
 
 type netParamsValues struct {
@@ -1899,6 +1900,11 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 		}
 	}
 	e.successorWindow = window
+	return nil
+}
+
+func (e *Engine) OnDefaultChainIDUpdate(_ context.Context, id uint64) error {
+	e.defaultChainID = id
 	return nil
 }
 

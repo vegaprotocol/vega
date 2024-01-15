@@ -30,8 +30,8 @@ import (
 
 func TestSpecConfigurationIntoProto(t *testing.T) {
 	t.Run("non-empty time source with empty lists", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(vegatime.SpecConfiguration{})
-		protoDs := ds.IntoProto()
+		ds := datasource.NewDefinitionWith(&vegatime.SpecConfiguration{})
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		ext := protoDs.GetInternal()
@@ -41,7 +41,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 	})
 
 	t.Run("non-empty time source with data", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(vegatime.SpecConfiguration{
+		ds := datasource.NewDefinitionWith(&vegatime.SpecConfiguration{
 			Conditions: []*common.SpecCondition{
 				{},
 				{
@@ -55,7 +55,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 			},
 		})
 
-		protoDs := ds.IntoProto()
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		ext := protoDs.GetInternal()
@@ -73,12 +73,12 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 
 func TestSpecConfigurationString(t *testing.T) {
 	t.Run("non-empty time source with empty lists", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(vegatime.SpecConfiguration{}).String()
+		ds := datasource.NewDefinitionWith(&vegatime.SpecConfiguration{}).String()
 		assert.Equal(t, "conditions([])", ds)
 	})
 
 	t.Run("non-empty time source with data", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(vegatime.SpecConfiguration{
+		ds := datasource.NewDefinitionWith(&vegatime.SpecConfiguration{
 			Conditions: []*common.SpecCondition{
 				{},
 				{
@@ -101,7 +101,7 @@ func TestSpecConfigurationFromProto(t *testing.T) {
 		s := vegatime.SpecConfigurationFromProto(nil)
 
 		assert.NotNil(t, s)
-		assert.IsType(t, vegatime.SpecConfiguration{}, s)
+		assert.IsType(t, &vegatime.SpecConfiguration{}, s)
 
 		assert.Nil(t, s.Conditions)
 	})
@@ -113,7 +113,7 @@ func TestSpecConfigurationFromProto(t *testing.T) {
 			},
 		)
 		assert.NotNil(t, s)
-		assert.IsType(t, vegatime.SpecConfiguration{}, s)
+		assert.IsType(t, &vegatime.SpecConfiguration{}, s)
 		assert.NotNil(t, s.Conditions)
 		assert.Equal(t, 0, len(s.Conditions))
 	})

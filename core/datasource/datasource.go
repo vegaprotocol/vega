@@ -39,7 +39,8 @@ type Spec struct {
 func (s *Spec) IntoProto() *vegapb.DataSourceSpec {
 	config := &vegapb.DataSourceDefinition{}
 	if s.Data != nil {
-		config = s.Data.IntoProto()
+		// @TODO check value set on data
+		config = s.Data.IntoProto(1)
 	}
 
 	return &vegapb.DataSourceSpec{
@@ -83,7 +84,8 @@ func SpecFromProto(specProto *vegapb.DataSourceSpec) *Spec {
 
 func (s *Spec) FromDefinition(d *definition.Definition) *Spec {
 	if d != nil {
-		bytes, _ := proto.Marshal(d.IntoProto())
+		// @TODO provide value somehow
+		bytes, _ := proto.Marshal(d.IntoProto(1))
 		specID := hex.EncodeToString(crypto.Hash(bytes))
 		return &Spec{
 			ID:   specID,
@@ -94,8 +96,8 @@ func (s *Spec) FromDefinition(d *definition.Definition) *Spec {
 	return &Spec{}
 }
 
-func SpecFromDefinition(d definition.Definition) *Spec {
-	bytes, _ := proto.Marshal(d.IntoProto())
+func SpecFromDefinition(d definition.Definition, cid uint64) *Spec {
+	bytes, _ := proto.Marshal(d.IntoProto(cid))
 	specID := hex.EncodeToString(crypto.Hash(bytes))
 	return &Spec{
 		ID:   specID,

@@ -183,8 +183,8 @@ func InternalTimeTriggersFromProto(protoTriggers []*datapb.InternalTimeTrigger) 
 	return ts
 }
 
-func (i InternalTimeTriggers) DeepClone() InternalTimeTriggers {
-	clonedTriggers := InternalTimeTriggers{}
+func (i InternalTimeTriggers) DeepClone() *InternalTimeTriggers {
+	clonedTriggers := &InternalTimeTriggers{}
 	if len(i) == 1 && i[0] != nil {
 		clonedTriggers[0] = i[0].DeepClone()
 	}

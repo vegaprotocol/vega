@@ -47,7 +47,7 @@ func NewCompositePriceOracle(ctx context.Context, oracleEngine OracleEngine, ora
 		return nil, err
 	}
 
-	os, err := spec.New(*datasource.SpecFromDefinition(*oracleSpec.Data))
+	os, err := spec.New(*datasource.SpecFromDefinition(*oracleSpec.Data, 0))
 	if err != nil {
 		return nil, err
 	}

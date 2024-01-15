@@ -36,7 +36,7 @@ type Result struct {
 	PassesFilters bool
 }
 
-func NewResult(spec ethcallcommon.Spec, bytes []byte) (Result, error) {
+func NewResult(spec *ethcallcommon.Spec, bytes []byte) (Result, error) {
 	call, err := NewCall(spec)
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to create result: %w", err)

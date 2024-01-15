@@ -56,6 +56,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -239,7 +240,8 @@ type App struct {
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize atomic.Uint64
+	maxBatchSize   atomic.Uint64
+	defaultChainID uint64
 }
 
 func NewApp(
@@ -510,6 +512,19 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uin
 	return nil
 }
 
+func (app *App) OnDefaultChainIDUpdate(ctx context.Context, chain any) error {
+	cfg, err := types.EthereumConfigFromUntypedProto(chain)
+	if err != nil {
+		return err
+	}
+	cID, err := strconv.ParseUint(cfg.ChainID(), 10, 64)
+	if err != nil {
+		return err
+	}
+	app.defaultChainID = cID
+	return app.gov.OnDefaultChainIDUpdate(ctx, cID)
+}
+
 // generateDeterministicID will build the command ID
 // the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
@@ -611,6 +626,19 @@ func (app *App) ensureConfig() {
 	if app.cfg.KeepCheckpointsMax < 1 {
 		app.cfg.KeepCheckpointsMax = 1
 	}
+	// eth config
+	v := &proto.EthereumConfig{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, v); err != nil {
+		// @TODO maybe log panic
+		return
+	}
+	cID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	if err != nil {
+		// @TODO maybe log panic
+		return
+	}
+	app.defaultChainID = cID
+	app.gov.OnDefaultChainIDUpdate(context.Background(), cID)
 }
 
 // ReloadConf updates the internal configuration.

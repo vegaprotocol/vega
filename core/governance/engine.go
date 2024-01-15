@@ -140,7 +140,8 @@ type Engine struct {
 	enactedProposals     []*proposal
 
 	// snapshot state
-	gss *governanceSnapshotState
+	gss            *governanceSnapshotState
+	defaultChainID uint64
 }
 
 func NewEngine(
@@ -594,13 +595,13 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
-		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now, restore); err != nil {
+		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent, now, restore, e.defaultChainID); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		// closeTime = e.timeService.GetTimeNow().Round(time.Second)
 		// auctionDuration = enactTime.Sub(closeTime)
-		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
+		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration, e.defaultChainID)
 		if err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -999,7 +1000,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			}
 			parent = &pm
 		}
-		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow(), false)
+		return validateNewMarketChange(newMarket, e.assets, true, e.netp, enactTime.Sub(closeTime), enct, parent, e.timeService.GetTimeNow(), false, e.defaultChainID)
 	case types.ProposalTermsTypeUpdateMarket:
 		enct.shouldNotVerify = true
 		marketUpdate := terms.GetUpdateMarket()
@@ -1008,7 +1009,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			return types.ProposalErrorInvalidMarket, ErrParentMarketDoesNotExist
 		}
 
-		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow())
+		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow(), e.defaultChainID)
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1234,6 +1235,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnknownRiskParameterType, ErrUnsupportedRiskParameters
 	}
 
+	// @TODO set chain id on definition/spec if needed
 	switch product := terms.Changes.Instrument.Product.(type) {
 	case nil:
 		return nil, types.ProposalErrorNoProduct, ErrMissingProduct
@@ -1274,12 +1276,13 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		newMarket.Changes.LiquidationStrategy = existingMarket.LiquidationStrategy
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow(), e.defaultChainID); err != nil {
 		return nil, perr, err
 	}
 
 	previousAuctionDuration := time.Duration(existingMarket.OpeningAuction.Duration) * time.Second
-	return buildMarketFromProposal(existingMarket.ID, newMarket, e.netp, previousAuctionDuration)
+	// @TODO the definition on the market should probably be updated above
+	return buildMarketFromProposal(existingMarket.ID, newMarket, e.netp, previousAuctionDuration, e.defaultChainID)
 }
 
 func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.ProposalError, error) {
@@ -1331,4 +1334,9 @@ func getGovernanceTokens(accounts StakingAccounts, party string) (*num.Uint, err
 	}
 
 	return balance, err
+}
+
+func (e *Engine) OnDefaultChainIDUpdate(_ context.Context, id uint64) error {
+	e.defaultChainID = id
+	return nil
 }

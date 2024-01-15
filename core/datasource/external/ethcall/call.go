@@ -41,7 +41,7 @@ type Call struct {
 	chainID uint64
 }
 
-func NewCall(spec ethcallcommon.Spec) (Call, error) {
+func NewCall(spec *ethcallcommon.Spec) (Call, error) {
 	abiJSON, err := CanonicalizeJSON(spec.AbiJson)
 	if err != nil {
 		return Call{}, errors.Join(
@@ -78,13 +78,14 @@ func NewCall(spec ethcallcommon.Spec) (Call, error) {
 			fmt.Errorf("failed to create filters: %w", err))
 	}
 
+	s := spec.DeepClone().(*ethcallcommon.Spec)
 	return Call{
 		address: common.HexToAddress(spec.Address),
 		method:  spec.Method,
 		args:    packedArgs,
 		abi:     abi,
 		abiJSON: abiJSON,
-		spec:    spec,
+		spec:    *s,
 		filters: filters,
 		chainID: spec.L2ChainID,
 	}, nil

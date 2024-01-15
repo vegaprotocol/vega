@@ -32,8 +32,8 @@ import (
 
 func TestSpecConfigurationIntoProto(t *testing.T) {
 	t.Run("non-empty time source with empty lists", func(t *testing.T) {
-		ds := datasource.NewDefinitionWith(timetrigger.SpecConfiguration{})
-		protoDs := ds.IntoProto()
+		ds := datasource.NewDefinitionWith(&timetrigger.SpecConfiguration{})
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		ext := protoDs.GetInternal()
@@ -44,7 +44,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 
 	t.Run("non-empty time source with data", func(t *testing.T) {
 		timeNow := time.Now()
-		ds := datasource.NewDefinitionWith(timetrigger.SpecConfiguration{
+		ds := datasource.NewDefinitionWith(&timetrigger.SpecConfiguration{
 			Triggers: common.InternalTimeTriggers{
 				{
 					Initial: &timeNow,
@@ -64,7 +64,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 			},
 		})
 
-		protoDs := ds.IntoProto()
+		protoDs := ds.IntoProto(1)
 		assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 		assert.NotNil(t, protoDs.SourceType)
 		internal := protoDs.GetInternal()
@@ -85,7 +85,7 @@ func TestSpecConfigurationIntoProto(t *testing.T) {
 
 func TestSpecConfigurationGetFilters(t *testing.T) {
 	timeNow := time.Now()
-	ds := datasource.NewDefinitionWith(timetrigger.SpecConfiguration{
+	ds := datasource.NewDefinitionWith(&timetrigger.SpecConfiguration{
 		Triggers: common.InternalTimeTriggers{
 			{
 				Initial: &timeNow,
@@ -120,7 +120,7 @@ func TestSpecConfigurationGetFilters(t *testing.T) {
 
 func TestSpecConfigurationGetTimeTriggers(t *testing.T) {
 	timeNow := time.Now()
-	ds := datasource.NewDefinitionWith(timetrigger.SpecConfiguration{
+	ds := datasource.NewDefinitionWith(&timetrigger.SpecConfiguration{
 		Triggers: common.InternalTimeTriggers{
 			{
 				Initial: &timeNow,

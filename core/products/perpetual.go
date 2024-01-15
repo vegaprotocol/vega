@@ -413,11 +413,11 @@ func (p *Perpetual) Update(ctx context.Context, pp interface{}, oe OracleEngine)
 	}
 
 	// create specs from source
-	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementData.Data))
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementData.Data, 0))
 	if err != nil {
 		return err
 	}
-	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementSchedule.Data))
+	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.p.DataSourceSpecForSettlementSchedule.Data, 0))
 	if err != nil {
 		return err
 	}
@@ -452,11 +452,11 @@ func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, mark
 		internalTWAP: NewCachedTWAP(log, 0, auctions),
 	}
 	// create specs from source
-	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data))
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementData.Data, 0))
 	if err != nil {
 		return nil, err
 	}
-	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data))
+	osForSchedule, err := spec.New(*datasource.SpecFromDefinition(*p.DataSourceSpecForSettlementSchedule.Data, 0))
 	if err != nil {
 		return nil, err
 	}

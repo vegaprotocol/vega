@@ -478,11 +478,11 @@ func triggerSpec(t *testing.T, initial time.Time, every int64) specBundle {
 		},
 	}
 
-	testSpec := vegapb.NewDataSourceSpec(definition.NewWith(cfg).IntoProto())
+	testSpec := vegapb.NewDataSourceSpec(definition.NewWith(cfg).IntoProto(1))
 	typedOracleSpec := datasource.SpecFromProto(testSpec)
 
 	// Initialise trigger
-	balh := typedOracleSpec.Data.Content().(timetrigger.SpecConfiguration)
+	balh := typedOracleSpec.Data.Content().(*timetrigger.SpecConfiguration)
 	balh.SetNextTrigger(initial)
 
 	spec, err := dsspec.New(*typedOracleSpec)

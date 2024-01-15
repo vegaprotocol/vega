@@ -113,7 +113,8 @@ func New(originalSpec datasource.Spec) (*Spec, error) {
 	}
 
 	if builtInTrigger {
-		triggersFromSpec = originalSpec.Data.GetTimeTriggers()
+		gt := originalSpec.Data.GetTimeTriggers()
+		triggersFromSpec = *gt
 	}
 
 	os := &Spec{

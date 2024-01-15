@@ -46,10 +46,12 @@ func (s SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
 }
 
 func (s SpecConfiguration) DeepClone() common.DataSourceType {
-	conditions := []*common.SpecCondition{}
-	conditions = append(conditions, s.Conditions...)
+	conditions := make([]*common.SpecCondition, 0, len(s.Conditions))
+	for _, c := range s.Conditions {
+		conditions = append(conditions, c.DeepClone())
+	}
 
-	return SpecConfiguration{
+	return &SpecConfiguration{
 		Conditions: conditions,
 	}
 }
@@ -77,17 +79,17 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	return filters
 }
 
-func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) SpecConfiguration {
+func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) *SpecConfiguration {
 	if protoConfig == nil {
-		return SpecConfiguration{}
+		return &SpecConfiguration{}
 	}
 
-	return SpecConfiguration{
+	return &SpecConfiguration{
 		Conditions: common.SpecConditionsFromProto(protoConfig.Conditions),
 	}
 }
 
-func (s SpecConfiguration) ToDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+func (s *SpecConfiguration) ToDefinitionProto(_ uint64) (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_Internal{
 			Internal: &vegapb.DataSourceDefinitionInternal{

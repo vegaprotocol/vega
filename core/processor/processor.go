@@ -117,6 +117,9 @@ type GovernanceEngine interface {
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 	RejectBatchProposal(context.Context, string, types.ProposalError, error) error
 	Hash() []byte
+
+	// default chain update
+	OnDefaultChainIDUpdate(ctx context.Context, id uint64) error
 }
 
 //nolint:interfacebloat
@@ -228,12 +231,17 @@ type Banking interface {
 	CancelGovTransfer(ctx context.Context, ID string) error
 }
 
+type Reset interface {
+	Reset()
+}
+
 // NetworkParameters ...
 type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
 	GetInt(key string) (int64, error)
+	GetJSONStruct(key string, v Reset) error
 }
 
 type Oracle struct {

@@ -36,16 +36,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		s, err := common.SpecFromProto(nil)
 		assert.Error(t, errors.New("ethereum call spec proto is nil"), err)
 
-		assert.NotNil(t, s)
-		assert.IsType(t, common.Spec{}, s)
-
-		assert.Equal(t, "", s.Address)
-		assert.Equal(t, []byte(nil), s.AbiJson)
-		assert.Nil(t, nil, s.Method)
-		assert.Nil(t, s.ArgsJson)
-		assert.Equal(t, 0, len(s.ArgsJson))
-		assert.Nil(t, s.Filters)
-		assert.Nil(t, s.Trigger)
+		assert.Nil(t, s)
 	})
 
 	t.Run("non-empty with empty lists", func(t *testing.T) {
@@ -57,16 +48,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		s, err := common.SpecFromProto(protoSource)
 		assert.Error(t, errors.New(" error unmarshalling trigger: trigger proto is nil"), err)
 
-		assert.NotNil(t, s)
-		assert.IsType(t, common.Spec{}, s)
-
-		assert.Equal(t, "", s.Address)
-		assert.Equal(t, []byte(nil), s.AbiJson)
-		assert.Nil(t, nil, s.Method)
-		assert.Nil(t, s.ArgsJson)
-		assert.Equal(t, 0, len(s.ArgsJson))
-		assert.Nil(t, s.Filters)
-		assert.Nil(t, s.Trigger)
+		assert.Nil(t, s)
 	})
 
 	t.Run("non-empty with error", func(t *testing.T) {
@@ -100,20 +82,12 @@ func TestEthCallSpecFromProto(t *testing.T) {
 
 		ds, err := common.SpecFromProto(protoSource)
 		assert.Error(t, errors.New("error marshalling arg: proto: google.protobuf.Value: none of the oneof fields is set"), err)
-		assert.IsType(t, common.Spec{}, ds)
-
-		assert.Equal(t, "", ds.Address)
-		assert.Equal(t, []byte(nil), ds.AbiJson)
-		assert.Nil(t, nil, ds.Method)
-		assert.Nil(t, ds.ArgsJson)
-		assert.Equal(t, 0, len(ds.ArgsJson))
-		assert.Nil(t, ds.Filters)
-		assert.Nil(t, ds.Trigger)
+		assert.Nil(t, ds)
 
 		protoSource.Args = nil
 		ds, err = common.SpecFromProto(protoSource)
 		assert.Nil(t, err)
-		assert.IsType(t, common.Spec{}, ds)
+		assert.IsType(t, &common.Spec{}, ds)
 
 		assert.Equal(t, "test-eth-address", ds.Address)
 		assert.Equal(t, []byte("5"), ds.AbiJson)
@@ -158,7 +132,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 
 		ds, err := common.SpecFromProto(protoSource)
 		assert.Nil(t, err)
-		assert.IsType(t, common.Spec{}, ds)
+		assert.IsType(t, &common.Spec{}, ds)
 
 		assert.Equal(t, "test-eth-address", ds.Address)
 		assert.Equal(t, []byte("5"), ds.AbiJson)

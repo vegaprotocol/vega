@@ -67,9 +67,14 @@ func (s SpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigurationTimeTr
 }
 
 func (s SpecConfiguration) DeepClone() common.DataSourceType {
-	return SpecConfiguration{
-		Triggers:   s.Triggers.DeepClone(),
-		Conditions: s.Conditions,
+	condition := make([]*common.SpecCondition, 0, len(s.Conditions))
+	for _, c := range s.Conditions {
+		condition = append(condition, c.DeepClone())
+	}
+	trigs := s.Triggers.DeepClone()
+	return &SpecConfiguration{
+		Triggers:   *trigs,
+		Conditions: condition,
 	}
 }
 
@@ -99,26 +104,26 @@ func (s SpecConfiguration) GetFilters() []*common.SpecFilter {
 	return filters
 }
 
-func (s SpecConfiguration) GetTimeTriggers() common.InternalTimeTriggers {
-	return s.Triggers
+func (s SpecConfiguration) GetTimeTriggers() *common.InternalTimeTriggers {
+	return s.Triggers.DeepClone()
 }
 
 func (s SpecConfiguration) IsTriggered(tm time.Time) bool {
 	return s.Triggers.IsTriggered(tm)
 }
 
-func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTimeTrigger, tm *time.Time) (SpecConfiguration, error) {
+func SpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTimeTrigger, tm *time.Time) (*SpecConfiguration, error) {
 	if protoConfig == nil {
-		return SpecConfiguration{}, nil
+		return &SpecConfiguration{}, nil
 	}
 
-	return SpecConfiguration{
+	return &SpecConfiguration{
 		Triggers:   common.InternalTimeTriggersFromProto(protoConfig.Triggers),
 		Conditions: common.SpecConditionsFromProto(protoConfig.Conditions),
 	}, nil
 }
 
-func (s SpecConfiguration) ToDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+func (s *SpecConfiguration) ToDefinitionProto(_ uint64) (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_Internal{
 			Internal: &vegapb.DataSourceDefinitionInternal{

@@ -62,13 +62,13 @@ func New(tp ContentType) *Definition {
 	switch tp {
 	case ContentTypeOracle:
 		return NewWith(
-			signedoracle.SpecConfiguration{
+			&signedoracle.SpecConfiguration{
 				Signers: []*common.Signer{},
 				Filters: []*common.SpecFilter{},
 			})
 	case ContentTypeEthOracle:
 		return NewWith(
-			ethcallcommon.Spec{
+			&ethcallcommon.Spec{
 				AbiJson:     []byte{},
 				ArgsJson:    []string{},
 				Trigger:     &ethcallcommon.TimeTrigger{},
@@ -77,12 +77,12 @@ func New(tp ContentType) *Definition {
 			})
 	case ContentTypeInternalTimeTermination:
 		return NewWith(
-			vegatime.SpecConfiguration{
+			&vegatime.SpecConfiguration{
 				Conditions: []*common.SpecCondition{},
 			})
 	case ContentTypeInternalTimeTriggerTermination:
 		return NewWith(
-			timetrigger.SpecConfiguration{
+			&timetrigger.SpecConfiguration{
 				Triggers:   common.InternalTimeTriggers{},
 				Conditions: []*common.SpecCondition{},
 			})
@@ -93,11 +93,11 @@ func New(tp ContentType) *Definition {
 // IntoProto returns the proto object from Definition
 // that is - vegapb.DataSourceDefinition that may have external or internal SourceType.
 // Returns the whole proto object.
-func (s *Definition) IntoProto() *vegapb.DataSourceDefinition {
+func (s *Definition) IntoProto(cid uint64) *vegapb.DataSourceDefinition {
 	if s.DataSourceType == nil {
 		return &vegapb.DataSourceDefinition{}
 	}
-	proto, err := s.ToDefinitionProto()
+	proto, err := s.ToDefinitionProto(cid)
 	if err != nil {
 		// TODO: bubble error
 		return &vegapb.DataSourceDefinition{}
@@ -156,7 +156,7 @@ func (s *Definition) GetSigners() []*common.Signer {
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
-		case signedoracle.SpecConfiguration:
+		case *signedoracle.SpecConfiguration:
 			signers = tp.Signers
 		}
 	}
@@ -171,13 +171,13 @@ func (s *Definition) GetFilters() []*common.SpecFilter {
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
-		case signedoracle.SpecConfiguration:
+		case *signedoracle.SpecConfiguration:
 			filters = tp.Filters
 
-		case ethcallcommon.Spec:
+		case *ethcallcommon.Spec:
 			filters = tp.Filters
 
-		case vegatime.SpecConfiguration:
+		case *vegatime.SpecConfiguration:
 			// TODO: Fix this to use the same method as in the vegatime package (example: as below)
 			// For the case the internal data source is time based
 			// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
@@ -198,7 +198,7 @@ func (s *Definition) GetFilters() []*common.SpecFilter {
 				)
 			}
 
-		case timetrigger.SpecConfiguration:
+		case *timetrigger.SpecConfiguration:
 			sc := s.GetInternalTimeTriggerSpecConfiguration()
 			filters = sc.GetFilters()
 		}
@@ -209,67 +209,61 @@ func (s *Definition) GetFilters() []*common.SpecFilter {
 
 // GetSignedOracleSpecConfiguration returns the base object - vega oracle SpecConfiguration
 // from the Definition.
-func (s *Definition) GetSignedOracleSpecConfiguration() signedoracle.SpecConfiguration {
+func (s *Definition) GetSignedOracleSpecConfiguration() *signedoracle.SpecConfiguration {
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
-		case signedoracle.SpecConfiguration:
+		case *signedoracle.SpecConfiguration:
 			return tp
 		}
 	}
 
-	return signedoracle.SpecConfiguration{}
+	return &signedoracle.SpecConfiguration{}
 }
 
 // GetEthCallSpec returns the base object - EthCallSpec
 // from the Definition.
-func (s *Definition) GetEthCallSpec() ethcallcommon.Spec {
+func (s *Definition) GetEthCallSpec() *ethcallcommon.Spec {
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
-		case ethcallcommon.Spec:
+		case *ethcallcommon.Spec:
 			return tp
 		}
 	}
 
-	return ethcallcommon.Spec{}
+	return &ethcallcommon.Spec{}
 }
 
 func (s *Definition) IsEthCallSpec() bool {
 	data := s.Content()
-	if data != nil {
-		switch data.(type) {
-		case ethcallcommon.Spec:
-			return true
-		}
+	if data == nil {
+		return false
 	}
-
-	return false
+	_, ok := data.(*ethcallcommon.Spec)
+	return ok
 }
 
 // Definition is also a `Timer`.
-func (s *Definition) GetTimeTriggers() common.InternalTimeTriggers {
+func (s *Definition) GetTimeTriggers() *common.InternalTimeTriggers {
 	data := s.Content()
 	if data != nil {
 		switch tp := data.(type) {
-		case timetrigger.SpecConfiguration:
+		case *timetrigger.SpecConfiguration:
 			return tp.GetTimeTriggers()
 		}
 	}
 
-	return common.InternalTimeTriggers{}
+	return &common.InternalTimeTriggers{}
 }
 
 func (s *Definition) IsTriggered(tm time.Time) bool {
 	data := s.Content()
-	if data != nil {
-		switch tp := data.(type) {
-		case timetrigger.SpecConfiguration:
-			return tp.IsTriggered(tm)
-		}
+	if data == nil {
+		return false
 	}
-
-	return false
+	_, ok := data.(*timetrigger.SpecConfiguration)
+	return ok
 }
 
 // UpdateFilters updates the Definition Filters.
@@ -295,15 +289,15 @@ func (s *Definition) UpdateFilters(filters []*common.SpecFilter) error {
 	}
 
 	switch content := s.DataSourceType.DeepClone().(type) {
-	case signedoracle.SpecConfiguration:
+	case *signedoracle.SpecConfiguration:
 		content.Filters = filters
 		s.DataSourceType = content
 
-	case ethcallcommon.Spec:
+	case *ethcallcommon.Spec:
 		content.Filters = filters
 		s.DataSourceType = content
 
-	case vegatime.SpecConfiguration:
+	case *vegatime.SpecConfiguration:
 		// The data source definition is an internal time based source
 		// For this case we take only the first item from the list of filters
 		// https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
@@ -316,7 +310,7 @@ func (s *Definition) UpdateFilters(filters []*common.SpecFilter) error {
 		content.Conditions = c
 		s.DataSourceType = content
 
-	case timetrigger.SpecConfiguration:
+	case *timetrigger.SpecConfiguration:
 		c := []*common.SpecCondition{}
 		if len(filters) > 0 {
 			for _, f := range filters {
@@ -336,12 +330,12 @@ func (s *Definition) UpdateFilters(filters []*common.SpecFilter) error {
 
 func (s *Definition) SetFilterDecimals(d uint64) *Definition {
 	switch content := s.DataSourceType.DeepClone().(type) {
-	case signedoracle.SpecConfiguration:
+	case *signedoracle.SpecConfiguration:
 		for i := range content.Filters {
 			content.Filters[i].Key.NumberDecimalPlaces = &d
 		}
 		s.DataSourceType = content
-	case ethcallcommon.Spec:
+	case *ethcallcommon.Spec:
 		for i := range content.Filters {
 			content.Filters[i].Key.NumberDecimalPlaces = &d
 		}
@@ -358,11 +352,11 @@ func (s *Definition) SetFilterDecimals(d uint64) *Definition {
 // If the receiver is not external oracle type data source - it is not changed.
 // This method does not care about object previous contents.
 func (s *Definition) SetOracleConfig(oc common.DataSourceType) *Definition {
-	if _, ok := s.DataSourceType.(signedoracle.SpecConfiguration); ok {
+	if _, ok := s.DataSourceType.(*signedoracle.SpecConfiguration); ok {
 		s.DataSourceType = oc.DeepClone()
 	}
 
-	if _, ok := s.DataSourceType.(ethcallcommon.Spec); ok {
+	if _, ok := s.DataSourceType.(*ethcallcommon.Spec); ok {
 		s.DataSourceType = oc.DeepClone()
 	}
 
@@ -373,14 +367,14 @@ func (s *Definition) SetOracleConfig(oc common.DataSourceType) *Definition {
 // If the receiver is not a time triggered data source - it does not set anything to it.
 // This method does not care about object previous contents.
 func (s *Definition) SetTimeTriggerConditionConfig(c []*common.SpecCondition) *Definition {
-	if _, ok := s.DataSourceType.(vegatime.SpecConfiguration); ok {
-		s.DataSourceType = vegatime.SpecConfiguration{
+	if _, ok := s.DataSourceType.(*vegatime.SpecConfiguration); ok {
+		s.DataSourceType = &vegatime.SpecConfiguration{
 			Conditions: c,
 		}
 	}
 
-	if sc, ok := s.DataSourceType.(timetrigger.SpecConfiguration); ok {
-		s.DataSourceType = timetrigger.SpecConfiguration{
+	if sc, ok := s.DataSourceType.(*timetrigger.SpecConfiguration); ok {
+		s.DataSourceType = &timetrigger.SpecConfiguration{
 			Triggers:   sc.Triggers,
 			Conditions: c,
 		}
@@ -389,8 +383,8 @@ func (s *Definition) SetTimeTriggerConditionConfig(c []*common.SpecCondition) *D
 }
 
 func (s *Definition) SetTimeTriggerTriggersConfig(tr common.InternalTimeTriggers) *Definition {
-	if sc, ok := s.DataSourceType.(timetrigger.SpecConfiguration); ok {
-		s.DataSourceType = timetrigger.SpecConfiguration{
+	if sc, ok := s.DataSourceType.(*timetrigger.SpecConfiguration); ok {
+		s.DataSourceType = &timetrigger.SpecConfiguration{
 			Triggers:   tr,
 			Conditions: sc.Conditions,
 		}
@@ -398,34 +392,34 @@ func (s *Definition) SetTimeTriggerTriggersConfig(tr common.InternalTimeTriggers
 	return s
 }
 
-func (s *Definition) GetVegaTimeSpecConfiguration() vegatime.SpecConfiguration {
+func (s *Definition) GetVegaTimeSpecConfiguration() *vegatime.SpecConfiguration {
 	data := s.Content()
 	switch tp := data.(type) {
-	case vegatime.SpecConfiguration:
+	case *vegatime.SpecConfiguration:
 		return tp
 	}
 
-	return vegatime.SpecConfiguration{}
+	return &vegatime.SpecConfiguration{}
 }
 
-func (s *Definition) GetInternalTimeTriggerSpecConfiguration() timetrigger.SpecConfiguration {
+func (s *Definition) GetInternalTimeTriggerSpecConfiguration() *timetrigger.SpecConfiguration {
 	data := s.Content()
 	switch tp := data.(type) {
-	case timetrigger.SpecConfiguration:
+	case *timetrigger.SpecConfiguration:
 		return tp
 	}
-	return timetrigger.SpecConfiguration{}
+	return &timetrigger.SpecConfiguration{}
 }
 
 func (s *Definition) IsExternal() (bool, error) {
 	switch s.DataSourceType.(type) {
-	case signedoracle.SpecConfiguration:
+	case *signedoracle.SpecConfiguration:
 		return true, nil
-	case ethcallcommon.Spec:
+	case *ethcallcommon.Spec:
 		return true, nil
-	case vegatime.SpecConfiguration:
+	case *vegatime.SpecConfiguration:
 		return false, nil
-	case timetrigger.SpecConfiguration:
+	case *timetrigger.SpecConfiguration:
 		return false, nil
 	}
 	return false, errors.New("unknown type of data source provided")
@@ -433,13 +427,13 @@ func (s *Definition) IsExternal() (bool, error) {
 
 func (s *Definition) Type() (ContentType, bool) {
 	switch s.DataSourceType.(type) {
-	case signedoracle.SpecConfiguration:
+	case *signedoracle.SpecConfiguration:
 		return ContentTypeOracle, true
-	case ethcallcommon.Spec:
+	case *ethcallcommon.Spec:
 		return ContentTypeEthOracle, true
-	case vegatime.SpecConfiguration:
+	case *vegatime.SpecConfiguration:
 		return ContentTypeInternalTimeTermination, false
-	case timetrigger.SpecConfiguration:
+	case *timetrigger.SpecConfiguration:
 		return ContentTypeInternalTimeTriggerTermination, false
 	}
 	return ContentTypeInvalid, false
@@ -447,13 +441,13 @@ func (s *Definition) Type() (ContentType, bool) {
 
 func (s *Definition) GetSpecConfiguration() common.DataSourceType {
 	switch s.DataSourceType.(type) {
-	case signedoracle.SpecConfiguration:
+	case *signedoracle.SpecConfiguration:
 		return s.GetSignedOracleSpecConfiguration()
-	case ethcallcommon.Spec:
+	case *ethcallcommon.Spec:
 		return s.GetEthCallSpec()
-	case vegatime.SpecConfiguration:
+	case *vegatime.SpecConfiguration:
 		return s.GetVegaTimeSpecConfiguration()
-	case timetrigger.SpecConfiguration:
+	case *timetrigger.SpecConfiguration:
 		return s.GetInternalTimeTriggerSpecConfiguration()
 	}
 

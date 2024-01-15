@@ -46,14 +46,14 @@ type Spec struct {
 	L2ChainID             uint64
 }
 
-func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
+func SpecFromProto(proto *vegapb.EthCallSpec) (*Spec, error) {
 	if proto == nil {
-		return Spec{}, ErrCallSpecIsNil
+		return nil, ErrCallSpecIsNil
 	}
 
 	trigger, err := TriggerFromProto(proto.Trigger)
 	if err != nil {
-		return Spec{}, errors.Join(ErrInvalidCallTrigger, err)
+		return nil, errors.Join(ErrInvalidCallTrigger, err)
 	}
 
 	filters := common.SpecFiltersFromProto(proto.Filters)
@@ -64,7 +64,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 	for _, protoArg := range proto.Args {
 		jsonArg, err := protoArg.MarshalJSON()
 		if err != nil {
-			return Spec{}, errors.Join(ErrInvalidCallArgs, err)
+			return nil, errors.Join(ErrInvalidCallArgs, err)
 		}
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}
@@ -74,13 +74,13 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 		normalisers[v.Name] = v.Expression
 	}
 
-	// default to ethereum mainnet
-	var chainID uint64 = 1
+	// default to zero, indicating chain ID wasn't set
+	var chainID uint64 = 0
 	if proto.L2ChainId != nil {
 		chainID = *proto.L2ChainId
 	}
 
-	return Spec{
+	return &Spec{
 		Address:               proto.Address,
 		AbiJson:               abiBytes,
 		Method:                proto.Method,
@@ -128,7 +128,10 @@ func (s Spec) IntoProto() (*vegapb.EthCallSpec, error) {
 	}, nil
 }
 
-func (s Spec) ToDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+func (s *Spec) ToDefinitionProto(cid uint64) (*vegapb.DataSourceDefinition, error) {
+	if s.L2ChainID == 0 && cid != 0 {
+		s.L2ChainID = cid
+	}
 	eth, err := s.IntoProto()
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert to eth oracle proto: %w", err)
@@ -161,11 +164,11 @@ func (s Spec) DeepClone() common.DataSourceType {
 		clonedNormalisers[key] = value
 	}
 
-	return Spec{
+	return &Spec{
 		Address:               s.Address,
 		AbiJson:               s.AbiJson,
 		Method:                s.Method,
-		ArgsJson:              append([]string(nil), s.ArgsJson...),
+		ArgsJson:              s.ArgsJson[:],
 		Trigger:               s.Trigger,
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(common.SpecFilters(nil), s.Filters...),

@@ -36,20 +36,17 @@ import (
 //go:embed testdata/*
 var testData embed.FS
 
+type chainClient struct {
+	*backends.SimulatedBackend
+	chainID int64
+}
+
 type ToyChain struct {
 	key          *ecdsa.PrivateKey
-	client       *Client
+	client       *chainClient
 	addr         common.Address
 	contractAddr common.Address
 	abiBytes     []byte
-}
-
-type Client struct {
-	*backends.SimulatedBackend
-}
-
-func (c *Client) ChainID(context.Context) (*big.Int, error) {
-	return big.NewInt(1337), nil
 }
 
 func NewToyChain() (*ToyChain, error) {
@@ -73,6 +70,10 @@ func NewToyChain() (*ToyChain, error) {
 			addr: {Balance: big.NewInt(10000000000000000)},
 		}, 10000000,
 	)
+	cc := &chainClient{
+		SimulatedBackend: client,
+		chainID:          1337,
+	}
 
 	// Read in contract ABI
 	contractAbiBytes, err := testData.ReadFile("testdata/MyContract.abi")
@@ -97,13 +98,18 @@ func NewToyChain() (*ToyChain, error) {
 		return nil, fmt.Errorf("could not deploy contract")
 	}
 
-	client.Commit()
+	cc.Commit()
 
 	return &ToyChain{
 		key:          key,
-		client:       &Client{client},
+		client:       cc,
 		addr:         addr,
 		contractAddr: contractAddr,
 		abiBytes:     contractAbiBytes,
 	}, nil
+}
+
+func (c *chainClient) ChainID(_ context.Context) (*big.Int, error) {
+	i := big.NewInt(c.chainID)
+	return i, nil
 }

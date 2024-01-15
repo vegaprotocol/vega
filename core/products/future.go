@@ -258,11 +258,11 @@ func (f *Future) Update(ctx context.Context, pp interface{}, oe OracleEngine) er
 
 	// subscribe to new
 	// Oracle spec for settlement data.
-	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForSettlementData.Data))
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForSettlementData.Data, 0))
 	if err != nil {
 		return err
 	}
-	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForTradingTermination.Data))
+	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*cfg.DataSourceSpecForTradingTermination.Data, 0))
 	if err != nil {
 		return err
 	}
@@ -300,11 +300,11 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	// Oracle spec for settlement data.
-	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data))
+	osForSettle, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForSettlementData.Data, 0))
 	if err != nil {
 		return nil, err
 	}
-	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data))
+	osForTerm, err := spec.New(*datasource.SpecFromDefinition(*f.DataSourceSpecForTradingTermination.Data, 0))
 	if err != nil {
 		return nil, err
 	}
