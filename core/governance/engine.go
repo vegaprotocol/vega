@@ -141,6 +141,8 @@ type Engine struct {
 
 	// snapshot state
 	gss *governanceSnapshotState
+	// main chain ID
+	chainID uint64
 }
 
 func NewEngine(
@@ -1317,6 +1319,11 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	}
 
 	return newAsset, types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) OnChainIDUpdate(cID uint64) error {
+	e.chainID = cID
+	return nil
 }
 
 func getTokensBalance(accounts StakingAccounts, partyID string) *num.Uint {

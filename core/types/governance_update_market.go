@@ -238,6 +238,36 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 	return r
 }
 
+// func (n NewMarketConfiguration) GetPerps() *InstrumentConfigurationPerps {
+func (n UpdateMarketConfiguration) GetPerps() *UpdateInstrumentConfigurationPerps {
+	if n.GetProductType() == ProductTypePerps {
+		ret, _ := n.Instrument.Product.(*UpdateInstrumentConfigurationPerps)
+		return ret
+	}
+	return nil
+}
+
+func (n UpdateMarketConfiguration) GetFuture() *UpdateInstrumentConfigurationFuture {
+	if n.GetProductType() == ProductTypeFuture {
+		ret, _ := n.Instrument.Product.(*UpdateInstrumentConfigurationFuture)
+		return ret
+	}
+	return nil
+}
+
+func (n UpdateMarketConfiguration) GetProductType() ProductType {
+	if n.Instrument == nil || n.Instrument.Product == nil {
+		return ProductTypeUnspecified
+	}
+	switch n.Instrument.Product.(type) {
+	case *UpdateInstrumentConfigurationFuture:
+		return ProductTypeFuture
+	case *UpdateInstrumentConfigurationPerps:
+		return ProductTypePerps
+	}
+	return ProductTypeUnspecified // maybe spot?
+}
+
 func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*UpdateMarketConfiguration, error) {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
@@ -307,6 +337,7 @@ type UpdateInstrumentConfiguration struct {
 	Code string
 	Name string
 	// *UpdateInstrumentConfigurationFuture
+	// *UpdateInstrumentConfigurationPerps
 	Product updateInstrumentConfigurationProduct
 }
 

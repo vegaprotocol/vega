@@ -22,10 +22,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -163,6 +165,10 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*future.Market, error) {
 	marketConfig := em.Market
+	// ensure the default chain ID is set, can be removed after protocol upgrade
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+		e.ensureChainIDSet(marketConfig)
+	}
 
 	if len(marketConfig.ID) == 0 {
 		return nil, ErrNoMarketID
@@ -242,6 +248,50 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 
 	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
+}
+
+func (e *Engine) ensureChainIDSet(marketConfig *types.Market) {
+	if perp := marketConfig.GetPerps(); perp != nil {
+		if perp.Perps.DataSourceSpecForSettlementData != nil && perp.Perps.DataSourceSpecForSettlementData.Data != nil {
+			switch ct := perp.Perps.DataSourceSpecForSettlementData.Data.DataSourceType.(type) {
+			case ethcallcommon.Spec:
+				if ct.L2ChainID == 0 {
+					ct.L2ChainID = e.npv.chainID
+					perp.Perps.DataSourceSpecForSettlementData.Data.DataSourceType = ct
+				}
+			}
+		}
+		if perp.Perps.DataSourceSpecForSettlementSchedule != nil && perp.Perps.DataSourceSpecForSettlementSchedule.Data != nil {
+			switch ct := perp.Perps.DataSourceSpecForSettlementSchedule.Data.DataSourceType.(type) {
+			case ethcallcommon.Spec:
+				if ct.L2ChainID == 0 {
+					ct.L2ChainID = e.npv.chainID
+					perp.Perps.DataSourceSpecForSettlementSchedule.Data.DataSourceType = ct
+				}
+			}
+		}
+		return
+	}
+	if future := marketConfig.GetFuture(); future != nil {
+		if future.Future.DataSourceSpecForSettlementData != nil && future.Future.DataSourceSpecForSettlementData.Data != nil {
+			switch ft := future.Future.DataSourceSpecForSettlementData.Data.DataSourceType.(type) {
+			case ethcallcommon.Spec:
+				if ft.L2ChainID == 0 {
+					ft.L2ChainID = e.npv.chainID
+					future.Future.DataSourceSpecForSettlementData.Data.DataSourceType = ft
+				}
+			}
+		}
+		if future.Future.DataSourceSpecForTradingTermination != nil && future.Future.DataSourceSpecForTradingTermination.Data != nil {
+			switch ft := future.Future.DataSourceSpecForTradingTermination.Data.DataSourceType.(type) {
+			case ethcallcommon.Spec:
+				if ft.L2ChainID == 0 {
+					ft.L2ChainID = e.npv.chainID
+					future.Future.DataSourceSpecForTradingTermination.Data.DataSourceType = ft
+				}
+			}
+		}
+	}
 }
 
 func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMarket) ([]types.StateProvider, error) {

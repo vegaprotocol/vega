@@ -139,6 +139,9 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
 	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
+
+	// only used for protocol upgrade to v0.74
+	chainID uint64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -1899,6 +1902,11 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 		}
 	}
 	e.successorWindow = window
+	return nil
+}
+
+func (e *Engine) OnChainIDUpdate(cID uint64) error {
+	e.npv.chainID = cID
 	return nil
 }
 

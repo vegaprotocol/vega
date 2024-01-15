@@ -13,6 +13,7 @@ import (
 	common "code.vegaprotocol.io/vega/core/datasource/common"
 	common0 "code.vegaprotocol.io/vega/core/execution/common"
 	governance "code.vegaprotocol.io/vega/core/governance"
+	netparams "code.vegaprotocol.io/vega/core/netparams"
 	types "code.vegaprotocol.io/vega/core/types"
 	crypto "code.vegaprotocol.io/vega/libs/crypto"
 	num "code.vegaprotocol.io/vega/libs/num"
@@ -375,6 +376,20 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockExecutionEngine)(nil).Hash))
 }
 
+// OnChainIDUpdate mocks base method.
+func (m *MockExecutionEngine) OnChainIDUpdate(arg0 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnChainIDUpdate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnChainIDUpdate indicates an expected call of OnChainIDUpdate.
+func (mr *MockExecutionEngineMockRecorder) OnChainIDUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainIDUpdate", reflect.TypeOf((*MockExecutionEngine)(nil).OnChainIDUpdate), arg0)
+}
+
 // RejectMarket mocks base method.
 func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -620,6 +635,20 @@ func (m *MockGovernanceEngine) Hash() []byte {
 func (mr *MockGovernanceEngineMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockGovernanceEngine)(nil).Hash))
+}
+
+// OnChainIDUpdate mocks base method.
+func (m *MockGovernanceEngine) OnChainIDUpdate(arg0 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnChainIDUpdate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnChainIDUpdate indicates an expected call of OnChainIDUpdate.
+func (mr *MockGovernanceEngineMockRecorder) OnChainIDUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainIDUpdate", reflect.TypeOf((*MockGovernanceEngine)(nil).OnChainIDUpdate), arg0)
 }
 
 // OnTick mocks base method.
@@ -1837,6 +1866,20 @@ func (m *MockNetworkParameters) GetInt(arg0 string) (int64, error) {
 func (mr *MockNetworkParametersMockRecorder) GetInt(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockNetworkParameters)(nil).GetInt), arg0)
+}
+
+// GetJSONStruct mocks base method.
+func (m *MockNetworkParameters) GetJSONStruct(arg0 string, arg1 netparams.Reset) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetJSONStruct", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetJSONStruct indicates an expected call of GetJSONStruct.
+func (mr *MockNetworkParametersMockRecorder) GetJSONStruct(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJSONStruct", reflect.TypeOf((*MockNetworkParameters)(nil).GetJSONStruct), arg0, arg1)
 }
 
 // IsUpdateAllowed mocks base method.
