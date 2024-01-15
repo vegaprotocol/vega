@@ -91,10 +91,12 @@ Feature: Test setting of mark price
     Then the mark price should be "15939" for the market "ETH/FEB23"
     Then the mark price should be "15939" for the market "ETH/FEB22"
 
+    #AC 0009-MRKP-020,0009-MRKP-021
     #book mark price is stale, and we only have trade mark price available
     When the network moves ahead "4" blocks
     Then the mark price should be "15979" for the market "ETH/FEB23"
     Then the mark price should be "15979" for the market "ETH/FEB22"
+
 
 
 
