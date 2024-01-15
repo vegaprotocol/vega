@@ -83,6 +83,8 @@ http:
       get: "/api/v2/party/{party_id}"
     - selector: datanode.api.v2.TradingDataService.ListParties
       get: "/api/v2/parties"
+    - selector: datanode.api.v2.TradingDataService.ListPartiesProfiles
+      get: "/api/v2/parties/profiles"
     - selector: datanode.api.v2.TradingDataService.ListMarginLevels
       get: "/api/v2/margin/levels"
     - selector: datanode.api.v2.TradingDataService.ListRewards

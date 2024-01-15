@@ -741,6 +741,19 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
+	req := v2.ListPartiesProfilesRequest{
+		Parties:    ids,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListPartiesProfiles(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Profiles, nil
+}
+
 func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error) {
 	req := v2.ListPartyMarginModesRequest{
 		MarketId:   marketID,

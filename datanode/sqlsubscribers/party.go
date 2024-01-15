@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )
@@ -30,8 +31,14 @@ type PartyEvent interface {
 	Party() types.Party
 }
 
+type PartyProfileUpdatedEvent interface {
+	events.Event
+	PartyProfileUpdated() *eventspb.PartyProfileUpdated
+}
+
 type PartyStore interface {
 	Add(context.Context, entities.Party) error
+	UpdateProfile(ctx context.Context, updated *entities.PartyProfile) error
 }
 
 type Party struct {
@@ -47,18 +54,32 @@ func NewParty(store PartyStore) *Party {
 }
 
 func (ps *Party) Types() []events.Type {
-	return []events.Type{events.PartyEvent}
+	return []events.Type{events.PartyEvent, events.PartyProfileUpdatedEvent}
 }
 
 func (ps *Party) Push(ctx context.Context, evt events.Event) error {
-	return ps.consume(ctx, evt.(PartyEvent))
+	switch e := evt.(type) {
+	case PartyEvent:
+		return ps.consumeNewParty(ctx, e)
+	case PartyProfileUpdatedEvent:
+		return ps.consumePartyProfileUpdated(ctx, e)
+	default:
+		return nil
+	}
 }
 
-func (ps *Party) consume(ctx context.Context, event PartyEvent) error {
+func (ps *Party) consumeNewParty(ctx context.Context, event PartyEvent) error {
 	pp := event.Party().IntoProto()
 	p := entities.PartyFromProto(pp, entities.TxHash(event.TxHash()))
 	vt := ps.vegaTime
 	p.VegaTime = &vt
 
-	return errors.Wrap(ps.store.Add(ctx, p), "error adding party:%w")
+	return errors.Wrap(ps.store.Add(ctx, p), "adding party")
+}
+
+func (ps *Party) consumePartyProfileUpdated(ctx context.Context, e PartyProfileUpdatedEvent) error {
+	updateEvent := e.PartyProfileUpdated()
+	updated := entities.PartyProfileFromProto(updateEvent.UpdatedProfile)
+
+	return errors.Wrap(ps.store.UpdateProfile(ctx, updated), "updating party profile")
 }

@@ -172,9 +172,10 @@ var (
 	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")
 	ErrCandleServiceGetCandlesForMarket = errors.New("failed to get candles for market")
 	// PartyService...
-	ErrPartyServiceGetAll      = errors.New("failed to get parties")
-	ErrPartyServiceGetByID     = errors.New("failed to get party for ID")
-	ErrPartyServiceGetByTxHash = errors.New("failed to get parties for tx hash")
+	ErrPartyServiceGetAll       = errors.New("failed to get parties")
+	ErrPartyServiceListProfiles = errors.New("failed to get parties' profiles")
+	ErrPartyServiceGetByID      = errors.New("failed to get party for ID")
+	ErrPartyServiceGetByTxHash  = errors.New("failed to get parties for tx hash")
 	// NotaryService...
 	ErrNotaryServiceGetByResourceID = errors.New("failed to get notary for resource ID")
 	// OracleSpecService...
