@@ -13,7 +13,7 @@ import (
 	common "code.vegaprotocol.io/vega/core/datasource/common"
 	common0 "code.vegaprotocol.io/vega/core/execution/common"
 	governance "code.vegaprotocol.io/vega/core/governance"
-	processor "code.vegaprotocol.io/vega/core/processor"
+	netparams "code.vegaprotocol.io/vega/core/netparams"
 	types "code.vegaprotocol.io/vega/core/types"
 	crypto "code.vegaprotocol.io/vega/libs/crypto"
 	num "code.vegaprotocol.io/vega/libs/num"
@@ -1855,7 +1855,7 @@ func (mr *MockNetworkParametersMockRecorder) GetInt(arg0 interface{}) *gomock.Ca
 }
 
 // GetJSONStruct mocks base method.
-func (m *MockNetworkParameters) GetJSONStruct(arg0 string, arg1 processor.Reset) error {
+func (m *MockNetworkParameters) GetJSONStruct(arg0 string, arg1 netparams.Reset) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetJSONStruct", arg0, arg1)
 	ret0, _ := ret[0].(error)

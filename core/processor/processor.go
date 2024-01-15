@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -231,17 +232,13 @@ type Banking interface {
 	CancelGovTransfer(ctx context.Context, ID string) error
 }
 
-type Reset interface {
-	Reset()
-}
-
 // NetworkParameters ...
 type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
 	GetInt(key string) (int64, error)
-	GetJSONStruct(key string, v Reset) error
+	GetJSONStruct(key string, v netparams.Reset) error
 }
 
 type Oracle struct {

@@ -173,7 +173,7 @@ func testPerpetualSnapshot(t *testing.T, ctrl *gomock.Controller, state *snapsho
 			},
 		},
 	)
-	scheduleSrc := datasource.SpecFromProto(vegapb.NewDataSourceSpec(definition.IntoProto()))
+	scheduleSrc := datasource.SpecFromProto(vegapb.NewDataSourceSpec(definition.IntoProto(1)))
 
 	perp := &types.Perps{
 		MarginFundingFactor:                 factor,
