@@ -225,6 +225,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the mark price algo should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheMarkPriceAlgoShouldBeForMarket(execsetup.broker, marketID, mpAlgo)
+	})
+
 	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {
 		return steps.TheLastStateUpdateShouldBeForMarket(execsetup.broker, marketID, mState)
 	})
