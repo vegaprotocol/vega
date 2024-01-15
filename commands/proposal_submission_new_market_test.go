@@ -6324,10 +6324,19 @@ func getCompositePriceConfigurationCases() []compositePriceConfigCase {
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
-				SourceWeights: []string{"0", "0", "0", "0"},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceWeights:      []string{"0", "0", "0", "0"},
 			},
 			field: "source_weights",
 			err:   fmt.Errorf("must have at least one none zero weight"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceWeights:      []string{"0", "0", "0", "0"},
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
