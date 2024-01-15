@@ -144,6 +144,7 @@ message Payload {
     BankingTransferFeeDiscounts banking_transfer_fee_discounts = 81;
     GovernanceBatchActive governance_batch_active = 82;
     Parties parties = 83;
+    L2EthOracles l2_eth_oracles = 84;
   }
 }
 
@@ -809,6 +810,16 @@ message StakeVerifierPending {
   uint64 log_index = 6;
   string tx_id = 7;
   string id = 8;
+}
+
+message L2EthOracles {
+  repeated ChainIdEthOracles chain_id_eth_oracles = 1;
+}
+
+message ChainIdEthOracles {
+  string source_chain_id = 1;
+  EthOracleVerifierLastBlock last_block = 2;
+  EthContractCallResults call_results = 3;
 }
 
 message EthOracleVerifierLastBlock {
