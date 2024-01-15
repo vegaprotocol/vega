@@ -88,21 +88,20 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 		if _, ok := v.verifiers[c.ChainID]; ok {
 			continue
 		}
-		v.verifiers[c.ChainID] = v.instanciate(c.NetworkID, c.ChainID)
+		v.verifiers[c.ChainID] = v.instanciate(c.ChainID)
 	}
 
 	return nil
 }
 
-func (v *L2Verifiers) instanciate(networkID, chainID string) *Verifier {
+func (v *L2Verifiers) instanciate(chainID string) *Verifier {
 	var confs *eth.EthereumConfirmations
 	if v.isValidator {
 		var ok bool
-		_, confs, ok = v.clients.Get(networkID)
+		_, confs, ok = v.clients.Get(chainID)
 		if !ok {
 			v.log.Panic("ethereum client not configured for L2",
 				logging.String("chain-id", chainID),
-				logging.String("network-id", networkID),
 			)
 		}
 	}

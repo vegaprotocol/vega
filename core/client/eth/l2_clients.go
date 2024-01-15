@@ -35,7 +35,7 @@ type L2Client struct {
 type L2Clients struct {
 	ctx context.Context
 	log *logging.Logger
-	// map of networkID -> Client
+	// map of chainID -> Client
 	clients       map[string]*L2Client
 	confirmations map[string]*EthereumConfirmations
 }
@@ -54,10 +54,10 @@ func NewL2Clients(
 
 	for _, v := range cfg.L2Configs {
 		log.Info("starting L2 client",
-			logging.String("network-id", v.NetworkID),
+			logging.String("network-id", v.ChainID),
 			logging.String("endpoint", v.RPCEndpoint),
 		)
-		if len(v.NetworkID) <= 0 || len(v.RPCEndpoint) <= 0 {
+		if len(v.ChainID) <= 0 || len(v.RPCEndpoint) <= 0 {
 			return nil, errors.New("l2 rpc endpoint configured with empty strings")
 		}
 		clt, err := DialL2(ctx, v.RPCEndpoint)
@@ -65,17 +65,17 @@ func NewL2Clients(
 			return nil, err
 		}
 
-		networkID, err := clt.NetworkID(ctx)
+		networkID, err := clt.ChainID(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't get network id: %w", err)
 		}
 
-		if networkID.String() != v.NetworkID {
-			return nil, fmt.Errorf("client retrieve different network id: %v vs %v", networkID.String(), v.NetworkID)
+		if networkID.String() != v.ChainID {
+			return nil, fmt.Errorf("client retrieve different network id: %v vs %v", networkID.String(), v.ChainID)
 		}
 
-		clients[v.NetworkID] = clt
-		confirmations[v.NetworkID] = NewEthereumConfirmations(
+		clients[v.ChainID] = clt
+		confirmations[v.ChainID] = NewEthereumConfirmations(
 			cfg, clt, nil)
 	}
 
@@ -89,7 +89,7 @@ func NewL2Clients(
 
 func (e *L2Clients) UpdateConfirmations(ethCfg *types.EthereumL2Configs) {
 	for _, v := range ethCfg.Configs {
-		confs, ok := e.confirmations[v.NetworkID]
+		confs, ok := e.confirmations[v.ChainID]
 		if !ok {
 			e.log.Panic("ethereum client for L2 is not configured", logging.String("name", v.Name), logging.String("chain-id", v.ChainID))
 		}
@@ -113,21 +113,21 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 
 	e.log.Info("updating L2 clients")
 	for _, v := range cfg.L2Configs {
-		if _, ok := e.clients[v.NetworkID]; ok {
+		if _, ok := e.clients[v.ChainID]; ok {
 			e.log.Warn("L2 client already setted up, please stop and restart node to update existing configuration",
-				logging.String("network-id", v.NetworkID),
+				logging.String("network-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
 		}
 
 		e.log.Info("starting L2 client",
-			logging.String("network-id", v.NetworkID),
+			logging.String("network-id", v.ChainID),
 			logging.String("endpoint", v.RPCEndpoint),
 		)
-		if len(v.NetworkID) <= 0 || len(v.RPCEndpoint) <= 0 {
+		if len(v.ChainID) <= 0 || len(v.RPCEndpoint) <= 0 {
 			e.log.Warn("invalid L2 client configuration",
-				logging.String("network-id", v.NetworkID),
+				logging.String("network-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
@@ -135,28 +135,28 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 		clt, err := DialL2(e.ctx, v.RPCEndpoint)
 		if err != nil {
 			e.log.Warn("couldn't start L2 client",
-				logging.String("network-id", v.NetworkID),
+				logging.String("network-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
 		}
 
-		networkID, err := clt.NetworkID(e.ctx)
+		networkID, err := clt.ChainID(e.ctx)
 		if err != nil {
 			e.log.Warn("couldn't get network id", logging.Error(err))
 			continue
 		}
 
-		if networkID.String() != v.NetworkID {
+		if networkID.String() != v.ChainID {
 			e.log.Warn("client retrieved different network id",
 				logging.String("network-id", networkID.String()),
-				logging.String("expected", v.NetworkID),
+				logging.String("expected", v.ChainID),
 			)
 			continue
 		}
 
-		e.clients[v.NetworkID] = clt
-		e.confirmations[v.NetworkID] = NewEthereumConfirmations(
+		e.clients[v.ChainID] = clt
+		e.confirmations[v.ChainID] = NewEthereumConfirmations(
 			cfg, clt, nil)
 	}
 }
