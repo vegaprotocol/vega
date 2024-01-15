@@ -45,11 +45,11 @@ Feature: Test setting of mark price
       | party1            | ETH/FEB22 | sell | 1      | 15904  | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider1 | ETH/FEB22 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |
 
-    #AC 0009-MRKP-120,0009-MRKP-121
+    #AC 0009-MRKP-120,0009-MRKP-121, 0009-MRKP-014,0009-MRKP-015
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB22"
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode  |
@@ -75,8 +75,8 @@ Feature: Test setting of mark price
     Then the mark price should be "15451" for the market "ETH/FEB22"
 
     And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 1      | 15904 | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15904 | 1                | TYPE_LIMIT | TIF_GTC |           |
       | buySideProvider1 | ETH/FEB22 | buy  | 1      | 15904 | 1                | TYPE_LIMIT | TIF_GTC |           |
     When the network moves ahead "2" blocks
     Then the mark price should be "15451" for the market "ETH/FEB23"
