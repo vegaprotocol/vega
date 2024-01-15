@@ -88,13 +88,13 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 		if _, ok := v.verifiers[c.ChainID]; ok {
 			continue
 		}
-		v.verifiers[c.ChainID] = v.instanciate(c.ChainID)
+		v.verifiers[c.ChainID] = v.instantiate(c.ChainID)
 	}
 
 	return nil
 }
 
-func (v *L2Verifiers) instanciate(chainID string) *Verifier {
+func (v *L2Verifiers) instantiate(chainID string) *Verifier {
 	var confs *eth.EthereumConfirmations
 	if v.isValidator {
 		var ok bool
