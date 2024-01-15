@@ -54,7 +54,7 @@ func NewL2Clients(
 
 	for _, v := range cfg.L2Configs {
 		log.Info("starting L2 client",
-			logging.String("network-id", v.ChainID),
+			logging.String("chain-id", v.ChainID),
 			logging.String("endpoint", v.RPCEndpoint),
 		)
 		if len(v.ChainID) <= 0 || len(v.RPCEndpoint) <= 0 {
@@ -115,19 +115,19 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 	for _, v := range cfg.L2Configs {
 		if _, ok := e.clients[v.ChainID]; ok {
 			e.log.Warn("L2 client already setted up, please stop and restart node to update existing configuration",
-				logging.String("network-id", v.ChainID),
+				logging.String("chain-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
 		}
 
 		e.log.Info("starting L2 client",
-			logging.String("network-id", v.ChainID),
+			logging.String("chain-id", v.ChainID),
 			logging.String("endpoint", v.RPCEndpoint),
 		)
 		if len(v.ChainID) <= 0 || len(v.RPCEndpoint) <= 0 {
 			e.log.Warn("invalid L2 client configuration",
-				logging.String("network-id", v.ChainID),
+				logging.String("chain-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
@@ -135,7 +135,7 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 		clt, err := DialL2(e.ctx, v.RPCEndpoint)
 		if err != nil {
 			e.log.Warn("couldn't start L2 client",
-				logging.String("network-id", v.ChainID),
+				logging.String("chain-id", v.ChainID),
 				logging.String("endpoint", v.RPCEndpoint),
 			)
 			continue
@@ -149,7 +149,7 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 
 		if networkID.String() != v.ChainID {
 			e.log.Warn("client retrieved different network id",
-				logging.String("network-id", networkID.String()),
+				logging.String("chain-id", networkID.String()),
 				logging.String("expected", v.ChainID),
 			)
 			continue
