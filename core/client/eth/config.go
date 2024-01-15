@@ -32,7 +32,7 @@ type Config struct {
 }
 
 type L2Config struct {
-	NetworkID   string
+	ChainID     string
 	RPCEndpoint string
 }
 
