@@ -272,6 +272,10 @@ type PayloadEthContractCallEvent struct {
 	EthContractCallEvent []*ethcall.ContractCallEvent
 }
 
+type PayloadL2EthOracles struct {
+	L2EthOracles *snapshot.L2EthOracles
+}
+
 type PayloadEpoch struct {
 	EpochState *EpochState
 }
@@ -983,6 +987,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadGovernanceBatchActiveFromProto(dt)
 	case *snapshot.Payload_Parties:
 		ret.Data = PayloadPartiesFromProto(dt)
+	case *snapshot.Payload_L2EthOracles:
+		ret.Data = PayloadL2EthOraclesFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1167,6 +1173,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_GovernanceBatchActive:
 		ret.Data = dt
 	case *snapshot.Payload_Parties:
+		ret.Data = dt
+	case *snapshot.Payload_L2EthOracles:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -4367,6 +4375,32 @@ func (*PayloadEthContractCallEvent) Key() string {
 
 func (*PayloadEthContractCallEvent) Namespace() SnapshotNamespace {
 	return EthereumOracleVerifierSnapshot
+}
+
+func PayloadL2EthOraclesFromProto(sp *snapshot.Payload_L2EthOracles) *PayloadL2EthOracles {
+	return &PayloadL2EthOracles{
+		L2EthOracles: sp.L2EthOracles,
+	}
+}
+
+func (p *PayloadL2EthOracles) IntoProto() *snapshot.Payload_L2EthOracles {
+	return &snapshot.Payload_L2EthOracles{
+		L2EthOracles: p.L2EthOracles,
+	}
+}
+
+func (*PayloadL2EthOracles) isPayload() {}
+
+func (p *PayloadL2EthOracles) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadL2EthOracles) Key() string {
+	return "l2EthOracles"
+}
+
+func (*PayloadL2EthOracles) Namespace() SnapshotNamespace {
+	return L2EthereumOraclesSnapshot
 }
 
 func PayloadEthOracleVerifierLastBlockFromProto(svd *snapshot.Payload_EthOracleVerifierLastBlock) *PayloadEthOracleLastBlock {

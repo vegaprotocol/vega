@@ -106,9 +106,6 @@ type Verifier struct {
 
 	mu     sync.Mutex
 	hashes map[string]struct{}
-
-	// snapshot data
-	snapshotState *verifierSnapshotState
 }
 
 type pendingCallEvent struct {
@@ -143,7 +140,6 @@ func New(
 		ethEngine:        ethCallEngine,
 		ethConfirmations: ethConfirmations,
 		hashes:           map[string]struct{}{},
-		snapshotState:    &verifierSnapshotState{},
 	}
 	return s
 }
