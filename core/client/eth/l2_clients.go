@@ -65,13 +65,13 @@ func NewL2Clients(
 			return nil, err
 		}
 
-		networkID, err := clt.ChainID(ctx)
+		chainID, err := clt.ChainID(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't get network id: %w", err)
+			return nil, fmt.Errorf("couldn't get chain id: %w", err)
 		}
 
-		if networkID.String() != v.ChainID {
-			return nil, fmt.Errorf("client retrieve different network id: %v vs %v", networkID.String(), v.ChainID)
+		if chainID.String() != v.ChainID {
+			return nil, fmt.Errorf("client retrieve different chain id: %v vs %v", chainID.String(), v.ChainID)
 		}
 
 		clients[v.ChainID] = clt
@@ -141,15 +141,15 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 			continue
 		}
 
-		networkID, err := clt.ChainID(e.ctx)
+		chainID, err := clt.ChainID(e.ctx)
 		if err != nil {
-			e.log.Warn("couldn't get network id", logging.Error(err))
+			e.log.Warn("couldn't get chain id", logging.Error(err))
 			continue
 		}
 
-		if networkID.String() != v.ChainID {
-			e.log.Warn("client retrieved different network id",
-				logging.String("chain-id", networkID.String()),
+		if chainID.String() != v.ChainID {
+			e.log.Warn("client retrieved different chain id",
+				logging.String("chain-id", chainID.String()),
 				logging.String("expected", v.ChainID),
 			)
 			continue
@@ -170,8 +170,8 @@ func DialL2(ctx context.Context, endpoint string) (*L2Client, error) {
 	return &L2Client{ETHClient: newEthClientWrapper(ethClient)}, nil
 }
 
-func (c *L2Clients) Get(networkID string) (*L2Client, *EthereumConfirmations, bool) {
-	clt, ok1 := c.clients[networkID]
-	confs, ok2 := c.confirmations[networkID]
+func (c *L2Clients) Get(chainID string) (*L2Client, *EthereumConfirmations, bool) {
+	clt, ok1 := c.clients[chainID]
+	confs, ok2 := c.confirmations[chainID]
 	return clt, confs, ok1 && ok2
 }
