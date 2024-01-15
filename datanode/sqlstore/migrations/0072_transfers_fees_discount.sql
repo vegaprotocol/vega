@@ -1,6 +1,6 @@
 -- +goose Up
 
-ALTER TABLE IF EXISTS transfer_fees ADD COLUMN discount_applied HUGEINT;
+ALTER TABLE IF EXISTS transfer_fees ADD COLUMN discount_applied HUGEINT DEFAULT (0);
 
 -- transfer_fees_discount table contains the per party, per party available transaction fee discount.
 CREATE TABLE IF NOT EXISTS transfer_fees_discount (

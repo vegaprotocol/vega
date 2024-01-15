@@ -3,6 +3,12 @@
 alter table transfers add column if not exists game_id bytea null;
 alter table rewards add column if not exists game_id bytea null;
 
+-- Make sure we refresh the view to account for the new column
+create or replace view transfers_current as
+(
+    SELECT DISTINCT ON (id, from_account_id, to_account_id) * FROM transfers ORDER BY id, from_account_id, to_account_id, vega_time DESC
+);
+
 create table game_reward_totals (
     game_id bytea not null,
     party_id bytea not null,
@@ -146,6 +152,7 @@ drop view if exists game_stats;
 drop view if exists game_individual_rankings;
 drop view if exists game_team_member_rankings;
 drop view if exists game_team_rankings;
+drop view if exists transfers_current;
 
 drop trigger if exists insert_game_reward_totals on game_reward_totals;
 drop function if exists insert_game_reward_totals;
@@ -153,3 +160,9 @@ drop table if exists game_reward_totals;
 
 alter table transfers drop column if exists game_id;
 alter table rewards drop column if exists game_id;
+
+-- Make sure we refresh the view to account for the new column
+create view transfers_current as
+(
+    SELECT DISTINCT ON (id, from_account_id, to_account_id) * FROM transfers ORDER BY id, from_account_id, to_account_id, vega_time DESC
+);
