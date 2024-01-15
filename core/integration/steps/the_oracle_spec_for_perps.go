@@ -66,9 +66,8 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 		}
 
 		indexPriceConfig := &protoTypes.CompositePriceConfiguration{}
-		if row.row.HasColumn("price type") {
-			indexPriceConfig.CompositePriceType = row.row.MarkPriceType()
-		}
+		indexPriceConfig.CompositePriceType = row.row.MarkPriceType()
+
 		if row.row.HasColumn("decay power") {
 			indexPriceConfig.DecayPower = row.DecayPower()
 		}
