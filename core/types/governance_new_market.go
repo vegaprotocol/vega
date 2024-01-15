@@ -41,6 +41,7 @@ const (
 	ProductTypeFuture ProductType = iota
 	ProductTypeSpot
 	ProductTypePerps
+	ProductTypeUnspecified // used on updates, if the product is not set
 )
 
 type ProposalTermsNewMarket struct {

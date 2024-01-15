@@ -147,6 +147,10 @@ func New(
 			Param:   netparams.SpamProtectionMaxBatchSize,
 			Watcher: proto.App.OnSpamProtectionMaxBatchSizeUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.BlockchainsEthereumConfig,
+			Watcher: proto.App.OnBlockchainEthereumConfigUpdate,
+		},
 	)
 
 	return proto, nil

@@ -56,6 +56,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -239,7 +240,8 @@ type App struct {
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize atomic.Uint64
+	maxBatchSize   atomic.Uint64
+	defaultChainID uint64
 }
 
 func NewApp(
@@ -611,6 +613,17 @@ func (app *App) ensureConfig() {
 	if app.cfg.KeepCheckpointsMax < 1 {
 		app.cfg.KeepCheckpointsMax = 1
 	}
+	v := &proto.EthereumConfig{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, v); err != nil {
+		return
+	}
+	cID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	if err != nil {
+		return
+	}
+	app.defaultChainID = cID
+	app.gov.OnChainIDUpdate(cID)
+	app.exec.OnChainIDUpdate(cID)
 }
 
 // ReloadConf updates the internal configuration.
@@ -2634,4 +2647,18 @@ func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
 	}
 
 	return nil
+}
+
+func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) error {
+	cfg, err := types.EthereumConfigFromUntypedProto(conf)
+	if err != nil {
+		return err
+	}
+	cID, err := strconv.ParseUint(cfg.ChainID(), 10, 64)
+	if err != nil {
+		return err
+	}
+	app.defaultChainID = cID
+	app.exec.OnChainIDUpdate(cID)
+	return app.gov.OnChainIDUpdate(cID)
 }
