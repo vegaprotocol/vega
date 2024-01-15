@@ -93,6 +93,7 @@ const (
 	SettlementSnapshot             SnapshotNamespace = "settlement"
 	HoldingAccountTrackerSnapshot  SnapshotNamespace = "holdingAccountTracker"
 	EthereumOracleVerifierSnapshot SnapshotNamespace = "ethereumoracleverifier"
+	L2EthereumOraclesSnapshot      SnapshotNamespace = "l2EthereumOracles"
 	TeamsSnapshot                  SnapshotNamespace = "teams"
 	VestingSnapshot                SnapshotNamespace = "vesting"
 	ReferralProgramSnapshot        SnapshotNamespace = "referralProgram"

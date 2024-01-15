@@ -88,30 +88,31 @@ func (v *L2Verifiers) OnEthereumL2ConfigsUpdated(
 		if _, ok := v.verifiers[c.ChainID]; ok {
 			continue
 		}
-
-		var confs *eth.EthereumConfirmations
-		if v.isValidator {
-			var ok bool
-			_, confs, ok = v.clients.Get(c.NetworkID)
-			if !ok {
-				v.log.Panic("ethereum client not configured for L2",
-					logging.String("chain-id", c.ChainID),
-					logging.String("network-id", c.NetworkID),
-				)
-			}
-		}
-
-		ethCallEngine, err := v.ethL2CallEngine.GetOrInstantiate(c.ChainID)
-		if err != nil {
-			v.log.Panic("could not get call engine for L2", logging.String("chain-id", c.ChainID))
-		}
-
-		verifier := New(v.log, v.witness, v.ts, v.broker, v.oracleBroadcaster, ethCallEngine, confs)
-
-		v.verifiers[c.ChainID] = verifier
+		v.verifiers[c.ChainID] = v.instanciate(c.NetworkID, c.ChainID)
 	}
 
 	return nil
+}
+
+func (v *L2Verifiers) instanciate(networkID, chainID string) *Verifier {
+	var confs *eth.EthereumConfirmations
+	if v.isValidator {
+		var ok bool
+		_, confs, ok = v.clients.Get(networkID)
+		if !ok {
+			v.log.Panic("ethereum client not configured for L2",
+				logging.String("chain-id", chainID),
+				logging.String("network-id", networkID),
+			)
+		}
+	}
+
+	ethCallEngine, err := v.ethL2CallEngine.GetOrInstantiate(chainID)
+	if err != nil {
+		v.log.Panic("could not get call engine for L2", logging.String("chain-id", chainID))
+	}
+
+	return New(v.log, v.witness, v.ts, v.broker, v.oracleBroadcaster, ethCallEngine, confs)
 }
 
 func (v *L2Verifiers) OnTick(ctx context.Context, t time.Time) {
