@@ -324,7 +324,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.BatchProposals)))
 	for _, bpp := range active.BatchProposals {
 		bpt := types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals)
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
 			e.ensureChainIDSet(bpt.Proposals...)
 		}
 		bp := &batchProposal{
@@ -380,7 +380,7 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
 			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
