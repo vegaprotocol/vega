@@ -67,8 +67,6 @@ func TestEngine(t *testing.T) {
 			Every:   20,
 			Until:   0,
 		},
-		L2ChainID: uint64(tc.client.chainID),
-
 		RequiredConfirmations: 0,
 		Filters:               common.SpecFilters{},
 	}
@@ -172,8 +170,6 @@ func TestEngineWithErrorSpec(t *testing.T) {
 			Every:   20,
 			Until:   0,
 		},
-		L2ChainID: uint64(tc.client.chainID),
-
 		RequiredConfirmations: 0,
 		Filters:               common.SpecFilters{},
 	}
