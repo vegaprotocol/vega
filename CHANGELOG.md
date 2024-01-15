@@ -123,6 +123,7 @@
 - [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
 - [10326](https://github.com/vegaprotocol/vega/issues/10326) - Fix intermittent test failure.
 - [10382](https://github.com/vegaprotocol/vega/issues/10382) - Fix switch to isolated margin with parked pegged orders. 
+- [10390](https://github.com/vegaprotocol/vega/pull/10390) - Fix the data node startup when an external `hypertable` exist outside of the public schema
 - [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
 
 ## 0.73.0
