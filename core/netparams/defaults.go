@@ -343,7 +343,7 @@ func checkOptionalRFC3339Date(d string) error {
 	return err
 }
 
-func PriceMonitoringParametersValidation(i interface{}) error {
+func PriceMonitoringParametersValidation(i interface{}, _ interface{}) error {
 	pmp, ok := i.(*proto.PriceMonitoringParameters)
 	if !ok {
 		return errors.New("not a price monitoring parameters type")

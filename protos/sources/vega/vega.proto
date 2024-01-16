@@ -1492,14 +1492,14 @@ message LiquidityProvision {
 }
 
 message EthereumL2Config {
-  // Network ID of this Ethereum L2 network.
+  // Network ID of this Ethereum layer 2 network.
   string network_id = 1;
-  // Chain ID of this Ethereum L2 network.
+  // Chain ID of this Ethereum layer 2 network.
   string chain_id = 2;
   // Number of block confirmations to wait to consider an Ethereum transaction trusted.
   // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
   // network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
-  // and the current block to be forged (or mined) on the L2 is block 14, block
+  // and the current block to be forged, or mined, on the L2 is block 14, block
   // 10 would be considered as trusted, but not block 11.
   uint32 confirmations = 3;
   // Display name of this network

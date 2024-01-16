@@ -584,9 +584,9 @@ type EthCallSpec struct {
 	// in the second result returned from the contract for a structure with a key
 	// called 'price' and use that if it exists.
 	Normalisers []*Normaliser `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty"`
-	// an optional ethereum L2 chain id, if not specified this EthCallSpec is
-	// to be used against ethereum mainnet, if set the matching L2 network
-	// for the chain_id is to be used, the network must have been registered via governance
+	// Ethereum layer 2 chain ID. If not specified this EthCallSpec is
+	// to be used against ethereum mainnet. If set, the matching L2 network
+	// for the chain ID is to be used, and the network must have been registered via governance
 	// first.
 	L2ChainId *uint64 `protobuf:"varint,9,opt,name=l2_chain_id,json=l2ChainId,proto3,oneof" json:"l2_chain_id,omitempty"`
 }
