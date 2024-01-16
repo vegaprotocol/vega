@@ -44,8 +44,8 @@ func SpamPoWHashFunction(supportedFunctions []string) func(string) error {
 	}
 }
 
-func MarginScalingFactor() func(interface{}) error {
-	return func(v interface{}) error {
+func MarginScalingFactor() func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
 		sf := v.(*types.ScalingFactors)
 		if sf.SearchLevel >= sf.InitialMargin || sf.InitialMargin >= sf.CollateralRelease {
 			return errors.New("invalid scaling factors (searchLevel < initialMargin < collateralRelease)")
@@ -54,8 +54,8 @@ func MarginScalingFactor() func(interface{}) error {
 	}
 }
 
-func MarginScalingFactorRange(min, max num.Decimal) func(interface{}) error {
-	return func(v interface{}) error {
+func MarginScalingFactorRange(min, max num.Decimal) func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
 		sf := v.(*types.ScalingFactors)
 		if sf.SearchLevel < min.InexactFloat64() || sf.CollateralRelease > max.InexactFloat64() {
 			return errors.New("invalid scaling factors (" + min.String() + "< searchLevel < initialMargin < collateralRelease <=" + max.String() + ")")
@@ -64,8 +64,8 @@ func MarginScalingFactorRange(min, max num.Decimal) func(interface{}) error {
 	}
 }
 
-func PriceMonitoringParametersAuctionExtension(min, max time.Duration) func(interface{}) error {
-	return func(v interface{}) error {
+func PriceMonitoringParametersAuctionExtension(min, max time.Duration) func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
 		pmp := v.(*types.PriceMonitoringParameters)
 		for _, pmt := range pmp.Triggers {
 			if time.Duration(pmt.AuctionExtension*int64(time.Second)) < min || time.Duration(pmt.AuctionExtension*int64(time.Second)) > max {
@@ -76,8 +76,8 @@ func PriceMonitoringParametersAuctionExtension(min, max time.Duration) func(inte
 	}
 }
 
-func PriceMonitoringParametersHorizon(min, max time.Duration) func(interface{}) error {
-	return func(v interface{}) error {
+func PriceMonitoringParametersHorizon(min, max time.Duration) func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
 		pmp := v.(*types.PriceMonitoringParameters)
 		for _, pmt := range pmp.Triggers {
 			if time.Duration(pmt.Horizon*int64(time.Second)) < min || time.Duration(pmt.Horizon*int64(time.Second)) > max {
@@ -88,8 +88,8 @@ func PriceMonitoringParametersHorizon(min, max time.Duration) func(interface{}) 
 	}
 }
 
-func PriceMonitoringParametersProbability(min, max num.Decimal) func(interface{}) error {
-	return func(v interface{}) error {
+func PriceMonitoringParametersProbability(min, max num.Decimal) func(interface{}, interface{}) error {
+	return func(v interface{}, _ interface{}) error {
 		pmp := v.(*types.PriceMonitoringParameters)
 		for _, pmt := range pmp.Triggers {
 			p, e := num.DecimalFromString(pmt.Probability)

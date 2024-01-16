@@ -6883,14 +6883,14 @@ type EthereumL2Config struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Network ID of this Ethereum L2 network.
+	// Network ID of this Ethereum layer 2 network.
 	NetworkId string `protobuf:"bytes,1,opt,name=network_id,json=networkId,proto3" json:"network_id,omitempty"`
-	// Chain ID of this Ethereum L2 network.
+	// Chain ID of this Ethereum layer 2 network.
 	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 	// Number of block confirmations to wait to consider an Ethereum transaction trusted.
 	// An Ethereum block is trusted when there are at least "n" blocks confirmed by the
 	// network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
-	// and the current block to be forged (or mined) on the L2 is block 14, block
+	// and the current block to be forged, or mined, on the L2 is block 14, block
 	// 10 would be considered as trusted, but not block 11.
 	Confirmations uint32 `protobuf:"varint,3,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
 	// Display name of this network

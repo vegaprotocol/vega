@@ -36,7 +36,7 @@ type EthContractCallEvent struct {
 	Result []byte `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
 	// Error message if the call failed.
 	Error *string `protobuf:"bytes,5,opt,name=error,proto3,oneof" json:"error,omitempty"`
-	// the l2 chain for this chain event.
+	// Layer 2 chain for this chain event.
 	L2ChainId *uint64 `protobuf:"varint,6,opt,name=l2_chain_id,json=l2ChainId,proto3,oneof" json:"l2_chain_id,omitempty"`
 }
 
