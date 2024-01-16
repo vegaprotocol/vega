@@ -16,7 +16,7 @@ message EthContractCallEvent {
   bytes result = 4;
   // Error message if the call failed.
   optional string error = 5;
-  // the l2 chain for this chain event.
+  // Layer 2 chain for this chain event.
   optional uint64 l2_chain_id = 6;
 }
 

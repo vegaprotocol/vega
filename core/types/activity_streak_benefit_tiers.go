@@ -82,7 +82,7 @@ func ActivityStreakBenefitTiersFromProto(ptiers *proto.ActivityStreakBenefitTier
 	return tiers, nil
 }
 
-func CheckUntypedActivityStreakBenefitTier(v interface{}) error {
+func CheckUntypedActivityStreakBenefitTier(v interface{}, _ interface{}) error {
 	tiers, err := toActivityStreakBenefitTier(v)
 	if err != nil {
 		return err
