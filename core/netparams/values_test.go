@@ -16,6 +16,7 @@
 package netparams_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -49,7 +50,7 @@ func TestNegativeUint(t *testing.T) {
 }
 
 func TestJSONValues(t *testing.T) {
-	validator := func(v interface{}) error {
+	validator := func(v interface{}, p interface{}) error {
 		a, ok := v.(*A)
 		if !ok {
 			return errors.New("invalid type")
@@ -61,6 +62,18 @@ func TestJSONValues(t *testing.T) {
 		if a.I < 0 {
 			return errors.New("I negative")
 		}
+
+		b := &A{}
+		json.Unmarshal([]byte(p.(string)), b)
+
+		if !ok {
+			return errors.New("invalid type B")
+		}
+
+		if a.I < b.I {
+			return errors.New("cannot amended to lower value")
+		}
+
 		return nil
 	}
 
@@ -97,6 +110,10 @@ func TestJSONValues(t *testing.T) {
 	// valid type, field validation failed
 	err = j.Update(`{"s": "", "i": 84}`)
 	assert.EqualError(t, err, "empty string")
+
+	// flex rule that prevents update to a lower value of i
+	err = j.Validate(`{"s": "notempty", "i": 1}`)
+	assert.EqualError(t, err, "cannot amended to lower value")
 }
 
 func TestJSONVPriceMonitoringParameters(t *testing.T) {

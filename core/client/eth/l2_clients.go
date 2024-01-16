@@ -28,8 +28,6 @@ import (
 
 type L2Client struct {
 	ETHClient
-
-	l2Configs *types.EthereumConfig
 }
 
 type L2Clients struct {

@@ -77,7 +77,7 @@ func VestingBenefitTiersFromProto(ptiers *proto.VestingBenefitTiers) (*VestingBe
 	return tiers, nil
 }
 
-func CheckUntypedVestingBenefitTier(v interface{}) error {
+func CheckUntypedVestingBenefitTier(v interface{}, _ interface{}) error {
 	tiers, err := toVestingBenefitTier(v)
 	if err != nil {
 		return err
