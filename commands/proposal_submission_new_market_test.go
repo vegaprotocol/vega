@@ -6014,10 +6014,18 @@ func testLiquidityFeeSettings(t *testing.T) {
 		{
 			lfs: &vega.LiquidityFeeSettings{
 				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
-				FeeConstant: ptr.From("-0.1"),
+				FeeConstant: ptr.From("-0.1"), // (0042-LIQF-060)
 			},
 			field: "fee_constant",
 			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("1.1"), // (0042-LIQF-060)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBeWithinRange01,
 		},
 		{
 			lfs: &vega.LiquidityFeeSettings{

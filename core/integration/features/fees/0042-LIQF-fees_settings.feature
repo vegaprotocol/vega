@@ -11,11 +11,9 @@ Feature: Test liquidity fee settings, using 3 different methods
     And the fees configuration named "fees-config-2":
       | maker fee | infrastructure fee | liquidity fee method | liquidity fee constant |
       | 0.0004    | 0.001              | METHOD_CONSTANT      | 0.01                   |
-
     And the fees configuration named "fees-config-3":
       | maker fee | infrastructure fee | liquidity fee method    | liquidity fee constant |
       | 0.0004    | 0.001              | METHOD_WEIGHTED_AVERAGE | 0.01                   |
-
     And the fees configuration named "fees-config-4":
       | maker fee | infrastructure fee | liquidity fee method | liquidity fee constant |
       | 0.0004    | 0.001              | METHOD_MARGINAL_COST | 0.01                   |
