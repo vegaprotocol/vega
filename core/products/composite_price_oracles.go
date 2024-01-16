@@ -64,6 +64,10 @@ func NewCompositePriceOracle(ctx context.Context, oracleEngine OracleEngine, ora
 	return cpo, nil
 }
 
+func (cpo *CompositePriceOracle) GetDecimals() int64 {
+	return int64(cpo.binding.priceDecimals)
+}
+
 func newCompositePriceBinding(spec *datasource.Spec, binding *datasource.SpecBindingForCompositePrice) (compositePriceOracleBinding, error) {
 	priceProp := strings.TrimSpace(binding.PriceSourceProperty)
 	if len(priceProp) == 0 {
