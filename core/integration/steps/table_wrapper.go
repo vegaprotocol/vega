@@ -687,6 +687,21 @@ func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	return ty
 }
 
+func (r RowWrapper) MarkPriceType() types.CompositePriceType {
+	if !r.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
+}
+
 func TradingMode(name string) (types.MarketTradingMode, error) {
 	ty, ok := proto.Market_TradingMode_value[name]
 

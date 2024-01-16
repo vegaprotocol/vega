@@ -1,4 +1,4 @@
-Feature: Successor markets: Global insurance pool account collects all outstanding funds from closed/expired markets in a risk universe (0013-ACCT-032)
+Feature: Successor markets: Global insurance pool account collects all outstanding funds from closed/expired markets in a risk universe (0013-ACCT-032 0013-ACCT-033)
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"

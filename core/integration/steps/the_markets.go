@@ -382,9 +382,8 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 
 	markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
-	if row.row.HasColumn("price type") {
-		markPriceConfig.CompositePriceType = row.markPriceType()
-	}
+	markPriceConfig.CompositePriceType = row.markPriceType()
+
 	if row.row.HasColumn("decay power") {
 		markPriceConfig.DecayPower = row.decayPower()
 	}
@@ -400,6 +399,10 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	if row.row.HasColumn("source staleness tolerance") {
 		markPriceConfig.SourceStalenessTolerance = row.priceSourceStalnessTolerance()
 	}
+	if row.row.HasColumn("oracle1") {
+		markPriceConfig.DataSources, markPriceConfig.SpecBindingForCompositePrice = row.oracles(config)
+	}
+
 	update.Changes.MarkPriceConfiguration = markPriceConfig
 	existing.MarkPriceConfiguration = markPriceConfig
 	return update, nil
@@ -439,6 +442,14 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 	if err != nil {
 		panic(err)
 	}
+	lqs, err := config.LiquidationStrat.Get(row.liquidationStrat())
+	if err != nil {
+		panic(err)
+	}
+	liqStrat, err := types.LiquidationStrategyFromProto(lqs)
+	if err != nil {
+		panic(err)
+	}
 
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
@@ -448,13 +459,16 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	specs, binding := row.oracles(config)
 	markPriceConfig := &types.CompositePriceConfiguration{
-		CompositePriceType:       row.markPriceType(),
-		DecayWeight:              row.decayWeight(),
-		DecayPower:               row.decayPower(),
-		CashAmount:               row.cashAmount(),
-		SourceWeights:            row.priceSourceWeights(),
-		SourceStalenessTolerance: row.priceSourceStalnessTolerance(),
+		CompositePriceType:           row.markPriceType(),
+		DecayWeight:                  row.decayWeight(),
+		DecayPower:                   row.decayPower(),
+		CashAmount:                   row.cashAmount(),
+		SourceWeights:                row.priceSourceWeights(),
+		SourceStalenessTolerance:     row.priceSourceStalnessTolerance(),
+		DataSources:                  specs,
+		SpecBindingForCompositePrice: binding,
 	}
 
 	m := types.Market{
@@ -464,6 +478,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		DecimalPlaces:         row.decimalPlaces(),
 		PositionDecimalPlaces: row.positionDecimalPlaces(),
 		Fees:                  types.FeesFromProto(fees),
+		LiquidationStrategy:   liqStrat,
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Perpetual", row.id()),
@@ -561,13 +576,16 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	sources, bindings := row.oracles(config)
 	markPriceConfig := &types.CompositePriceConfiguration{
-		CompositePriceType:       row.markPriceType(),
-		DecayWeight:              row.decayWeight(),
-		DecayPower:               row.decayPower(),
-		CashAmount:               row.cashAmount(),
-		SourceWeights:            row.priceSourceWeights(),
-		SourceStalenessTolerance: row.priceSourceStalnessTolerance(),
+		CompositePriceType:           row.markPriceType(),
+		DecayWeight:                  row.decayWeight(),
+		DecayPower:                   row.decayPower(),
+		CashAmount:                   row.cashAmount(),
+		SourceWeights:                row.priceSourceWeights(),
+		SourceStalenessTolerance:     row.priceSourceStalnessTolerance(),
+		DataSources:                  sources,
+		SpecBindingForCompositePrice: bindings,
 	}
 
 	m := types.Market{
@@ -668,6 +686,11 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"cash amount",
 		"source weights",
 		"source staleness tolerance",
+		"oracle1",
+		"oracle2",
+		"oracle3",
+		"oracle4",
+		"oracle5",
 	})
 }
 
@@ -690,6 +713,11 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"cash amount",
 		"source weights",
 		"source staleness tolerance",
+		"oracle1",
+		"oracle2",
+		"oracle3",
+		"oracle4",
+		"oracle5",
 	})
 }
 
@@ -755,6 +783,45 @@ func (r marketUpdateRow) priceSourceWeights() []num.Decimal {
 		d = append(d, num.MustDecimalFromString(v))
 	}
 	return d
+}
+
+func (r marketUpdateRow) compositePriceOracleFromName(config *market.Config, name string) (*datasource.Spec, *datasource.SpecBindingForCompositePrice) {
+	if !r.row.HasColumn(name) {
+		return nil, nil
+	}
+
+	rawSpec, binding, err := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.Str(name))
+	if err != nil {
+		return nil, nil
+	}
+	spec := datasource.FromOracleSpecProto(rawSpec)
+	filters := spec.Data.GetFilters()
+	ds := datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: spec.Data.GetSigners(),
+			Filters: filters,
+		},
+	)
+	return datasource.SpecFromDefinition(*ds), &datasource.SpecBindingForCompositePrice{PriceSourceProperty: binding.PriceSourceProperty}
+}
+
+func (r marketUpdateRow) oracles(config *market.Config) ([]*datasource.Spec, []*datasource.SpecBindingForCompositePrice) {
+	specs := []*datasource.Spec{}
+	bindings := []*datasource.SpecBindingForCompositePrice{}
+	names := []string{"oracle1", "oracle2", "oracle3", "oracle4", "oracle5"}
+	for _, v := range names {
+		spec, binding := r.compositePriceOracleFromName(config, v)
+		if spec == nil {
+			continue
+		}
+		specs = append(specs, spec)
+		bindings = append(bindings, binding)
+	}
+	if len(specs) > 0 {
+		return specs, bindings
+	}
+
+	return nil, nil
 }
 
 func (r marketUpdateRow) priceSourceStalnessTolerance() []time.Duration {
@@ -964,6 +1031,44 @@ func (r marketRow) markPriceType() types.CompositePriceType {
 	} else {
 		panic("invalid price type")
 	}
+}
+
+func (r marketRow) compositePriceOracleFromName(config *market.Config, name string) (*datasource.Spec, *datasource.SpecBindingForCompositePrice) {
+	if !r.row.HasColumn(name) {
+		return nil, nil
+	}
+	rawSpec, binding, err := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.Str(name))
+	if err != nil {
+		return nil, nil
+	}
+	spec := datasource.FromOracleSpecProto(rawSpec)
+	filters := spec.Data.GetFilters()
+	ds := datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: spec.Data.GetSigners(),
+			Filters: filters,
+		},
+	)
+	return datasource.SpecFromDefinition(*ds), &datasource.SpecBindingForCompositePrice{PriceSourceProperty: binding.PriceSourceProperty}
+}
+
+func (r marketRow) oracles(config *market.Config) ([]*datasource.Spec, []*datasource.SpecBindingForCompositePrice) {
+	specs := []*datasource.Spec{}
+	bindings := []*datasource.SpecBindingForCompositePrice{}
+	names := []string{"oracle1", "oracle2", "oracle3", "oracle4", "oracle5"}
+	for _, v := range names {
+		spec, binding := r.compositePriceOracleFromName(config, v)
+		if spec == nil {
+			continue
+		}
+		specs = append(specs, spec)
+		bindings = append(bindings, binding)
+	}
+	if len(specs) > 0 {
+		return specs, bindings
+	}
+
+	return nil, nil
 }
 
 func (r marketRow) quadraticSlippageFactor() float64 {

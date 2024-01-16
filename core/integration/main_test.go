@@ -155,6 +155,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the perpetual oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
 		return steps.ThePerpsOracleSpec(marketConfig, signers, table)
 	})
+	s.Step(`^the composite price oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
+		return steps.TheCompositePriceOracleSpec(marketConfig, signers, table)
+	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
@@ -223,6 +226,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
+	})
+
+	s.Step(`^the mark price algo should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheMarkPriceAlgoShouldBeForMarket(execsetup.broker, marketID, mpAlgo)
 	})
 
 	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {

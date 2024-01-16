@@ -100,3 +100,4 @@ Feature: Test setting of mark price
     When the network moves ahead "1" blocks
     Then the mark price should be "15990" for the market "ETH/FEB23"
 
+

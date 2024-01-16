@@ -421,6 +421,29 @@ func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *vegapb.Market {
 	return r
 }
 
+func (b *BrokerStub) GetMarkPriceSettings(marketID string) *vegapb.CompositePriceConfiguration {
+	batch := b.GetBatch(events.MarketUpdatedEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	var r *vegapb.Market
+	for _, evt := range batch {
+		switch me := evt.(type) {
+		case *events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		case events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		}
+	}
+	return r.MarkPriceConfiguration
+}
+
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []vegapb.Order {
 	orders := b.GetOrderEvents()
 	ret := []vegapb.Order{}
