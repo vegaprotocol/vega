@@ -255,8 +255,8 @@ func (e *Engine) ensureChainIDSet(marketConfig *types.Market) {
 		if perp.Perps.DataSourceSpecForSettlementData != nil && perp.Perps.DataSourceSpecForSettlementData.Data != nil {
 			switch ct := perp.Perps.DataSourceSpecForSettlementData.Data.DataSourceType.(type) {
 			case ethcallcommon.Spec:
-				if ct.L2ChainID == 0 {
-					ct.L2ChainID = e.npv.chainID
+				if ct.SourceChainID == 0 {
+					ct.SourceChainID = e.npv.chainID
 					perp.Perps.DataSourceSpecForSettlementData.Data.DataSourceType = ct
 				}
 			}
@@ -264,8 +264,8 @@ func (e *Engine) ensureChainIDSet(marketConfig *types.Market) {
 		if perp.Perps.DataSourceSpecForSettlementSchedule != nil && perp.Perps.DataSourceSpecForSettlementSchedule.Data != nil {
 			switch ct := perp.Perps.DataSourceSpecForSettlementSchedule.Data.DataSourceType.(type) {
 			case ethcallcommon.Spec:
-				if ct.L2ChainID == 0 {
-					ct.L2ChainID = e.npv.chainID
+				if ct.SourceChainID == 0 {
+					ct.SourceChainID = e.npv.chainID
 					perp.Perps.DataSourceSpecForSettlementSchedule.Data.DataSourceType = ct
 				}
 			}
@@ -276,8 +276,8 @@ func (e *Engine) ensureChainIDSet(marketConfig *types.Market) {
 		if future.Future.DataSourceSpecForSettlementData != nil && future.Future.DataSourceSpecForSettlementData.Data != nil {
 			switch ft := future.Future.DataSourceSpecForSettlementData.Data.DataSourceType.(type) {
 			case ethcallcommon.Spec:
-				if ft.L2ChainID == 0 {
-					ft.L2ChainID = e.npv.chainID
+				if ft.SourceChainID == 0 {
+					ft.SourceChainID = e.npv.chainID
 					future.Future.DataSourceSpecForSettlementData.Data.DataSourceType = ft
 				}
 			}
@@ -285,8 +285,8 @@ func (e *Engine) ensureChainIDSet(marketConfig *types.Market) {
 		if future.Future.DataSourceSpecForTradingTermination != nil && future.Future.DataSourceSpecForTradingTermination.Data != nil {
 			switch ft := future.Future.DataSourceSpecForTradingTermination.Data.DataSourceType.(type) {
 			case ethcallcommon.Spec:
-				if ft.L2ChainID == 0 {
-					ft.L2ChainID = e.npv.chainID
+				if ft.SourceChainID == 0 {
+					ft.SourceChainID = e.npv.chainID
 					future.Future.DataSourceSpecForTradingTermination.Data.DataSourceType = ft
 				}
 			}

@@ -86,7 +86,7 @@ func NewCall(spec ethcallcommon.Spec) (Call, error) {
 		abiJSON: abiJSON,
 		spec:    spec,
 		filters: filters,
-		chainID: spec.L2ChainID,
+		chainID: spec.SourceChainID,
 	}, nil
 }
 

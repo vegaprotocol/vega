@@ -123,11 +123,11 @@ func (v *L2Verifiers) OnTick(ctx context.Context, t time.Time) {
 }
 
 func (v *L2Verifiers) ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error {
-	if callEvent.L2ChainID == nil {
+	if callEvent.SourceChainID == nil {
 		return errors.New("invalid non l2 event")
 	}
 
-	verifier, ok := v.verifiers[fmt.Sprintf("%v", *callEvent.L2ChainID)]
+	verifier, ok := v.verifiers[fmt.Sprintf("%v", *callEvent.SourceChainID)]
 	if !ok {
 		return errors.New("unsupported l2 chain")
 	}
