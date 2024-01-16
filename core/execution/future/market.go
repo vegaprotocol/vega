@@ -4290,8 +4290,16 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 	}
 }
 
-func (m *Market) scaleOracleData(ctx context.Context, price *num.Numeric) *num.Uint {
-	p, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(price, m.assetDP)
+func (m *Market) scaleOracleData(ctx context.Context, price *num.Numeric, dp int64) *num.Uint {
+	if price == nil {
+		return nil
+	}
+
+	if !price.SupportDecimalPlaces(int64(m.assetDP)) {
+		return nil
+	}
+
+	p, err := price.ScaleTo(int64(m.assetDP), dp)
 	if err != nil {
 		m.log.Error(err.Error())
 		return nil

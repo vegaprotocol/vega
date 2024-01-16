@@ -395,6 +395,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Parties"};
   }
 
+  // List parties' profiles
+  //
+  // Get a list of profiles for multiple parties
+  rpc ListPartiesProfiles(ListPartiesProfilesRequest) returns (ListPartiesProfilesResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Parties"};
+  }
+
   // List margin levels
   //
   // Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
@@ -2440,6 +2447,37 @@ message PartyEdge {
 message PartyConnection {
   // Page of parties and their corresponding cursors.
   repeated PartyEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Request to list profiles by party ID.
+message ListPartiesProfilesRequest {
+  // Restrict the returned profiles to only the given party IDs. If not set,
+  // all parties' profiles will be returned.
+  repeated string parties = 1;
+  // Pagination control.
+  Pagination pagination = 2;
+}
+
+// Response from listing parties' profiles.
+message ListPartiesProfilesResponse {
+  // Page of profile data and corresponding page information.
+  PartiesProfilesConnection profiles = 1;
+}
+
+// Party's profile data with the corresponding cursor.
+message PartyProfileEdge {
+  // Data associated with a party's profile.
+  vega.PartyProfile node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of profile data per party and corresponding page information.
+message PartiesProfilesConnection {
+  // Page of profiles and their corresponding cursors.
+  repeated PartyProfileEdge edges = 1;
   // Page information that is used for fetching further pages.
   PageInfo page_info = 2;
 }

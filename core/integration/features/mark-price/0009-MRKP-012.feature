@@ -9,9 +9,19 @@ Feature: Test setting of mark price
     And the simple risk model named "simple-risk-model":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
+
+    # this is just an example of setting up oracles
+    And the composite price oracles from "0xCAFECAFE1":
+      | name    | price property   | price type   | price decimals |
+      | oracle1 | price1.USD.value | TYPE_INTEGER | 0              |
+      | oracle2 | price2.USD.value | TYPE_INTEGER | 0              |
+      | oracle3 | price3.USD.value | TYPE_INTEGER | 0              |
+      | oracle4 | price4.USD.value | TYPE_INTEGER | 0              |
+      | oracle5 | price4.USD.value | TYPE_INTEGER | 0              |
+
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 0           | 1,0,0,0        | 3h0m0s,2s,24h0m0s,1h25m0s  |
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights  | source staleness tolerance                                | oracle1 | oracle2 | oracle3 | oracle4 | oracle5 |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 0           | 1,0,0,0,0,0,0,0 | 3h0m0s,2s,24h0m0s,24h0m0s,24h0m0s,24h0m0s,24h0m0s,1h25m0s | oracle1 | oracle2 | oracle3 | oracle4 | oracle5 |
 
   @SLABug
   Scenario: 001 check mark price using weight average
@@ -54,6 +64,15 @@ Feature: Test setting of mark price
 
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
+
+    # example of pushing oracle prices 
+    Then the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value | time offset |
+      | price1.USD.value | 16000 | -1s         |
+      | price2.USD.value | 15900 | -1s         |
+      | price3.USD.value | 15940 | -1s         |
+      | price4.USD.value | 16001 | -1s         |
+      | price5.USD.value | 16002 | -1s         |
 
     When the network moves ahead "1" blocks
     Then the mark price should be "15940" for the market "ETH/FEB23"

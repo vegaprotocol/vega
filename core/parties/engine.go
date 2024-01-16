@@ -17,11 +17,18 @@ package parties
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+)
+
+var (
+	ErrAliasIsReserved   = errors.New("this alias is reserved")
+	ReservedPartyAliases = []string{"network"}
 )
 
 type Engine struct {
@@ -83,6 +90,10 @@ func (e *Engine) validateProfileUpdate(partyID types.PartyID, cmd *commandspb.Up
 func (e *Engine) ensureAliasUniqueness(partyID types.PartyID, newAlias string) error {
 	if newAlias == "" {
 		return nil
+	}
+
+	if slices.Contains(ReservedPartyAliases, newAlias) {
+		return ErrAliasIsReserved
 	}
 
 	for _, profile := range e.profiles {

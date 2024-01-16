@@ -43,7 +43,7 @@ type CompositePriceCalculator struct {
 	// [2+n] median mark price
 	priceSources []*num.Uint
 	oracles      []*products.CompositePriceOracle
-	scalingFunc  func(context.Context, *num.Numeric) *num.Uint
+	scalingFunc  func(context.Context, *num.Numeric, int64) *num.Uint
 }
 
 const (
@@ -180,7 +180,7 @@ func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe excomm
 	return nil
 }
 
-func (mpc *CompositePriceCalculator) setOraclePriceScalingFunc(f func(context.Context, *num.Numeric) *num.Uint) {
+func (mpc *CompositePriceCalculator) setOraclePriceScalingFunc(f func(context.Context, *num.Numeric, int64) *num.Uint) {
 	mpc.scalingFunc = f
 }
 
@@ -210,7 +210,7 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 		if err != nil {
 			return err
 		}
-		p := mpc.scalingFunc(ctx, pd)
+		p := mpc.scalingFunc(ctx, pd, mpc.oracles[oracleIndex].GetDecimals())
 		if p == nil || p.IsZero() {
 			return nil
 		}

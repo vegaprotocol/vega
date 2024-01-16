@@ -198,16 +198,15 @@ func (mpc *CompositePriceConfiguration) DeepClone() *CompositePriceConfiguration
 	weights = append(weights, mpc.SourceWeights...)
 	stalenessTolerance := make([]time.Duration, 0, len(mpc.SourceStalenessTolerance))
 	stalenessTolerance = append(stalenessTolerance, mpc.SourceStalenessTolerance...)
-
 	sources := make([]*datasource.Spec, 0, len(mpc.DataSources))
 	for _, s := range mpc.DataSources {
-		specDefinition := s.Data.DeepClone()
-		sources = append(sources, datasource.SpecFromDefinition(*definition.NewWith(specDefinition)))
+		definition := s.GetDefinition()
+		definition = *definition.DeepClone().(*dsdefinition.Definition)
+		spec := &datasource.Spec{}
+		sources = append(sources, spec.FromDefinition(&definition))
 	}
 	bindings := make([]*datasource.SpecBindingForCompositePrice, 0, len(mpc.SpecBindingForCompositePrice))
-	for _, sbfcp := range mpc.SpecBindingForCompositePrice {
-		bindings = append(bindings, sbfcp.DeepClone())
-	}
+	bindings = append(bindings, mpc.SpecBindingForCompositePrice...)
 
 	return &CompositePriceConfiguration{
 		DecayWeight:                  mpc.DecayWeight,

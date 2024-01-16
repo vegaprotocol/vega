@@ -95,4 +95,8 @@ func TestUpdatingProfiles(t *testing.T) {
 			},
 		},
 	}, te.engine.ListProfiles())
+
+	require.Error(t, te.engine.UpdateProfile(ctx, party1, &commandspb.UpdatePartyProfile{
+		Alias: "network",
+	}))
 }

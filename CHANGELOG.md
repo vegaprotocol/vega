@@ -59,9 +59,10 @@
 - [595](https://github.com/vegaprotocol/core-test-coverage/issues/595) - Ensure the full size of iceberg orders is considered when creating a network order.
 - [10308](https://github.com/vegaprotocol/vega/issues/10308) - Support joining to closed teams based on an allow list.
 - [10349](https://github.com/vegaprotocol/vega/issues/10349) - Add oracle support to mark price configuration.
-- [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology. 
+- [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology.
 - [521](https://github.com/vegaprotocol/core-test-coverage/issues/521) - Add tests for allow list functionality when joining teams.
-- [10340](https://github.com/vegaprotocol/core-test-coverage/issues/10340) - Support updating profile for a party.
+- [10340](https://github.com/vegaprotocol/vega/issues/10340) - Support updating profile for a party.
+- [10375](https://github.com/vegaprotocol/vega/issues/10375) - Expose party's profile in parties API.
 
 ### 🐛 Fixes
 
@@ -123,6 +124,10 @@
 - [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
 - [10326](https://github.com/vegaprotocol/vega/issues/10326) - Fix intermittent test failure.
 - [10382](https://github.com/vegaprotocol/vega/issues/10382) - Fix switch to isolated margin with parked pegged orders. 
+- [10390](https://github.com/vegaprotocol/vega/pull/10390) - Fix the data node startup when an external `hypertable` exist outside of the public schema
+- [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
+- [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
+- [10299](https://github.com/vegaprotocol/vega/issues/10299) - `ListTransfers` does not return staking rewards.
 
 ## 0.73.0
 

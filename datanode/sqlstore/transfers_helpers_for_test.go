@@ -26,6 +26,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,6 +38,20 @@ func CreateTransfer(t *testing.T, ctx context.Context, transferStore *sqlstore.T
 	transfer := NewTransfer(t, ctx, accountsStore, block, options...)
 
 	require.NoError(t, transferStore.Upsert(ctx, transfer))
+
+	fee := entities.TransferFees{
+		TransferID:      transfer.ID,
+		EpochSeq:        1,
+		Amount:          decimal.NewFromInt(1),
+		DiscountApplied: decimal.NewFromInt(0),
+		VegaTime:        transfer.VegaTime,
+	}
+
+	require.NoError(t, transferStore.UpsertFees(ctx, &fee))
+	fee.EpochSeq = 2
+	fee.VegaTime = fee.VegaTime.Add(time.Second)
+
+	require.NoError(t, transferStore.UpsertFees(ctx, &fee))
 
 	return transfer
 }

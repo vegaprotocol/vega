@@ -1969,7 +1969,7 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 			weightSum = weightSum.Add(d)
 		}
 	}
-	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && weightSum.IsZero() {
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && weightSum.IsZero() {
 		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must have at least one none zero weight"))
 	}
 
