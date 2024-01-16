@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 )
@@ -28,6 +29,7 @@ func TheProductDataShouldBe(engine Execution, mID string, data *godog.Table) err
 	if err != nil {
 		return err
 	}
+
 	for _, row := range parseProductDataTable(data) {
 		expect := ProductDataWrapper{
 			row: row,
@@ -41,28 +43,41 @@ func TheProductDataShouldBe(engine Execution, mID string, data *godog.Table) err
 }
 
 func checkProductData(pd types.ProductData, row ProductDataWrapper) error {
-	expectedInternalTwap := row.InternalTWAP()
-	actualInternalTwap := pd.Data.IntoProto().GetPerpetualData().InternalTwap
+	perpData := pd.Data.IntoProto().GetPerpetualData()
 
+	expectedInternalTwap := row.InternalTWAP()
+	actualInternalTwap := perpData.InternalTwap
 	if expectedInternalTwap != actualInternalTwap {
 		return fmt.Errorf("expected '%s' for InternalTWAP, instead got '%s'", expectedInternalTwap, actualInternalTwap)
 	}
 
 	expectedExternalTwap := row.ExternalTWAP()
-	actualExternalTwap := pd.Data.IntoProto().GetPerpetualData().ExternalTwap
+	actualExternalTwap := perpData.ExternalTwap
 	if expectedExternalTwap != actualExternalTwap {
 		return fmt.Errorf("expected '%s' for InternalTWAP, instead got '%s'", expectedExternalTwap, actualExternalTwap)
 	}
 
 	expectedFundingPayment, b := row.FundingPayment()
-	actualFundingPayment := pd.Data.IntoProto().GetPerpetualData().FundingPayment
+	actualFundingPayment := perpData.FundingPayment
 	if b && expectedFundingPayment != actualFundingPayment {
 		return fmt.Errorf("expected '%s' for funding payment, instead got '%s'", expectedFundingPayment, actualFundingPayment)
 	}
 
 	expectedFundingRate, b := row.FundingRate()
-	actualFundingRate := pd.Data.IntoProto().GetPerpetualData().FundingRate
+	actualFundingRate := perpData.FundingRate
 	if b && expectedFundingRate != actualFundingRate {
+		return fmt.Errorf("expected '%s' for funding rate, instead got '%s'", expectedFundingRate, actualFundingRate)
+	}
+
+	expectedIndexPrice, b := row.IndexPrice()
+	actualIndexPrice := perpData.IndexPrice
+	if b && expectedIndexPrice != actualIndexPrice {
+		return fmt.Errorf("expected '%s' for funding rate, instead got '%s'", expectedFundingRate, actualFundingRate)
+	}
+
+	expectedIndexPriceType, b := row.PriceType()
+	actualIndexPriceType := perpData.IndexPriceType
+	if b && expectedIndexPriceType != actualIndexPriceType {
 		return fmt.Errorf("expected '%s' for funding rate, instead got '%s'", expectedFundingRate, actualFundingRate)
 	}
 
@@ -76,6 +91,8 @@ func parseProductDataTable(table *godog.Table) []RowWrapper {
 	}, []string{
 		"funding payment",
 		"funding rate",
+		"index price",
+		"price type",
 	})
 }
 
@@ -97,4 +114,15 @@ func (f ProductDataWrapper) FundingPayment() (string, bool) {
 
 func (f ProductDataWrapper) FundingRate() (string, bool) {
 	return f.row.StrB("funding rate")
+}
+
+func (f ProductDataWrapper) IndexPrice() (string, bool) {
+	return f.row.StrB("index price")
+}
+
+func (f ProductDataWrapper) PriceType() (vega.CompositePriceType, bool) {
+	if !f.row.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade, false
+	}
+	return f.row.MarkPriceType(), true
 }

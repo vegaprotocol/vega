@@ -98,6 +98,6 @@ Feature: Test setting of mark price
     Then the mark price should be "15940" for the market "ETH/FEB23"
 
     When the network moves ahead "1" blocks
-    Then the mark price should be "15978" for the market "ETH/FEB23"
+    Then the mark price should be "15990" for the market "ETH/FEB23"
 
 

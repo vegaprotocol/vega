@@ -382,9 +382,8 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	}
 
 	markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
-	if row.row.HasColumn("price type") {
-		markPriceConfig.CompositePriceType = row.markPriceType()
-	}
+	markPriceConfig.CompositePriceType = row.markPriceType()
+
 	if row.row.HasColumn("decay power") {
 		markPriceConfig.DecayPower = row.decayPower()
 	}
