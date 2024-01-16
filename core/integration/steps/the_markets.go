@@ -442,6 +442,14 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 	if err != nil {
 		panic(err)
 	}
+	lqs, err := config.LiquidationStrat.Get(row.liquidationStrat())
+	if err != nil {
+		panic(err)
+	}
+	liqStrat, err := types.LiquidationStrategyFromProto(lqs)
+	if err != nil {
+		panic(err)
+	}
 
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
@@ -470,6 +478,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		DecimalPlaces:         row.decimalPlaces(),
 		PositionDecimalPlaces: row.positionDecimalPlaces(),
 		Fees:                  types.FeesFromProto(fees),
+		LiquidationStrategy:   liqStrat,
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Perpetual", row.id()),
