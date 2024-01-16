@@ -133,6 +133,7 @@ func assignProduct(
 				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData),
 				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule),
 				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
+				IndexPriceConfig:                    product.Perps.IndexPriceConfig,
 			},
 		}
 	case *types.InstrumentConfigurationSpot:
