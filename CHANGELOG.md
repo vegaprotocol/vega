@@ -61,8 +61,9 @@
 - [10349](https://github.com/vegaprotocol/vega/issues/10349) - Add oracle support to mark price configuration.
 - [10350](https://github.com/vegaprotocol/vega/issues/10350) - Set mark price to uncrossing price if at the end of opening auction no price was yielded by the mark price methodology.
 - [521](https://github.com/vegaprotocol/core-test-coverage/issues/521) - Add tests for allow list functionality when joining teams.
-- [10340](https://github.com/vegaprotocol/vega/issues/10340) - Support updating profile for a party.
 - [10375](https://github.com/vegaprotocol/vega/issues/10375) - Expose party's profile in parties API.
+- [10340](https://github.com/vegaprotocol/core-test-coverage/issues/10340) - Support updating profile for a party.
+- [551](https://github.com/vegaprotocol/core-test-coverage/issues/551) - Cover `0053-PERP-033` explicitly.
 
 ### 🐛 Fixes
 
@@ -123,7 +124,7 @@
 - [10362](https://github.com/vegaprotocol/vega/issues/10362) - Include notional volumes in `SLA` snapshot.
 - [10339](https://github.com/vegaprotocol/vega/issues/10339) - Fix for GraphQL batch proposals support.
 - [10326](https://github.com/vegaprotocol/vega/issues/10326) - Fix intermittent test failure.
-- [10382](https://github.com/vegaprotocol/vega/issues/10382) - Fix switch to isolated margin with parked pegged orders. 
+- [10382](https://github.com/vegaprotocol/vega/issues/10382) - Fix switch to isolated margin with parked pegged orders.
 - [10390](https://github.com/vegaprotocol/vega/pull/10390) - Fix the data node startup when an external `hypertable` exist outside of the public schema
 - [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
 - [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
