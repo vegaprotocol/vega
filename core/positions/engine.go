@@ -331,6 +331,12 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	// Update potential positions & vwaps. Potential positions decrease for both buyer and seller.
 	aggressive.UpdateOnOrderChange(e.log, aggressiveOrder.Side, aggressiveOrder.Price, trade.Size, false)
 	passive.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
+	// if the network opens a position here, the price will not be set, which breaks the snapshot
+	// we know the network will trade at the current mark price, and therefore it will hold the position at this price.
+	// so we should just make sure the price is set correctly here.
+	if aggressive.partyID == types.NetworkParty && (aggressive.price == nil || aggressive.price.IsZero()) {
+		aggressive.price = trade.Price.Clone()
+	}
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
