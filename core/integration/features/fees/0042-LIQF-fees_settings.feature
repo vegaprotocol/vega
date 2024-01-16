@@ -96,8 +96,13 @@ Feature: Test liquidity fee settings, using 3 different methods
     Then the network moves ahead "1" blocks
     And the liquidity fee factor should be "0.0054545454545455" for the market "ETH/MAR22"
 
+    # Use the MARGINAL COST to calculate the liquidity fee. This value with be one of the LP fee values (0042-LIQF-059)
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor | liquidity fee settings |
       | ETH/MAR22 | lqm-params           | 1e-3                   | 0                         | fees-config-4          |
+
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee    | lp type   |
+      | lp1 | lp1   | ETH/MAR22 | 800               | 0.0375 | amendment |
     Then the network moves ahead "1" blocks
-    And the liquidity fee factor should be "0.006" for the market "ETH/MAR22"
+    And the liquidity fee factor should be "0.0375" for the market "ETH/MAR22"
