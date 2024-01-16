@@ -39,6 +39,9 @@ func timeWeight(alpha, lambda, decayPower num.Decimal, t, tradeTime int64) num.D
 
 // PriceFromTrades calculates the mark price from trades in the current price frequency.
 func PriceFromTrades(trades []*types.Trade, decayWeight, lambda, decayPower num.Decimal, t int64) *num.Uint {
+	if lambda.IsZero() {
+		return nil
+	}
 	wSum := num.DecimalZero()
 	ptSum := num.DecimalZero()
 
