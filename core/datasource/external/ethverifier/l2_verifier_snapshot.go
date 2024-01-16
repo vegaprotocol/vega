@@ -35,7 +35,7 @@ var (
 )
 
 func (s *L2Verifiers) Namespace() types.SnapshotNamespace {
-	return types.EthereumOracleVerifierSnapshot
+	return types.L2EthereumOraclesSnapshot
 }
 
 func (s *L2Verifiers) Keys() []string {
@@ -100,8 +100,10 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 		// might be nil so need proper check first here
 		var lastBlock *types.EthBlock
 		if v.LastBlock != nil {
-			lastBlock.Height = v.LastBlock.BlockHeight
-			lastBlock.Time = v.LastBlock.BlockTime
+			lastBlock = &types.EthBlock{
+				Height: v.LastBlock.BlockHeight,
+				Time:   v.LastBlock.BlockTime,
+			}
 		}
 		verifier.restoreLastEthBlock(lastBlock)
 
