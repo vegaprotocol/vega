@@ -32,7 +32,6 @@ Feature: Network disposing position
       | ETH/MAR23 | ETH        | USD.0.10 | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | price-monitoring-1 | default-eth-for-future | 0.001                  | 0                         | SLA        | disposal-strat-2     |
 
 
-  @NoPerp
   Scenario: Network takes over distressed position and disposes position over time (0012-POSR-022)(0012-POSR-023)
 
     Given the parties deposit on asset's general account the following amount:
@@ -148,7 +147,6 @@ Feature: Network disposing position
     And clear trade events
 
 
-  @NoPerp
   Scenario: Network takes over distressed position and disposes position full position once position smaller than full disposal size (0012-POSR-022)(0012-POSR-024)
 
     Given the parties deposit on asset's general account the following amount:

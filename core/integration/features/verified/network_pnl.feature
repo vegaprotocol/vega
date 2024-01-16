@@ -24,7 +24,7 @@ Feature: Profit and loss for network a running liquidation strategy
 
 
 
-  @NoPerp @NetPNL
+  @NetPNL
   Scenario: Network long then liquidates short positions (0003-MTMK-015)(0012-POSR-016)
 
     # Setup the market
@@ -140,7 +140,7 @@ Feature: Profit and loss for network a running liquidation strategy
     And the insurance pool balance should be "10060" for the market "ETH/MAR22"
 
 
-  @NoPerp @NetPNL
+  @NetPNL
   Scenario: Network long then liquidates further long positions (0003-MTMK-016)(0012-POSR-017)
 
     # Setup the market
@@ -255,7 +255,7 @@ Feature: Profit and loss for network a running liquidation strategy
       | network     | 2      | -70            | 0            |
     And the insurance pool balance should be "9930" for the market "ETH/MAR22"
 
-  @NoPerp @NetPNL
+  @NetPNL
   Scenario: Network disposes long position at a loss, loss socialisation applied (0003-MTMK-017)(0012-POSR-018)
 
     # Setup the market
