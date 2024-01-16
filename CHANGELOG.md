@@ -128,6 +128,7 @@
 - [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
 - [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - `ListTransfers` does not return staking rewards.
+- [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency. 
 
 ## 0.73.0
 
