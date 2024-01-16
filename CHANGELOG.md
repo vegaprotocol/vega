@@ -130,6 +130,7 @@
 - [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - `ListTransfers` does not return staking rewards.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
+- [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
 
 ## 0.73.0
 
