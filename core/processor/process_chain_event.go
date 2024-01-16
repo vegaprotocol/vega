@@ -142,12 +142,12 @@ func (app *App) processChainEvent(
 			return err
 		}
 
-		chainID := uint64(1)
-		if callResult.L2ChainID != nil {
-			chainID = *callResult.L2ChainID
+		chainID := app.defaultChainID
+		if callResult.SourceChainID != nil {
+			chainID = *callResult.SourceChainID
 		}
 
-		if chainID == 1 {
+		if chainID == app.defaultChainID {
 			return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
 		}
 

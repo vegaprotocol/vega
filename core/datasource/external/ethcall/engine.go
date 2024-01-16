@@ -244,7 +244,7 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec datasource.Spec) erro
 
 		// here ensure we are on the engine with the right network ID
 		// not an error, just return
-		if e.chainID != d.L2ChainID {
+		if e.chainID != d.SourceChainID {
 			return nil
 		}
 
@@ -324,11 +324,11 @@ func makeChainEvent(res Result, specID string, block blockish, chainID uint64) *
 		Nonce: 0,          // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Result:      res.Bytes,
-				L2ChainId:   ptr.From(chainID),
+				SpecId:        specID,
+				BlockHeight:   block.NumberU64(),
+				BlockTime:     block.Time(),
+				Result:        res.Bytes,
+				SourceChainId: ptr.From(chainID),
 			},
 		},
 	}
@@ -342,11 +342,11 @@ func makeErrorChainEvent(errMsg string, specID string, block blockish, chainID u
 		Nonce: 0,          // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Error:       &errMsg,
-				L2ChainId:   ptr.From(chainID),
+				SpecId:        specID,
+				BlockHeight:   block.NumberU64(),
+				BlockTime:     block.Time(),
+				Error:         &errMsg,
+				SourceChainId: ptr.From(chainID),
 			},
 		},
 	}

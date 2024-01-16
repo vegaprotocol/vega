@@ -175,9 +175,8 @@ const (
 	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
 
 	// blockchain specifics?
-	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
-	// blockchain specifics?
-	BlockchainsEthereumL2Configs = "blockchains.ethereumL2Configs"
+	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
+	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"

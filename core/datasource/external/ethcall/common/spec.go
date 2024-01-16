@@ -43,7 +43,7 @@ type Spec struct {
 	RequiredConfirmations uint64
 	Normalisers           map[string]string
 	Filters               common.SpecFilters
-	L2ChainID             uint64
+	SourceChainID         uint64
 }
 
 func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
@@ -74,12 +74,6 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 		normalisers[v.Name] = v.Expression
 	}
 
-	// default to ethereum mainnet
-	var chainID uint64 = 1
-	if proto.L2ChainId != nil {
-		chainID = *proto.L2ChainId
-	}
-
 	return Spec{
 		Address:               proto.Address,
 		AbiJson:               abiBytes,
@@ -89,7 +83,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 		RequiredConfirmations: proto.RequiredConfirmations,
 		Filters:               filters,
 		Normalisers:           normalisers,
-		L2ChainID:             chainID,
+		SourceChainID:         proto.SourceChainId,
 	}, nil
 }
 
@@ -124,7 +118,7 @@ func (s Spec) IntoProto() (*vegapb.EthCallSpec, error) {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
 		Normalisers:           normalisers,
-		L2ChainId:             &s.L2ChainID,
+		SourceChainId:         s.SourceChainID,
 	}, nil
 }
 
@@ -170,7 +164,7 @@ func (s Spec) DeepClone() common.DataSourceType {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(common.SpecFilters(nil), s.Filters...),
 		Normalisers:           clonedNormalisers,
-		L2ChainID:             s.L2ChainID,
+		SourceChainID:         s.SourceChainID,
 	}
 }
 

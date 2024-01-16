@@ -104,11 +104,7 @@ message EthCallSpec {
   // called 'price' and use that if it exists.
   repeated Normaliser normalisers = 8;
 
-  // Ethereum layer 2 chain ID. If not specified this EthCallSpec is
-  // to be used against ethereum mainnet. If set, the matching L2 network
-  // for the chain ID is to be used, and the network must have been registered via governance
-  // first.
-  optional uint64 l2_chain_id = 9;
+  uint64 source_chain_id = 9;
 }
 
 message Normaliser {
