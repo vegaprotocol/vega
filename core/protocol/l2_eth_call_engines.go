@@ -76,7 +76,7 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		var clt *eth.L2Client
 		if v.isValidator {
 			var ok bool
-			clt, _, ok = v.clients.Get(c.NetworkID)
+			clt, _, ok = v.clients.Get(c.ChainID)
 			if !ok {
 				v.log.Panic("ethereum client not configured for L2",
 					logging.String("chain-id", c.ChainID),
