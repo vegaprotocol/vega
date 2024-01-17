@@ -144,14 +144,16 @@ func CompositePriceByWeight(prices []*num.Uint, weights []num.Decimal, lastUpdat
 
 // CalculateTimeWeightedAverageBookPrice calculates the time weighted average of the timepoints where book price
 // was calculated.
-func CalculateTimeWeightedAverageBookPrice(timeToPrice map[int64]*num.Uint, t int64) *num.Uint {
+func CalculateTimeWeightedAverageBookPrice(timeToPrice map[int64]*num.Uint, t int64, markPricePeriod int64) *num.Uint {
 	if len(timeToPrice) == 0 {
 		return nil
 	}
 
 	keys := make([]int64, 0, len(timeToPrice))
 	for k := range timeToPrice {
-		keys = append(keys, k)
+		if k >= t-markPricePeriod {
+			keys = append(keys, k)
+		}
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 	totalDuration := num.DecimalFromInt64(t - keys[0])
