@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -106,6 +107,8 @@ type ExecutionEngine interface {
 
 	// Margin mode
 	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
+	// default chain ID, can be removed once we've upgraded to v0.74
+	OnChainIDUpdate(uint64) error
 }
 
 type GovernanceEngine interface {
@@ -117,6 +120,7 @@ type GovernanceEngine interface {
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 	RejectBatchProposal(context.Context, string, types.ProposalError, error) error
 	Hash() []byte
+	OnChainIDUpdate(uint64) error
 }
 
 //nolint:interfacebloat
@@ -234,12 +238,14 @@ type NetworkParameters interface {
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
 	GetInt(key string) (int64, error)
+	GetJSONStruct(key string, v netparams.Reset) error
 }
 
 type Oracle struct {
-	Engine                  OraclesEngine
-	Adaptors                OracleAdaptors
-	EthereumOraclesVerifier EthereumOracleVerifier
+	Engine                    OraclesEngine
+	Adaptors                  OracleAdaptors
+	EthereumOraclesVerifier   EthereumOracleVerifier
+	EthereumL2OraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {

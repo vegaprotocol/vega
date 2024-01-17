@@ -703,7 +703,7 @@ func DurationLT(i time.Duration) func(time.Duration) error {
 	}
 }
 
-type JSONRule func(interface{}) error
+type JSONRule func(interface{}, interface{}) error
 
 type JSON struct {
 	*baseValue
@@ -790,7 +790,7 @@ func (j *JSON) Validate(value string) error {
 	}
 
 	for _, fn := range j.rules {
-		if newerr := fn(j.value); newerr != nil {
+		if newerr := fn(j.value, j.rawval); newerr != nil {
 			if err != nil {
 				err = fmt.Errorf("%v, %w", err, newerr)
 			} else {

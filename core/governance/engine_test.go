@@ -1453,6 +1453,9 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 		els:      map[string]map[string]float64{},
 	}
 	// ensure the balance is always returned as expected
+
+	broker.EXPECT().Send(gomock.Any()).Times(1)
+	tEng.netp.Update(context.Background(), netparams.BlockchainsEthereumConfig, "{\"network_id\":\"1\",\"chain_id\":\"1\",\"collateral_bridge_contract\":{\"address\":\"0x23872549cE10B40e31D6577e0A920088B0E0666a\"},\"confirmations\":64,\"staking_bridge_contract\":{\"address\":\"0x195064D33f09e0c42cF98E665D9506e0dC17de68\",\"deployment_block_height\":13146644},\"token_vesting_contract\":{\"address\":\"0x23d1bFE8fA50a167816fBD79D7932577c06011f4\",\"deployment_block_height\":12834524},\"multisig_control_contract\":{\"address\":\"0xDD2df0E7583ff2acfed5e49Df4a424129cA9B58F\",\"deployment_block_height\":15263593}}")
 	tEng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) (*num.Uint, error) {
 		b, ok := tEng.tokenBal[p]
 		if !ok {

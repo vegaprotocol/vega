@@ -19,6 +19,7 @@ import (
 	"context"
 	"sort"
 
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
@@ -254,6 +255,9 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+			e.ensureChainIDSet(p.Proposal)
+		}
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -319,8 +323,12 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.BatchProposals)))
 	for _, bpp := range active.BatchProposals {
+		bpt := types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals)
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+			e.ensureChainIDSet(bpt.Proposals...)
+		}
 		bp := &batchProposal{
-			BatchProposal: types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals),
+			BatchProposal: bpt,
 			yes:           votesAsMapFromProto(bpp.BatchProposal.Yes),
 			no:            votesAsMapFromProto(bpp.BatchProposal.No),
 			invalidVotes:  votesAsMapFromProto(bpp.BatchProposal.Invalid),
@@ -372,6 +380,9 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+			e.ensureChainIDSet(p.Proposal)
+		}
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -418,6 +429,83 @@ func (e *Engine) restoreNodeProposals(ctx context.Context, node *types.Governanc
 	var err error
 	e.gss.serialisedNodeValidation, err = proto.Marshal(p.IntoProto())
 	return err
+}
+
+// ensureChainIDSet can be removed after protocol upgrade.
+func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
+	for _, p := range props {
+		if nm := p.Terms.GetNewMarket(); nm != nil {
+			if perp := nm.Changes.GetPerps(); perp != nil {
+				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if pt.SourceChainID == 0 {
+						pt.SourceChainID = e.chainID
+						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
+					}
+				}
+				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if pt.SourceChainID == 0 {
+						pt.SourceChainID = e.chainID
+						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
+					}
+				}
+				continue
+			}
+			if future := nm.Changes.GetFuture(); future != nil {
+				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if ft.SourceChainID == 0 {
+						ft.SourceChainID = e.chainID
+						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
+					}
+				}
+				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if ft.SourceChainID == 0 {
+						ft.SourceChainID = e.chainID
+						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
+					}
+				}
+			}
+			continue
+		}
+		if um := p.Terms.GetUpdateMarket(); um != nil {
+			if perp := um.Changes.GetPerps(); perp != nil {
+				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if pt.SourceChainID == 0 {
+						pt.SourceChainID = e.chainID
+						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
+					}
+				}
+				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if pt.SourceChainID == 0 {
+						pt.SourceChainID = e.chainID
+						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
+					}
+				}
+				continue
+			}
+			if future := um.Changes.GetFuture(); future != nil {
+				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if ft.SourceChainID == 0 {
+						ft.SourceChainID = e.chainID
+						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
+					}
+				}
+				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
+				case ethcallcommon.Spec:
+					if ft.SourceChainID == 0 {
+						ft.SourceChainID = e.chainID
+						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
+					}
+				}
+			}
+		}
+	}
 }
 
 // votesAsSlice returns a sorted slice of votes from a given map of votes.

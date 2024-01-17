@@ -25,12 +25,12 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.EpochSnapshot,
 	types.AssetsSnapshot,  // Needs to happen before banking.
 	types.WitnessSnapshot, // Needs to happen before banking and governance.
+	types.NetParamsSnapshot,
 	types.GovernanceSnapshot,
 	types.BankingSnapshot,
 	types.CollateralSnapshot,
 	types.TopologySnapshot,
 	types.NotarySnapshot,
-	types.NetParamsSnapshot,
 	types.CheckpointSnapshot,
 	types.DelegationSnapshot,
 	types.FloatingPointConsensusSnapshot, // Shouldn't matter but maybe best before the markets are restored.
@@ -41,6 +41,7 @@ var providersInCallOrder = []types.SnapshotNamespace{
 	types.LiquidationSnapshot,            // Requires markets.
 	types.HoldingAccountTrackerSnapshot,
 	types.EthereumOracleVerifierSnapshot,
+	types.L2EthereumOraclesSnapshot,
 	types.LiquiditySnapshot,
 	types.LiquidityV2Snapshot,
 	types.LiquidityTargetSnapshot,

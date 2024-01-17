@@ -85,6 +85,7 @@ type EthCallEngine interface {
 	GetInitialTriggerTime(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
+	EnsureChainID(chainID string)
 }
 
 type allServices struct {
@@ -157,6 +158,12 @@ type allServices struct {
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
 	volumeDiscount *volumediscount.SnapshottedEngine
+
+	// l2 stuff
+	// TODO: instantiate
+	l2Clients     *ethclient.L2Clients
+	l2Verifiers   *ethverifier.L2Verifiers
+	l2CallEngines *L2EthCallEngines
 }
 
 func newServices(
@@ -170,6 +177,8 @@ func newServices(
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
+
+	l2Clients *ethclient.L2Clients,
 ) (_ *allServices, err error) {
 	svcs := &allServices{
 		ctx:              ctx,
@@ -177,6 +186,7 @@ func newServices(
 		confWatcher:      conf,
 		conf:             conf.Get(),
 		ethClient:        ethClient,
+		l2Clients:        l2Clients,
 		ethConfirmations: ethConfirmations,
 		blockchainClient: blockchainClient,
 		stats:            stats,
@@ -242,8 +252,13 @@ func newServices(
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
 
+	svcs.l2CallEngines = NewL2EthCallEngines(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.l2Clients, svcs.eventForwarder, svcs.oracle.AddSpecActivationListener)
+
 	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines, svcs.conf.IsValidator())
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
@@ -396,7 +411,7 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
 		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
-		svcs.teamsEngine, svcs.spam)
+		svcs.teamsEngine, svcs.spam, svcs.l2Verifiers)
 
 	pow := pow.New(svcs.log, svcs.conf.PoW)
 
@@ -467,6 +482,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.limits.OnTick,
 
 		svcs.ethereumOraclesVerifier.OnTick,
+		svcs.l2Verifiers.OnTick,
 	)
 }
 
@@ -489,6 +505,7 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
 	)
 	svcs.timeService.NotifyOnTick(svcs.confWatcher.OnTimeUpdate)
 }
@@ -834,16 +851,41 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param: netparams.BlockchainsEthereumConfig,
 			Watcher: func(_ context.Context, cfg interface{}) error {
-				// nothing to do if not a validator
-				if !svcs.conf.HaveEthClient() {
-					return nil
-				}
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid ethereum configuration: %w", err)
 				}
 
+				// now we can set the chainID on the original ethCall engine
+				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID())
+
+				// nothing to do if not a validator
+				if !svcs.conf.HaveEthClient() {
+					return nil
+				}
+
 				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		},
+		{
+			Param: netparams.BlockchainsEthereumL2Configs,
+			Watcher: func(ctx context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumL2ConfigsFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum l2 configuration: %w", err)
+				}
+
+				if svcs.conf.HaveEthClient() {
+					svcs.l2Clients.UpdateConfirmations(ethCfg)
+				}
+
+				// non-validators still need to create these engine's for consensus reasons
+				svcs.l2CallEngines.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+				svcs.l2Verifiers.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+
 				return nil
 			},
 		},
