@@ -143,6 +143,7 @@
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
 -
 - [10417](https://github.com/vegaprotocol/vega/issues/10417) - Party margin modes `API` always errors.
+- [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation. 
 
 ## 0.73.0
 

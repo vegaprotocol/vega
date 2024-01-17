@@ -1518,7 +1518,10 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 	case *vegapb.DataSourceDefinition_External:
-
+		if tp.External == nil {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.external", parentProperty, name), ErrIsRequired)
+			return errs
+		}
 		switch tp.External.SourceType.(type) {
 		case *vegapb.DataSourceDefinitionExternal_Oracle:
 			// If data source type is external - check if the signers are present first.
@@ -1986,14 +1989,16 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 	if len(config.DataSourcesSpec) > 5 {
 		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("too many data source specs - must be less than or equal to 5"))
 	}
-	if len(config.DataSourcesSpec) > 0 && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
+	if len(config.SourceStalenessTolerance) > 0 && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
 		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must included staleness information for all data sources"))
 	}
 
 	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.DataSourcesSpec) > 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("are not supported for last trade composite price type"))
 	}
-	if len(config.DataSourcesSpec) > 0 {
+	if len(config.DataSourcesSpec) != len(config.DataSourcesSpecBinding) {
+		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec_binding", parent), fmt.Errorf("must be defined for all oracles"))
+	} else if len(config.DataSourcesSpec) > 0 {
 		for i, dsd := range config.DataSourcesSpec {
 			errs.Merge(checkDataSourceSpec(dsd, fmt.Sprintf("data_sources_spec.%d", i), parent, true))
 			errs.Merge(checkCompositePriceBinding(config.DataSourcesSpecBinding[i], dsd, fmt.Sprintf("%s.data_sources_spec_binding.%d", parent, i)))
