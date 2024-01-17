@@ -86,7 +86,7 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		}
 
 		e := ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
-		e.EnsureChainID(c.ChainID)
+		e.EnsureChainID(c.ChainID, v.isValidator)
 		v.engines[c.ChainID] = e
 
 		// start it here?
