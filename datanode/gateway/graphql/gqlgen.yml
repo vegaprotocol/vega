@@ -787,3 +787,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.PartyProfile
   Metadata:
     model: code.vegaprotocol.io/vega/protos/vega.Metadata
+  MarginMode:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarginMode

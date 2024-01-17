@@ -670,3 +670,23 @@ func UnmarshalLiquidityFeeMethod(v interface{}) (vega.LiquidityFeeSettings_Metho
 
 	return vega.LiquidityFeeSettings_Method(side), nil
 }
+
+func MarshalMarginMode(s vega.MarginMode) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalMarginMode(v interface{}) (vega.MarginMode, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.MarginMode_MARGIN_MODE_UNSPECIFIED, fmt.Errorf("expected margin mode to be a string")
+	}
+
+	side, ok := vega.MarginMode_value[s]
+	if !ok {
+		return vega.MarginMode_MARGIN_MODE_UNSPECIFIED, fmt.Errorf("failed to convert margin mode from GraphQL to Proto: %v", s)
+	}
+
+	return vega.MarginMode(side), nil
+}
