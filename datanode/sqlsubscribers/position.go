@@ -334,12 +334,6 @@ func (p *Position) getPosition(ctx context.Context, e positionEventBase) entitie
 }
 
 func (p *Position) updatePosition(ctx context.Context, pos entities.Position) error {
-	if pos.PartyID == entities.PartyID(types.NetworkParty) {
-		pos.PendingRealisedPnl = num.DecimalZero()
-		pos.RealisedPnl = num.DecimalZero()
-		pos.PendingUnrealisedPnl = num.DecimalZero()
-		pos.UnrealisedPnl = num.DecimalZero()
-	}
 	pos.VegaTime = p.vegaTime
 
 	err := p.store.Add(ctx, pos)
