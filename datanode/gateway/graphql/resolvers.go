@@ -2499,13 +2499,6 @@ func (r *myMarginLevelsUpdateResolver) MarginFactor(_ context.Context, m *vegapb
 	return m.MarginFactor, nil
 }
 
-func (r *myMarginLevelsUpdateResolver) MarginMode(_ context.Context, m *vegapb.MarginLevels) (MarginMode, error) {
-	if m.MarginMode == vegapb.MarginMode_MARGIN_MODE_ISOLATED_MARGIN {
-		return MarginModeMarginModeIsolatedMargin, nil
-	}
-	return MarginModeMarginModeCrossMargin, nil
-}
-
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -2556,13 +2549,6 @@ func (r *myMarginLevelsResolver) OrderMarginLevel(_ context.Context, m *vegapb.M
 
 func (r *myMarginLevelsResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
 	return m.MarginFactor, nil
-}
-
-func (r *myMarginLevelsResolver) MarginMode(_ context.Context, m *vegapb.MarginLevels) (MarginMode, error) {
-	if m.MarginMode == vegapb.MarginMode_MARGIN_MODE_ISOLATED_MARGIN {
-		return MarginModeMarginModeIsolatedMargin, nil
-	}
-	return MarginModeMarginModeCrossMargin, nil
 }
 
 // END: MarginLevels Resolver
