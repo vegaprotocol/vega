@@ -247,6 +247,23 @@ func (s *Definition) IsEthCallSpec() bool {
 	return false
 }
 
+func (s *Definition) EnsureValidChainID(ids []uint64) bool {
+	data := s.Content()
+	if data != nil {
+		switch d := data.(type) {
+		case ethcallcommon.Spec:
+			for _, id := range ids {
+				if id == d.SourceChainID {
+					return true
+				}
+			}
+			return false
+		}
+	}
+
+	return true
+}
+
 // Definition is also a `Timer`.
 func (s *Definition) GetTimeTriggers() common.InternalTimeTriggers {
 	data := s.Content()
