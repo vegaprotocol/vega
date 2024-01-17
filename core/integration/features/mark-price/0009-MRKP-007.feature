@@ -13,7 +13,6 @@ Feature: Test setting of mark price
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights  | source staleness tolerance |
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | last trade | 0.1          | 0.5         | 0           | 0.1,0.2,0.3,0.6 | 3h0m0s,2s,24h0m0s,1h25m0s  |
 
-  @SLABug
   Scenario: 001 when network.markPriceUpdateMaximumFrequency>0s
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount       |
