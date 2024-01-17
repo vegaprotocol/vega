@@ -151,12 +151,12 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
       | party | market id | maintenance | initial |
       | aux2  | ETH/DEC19 | 0           | 0       |
 
-    # check that loss socialisation has happened and that the insurance pool has been clearer to indicate 
+    # check that loss socialisation has happened and that the insurance pool has been cleared to indicate 
     # that there wasn't enough in there to cover the funding payment.
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
-    # We still have a constant total amount in all accounts
+    # Check we still have a constant total amount in all accounts
     And the cumulated balance for all accounts should be worth "231515200"
 
     And the parties should have the following account balances:
