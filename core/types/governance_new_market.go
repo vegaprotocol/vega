@@ -870,6 +870,11 @@ func InstrumentConfigurationFromProto(
 			upperBound = &d
 		}
 
+		var ipc *CompositePriceConfiguration
+		if pr.Perpetual.IndexPriceConfiguration != nil {
+			ipc = CompositePriceConfigurationFromProto(pr.Perpetual.IndexPriceConfiguration)
+		}
+
 		r.Product = &InstrumentConfigurationPerps{
 			Perps: &PerpsProduct{
 				SettlementAsset:                     pr.Perpetual.SettlementAsset,
@@ -884,6 +889,7 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
 				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
 				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perpetual.DataSourceSpecBinding),
+				IndexPriceConfig:                    ipc,
 			},
 		}
 	case *vegapb.InstrumentConfiguration_Spot:
@@ -957,6 +963,8 @@ type PerpsProduct struct {
 	DataSourceSpecForSettlementData     dsdefinition.Definition
 	DataSourceSpecForSettlementSchedule dsdefinition.Definition
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+
+	IndexPriceConfig *CompositePriceConfiguration
 }
 
 func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
@@ -975,6 +983,11 @@ func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
 		lowerBound = ptr.From(p.FundingRateLowerBound.String())
 	}
 
+	var ipc *vegapb.CompositePriceConfiguration
+	if p.IndexPriceConfig != nil {
+		ipc = p.IndexPriceConfig.IntoProto()
+	}
+
 	return &vegapb.PerpetualProduct{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -988,10 +1001,15 @@ func (p PerpsProduct) IntoProto() *vegapb.PerpetualProduct {
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+		IndexPriceConfiguration:             ipc,
 	}
 }
 
 func (p PerpsProduct) DeepClone() *PerpsProduct {
+	var ipc *CompositePriceConfiguration
+	if p.IndexPriceConfig != nil {
+		ipc = p.IndexPriceConfig.DeepClone()
+	}
 	return &PerpsProduct{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -1005,12 +1023,13 @@ func (p PerpsProduct) DeepClone() *PerpsProduct {
 		DataSourceSpecForSettlementData:     *p.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecForSettlementSchedule: *p.DataSourceSpecForSettlementSchedule.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.DeepClone(),
+		IndexPriceConfig:                    ipc,
 	}
 }
 
 func (p PerpsProduct) String() string {
 	return fmt.Sprintf(
-		"quote(%s) settlementAsset(%s) marginFundingFactor(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) settlementSchedule(%s) binding(%s)",
+		"quote(%s) settlementAsset(%s) marginFundingFactor(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) settlementSchedule(%s) binding(%s) indexPriceConfig(%s)",
 		p.QuoteName,
 		p.SettlementAsset,
 		p.MarginFundingFactor.String(),
@@ -1020,6 +1039,7 @@ func (p PerpsProduct) String() string {
 		stringer.ObjToString(p.DataSourceSpecForSettlementData),
 		stringer.ObjToString(p.DataSourceSpecForSettlementSchedule),
 		stringer.PtrToString(p.DataSourceSpecBinding),
+		stringer.PtrToString(p.IndexPriceConfig),
 	)
 }
 
