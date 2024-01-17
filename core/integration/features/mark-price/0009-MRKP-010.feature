@@ -34,4 +34,3 @@ Feature: Test setting of mark price algorithm for futures and perpetual markets
 
 
 
-
