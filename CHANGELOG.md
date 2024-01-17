@@ -71,6 +71,7 @@
 - [534](https://github.com/vegaprotocol/core-test-coverage/issues/534) - Add integration test for team rewards `0009-MRKP-017`
 - [536](https://github.com/vegaprotocol/core-test-coverage/issues/536) - Add integration test for team rewards `0009-MRKP-019`
 - [10317](https://github.com/vegaprotocol/vega/issues/10317) - Add support in Ethereum oracles to data source from `L2s`
+- [10429](https://github.com/vegaprotocol/vega/issues/10429) - Restrict the mark price by book to prices from the last mark price duration. 
 
 
 ### 🐛 Fixes

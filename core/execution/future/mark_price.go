@@ -259,7 +259,7 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 			mpc.priceSources[TradePriceIndex] = pft
 		}
 	}
-	if p := CalculateTimeWeightedAverageBookPrice(mpc.bookPriceAtTime, t); p != nil {
+	if p := CalculateTimeWeightedAverageBookPrice(mpc.bookPriceAtTime, t, markPriceFrequency.Nanoseconds()); p != nil {
 		mpc.priceSources[BookPriceIndex] = p
 	}
 	if median := MedianPrice(mpc.priceSources[:len(mpc.priceSources)-1]); median != nil {

@@ -171,10 +171,16 @@ func TestCalculateTimeWeightedAverageBookMarkPrice(t *testing.T) {
 	timeToPrice := map[int64]*num.Uint{0: num.NewUint(100), 30: num.NewUint(120), 45: num.NewUint(150)}
 
 	// 100 * 30/60 + 120 * 15/60 + 150 * 15/60 = 117.5 => 117
-	require.Equal(t, "117", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 60).String())
+	require.Equal(t, "117", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 60, 60).String())
+
+	// 120 * 15/30 + 150 * 15/30 = 97.5 => 135
+	require.Equal(t, "135", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 60, 30).String())
 
 	// 100 * 30/120 + 120 * 15/120 + 150 * 75/120 = 133.75 => 133
-	require.Equal(t, "133", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 120).String())
+	require.Equal(t, "133", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 120, 120).String())
+
+	// only the price from 45 is considered as the price from 30 is starting before the mark price period
+	require.Equal(t, "150", future.CalculateTimeWeightedAverageBookPrice(timeToPrice, 120, 80).String())
 }
 
 func newOrder(price *num.Uint, size uint64, side types.Side) *types.Order {
