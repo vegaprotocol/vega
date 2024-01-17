@@ -85,7 +85,7 @@ type EthCallEngine interface {
 	GetInitialTriggerTime(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
-	EnsureChainID(chainID string)
+	EnsureChainID(chainID string, confirmWithClient bool)
 }
 
 type allServices struct {
@@ -856,8 +856,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return fmt.Errorf("invalid ethereum configuration: %w", err)
 				}
 
-				// now we can set the chainID on the original ethCall engine
-				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID())
+				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID(), svcs.conf.HaveEthClient())
 
 				// nothing to do if not a validator
 				if !svcs.conf.HaveEthClient() {
