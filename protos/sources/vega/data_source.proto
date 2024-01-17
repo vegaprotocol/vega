@@ -104,6 +104,7 @@ message EthCallSpec {
   // called 'price' and use that if it exists.
   repeated Normaliser normalisers = 8;
 
+  // The ID of the EVM based chain which is to be used to source the oracle data.
   uint64 source_chain_id = 9;
 }
 

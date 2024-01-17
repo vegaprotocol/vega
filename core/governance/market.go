@@ -777,7 +777,6 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
@@ -846,11 +845,9 @@ func validateNewMarketChange(
 
 	if terms.Changes.MarkPriceConfiguration != nil {
 		for _, v := range terms.Changes.MarkPriceConfiguration.DataSources {
-
 			if !v.Data.EnsureValidChainID(getEVMChainIDs(netp)) {
 				return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 			}
-
 		}
 	}
 

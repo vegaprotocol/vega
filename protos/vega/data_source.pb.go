@@ -583,8 +583,9 @@ type EthCallSpec struct {
 	// located, for example $[0] indicates the first result. $[1].price would look
 	// in the second result returned from the contract for a structure with a key
 	// called 'price' and use that if it exists.
-	Normalisers   []*Normaliser `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty"`
-	SourceChainId uint64        `protobuf:"varint,9,opt,name=source_chain_id,json=sourceChainId,proto3" json:"source_chain_id,omitempty"`
+	Normalisers []*Normaliser `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty"`
+	// The ID of the EVM based chain which is to be used to source the oracle data.
+	SourceChainId uint64 `protobuf:"varint,9,opt,name=source_chain_id,json=sourceChainId,proto3" json:"source_chain_id,omitempty"`
 }
 
 func (x *EthCallSpec) Reset() {

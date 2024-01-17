@@ -2903,6 +2903,14 @@ func (m *myDataSourceSpecConfigurationTimeTriggerResolver) Conditions(ctx contex
 // BEGIN: EthCallSpec Resolver.
 type ethCallSpecResolver VegaResolverRoot
 
+func (m *ethCallSpecResolver) SourceChainID(ctx context.Context, obj *vegapb.EthCallSpec) (int, error) {
+	if obj != nil {
+		return int(obj.SourceChainId), nil
+	}
+
+	return 0, nil
+}
+
 func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vegapb.EthCallSpec) ([]string, error) {
 	if obj != nil {
 		if len(obj.Abi) > 0 {
