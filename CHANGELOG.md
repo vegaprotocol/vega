@@ -64,6 +64,13 @@
 - [10375](https://github.com/vegaprotocol/vega/issues/10375) - Expose party's profile in parties API.
 - [10340](https://github.com/vegaprotocol/core-test-coverage/issues/10340) - Support updating profile for a party.
 - [551](https://github.com/vegaprotocol/core-test-coverage/issues/551) - Cover `0053-PERP-033` explicitly.
+- [646](https://github.com/vegaprotocol/core-test-coverage/issues/646) - Add integration test for team rewards `0009-MRKP-130`
+- [647](https://github.com/vegaprotocol/core-test-coverage/issues/647) - Add integration test for team rewards `0009-MRKP-131`
+- [648](https://github.com/vegaprotocol/core-test-coverage/issues/648) - Add integration test for team rewards `0009-MRKP-132`
+- [533](https://github.com/vegaprotocol/core-test-coverage/issues/533) - Add integration test for team rewards `0009-MRKP-016`
+- [534](https://github.com/vegaprotocol/core-test-coverage/issues/534) - Add integration test for team rewards `0009-MRKP-017`
+- [536](https://github.com/vegaprotocol/core-test-coverage/issues/536) - Add integration test for team rewards `0009-MRKP-019`
+
 
 ### 🐛 Fixes
 
@@ -132,6 +139,7 @@
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency. 
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
+- 
 
 ## 0.73.0
 
