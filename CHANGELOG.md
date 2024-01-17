@@ -70,6 +70,7 @@
 - [533](https://github.com/vegaprotocol/core-test-coverage/issues/533) - Add integration test for team rewards `0009-MRKP-016`
 - [534](https://github.com/vegaprotocol/core-test-coverage/issues/534) - Add integration test for team rewards `0009-MRKP-017`
 - [536](https://github.com/vegaprotocol/core-test-coverage/issues/536) - Add integration test for team rewards `0009-MRKP-019`
+- [10317](https://github.com/vegaprotocol/vega/issues/10317) - Add support in Ethereum oracles to data source from `L2s`
 
 
 ### 🐛 Fixes
@@ -139,7 +140,7 @@
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
-- 
+-
 - [10417](https://github.com/vegaprotocol/vega/issues/10417) - Party margin modes `API` always errors.
 
 ## 0.73.0

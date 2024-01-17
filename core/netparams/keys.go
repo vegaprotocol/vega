@@ -175,7 +175,8 @@ const (
 	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
 
 	// blockchain specifics?
-	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
+	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
+	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
@@ -439,4 +440,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxApplyReferralCode:                           {},
 	SpamProtectionBalanceSnapshotFrequency:                       {},
 	SpamProtectionApplyReferralMinFunds:                          {},
+	BlockchainsEthereumL2Configs:                                 {},
 }

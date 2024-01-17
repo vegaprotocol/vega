@@ -18,13 +18,16 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/big"
 	"reflect"
+	"strconv"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -35,6 +38,7 @@ import (
 type EthReaderCaller interface {
 	ethereum.ContractCaller
 	ethereum.ChainReader
+	ChainID(context.Context) (*big.Int, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethcall Forwarder
@@ -71,6 +75,8 @@ type Engine struct {
 	cancelEthereumQueries context.CancelFunc
 	poller                *poller
 	mu                    sync.Mutex
+
+	chainID uint64
 }
 
 func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
@@ -83,8 +89,27 @@ func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthRead
 		calls:       make(map[string]Call),
 		poller:      newPoller(cfg.PollEvery.Get()),
 	}
-
 	return e
+}
+
+// EnsureChainID tells the engine which chainID it should be related to, and it confirms this against the its client.
+func (e *Engine) EnsureChainID(chainID string) {
+	e.chainID, _ = strconv.ParseUint(chainID, 10, 64)
+
+	// if the node is a validator, we now check the chainID against the chain the client is connected to.
+	if e.isValidator {
+		cid, err := e.client.ChainID(context.Background())
+		if err != nil {
+			log.Panic("could not load chain ID", logging.Error(err))
+		}
+
+		if cid.Uint64() != e.chainID {
+			log.Panic("chain ID mismatch between ethCall engine and EVM client",
+				logging.Uint64("client-chain-id", cid.Uint64()),
+				logging.Uint64("engine-chain-id", e.chainID),
+			)
+		}
+	}
 }
 
 // Start starts the polling of the Ethereum bridges, listens to the events
@@ -217,6 +242,12 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec datasource.Spec) erro
 			return fmt.Errorf("failed to create data source: %w", err)
 		}
 
+		// here ensure we are on the engine with the right network ID
+		// not an error, just return
+		if e.chainID != d.SourceChainID {
+			return nil
+		}
+
 		e.calls[id] = ethCall
 	}
 
@@ -246,6 +277,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	}
 
 	e.log.Info("tick",
+		logging.Uint64("chainID", e.chainID),
 		logging.Time("wallTime", wallTime),
 		logging.BigInt("ethBlock", lastEthBlock.Number),
 		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time), 0)))
@@ -265,19 +297,18 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 		}
 
 		nextEthBlockIsh := blockIndex{number: nextEthBlock.Number.Uint64(), time: nextEthBlock.Time}
-
 		for specID, call := range e.getCalls() {
 			if call.triggered(prevEthBlock, nextEthBlockIsh) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.Number.Uint64())
 				if err != nil {
 					e.log.Error("failed to call contract", logging.Error(err))
-					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh)
+					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh, e.chainID)
 					e.forwarder.ForwardFromSelf(event)
 					continue
 				}
 
 				if res.PassesFilters {
-					event := makeChainEvent(res, specID, nextEthBlockIsh)
+					event := makeChainEvent(res, specID, nextEthBlockIsh, e.chainID)
 					e.forwarder.ForwardFromSelf(event)
 				}
 			}
@@ -287,16 +318,17 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	}
 }
 
-func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
+func makeChainEvent(res Result, specID string, block blockish, chainID uint64) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "internal", // NA
 		Nonce: 0,          // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Result:      res.Bytes,
+				SpecId:        specID,
+				BlockHeight:   block.NumberU64(),
+				BlockTime:     block.Time(),
+				Result:        res.Bytes,
+				SourceChainId: ptr.From(chainID),
 			},
 		},
 	}
@@ -304,16 +336,17 @@ func makeChainEvent(res Result, specID string, block blockish) *commandspb.Chain
 	return &ce
 }
 
-func makeErrorChainEvent(errMsg string, specID string, block blockish) *commandspb.ChainEvent {
+func makeErrorChainEvent(errMsg string, specID string, block blockish, chainID uint64) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "internal", // NA
 		Nonce: 0,          // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
-				SpecId:      specID,
-				BlockHeight: block.NumberU64(),
-				BlockTime:   block.Time(),
-				Error:       &errMsg,
+				SpecId:        specID,
+				BlockHeight:   block.NumberU64(),
+				BlockTime:     block.Time(),
+				Error:         &errMsg,
+				SourceChainId: ptr.From(chainID),
 			},
 		},
 	}

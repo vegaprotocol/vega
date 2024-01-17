@@ -43,6 +43,7 @@ type Spec struct {
 	RequiredConfirmations uint64
 	Normalisers           map[string]string
 	Filters               common.SpecFilters
+	SourceChainID         uint64
 }
 
 func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
@@ -82,6 +83,7 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 		RequiredConfirmations: proto.RequiredConfirmations,
 		Filters:               filters,
 		Normalisers:           normalisers,
+		SourceChainID:         proto.SourceChainId,
 	}, nil
 }
 
@@ -116,6 +118,7 @@ func (s Spec) IntoProto() (*vegapb.EthCallSpec, error) {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
 		Normalisers:           normalisers,
+		SourceChainId:         s.SourceChainID,
 	}, nil
 }
 
@@ -161,6 +164,7 @@ func (s Spec) DeepClone() common.DataSourceType {
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(common.SpecFilters(nil), s.Filters...),
 		Normalisers:           clonedNormalisers,
+		SourceChainID:         s.SourceChainID,
 	}
 }
 

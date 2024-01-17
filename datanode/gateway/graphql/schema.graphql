@@ -4513,6 +4513,8 @@ type EthCallSpec {
   normalisers: [Normaliser!]
   "Filters the data returned from the contract method."
   filters: [Filter!]
+  "The ID of the EVM based chain which is to be used to source the oracle data."
+  sourceChainId: Int!
 }
 
 type InstrumentConfiguration {

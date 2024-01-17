@@ -22,10 +22,18 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+const namedLogger = "ethClient"
+
 type Config struct {
-	Level       encoding.LogLevel `long:"log-level"`
+	Level           encoding.LogLevel `long:"log-level"`
+	RPCEndpoint     string
+	RetryDelay      encoding.Duration
+	EVMChainConfigs []EVMChainConfig
+}
+
+type EVMChainConfig struct {
+	ChainID     string
 	RPCEndpoint string
-	RetryDelay  encoding.Duration
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration,

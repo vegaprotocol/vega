@@ -16,6 +16,8 @@ message EthContractCallEvent {
   bytes result = 4;
   // Error message if the call failed.
   optional string error = 5;
+  // Source chain for this chain event.
+  optional uint64 source_chain_id = 6;
 }
 
 // Deposit for a Vega built-in asset
