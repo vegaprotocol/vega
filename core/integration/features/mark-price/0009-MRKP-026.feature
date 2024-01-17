@@ -48,7 +48,7 @@ Feature: Mark price calculation on auction exit
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | aux1  | ETH/FEB23 | buy  | 1      | 15110 | 0                | TYPE_LIMIT | TIF_GTC | auctionBid |
       | aux2  | ETH/FEB23 | sell | 1      | 15110 | 0                | TYPE_LIMIT | TIF_GTC | auctionAsk |
-    When the network moves ahead "5" blocks
+    When the network moves ahead "10" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    |
       | 15030      | TRADING_MODE_MONITORING_AUCTION |
@@ -56,10 +56,10 @@ Feature: Mark price calculation on auction exit
       | party | reference  | price | size delta | tif     |
       | aux1  | auctionBid | 15100 | 0          | TIF_GTC |
       | aux2  | auctionAsk | 15100 | 0          | TIF_GTC |
-    When the network moves ahead "6" blocks
+    When the network moves ahead "1" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
-      | 15105      | TRADING_MODE_CONTINUOUS |
+      | 15108      | TRADING_MODE_CONTINUOUS |
 
 
 
