@@ -69,7 +69,7 @@ var (
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
 	ErrInvalidInsurancePoolFraction          = errors.New("insurnace pool fraction invalid")
 	ErrUpdateMarketDifferentProduct          = errors.New("cannot update a market to a different product type")
-	ErrInvalidEVMChainIDInEthereumOracleSpec = errors.New("invalid evm chain id in ethereum oracle spec")
+	ErrInvalidEVMChainIDInEthereumOracleSpec = errors.New("invalid source chain id in ethereum oracle spec")
 )
 
 func assignProduct(

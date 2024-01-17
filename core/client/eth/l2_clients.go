@@ -50,7 +50,7 @@ func NewL2Clients(
 	clients := map[string]*L2Client{}
 	confirmations := map[string]*EthereumConfirmations{}
 
-	for _, v := range cfg.L2Configs {
+	for _, v := range cfg.EVMChainConfigs {
 		log.Info("starting L2 client",
 			logging.String("chain-id", v.ChainID),
 			logging.String("endpoint", v.RPCEndpoint),
@@ -110,7 +110,7 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 	}
 
 	e.log.Info("updating L2 clients")
-	for _, v := range cfg.L2Configs {
+	for _, v := range cfg.EVMChainConfigs {
 		if _, ok := e.clients[v.ChainID]; ok {
 			e.log.Warn("L2 client already setted up, please stop and restart node to update existing configuration",
 				logging.String("chain-id", v.ChainID),
