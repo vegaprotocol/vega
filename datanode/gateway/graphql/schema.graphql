@@ -186,6 +186,8 @@ type MarginLevels {
 }
 
 enum MarginMode {
+  "Margin mode is not specified."
+  MARGIN_MODE_UNSPECIFIED
   "Party is in cross margin mode"
   MARGIN_MODE_CROSS_MARGIN
   "Party is in isolated margin mode"
@@ -4511,6 +4513,8 @@ type EthCallSpec {
   normalisers: [Normaliser!]
   "Filters the data returned from the contract method."
   filters: [Filter!]
+  "The ID of the EVM based chain which is to be used to source the oracle data."
+  sourceChainId: Int!
 }
 
 type InstrumentConfiguration {
@@ -7115,11 +7119,11 @@ type PartyMarginMode {
   "Selected margin mode."
   marginMode: MarginMode!
   "Margin factor for the market. Isolated mode only."
-  margin_factor: String
+  marginFactor: String
   "Minimum theoretical margin factor for the market. Isolated mode only."
-  min_theoretical_margin_factor: String
+  minTheoreticalMarginFactor: String
   "Maximum theoretical leverage for the market. Isolated mode only."
-  max_theoretical_leverage: String
+  maxTheoreticalLeverage: String
   "Epoch at which the update happened."
   atEpoch: Int!
 }

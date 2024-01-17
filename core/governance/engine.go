@@ -141,6 +141,8 @@ type Engine struct {
 
 	// snapshot state
 	gss *governanceSnapshotState
+	// main chain ID
+	chainID uint64
 }
 
 func NewEngine(
@@ -1008,7 +1010,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 			return types.ProposalErrorInvalidMarket, ErrParentMarketDoesNotExist
 		}
 
-		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow())
+		return validateUpdateMarketChange(marketUpdate, mkt, enct, e.timeService.GetTimeNow(), e.netp)
 	case types.ProposalTermsTypeNewAsset:
 		return e.validateNewAssetProposal(terms.GetNewAsset())
 	case types.ProposalTermsTypeUpdateAsset:
@@ -1274,7 +1276,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		newMarket.Changes.LiquidationStrategy = existingMarket.LiquidationStrategy
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow()); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, existingMarket, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}, e.timeService.GetTimeNow(), e.netp); err != nil {
 		return nil, perr, err
 	}
 
@@ -1317,6 +1319,11 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 	}
 
 	return newAsset, types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) OnChainIDUpdate(cID uint64) error {
+	e.chainID = cID
+	return nil
 }
 
 func getTokensBalance(accounts StakingAccounts, partyID string) *num.Uint {

@@ -2499,13 +2499,6 @@ func (r *myMarginLevelsUpdateResolver) MarginFactor(_ context.Context, m *vegapb
 	return m.MarginFactor, nil
 }
 
-func (r *myMarginLevelsUpdateResolver) MarginMode(_ context.Context, m *vegapb.MarginLevels) (MarginMode, error) {
-	if m.MarginMode == vegapb.MarginMode_MARGIN_MODE_ISOLATED_MARGIN {
-		return MarginModeMarginModeIsolatedMargin, nil
-	}
-	return MarginModeMarginModeCrossMargin, nil
-}
-
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -2556,13 +2549,6 @@ func (r *myMarginLevelsResolver) OrderMarginLevel(_ context.Context, m *vegapb.M
 
 func (r *myMarginLevelsResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
 	return m.MarginFactor, nil
-}
-
-func (r *myMarginLevelsResolver) MarginMode(_ context.Context, m *vegapb.MarginLevels) (MarginMode, error) {
-	if m.MarginMode == vegapb.MarginMode_MARGIN_MODE_ISOLATED_MARGIN {
-		return MarginModeMarginModeIsolatedMargin, nil
-	}
-	return MarginModeMarginModeCrossMargin, nil
 }
 
 // END: MarginLevels Resolver
@@ -2902,6 +2888,14 @@ func (m *myDataSourceSpecConfigurationTimeTriggerResolver) Conditions(ctx contex
 
 // BEGIN: EthCallSpec Resolver.
 type ethCallSpecResolver VegaResolverRoot
+
+func (m *ethCallSpecResolver) SourceChainID(ctx context.Context, obj *vegapb.EthCallSpec) (int, error) {
+	if obj != nil {
+		return int(obj.SourceChainId), nil
+	}
+
+	return 0, nil
+}
 
 func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vegapb.EthCallSpec) ([]string, error) {
 	if obj != nil {

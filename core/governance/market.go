@@ -67,8 +67,9 @@ var (
 	// ErrInvalidRiskParameter ...
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
-	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
-	ErrUpdateMarketDifferentProduct = errors.New("cannot update a market to a different product type")
+	ErrInvalidInsurancePoolFraction          = errors.New("insurnace pool fraction invalid")
+	ErrUpdateMarketDifferentProduct          = errors.New("cannot update a market to a different product type")
+	ErrInvalidEVMChainIDInEthereumOracleSpec = errors.New("invalid source chain id in ethereum oracle spec")
 )
 
 func assignProduct(
@@ -133,6 +134,7 @@ func assignProduct(
 				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData),
 				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule),
 				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
+				IndexPriceConfig:                    product.Perps.IndexPriceConfig,
 			},
 		}
 	case *types.InstrumentConfigurationSpot:
@@ -415,13 +417,17 @@ func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepC
 	return validateAssetBasic(spot.BaseAsset, assets, deepCheck)
 }
 
-func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
+func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
 	future.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(future.DataSourceSpecForSettlementData, et)
 	future.DataSourceSpecForTradingTermination = setDatasourceDefinitionDefaults(future.DataSourceSpecForTradingTermination, et)
 
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if !settlData.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlData.Content() == nil {
@@ -440,6 +446,10 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if !tterm.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if tterm.Content() == nil {
@@ -514,13 +524,17 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool) (types.ProposalError, error) {
+func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et *enactmentTime, currentTime time.Time, deepCheck bool, evmChainIDs []uint64) (types.ProposalError, error) {
 	perps.DataSourceSpecForSettlementData = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementData, et)
 	perps.DataSourceSpecForSettlementSchedule = setDatasourceDefinitionDefaults(perps.DataSourceSpecForSettlementSchedule, et)
 
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if !settlData.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidPerpsProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlData.Content() == nil {
@@ -539,6 +553,10 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 	settlSchedule := &perps.DataSourceSpecForSettlementSchedule
 	if settlSchedule == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if !settlSchedule.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidPerpsProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlSchedule.Content() == nil {
@@ -601,17 +619,25 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 		return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger only supported for now")
 	}
 
+	if perps.IndexPriceConfig != nil {
+		for _, v := range perps.IndexPriceConfig.DataSources {
+			if !v.Data.EnsureValidChainID(evmChainIDs) {
+				return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
+			}
+		}
+	}
+
 	return validateAsset(perps.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time) (types.ProposalError, error) {
+func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool, currentTime *time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
-		return validateFuture(product.Future, decimals, assets, et, deepCheck)
+		return validateFuture(product.Future, decimals, assets, et, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationPerps:
-		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck)
+		return validatePerps(product.Perps, decimals, assets, et, *currentTime, deepCheck, evmChainIDs)
 	case *types.InstrumentConfigurationSpot:
 		return validateSpot(product.Spot, decimals, assets, deepCheck)
 	default:
@@ -725,6 +751,33 @@ func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.Pr
 	return types.ProposalErrorUnspecified, nil
 }
 
+func getEVMChainIDs(netp NetParams) []uint64 {
+	ethCfg := &proto.EthereumConfig{}
+	if err := netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, ethCfg); err != nil {
+		panic(fmt.Sprintf("could not load ethereum config from network parameter, this should never happen: %v", err))
+	}
+	cID, err := strconv.ParseUint(ethCfg.ChainId, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("could not convert chain id from ethereum config into integer: %v", err))
+	}
+
+	allIDs := []uint64{cID}
+	l2Cfgs := &proto.EthereumL2Configs{}
+	if err := netp.GetJSONStruct(netparams.BlockchainsEthereumL2Configs, l2Cfgs); err != nil {
+		panic(fmt.Sprintf("could not load ethereum l2 config from network parameter, this should never happen: %v", err))
+	}
+
+	for _, v := range l2Cfgs.Configs {
+		l2ID, err := strconv.ParseUint(v.ChainId, 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("could not convert chain id from ethereum l2 config into integer: %v", err))
+		}
+		allIDs = append(allIDs, l2ID)
+	}
+
+	return allIDs
+}
+
 func validateNewSpotMarketChange(
 	terms *types.NewSpotMarket,
 	assets Assets,
@@ -733,7 +786,7 @@ func validateNewSpotMarketChange(
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
 ) (types.ProposalError, error) {
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, nil, getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
@@ -765,7 +818,7 @@ func validateNewMarketChange(
 	restore bool,
 ) (types.ProposalError, error) {
 	// in all cases, the instrument must be specified and validated, successor markets included.
-	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime)); err != nil {
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck, ptr.From(currentTime), getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets
@@ -798,6 +851,15 @@ func validateNewMarketChange(
 	} else if perr, err := validateLiquidationStrategy(terms.Changes.LiquidationStrategy); err != nil {
 		return perr, err
 	}
+
+	if terms.Changes.MarkPriceConfiguration != nil {
+		for _, v := range terms.Changes.MarkPriceConfiguration.DataSources {
+			if !v.Data.EnsureValidChainID(getEVMChainIDs(netp)) {
+				return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
+			}
+		}
+	}
+
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -852,8 +914,8 @@ func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.Propos
 }
 
 // validateUpdateMarketChange checks market update proposal terms.
-func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
-	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime); err != nil {
+func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu *enactmentTime, currentTime time.Time, netp NetParams) (types.ProposalError, error) {
+	if perr, err := validateUpdateInstrument(terms.Changes.Instrument, mkt, etu, currentTime, getEVMChainIDs(netp)); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
@@ -874,20 +936,20 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, mkt types.Market, etu
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdateInstrument(instrument *types.UpdateInstrumentConfiguration, mkt types.Market, et *enactmentTime, currentTime time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		return validateUpdateFuture(product.Future, mkt, et)
+		return validateUpdateFuture(product.Future, mkt, et, evmChainIDs)
 	case *types.UpdateInstrumentConfigurationPerps:
-		return validateUpdatePerps(product.Perps, mkt, et, currentTime)
+		return validateUpdatePerps(product.Perps, mkt, et, currentTime, evmChainIDs)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 }
 
-func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime) (types.ProposalError, error) {
+func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, et *enactmentTime, evmChainIDs []uint64) (types.ProposalError, error) {
 	if mkt.GetFuture() == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrUpdateMarketDifferentProduct
 	}
@@ -898,6 +960,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if !settlData.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlData.Content() == nil {
@@ -916,6 +982,10 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
+	}
+
+	if !tterm.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if tterm.Content() == nil {
@@ -992,7 +1062,7 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, mkt types.Market, e
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time) (types.ProposalError, error) {
+func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *enactmentTime, currentTime time.Time, evmChainIDs []uint64) (types.ProposalError, error) {
 	if mkt.GetPerps() == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrUpdateMarketDifferentProduct
 	}
@@ -1003,6 +1073,10 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	settlData := &perps.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	if !settlData.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidPerpsProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlData.Content() == nil {
@@ -1021,6 +1095,10 @@ func validateUpdatePerps(perps *types.UpdatePerpsProduct, mkt types.Market, et *
 	settlSchedule := &perps.DataSourceSpecForSettlementSchedule
 	if settlSchedule == nil {
 		return types.ProposalErrorInvalidPerpsProduct, ErrMissingDataSourceSpecForSettlementSchedule
+	}
+
+	if !settlSchedule.EnsureValidChainID(evmChainIDs) {
+		return types.ProposalErrorInvalidPerpsProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 	}
 
 	if settlSchedule.Content() == nil {

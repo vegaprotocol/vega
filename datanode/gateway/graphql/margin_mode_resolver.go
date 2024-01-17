@@ -23,10 +23,6 @@ import (
 
 type marginModeResolver VegaResolverRoot
 
-func (m marginModeResolver) MarginMode(_ context.Context, obj *v2.PartyMarginMode) (MarginMode, error) {
-	return MarginMode(obj.MarginMode), nil
-}
-
 func (m marginModeResolver) AtEpoch(_ context.Context, obj *v2.PartyMarginMode) (int, error) {
 	return int(obj.AtEpoch), nil
 }

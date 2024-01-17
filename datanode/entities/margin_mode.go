@@ -44,10 +44,31 @@ func (t PartyMarginMode) Cursor() *Cursor {
 }
 
 func (t PartyMarginMode) ToProto() *v2.PartyMarginMode {
+	var marginFactor, minTheoreticalMarginFactor, maxTheoreticalLeverage *string
+
+	if t.MarginFactor != nil {
+		factor := t.MarginFactor.String()
+		marginFactor = &factor
+	}
+
+	if t.MinTheoreticalMarginFactor != nil {
+		factor := t.MinTheoreticalMarginFactor.String()
+		minTheoreticalMarginFactor = &factor
+	}
+
+	if t.MaxTheoreticalLeverage != nil {
+		leverage := t.MaxTheoreticalLeverage.String()
+		maxTheoreticalLeverage = &leverage
+	}
+
 	return &v2.PartyMarginMode{
-		MarketId: string(t.MarketID),
-		PartyId:  string(t.PartyID),
-		AtEpoch:  t.AtEpoch,
+		MarketId:                   string(t.MarketID),
+		PartyId:                    string(t.PartyID),
+		MarginMode:                 t.MarginMode,
+		MarginFactor:               marginFactor,
+		MinTheoreticalMarginFactor: minTheoreticalMarginFactor,
+		MaxTheoreticalLeverage:     maxTheoreticalLeverage,
+		AtEpoch:                    t.AtEpoch,
 	}
 }
 
