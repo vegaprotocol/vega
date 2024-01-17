@@ -1,9 +1,12 @@
 Feature: Test setting of mark price
   Background:
-    Given the average block duration is "1"
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 4s    |
+
+    And the perpetual oracles from "0xCAFECAFE1":
+      | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
+      | perp-oracle | USD   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.5                   | 0.05          | 0.1               | 0.9               | ETH        | 18                  |
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 0.00             | 24h         | 1e-9           |
@@ -11,68 +14,62 @@ Feature: Test setting of mark price
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | median     | 0.5          | 2           | 0           | 0,1,0,0        | 6s,4s,24h0m0s,1h25m0s      |
+      | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance | market type |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 0           | 1,2,0,0        | 8s,5s,24h0m0s,1h25m0s      | future      |
+      | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle            | 0.25                   | 0                         | default-futures | weight     | 1            | 1           | 0           | 1,2,0,0        | 8s,5s,24h0m0s,1h25m0s      | perp        |
 
-  @SLABug
-  Scenario: 001 check mark price using order price with cash amount 100 USD
+  Scenario: 001 check mark price using weight average
     Given the parties deposit on asset's general account the following amount:
-      | party            | asset | amount       |
-      | buySideProvider  | USD   | 100000000000 |
-      | sellSideProvider | USD   | 100000000000 |
-      | party            | USD   | 48050        |
+      | party             | asset | amount       |
+      | buySideProvider   | USD   | 100000000000 |
+      | sellSideProvider  | USD   | 100000000000 |
+      | party             | USD   | 48050        |
+      | buySideProvider1  | USD   | 100000000000 |
+      | sellSideProvider1 | USD   | 100000000000 |
+      | party1            | USD   | 48050        |
     And the parties place the following orders:
-      | party            | market id | side | volume | price  | resulting trades | type       | tif     |
-      | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party            | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party            | ETH/FEB23 | sell | 2      | 15902  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party            | ETH/FEB23 | sell | 1      | 15904  | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party             | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | buySideProvider   | ETH/FEB23 | buy  | 5      | 14900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider   | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider   | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party             | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider  | ETH/FEB23 | sell | 2      | 15920  | 0                | TYPE_LIMIT | TIF_GTC | sell-2    |
+      | sellSideProvider  | ETH/FEB23 | sell | 1      | 15940  | 0                | TYPE_LIMIT | TIF_GTC | sell-3    |
+      | sellSideProvider  | ETH/FEB23 | sell | 3      | 15960  | 0                | TYPE_LIMIT | TIF_GTC | sell-4    |
+      | sellSideProvider  | ETH/FEB23 | sell | 5      | 15990  | 0                | TYPE_LIMIT | TIF_GTC | sell-5    |
+      | sellSideProvider  | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider1  | ETH/FEB22 | buy  | 5      | 14900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider1  | ETH/FEB22 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider1  | ETH/FEB22 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party1            | ETH/FEB22 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | sellSideProvider1 | ETH/FEB22 | sell | 2      | 15920  | 0                | TYPE_LIMIT | TIF_GTC | sell-2    |
+      | sellSideProvider1 | ETH/FEB22 | sell | 1      | 15940  | 0                | TYPE_LIMIT | TIF_GTC | sell-3    |
+      | sellSideProvider1 | ETH/FEB22 | sell | 3      | 15960  | 0                | TYPE_LIMIT | TIF_GTC | sell-4    |
+      | sellSideProvider1 | ETH/FEB22 | sell | 5      | 15990  | 0                | TYPE_LIMIT | TIF_GTC | sell-5    |
+      | sellSideProvider1 | ETH/FEB22 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
-    #AC 0009-MRKP-030
+    # AC 0009-MRKP-030,0009-MRKP-031
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
-
-    And the parties should have the following margin levels:
-      | party | market id | maintenance | search | initial | release | margin mode  |
-      | party | ETH/FEB23 | 9546        | 10500  | 11455   | 13364   | cross margin |
-    #margin = min(3*(15900-15900), 3*15900*(0.25))+3*0.1*15900 + 3*0.1*15900=9546
-
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
-      | party | USD   | ETH/FEB23 | 11449  | 36601   |
-
-    When the network moves ahead "2" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15900" for the market "ETH/FEB23"
-
-    # last trade mark price = 15900
-    # book mark price = 15451
-    # median price = 15675
-    # => mark price by median =
-    When the network moves ahead "1" blocks
-    Then the mark price should be "15675" for the market "ETH/FEB23"
+    Then the mark price should be "15900" for the market "ETH/FEB22"
 
     And the parties place the following orders:
-      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | buySideProvider | ETH/FEB23 | buy  | 1      | 15904 | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | buySideProvider  | ETH/FEB23 | buy  | 2      | 15920 | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider1 | ETH/FEB22 | buy  | 2      | 15920 | 1                | TYPE_LIMIT | TIF_GTC |           |
+    When the network moves ahead "1" blocks
+    Then the mark price should be "15900" for the market "ETH/FEB23"
+    Then the mark price should be "15900" for the market "ETH/FEB22"
 
-    When the network moves ahead "2" blocks
-    Then the mark price should be "15675" for the market "ETH/FEB23"
-    When the network moves ahead "3" blocks
-    # last trade mark price = 15902
-    # book mark price = 15451
-    # median mark price = (15902+15451)/2 = 15676
-    # => mark price by median = 15676
-    Then the mark price should be "15676" for the market "ETH/FEB23"
+    And the parties place the following orders:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 15940 | 1                | TYPE_LIMIT | TIF_GTC |           |
+      | buySideProvider1 | ETH/FEB22 | buy  | 1      | 15940 | 1                | TYPE_LIMIT | TIF_GTC |           |
+    When the network moves ahead "4" blocks
 
+    #book mark price would be (15480*3+15470)/4 = 15,477
+    #traded mark price should 15940
+    #weighted price: (15477*2+15940)/3=15631
+    Then the mark price should be "15631" for the market "ETH/FEB23"
+    Then the mark price should be "15631" for the market "ETH/FEB22"
 
