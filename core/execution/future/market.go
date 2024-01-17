@@ -4299,7 +4299,7 @@ func (m *Market) scaleOracleData(ctx context.Context, price *num.Numeric, dp int
 		return nil
 	}
 
-	p, err := price.ScaleTo(int64(m.assetDP), dp)
+	p, err := price.ScaleTo(dp, int64(m.assetDP))
 	if err != nil {
 		m.log.Error(err.Error())
 		return nil
