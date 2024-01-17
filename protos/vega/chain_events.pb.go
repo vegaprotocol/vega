@@ -36,7 +36,7 @@ type EthContractCallEvent struct {
 	Result []byte `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
 	// Error message if the call failed.
 	Error *string `protobuf:"bytes,5,opt,name=error,proto3,oneof" json:"error,omitempty"`
-	// source chain for this chain event.
+	// Source chain for this chain event.
 	SourceChainId *uint64 `protobuf:"varint,6,opt,name=source_chain_id,json=sourceChainId,proto3,oneof" json:"source_chain_id,omitempty"`
 }
 
