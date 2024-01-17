@@ -619,6 +619,14 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 		return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger only supported for now")
 	}
 
+	if perps.IndexPriceConfig != nil {
+		for _, v := range perps.IndexPriceConfig.DataSources {
+			if !v.Data.EnsureValidChainID(evmChainIDs) {
+				return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
+			}
+		}
+	}
+
 	return validateAsset(perps.SettlementAsset, decimals, assets, deepCheck)
 }
 
