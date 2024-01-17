@@ -4,7 +4,7 @@ Feature: Composite mark price calculation
     Given the average block duration is "1"
     Given the following network parameters are set:
       | name                                    | value |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | network.markPriceUpdateMaximumFrequency | 1s    |
     And the liquidity monitoring parameters:
       | name       | triggering ratio | time window | scaling factor |
       | lqm-params | 0.00             | 24h         | 1e-9           |
@@ -36,7 +36,7 @@ Feature: Composite mark price calculation
     Given the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value | time offset |
       | price1.USD.value | 15060 | 0s          |
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
     Then the mark price should be "15030" for the market "ETH/FEB23"
 
     # Last traded price stale, composite price average of book price and oracle price
