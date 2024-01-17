@@ -1880,6 +1880,8 @@ func checkLiquidityFeeSettings(config *protoTypes.LiquidityFeeSettings, parent s
 			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrIsNotValidNumber)
 		case fee.IsNegative():
 			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrMustBePositiveOrZero)
+		case fee.GreaterThan(num.DecimalOne()):
+			errs.AddForProperty(fmt.Sprintf("%s.fee_constant", parent), ErrMustBeWithinRange01)
 		}
 	}
 
