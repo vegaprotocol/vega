@@ -17,7 +17,7 @@ Feature: Test setting of mark price
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 0.1          | 0.5         | 500000      | 0,1,0,0        | 3h0m0s,2s,24h0m0s,1h25m0s  | future      |
       | ETH/FEB22 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle            | 0.25                   | 0                         | default-futures | weight     | 0.1          | 0.5         | 500000      | 0,1,0,0        | 3h0m0s,2s,24h0m0s,1h25m0s  | perp        |
 
-  Scenario: when mark price methodology hasn't provided a price at the point of uncrossing the opening auction (0009-MRKP-001,0009-MRKP-002)
+  Scenario: when mark price methodology hasn't provided a price at the point of uncrossing the opening auction (0009-MRKP-001,0009-MRKP-003)
     Given the parties deposit on asset's general account the following amount:
       | party             | asset | amount       |
       | buySideProvider   | USD   | 100000000000 |
