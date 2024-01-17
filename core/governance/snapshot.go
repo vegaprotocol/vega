@@ -438,14 +438,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if perp := nm.Changes.GetPerps(); perp != nil {
 				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
 					}
 				}
 				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
 					}
@@ -455,14 +455,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if future := nm.Changes.GetFuture(); future != nil {
 				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
 					}
 				}
 				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
 					}
@@ -474,14 +474,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if perp := um.Changes.GetPerps(); perp != nil {
 				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
 					}
 				}
 				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
 					}
@@ -491,14 +491,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if future := um.Changes.GetFuture(); future != nil {
 				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
 					}
 				}
 				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
 					}

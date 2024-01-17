@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
@@ -62,6 +63,7 @@ type tstEngine struct {
 	proposalCounter uint                          // to streamline proposal generation
 	tokenBal        map[string]uint64             // party > balance
 	els             map[string]map[string]float64 // market > party > ELS
+	chainID         uint64
 }
 
 func TestSubmitProposals(t *testing.T) {
@@ -1438,6 +1440,8 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 	// Initialise engine as validator
 	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp, banking)
 	require.NotNil(t, eng)
+	// to ensure the source chain ID doesn't change due to the protocol upgrade stuff ->
+	eng.OnChainIDUpdate(123)
 
 	tEng := &tstEngine{
 		Engine:   eng,
@@ -1451,6 +1455,7 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 		netp:     netp,
 		tokenBal: map[string]uint64{},
 		els:      map[string]map[string]float64{},
+		chainID:  123,
 	}
 	// ensure the balance is always returned as expected
 
@@ -1464,6 +1469,11 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 		return num.NewUint(b), nil
 	})
 	return tEng
+}
+
+func (t *tstEngine) OnChainIDUpdate(cID uint64) error {
+	t.chainID = cID
+	return t.Engine.OnChainIDUpdate(cID)
 }
 
 func newFreeformTerms() *types.ProposalTermsNewFreeform {
@@ -1534,7 +1544,7 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool, successor *types.SuccessorConfig, chainID uint64) *types.ProposalTermsNewMarket {
 	var dt *dsdefinition.Definition
 	if termExt {
 		if termFilter == nil {
@@ -1564,6 +1574,35 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 			},
 		)
 	}
+	if spec, ok := dt.DataSourceType.(ethcallcommon.Spec); ok && !spec.IsZero() {
+		spec.SourceChainID = chainID
+		dt.DataSourceType = spec
+	}
+	ds := *datasource.NewDefinition(
+		datasource.ContentTypeOracle,
+	).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "prices.ETH.value",
+						Type: datapb.PropertyKey_TYPE_INTEGER,
+					},
+					Conditions: []*dstypes.SpecCondition{
+						{
+							Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+							Value:    "0",
+						},
+					},
+				},
+			},
+		},
+	)
+	if spec, ok := ds.DataSourceType.(ethcallcommon.Spec); ok && !spec.IsZero() {
+		spec.SourceChainID = chainID
+		ds.DataSourceType = spec
+	}
 
 	return &types.ProposalTermsNewMarket{
 		NewMarket: &types.NewMarket{
@@ -1573,29 +1612,9 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 					Code: "CRYPTO:GBPVUSD/JUN20",
 					Product: &types.InstrumentConfigurationFuture{
 						Future: &types.FutureProduct{
-							SettlementAsset: "VUSD",
-							QuoteName:       "VUSD",
-							DataSourceSpecForSettlementData: *datasource.NewDefinition(
-								datasource.ContentTypeOracle,
-							).SetOracleConfig(
-								&signedoracle.SpecConfiguration{
-									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
-									Filters: []*dstypes.SpecFilter{
-										{
-											Key: &dstypes.SpecPropertyKey{
-												Name: "prices.ETH.value",
-												Type: datapb.PropertyKey_TYPE_INTEGER,
-											},
-											Conditions: []*dstypes.SpecCondition{
-												{
-													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-													Value:    "0",
-												},
-											},
-										},
-									},
-								},
-							),
+							SettlementAsset:                     "VUSD",
+							QuoteName:                           "VUSD",
+							DataSourceSpecForSettlementData:     ds,
 							DataSourceSpecForTradingTermination: *dt,
 							DataSourceSpecBinding:               termBinding,
 						},
@@ -1629,18 +1648,50 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
 				},
+				MarkPriceConfiguration: &types.CompositePriceConfiguration{
+					DecayWeight:        num.DecimalZero(),
+					DecayPower:         num.DecimalZero(),
+					CashAmount:         num.UintZero(),
+					CompositePriceType: types.CompositePriceTypeByLastTrade,
+				},
 			},
 		},
 	}
 }
 
 //nolint:unparam
-func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.SpecBindingForPerps) *types.ProposalTermsNewMarket {
+func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.SpecBindingForPerps, chainID uint64) *types.ProposalTermsNewMarket {
 	if binding == nil {
 		binding = &datasource.SpecBindingForPerps{
 			SettlementDataProperty:     "price.ETH.value",
 			SettlementScheduleProperty: "vegaprotocol.builtin.timetrigger",
 		}
+	}
+	ds := *datasource.NewDefinition(
+		datasource.ContentTypeOracle,
+	).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
+			Filters: []*dstypes.SpecFilter{
+				{
+					Key: &dstypes.SpecPropertyKey{
+						Name: "price.ETH.value",
+						Type: datapb.PropertyKey_TYPE_INTEGER,
+					},
+					Conditions: []*dstypes.SpecCondition{
+						{
+							Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+							Value:    "0",
+						},
+					},
+				},
+			},
+		},
+	)
+
+	if spec, ok := ds.DataSourceType.(ethcallcommon.Spec); ok && !spec.IsZero() {
+		spec.SourceChainID = chainID
+		ds.DataSourceType = spec
 	}
 
 	return &types.ProposalTermsNewMarket{
@@ -1651,29 +1702,9 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 					Code: "CRYPTO:GBP/USD",
 					Product: &types.InstrumentConfigurationPerps{
 						Perps: &types.PerpsProduct{
-							SettlementAsset: "USDT",
-							QuoteName:       "USD",
-							DataSourceSpecForSettlementData: *datasource.NewDefinition(
-								datasource.ContentTypeOracle,
-							).SetOracleConfig(
-								&signedoracle.SpecConfiguration{
-									Signers: []*dstypes.Signer{dstypes.CreateSignerFromString("0xDEADBEEF", dstypes.SignerTypePubKey)},
-									Filters: []*dstypes.SpecFilter{
-										{
-											Key: &dstypes.SpecPropertyKey{
-												Name: "price.ETH.value",
-												Type: datapb.PropertyKey_TYPE_INTEGER,
-											},
-											Conditions: []*dstypes.SpecCondition{
-												{
-													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-													Value:    "0",
-												},
-											},
-										},
-									},
-								},
-							),
+							SettlementAsset:                 "USDT",
+							QuoteName:                       "USD",
+							DataSourceSpecForSettlementData: ds,
 							DataSourceSpecForSettlementSchedule: *datasource.NewDefinition(datasource.ContentTypeInternalTimeTriggerTermination).SetTimeTriggerTriggersConfig(
 								common.InternalTimeTriggers{
 									{
@@ -1872,6 +1903,12 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
 				},
+				MarkPriceConfiguration: &types.CompositePriceConfiguration{
+					DecayWeight:        num.DecimalZero(),
+					DecayPower:         num.DecimalZero(),
+					CashAmount:         num.UintZero(),
+					CompositePriceType: types.CompositePriceTypeByLastTrade,
+				},
 			},
 		},
 	}
@@ -1977,7 +2014,7 @@ func (e *tstEngine) newProposalForNewPerpsMarket(
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newPerpsMarketTerms(termFilter, termBinding),
+			Change:              newPerpsMarketTerms(termFilter, termBinding, e.chainID),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -2002,7 +2039,7 @@ func (e *tstEngine) newProposalForNewMarket(
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt, nil),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, nil, e.chainID),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -2021,7 +2058,7 @@ func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time,
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, successor, e.chainID),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
