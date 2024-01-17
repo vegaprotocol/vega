@@ -16,7 +16,7 @@ message EthContractCallEvent {
   bytes result = 4;
   // Error message if the call failed.
   optional string error = 5;
-  // source chain for this chain event.
+  // Source chain for this chain event.
   optional uint64 source_chain_id = 6;
 }
 
