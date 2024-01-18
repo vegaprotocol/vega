@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/ethverifier"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -89,8 +90,13 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		e.EnsureChainID(c.ChainID, v.isValidator)
 		v.engines[c.ChainID] = e
 
-		// start it here?
-		e.Start()
+		// if we are restoring from a snapshot we want to delay starting the engine
+		// until we know what block height to use. If we aren't restoring from a snapshot
+		// we are either loading from genesis, or the engine has been added dynamically and
+		// so we want to kick it off
+		if !vgcontext.InProgressSnapshotRestore(ctx) {
+			e.Start()
+		}
 
 		// setup activation listener
 		v.specActivationListener(v.engines[c.ChainID])

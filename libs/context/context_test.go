@@ -28,12 +28,15 @@ func TestRestoreDataInContext(t *testing.T) {
 	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.74.0", true)
 	assert.True(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0"))
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.1"))
+	assert.True(t, vgcontext.InProgressSnapshotRestore(ctx))
 
 	ctx = vgcontext.WithSnapshotInfo(context.Background(), "v0.74.0", false)
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0"))
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.1"))
+	assert.True(t, vgcontext.InProgressSnapshotRestore(ctx))
 
 	ctx = context.Background()
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0"))
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.1"))
+	assert.False(t, vgcontext.InProgressSnapshotRestore(ctx))
 }
