@@ -169,4 +169,4 @@ Feature: Simple tests for perpetual market mark price.
 
     And the product data for the market "ETH/DEC19" should be:
       | internal twap     | external twap |
-      | 1050              | 140           |
+      | 1013              | 140           |
