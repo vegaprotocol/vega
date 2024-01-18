@@ -50,7 +50,7 @@ var (
 		"default-dai-for-future": "default-dai-for-perps",
 	}
 
-	// default source chain ID for the default oracles
+	// default source chain ID for the default oracles.
 	defaultSourceChainID uint64 = 1
 )
 
