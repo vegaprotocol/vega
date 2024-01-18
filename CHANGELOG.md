@@ -144,13 +144,13 @@
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
--
 - [10417](https://github.com/vegaprotocol/vega/issues/10417) - Party margin modes `API` always errors.
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10436](https://github.com/vegaprotocol/vega/issues/10436) - Fix source staleness validation when oracles are not defined.
 - [10434](https://github.com/vegaprotocol/vega/issues/10434) - Unsubscribe oracles when market is closed.
 - [10454](https://github.com/vegaprotocol/vega/issues/10454) - Fix account resolver validation to include order margin account.
 - [10451](https://github.com/vegaprotocol/vega/issues/10451) - Fix get update asset bundle.
+- [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
 
 ## 0.73.0
 
