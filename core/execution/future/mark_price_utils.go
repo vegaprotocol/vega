@@ -156,6 +156,9 @@ func CalculateTimeWeightedAverageBookPrice(timeToPrice map[int64]*num.Uint, t in
 		}
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	if len(keys) == 0 {
+		return nil
+	}
 	totalDuration := num.DecimalFromInt64(t - keys[0])
 	mp := num.DecimalZero()
 	for i, timepoint := range keys {

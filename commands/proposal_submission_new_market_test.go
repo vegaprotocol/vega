@@ -6293,9 +6293,14 @@ func getCompositePriceConfigurationCases() []compositePriceConfigCase {
 			mpc: &vega.CompositePriceConfiguration{
 				SourceWeights:      []string{"", "", ""},
 				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
 			},
 			field: "source_weights",
-			err:   fmt.Errorf("must be greater than or equal to 4"),
+			err:   fmt.Errorf("must be defined for all price sources"),
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
@@ -6308,7 +6313,7 @@ func getCompositePriceConfigurationCases() []compositePriceConfigCase {
 				},
 			},
 			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must included staleness information for all data sources"),
+			err:   fmt.Errorf("must included staleness information for all price sources"),
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
@@ -6320,23 +6325,70 @@ func getCompositePriceConfigurationCases() []compositePriceConfigCase {
 				},
 			},
 			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must included staleness information for all data sources"),
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
 				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
-				SourceStalenessTolerance: []string{"", "", ""},
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				SourceWeights:            []string{"1", "2", "3"},
 			},
 			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must be greater than or equal to 4"),
+			err:   nil,
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{
 				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
-				SourceStalenessTolerance: []string{"", "", ""},
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
 			},
 			field: "source_staleness_tolerance",
-			err:   fmt.Errorf("must be greater than or equal to 4"),
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
 		},
 		{
 			mpc: &vega.CompositePriceConfiguration{

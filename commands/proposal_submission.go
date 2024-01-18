@@ -1952,12 +1952,8 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be empty if composite price type is not weighted"))
 	}
 
-	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) < 4 {
-		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be greater than or equal to 4"))
-	}
-
-	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.SourceStalenessTolerance) < 4 {
-		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must be greater than or equal to 4"))
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != 3+len(config.DataSourcesSpec) {
+		errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must be defined for all price sources"))
 	}
 
 	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED && len(config.SourceWeights) != len(config.SourceStalenessTolerance) {
@@ -1989,8 +1985,8 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 	if len(config.DataSourcesSpec) > 5 {
 		errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("too many data source specs - must be less than or equal to 5"))
 	}
-	if len(config.SourceStalenessTolerance) > 0 && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
-		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must included staleness information for all data sources"))
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.SourceStalenessTolerance) != 3+len(config.DataSourcesSpec) {
+		errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must included staleness information for all price sources"))
 	}
 
 	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE && len(config.DataSourcesSpec) > 0 {
