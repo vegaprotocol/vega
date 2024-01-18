@@ -505,8 +505,14 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
-		func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
 	)
+
+	if svcs.conf.HaveEthClient() {
+		svcs.confListenerIDs = svcs.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
+		)
+	}
+
 	svcs.timeService.NotifyOnTick(svcs.confWatcher.OnTimeUpdate)
 }
 

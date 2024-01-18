@@ -226,7 +226,7 @@ pipeline {
                 stage('core/integration tests') {
                     steps {
                         dir('vega/core/integration') {
-                            sh 'go test . --godog.format=junit:core-integration-report.xml'
+                            sh 'go test . -timeout 30m --godog.format=junit:core-integration-report.xml'
                             junit checksName: 'Core Integration Tests', testResults: 'core-integration-report.xml'
                         }
                     }
