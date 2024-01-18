@@ -5099,7 +5099,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
 			desc: "interest_rate is valid",
 		},
-		// clamp_lower_bound
+		// clamp_lower_bound (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "",
@@ -5146,7 +5146,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
 			desc: "clamp_lower_bound is valid",
 		},
-		// clamp_upper_bound
+		// clamp_upper_bound (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "",
@@ -5193,7 +5193,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
 			desc: "clamp_upper_bound is valid",
 		},
-		// clamp lower and upper
+		// clamp lower and upper (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.5",
