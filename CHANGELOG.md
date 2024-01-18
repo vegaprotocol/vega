@@ -71,8 +71,8 @@
 - [534](https://github.com/vegaprotocol/core-test-coverage/issues/534) - Add integration test for team rewards `0009-MRKP-017`
 - [536](https://github.com/vegaprotocol/core-test-coverage/issues/536) - Add integration test for team rewards `0009-MRKP-019`
 - [10317](https://github.com/vegaprotocol/vega/issues/10317) - Add support in Ethereum oracles to data source from `L2s`
-- [10429](https://github.com/vegaprotocol/vega/issues/10429) - Restrict the mark price by book to prices from the last mark price duration. 
-
+- [10429](https://github.com/vegaprotocol/vega/issues/10429) - Restrict the mark price by book to prices from the last mark price duration.
+- [552](https://github.com/vegaprotocol/core-test-coverage/issues/552) - Add integration test for mark price `0053-PERP-034`
 
 ### 🐛 Fixes
 
@@ -143,7 +143,7 @@
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
 -
 - [10417](https://github.com/vegaprotocol/vega/issues/10417) - Party margin modes `API` always errors.
-- [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation. 
+- [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10436](https://github.com/vegaprotocol/vega/issues/10436) - Fix source staleness validation when oracles are not defined.
 - [10434](https://github.com/vegaprotocol/vega/issues/10434) - Unsubscribe oracles when market is closed.
 
