@@ -151,6 +151,8 @@
 - [10454](https://github.com/vegaprotocol/vega/issues/10454) - Fix account resolver validation to include order margin account.
 - [10451](https://github.com/vegaprotocol/vega/issues/10451) - Fix get update asset bundle.
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
+- [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation. 
+- [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
 
 ## 0.73.0
 
