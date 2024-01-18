@@ -183,6 +183,10 @@ func (g *Games) getSelectTable(from, to uint64) string {
 }
 
 func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
+	if len(rewards) <= 0 {
+		return []entities.Game{}, nil
+	}
+
 	type gameKey struct {
 		EpochID uint64
 		GameID  entities.GameID
