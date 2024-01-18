@@ -1,6 +1,7 @@
 Feature: Simple example of successor markets
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
+    And the default source chain ID is set to "123"
     And the following assets are registered:
       | id  | decimal places |
       | ETH | 0              |

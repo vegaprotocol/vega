@@ -49,6 +49,9 @@ var (
 		"default-usd-for-future": "default-usd-for-perps",
 		"default-dai-for-future": "default-dai-for-perps",
 	}
+
+	// default source chain ID for the default oracles
+	defaultSourceChainID uint64 = 1
 )
 
 type Binding interface {
@@ -68,6 +71,7 @@ type oracleConfigs struct {
 	fullFutures           map[string]*vegapb.Future
 	perpSwap              bool
 	compositePriceOracles map[string]CompositePriceOracleConfig
+	defaultSourceChainID  uint64
 }
 
 type oConfig[T BindType] struct {
@@ -94,6 +98,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		fullPerps:             map[string]*vegapb.Perpetual{},
 		fullFutures:           map[string]*vegapb.Future{},
 		compositePriceOracles: map[string]CompositePriceOracleConfig{},
+		defaultSourceChainID:  defaultSourceChainID,
 	}
 	configs.futureOracleSpecs(unmarshaler)
 	configs.perpetualOracleSpecs(unmarshaler)
@@ -111,6 +116,55 @@ func newOConfig[T BindType]() *oConfig[T] {
 
 func (c *oracleConfigs) SwapToPerps() {
 	c.perpSwap = true
+}
+
+func (c *oracleConfigs) SetDefaultSourceChainID(id uint64) {
+	if id == c.defaultSourceChainID {
+		// nothing to do
+		return
+	}
+	// now just iterate over futures, perps and price configs, set chain ID to the new value if they match the old
+	for _, v := range c.fullFutures {
+		if ex := v.DataSourceSpecForSettlementData.Data.GetExternal(); ex != nil {
+			if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == c.defaultSourceChainID {
+				eo.SourceChainId = id
+			}
+		}
+		if ex := v.DataSourceSpecForTradingTermination.Data.GetExternal(); ex != nil {
+			if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == c.defaultSourceChainID {
+				eo.SourceChainId = id
+			}
+		}
+	}
+	for _, v := range c.fullPerps {
+		if ex := v.DataSourceSpecForSettlementData.Data.GetExternal(); ex != nil {
+			if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == c.defaultSourceChainID {
+				eo.SourceChainId = id
+			}
+		}
+		if ex := v.DataSourceSpecForSettlementSchedule.Data.GetExternal(); ex != nil {
+			if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == c.defaultSourceChainID {
+				eo.SourceChainId = id
+			}
+		}
+	}
+	for k, v := range c.compositePriceOracles {
+		if spec := v.Spec.GetExternalDataSourceSpec(); spec != nil && spec.Spec != nil && spec.Spec.Data != nil {
+			if ex := spec.Spec.Data.GetExternal(); ex != nil {
+				if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == c.defaultSourceChainID {
+					eo.SourceChainId = id
+					c.compositePriceOracles[k] = v
+				}
+			}
+		}
+	}
+	c.defaultSourceChainID = id
+}
+
+func (c *oracleConfigs) RestoreDefaultSourceChainID() {
+	if c.defaultSourceChainID != defaultSourceChainID {
+		c.SetDefaultSourceChainID(defaultSourceChainID)
+	}
 }
 
 func (c *oracleConfigs) CheckName(name string) string {
@@ -176,6 +230,7 @@ func (f *oConfig[T]) GetSettlementDataDP(name string) (uint32, bool) {
 }
 
 func (c *oracleConfigs) AddFuture(name string, future *vegapb.Future) error {
+	// future.DataSourceSpecForSettlementData.Data.GetExternal().GetEthOracle().SourceChainId()
 	if err := c.futures.Add(name, "settlement data", future.DataSourceSpecForSettlementData, future.DataSourceSpecBinding); err != nil {
 		return err
 	}
@@ -187,6 +242,11 @@ func (c *oracleConfigs) AddFuture(name string, future *vegapb.Future) error {
 }
 
 func (c *oracleConfigs) AddCompositePriceOracle(name string, spec *vegapb.DataSourceSpec, binding *vegapb.SpecBindingForCompositePrice) {
+	if ex := spec.Data.GetExternal(); ex != nil {
+		if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == 0 {
+			eo.SourceChainId = defaultSourceChainID
+		}
+	}
 	c.compositePriceOracles[name] = CompositePriceOracleConfig{
 		Spec: &vegapb.OracleSpec{
 			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
@@ -226,6 +286,11 @@ func (f *oConfig[T]) Add(
 	spec *vegapb.DataSourceSpec,
 	binding T,
 ) error {
+	if ex := spec.Data.GetExternal(); ex != nil {
+		if eo := ex.GetEthOracle(); eo != nil && eo.SourceChainId == 0 {
+			eo.SourceChainId = defaultSourceChainID
+		}
+	}
 	if specType == "settlement data" {
 		f.configForSettlementData[name] = &OracleConfig[T]{
 			Spec: &vegapb.OracleSpec{

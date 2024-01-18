@@ -97,6 +97,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return ctx, nil
 	})
 	s.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+		// if a step set a specific default source chain ID, this restores it to the expected default of 1
+		marketConfig.OracleConfigs.RestoreDefaultSourceChainID()
 		aerr := reconcileAccounts()
 		if aerr != nil {
 			aerr = fmt.Errorf("failed to reconcile account balance changes over the last step from emitted events: %v", aerr)
@@ -657,6 +659,11 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^set assets to permissive$`, func() error {
 		execsetup.assetsEngine.SetPermissive()
+		return nil
+	})
+
+	s.Step(`the default source chain ID is set to "([0-9]+)"`, func(chainID int) error {
+		marketConfig.OracleConfigs.SetDefaultSourceChainID(uint64(chainID))
 		return nil
 	})
 

@@ -42,6 +42,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 
 	rows := parseOracleSpecTable(table)
 	filters := make([]*datav1.Filter, 0, len(rows))
+	chainID := uint64(0)
 	for _, r := range rows {
 		row := oracleSpecRow{row: r}
 		var numDec *uint64
@@ -89,24 +90,34 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		if row.destination() == "trading termination" {
 			binding.TradingTerminationProperty = row.propertyName()
 		}
+		if chainID == 0 {
+			chainID = row.sourceChainID()
+		}
+	}
+	dsSpec := &protoTypes.DataSourceSpec{
+		Id: vgrand.RandomStr(10),
+		Data: protoTypes.NewDataSourceDefinition(
+			protoTypes.DataSourceContentTypeOracle,
+		).SetOracleConfig(
+			&protoTypes.DataSourceDefinitionExternal_Oracle{
+				Oracle: &protoTypes.DataSourceSpecConfiguration{
+					Signers: pubKeysSigners,
+					Filters: filters,
+				},
+			},
+		),
+	}
+	// set chain ID if provided
+	if ex := dsSpec.Data.GetExternal(); ex != nil {
+		if eo := ex.GetEthOracle(); eo != nil {
+			eo.SourceChainId = chainID
+		}
 	}
 
 	return config.OracleConfigs.Add(
 		name,
 		specType,
-		&protoTypes.DataSourceSpec{
-			Id: vgrand.RandomStr(10),
-			Data: protoTypes.NewDataSourceDefinition(
-				protoTypes.DataSourceContentTypeOracle,
-			).SetOracleConfig(
-				&protoTypes.DataSourceDefinitionExternal_Oracle{
-					Oracle: &protoTypes.DataSourceSpecConfiguration{
-						Signers: pubKeysSigners,
-						Filters: filters,
-					},
-				},
-			),
-		},
+		dsSpec,
 		binding,
 	)
 }
@@ -120,6 +131,7 @@ func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 		"decimals",
 		"condition",
 		"value",
+		"source chain",
 	})
 }
 
@@ -149,4 +161,11 @@ func (r oracleSpecRow) condition() datav1.Condition_Operator {
 
 func (r oracleSpecRow) value() string {
 	return r.row.MustStr("value")
+}
+
+func (r oracleSpecRow) sourceChainID() uint64 {
+	if !r.row.HasColumn("source chain") {
+		return 0
+	}
+	return r.row.MustU64("source chain")
 }
