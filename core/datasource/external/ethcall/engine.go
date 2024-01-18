@@ -121,10 +121,7 @@ func (e *Engine) Start() {
 			defer cancelEthereumQueries()
 
 			e.cancelEthereumQueries = cancelEthereumQueries
-
-			if e.log.IsDebug() {
-				e.log.Debug("Starting ethereum contract call polling engine")
-			}
+			e.log.Info("Starting ethereum contract call polling engine", logging.Uint64("chain-id", e.chainID))
 
 			e.poller.Loop(func() {
 				e.Poll(ctx, time.Now())

@@ -145,6 +145,17 @@ func WithSnapshotInfo(ctx context.Context, version string, upgrade bool) context
 	return context.WithValue(ctx, snapshotKey, snapshotInfo{version: version, upgrade: upgrade})
 }
 
+// InProgressSnapshotRestore returns whether the data in the contexts tells us that a
+// snapshot restore is in progress.
+func InProgressSnapshotRestore(ctx context.Context) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	_, ok := v.(snapshotInfo)
+	return ok
+}
+
 // InProgressUpgradeFrom returns whether the data in the contexts tells us that the
 // node is restoring from a snapshot taken for a protocol-upgrade by the given version.
 func InProgressUpgradeFrom(ctx context.Context, from string) bool {
