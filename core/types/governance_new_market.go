@@ -225,13 +225,19 @@ func (mpc *CompositePriceConfiguration) IntoProto() *vegapb.CompositePriceConfig
 	if mpc == nil {
 		return nil
 	}
-	weights := make([]string, 0, len(mpc.SourceWeights))
-	stalenessTolerance := make([]string, 0, len(mpc.SourceStalenessTolerance))
-	for _, d := range mpc.SourceWeights {
-		weights = append(weights, d.String())
+	var weights []string
+	if len(mpc.SourceWeights) > 0 {
+		weights = make([]string, 0, len(mpc.SourceWeights))
+		for _, d := range mpc.SourceWeights {
+			weights = append(weights, d.String())
+		}
 	}
-	for _, d := range mpc.SourceStalenessTolerance {
-		stalenessTolerance = append(stalenessTolerance, d.String())
+	var stalenessTolerance []string
+	if len(mpc.SourceStalenessTolerance) > 0 {
+		stalenessTolerance = make([]string, 0, len(mpc.SourceStalenessTolerance))
+		for _, d := range mpc.SourceStalenessTolerance {
+			stalenessTolerance = append(stalenessTolerance, d.String())
+		}
 	}
 	var specs []*vegapb.DataSourceDefinition
 	if len(mpc.DataSources) > 0 {
@@ -273,9 +279,15 @@ func CompositePriceConfigurationFromProto(mpc *vegapb.CompositePriceConfiguratio
 	for _, v := range mpc.SourceWeights {
 		weights = append(weights, num.MustDecimalFromString(v))
 	}
+	if len(weights) == 0 {
+		weights = nil
+	}
 	for _, v := range mpc.SourceStalenessTolerance {
 		dur, _ := time.ParseDuration(v)
 		stalenessTolerance = append(stalenessTolerance, dur)
+	}
+	if len(stalenessTolerance) == 0 {
+		stalenessTolerance = nil
 	}
 
 	dataSources := make([]*datasource.Spec, 0, len(mpc.DataSourcesSpec))
