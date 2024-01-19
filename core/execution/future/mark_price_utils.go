@@ -93,8 +93,9 @@ func PriceFromBookAtTime(C *num.Uint, initialScalingFactor, slippageFactor, shor
 	if err != nil {
 		return nil
 	}
-
-	return num.UintZero().Div(vwapSell.AddSum(vwapBuy), num.NewUint(2))
+	p := num.UintZero().Div(vwapSell.AddSum(vwapBuy), num.NewUint(2))
+	println(fmt.Sprintf("C=%s,initialScaling=%s,slippage=%s,risk=%s/%s,best=%s/%s, v=%d/%d, vwap%s/%s, price from book at time t=%s", C.String(), initialScalingFactor.String(), slippageFactor.String(), shortRiskFactor.String(), longRiskFactor.String(), bestBid.String(), bestAsk.String(), vBuy, vSell, vwapBuy.String(), vwapSell.String(), p.String()))
+	return p
 }
 
 // MedianPrice returns the median of the given prices (pBook, pTrades, pOracle1..n).
