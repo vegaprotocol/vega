@@ -246,6 +246,7 @@ func (mpc *CompositePriceCalculator) CalculateBookMarkPriceAtTimeT(initialScalin
 	}
 	mp := PriceFromBookAtTime(mpc.config.CashAmount, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor, ob)
 	if mp != nil {
+		println("PriceFromBookAtTime", mp.String(), t)
 		mpc.bookPriceAtTime[t] = mp
 		mpc.sourceLastUpdate[BookPriceIndex] = t
 	}
@@ -270,8 +271,9 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 	if p := CalculateTimeWeightedAverageBookPrice(mpc.bookPriceAtTime, t, markPriceFrequency.Nanoseconds()); p != nil {
 		mpc.priceSources[BookPriceIndex] = p
 	}
-	if median := MedianPrice(mpc.priceSources[:len(mpc.priceSources)-1]); median != nil {
+	if median := MedianPrice(mpc.priceSources[:len(mpc.priceSources)-1]); median != nil && !median.IsZero() {
 		mpc.priceSources[len(mpc.priceSources)-1] = median
+		mpc.sourceLastUpdate[len(mpc.priceSources)-1] = t
 	}
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByMedian {
 		if p := CompositePriceByMedian(mpc.priceSources, mpc.sourceLastUpdate, mpc.config.SourceStalenessTolerance, t); p != nil && !p.IsZero() {
