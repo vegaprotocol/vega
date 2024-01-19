@@ -1921,8 +1921,8 @@ Feature: stop orders
       | party2 | ETH/DEC19 | STATUS_EXPIRED   | stop2-1   |
 
 
-  Scenario: A party with a long position enters a buy stop order with position size override and is valid but
-            at the time of trigger it is cancelled then the stop order should be cancelled. (0014-ORDT-137)
+  Scenario: A party with a long position cannot enter a buy stop order,
+            and a party with a short position cannot enter a sell stop order. (0014-ORDT-137)
 
     # setup accounts
     Given time is updated to "2019-11-30T00:00:00Z"
