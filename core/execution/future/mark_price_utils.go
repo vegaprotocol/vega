@@ -124,13 +124,11 @@ func CompositePriceByMedian(prices []*num.Uint, lastUpdate []int64, delta []time
 		ind := indices[i]
 		if ind == 0 {
 			str += "===> trade price:" + u.String() + "\n"
-		}
-		if ind == 1 {
+		} else if ind == 1 {
 			str += "===> book price:" + u.String() + "\n"
-		}
-		if ind > 1 && ind != len(prices)-1 {
+		} else if ind > 1 && ind != len(prices)-1 {
 			str += fmt.Sprintf("===> oracle [%d] price:%s\n", ind-2, u.String())
-		} else {
+		} else if ind > 1 && ind == len(prices) {
 			str += "===> median price:" + u.String() + "\n"
 		}
 	}
