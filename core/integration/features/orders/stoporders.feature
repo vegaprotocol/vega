@@ -1977,3 +1977,74 @@ Feature: stop orders
       | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error                                               |
       | party1 | ETH/DEC19 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | side used in stop order does not close the position |
 
+
+  Scenario: If a stop order is placed with a position_fraction equal to 0.5 and the position
+            size is 5 then the rounding should be equal to 3 (0014-ORDT-138)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 5      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 10     | 51    | 0                | TYPE_LIMIT | TIF_GTC |
+
+
+    When time is updated to "2019-11-30T00:00:10Z"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | ra expires in | ra expiry strategy     | fb expires in | fb expiry strategy     | ra size override setting       | ra size override percentage |
+      | party1 | ETH/DEC19 | buy  | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | 10            | EXPIRY_STRATEGY_SUBMIT | 15            | EXPIRY_STRATEGY_SUBMIT | POSITION                       | 0.5                         |
+
+    Then the stop orders should have the following states
+      | party  | market id | status          | reference |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop-1    |
+      | party1 | ETH/DEC19 | STATUS_PENDING  | stop-2    |
+
+    Then clear all events
+    When time is updated to "2019-11-30T00:00:20Z"
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_STOPPED   | stop-1    |
+      | party1 | ETH/DEC19 | STATUS_EXPIRED   | stop-2    |
+
+    # Now we check that the order size was 3 as the position was 5 and the were scaling by 0.5 (5*0.5)==3, we round up
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 50    | 3    | party3 |
+
