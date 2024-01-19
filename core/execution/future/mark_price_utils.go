@@ -16,6 +16,7 @@
 package future
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -108,15 +109,37 @@ func MedianPrice(prices []*num.Uint) *num.Uint {
 // CompositePriceByMedian returns the median mark price out of the non stale ones or nil if there is none.
 func CompositePriceByMedian(prices []*num.Uint, lastUpdate []int64, delta []time.Duration, t int64) *num.Uint {
 	pricesToConsider := []*num.Uint{}
+	indices := []int{}
 	for i, u := range prices {
 		if t-lastUpdate[i] <= delta[i].Nanoseconds() && u != nil && !u.IsZero() {
 			pricesToConsider = append(pricesToConsider, u)
+			indices = append(indices, i)
 		}
 	}
 	if len(pricesToConsider) == 0 {
 		return nil
 	}
-	return num.Median(pricesToConsider)
+	str := "calculating median from:\n"
+	for i, u := range pricesToConsider {
+		ind := indices[i]
+		if ind == 0 {
+			str += "===> trade price:" + u.String() + "\n"
+		}
+		if ind == 1 {
+			str += "===> book price:" + u.String() + "\n"
+		}
+		if ind != len(prices)-1 {
+			str += fmt.Sprintf("===> oracle [%d] price:%s\n", ind-2, u.String())
+		}
+		if ind == len(prices)-1 {
+			str += "===> median price:" + u.String() + "\n"
+		}
+	}
+	median := num.Median(pricesToConsider)
+	str += "median mark price= " + median.String() + "\n"
+	println(str)
+
+	return median
 }
 
 // CompositePriceByWeight calculates the mid price out of the non-stale price by the weights assigned to each mid price.
