@@ -36,7 +36,7 @@ var (
 func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
 	txID = strings.ToUpper(txID)
 
-	query := `SELECT t.rowid, t.block_id, t.index, t.created_at, t.tx_hash, t.tx_result, t.cmd_type, t.submitter FROM tx_results t WHERE t.tx_hash=$1`
+	query := `SELECT t.rowid, t.block_height, t.index, t.created_at, t.tx_hash, t.tx_result, t.cmd_type, t.submitter FROM tx_results t WHERE t.tx_hash=$1`
 	var rows []entities.TxResultRow
 
 	if err := pgxscan.Select(ctx, s.pool, &rows, query, txID); err != nil {
