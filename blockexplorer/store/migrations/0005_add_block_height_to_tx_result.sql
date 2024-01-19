@@ -19,6 +19,7 @@ ALTER INDEX tx_results_cmd_type_block_id_index RENAME TO tx_results_old_cmd_type
 -- continues where the old one leaves off otherwise we will break foreign key constraints
 -- in the events table which we have had to drop temporarily and will restore once all the
 -- data has been migrated.
+-- +goose StatementBegin
 do $$
     declare
         tx_results_seq_name text;
@@ -63,6 +64,7 @@ do $$
         execute format('alter sequence %s restart with %s', tx_results_seq_name, tx_results_seq_next);
     end;
 $$;
+-- +goose StatementEnd
 
 -- Recreate views, functions and triggers associated with the original tx_results table
 CREATE OR REPLACE VIEW tx_events AS
