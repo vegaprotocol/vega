@@ -1919,3 +1919,61 @@ Feature: stop orders
       | party  | market id | status           | reference |
       | party2 | ETH/DEC19 | STATUS_STOPPED   | stop2-2   |
       | party2 | ETH/DEC19 | STATUS_EXPIRED   | stop2-1   |
+
+
+  Scenario: A party with a long position cannot enter a buy stop order,
+            and a party with a short position cannot enter a sell stop order. (0014-ORDT-137)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000000 |
+      | party2 | BTC   | 10000000 |
+      | party3 | BTC   | 10000000 |
+      | aux    | BTC   | 10000000 |
+      | aux2   | BTC   | 10000000 |
+      | aux3   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+ 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # volume for the stop trade
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC19 | buy  | 10     | 51    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    # We should not be able to place a but stop order for party2 as they have a long position and it would make it more long
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error                                               |
+      | party2 | ETH/DEC19 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | side used in stop order does not close the position |
+
+    # We should not be able to place a sell stop order for party1 as they have a short position and it would make it more short
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | fb price trigger | reference | error                                               |
+      | party1 | ETH/DEC19 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 75               | 25               | stop      | side used in stop order does not close the position |
+
