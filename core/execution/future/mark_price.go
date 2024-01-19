@@ -180,6 +180,14 @@ func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe excomm
 	return nil
 }
 
+func (mpc *CompositePriceCalculator) Close(ctx context.Context) {
+	if mpc.oracles != nil {
+		for _, cpo := range mpc.oracles {
+			cpo.UnsubAll(ctx)
+		}
+	}
+}
+
 func (mpc *CompositePriceCalculator) setOraclePriceScalingFunc(f func(context.Context, *num.Numeric, int64) *num.Uint) {
 	mpc.scalingFunc = f
 }

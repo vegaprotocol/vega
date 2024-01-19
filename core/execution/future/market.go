@@ -1172,6 +1172,11 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
 	}
 
+	m.markPriceCalculator.Close(ctx)
+	if m.indexPriceCalculator != nil {
+		m.indexPriceCalculator.Close(ctx)
+	}
+
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.mkt.MarketTimestamps.Close = m.timeService.GetTimeNow().UnixNano()
