@@ -69,17 +69,19 @@ func PriceFromTrades(trades []*types.Trade, decayWeight, lambda, decayPower num.
 // by the factors. If there is no bid or ask price for the required quantity, returns nil.
 func PriceFromBookAtTime(C *num.Uint, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, orderBook *matching.CachedOrderBook) *num.Uint {
 	bestAsk, err := orderBook.GetBestAskPrice()
-	// no best bid
-	if err != nil {
-		return nil
-	}
 	println("PriceFromBookAtTime, bestAsk=", num.UintToString(bestAsk))
-	bestBid, err := orderBook.GetBestBidPrice()
 	// no best ask
 	if err != nil {
+		println(err.Error())
 		return nil
 	}
+	bestBid, err := orderBook.GetBestBidPrice()
 	println("PriceFromBookAtTime, bestBid=", num.UintToString(bestBid))
+	// no best bid
+	if err != nil {
+		println(err.Error())
+		return nil
+	}
 
 	vBuy := uint64(C.ToDecimal().Div(initialScalingFactor.Mul(slippageFactor.Add(shortRiskFactor))).Div(bestBid.ToDecimal()).IntPart())
 	println("PriceFromBookAtTime, vBuy=", vBuy)
@@ -136,7 +138,7 @@ func CompositePriceByMedian(prices []*num.Uint, lastUpdate []int64, delta []time
 	if len(pricesToConsider) == 0 {
 		return nil
 	}
-	str := "calculating median from:\n"
+	str := fmt.Sprintf("calculating median for time %d\n: from %d sources", t, len(pricesToConsider))
 	for i, u := range pricesToConsider {
 		ind := indices[i]
 		if ind == 0 {
@@ -145,7 +147,7 @@ func CompositePriceByMedian(prices []*num.Uint, lastUpdate []int64, delta []time
 			str += "===> book price:" + u.String() + "\n"
 		} else if ind > 1 && ind != len(prices)-1 {
 			str += fmt.Sprintf("===> oracle [%d] price:%s\n", ind-2, u.String())
-		} else if ind > 1 && ind == len(prices) {
+		} else if ind > 1 && ind == len(prices)-1 {
 			str += "===> median price:" + u.String() + "\n"
 		}
 	}
