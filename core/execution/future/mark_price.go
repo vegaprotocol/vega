@@ -233,9 +233,11 @@ func (mpc *CompositePriceCalculator) GetUpdateOraclePriceFunc(oracleIndex int) f
 // If there is insufficient quantity in the book, ignore this price
 // IF the market is in auction set the mark price to the indicative price if not zero.
 func (mpc *CompositePriceCalculator) CalculateBookMarkPriceAtTimeT(initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, t int64, ob *matching.CachedOrderBook) {
+	println("CalculateBookMarkPriceAtTimeT", t)
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
 		return
 	}
+	println("CalculateBookMarkPriceAtTimeT in auction?", ob.InAuction())
 	if ob.InAuction() {
 		indicative := ob.GetIndicativePrice()
 		if !indicative.IsZero() {
@@ -245,8 +247,8 @@ func (mpc *CompositePriceCalculator) CalculateBookMarkPriceAtTimeT(initialScalin
 		return
 	}
 	mp := PriceFromBookAtTime(mpc.config.CashAmount, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor, ob)
+	println("CalculateBookMarkPriceAtTimeT calculated book price", num.UintToString(mp))
 	if mp != nil {
-		println("PriceFromBookAtTime", mp.String(), t)
 		mpc.bookPriceAtTime[t] = mp
 		mpc.sourceLastUpdate[BookPriceIndex] = t
 	}
@@ -272,6 +274,7 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 		mpc.priceSources[BookPriceIndex] = p
 	}
 	if median := MedianPrice(mpc.priceSources[:len(mpc.priceSources)-1]); median != nil && !median.IsZero() {
+		println("updated median", median.String())
 		mpc.priceSources[len(mpc.priceSources)-1] = median
 		mpc.sourceLastUpdate[len(mpc.priceSources)-1] = t
 	}
@@ -286,9 +289,7 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 	}
 	mpc.trades = []*types.Trade{}
 	mpc.bookPriceAtTime = map[int64]*num.Uint{}
-	if p := PriceFromBookAtTime(mpc.config.CashAmount, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor, ob); p != nil {
-		mpc.bookPriceAtTime[t] = p
-	}
+	mpc.CalculateBookMarkPriceAtTimeT(initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor, t, ob)
 	return mpc.price
 }
 
