@@ -73,26 +73,31 @@ func PriceFromBookAtTime(C *num.Uint, initialScalingFactor, slippageFactor, shor
 	if err != nil {
 		return nil
 	}
-
+	println("PriceFromBookAtTime, bestAsk=", num.UintToString(bestAsk))
 	bestBid, err := orderBook.GetBestBidPrice()
 	// no best ask
 	if err != nil {
 		return nil
 	}
+	println("PriceFromBookAtTime, bestBid=", num.UintToString(bestBid))
 
 	vBuy := uint64(C.ToDecimal().Div(initialScalingFactor.Mul(slippageFactor.Add(shortRiskFactor))).Div(bestBid.ToDecimal()).IntPart())
+	println("PriceFromBookAtTime, vBuy=", vBuy)
 	vwapBuy, err := orderBook.VWAP(vBuy, types.SideBuy)
 	// insufficient quantity in the book for vbuy quantity
 	if err != nil {
 		return nil
 	}
+	println("PriceFromBookAtTime, vwapBuy=", num.UintToString(vwapBuy))
 
 	vSell := uint64(C.ToDecimal().Div(initialScalingFactor.Mul(slippageFactor.Add(longRiskFactor))).Div(bestAsk.ToDecimal()).IntPart())
+	println("PriceFromBookAtTime, vSell=", vSell)
 	vwapSell, err := orderBook.VWAP(vSell, types.SideSell)
 	// insufficient quantity in the book for vsell quantity
 	if err != nil {
 		return nil
 	}
+	println("PriceFromBookAtTime, vwapSell=", num.UintToString(vwapSell))
 	p := num.UintZero().Div(vwapSell.AddSum(vwapBuy), num.NewUint(2))
 	println(fmt.Sprintf("C=%s,initialScaling=%s,slippage=%s,risk=%s/%s,best=%s/%s, v=%d/%d, vwap%s/%s, price from book at time t=%s", C.String(), initialScalingFactor.String(), slippageFactor.String(), shortRiskFactor.String(), longRiskFactor.String(), bestBid.String(), bestAsk.String(), vBuy, vSell, vwapBuy.String(), vwapSell.String(), p.String()))
 	return p
@@ -111,6 +116,17 @@ func MedianPrice(prices []*num.Uint) *num.Uint {
 func CompositePriceByMedian(prices []*num.Uint, lastUpdate []int64, delta []time.Duration, t int64) *num.Uint {
 	pricesToConsider := []*num.Uint{}
 	indices := []int{}
+
+	println("number of price sources", len(prices))
+	println("price by trades", num.UintToString(prices[0]), "last updated", lastUpdate[0])
+	println("price by book", num.UintToString(prices[1]), "last updated", lastUpdate[1])
+	if len(prices) > 3 {
+		for i := 2; i < len(prices)-1; i++ {
+			println("price by oracle", num.UintToString(prices[i]), "last updated", lastUpdate[i])
+		}
+	}
+	println("price by median", num.UintToString(prices[len(prices)-1]), "last updated", lastUpdate[len(lastUpdate)-1])
+
 	for i, u := range prices {
 		if t-lastUpdate[i] <= delta[i].Nanoseconds() && u != nil && !u.IsZero() {
 			pricesToConsider = append(pricesToConsider, u)
