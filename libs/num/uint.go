@@ -535,14 +535,14 @@ func UintToString(u *Uint) string {
 }
 
 // Median calculates the median of the slice of uints.
-// it is assumed that no nils are allowed in the slice or else it panics.
+// it is assumed that no nils are allowed, no zeros are allowed.
 func Median(nums []*Uint) *Uint {
 	if nums == nil {
 		return nil
 	}
 	numsCopy := make([]*Uint, 0, len(nums))
 	for _, u := range nums {
-		if u != nil {
+		if u != nil && !u.IsZero() {
 			numsCopy = append(numsCopy, u.Clone())
 		}
 	}
