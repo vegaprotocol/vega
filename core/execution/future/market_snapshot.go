@@ -286,6 +286,10 @@ func NewMarketFromSnapshot(
 	if em.Closed {
 		market.closed = true
 		market.tradableInstrument.Instrument.Unsubscribe(ctx)
+		market.markPriceCalculator.Close(ctx)
+		if market.indexPriceCalculator != nil {
+			market.indexPriceCalculator.Close(ctx)
+		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
 	return market, nil

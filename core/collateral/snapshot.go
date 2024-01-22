@@ -111,7 +111,6 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 	e.updateNextBalanceSnapshot(accs.NextBalanceSnapshot)
 	e.snapshotBalances()
-	e.activeRestore = true
 	return err
 }
 
