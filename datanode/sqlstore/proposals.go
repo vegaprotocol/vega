@@ -144,6 +144,19 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	return p, nil
 }
 
+// GetByIDWithoutBatch returns a proposal without extending single proposal by fetching batch proposal.
+func (ps *Proposals) GetByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByIDWithoutBatch")()
+	var p entities.Proposal
+	query := `SELECT * FROM proposals_current WHERE id=$1`
+
+	if err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)); err != nil {
+		return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	}
+
+	return p, nil
+}
+
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
 	defer metrics.StartSQLQuery("Proposals", "GetByReference")()
 	var p entities.Proposal
