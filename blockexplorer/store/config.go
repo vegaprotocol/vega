@@ -22,7 +22,8 @@ import (
 var namedLogger = "postgres.store"
 
 type Config struct {
-	Postgres config.PostgresConnection `group:"database" namespace:"postgres"`
+	Postgres    config.PostgresConnection `group:"database" namespace:"postgres"`
+	MigrateData bool                      `default:"true"   description:"Migrate data from the old database" group:"database" namespace:"postgres"`
 }
 
 func NewDefaultConfig() Config {
@@ -35,5 +36,6 @@ func NewDefaultConfig() Config {
 			Password:        "vega",
 			ApplicationName: "vega block explorer",
 		},
+		MigrateData: true,
 	}
 }
