@@ -86,6 +86,7 @@ func NewPerpetualFromSnapshot(
 	perps.seq = state.Seq
 
 	if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+		log.Info(">>> PRODUCT.PERP upgrading to v0.74.0")
 		// do it the old way where we'd regenerate the cached values by adding the points again
 		perps.externalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
 		perps.internalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
