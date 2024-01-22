@@ -119,10 +119,6 @@ type Engine struct {
 
 	nextBalancesSnapshot     time.Time
 	balanceSnapshotFrequency time.Duration
-	// this is a bit of a hack to work around the fact that the collateral engine is restored before the net patams engine.
-	// what we want to achieve is that when the balanceSnapshotFrequency net param is restored we don't use it to reschedule the nextBalancesSnapshot
-	// but rather just set the frequency. On post restore we release the active restore flag.
-	activeRestore bool
 
 	// set to false when started
 	// we'll use it only once after an upgrade
@@ -149,7 +145,6 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 		vesting:                 map[string]map[string]*num.Uint{},
 		partiesAccsBalanceCache: map[string]*num.Uint{},
 		nextBalancesSnapshot:    time.Time{},
-		activeRestore:           false,
 	}
 }
 
@@ -207,11 +202,6 @@ func (e *Engine) updateNextBalanceSnapshot(t time.Time) {
 }
 
 func (e *Engine) OnBalanceSnapshotFrequencyUpdated(ctx context.Context, d time.Duration) error {
-	if e.activeRestore {
-		e.balanceSnapshotFrequency = d
-		e.activeRestore = false
-		return nil
-	}
 	if !e.nextBalancesSnapshot.IsZero() {
 		e.updateNextBalanceSnapshot(e.nextBalancesSnapshot.Add(-e.balanceSnapshotFrequency))
 	}
