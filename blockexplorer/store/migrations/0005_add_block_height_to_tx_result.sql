@@ -63,7 +63,7 @@ BEGIN
     WHERE b.rowid = NEW.block_id
       AND tx_results.rowid = NEW.rowid;
 
-    RETURN NULL;
+    RETURN NEW;
 END;
 $$;
 -- +goose StatementEnd
