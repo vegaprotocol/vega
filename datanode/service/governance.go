@@ -26,6 +26,7 @@ import (
 type ProposalStore interface {
 	Add(ctx context.Context, p entities.Proposal) error
 	GetByID(ctx context.Context, id string) (entities.Proposal, error)
+	GetByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error)
 	GetByReference(ctx context.Context, ref string) (entities.Proposal, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error)
 	Get(ctx context.Context, inState *entities.ProposalState, partyIDStr *string, proposalType *entities.ProposalType,
@@ -74,6 +75,10 @@ func (g *Governance) AddProposal(ctx context.Context, p entities.Proposal) error
 
 func (g *Governance) GetProposalByID(ctx context.Context, id string) (entities.Proposal, error) {
 	return g.pStore.GetByID(ctx, id)
+}
+
+func (g *Governance) GetProposalByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error) {
+	return g.pStore.GetByIDWithoutBatch(ctx, id)
 }
 
 func (g *Governance) GetProposalsByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error) {

@@ -73,6 +73,8 @@
 - [10317](https://github.com/vegaprotocol/vega/issues/10317) - Add support in Ethereum oracles to data source from `L2s`
 - [10429](https://github.com/vegaprotocol/vega/issues/10429) - Restrict the mark price by book to prices from the last mark price duration.
 - [552](https://github.com/vegaprotocol/core-test-coverage/issues/552) - Add integration test for mark price `0053-PERP-034`
+- [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
+- [10429](https://github.com/vegaprotocol/vega/issues/10439) - Account for isolated margin mode in `EstimatePosition` endpoint.
 
 ### 🐛 Fixes
 
@@ -146,6 +148,8 @@
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10436](https://github.com/vegaprotocol/vega/issues/10436) - Fix source staleness validation when oracles are not defined.
 - [10434](https://github.com/vegaprotocol/vega/issues/10434) - Unsubscribe oracles when market is closed.
+- [10454](https://github.com/vegaprotocol/vega/issues/10454) - Fix account resolver validation to include order margin account.
+- [10451](https://github.com/vegaprotocol/vega/issues/10451) - Fix get update asset bundle.
 
 ## 0.73.0
 

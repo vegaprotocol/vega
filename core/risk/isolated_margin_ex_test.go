@@ -19,6 +19,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 
@@ -52,7 +53,8 @@ func TestSwitchFromIsolatedMargin(t *testing.T) {
 }
 
 func TestSwithToIsolatedMarginContinuous(t *testing.T) {
-	e := getTestEngine(t, num.DecimalOne())
+	positionFactor := num.DecimalOne()
+	e := getTestEngine(t, positionFactor)
 	evt := testMargin{
 		party:       "party1",
 		size:        1,
@@ -79,17 +81,26 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, "insufficient balance in general account to cover for required order margin", err.Error())
 
 	// case1 - need to topup margin account only
-	risk, err := e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), []*types.Order{}, num.DecimalFromFloat(0.5), nil)
+	marginFactor := num.DecimalFromFloat(0.5)
+	orders := []*types.Order{}
+	riskEvent, err := e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), orders, marginFactor, num.UintZero())
 	require.NoError(t, err)
-	require.Equal(t, 1, len(risk))
-	require.Equal(t, num.NewUint(490), risk[0].Transfer().Amount.Amount)
-	require.Equal(t, num.NewUint(490), risk[0].Transfer().MinAmount)
-	require.Equal(t, types.TransferTypeMarginLow, risk[0].Transfer().Type)
-	require.Equal(t, "party1", risk[0].Transfer().Owner)
-	require.Equal(t, num.NewUint(0), risk[0].MarginLevels().OrderMargin)
+	require.Equal(t, 1, len(riskEvent))
+	require.Equal(t, num.NewUint(490), riskEvent[0].Transfer().Amount.Amount)
+	require.Equal(t, num.NewUint(490), riskEvent[0].Transfer().MinAmount)
+	require.Equal(t, types.TransferTypeMarginLow, riskEvent[0].Transfer().Type)
+	require.Equal(t, "party1", riskEvent[0].Transfer().Owner)
+	require.Equal(t, num.NewUint(0), riskEvent[0].MarginLevels().OrderMargin)
+
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+	requiredPositionMarginStatic, requiredOrderMarginStatic := risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	require.True(t, !requiredPositionMarginStatic.IsZero())
+	require.True(t, requiredOrderMarginStatic.IsZero())
+	transferRecalc := requiredPositionMarginStatic.Sub(evt.MarginBalance().ToDecimal())
+	require.True(t, riskEvent[0].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
 
 	// case2 we have also some orders
-	orders := []*types.Order{
+	orders = []*types.Order{
 		{Side: types.SideBuy, Remaining: 1, Price: num.NewUint(1000), Status: types.OrderStatusActive},
 	}
 
@@ -99,18 +110,47 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, "insufficient balance in general account to cover for required order margin", err.Error())
 
 	evt.general = 10000
-	risk, err = e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), orders, num.DecimalFromFloat(0.3), nil)
+	marginFactor = num.DecimalFromFloat(0.3)
+	riskEvent, err = e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), orders, marginFactor, nil)
 	require.NoError(t, err)
-	require.Equal(t, 2, len(risk))
-	require.Equal(t, num.NewUint(290), risk[0].Transfer().Amount.Amount)
-	require.Equal(t, num.NewUint(290), risk[0].Transfer().MinAmount)
-	require.Equal(t, types.TransferTypeMarginLow, risk[0].Transfer().Type)
-	require.Equal(t, "party1", risk[0].Transfer().Owner)
-	require.Equal(t, num.NewUint(300), risk[0].MarginLevels().OrderMargin)
+	require.Equal(t, 2, len(riskEvent))
+	require.Equal(t, num.NewUint(290), riskEvent[0].Transfer().Amount.Amount)
+	require.Equal(t, num.NewUint(290), riskEvent[0].Transfer().MinAmount)
+	require.Equal(t, types.TransferTypeMarginLow, riskEvent[0].Transfer().Type)
+	require.Equal(t, "party1", riskEvent[0].Transfer().Owner)
+	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
 
-	require.Equal(t, num.NewUint(300), risk[1].Transfer().Amount.Amount)
-	require.Equal(t, num.NewUint(300), risk[1].Transfer().MinAmount)
-	require.Equal(t, types.TransferTypeOrderMarginLow, risk[1].Transfer().Type)
-	require.Equal(t, "party1", risk[1].Transfer().Owner)
-	require.Equal(t, num.NewUint(300), risk[0].MarginLevels().OrderMargin)
+	buyOrderInfo, sellOrderInfo = extractOrderInfo(orders)
+	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	require.True(t, !requiredPositionMarginStatic.IsZero())
+	require.True(t, !requiredOrderMarginStatic.IsZero())
+	transferRecalc = requiredPositionMarginStatic.Sub(evt.MarginBalance().ToDecimal())
+	require.True(t, riskEvent[0].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
+
+	require.Equal(t, num.NewUint(300), riskEvent[1].Transfer().Amount.Amount)
+	require.Equal(t, num.NewUint(300), riskEvent[1].Transfer().MinAmount)
+	require.Equal(t, types.TransferTypeOrderMarginLow, riskEvent[1].Transfer().Type)
+	require.Equal(t, "party1", riskEvent[1].Transfer().Owner)
+	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
+
+	transferRecalc = requiredOrderMarginStatic.Sub(evt.OrderMarginBalance().ToDecimal())
+	require.True(t, riskEvent[1].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
+}
+
+func extractOrderInfo(orders []*types.Order) (buyOrders, sellOrders []*risk.OrderInfo) {
+	buyOrders, sellOrders = []*risk.OrderInfo{}, []*risk.OrderInfo{}
+	for _, o := range orders {
+		if o.Status == types.OrderStatusActive {
+			remaining := o.TrueRemaining()
+			price := o.Price.ToDecimal()
+			isMarketOrder := o.Type == types.OrderTypeMarket
+			if o.Side == types.SideBuy {
+				buyOrders = append(buyOrders, &risk.OrderInfo{TrueRemaining: remaining, Price: price, IsMarketOrder: isMarketOrder})
+			}
+			if o.Side == types.SideSell {
+				sellOrders = append(sellOrders, &risk.OrderInfo{TrueRemaining: remaining, Price: price, IsMarketOrder: isMarketOrder})
+			}
+		}
+	}
+	return buyOrders, sellOrders
 }

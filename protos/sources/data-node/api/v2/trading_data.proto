@@ -3890,28 +3890,50 @@ message OrderInfo {
   bool is_market_order = 4;
 }
 
-// Request for the estimate of the margin level and, if available collateral is provided, liquidation price for the specified position.
+// Request for the estimated margin level, margin account balance change, and liquidation price for the specified position.
 message EstimatePositionRequest {
   // Market ID to estimate position for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Open volume. This field is a signed integer scaled to the market's position decimal places.
   // A negative number denotes a short position.
   int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
+  // Average entry price corresponding to the open volume. The price is an unsigned integer. For example `123456` is a correctly
+  // formatted price of `1.23456` assuming market configured to 5 decimal places.
+  string average_entry_price = 3;
   // Open and/or hypothetical orders.
-  repeated OrderInfo orders = 3;
-  // Collateral available for the position. If provided then response will contain the liquidation price estimate.
-  // Collateral available needs to be provided scaled to asset decimal places. Liquidation price returned is scaled to asset decimal places by default.
-  optional string collateral_available = 4;
+  repeated OrderInfo orders = 4;
+  // Margin account balance. Needs to be provided scaled to asset decimal places.
+  string margin_account_balance = 5;
+  // General account balance. Needs to be provided scaled to asset decimal places.
+  string general_account_balance = 6;
+  // Order margin account balance. Needs to be provided scaled to asset decimal places.
+  string order_margin_account_balance = 7;
+  // Margin mode for the party, cross margin or isolated margin.
+  vega.MarginMode margin_mode = 8;
+  // Margin factor to be used along with isolated margin mode
+  optional string margin_factor = 9;
+  // Whether the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode.
+  optional bool include_collateral_increase_in_available_collateral = 10;
   // Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
-  optional bool scale_liquidation_price_to_market_decimals = 5;
+  optional bool scale_liquidation_price_to_market_decimals = 11;
 }
 
 // Response for the estimate of the margin level and, if available collateral was provided in the request, liquidation price for the specified position.
 message EstimatePositionResponse {
   // Margin level range estimate for the specified position.
   MarginEstimate margin = 1;
+  // Estimated margin account balance increase.
+  CollateralIncreaseEstimate collateral_increase_estimate = 2;
   // Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request.
-  LiquidationEstimate liquidation = 2;
+  LiquidationEstimate liquidation = 3;
+}
+
+// Estimates the additional funds needed to support the specified position
+message CollateralIncreaseEstimate {
+  // Estimate assuming slippage cap is applied
+  string worst_case = 1;
+  // Estimate assuming no slippage
+  string best_case = 2;
 }
 
 // Margin level estimate for both worst and best case possible.

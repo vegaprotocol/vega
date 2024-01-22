@@ -591,6 +591,8 @@ type OrderInfo struct {
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
 	Margin *v2.MarginEstimate `json:"margin"`
+	// Estimated margin account balance increase
+	CollateralIncreaseEstimate *v2.CollateralIncreaseEstimate `json:"collateralIncreaseEstimate"`
 	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
 	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
 }

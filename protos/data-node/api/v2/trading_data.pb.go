@@ -19747,7 +19747,7 @@ func (x *OrderInfo) GetIsMarketOrder() bool {
 	return false
 }
 
-// Request for the estimate of the margin level and, if available collateral is provided, liquidation price for the specified position.
+// Request for the estimated margin level, margin account balance change, and liquidation price for the specified position.
 type EstimatePositionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -19758,13 +19758,25 @@ type EstimatePositionRequest struct {
 	// Open volume. This field is a signed integer scaled to the market's position decimal places.
 	// A negative number denotes a short position.
 	OpenVolume int64 `protobuf:"varint,2,opt,name=open_volume,json=openVolume,proto3" json:"open_volume,omitempty"`
+	// Average entry price corresponding to the open volume. The price is an unsigned integer. For example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places.
+	AverageEntryPrice string `protobuf:"bytes,3,opt,name=average_entry_price,json=averageEntryPrice,proto3" json:"average_entry_price,omitempty"`
 	// Open and/or hypothetical orders.
-	Orders []*OrderInfo `protobuf:"bytes,3,rep,name=orders,proto3" json:"orders,omitempty"`
-	// Collateral available for the position. If provided then response will contain the liquidation price estimate.
-	// Collateral available needs to be provided scaled to asset decimal places. Liquidation price returned is scaled to asset decimal places by default.
-	CollateralAvailable *string `protobuf:"bytes,4,opt,name=collateral_available,json=collateralAvailable,proto3,oneof" json:"collateral_available,omitempty"`
+	Orders []*OrderInfo `protobuf:"bytes,4,rep,name=orders,proto3" json:"orders,omitempty"`
+	// Margin account balance. Needs to be provided scaled to asset decimal places.
+	MarginAccountBalance string `protobuf:"bytes,5,opt,name=margin_account_balance,json=marginAccountBalance,proto3" json:"margin_account_balance,omitempty"`
+	// General account balance. Needs to be provided scaled to asset decimal places.
+	GeneralAccountBalance string `protobuf:"bytes,6,opt,name=general_account_balance,json=generalAccountBalance,proto3" json:"general_account_balance,omitempty"`
+	// Order margin account balance. Needs to be provided scaled to asset decimal places.
+	OrderMarginAccountBalance string `protobuf:"bytes,7,opt,name=order_margin_account_balance,json=orderMarginAccountBalance,proto3" json:"order_margin_account_balance,omitempty"`
+	// Margin mode for the party, cross margin or isolated margin.
+	MarginMode vega.MarginMode `protobuf:"varint,8,opt,name=margin_mode,json=marginMode,proto3,enum=vega.MarginMode" json:"margin_mode,omitempty"`
+	// Margin factor to be used along with isolated margin mode
+	MarginFactor *string `protobuf:"bytes,9,opt,name=margin_factor,json=marginFactor,proto3,oneof" json:"margin_factor,omitempty"`
+	// Whether the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode.
+	IncludeCollateralIncreaseInAvailableCollateral *bool `protobuf:"varint,10,opt,name=include_collateral_increase_in_available_collateral,json=includeCollateralIncreaseInAvailableCollateral,proto3,oneof" json:"include_collateral_increase_in_available_collateral,omitempty"`
 	// Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
-	ScaleLiquidationPriceToMarketDecimals *bool `protobuf:"varint,5,opt,name=scale_liquidation_price_to_market_decimals,json=scaleLiquidationPriceToMarketDecimals,proto3,oneof" json:"scale_liquidation_price_to_market_decimals,omitempty"`
+	ScaleLiquidationPriceToMarketDecimals *bool `protobuf:"varint,11,opt,name=scale_liquidation_price_to_market_decimals,json=scaleLiquidationPriceToMarketDecimals,proto3,oneof" json:"scale_liquidation_price_to_market_decimals,omitempty"`
 }
 
 func (x *EstimatePositionRequest) Reset() {
@@ -19813,6 +19825,13 @@ func (x *EstimatePositionRequest) GetOpenVolume() int64 {
 	return 0
 }
 
+func (x *EstimatePositionRequest) GetAverageEntryPrice() string {
+	if x != nil {
+		return x.AverageEntryPrice
+	}
+	return ""
+}
+
 func (x *EstimatePositionRequest) GetOrders() []*OrderInfo {
 	if x != nil {
 		return x.Orders
@@ -19820,11 +19839,46 @@ func (x *EstimatePositionRequest) GetOrders() []*OrderInfo {
 	return nil
 }
 
-func (x *EstimatePositionRequest) GetCollateralAvailable() string {
-	if x != nil && x.CollateralAvailable != nil {
-		return *x.CollateralAvailable
+func (x *EstimatePositionRequest) GetMarginAccountBalance() string {
+	if x != nil {
+		return x.MarginAccountBalance
 	}
 	return ""
+}
+
+func (x *EstimatePositionRequest) GetGeneralAccountBalance() string {
+	if x != nil {
+		return x.GeneralAccountBalance
+	}
+	return ""
+}
+
+func (x *EstimatePositionRequest) GetOrderMarginAccountBalance() string {
+	if x != nil {
+		return x.OrderMarginAccountBalance
+	}
+	return ""
+}
+
+func (x *EstimatePositionRequest) GetMarginMode() vega.MarginMode {
+	if x != nil {
+		return x.MarginMode
+	}
+	return vega.MarginMode(0)
+}
+
+func (x *EstimatePositionRequest) GetMarginFactor() string {
+	if x != nil && x.MarginFactor != nil {
+		return *x.MarginFactor
+	}
+	return ""
+}
+
+func (x *EstimatePositionRequest) GetIncludeCollateralIncreaseInAvailableCollateral() bool {
+	if x != nil && x.IncludeCollateralIncreaseInAvailableCollateral != nil {
+		return *x.IncludeCollateralIncreaseInAvailableCollateral
+	}
+	return false
 }
 
 func (x *EstimatePositionRequest) GetScaleLiquidationPriceToMarketDecimals() bool {
@@ -19842,8 +19896,10 @@ type EstimatePositionResponse struct {
 
 	// Margin level range estimate for the specified position.
 	Margin *MarginEstimate `protobuf:"bytes,1,opt,name=margin,proto3" json:"margin,omitempty"`
+	// Estimated margin account balance increase.
+	CollateralIncreaseEstimate *CollateralIncreaseEstimate `protobuf:"bytes,2,opt,name=collateral_increase_estimate,json=collateralIncreaseEstimate,proto3" json:"collateral_increase_estimate,omitempty"`
 	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request.
-	Liquidation *LiquidationEstimate `protobuf:"bytes,2,opt,name=liquidation,proto3" json:"liquidation,omitempty"`
+	Liquidation *LiquidationEstimate `protobuf:"bytes,3,opt,name=liquidation,proto3" json:"liquidation,omitempty"`
 }
 
 func (x *EstimatePositionResponse) Reset() {
@@ -19885,11 +19941,76 @@ func (x *EstimatePositionResponse) GetMargin() *MarginEstimate {
 	return nil
 }
 
+func (x *EstimatePositionResponse) GetCollateralIncreaseEstimate() *CollateralIncreaseEstimate {
+	if x != nil {
+		return x.CollateralIncreaseEstimate
+	}
+	return nil
+}
+
 func (x *EstimatePositionResponse) GetLiquidation() *LiquidationEstimate {
 	if x != nil {
 		return x.Liquidation
 	}
 	return nil
+}
+
+// Estimates the additional funds needed to support the specified position
+type CollateralIncreaseEstimate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Estimate assuming slippage cap is applied
+	WorstCase string `protobuf:"bytes,1,opt,name=worst_case,json=worstCase,proto3" json:"worst_case,omitempty"`
+	// Estimate assuming no slippage
+	BestCase string `protobuf:"bytes,2,opt,name=best_case,json=bestCase,proto3" json:"best_case,omitempty"`
+}
+
+func (x *CollateralIncreaseEstimate) Reset() {
+	*x = CollateralIncreaseEstimate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[327]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CollateralIncreaseEstimate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollateralIncreaseEstimate) ProtoMessage() {}
+
+func (x *CollateralIncreaseEstimate) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[327]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollateralIncreaseEstimate.ProtoReflect.Descriptor instead.
+func (*CollateralIncreaseEstimate) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{327}
+}
+
+func (x *CollateralIncreaseEstimate) GetWorstCase() string {
+	if x != nil {
+		return x.WorstCase
+	}
+	return ""
+}
+
+func (x *CollateralIncreaseEstimate) GetBestCase() string {
+	if x != nil {
+		return x.BestCase
+	}
+	return ""
 }
 
 // Margin level estimate for both worst and best case possible.
@@ -19907,7 +20028,7 @@ type MarginEstimate struct {
 func (x *MarginEstimate) Reset() {
 	*x = MarginEstimate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[327]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[328]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -19920,7 +20041,7 @@ func (x *MarginEstimate) String() string {
 func (*MarginEstimate) ProtoMessage() {}
 
 func (x *MarginEstimate) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[327]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[328]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19933,7 +20054,7 @@ func (x *MarginEstimate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarginEstimate.ProtoReflect.Descriptor instead.
 func (*MarginEstimate) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{327}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{328}
 }
 
 func (x *MarginEstimate) GetWorstCase() *vega.MarginLevels {
@@ -19965,7 +20086,7 @@ type LiquidationEstimate struct {
 func (x *LiquidationEstimate) Reset() {
 	*x = LiquidationEstimate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[328]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[329]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -19978,7 +20099,7 @@ func (x *LiquidationEstimate) String() string {
 func (*LiquidationEstimate) ProtoMessage() {}
 
 func (x *LiquidationEstimate) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[328]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[329]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -19991,7 +20112,7 @@ func (x *LiquidationEstimate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidationEstimate.ProtoReflect.Descriptor instead.
 func (*LiquidationEstimate) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{328}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{329}
 }
 
 func (x *LiquidationEstimate) GetWorstCase() *LiquidationPrice {
@@ -20025,7 +20146,7 @@ type LiquidationPrice struct {
 func (x *LiquidationPrice) Reset() {
 	*x = LiquidationPrice{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[329]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[330]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20038,7 +20159,7 @@ func (x *LiquidationPrice) String() string {
 func (*LiquidationPrice) ProtoMessage() {}
 
 func (x *LiquidationPrice) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[329]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[330]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20051,7 +20172,7 @@ func (x *LiquidationPrice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidationPrice.ProtoReflect.Descriptor instead.
 func (*LiquidationPrice) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{329}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{330}
 }
 
 func (x *LiquidationPrice) GetOpenVolumeOnly() string {
@@ -20085,7 +20206,7 @@ type GetCurrentReferralProgramRequest struct {
 func (x *GetCurrentReferralProgramRequest) Reset() {
 	*x = GetCurrentReferralProgramRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[330]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[331]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20098,7 +20219,7 @@ func (x *GetCurrentReferralProgramRequest) String() string {
 func (*GetCurrentReferralProgramRequest) ProtoMessage() {}
 
 func (x *GetCurrentReferralProgramRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[330]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[331]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20111,7 +20232,7 @@ func (x *GetCurrentReferralProgramRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCurrentReferralProgramRequest.ProtoReflect.Descriptor instead.
 func (*GetCurrentReferralProgramRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{330}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{331}
 }
 
 // Response containing the current referral program
@@ -20127,7 +20248,7 @@ type GetCurrentReferralProgramResponse struct {
 func (x *GetCurrentReferralProgramResponse) Reset() {
 	*x = GetCurrentReferralProgramResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[331]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[332]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20140,7 +20261,7 @@ func (x *GetCurrentReferralProgramResponse) String() string {
 func (*GetCurrentReferralProgramResponse) ProtoMessage() {}
 
 func (x *GetCurrentReferralProgramResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[331]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[332]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20153,7 +20274,7 @@ func (x *GetCurrentReferralProgramResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetCurrentReferralProgramResponse.ProtoReflect.Descriptor instead.
 func (*GetCurrentReferralProgramResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{331}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{332}
 }
 
 func (x *GetCurrentReferralProgramResponse) GetCurrentReferralProgram() *ReferralProgram {
@@ -20192,7 +20313,7 @@ type ReferralProgram struct {
 func (x *ReferralProgram) Reset() {
 	*x = ReferralProgram{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[332]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[333]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20205,7 +20326,7 @@ func (x *ReferralProgram) String() string {
 func (*ReferralProgram) ProtoMessage() {}
 
 func (x *ReferralProgram) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[332]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[333]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20218,7 +20339,7 @@ func (x *ReferralProgram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralProgram.ProtoReflect.Descriptor instead.
 func (*ReferralProgram) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{332}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{333}
 }
 
 func (x *ReferralProgram) GetVersion() uint64 {
@@ -20289,7 +20410,7 @@ type ReferralSet struct {
 func (x *ReferralSet) Reset() {
 	*x = ReferralSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[333]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[334]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20302,7 +20423,7 @@ func (x *ReferralSet) String() string {
 func (*ReferralSet) ProtoMessage() {}
 
 func (x *ReferralSet) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[333]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[334]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20315,7 +20436,7 @@ func (x *ReferralSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSet.ProtoReflect.Descriptor instead.
 func (*ReferralSet) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{333}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{334}
 }
 
 func (x *ReferralSet) GetId() string {
@@ -20361,7 +20482,7 @@ type ReferralSetEdge struct {
 func (x *ReferralSetEdge) Reset() {
 	*x = ReferralSetEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[334]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[335]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20374,7 +20495,7 @@ func (x *ReferralSetEdge) String() string {
 func (*ReferralSetEdge) ProtoMessage() {}
 
 func (x *ReferralSetEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[334]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[335]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20387,7 +20508,7 @@ func (x *ReferralSetEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetEdge.ProtoReflect.Descriptor instead.
 func (*ReferralSetEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{334}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{335}
 }
 
 func (x *ReferralSetEdge) GetNode() *ReferralSet {
@@ -20419,7 +20540,7 @@ type ReferralSetConnection struct {
 func (x *ReferralSetConnection) Reset() {
 	*x = ReferralSetConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[335]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[336]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20432,7 +20553,7 @@ func (x *ReferralSetConnection) String() string {
 func (*ReferralSetConnection) ProtoMessage() {}
 
 func (x *ReferralSetConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[335]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[336]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20445,7 +20566,7 @@ func (x *ReferralSetConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetConnection.ProtoReflect.Descriptor instead.
 func (*ReferralSetConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{335}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{336}
 }
 
 func (x *ReferralSetConnection) GetEdges() []*ReferralSetEdge {
@@ -20481,7 +20602,7 @@ type ListReferralSetsRequest struct {
 func (x *ListReferralSetsRequest) Reset() {
 	*x = ListReferralSetsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[336]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[337]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20494,7 +20615,7 @@ func (x *ListReferralSetsRequest) String() string {
 func (*ListReferralSetsRequest) ProtoMessage() {}
 
 func (x *ListReferralSetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[336]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[337]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20507,7 +20628,7 @@ func (x *ListReferralSetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReferralSetsRequest.ProtoReflect.Descriptor instead.
 func (*ListReferralSetsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{336}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{337}
 }
 
 func (x *ListReferralSetsRequest) GetReferralSetId() string {
@@ -20551,7 +20672,7 @@ type ListReferralSetsResponse struct {
 func (x *ListReferralSetsResponse) Reset() {
 	*x = ListReferralSetsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[337]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[338]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20564,7 +20685,7 @@ func (x *ListReferralSetsResponse) String() string {
 func (*ListReferralSetsResponse) ProtoMessage() {}
 
 func (x *ListReferralSetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[337]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[338]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20577,7 +20698,7 @@ func (x *ListReferralSetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReferralSetsResponse.ProtoReflect.Descriptor instead.
 func (*ListReferralSetsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{337}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{338}
 }
 
 func (x *ListReferralSetsResponse) GetReferralSets() *ReferralSetConnection {
@@ -20610,7 +20731,7 @@ type ReferralSetReferee struct {
 func (x *ReferralSetReferee) Reset() {
 	*x = ReferralSetReferee{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[338]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[339]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20623,7 +20744,7 @@ func (x *ReferralSetReferee) String() string {
 func (*ReferralSetReferee) ProtoMessage() {}
 
 func (x *ReferralSetReferee) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[338]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[339]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20636,7 +20757,7 @@ func (x *ReferralSetReferee) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetReferee.ProtoReflect.Descriptor instead.
 func (*ReferralSetReferee) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{338}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{339}
 }
 
 func (x *ReferralSetReferee) GetReferralSetId() string {
@@ -20696,7 +20817,7 @@ type ReferralSetRefereeEdge struct {
 func (x *ReferralSetRefereeEdge) Reset() {
 	*x = ReferralSetRefereeEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[339]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[340]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20709,7 +20830,7 @@ func (x *ReferralSetRefereeEdge) String() string {
 func (*ReferralSetRefereeEdge) ProtoMessage() {}
 
 func (x *ReferralSetRefereeEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[339]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[340]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20722,7 +20843,7 @@ func (x *ReferralSetRefereeEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetRefereeEdge.ProtoReflect.Descriptor instead.
 func (*ReferralSetRefereeEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{339}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{340}
 }
 
 func (x *ReferralSetRefereeEdge) GetNode() *ReferralSetReferee {
@@ -20754,7 +20875,7 @@ type ReferralSetRefereeConnection struct {
 func (x *ReferralSetRefereeConnection) Reset() {
 	*x = ReferralSetRefereeConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[340]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[341]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20767,7 +20888,7 @@ func (x *ReferralSetRefereeConnection) String() string {
 func (*ReferralSetRefereeConnection) ProtoMessage() {}
 
 func (x *ReferralSetRefereeConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[340]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[341]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20780,7 +20901,7 @@ func (x *ReferralSetRefereeConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetRefereeConnection.ProtoReflect.Descriptor instead.
 func (*ReferralSetRefereeConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{340}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{341}
 }
 
 func (x *ReferralSetRefereeConnection) GetEdges() []*ReferralSetRefereeEdge {
@@ -20818,7 +20939,7 @@ type ListReferralSetRefereesRequest struct {
 func (x *ListReferralSetRefereesRequest) Reset() {
 	*x = ListReferralSetRefereesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[341]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[342]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20831,7 +20952,7 @@ func (x *ListReferralSetRefereesRequest) String() string {
 func (*ListReferralSetRefereesRequest) ProtoMessage() {}
 
 func (x *ListReferralSetRefereesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[341]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[342]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20844,7 +20965,7 @@ func (x *ListReferralSetRefereesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReferralSetRefereesRequest.ProtoReflect.Descriptor instead.
 func (*ListReferralSetRefereesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{341}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{342}
 }
 
 func (x *ListReferralSetRefereesRequest) GetReferralSetId() string {
@@ -20895,7 +21016,7 @@ type ListReferralSetRefereesResponse struct {
 func (x *ListReferralSetRefereesResponse) Reset() {
 	*x = ListReferralSetRefereesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[342]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[343]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20908,7 +21029,7 @@ func (x *ListReferralSetRefereesResponse) String() string {
 func (*ListReferralSetRefereesResponse) ProtoMessage() {}
 
 func (x *ListReferralSetRefereesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[342]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[343]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20921,7 +21042,7 @@ func (x *ListReferralSetRefereesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReferralSetRefereesResponse.ProtoReflect.Descriptor instead.
 func (*ListReferralSetRefereesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{342}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{343}
 }
 
 func (x *ListReferralSetRefereesResponse) GetReferralSetReferees() *ReferralSetRefereeConnection {
@@ -20950,7 +21071,7 @@ type GetReferralSetStatsRequest struct {
 func (x *GetReferralSetStatsRequest) Reset() {
 	*x = GetReferralSetStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[343]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[344]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -20963,7 +21084,7 @@ func (x *GetReferralSetStatsRequest) String() string {
 func (*GetReferralSetStatsRequest) ProtoMessage() {}
 
 func (x *GetReferralSetStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[343]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[344]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -20976,7 +21097,7 @@ func (x *GetReferralSetStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReferralSetStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetReferralSetStatsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{343}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{344}
 }
 
 func (x *GetReferralSetStatsRequest) GetReferralSetId() string {
@@ -21020,7 +21141,7 @@ type GetReferralSetStatsResponse struct {
 func (x *GetReferralSetStatsResponse) Reset() {
 	*x = GetReferralSetStatsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[344]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[345]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21033,7 +21154,7 @@ func (x *GetReferralSetStatsResponse) String() string {
 func (*GetReferralSetStatsResponse) ProtoMessage() {}
 
 func (x *GetReferralSetStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[344]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[345]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21046,7 +21167,7 @@ func (x *GetReferralSetStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReferralSetStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetReferralSetStatsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{344}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{345}
 }
 
 func (x *GetReferralSetStatsResponse) GetStats() *ReferralSetStatsConnection {
@@ -21071,7 +21192,7 @@ type ReferralSetStatsConnection struct {
 func (x *ReferralSetStatsConnection) Reset() {
 	*x = ReferralSetStatsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[345]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[346]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21084,7 +21205,7 @@ func (x *ReferralSetStatsConnection) String() string {
 func (*ReferralSetStatsConnection) ProtoMessage() {}
 
 func (x *ReferralSetStatsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[345]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[346]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21097,7 +21218,7 @@ func (x *ReferralSetStatsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetStatsConnection.ProtoReflect.Descriptor instead.
 func (*ReferralSetStatsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{345}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{346}
 }
 
 func (x *ReferralSetStatsConnection) GetEdges() []*ReferralSetStatsEdge {
@@ -21129,7 +21250,7 @@ type ReferralSetStatsEdge struct {
 func (x *ReferralSetStatsEdge) Reset() {
 	*x = ReferralSetStatsEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[346]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[347]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21142,7 +21263,7 @@ func (x *ReferralSetStatsEdge) String() string {
 func (*ReferralSetStatsEdge) ProtoMessage() {}
 
 func (x *ReferralSetStatsEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[346]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[347]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21155,7 +21276,7 @@ func (x *ReferralSetStatsEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetStatsEdge.ProtoReflect.Descriptor instead.
 func (*ReferralSetStatsEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{346}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{347}
 }
 
 func (x *ReferralSetStatsEdge) GetNode() *ReferralSetStats {
@@ -21204,7 +21325,7 @@ type ReferralSetStats struct {
 func (x *ReferralSetStats) Reset() {
 	*x = ReferralSetStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[347]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[348]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21217,7 +21338,7 @@ func (x *ReferralSetStats) String() string {
 func (*ReferralSetStats) ProtoMessage() {}
 
 func (x *ReferralSetStats) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[347]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[348]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21230,7 +21351,7 @@ func (x *ReferralSetStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReferralSetStats.ProtoReflect.Descriptor instead.
 func (*ReferralSetStats) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{347}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{348}
 }
 
 func (x *ReferralSetStats) GetAtEpoch() uint64 {
@@ -21334,7 +21455,7 @@ type Team struct {
 func (x *Team) Reset() {
 	*x = Team{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[348]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[349]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21347,7 +21468,7 @@ func (x *Team) String() string {
 func (*Team) ProtoMessage() {}
 
 func (x *Team) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[348]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[349]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21360,7 +21481,7 @@ func (x *Team) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Team.ProtoReflect.Descriptor instead.
 func (*Team) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{348}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{349}
 }
 
 func (x *Team) GetTeamId() string {
@@ -21441,7 +21562,7 @@ type TeamEdge struct {
 func (x *TeamEdge) Reset() {
 	*x = TeamEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[349]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[350]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21454,7 +21575,7 @@ func (x *TeamEdge) String() string {
 func (*TeamEdge) ProtoMessage() {}
 
 func (x *TeamEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[349]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[350]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21467,7 +21588,7 @@ func (x *TeamEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamEdge.ProtoReflect.Descriptor instead.
 func (*TeamEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{349}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{350}
 }
 
 func (x *TeamEdge) GetNode() *Team {
@@ -21499,7 +21620,7 @@ type TeamConnection struct {
 func (x *TeamConnection) Reset() {
 	*x = TeamConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[350]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[351]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21512,7 +21633,7 @@ func (x *TeamConnection) String() string {
 func (*TeamConnection) ProtoMessage() {}
 
 func (x *TeamConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[350]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[351]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21525,7 +21646,7 @@ func (x *TeamConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamConnection.ProtoReflect.Descriptor instead.
 func (*TeamConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{350}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{351}
 }
 
 func (x *TeamConnection) GetEdges() []*TeamEdge {
@@ -21559,7 +21680,7 @@ type ListTeamsRequest struct {
 func (x *ListTeamsRequest) Reset() {
 	*x = ListTeamsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[351]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[352]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21572,7 +21693,7 @@ func (x *ListTeamsRequest) String() string {
 func (*ListTeamsRequest) ProtoMessage() {}
 
 func (x *ListTeamsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[351]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[352]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21585,7 +21706,7 @@ func (x *ListTeamsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{351}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{352}
 }
 
 func (x *ListTeamsRequest) GetTeamId() string {
@@ -21622,7 +21743,7 @@ type ListTeamsResponse struct {
 func (x *ListTeamsResponse) Reset() {
 	*x = ListTeamsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[352]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[353]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21635,7 +21756,7 @@ func (x *ListTeamsResponse) String() string {
 func (*ListTeamsResponse) ProtoMessage() {}
 
 func (x *ListTeamsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[352]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[353]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21648,7 +21769,7 @@ func (x *ListTeamsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{352}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{353}
 }
 
 func (x *ListTeamsResponse) GetTeams() *TeamConnection {
@@ -21676,7 +21797,7 @@ type ListTeamsStatisticsRequest struct {
 func (x *ListTeamsStatisticsRequest) Reset() {
 	*x = ListTeamsStatisticsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[353]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[354]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21689,7 +21810,7 @@ func (x *ListTeamsStatisticsRequest) String() string {
 func (*ListTeamsStatisticsRequest) ProtoMessage() {}
 
 func (x *ListTeamsStatisticsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[353]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[354]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21702,7 +21823,7 @@ func (x *ListTeamsStatisticsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsStatisticsRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamsStatisticsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{353}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{354}
 }
 
 func (x *ListTeamsStatisticsRequest) GetTeamId() string {
@@ -21739,7 +21860,7 @@ type ListTeamsStatisticsResponse struct {
 func (x *ListTeamsStatisticsResponse) Reset() {
 	*x = ListTeamsStatisticsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[354]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[355]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21752,7 +21873,7 @@ func (x *ListTeamsStatisticsResponse) String() string {
 func (*ListTeamsStatisticsResponse) ProtoMessage() {}
 
 func (x *ListTeamsStatisticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[354]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[355]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21765,7 +21886,7 @@ func (x *ListTeamsStatisticsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamsStatisticsResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamsStatisticsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{354}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{355}
 }
 
 func (x *ListTeamsStatisticsResponse) GetStatistics() *TeamsStatisticsConnection {
@@ -21790,7 +21911,7 @@ type TeamsStatisticsConnection struct {
 func (x *TeamsStatisticsConnection) Reset() {
 	*x = TeamsStatisticsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[355]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[356]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21803,7 +21924,7 @@ func (x *TeamsStatisticsConnection) String() string {
 func (*TeamsStatisticsConnection) ProtoMessage() {}
 
 func (x *TeamsStatisticsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[355]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[356]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21816,7 +21937,7 @@ func (x *TeamsStatisticsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamsStatisticsConnection.ProtoReflect.Descriptor instead.
 func (*TeamsStatisticsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{355}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{356}
 }
 
 func (x *TeamsStatisticsConnection) GetEdges() []*TeamStatisticsEdge {
@@ -21848,7 +21969,7 @@ type TeamStatisticsEdge struct {
 func (x *TeamStatisticsEdge) Reset() {
 	*x = TeamStatisticsEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[356]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[357]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21861,7 +21982,7 @@ func (x *TeamStatisticsEdge) String() string {
 func (*TeamStatisticsEdge) ProtoMessage() {}
 
 func (x *TeamStatisticsEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[356]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[357]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21874,7 +21995,7 @@ func (x *TeamStatisticsEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamStatisticsEdge.ProtoReflect.Descriptor instead.
 func (*TeamStatisticsEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{356}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{357}
 }
 
 func (x *TeamStatisticsEdge) GetNode() *TeamStatistics {
@@ -21917,7 +22038,7 @@ type TeamStatistics struct {
 func (x *TeamStatistics) Reset() {
 	*x = TeamStatistics{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[357]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[358]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -21930,7 +22051,7 @@ func (x *TeamStatistics) String() string {
 func (*TeamStatistics) ProtoMessage() {}
 
 func (x *TeamStatistics) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[357]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[358]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -21943,7 +22064,7 @@ func (x *TeamStatistics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamStatistics.ProtoReflect.Descriptor instead.
 func (*TeamStatistics) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{357}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{358}
 }
 
 func (x *TeamStatistics) GetTeamId() string {
@@ -22002,7 +22123,7 @@ type QuantumRewardsPerEpoch struct {
 func (x *QuantumRewardsPerEpoch) Reset() {
 	*x = QuantumRewardsPerEpoch{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[358]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[359]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22015,7 +22136,7 @@ func (x *QuantumRewardsPerEpoch) String() string {
 func (*QuantumRewardsPerEpoch) ProtoMessage() {}
 
 func (x *QuantumRewardsPerEpoch) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[358]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[359]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22028,7 +22149,7 @@ func (x *QuantumRewardsPerEpoch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuantumRewardsPerEpoch.ProtoReflect.Descriptor instead.
 func (*QuantumRewardsPerEpoch) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{358}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{359}
 }
 
 func (x *QuantumRewardsPerEpoch) GetEpoch() uint64 {
@@ -22065,7 +22186,7 @@ type ListTeamMembersStatisticsRequest struct {
 func (x *ListTeamMembersStatisticsRequest) Reset() {
 	*x = ListTeamMembersStatisticsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[359]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[360]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22078,7 +22199,7 @@ func (x *ListTeamMembersStatisticsRequest) String() string {
 func (*ListTeamMembersStatisticsRequest) ProtoMessage() {}
 
 func (x *ListTeamMembersStatisticsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[359]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[360]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22091,7 +22212,7 @@ func (x *ListTeamMembersStatisticsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamMembersStatisticsRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamMembersStatisticsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{359}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{360}
 }
 
 func (x *ListTeamMembersStatisticsRequest) GetTeamId() string {
@@ -22135,7 +22256,7 @@ type ListTeamMembersStatisticsResponse struct {
 func (x *ListTeamMembersStatisticsResponse) Reset() {
 	*x = ListTeamMembersStatisticsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[360]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[361]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22148,7 +22269,7 @@ func (x *ListTeamMembersStatisticsResponse) String() string {
 func (*ListTeamMembersStatisticsResponse) ProtoMessage() {}
 
 func (x *ListTeamMembersStatisticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[360]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[361]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22161,7 +22282,7 @@ func (x *ListTeamMembersStatisticsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ListTeamMembersStatisticsResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamMembersStatisticsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{360}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{361}
 }
 
 func (x *ListTeamMembersStatisticsResponse) GetStatistics() *TeamMembersStatisticsConnection {
@@ -22186,7 +22307,7 @@ type TeamMembersStatisticsConnection struct {
 func (x *TeamMembersStatisticsConnection) Reset() {
 	*x = TeamMembersStatisticsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[361]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[362]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22199,7 +22320,7 @@ func (x *TeamMembersStatisticsConnection) String() string {
 func (*TeamMembersStatisticsConnection) ProtoMessage() {}
 
 func (x *TeamMembersStatisticsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[361]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[362]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22212,7 +22333,7 @@ func (x *TeamMembersStatisticsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMembersStatisticsConnection.ProtoReflect.Descriptor instead.
 func (*TeamMembersStatisticsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{361}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{362}
 }
 
 func (x *TeamMembersStatisticsConnection) GetEdges() []*TeamMemberStatisticsEdge {
@@ -22244,7 +22365,7 @@ type TeamMemberStatisticsEdge struct {
 func (x *TeamMemberStatisticsEdge) Reset() {
 	*x = TeamMemberStatisticsEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[362]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[363]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22257,7 +22378,7 @@ func (x *TeamMemberStatisticsEdge) String() string {
 func (*TeamMemberStatisticsEdge) ProtoMessage() {}
 
 func (x *TeamMemberStatisticsEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[362]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[363]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22270,7 +22391,7 @@ func (x *TeamMemberStatisticsEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMemberStatisticsEdge.ProtoReflect.Descriptor instead.
 func (*TeamMemberStatisticsEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{362}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{363}
 }
 
 func (x *TeamMemberStatisticsEdge) GetNode() *TeamMemberStatistics {
@@ -22313,7 +22434,7 @@ type TeamMemberStatistics struct {
 func (x *TeamMemberStatistics) Reset() {
 	*x = TeamMemberStatistics{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[363]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[364]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22326,7 +22447,7 @@ func (x *TeamMemberStatistics) String() string {
 func (*TeamMemberStatistics) ProtoMessage() {}
 
 func (x *TeamMemberStatistics) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[363]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[364]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22339,7 +22460,7 @@ func (x *TeamMemberStatistics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamMemberStatistics.ProtoReflect.Descriptor instead.
 func (*TeamMemberStatistics) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{363}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{364}
 }
 
 func (x *TeamMemberStatistics) GetPartyId() string {
@@ -22399,7 +22520,7 @@ type ListTeamRefereesRequest struct {
 func (x *ListTeamRefereesRequest) Reset() {
 	*x = ListTeamRefereesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[364]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[365]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22412,7 +22533,7 @@ func (x *ListTeamRefereesRequest) String() string {
 func (*ListTeamRefereesRequest) ProtoMessage() {}
 
 func (x *ListTeamRefereesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[364]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[365]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22425,7 +22546,7 @@ func (x *ListTeamRefereesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamRefereesRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamRefereesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{364}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{365}
 }
 
 func (x *ListTeamRefereesRequest) GetTeamId() string {
@@ -22461,7 +22582,7 @@ type TeamReferee struct {
 func (x *TeamReferee) Reset() {
 	*x = TeamReferee{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[365]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[366]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22474,7 +22595,7 @@ func (x *TeamReferee) String() string {
 func (*TeamReferee) ProtoMessage() {}
 
 func (x *TeamReferee) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[365]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[366]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22487,7 +22608,7 @@ func (x *TeamReferee) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamReferee.ProtoReflect.Descriptor instead.
 func (*TeamReferee) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{365}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{366}
 }
 
 func (x *TeamReferee) GetTeamId() string {
@@ -22533,7 +22654,7 @@ type TeamRefereeEdge struct {
 func (x *TeamRefereeEdge) Reset() {
 	*x = TeamRefereeEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[366]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[367]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22546,7 +22667,7 @@ func (x *TeamRefereeEdge) String() string {
 func (*TeamRefereeEdge) ProtoMessage() {}
 
 func (x *TeamRefereeEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[366]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[367]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22559,7 +22680,7 @@ func (x *TeamRefereeEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRefereeEdge.ProtoReflect.Descriptor instead.
 func (*TeamRefereeEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{366}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{367}
 }
 
 func (x *TeamRefereeEdge) GetNode() *TeamReferee {
@@ -22591,7 +22712,7 @@ type TeamRefereeConnection struct {
 func (x *TeamRefereeConnection) Reset() {
 	*x = TeamRefereeConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[367]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[368]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22604,7 +22725,7 @@ func (x *TeamRefereeConnection) String() string {
 func (*TeamRefereeConnection) ProtoMessage() {}
 
 func (x *TeamRefereeConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[367]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[368]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22617,7 +22738,7 @@ func (x *TeamRefereeConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRefereeConnection.ProtoReflect.Descriptor instead.
 func (*TeamRefereeConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{367}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{368}
 }
 
 func (x *TeamRefereeConnection) GetEdges() []*TeamRefereeEdge {
@@ -22647,7 +22768,7 @@ type ListTeamRefereesResponse struct {
 func (x *ListTeamRefereesResponse) Reset() {
 	*x = ListTeamRefereesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[368]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[369]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22660,7 +22781,7 @@ func (x *ListTeamRefereesResponse) String() string {
 func (*ListTeamRefereesResponse) ProtoMessage() {}
 
 func (x *ListTeamRefereesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[368]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[369]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22673,7 +22794,7 @@ func (x *ListTeamRefereesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamRefereesResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamRefereesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{368}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{369}
 }
 
 func (x *ListTeamRefereesResponse) GetTeamReferees() *TeamRefereeConnection {
@@ -22700,7 +22821,7 @@ type TeamRefereeHistory struct {
 func (x *TeamRefereeHistory) Reset() {
 	*x = TeamRefereeHistory{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[369]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[370]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22713,7 +22834,7 @@ func (x *TeamRefereeHistory) String() string {
 func (*TeamRefereeHistory) ProtoMessage() {}
 
 func (x *TeamRefereeHistory) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[369]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[370]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22726,7 +22847,7 @@ func (x *TeamRefereeHistory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRefereeHistory.ProtoReflect.Descriptor instead.
 func (*TeamRefereeHistory) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{369}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{370}
 }
 
 func (x *TeamRefereeHistory) GetTeamId() string {
@@ -22765,7 +22886,7 @@ type TeamRefereeHistoryEdge struct {
 func (x *TeamRefereeHistoryEdge) Reset() {
 	*x = TeamRefereeHistoryEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[370]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[371]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22778,7 +22899,7 @@ func (x *TeamRefereeHistoryEdge) String() string {
 func (*TeamRefereeHistoryEdge) ProtoMessage() {}
 
 func (x *TeamRefereeHistoryEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[370]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[371]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22791,7 +22912,7 @@ func (x *TeamRefereeHistoryEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRefereeHistoryEdge.ProtoReflect.Descriptor instead.
 func (*TeamRefereeHistoryEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{370}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{371}
 }
 
 func (x *TeamRefereeHistoryEdge) GetNode() *TeamRefereeHistory {
@@ -22823,7 +22944,7 @@ type TeamRefereeHistoryConnection struct {
 func (x *TeamRefereeHistoryConnection) Reset() {
 	*x = TeamRefereeHistoryConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[371]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[372]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22836,7 +22957,7 @@ func (x *TeamRefereeHistoryConnection) String() string {
 func (*TeamRefereeHistoryConnection) ProtoMessage() {}
 
 func (x *TeamRefereeHistoryConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[371]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[372]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22849,7 +22970,7 @@ func (x *TeamRefereeHistoryConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamRefereeHistoryConnection.ProtoReflect.Descriptor instead.
 func (*TeamRefereeHistoryConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{371}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{372}
 }
 
 func (x *TeamRefereeHistoryConnection) GetEdges() []*TeamRefereeHistoryEdge {
@@ -22881,7 +23002,7 @@ type ListTeamRefereeHistoryRequest struct {
 func (x *ListTeamRefereeHistoryRequest) Reset() {
 	*x = ListTeamRefereeHistoryRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[372]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[373]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22894,7 +23015,7 @@ func (x *ListTeamRefereeHistoryRequest) String() string {
 func (*ListTeamRefereeHistoryRequest) ProtoMessage() {}
 
 func (x *ListTeamRefereeHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[372]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[373]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22907,7 +23028,7 @@ func (x *ListTeamRefereeHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamRefereeHistoryRequest.ProtoReflect.Descriptor instead.
 func (*ListTeamRefereeHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{372}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{373}
 }
 
 func (x *ListTeamRefereeHistoryRequest) GetReferee() string {
@@ -22937,7 +23058,7 @@ type ListTeamRefereeHistoryResponse struct {
 func (x *ListTeamRefereeHistoryResponse) Reset() {
 	*x = ListTeamRefereeHistoryResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[373]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[374]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -22950,7 +23071,7 @@ func (x *ListTeamRefereeHistoryResponse) String() string {
 func (*ListTeamRefereeHistoryResponse) ProtoMessage() {}
 
 func (x *ListTeamRefereeHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[373]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[374]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -22963,7 +23084,7 @@ func (x *ListTeamRefereeHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTeamRefereeHistoryResponse.ProtoReflect.Descriptor instead.
 func (*ListTeamRefereeHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{373}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{374}
 }
 
 func (x *ListTeamRefereeHistoryResponse) GetTeamRefereeHistory() *TeamRefereeHistoryConnection {
@@ -22992,7 +23113,7 @@ type GetFeesStatsRequest struct {
 func (x *GetFeesStatsRequest) Reset() {
 	*x = GetFeesStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[374]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[375]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23005,7 +23126,7 @@ func (x *GetFeesStatsRequest) String() string {
 func (*GetFeesStatsRequest) ProtoMessage() {}
 
 func (x *GetFeesStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[374]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[375]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23018,7 +23139,7 @@ func (x *GetFeesStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeesStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetFeesStatsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{374}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{375}
 }
 
 func (x *GetFeesStatsRequest) GetMarketId() string {
@@ -23062,7 +23183,7 @@ type GetFeesStatsResponse struct {
 func (x *GetFeesStatsResponse) Reset() {
 	*x = GetFeesStatsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[375]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[376]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23075,7 +23196,7 @@ func (x *GetFeesStatsResponse) String() string {
 func (*GetFeesStatsResponse) ProtoMessage() {}
 
 func (x *GetFeesStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[375]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[376]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23088,7 +23209,7 @@ func (x *GetFeesStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeesStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetFeesStatsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{375}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{376}
 }
 
 func (x *GetFeesStatsResponse) GetFeesStats() *v1.FeesStats {
@@ -23117,7 +23238,7 @@ type GetFeesStatsForPartyRequest struct {
 func (x *GetFeesStatsForPartyRequest) Reset() {
 	*x = GetFeesStatsForPartyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[376]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[377]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23130,7 +23251,7 @@ func (x *GetFeesStatsForPartyRequest) String() string {
 func (*GetFeesStatsForPartyRequest) ProtoMessage() {}
 
 func (x *GetFeesStatsForPartyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[376]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[377]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23143,7 +23264,7 @@ func (x *GetFeesStatsForPartyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeesStatsForPartyRequest.ProtoReflect.Descriptor instead.
 func (*GetFeesStatsForPartyRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{376}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{377}
 }
 
 func (x *GetFeesStatsForPartyRequest) GetPartyId() string {
@@ -23187,7 +23308,7 @@ type GetFeesStatsForPartyResponse struct {
 func (x *GetFeesStatsForPartyResponse) Reset() {
 	*x = GetFeesStatsForPartyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[377]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[378]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23200,7 +23321,7 @@ func (x *GetFeesStatsForPartyResponse) String() string {
 func (*GetFeesStatsForPartyResponse) ProtoMessage() {}
 
 func (x *GetFeesStatsForPartyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[377]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[378]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23213,7 +23334,7 @@ func (x *GetFeesStatsForPartyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeesStatsForPartyResponse.ProtoReflect.Descriptor instead.
 func (*GetFeesStatsForPartyResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{377}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{378}
 }
 
 func (x *GetFeesStatsForPartyResponse) GetFeesStatsForParty() []*FeesStatsForParty {
@@ -23233,7 +23354,7 @@ type GetCurrentVolumeDiscountProgramRequest struct {
 func (x *GetCurrentVolumeDiscountProgramRequest) Reset() {
 	*x = GetCurrentVolumeDiscountProgramRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[378]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[379]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23246,7 +23367,7 @@ func (x *GetCurrentVolumeDiscountProgramRequest) String() string {
 func (*GetCurrentVolumeDiscountProgramRequest) ProtoMessage() {}
 
 func (x *GetCurrentVolumeDiscountProgramRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[378]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[379]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23259,7 +23380,7 @@ func (x *GetCurrentVolumeDiscountProgramRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetCurrentVolumeDiscountProgramRequest.ProtoReflect.Descriptor instead.
 func (*GetCurrentVolumeDiscountProgramRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{378}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{379}
 }
 
 // Response containing the current referral program
@@ -23275,7 +23396,7 @@ type GetCurrentVolumeDiscountProgramResponse struct {
 func (x *GetCurrentVolumeDiscountProgramResponse) Reset() {
 	*x = GetCurrentVolumeDiscountProgramResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[379]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[380]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23288,7 +23409,7 @@ func (x *GetCurrentVolumeDiscountProgramResponse) String() string {
 func (*GetCurrentVolumeDiscountProgramResponse) ProtoMessage() {}
 
 func (x *GetCurrentVolumeDiscountProgramResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[379]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[380]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23301,7 +23422,7 @@ func (x *GetCurrentVolumeDiscountProgramResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GetCurrentVolumeDiscountProgramResponse.ProtoReflect.Descriptor instead.
 func (*GetCurrentVolumeDiscountProgramResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{379}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{380}
 }
 
 func (x *GetCurrentVolumeDiscountProgramResponse) GetCurrentVolumeDiscountProgram() *VolumeDiscountProgram {
@@ -23328,7 +23449,7 @@ type GetVolumeDiscountStatsRequest struct {
 func (x *GetVolumeDiscountStatsRequest) Reset() {
 	*x = GetVolumeDiscountStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[380]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[381]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23341,7 +23462,7 @@ func (x *GetVolumeDiscountStatsRequest) String() string {
 func (*GetVolumeDiscountStatsRequest) ProtoMessage() {}
 
 func (x *GetVolumeDiscountStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[380]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[381]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23354,7 +23475,7 @@ func (x *GetVolumeDiscountStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVolumeDiscountStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetVolumeDiscountStatsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{380}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{381}
 }
 
 func (x *GetVolumeDiscountStatsRequest) GetAtEpoch() uint64 {
@@ -23391,7 +23512,7 @@ type GetVolumeDiscountStatsResponse struct {
 func (x *GetVolumeDiscountStatsResponse) Reset() {
 	*x = GetVolumeDiscountStatsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[381]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[382]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23404,7 +23525,7 @@ func (x *GetVolumeDiscountStatsResponse) String() string {
 func (*GetVolumeDiscountStatsResponse) ProtoMessage() {}
 
 func (x *GetVolumeDiscountStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[381]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[382]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23417,7 +23538,7 @@ func (x *GetVolumeDiscountStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVolumeDiscountStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetVolumeDiscountStatsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{381}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{382}
 }
 
 func (x *GetVolumeDiscountStatsResponse) GetStats() *VolumeDiscountStatsConnection {
@@ -23442,7 +23563,7 @@ type VolumeDiscountStatsConnection struct {
 func (x *VolumeDiscountStatsConnection) Reset() {
 	*x = VolumeDiscountStatsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[382]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[383]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23455,7 +23576,7 @@ func (x *VolumeDiscountStatsConnection) String() string {
 func (*VolumeDiscountStatsConnection) ProtoMessage() {}
 
 func (x *VolumeDiscountStatsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[382]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[383]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23468,7 +23589,7 @@ func (x *VolumeDiscountStatsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeDiscountStatsConnection.ProtoReflect.Descriptor instead.
 func (*VolumeDiscountStatsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{382}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{383}
 }
 
 func (x *VolumeDiscountStatsConnection) GetEdges() []*VolumeDiscountStatsEdge {
@@ -23500,7 +23621,7 @@ type VolumeDiscountStatsEdge struct {
 func (x *VolumeDiscountStatsEdge) Reset() {
 	*x = VolumeDiscountStatsEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[383]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[384]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23513,7 +23634,7 @@ func (x *VolumeDiscountStatsEdge) String() string {
 func (*VolumeDiscountStatsEdge) ProtoMessage() {}
 
 func (x *VolumeDiscountStatsEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[383]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[384]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23526,7 +23647,7 @@ func (x *VolumeDiscountStatsEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeDiscountStatsEdge.ProtoReflect.Descriptor instead.
 func (*VolumeDiscountStatsEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{383}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{384}
 }
 
 func (x *VolumeDiscountStatsEdge) GetNode() *VolumeDiscountStats {
@@ -23562,7 +23683,7 @@ type VolumeDiscountStats struct {
 func (x *VolumeDiscountStats) Reset() {
 	*x = VolumeDiscountStats{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[384]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[385]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23575,7 +23696,7 @@ func (x *VolumeDiscountStats) String() string {
 func (*VolumeDiscountStats) ProtoMessage() {}
 
 func (x *VolumeDiscountStats) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[384]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[385]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23588,7 +23709,7 @@ func (x *VolumeDiscountStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeDiscountStats.ProtoReflect.Descriptor instead.
 func (*VolumeDiscountStats) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{384}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{385}
 }
 
 func (x *VolumeDiscountStats) GetAtEpoch() uint64 {
@@ -23645,7 +23766,7 @@ type VolumeDiscountProgram struct {
 func (x *VolumeDiscountProgram) Reset() {
 	*x = VolumeDiscountProgram{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[385]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[386]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23658,7 +23779,7 @@ func (x *VolumeDiscountProgram) String() string {
 func (*VolumeDiscountProgram) ProtoMessage() {}
 
 func (x *VolumeDiscountProgram) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[385]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[386]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23671,7 +23792,7 @@ func (x *VolumeDiscountProgram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VolumeDiscountProgram.ProtoReflect.Descriptor instead.
 func (*VolumeDiscountProgram) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{385}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{386}
 }
 
 func (x *VolumeDiscountProgram) GetVersion() uint64 {
@@ -23736,7 +23857,7 @@ type FeesStatsForParty struct {
 func (x *FeesStatsForParty) Reset() {
 	*x = FeesStatsForParty{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[386]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[387]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23749,7 +23870,7 @@ func (x *FeesStatsForParty) String() string {
 func (*FeesStatsForParty) ProtoMessage() {}
 
 func (x *FeesStatsForParty) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[386]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[387]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23762,7 +23883,7 @@ func (x *FeesStatsForParty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FeesStatsForParty.ProtoReflect.Descriptor instead.
 func (*FeesStatsForParty) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{386}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{387}
 }
 
 func (x *FeesStatsForParty) GetAssetId() string {
@@ -23817,7 +23938,7 @@ type ObserveTransactionResultsRequest struct {
 func (x *ObserveTransactionResultsRequest) Reset() {
 	*x = ObserveTransactionResultsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[387]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[388]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23830,7 +23951,7 @@ func (x *ObserveTransactionResultsRequest) String() string {
 func (*ObserveTransactionResultsRequest) ProtoMessage() {}
 
 func (x *ObserveTransactionResultsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[387]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[388]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23843,7 +23964,7 @@ func (x *ObserveTransactionResultsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveTransactionResultsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveTransactionResultsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{387}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{388}
 }
 
 func (x *ObserveTransactionResultsRequest) GetPartyIds() []string {
@@ -23880,7 +24001,7 @@ type ObserveTransactionResultsResponse struct {
 func (x *ObserveTransactionResultsResponse) Reset() {
 	*x = ObserveTransactionResultsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[388]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[389]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23893,7 +24014,7 @@ func (x *ObserveTransactionResultsResponse) String() string {
 func (*ObserveTransactionResultsResponse) ProtoMessage() {}
 
 func (x *ObserveTransactionResultsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[388]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[389]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23906,7 +24027,7 @@ func (x *ObserveTransactionResultsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ObserveTransactionResultsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveTransactionResultsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{388}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{389}
 }
 
 func (x *ObserveTransactionResultsResponse) GetTransactionResults() []*v1.TransactionResult {
@@ -23937,7 +24058,7 @@ type EstimateTransferFeeRequest struct {
 func (x *EstimateTransferFeeRequest) Reset() {
 	*x = EstimateTransferFeeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[389]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[390]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -23950,7 +24071,7 @@ func (x *EstimateTransferFeeRequest) String() string {
 func (*EstimateTransferFeeRequest) ProtoMessage() {}
 
 func (x *EstimateTransferFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[389]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[390]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -23963,7 +24084,7 @@ func (x *EstimateTransferFeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateTransferFeeRequest.ProtoReflect.Descriptor instead.
 func (*EstimateTransferFeeRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{389}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{390}
 }
 
 func (x *EstimateTransferFeeRequest) GetFromAccount() string {
@@ -24016,7 +24137,7 @@ type EstimateTransferFeeResponse struct {
 func (x *EstimateTransferFeeResponse) Reset() {
 	*x = EstimateTransferFeeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[390]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[391]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24029,7 +24150,7 @@ func (x *EstimateTransferFeeResponse) String() string {
 func (*EstimateTransferFeeResponse) ProtoMessage() {}
 
 func (x *EstimateTransferFeeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[390]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[391]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24042,7 +24163,7 @@ func (x *EstimateTransferFeeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateTransferFeeResponse.ProtoReflect.Descriptor instead.
 func (*EstimateTransferFeeResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{390}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{391}
 }
 
 func (x *EstimateTransferFeeResponse) GetFee() string {
@@ -24074,7 +24195,7 @@ type GetTotalTransferFeeDiscountRequest struct {
 func (x *GetTotalTransferFeeDiscountRequest) Reset() {
 	*x = GetTotalTransferFeeDiscountRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[391]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[392]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24087,7 +24208,7 @@ func (x *GetTotalTransferFeeDiscountRequest) String() string {
 func (*GetTotalTransferFeeDiscountRequest) ProtoMessage() {}
 
 func (x *GetTotalTransferFeeDiscountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[391]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[392]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24100,7 +24221,7 @@ func (x *GetTotalTransferFeeDiscountRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetTotalTransferFeeDiscountRequest.ProtoReflect.Descriptor instead.
 func (*GetTotalTransferFeeDiscountRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{391}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{392}
 }
 
 func (x *GetTotalTransferFeeDiscountRequest) GetPartyId() string {
@@ -24130,7 +24251,7 @@ type GetTotalTransferFeeDiscountResponse struct {
 func (x *GetTotalTransferFeeDiscountResponse) Reset() {
 	*x = GetTotalTransferFeeDiscountResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[392]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[393]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24143,7 +24264,7 @@ func (x *GetTotalTransferFeeDiscountResponse) String() string {
 func (*GetTotalTransferFeeDiscountResponse) ProtoMessage() {}
 
 func (x *GetTotalTransferFeeDiscountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[392]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[393]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24156,7 +24277,7 @@ func (x *GetTotalTransferFeeDiscountResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetTotalTransferFeeDiscountResponse.ProtoReflect.Descriptor instead.
 func (*GetTotalTransferFeeDiscountResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{392}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{393}
 }
 
 func (x *GetTotalTransferFeeDiscountResponse) GetTotalDiscount() string {
@@ -24188,7 +24309,7 @@ type ListGamesRequest struct {
 func (x *ListGamesRequest) Reset() {
 	*x = ListGamesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[393]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[394]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24201,7 +24322,7 @@ func (x *ListGamesRequest) String() string {
 func (*ListGamesRequest) ProtoMessage() {}
 
 func (x *ListGamesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[393]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[394]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24214,7 +24335,7 @@ func (x *ListGamesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGamesRequest.ProtoReflect.Descriptor instead.
 func (*ListGamesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{393}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{394}
 }
 
 func (x *ListGamesRequest) GetGameId() string {
@@ -24265,7 +24386,7 @@ type ListGamesResponse struct {
 func (x *ListGamesResponse) Reset() {
 	*x = ListGamesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[394]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[395]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24278,7 +24399,7 @@ func (x *ListGamesResponse) String() string {
 func (*ListGamesResponse) ProtoMessage() {}
 
 func (x *ListGamesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[394]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[395]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24291,7 +24412,7 @@ func (x *ListGamesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGamesResponse.ProtoReflect.Descriptor instead.
 func (*ListGamesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{394}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{395}
 }
 
 func (x *ListGamesResponse) GetGames() *GamesConnection {
@@ -24316,7 +24437,7 @@ type GamesConnection struct {
 func (x *GamesConnection) Reset() {
 	*x = GamesConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[395]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[396]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24329,7 +24450,7 @@ func (x *GamesConnection) String() string {
 func (*GamesConnection) ProtoMessage() {}
 
 func (x *GamesConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[395]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[396]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24342,7 +24463,7 @@ func (x *GamesConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GamesConnection.ProtoReflect.Descriptor instead.
 func (*GamesConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{395}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{396}
 }
 
 func (x *GamesConnection) GetEdges() []*GameEdge {
@@ -24374,7 +24495,7 @@ type GameEdge struct {
 func (x *GameEdge) Reset() {
 	*x = GameEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[396]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[397]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24387,7 +24508,7 @@ func (x *GameEdge) String() string {
 func (*GameEdge) ProtoMessage() {}
 
 func (x *GameEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[396]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[397]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24400,7 +24521,7 @@ func (x *GameEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GameEdge.ProtoReflect.Descriptor instead.
 func (*GameEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{396}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{397}
 }
 
 func (x *GameEdge) GetNode() *Game {
@@ -24441,7 +24562,7 @@ type Game struct {
 func (x *Game) Reset() {
 	*x = Game{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[397]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[398]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24454,7 +24575,7 @@ func (x *Game) String() string {
 func (*Game) ProtoMessage() {}
 
 func (x *Game) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[397]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[398]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24467,7 +24588,7 @@ func (x *Game) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Game.ProtoReflect.Descriptor instead.
 func (*Game) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{397}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{398}
 }
 
 func (x *Game) GetId() string {
@@ -24543,7 +24664,7 @@ type TeamGameEntities struct {
 func (x *TeamGameEntities) Reset() {
 	*x = TeamGameEntities{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[398]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[399]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24556,7 +24677,7 @@ func (x *TeamGameEntities) String() string {
 func (*TeamGameEntities) ProtoMessage() {}
 
 func (x *TeamGameEntities) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[398]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[399]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24569,7 +24690,7 @@ func (x *TeamGameEntities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamGameEntities.ProtoReflect.Descriptor instead.
 func (*TeamGameEntities) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{398}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{399}
 }
 
 func (x *TeamGameEntities) GetTeam() []*TeamGameEntity {
@@ -24592,7 +24713,7 @@ type IndividualGameEntities struct {
 func (x *IndividualGameEntities) Reset() {
 	*x = IndividualGameEntities{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[399]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[400]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24605,7 +24726,7 @@ func (x *IndividualGameEntities) String() string {
 func (*IndividualGameEntities) ProtoMessage() {}
 
 func (x *IndividualGameEntities) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[399]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[400]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24618,7 +24739,7 @@ func (x *IndividualGameEntities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndividualGameEntities.ProtoReflect.Descriptor instead.
 func (*IndividualGameEntities) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{399}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{400}
 }
 
 func (x *IndividualGameEntities) GetIndividual() []*IndividualGameEntity {
@@ -24651,7 +24772,7 @@ type TeamGameEntity struct {
 func (x *TeamGameEntity) Reset() {
 	*x = TeamGameEntity{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[400]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[401]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24664,7 +24785,7 @@ func (x *TeamGameEntity) String() string {
 func (*TeamGameEntity) ProtoMessage() {}
 
 func (x *TeamGameEntity) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[400]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[401]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24677,7 +24798,7 @@ func (x *TeamGameEntity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamGameEntity.ProtoReflect.Descriptor instead.
 func (*TeamGameEntity) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{400}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{401}
 }
 
 func (x *TeamGameEntity) GetTeam() *TeamGameParticipation {
@@ -24737,7 +24858,7 @@ type TeamGameParticipation struct {
 func (x *TeamGameParticipation) Reset() {
 	*x = TeamGameParticipation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[401]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[402]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24750,7 +24871,7 @@ func (x *TeamGameParticipation) String() string {
 func (*TeamGameParticipation) ProtoMessage() {}
 
 func (x *TeamGameParticipation) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[401]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[402]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24763,7 +24884,7 @@ func (x *TeamGameParticipation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeamGameParticipation.ProtoReflect.Descriptor instead.
 func (*TeamGameParticipation) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{401}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{402}
 }
 
 func (x *TeamGameParticipation) GetTeamId() string {
@@ -24805,7 +24926,7 @@ type IndividualGameEntity struct {
 func (x *IndividualGameEntity) Reset() {
 	*x = IndividualGameEntity{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[402]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[403]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24818,7 +24939,7 @@ func (x *IndividualGameEntity) String() string {
 func (*IndividualGameEntity) ProtoMessage() {}
 
 func (x *IndividualGameEntity) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[402]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[403]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24831,7 +24952,7 @@ func (x *IndividualGameEntity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndividualGameEntity.ProtoReflect.Descriptor instead.
 func (*IndividualGameEntity) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{402}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{403}
 }
 
 func (x *IndividualGameEntity) GetIndividual() string {
@@ -24893,7 +25014,7 @@ type ListPartyMarginModesRequest struct {
 func (x *ListPartyMarginModesRequest) Reset() {
 	*x = ListPartyMarginModesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[403]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[404]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24906,7 +25027,7 @@ func (x *ListPartyMarginModesRequest) String() string {
 func (*ListPartyMarginModesRequest) ProtoMessage() {}
 
 func (x *ListPartyMarginModesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[403]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[404]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24919,7 +25040,7 @@ func (x *ListPartyMarginModesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartyMarginModesRequest.ProtoReflect.Descriptor instead.
 func (*ListPartyMarginModesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{403}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{404}
 }
 
 func (x *ListPartyMarginModesRequest) GetMarketId() string {
@@ -24956,7 +25077,7 @@ type ListPartyMarginModesResponse struct {
 func (x *ListPartyMarginModesResponse) Reset() {
 	*x = ListPartyMarginModesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[404]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[405]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -24969,7 +25090,7 @@ func (x *ListPartyMarginModesResponse) String() string {
 func (*ListPartyMarginModesResponse) ProtoMessage() {}
 
 func (x *ListPartyMarginModesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[404]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[405]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -24982,7 +25103,7 @@ func (x *ListPartyMarginModesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartyMarginModesResponse.ProtoReflect.Descriptor instead.
 func (*ListPartyMarginModesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{404}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{405}
 }
 
 func (x *ListPartyMarginModesResponse) GetPartyMarginModes() *PartyMarginModesConnection {
@@ -25007,7 +25128,7 @@ type PartyMarginModesConnection struct {
 func (x *PartyMarginModesConnection) Reset() {
 	*x = PartyMarginModesConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[405]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[406]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -25020,7 +25141,7 @@ func (x *PartyMarginModesConnection) String() string {
 func (*PartyMarginModesConnection) ProtoMessage() {}
 
 func (x *PartyMarginModesConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[405]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[406]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25033,7 +25154,7 @@ func (x *PartyMarginModesConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyMarginModesConnection.ProtoReflect.Descriptor instead.
 func (*PartyMarginModesConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{405}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{406}
 }
 
 func (x *PartyMarginModesConnection) GetEdges() []*PartyMarginModeEdge {
@@ -25065,7 +25186,7 @@ type PartyMarginModeEdge struct {
 func (x *PartyMarginModeEdge) Reset() {
 	*x = PartyMarginModeEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[406]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[407]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -25078,7 +25199,7 @@ func (x *PartyMarginModeEdge) String() string {
 func (*PartyMarginModeEdge) ProtoMessage() {}
 
 func (x *PartyMarginModeEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[406]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[407]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25091,7 +25212,7 @@ func (x *PartyMarginModeEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyMarginModeEdge.ProtoReflect.Descriptor instead.
 func (*PartyMarginModeEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{406}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{407}
 }
 
 func (x *PartyMarginModeEdge) GetNode() *PartyMarginMode {
@@ -25133,7 +25254,7 @@ type PartyMarginMode struct {
 func (x *PartyMarginMode) Reset() {
 	*x = PartyMarginMode{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[407]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[408]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -25146,7 +25267,7 @@ func (x *PartyMarginMode) String() string {
 func (*PartyMarginMode) ProtoMessage() {}
 
 func (x *PartyMarginMode) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[407]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[408]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -25159,7 +25280,7 @@ func (x *PartyMarginMode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyMarginMode.ProtoReflect.Descriptor instead.
 func (*PartyMarginMode) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{407}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{408}
 }
 
 func (x *PartyMarginMode) GetMarketId() string {
@@ -27919,40 +28040,79 @@ var file_data_node_api_v2_trading_data_proto_rawDesc = []byte{
 	0x01, 0x28, 0x04, 0x52, 0x09, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x12, 0x26,
 	0x0a, 0x0f, 0x69, 0x73, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x6f, 0x72, 0x64, 0x65,
 	0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x69, 0x73, 0x4d, 0x61, 0x72, 0x6b, 0x65,
-	0x74, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x22, 0xf7, 0x02, 0x0a, 0x17, 0x45, 0x73, 0x74, 0x69, 0x6d,
+	0x74, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x22, 0x9e, 0x06, 0x0a, 0x17, 0x45, 0x73, 0x74, 0x69, 0x6d,
 	0x61, 0x74, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x12, 0x21, 0x0a, 0x09, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x04, 0xe2, 0x41, 0x01, 0x02, 0x52, 0x08, 0x6d, 0x61, 0x72,
 	0x6b, 0x65, 0x74, 0x49, 0x64, 0x12, 0x25, 0x0a, 0x0b, 0x6f, 0x70, 0x65, 0x6e, 0x5f, 0x76, 0x6f,
 	0x6c, 0x75, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x04, 0xe2, 0x41, 0x01, 0x02,
-	0x52, 0x0a, 0x6f, 0x70, 0x65, 0x6e, 0x56, 0x6f, 0x6c, 0x75, 0x6d, 0x65, 0x12, 0x32, 0x0a, 0x06,
-	0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x64,
+	0x52, 0x0a, 0x6f, 0x70, 0x65, 0x6e, 0x56, 0x6f, 0x6c, 0x75, 0x6d, 0x65, 0x12, 0x2e, 0x0a, 0x13,
+	0x61, 0x76, 0x65, 0x72, 0x61, 0x67, 0x65, 0x5f, 0x65, 0x6e, 0x74, 0x72, 0x79, 0x5f, 0x70, 0x72,
+	0x69, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x11, 0x61, 0x76, 0x65, 0x72, 0x61,
+	0x67, 0x65, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x50, 0x72, 0x69, 0x63, 0x65, 0x12, 0x32, 0x0a, 0x06,
+	0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x64,
 	0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4f,
 	0x72, 0x64, 0x65, 0x72, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x06, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73,
-	0x12, 0x36, 0x0a, 0x14, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x5f, 0x61,
-	0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00,
-	0x52, 0x13, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x41, 0x76, 0x61, 0x69,
-	0x6c, 0x61, 0x62, 0x6c, 0x65, 0x88, 0x01, 0x01, 0x12, 0x5e, 0x0a, 0x2a, 0x73, 0x63, 0x61, 0x6c,
-	0x65, 0x5f, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x72,
-	0x69, 0x63, 0x65, 0x5f, 0x74, 0x6f, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x64, 0x65,
-	0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x48, 0x01, 0x52, 0x25,
-	0x73, 0x63, 0x61, 0x6c, 0x65, 0x4c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x50, 0x72, 0x69, 0x63, 0x65, 0x54, 0x6f, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x44, 0x65, 0x63,
-	0x69, 0x6d, 0x61, 0x6c, 0x73, 0x88, 0x01, 0x01, 0x42, 0x17, 0x0a, 0x15, 0x5f, 0x63, 0x6f, 0x6c,
-	0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x5f, 0x61, 0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c,
-	0x65, 0x42, 0x2d, 0x0a, 0x2b, 0x5f, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x5f, 0x6c, 0x69, 0x71, 0x75,
-	0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x5f, 0x74, 0x6f,
-	0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73,
-	0x22, 0x9b, 0x01, 0x0a, 0x18, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x73,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a,
-	0x06, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
-	0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e,
-	0x4d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x52, 0x06,
-	0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x12, 0x46, 0x0a, 0x0b, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4c, 0x69,
-	0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74,
-	0x65, 0x52, 0x0b, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x74,
+	0x12, 0x34, 0x0a, 0x16, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75,
+	0x6e, 0x74, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x14, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42,
+	0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x36, 0x0a, 0x17, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61,
+	0x6c, 0x5f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63,
+	0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x15, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x6c,
+	0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x3f,
+	0x0a, 0x1c, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x5f, 0x61,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x62, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x07,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x19, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x4d, 0x61, 0x72, 0x67, 0x69,
+	0x6e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x12,
+	0x31, 0x0a, 0x0b, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x5f, 0x6d, 0x6f, 0x64, 0x65, 0x18, 0x08,
+	0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4d, 0x61, 0x72, 0x67,
+	0x69, 0x6e, 0x4d, 0x6f, 0x64, 0x65, 0x52, 0x0a, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x4d, 0x6f,
+	0x64, 0x65, 0x12, 0x28, 0x0a, 0x0d, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x5f, 0x66, 0x61, 0x63,
+	0x74, 0x6f, 0x72, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0c, 0x6d, 0x61, 0x72,
+	0x67, 0x69, 0x6e, 0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x88, 0x01, 0x01, 0x12, 0x70, 0x0a, 0x33,
+	0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x5f, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72,
+	0x61, 0x6c, 0x5f, 0x69, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x5f, 0x69, 0x6e, 0x5f, 0x61,
+	0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65,
+	0x72, 0x61, 0x6c, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x08, 0x48, 0x01, 0x52, 0x2e, 0x69, 0x6e, 0x63,
+	0x6c, 0x75, 0x64, 0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x49, 0x6e,
+	0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x49, 0x6e, 0x41, 0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c,
+	0x65, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x88, 0x01, 0x01, 0x12, 0x5e,
+	0x0a, 0x2a, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x5f, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x72, 0x69, 0x63, 0x65, 0x5f, 0x74, 0x6f, 0x5f, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x5f, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x18, 0x0b, 0x20, 0x01,
+	0x28, 0x08, 0x48, 0x02, 0x52, 0x25, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x4c, 0x69, 0x71, 0x75, 0x69,
+	0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x69, 0x63, 0x65, 0x54, 0x6f, 0x4d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x44, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x88, 0x01, 0x01, 0x42, 0x10,
+	0x0a, 0x0e, 0x5f, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x5f, 0x66, 0x61, 0x63, 0x74, 0x6f, 0x72,
+	0x42, 0x36, 0x0a, 0x34, 0x5f, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x5f, 0x63, 0x6f, 0x6c,
+	0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x5f, 0x69, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65,
+	0x5f, 0x69, 0x6e, 0x5f, 0x61, 0x76, 0x61, 0x69, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x63, 0x6f,
+	0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x42, 0x2d, 0x0a, 0x2b, 0x5f, 0x73, 0x63, 0x61,
+	0x6c, 0x65, 0x5f, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x70,
+	0x72, 0x69, 0x63, 0x65, 0x5f, 0x74, 0x6f, 0x5f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x64,
+	0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x22, 0x8a, 0x02, 0x0a, 0x18, 0x45, 0x73, 0x74, 0x69,
+	0x6d, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x37, 0x0a, 0x06, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x4d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x45, 0x73, 0x74,
+	0x69, 0x6d, 0x61, 0x74, 0x65, 0x52, 0x06, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x12, 0x6d, 0x0a,
+	0x1c, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x5f, 0x69, 0x6e, 0x63, 0x72,
+	0x65, 0x61, 0x73, 0x65, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c,
+	0x49, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65,
+	0x52, 0x1a, 0x63, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72, 0x61, 0x6c, 0x49, 0x6e, 0x63, 0x72,
+	0x65, 0x61, 0x73, 0x65, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x12, 0x46, 0x0a, 0x0b,
+	0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x24, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69,
+	0x2e, 0x76, 0x32, 0x2e, 0x4c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x45,
+	0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x52, 0x0b, 0x6c, 0x69, 0x71, 0x75, 0x69, 0x64, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x22, 0x58, 0x0a, 0x1a, 0x43, 0x6f, 0x6c, 0x6c, 0x61, 0x74, 0x65, 0x72,
+	0x61, 0x6c, 0x49, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61,
+	0x74, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x77, 0x6f, 0x72, 0x73, 0x74, 0x5f, 0x63, 0x61, 0x73, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x77, 0x6f, 0x72, 0x73, 0x74, 0x43, 0x61, 0x73,
+	0x65, 0x12, 0x1b, 0x0a, 0x09, 0x62, 0x65, 0x73, 0x74, 0x5f, 0x63, 0x61, 0x73, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x62, 0x65, 0x73, 0x74, 0x43, 0x61, 0x73, 0x65, 0x22, 0x74,
 	0x0a, 0x0e, 0x4d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65,
 	0x12, 0x31, 0x0a, 0x0a, 0x77, 0x6f, 0x72, 0x73, 0x74, 0x5f, 0x63, 0x61, 0x73, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x4d, 0x61, 0x72, 0x67,
@@ -29807,7 +29967,7 @@ func file_data_node_api_v2_trading_data_proto_rawDescGZIP() []byte {
 }
 
 var file_data_node_api_v2_trading_data_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 408)
+var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 409)
 var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(LedgerEntryField)(0),                                 // 0: datanode.api.v2.LedgerEntryField
 	(AccountField)(0),                                     // 1: datanode.api.v2.AccountField
@@ -30142,183 +30302,184 @@ var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(*OrderInfo)(nil),                                     // 330: datanode.api.v2.OrderInfo
 	(*EstimatePositionRequest)(nil),                       // 331: datanode.api.v2.EstimatePositionRequest
 	(*EstimatePositionResponse)(nil),                      // 332: datanode.api.v2.EstimatePositionResponse
-	(*MarginEstimate)(nil),                                // 333: datanode.api.v2.MarginEstimate
-	(*LiquidationEstimate)(nil),                           // 334: datanode.api.v2.LiquidationEstimate
-	(*LiquidationPrice)(nil),                              // 335: datanode.api.v2.LiquidationPrice
-	(*GetCurrentReferralProgramRequest)(nil),              // 336: datanode.api.v2.GetCurrentReferralProgramRequest
-	(*GetCurrentReferralProgramResponse)(nil),             // 337: datanode.api.v2.GetCurrentReferralProgramResponse
-	(*ReferralProgram)(nil),                               // 338: datanode.api.v2.ReferralProgram
-	(*ReferralSet)(nil),                                   // 339: datanode.api.v2.ReferralSet
-	(*ReferralSetEdge)(nil),                               // 340: datanode.api.v2.ReferralSetEdge
-	(*ReferralSetConnection)(nil),                         // 341: datanode.api.v2.ReferralSetConnection
-	(*ListReferralSetsRequest)(nil),                       // 342: datanode.api.v2.ListReferralSetsRequest
-	(*ListReferralSetsResponse)(nil),                      // 343: datanode.api.v2.ListReferralSetsResponse
-	(*ReferralSetReferee)(nil),                            // 344: datanode.api.v2.ReferralSetReferee
-	(*ReferralSetRefereeEdge)(nil),                        // 345: datanode.api.v2.ReferralSetRefereeEdge
-	(*ReferralSetRefereeConnection)(nil),                  // 346: datanode.api.v2.ReferralSetRefereeConnection
-	(*ListReferralSetRefereesRequest)(nil),                // 347: datanode.api.v2.ListReferralSetRefereesRequest
-	(*ListReferralSetRefereesResponse)(nil),               // 348: datanode.api.v2.ListReferralSetRefereesResponse
-	(*GetReferralSetStatsRequest)(nil),                    // 349: datanode.api.v2.GetReferralSetStatsRequest
-	(*GetReferralSetStatsResponse)(nil),                   // 350: datanode.api.v2.GetReferralSetStatsResponse
-	(*ReferralSetStatsConnection)(nil),                    // 351: datanode.api.v2.ReferralSetStatsConnection
-	(*ReferralSetStatsEdge)(nil),                          // 352: datanode.api.v2.ReferralSetStatsEdge
-	(*ReferralSetStats)(nil),                              // 353: datanode.api.v2.ReferralSetStats
-	(*Team)(nil),                                          // 354: datanode.api.v2.Team
-	(*TeamEdge)(nil),                                      // 355: datanode.api.v2.TeamEdge
-	(*TeamConnection)(nil),                                // 356: datanode.api.v2.TeamConnection
-	(*ListTeamsRequest)(nil),                              // 357: datanode.api.v2.ListTeamsRequest
-	(*ListTeamsResponse)(nil),                             // 358: datanode.api.v2.ListTeamsResponse
-	(*ListTeamsStatisticsRequest)(nil),                    // 359: datanode.api.v2.ListTeamsStatisticsRequest
-	(*ListTeamsStatisticsResponse)(nil),                   // 360: datanode.api.v2.ListTeamsStatisticsResponse
-	(*TeamsStatisticsConnection)(nil),                     // 361: datanode.api.v2.TeamsStatisticsConnection
-	(*TeamStatisticsEdge)(nil),                            // 362: datanode.api.v2.TeamStatisticsEdge
-	(*TeamStatistics)(nil),                                // 363: datanode.api.v2.TeamStatistics
-	(*QuantumRewardsPerEpoch)(nil),                        // 364: datanode.api.v2.QuantumRewardsPerEpoch
-	(*ListTeamMembersStatisticsRequest)(nil),              // 365: datanode.api.v2.ListTeamMembersStatisticsRequest
-	(*ListTeamMembersStatisticsResponse)(nil),             // 366: datanode.api.v2.ListTeamMembersStatisticsResponse
-	(*TeamMembersStatisticsConnection)(nil),               // 367: datanode.api.v2.TeamMembersStatisticsConnection
-	(*TeamMemberStatisticsEdge)(nil),                      // 368: datanode.api.v2.TeamMemberStatisticsEdge
-	(*TeamMemberStatistics)(nil),                          // 369: datanode.api.v2.TeamMemberStatistics
-	(*ListTeamRefereesRequest)(nil),                       // 370: datanode.api.v2.ListTeamRefereesRequest
-	(*TeamReferee)(nil),                                   // 371: datanode.api.v2.TeamReferee
-	(*TeamRefereeEdge)(nil),                               // 372: datanode.api.v2.TeamRefereeEdge
-	(*TeamRefereeConnection)(nil),                         // 373: datanode.api.v2.TeamRefereeConnection
-	(*ListTeamRefereesResponse)(nil),                      // 374: datanode.api.v2.ListTeamRefereesResponse
-	(*TeamRefereeHistory)(nil),                            // 375: datanode.api.v2.TeamRefereeHistory
-	(*TeamRefereeHistoryEdge)(nil),                        // 376: datanode.api.v2.TeamRefereeHistoryEdge
-	(*TeamRefereeHistoryConnection)(nil),                  // 377: datanode.api.v2.TeamRefereeHistoryConnection
-	(*ListTeamRefereeHistoryRequest)(nil),                 // 378: datanode.api.v2.ListTeamRefereeHistoryRequest
-	(*ListTeamRefereeHistoryResponse)(nil),                // 379: datanode.api.v2.ListTeamRefereeHistoryResponse
-	(*GetFeesStatsRequest)(nil),                           // 380: datanode.api.v2.GetFeesStatsRequest
-	(*GetFeesStatsResponse)(nil),                          // 381: datanode.api.v2.GetFeesStatsResponse
-	(*GetFeesStatsForPartyRequest)(nil),                   // 382: datanode.api.v2.GetFeesStatsForPartyRequest
-	(*GetFeesStatsForPartyResponse)(nil),                  // 383: datanode.api.v2.GetFeesStatsForPartyResponse
-	(*GetCurrentVolumeDiscountProgramRequest)(nil),        // 384: datanode.api.v2.GetCurrentVolumeDiscountProgramRequest
-	(*GetCurrentVolumeDiscountProgramResponse)(nil),       // 385: datanode.api.v2.GetCurrentVolumeDiscountProgramResponse
-	(*GetVolumeDiscountStatsRequest)(nil),                 // 386: datanode.api.v2.GetVolumeDiscountStatsRequest
-	(*GetVolumeDiscountStatsResponse)(nil),                // 387: datanode.api.v2.GetVolumeDiscountStatsResponse
-	(*VolumeDiscountStatsConnection)(nil),                 // 388: datanode.api.v2.VolumeDiscountStatsConnection
-	(*VolumeDiscountStatsEdge)(nil),                       // 389: datanode.api.v2.VolumeDiscountStatsEdge
-	(*VolumeDiscountStats)(nil),                           // 390: datanode.api.v2.VolumeDiscountStats
-	(*VolumeDiscountProgram)(nil),                         // 391: datanode.api.v2.VolumeDiscountProgram
-	(*FeesStatsForParty)(nil),                             // 392: datanode.api.v2.FeesStatsForParty
-	(*ObserveTransactionResultsRequest)(nil),              // 393: datanode.api.v2.ObserveTransactionResultsRequest
-	(*ObserveTransactionResultsResponse)(nil),             // 394: datanode.api.v2.ObserveTransactionResultsResponse
-	(*EstimateTransferFeeRequest)(nil),                    // 395: datanode.api.v2.EstimateTransferFeeRequest
-	(*EstimateTransferFeeResponse)(nil),                   // 396: datanode.api.v2.EstimateTransferFeeResponse
-	(*GetTotalTransferFeeDiscountRequest)(nil),            // 397: datanode.api.v2.GetTotalTransferFeeDiscountRequest
-	(*GetTotalTransferFeeDiscountResponse)(nil),           // 398: datanode.api.v2.GetTotalTransferFeeDiscountResponse
-	(*ListGamesRequest)(nil),                              // 399: datanode.api.v2.ListGamesRequest
-	(*ListGamesResponse)(nil),                             // 400: datanode.api.v2.ListGamesResponse
-	(*GamesConnection)(nil),                               // 401: datanode.api.v2.GamesConnection
-	(*GameEdge)(nil),                                      // 402: datanode.api.v2.GameEdge
-	(*Game)(nil),                                          // 403: datanode.api.v2.Game
-	(*TeamGameEntities)(nil),                              // 404: datanode.api.v2.TeamGameEntities
-	(*IndividualGameEntities)(nil),                        // 405: datanode.api.v2.IndividualGameEntities
-	(*TeamGameEntity)(nil),                                // 406: datanode.api.v2.TeamGameEntity
-	(*TeamGameParticipation)(nil),                         // 407: datanode.api.v2.TeamGameParticipation
-	(*IndividualGameEntity)(nil),                          // 408: datanode.api.v2.IndividualGameEntity
-	(*ListPartyMarginModesRequest)(nil),                   // 409: datanode.api.v2.ListPartyMarginModesRequest
-	(*ListPartyMarginModesResponse)(nil),                  // 410: datanode.api.v2.ListPartyMarginModesResponse
-	(*PartyMarginModesConnection)(nil),                    // 411: datanode.api.v2.PartyMarginModesConnection
-	(*PartyMarginModeEdge)(nil),                           // 412: datanode.api.v2.PartyMarginModeEdge
-	(*PartyMarginMode)(nil),                               // 413: datanode.api.v2.PartyMarginMode
-	(*v1.PartyLockedBalance)(nil),                         // 414: vega.events.v1.PartyLockedBalance
-	(*v1.PartyVestingBalance)(nil),                        // 415: vega.events.v1.PartyVestingBalance
-	(vega.AccountType)(0),                                 // 416: vega.AccountType
-	(*vega.Order)(nil),                                    // 417: vega.Order
-	(vega.Order_Status)(0),                                // 418: vega.Order.Status
-	(vega.Order_Type)(0),                                  // 419: vega.Order.Type
-	(vega.Order_TimeInForce)(0),                           // 420: vega.Order.TimeInForce
-	(*v1.StopOrderEvent)(nil),                             // 421: vega.events.v1.StopOrderEvent
-	(vega.StopOrder_Status)(0),                            // 422: vega.StopOrder.Status
-	(vega.StopOrder_ExpiryStrategy)(0),                    // 423: vega.StopOrder.ExpiryStrategy
-	(*vega.Position)(nil),                                 // 424: vega.Position
-	(vega.TransferType)(0),                                // 425: vega.TransferType
-	(*vega.MarketDepth)(nil),                              // 426: vega.MarketDepth
-	(*vega.MarketDepthUpdate)(nil),                        // 427: vega.MarketDepthUpdate
-	(*vega.MarketData)(nil),                               // 428: vega.MarketData
-	(*vega.PriceLevel)(nil),                               // 429: vega.PriceLevel
-	(*vega.Trade)(nil),                                    // 430: vega.Trade
-	(v1.Transfer_Status)(0),                               // 431: vega.events.v1.Transfer.Status
-	(*v1.Transfer)(nil),                                   // 432: vega.events.v1.Transfer
-	(*v1.TransferFees)(nil),                               // 433: vega.events.v1.TransferFees
-	(*vega.NetworkLimits)(nil),                            // 434: vega.NetworkLimits
-	(*vega.Vote)(nil),                                     // 435: vega.Vote
-	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 436: vega.events.v1.ERC20MultiSigSignerAdded
-	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 437: vega.events.v1.ERC20MultiSigSignerRemoved
-	(*vega.OracleSpec)(nil),                               // 438: vega.OracleSpec
-	(*vega.OracleData)(nil),                               // 439: vega.OracleData
-	(*vega.Market)(nil),                                   // 440: vega.Market
-	(*vega.GovernanceData)(nil),                           // 441: vega.GovernanceData
-	(*vega.Party)(nil),                                    // 442: vega.Party
-	(*vega.PartyProfile)(nil),                             // 443: vega.PartyProfile
-	(*vega.MarginLevels)(nil),                             // 444: vega.MarginLevels
-	(*vega.Reward)(nil),                                   // 445: vega.Reward
-	(*vega.RewardSummary)(nil),                            // 446: vega.RewardSummary
-	(*vega.EpochRewardSummary)(nil),                       // 447: vega.EpochRewardSummary
-	(*vega.Deposit)(nil),                                  // 448: vega.Deposit
-	(*vega.Withdrawal)(nil),                               // 449: vega.Withdrawal
-	(*vega.Asset)(nil),                                    // 450: vega.Asset
-	(*vega.LiquidityProvision)(nil),                       // 451: vega.LiquidityProvision
-	(*vega.LiquidityProviderFeeShare)(nil),                // 452: vega.LiquidityProviderFeeShare
-	(*vega.LiquidityProviderSLA)(nil),                     // 453: vega.LiquidityProviderSLA
-	(*v1.PaidLiquidityFeesStats)(nil),                     // 454: vega.events.v1.PaidLiquidityFeesStats
-	(vega.Proposal_State)(0),                              // 455: vega.Proposal.State
-	(*vega.Delegation)(nil),                               // 456: vega.Delegation
-	(vega.NodeStatus)(0),                                  // 457: vega.NodeStatus
-	(*vega.NodeData)(nil),                                 // 458: vega.NodeData
-	(*vega.Node)(nil),                                     // 459: vega.Node
-	(*v11.NodeSignature)(nil),                             // 460: vega.commands.v1.NodeSignature
-	(*vega.Epoch)(nil),                                    // 461: vega.Epoch
-	(*vega.Fee)(nil),                                      // 462: vega.Fee
-	(vega.Side)(0),                                        // 463: vega.Side
-	(*vega.NetworkParameter)(nil),                         // 464: vega.NetworkParameter
-	(*v1.StakeLinking)(nil),                               // 465: vega.events.v1.StakeLinking
-	(*vega.RiskFactor)(nil),                               // 466: vega.RiskFactor
-	(v1.BusEventType)(0),                                  // 467: vega.events.v1.BusEventType
-	(*v1.BusEvent)(nil),                                   // 468: vega.events.v1.BusEvent
-	(*vega.LedgerMovement)(nil),                           // 469: vega.LedgerMovement
-	(*v1.KeyRotation)(nil),                                // 470: vega.events.v1.KeyRotation
-	(*v1.EthereumKeyRotation)(nil),                        // 471: vega.events.v1.EthereumKeyRotation
-	(v1.ProtocolUpgradeProposalStatus)(0),                 // 472: vega.events.v1.ProtocolUpgradeProposalStatus
-	(*v1.ProtocolUpgradeEvent)(nil),                       // 473: vega.events.v1.ProtocolUpgradeEvent
-	(*v1.CoreSnapshotData)(nil),                           // 474: vega.events.v1.CoreSnapshotData
-	(*vega.Account)(nil),                                  // 475: vega.Account
-	(*vega.LedgerEntry)(nil),                              // 476: vega.LedgerEntry
-	(*vega.Proposal)(nil),                                 // 477: vega.Proposal
-	(*v1.PartyActivityStreak)(nil),                        // 478: vega.events.v1.PartyActivityStreak
-	(*v1.FundingPeriod)(nil),                              // 479: vega.events.v1.FundingPeriod
-	(v1.FundingPeriodDataPoint_Source)(0),                 // 480: vega.events.v1.FundingPeriodDataPoint.Source
-	(*v1.FundingPeriodDataPoint)(nil),                     // 481: vega.events.v1.FundingPeriodDataPoint
-	(*vega.BenefitTier)(nil),                              // 482: vega.BenefitTier
-	(*vega.StakingTier)(nil),                              // 483: vega.StakingTier
-	(*v1.FeesStats)(nil),                                  // 484: vega.events.v1.FeesStats
-	(*vega.VolumeBenefitTier)(nil),                        // 485: vega.VolumeBenefitTier
-	(*v1.TransactionResult)(nil),                          // 486: vega.events.v1.TransactionResult
-	(vega.EntityScope)(0),                                 // 487: vega.EntityScope
-	(vega.MarginMode)(0),                                  // 488: vega.MarginMode
-	(*httpbody.HttpBody)(nil),                             // 489: google.api.HttpBody
+	(*CollateralIncreaseEstimate)(nil),                    // 333: datanode.api.v2.CollateralIncreaseEstimate
+	(*MarginEstimate)(nil),                                // 334: datanode.api.v2.MarginEstimate
+	(*LiquidationEstimate)(nil),                           // 335: datanode.api.v2.LiquidationEstimate
+	(*LiquidationPrice)(nil),                              // 336: datanode.api.v2.LiquidationPrice
+	(*GetCurrentReferralProgramRequest)(nil),              // 337: datanode.api.v2.GetCurrentReferralProgramRequest
+	(*GetCurrentReferralProgramResponse)(nil),             // 338: datanode.api.v2.GetCurrentReferralProgramResponse
+	(*ReferralProgram)(nil),                               // 339: datanode.api.v2.ReferralProgram
+	(*ReferralSet)(nil),                                   // 340: datanode.api.v2.ReferralSet
+	(*ReferralSetEdge)(nil),                               // 341: datanode.api.v2.ReferralSetEdge
+	(*ReferralSetConnection)(nil),                         // 342: datanode.api.v2.ReferralSetConnection
+	(*ListReferralSetsRequest)(nil),                       // 343: datanode.api.v2.ListReferralSetsRequest
+	(*ListReferralSetsResponse)(nil),                      // 344: datanode.api.v2.ListReferralSetsResponse
+	(*ReferralSetReferee)(nil),                            // 345: datanode.api.v2.ReferralSetReferee
+	(*ReferralSetRefereeEdge)(nil),                        // 346: datanode.api.v2.ReferralSetRefereeEdge
+	(*ReferralSetRefereeConnection)(nil),                  // 347: datanode.api.v2.ReferralSetRefereeConnection
+	(*ListReferralSetRefereesRequest)(nil),                // 348: datanode.api.v2.ListReferralSetRefereesRequest
+	(*ListReferralSetRefereesResponse)(nil),               // 349: datanode.api.v2.ListReferralSetRefereesResponse
+	(*GetReferralSetStatsRequest)(nil),                    // 350: datanode.api.v2.GetReferralSetStatsRequest
+	(*GetReferralSetStatsResponse)(nil),                   // 351: datanode.api.v2.GetReferralSetStatsResponse
+	(*ReferralSetStatsConnection)(nil),                    // 352: datanode.api.v2.ReferralSetStatsConnection
+	(*ReferralSetStatsEdge)(nil),                          // 353: datanode.api.v2.ReferralSetStatsEdge
+	(*ReferralSetStats)(nil),                              // 354: datanode.api.v2.ReferralSetStats
+	(*Team)(nil),                                          // 355: datanode.api.v2.Team
+	(*TeamEdge)(nil),                                      // 356: datanode.api.v2.TeamEdge
+	(*TeamConnection)(nil),                                // 357: datanode.api.v2.TeamConnection
+	(*ListTeamsRequest)(nil),                              // 358: datanode.api.v2.ListTeamsRequest
+	(*ListTeamsResponse)(nil),                             // 359: datanode.api.v2.ListTeamsResponse
+	(*ListTeamsStatisticsRequest)(nil),                    // 360: datanode.api.v2.ListTeamsStatisticsRequest
+	(*ListTeamsStatisticsResponse)(nil),                   // 361: datanode.api.v2.ListTeamsStatisticsResponse
+	(*TeamsStatisticsConnection)(nil),                     // 362: datanode.api.v2.TeamsStatisticsConnection
+	(*TeamStatisticsEdge)(nil),                            // 363: datanode.api.v2.TeamStatisticsEdge
+	(*TeamStatistics)(nil),                                // 364: datanode.api.v2.TeamStatistics
+	(*QuantumRewardsPerEpoch)(nil),                        // 365: datanode.api.v2.QuantumRewardsPerEpoch
+	(*ListTeamMembersStatisticsRequest)(nil),              // 366: datanode.api.v2.ListTeamMembersStatisticsRequest
+	(*ListTeamMembersStatisticsResponse)(nil),             // 367: datanode.api.v2.ListTeamMembersStatisticsResponse
+	(*TeamMembersStatisticsConnection)(nil),               // 368: datanode.api.v2.TeamMembersStatisticsConnection
+	(*TeamMemberStatisticsEdge)(nil),                      // 369: datanode.api.v2.TeamMemberStatisticsEdge
+	(*TeamMemberStatistics)(nil),                          // 370: datanode.api.v2.TeamMemberStatistics
+	(*ListTeamRefereesRequest)(nil),                       // 371: datanode.api.v2.ListTeamRefereesRequest
+	(*TeamReferee)(nil),                                   // 372: datanode.api.v2.TeamReferee
+	(*TeamRefereeEdge)(nil),                               // 373: datanode.api.v2.TeamRefereeEdge
+	(*TeamRefereeConnection)(nil),                         // 374: datanode.api.v2.TeamRefereeConnection
+	(*ListTeamRefereesResponse)(nil),                      // 375: datanode.api.v2.ListTeamRefereesResponse
+	(*TeamRefereeHistory)(nil),                            // 376: datanode.api.v2.TeamRefereeHistory
+	(*TeamRefereeHistoryEdge)(nil),                        // 377: datanode.api.v2.TeamRefereeHistoryEdge
+	(*TeamRefereeHistoryConnection)(nil),                  // 378: datanode.api.v2.TeamRefereeHistoryConnection
+	(*ListTeamRefereeHistoryRequest)(nil),                 // 379: datanode.api.v2.ListTeamRefereeHistoryRequest
+	(*ListTeamRefereeHistoryResponse)(nil),                // 380: datanode.api.v2.ListTeamRefereeHistoryResponse
+	(*GetFeesStatsRequest)(nil),                           // 381: datanode.api.v2.GetFeesStatsRequest
+	(*GetFeesStatsResponse)(nil),                          // 382: datanode.api.v2.GetFeesStatsResponse
+	(*GetFeesStatsForPartyRequest)(nil),                   // 383: datanode.api.v2.GetFeesStatsForPartyRequest
+	(*GetFeesStatsForPartyResponse)(nil),                  // 384: datanode.api.v2.GetFeesStatsForPartyResponse
+	(*GetCurrentVolumeDiscountProgramRequest)(nil),        // 385: datanode.api.v2.GetCurrentVolumeDiscountProgramRequest
+	(*GetCurrentVolumeDiscountProgramResponse)(nil),       // 386: datanode.api.v2.GetCurrentVolumeDiscountProgramResponse
+	(*GetVolumeDiscountStatsRequest)(nil),                 // 387: datanode.api.v2.GetVolumeDiscountStatsRequest
+	(*GetVolumeDiscountStatsResponse)(nil),                // 388: datanode.api.v2.GetVolumeDiscountStatsResponse
+	(*VolumeDiscountStatsConnection)(nil),                 // 389: datanode.api.v2.VolumeDiscountStatsConnection
+	(*VolumeDiscountStatsEdge)(nil),                       // 390: datanode.api.v2.VolumeDiscountStatsEdge
+	(*VolumeDiscountStats)(nil),                           // 391: datanode.api.v2.VolumeDiscountStats
+	(*VolumeDiscountProgram)(nil),                         // 392: datanode.api.v2.VolumeDiscountProgram
+	(*FeesStatsForParty)(nil),                             // 393: datanode.api.v2.FeesStatsForParty
+	(*ObserveTransactionResultsRequest)(nil),              // 394: datanode.api.v2.ObserveTransactionResultsRequest
+	(*ObserveTransactionResultsResponse)(nil),             // 395: datanode.api.v2.ObserveTransactionResultsResponse
+	(*EstimateTransferFeeRequest)(nil),                    // 396: datanode.api.v2.EstimateTransferFeeRequest
+	(*EstimateTransferFeeResponse)(nil),                   // 397: datanode.api.v2.EstimateTransferFeeResponse
+	(*GetTotalTransferFeeDiscountRequest)(nil),            // 398: datanode.api.v2.GetTotalTransferFeeDiscountRequest
+	(*GetTotalTransferFeeDiscountResponse)(nil),           // 399: datanode.api.v2.GetTotalTransferFeeDiscountResponse
+	(*ListGamesRequest)(nil),                              // 400: datanode.api.v2.ListGamesRequest
+	(*ListGamesResponse)(nil),                             // 401: datanode.api.v2.ListGamesResponse
+	(*GamesConnection)(nil),                               // 402: datanode.api.v2.GamesConnection
+	(*GameEdge)(nil),                                      // 403: datanode.api.v2.GameEdge
+	(*Game)(nil),                                          // 404: datanode.api.v2.Game
+	(*TeamGameEntities)(nil),                              // 405: datanode.api.v2.TeamGameEntities
+	(*IndividualGameEntities)(nil),                        // 406: datanode.api.v2.IndividualGameEntities
+	(*TeamGameEntity)(nil),                                // 407: datanode.api.v2.TeamGameEntity
+	(*TeamGameParticipation)(nil),                         // 408: datanode.api.v2.TeamGameParticipation
+	(*IndividualGameEntity)(nil),                          // 409: datanode.api.v2.IndividualGameEntity
+	(*ListPartyMarginModesRequest)(nil),                   // 410: datanode.api.v2.ListPartyMarginModesRequest
+	(*ListPartyMarginModesResponse)(nil),                  // 411: datanode.api.v2.ListPartyMarginModesResponse
+	(*PartyMarginModesConnection)(nil),                    // 412: datanode.api.v2.PartyMarginModesConnection
+	(*PartyMarginModeEdge)(nil),                           // 413: datanode.api.v2.PartyMarginModeEdge
+	(*PartyMarginMode)(nil),                               // 414: datanode.api.v2.PartyMarginMode
+	(*v1.PartyLockedBalance)(nil),                         // 415: vega.events.v1.PartyLockedBalance
+	(*v1.PartyVestingBalance)(nil),                        // 416: vega.events.v1.PartyVestingBalance
+	(vega.AccountType)(0),                                 // 417: vega.AccountType
+	(*vega.Order)(nil),                                    // 418: vega.Order
+	(vega.Order_Status)(0),                                // 419: vega.Order.Status
+	(vega.Order_Type)(0),                                  // 420: vega.Order.Type
+	(vega.Order_TimeInForce)(0),                           // 421: vega.Order.TimeInForce
+	(*v1.StopOrderEvent)(nil),                             // 422: vega.events.v1.StopOrderEvent
+	(vega.StopOrder_Status)(0),                            // 423: vega.StopOrder.Status
+	(vega.StopOrder_ExpiryStrategy)(0),                    // 424: vega.StopOrder.ExpiryStrategy
+	(*vega.Position)(nil),                                 // 425: vega.Position
+	(vega.TransferType)(0),                                // 426: vega.TransferType
+	(*vega.MarketDepth)(nil),                              // 427: vega.MarketDepth
+	(*vega.MarketDepthUpdate)(nil),                        // 428: vega.MarketDepthUpdate
+	(*vega.MarketData)(nil),                               // 429: vega.MarketData
+	(*vega.PriceLevel)(nil),                               // 430: vega.PriceLevel
+	(*vega.Trade)(nil),                                    // 431: vega.Trade
+	(v1.Transfer_Status)(0),                               // 432: vega.events.v1.Transfer.Status
+	(*v1.Transfer)(nil),                                   // 433: vega.events.v1.Transfer
+	(*v1.TransferFees)(nil),                               // 434: vega.events.v1.TransferFees
+	(*vega.NetworkLimits)(nil),                            // 435: vega.NetworkLimits
+	(*vega.Vote)(nil),                                     // 436: vega.Vote
+	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 437: vega.events.v1.ERC20MultiSigSignerAdded
+	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 438: vega.events.v1.ERC20MultiSigSignerRemoved
+	(*vega.OracleSpec)(nil),                               // 439: vega.OracleSpec
+	(*vega.OracleData)(nil),                               // 440: vega.OracleData
+	(*vega.Market)(nil),                                   // 441: vega.Market
+	(*vega.GovernanceData)(nil),                           // 442: vega.GovernanceData
+	(*vega.Party)(nil),                                    // 443: vega.Party
+	(*vega.PartyProfile)(nil),                             // 444: vega.PartyProfile
+	(*vega.MarginLevels)(nil),                             // 445: vega.MarginLevels
+	(*vega.Reward)(nil),                                   // 446: vega.Reward
+	(*vega.RewardSummary)(nil),                            // 447: vega.RewardSummary
+	(*vega.EpochRewardSummary)(nil),                       // 448: vega.EpochRewardSummary
+	(*vega.Deposit)(nil),                                  // 449: vega.Deposit
+	(*vega.Withdrawal)(nil),                               // 450: vega.Withdrawal
+	(*vega.Asset)(nil),                                    // 451: vega.Asset
+	(*vega.LiquidityProvision)(nil),                       // 452: vega.LiquidityProvision
+	(*vega.LiquidityProviderFeeShare)(nil),                // 453: vega.LiquidityProviderFeeShare
+	(*vega.LiquidityProviderSLA)(nil),                     // 454: vega.LiquidityProviderSLA
+	(*v1.PaidLiquidityFeesStats)(nil),                     // 455: vega.events.v1.PaidLiquidityFeesStats
+	(vega.Proposal_State)(0),                              // 456: vega.Proposal.State
+	(*vega.Delegation)(nil),                               // 457: vega.Delegation
+	(vega.NodeStatus)(0),                                  // 458: vega.NodeStatus
+	(*vega.NodeData)(nil),                                 // 459: vega.NodeData
+	(*vega.Node)(nil),                                     // 460: vega.Node
+	(*v11.NodeSignature)(nil),                             // 461: vega.commands.v1.NodeSignature
+	(*vega.Epoch)(nil),                                    // 462: vega.Epoch
+	(*vega.Fee)(nil),                                      // 463: vega.Fee
+	(vega.Side)(0),                                        // 464: vega.Side
+	(*vega.NetworkParameter)(nil),                         // 465: vega.NetworkParameter
+	(*v1.StakeLinking)(nil),                               // 466: vega.events.v1.StakeLinking
+	(*vega.RiskFactor)(nil),                               // 467: vega.RiskFactor
+	(v1.BusEventType)(0),                                  // 468: vega.events.v1.BusEventType
+	(*v1.BusEvent)(nil),                                   // 469: vega.events.v1.BusEvent
+	(*vega.LedgerMovement)(nil),                           // 470: vega.LedgerMovement
+	(*v1.KeyRotation)(nil),                                // 471: vega.events.v1.KeyRotation
+	(*v1.EthereumKeyRotation)(nil),                        // 472: vega.events.v1.EthereumKeyRotation
+	(v1.ProtocolUpgradeProposalStatus)(0),                 // 473: vega.events.v1.ProtocolUpgradeProposalStatus
+	(*v1.ProtocolUpgradeEvent)(nil),                       // 474: vega.events.v1.ProtocolUpgradeEvent
+	(*v1.CoreSnapshotData)(nil),                           // 475: vega.events.v1.CoreSnapshotData
+	(*vega.Account)(nil),                                  // 476: vega.Account
+	(*vega.LedgerEntry)(nil),                              // 477: vega.LedgerEntry
+	(*vega.Proposal)(nil),                                 // 478: vega.Proposal
+	(*v1.PartyActivityStreak)(nil),                        // 479: vega.events.v1.PartyActivityStreak
+	(*v1.FundingPeriod)(nil),                              // 480: vega.events.v1.FundingPeriod
+	(v1.FundingPeriodDataPoint_Source)(0),                 // 481: vega.events.v1.FundingPeriodDataPoint.Source
+	(*v1.FundingPeriodDataPoint)(nil),                     // 482: vega.events.v1.FundingPeriodDataPoint
+	(vega.MarginMode)(0),                                  // 483: vega.MarginMode
+	(*vega.BenefitTier)(nil),                              // 484: vega.BenefitTier
+	(*vega.StakingTier)(nil),                              // 485: vega.StakingTier
+	(*v1.FeesStats)(nil),                                  // 486: vega.events.v1.FeesStats
+	(*vega.VolumeBenefitTier)(nil),                        // 487: vega.VolumeBenefitTier
+	(*v1.TransactionResult)(nil),                          // 488: vega.events.v1.TransactionResult
+	(vega.EntityScope)(0),                                 // 489: vega.EntityScope
+	(*httpbody.HttpBody)(nil),                             // 490: google.api.HttpBody
 }
 var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
-	414, // 0: datanode.api.v2.GetVestingBalancesSummaryResponse.locked_balances:type_name -> vega.events.v1.PartyLockedBalance
-	415, // 1: datanode.api.v2.GetVestingBalancesSummaryResponse.vesting_balances:type_name -> vega.events.v1.PartyVestingBalance
-	416, // 2: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
+	415, // 0: datanode.api.v2.GetVestingBalancesSummaryResponse.locked_balances:type_name -> vega.events.v1.PartyLockedBalance
+	416, // 1: datanode.api.v2.GetVestingBalancesSummaryResponse.vesting_balances:type_name -> vega.events.v1.PartyVestingBalance
+	417, // 2: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
 	65,  // 3: datanode.api.v2.ListAccountsRequest.filter:type_name -> datanode.api.v2.AccountFilter
 	6,   // 4: datanode.api.v2.ListAccountsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	15,  // 5: datanode.api.v2.ListAccountsResponse.accounts:type_name -> datanode.api.v2.AccountsConnection
 	16,  // 6: datanode.api.v2.AccountsConnection.edges:type_name -> datanode.api.v2.AccountEdge
 	7,   // 7: datanode.api.v2.AccountsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	12,  // 8: datanode.api.v2.AccountEdge.node:type_name -> datanode.api.v2.AccountBalance
-	416, // 9: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
+	417, // 9: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
 	19,  // 10: datanode.api.v2.ObserveAccountsResponse.snapshot:type_name -> datanode.api.v2.AccountSnapshotPage
 	20,  // 11: datanode.api.v2.ObserveAccountsResponse.updates:type_name -> datanode.api.v2.AccountUpdates
 	12,  // 12: datanode.api.v2.AccountSnapshotPage.accounts:type_name -> datanode.api.v2.AccountBalance
 	12,  // 13: datanode.api.v2.AccountUpdates.accounts:type_name -> datanode.api.v2.AccountBalance
-	417, // 14: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
-	418, // 15: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
-	419, // 16: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
-	420, // 17: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
+	418, // 14: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
+	419, // 15: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
+	420, // 16: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
+	421, // 17: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
 	288, // 18: datanode.api.v2.OrderFilter.date_range:type_name -> datanode.api.v2.DateRange
 	6,   // 19: datanode.api.v2.ListOrdersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	25,  // 20: datanode.api.v2.ListOrdersRequest.filter:type_name -> datanode.api.v2.OrderFilter
@@ -30327,15 +30488,15 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	170, // 23: datanode.api.v2.ListOrderVersionsResponse.orders:type_name -> datanode.api.v2.OrderConnection
 	32,  // 24: datanode.api.v2.ObserveOrdersResponse.snapshot:type_name -> datanode.api.v2.OrderSnapshotPage
 	33,  // 25: datanode.api.v2.ObserveOrdersResponse.updates:type_name -> datanode.api.v2.OrderUpdates
-	417, // 26: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
-	417, // 27: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
-	421, // 28: datanode.api.v2.GetStopOrderResponse.order:type_name -> vega.events.v1.StopOrderEvent
+	418, // 26: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
+	418, // 27: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
+	422, // 28: datanode.api.v2.GetStopOrderResponse.order:type_name -> vega.events.v1.StopOrderEvent
 	6,   // 29: datanode.api.v2.ListStopOrdersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	37,  // 30: datanode.api.v2.ListStopOrdersRequest.filter:type_name -> datanode.api.v2.StopOrderFilter
-	422, // 31: datanode.api.v2.StopOrderFilter.statuses:type_name -> vega.StopOrder.Status
-	423, // 32: datanode.api.v2.StopOrderFilter.expiry_strategies:type_name -> vega.StopOrder.ExpiryStrategy
+	423, // 31: datanode.api.v2.StopOrderFilter.statuses:type_name -> vega.StopOrder.Status
+	424, // 32: datanode.api.v2.StopOrderFilter.expiry_strategies:type_name -> vega.StopOrder.ExpiryStrategy
 	288, // 33: datanode.api.v2.StopOrderFilter.date_range:type_name -> datanode.api.v2.DateRange
-	421, // 34: datanode.api.v2.StopOrderEdge.node:type_name -> vega.events.v1.StopOrderEvent
+	422, // 34: datanode.api.v2.StopOrderEdge.node:type_name -> vega.events.v1.StopOrderEvent
 	38,  // 35: datanode.api.v2.StopOrderConnection.edges:type_name -> datanode.api.v2.StopOrderEdge
 	7,   // 36: datanode.api.v2.StopOrderConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	39,  // 37: datanode.api.v2.ListStopOrdersResponse.orders:type_name -> datanode.api.v2.StopOrderConnection
@@ -30344,19 +30505,19 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	43,  // 40: datanode.api.v2.ListAllPositionsRequest.filter:type_name -> datanode.api.v2.PositionsFilter
 	6,   // 41: datanode.api.v2.ListAllPositionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	47,  // 42: datanode.api.v2.ListAllPositionsResponse.positions:type_name -> datanode.api.v2.PositionConnection
-	424, // 43: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
+	425, // 43: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
 	46,  // 44: datanode.api.v2.PositionConnection.edges:type_name -> datanode.api.v2.PositionEdge
 	7,   // 45: datanode.api.v2.PositionConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	50,  // 46: datanode.api.v2.ObservePositionsResponse.snapshot:type_name -> datanode.api.v2.PositionSnapshotPage
 	51,  // 47: datanode.api.v2.ObservePositionsResponse.updates:type_name -> datanode.api.v2.PositionUpdates
-	424, // 48: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
-	424, // 49: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
+	425, // 48: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
+	425, // 49: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
 	65,  // 50: datanode.api.v2.LedgerEntryFilter.from_account_filter:type_name -> datanode.api.v2.AccountFilter
 	65,  // 51: datanode.api.v2.LedgerEntryFilter.to_account_filter:type_name -> datanode.api.v2.AccountFilter
-	425, // 52: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
-	425, // 53: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
-	416, // 54: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
-	416, // 55: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
+	426, // 52: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
+	426, // 53: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
+	417, // 54: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
+	417, // 55: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
 	52,  // 56: datanode.api.v2.ListLedgerEntriesRequest.filter:type_name -> datanode.api.v2.LedgerEntryFilter
 	6,   // 57: datanode.api.v2.ListLedgerEntriesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	288, // 58: datanode.api.v2.ListLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
@@ -30377,33 +30538,33 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	66,  // 73: datanode.api.v2.AggregatedBalanceEdge.node:type_name -> datanode.api.v2.AggregatedBalance
 	63,  // 74: datanode.api.v2.AggregatedBalanceConnection.edges:type_name -> datanode.api.v2.AggregatedBalanceEdge
 	7,   // 75: datanode.api.v2.AggregatedBalanceConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	416, // 76: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
-	416, // 77: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
-	426, // 78: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
-	427, // 79: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
-	428, // 80: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
-	429, // 81: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
-	429, // 82: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
-	430, // 83: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
-	428, // 84: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
-	428, // 85: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
+	417, // 76: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
+	417, // 77: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
+	427, // 78: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
+	428, // 79: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
+	429, // 80: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
+	430, // 81: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
+	430, // 82: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
+	431, // 83: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
+	429, // 84: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
+	429, // 85: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
 	6,   // 86: datanode.api.v2.GetMarketDataHistoryByIDRequest.pagination:type_name -> datanode.api.v2.Pagination
 	82,  // 87: datanode.api.v2.GetMarketDataHistoryByIDResponse.market_data:type_name -> datanode.api.v2.MarketDataConnection
-	428, // 88: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
+	429, // 88: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
 	81,  // 89: datanode.api.v2.MarketDataConnection.edges:type_name -> datanode.api.v2.MarketDataEdge
 	7,   // 90: datanode.api.v2.MarketDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	2,   // 91: datanode.api.v2.ListTransfersRequest.direction:type_name -> datanode.api.v2.TransferDirection
 	6,   // 92: datanode.api.v2.ListTransfersRequest.pagination:type_name -> datanode.api.v2.Pagination
-	431, // 93: datanode.api.v2.ListTransfersRequest.status:type_name -> vega.events.v1.Transfer.Status
+	432, // 93: datanode.api.v2.ListTransfersRequest.status:type_name -> vega.events.v1.Transfer.Status
 	4,   // 94: datanode.api.v2.ListTransfersRequest.scope:type_name -> datanode.api.v2.ListTransfersRequest.Scope
 	87,  // 95: datanode.api.v2.ListTransfersResponse.transfers:type_name -> datanode.api.v2.TransferConnection
-	432, // 96: datanode.api.v2.TransferNode.transfer:type_name -> vega.events.v1.Transfer
-	433, // 97: datanode.api.v2.TransferNode.fees:type_name -> vega.events.v1.TransferFees
+	433, // 96: datanode.api.v2.TransferNode.transfer:type_name -> vega.events.v1.Transfer
+	434, // 97: datanode.api.v2.TransferNode.fees:type_name -> vega.events.v1.TransferFees
 	85,  // 98: datanode.api.v2.TransferEdge.node:type_name -> datanode.api.v2.TransferNode
 	86,  // 99: datanode.api.v2.TransferConnection.edges:type_name -> datanode.api.v2.TransferEdge
 	7,   // 100: datanode.api.v2.TransferConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	85,  // 101: datanode.api.v2.GetTransferResponse.transfer_node:type_name -> datanode.api.v2.TransferNode
-	434, // 102: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
+	435, // 102: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
 	93,  // 103: datanode.api.v2.ListCandleIntervalsResponse.interval_to_candle_id:type_name -> datanode.api.v2.IntervalToCandleId
 	95,  // 104: datanode.api.v2.ObserveCandleDataResponse.candle:type_name -> datanode.api.v2.Candle
 	6,   // 105: datanode.api.v2.ListCandleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
@@ -30413,170 +30574,170 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	7,   // 109: datanode.api.v2.CandleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 110: datanode.api.v2.ListVotesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	105, // 111: datanode.api.v2.ListVotesResponse.votes:type_name -> datanode.api.v2.VoteConnection
-	435, // 112: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
+	436, // 112: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
 	104, // 113: datanode.api.v2.VoteConnection.edges:type_name -> datanode.api.v2.VoteEdge
 	7,   // 114: datanode.api.v2.VoteConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	435, // 115: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
+	436, // 115: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
 	6,   // 116: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	112, // 117: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedConnection
-	436, // 118: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
+	437, // 118: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
 	113, // 119: datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
 	111, // 120: datanode.api.v2.ERC20MultiSigSignerAddedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge
 	7,   // 121: datanode.api.v2.ERC20MultiSigSignerAddedConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 122: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	118, // 123: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedConnection
-	437, // 124: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
+	438, // 124: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
 	119, // 125: datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
 	117, // 126: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge
 	7,   // 127: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	430, // 128: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
+	431, // 128: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
 	6,   // 129: datanode.api.v2.ListTradesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	288, // 130: datanode.api.v2.ListTradesRequest.date_range:type_name -> datanode.api.v2.DateRange
 	130, // 131: datanode.api.v2.ListTradesResponse.trades:type_name -> datanode.api.v2.TradeConnection
 	131, // 132: datanode.api.v2.TradeConnection.edges:type_name -> datanode.api.v2.TradeEdge
 	7,   // 133: datanode.api.v2.TradeConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	430, // 134: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
-	430, // 135: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
-	438, // 136: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
+	431, // 134: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
+	431, // 135: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
+	439, // 136: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
 	6,   // 137: datanode.api.v2.ListOracleSpecsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	141, // 138: datanode.api.v2.ListOracleSpecsResponse.oracle_specs:type_name -> datanode.api.v2.OracleSpecsConnection
 	6,   // 139: datanode.api.v2.ListOracleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	143, // 140: datanode.api.v2.ListOracleDataResponse.oracle_data:type_name -> datanode.api.v2.OracleDataConnection
-	438, // 141: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
+	439, // 141: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
 	140, // 142: datanode.api.v2.OracleSpecsConnection.edges:type_name -> datanode.api.v2.OracleSpecEdge
 	7,   // 143: datanode.api.v2.OracleSpecsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	439, // 144: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
+	440, // 144: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
 	142, // 145: datanode.api.v2.OracleDataConnection.edges:type_name -> datanode.api.v2.OracleDataEdge
 	7,   // 146: datanode.api.v2.OracleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	440, // 147: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
+	441, // 147: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
 	6,   // 148: datanode.api.v2.ListMarketsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	149, // 149: datanode.api.v2.ListMarketsResponse.markets:type_name -> datanode.api.v2.MarketConnection
-	440, // 150: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
+	441, // 150: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
 	148, // 151: datanode.api.v2.MarketConnection.edges:type_name -> datanode.api.v2.MarketEdge
 	7,   // 152: datanode.api.v2.MarketConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 153: datanode.api.v2.ListSuccessorMarketsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	440, // 154: datanode.api.v2.SuccessorMarket.market:type_name -> vega.Market
-	441, // 155: datanode.api.v2.SuccessorMarket.proposals:type_name -> vega.GovernanceData
+	441, // 154: datanode.api.v2.SuccessorMarket.market:type_name -> vega.Market
+	442, // 155: datanode.api.v2.SuccessorMarket.proposals:type_name -> vega.GovernanceData
 	151, // 156: datanode.api.v2.SuccessorMarketEdge.node:type_name -> datanode.api.v2.SuccessorMarket
 	152, // 157: datanode.api.v2.SuccessorMarketConnection.edges:type_name -> datanode.api.v2.SuccessorMarketEdge
 	7,   // 158: datanode.api.v2.SuccessorMarketConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	153, // 159: datanode.api.v2.ListSuccessorMarketsResponse.successor_markets:type_name -> datanode.api.v2.SuccessorMarketConnection
-	442, // 160: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
+	443, // 160: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
 	6,   // 161: datanode.api.v2.ListPartiesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	160, // 162: datanode.api.v2.ListPartiesResponse.parties:type_name -> datanode.api.v2.PartyConnection
-	442, // 163: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
+	443, // 163: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
 	159, // 164: datanode.api.v2.PartyConnection.edges:type_name -> datanode.api.v2.PartyEdge
 	7,   // 165: datanode.api.v2.PartyConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 166: datanode.api.v2.ListPartiesProfilesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	164, // 167: datanode.api.v2.ListPartiesProfilesResponse.profiles:type_name -> datanode.api.v2.PartiesProfilesConnection
-	443, // 168: datanode.api.v2.PartyProfileEdge.node:type_name -> vega.PartyProfile
+	444, // 168: datanode.api.v2.PartyProfileEdge.node:type_name -> vega.PartyProfile
 	163, // 169: datanode.api.v2.PartiesProfilesConnection.edges:type_name -> datanode.api.v2.PartyProfileEdge
 	7,   // 170: datanode.api.v2.PartiesProfilesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	417, // 171: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
+	418, // 171: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
 	6,   // 172: datanode.api.v2.ListMarginLevelsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	172, // 173: datanode.api.v2.ListMarginLevelsResponse.margin_levels:type_name -> datanode.api.v2.MarginConnection
-	444, // 174: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
+	445, // 174: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
 	165, // 175: datanode.api.v2.OrderConnection.edges:type_name -> datanode.api.v2.OrderEdge
 	7,   // 176: datanode.api.v2.OrderConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	444, // 177: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
+	445, // 177: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
 	171, // 178: datanode.api.v2.MarginConnection.edges:type_name -> datanode.api.v2.MarginEdge
 	7,   // 179: datanode.api.v2.MarginConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 180: datanode.api.v2.ListRewardsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	176, // 181: datanode.api.v2.ListRewardsResponse.rewards:type_name -> datanode.api.v2.RewardsConnection
-	445, // 182: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
+	446, // 182: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
 	175, // 183: datanode.api.v2.RewardsConnection.edges:type_name -> datanode.api.v2.RewardEdge
 	7,   // 184: datanode.api.v2.RewardsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 185: datanode.api.v2.ListRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	446, // 186: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
+	447, // 186: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
 	179, // 187: datanode.api.v2.ListEpochRewardSummariesRequest.filter:type_name -> datanode.api.v2.RewardSummaryFilter
 	6,   // 188: datanode.api.v2.ListEpochRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	182, // 189: datanode.api.v2.ListEpochRewardSummariesResponse.summaries:type_name -> datanode.api.v2.EpochRewardSummaryConnection
 	183, // 190: datanode.api.v2.EpochRewardSummaryConnection.edges:type_name -> datanode.api.v2.EpochRewardSummaryEdge
 	7,   // 191: datanode.api.v2.EpochRewardSummaryConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	447, // 192: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
-	445, // 193: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
-	448, // 194: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
+	448, // 192: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
+	446, // 193: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
+	449, // 194: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
 	6,   // 195: datanode.api.v2.ListDepositsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	288, // 196: datanode.api.v2.ListDepositsRequest.date_range:type_name -> datanode.api.v2.DateRange
 	191, // 197: datanode.api.v2.ListDepositsResponse.deposits:type_name -> datanode.api.v2.DepositsConnection
-	448, // 198: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
+	449, // 198: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
 	190, // 199: datanode.api.v2.DepositsConnection.edges:type_name -> datanode.api.v2.DepositEdge
 	7,   // 200: datanode.api.v2.DepositsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	449, // 201: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
+	450, // 201: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
 	6,   // 202: datanode.api.v2.ListWithdrawalsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	288, // 203: datanode.api.v2.ListWithdrawalsRequest.date_range:type_name -> datanode.api.v2.DateRange
 	197, // 204: datanode.api.v2.ListWithdrawalsResponse.withdrawals:type_name -> datanode.api.v2.WithdrawalsConnection
-	449, // 205: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
+	450, // 205: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
 	196, // 206: datanode.api.v2.WithdrawalsConnection.edges:type_name -> datanode.api.v2.WithdrawalEdge
 	7,   // 207: datanode.api.v2.WithdrawalsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	450, // 208: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
+	451, // 208: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
 	6,   // 209: datanode.api.v2.ListAssetsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	203, // 210: datanode.api.v2.ListAssetsResponse.assets:type_name -> datanode.api.v2.AssetsConnection
-	450, // 211: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
+	451, // 211: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
 	202, // 212: datanode.api.v2.AssetsConnection.edges:type_name -> datanode.api.v2.AssetEdge
 	7,   // 213: datanode.api.v2.AssetsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 214: datanode.api.v2.ListLiquidityProvisionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	6,   // 215: datanode.api.v2.ListAllLiquidityProvisionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	211, // 216: datanode.api.v2.ListLiquidityProvisionsResponse.liquidity_provisions:type_name -> datanode.api.v2.LiquidityProvisionsConnection
 	212, // 217: datanode.api.v2.ListAllLiquidityProvisionsResponse.liquidity_provisions:type_name -> datanode.api.v2.LiquidityProvisionsWithPendingConnection
-	451, // 218: datanode.api.v2.LiquidityProvision.current:type_name -> vega.LiquidityProvision
-	451, // 219: datanode.api.v2.LiquidityProvision.pending:type_name -> vega.LiquidityProvision
-	451, // 220: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
+	452, // 218: datanode.api.v2.LiquidityProvision.current:type_name -> vega.LiquidityProvision
+	452, // 219: datanode.api.v2.LiquidityProvision.pending:type_name -> vega.LiquidityProvision
+	452, // 220: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
 	208, // 221: datanode.api.v2.LiquidityProvisionWithPendingEdge.node:type_name -> datanode.api.v2.LiquidityProvision
 	209, // 222: datanode.api.v2.LiquidityProvisionsConnection.edges:type_name -> datanode.api.v2.LiquidityProvisionsEdge
 	7,   // 223: datanode.api.v2.LiquidityProvisionsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	210, // 224: datanode.api.v2.LiquidityProvisionsWithPendingConnection.edges:type_name -> datanode.api.v2.LiquidityProvisionWithPendingEdge
 	7,   // 225: datanode.api.v2.LiquidityProvisionsWithPendingConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	451, // 226: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
+	452, // 226: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
 	6,   // 227: datanode.api.v2.ListLiquidityProvidersRequest.pagination:type_name -> datanode.api.v2.Pagination
-	452, // 228: datanode.api.v2.LiquidityProvider.fee_share:type_name -> vega.LiquidityProviderFeeShare
-	453, // 229: datanode.api.v2.LiquidityProvider.sla:type_name -> vega.LiquidityProviderSLA
+	453, // 228: datanode.api.v2.LiquidityProvider.fee_share:type_name -> vega.LiquidityProviderFeeShare
+	454, // 229: datanode.api.v2.LiquidityProvider.sla:type_name -> vega.LiquidityProviderSLA
 	216, // 230: datanode.api.v2.LiquidityProviderEdge.node:type_name -> datanode.api.v2.LiquidityProvider
 	217, // 231: datanode.api.v2.LiquidityProviderConnection.edges:type_name -> datanode.api.v2.LiquidityProviderEdge
 	7,   // 232: datanode.api.v2.LiquidityProviderConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	218, // 233: datanode.api.v2.ListLiquidityProvidersResponse.liquidity_providers:type_name -> datanode.api.v2.LiquidityProviderConnection
 	6,   // 234: datanode.api.v2.ListPaidLiquidityFeesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	223, // 235: datanode.api.v2.ListPaidLiquidityFeesResponse.paid_liquidity_fees:type_name -> datanode.api.v2.PaidLiquidityFeesConnection
-	454, // 236: datanode.api.v2.PaidLiquidityFeesEdge.node:type_name -> vega.events.v1.PaidLiquidityFeesStats
+	455, // 236: datanode.api.v2.PaidLiquidityFeesEdge.node:type_name -> vega.events.v1.PaidLiquidityFeesStats
 	222, // 237: datanode.api.v2.PaidLiquidityFeesConnection.edges:type_name -> datanode.api.v2.PaidLiquidityFeesEdge
 	7,   // 238: datanode.api.v2.PaidLiquidityFeesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	441, // 239: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
-	455, // 240: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
+	442, // 239: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
+	456, // 240: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
 	5,   // 241: datanode.api.v2.ListGovernanceDataRequest.proposal_type:type_name -> datanode.api.v2.ListGovernanceDataRequest.Type
 	6,   // 242: datanode.api.v2.ListGovernanceDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	229, // 243: datanode.api.v2.ListGovernanceDataResponse.connection:type_name -> datanode.api.v2.GovernanceDataConnection
-	441, // 244: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
+	442, // 244: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
 	228, // 245: datanode.api.v2.GovernanceDataConnection.edges:type_name -> datanode.api.v2.GovernanceDataEdge
 	7,   // 246: datanode.api.v2.GovernanceDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	441, // 247: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
+	442, // 247: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
 	6,   // 248: datanode.api.v2.ListDelegationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	235, // 249: datanode.api.v2.ListDelegationsResponse.delegations:type_name -> datanode.api.v2.DelegationsConnection
-	456, // 250: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
+	457, // 250: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
 	234, // 251: datanode.api.v2.DelegationsConnection.edges:type_name -> datanode.api.v2.DelegationEdge
 	7,   // 252: datanode.api.v2.DelegationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	456, // 253: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
-	457, // 254: datanode.api.v2.NodeBasic.status:type_name -> vega.NodeStatus
-	458, // 255: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
-	459, // 256: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
+	457, // 253: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
+	458, // 254: datanode.api.v2.NodeBasic.status:type_name -> vega.NodeStatus
+	459, // 255: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
+	460, // 256: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
 	6,   // 257: datanode.api.v2.ListNodesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	246, // 258: datanode.api.v2.ListNodesResponse.nodes:type_name -> datanode.api.v2.NodesConnection
-	459, // 259: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
+	460, // 259: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
 	245, // 260: datanode.api.v2.NodesConnection.edges:type_name -> datanode.api.v2.NodeEdge
 	7,   // 261: datanode.api.v2.NodesConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 262: datanode.api.v2.ListNodeSignaturesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	250, // 263: datanode.api.v2.ListNodeSignaturesResponse.signatures:type_name -> datanode.api.v2.NodeSignaturesConnection
-	460, // 264: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
+	461, // 264: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
 	249, // 265: datanode.api.v2.NodeSignaturesConnection.edges:type_name -> datanode.api.v2.NodeSignatureEdge
 	7,   // 266: datanode.api.v2.NodeSignaturesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	461, // 267: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
-	462, // 268: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
-	463, // 269: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
-	419, // 270: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
-	444, // 271: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
+	462, // 267: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
+	463, // 268: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
+	464, // 269: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
+	420, // 270: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
+	445, // 271: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
 	6,   // 272: datanode.api.v2.ListNetworkParametersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	262, // 273: datanode.api.v2.ListNetworkParametersResponse.network_parameters:type_name -> datanode.api.v2.NetworkParameterConnection
-	464, // 274: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
-	464, // 275: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
+	465, // 274: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
+	465, // 275: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
 	261, // 276: datanode.api.v2.NetworkParameterConnection.edges:type_name -> datanode.api.v2.NetworkParameterEdge
 	7,   // 277: datanode.api.v2.NetworkParameterConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 278: datanode.api.v2.ListCheckpointsRequest.pagination:type_name -> datanode.api.v2.Pagination
@@ -30586,66 +30747,66 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	7,   // 282: datanode.api.v2.CheckpointsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 283: datanode.api.v2.GetStakeRequest.pagination:type_name -> datanode.api.v2.Pagination
 	271, // 284: datanode.api.v2.GetStakeResponse.stake_linkings:type_name -> datanode.api.v2.StakesConnection
-	465, // 285: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
+	466, // 285: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
 	270, // 286: datanode.api.v2.StakesConnection.edges:type_name -> datanode.api.v2.StakeLinkingEdge
 	7,   // 287: datanode.api.v2.StakesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	466, // 288: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
-	467, // 289: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
-	468, // 290: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
-	469, // 291: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
+	467, // 288: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
+	468, // 289: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
+	469, // 290: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
+	470, // 291: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
 	6,   // 292: datanode.api.v2.ListKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	281, // 293: datanode.api.v2.ListKeyRotationsResponse.rotations:type_name -> datanode.api.v2.KeyRotationConnection
-	470, // 294: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
+	471, // 294: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
 	280, // 295: datanode.api.v2.KeyRotationConnection.edges:type_name -> datanode.api.v2.KeyRotationEdge
 	7,   // 296: datanode.api.v2.KeyRotationConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	6,   // 297: datanode.api.v2.ListEthereumKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	284, // 298: datanode.api.v2.ListEthereumKeyRotationsResponse.key_rotations:type_name -> datanode.api.v2.EthereumKeyRotationsConnection
 	285, // 299: datanode.api.v2.EthereumKeyRotationsConnection.edges:type_name -> datanode.api.v2.EthereumKeyRotationEdge
 	7,   // 300: datanode.api.v2.EthereumKeyRotationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	471, // 301: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
-	472, // 302: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
+	472, // 301: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
+	473, // 302: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
 	6,   // 303: datanode.api.v2.ListProtocolUpgradeProposalsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	293, // 304: datanode.api.v2.ListProtocolUpgradeProposalsResponse.protocol_upgrade_proposals:type_name -> datanode.api.v2.ProtocolUpgradeProposalConnection
 	294, // 305: datanode.api.v2.ProtocolUpgradeProposalConnection.edges:type_name -> datanode.api.v2.ProtocolUpgradeProposalEdge
 	7,   // 306: datanode.api.v2.ProtocolUpgradeProposalConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	473, // 307: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	474, // 307: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
 	6,   // 308: datanode.api.v2.ListCoreSnapshotsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	297, // 309: datanode.api.v2.ListCoreSnapshotsResponse.core_snapshots:type_name -> datanode.api.v2.CoreSnapshotConnection
 	298, // 310: datanode.api.v2.CoreSnapshotConnection.edges:type_name -> datanode.api.v2.CoreSnapshotEdge
 	7,   // 311: datanode.api.v2.CoreSnapshotConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	474, // 312: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
+	475, // 312: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
 	299, // 313: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse.segment:type_name -> datanode.api.v2.HistorySegment
 	299, // 314: datanode.api.v2.ListAllNetworkHistorySegmentsResponse.segments:type_name -> datanode.api.v2.HistorySegment
 	3,   // 315: datanode.api.v2.ExportNetworkHistoryRequest.table:type_name -> datanode.api.v2.Table
-	475, // 316: datanode.api.v2.ListEntitiesResponse.accounts:type_name -> vega.Account
-	417, // 317: datanode.api.v2.ListEntitiesResponse.orders:type_name -> vega.Order
-	424, // 318: datanode.api.v2.ListEntitiesResponse.positions:type_name -> vega.Position
-	476, // 319: datanode.api.v2.ListEntitiesResponse.ledger_entries:type_name -> vega.LedgerEntry
+	476, // 316: datanode.api.v2.ListEntitiesResponse.accounts:type_name -> vega.Account
+	418, // 317: datanode.api.v2.ListEntitiesResponse.orders:type_name -> vega.Order
+	425, // 318: datanode.api.v2.ListEntitiesResponse.positions:type_name -> vega.Position
+	477, // 319: datanode.api.v2.ListEntitiesResponse.ledger_entries:type_name -> vega.LedgerEntry
 	12,  // 320: datanode.api.v2.ListEntitiesResponse.balance_changes:type_name -> datanode.api.v2.AccountBalance
-	432, // 321: datanode.api.v2.ListEntitiesResponse.transfers:type_name -> vega.events.v1.Transfer
-	435, // 322: datanode.api.v2.ListEntitiesResponse.votes:type_name -> vega.Vote
+	433, // 321: datanode.api.v2.ListEntitiesResponse.transfers:type_name -> vega.events.v1.Transfer
+	436, // 322: datanode.api.v2.ListEntitiesResponse.votes:type_name -> vega.Vote
 	113, // 323: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_added_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
 	119, // 324: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_removed_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
-	430, // 325: datanode.api.v2.ListEntitiesResponse.trades:type_name -> vega.Trade
-	438, // 326: datanode.api.v2.ListEntitiesResponse.oracle_specs:type_name -> vega.OracleSpec
-	439, // 327: datanode.api.v2.ListEntitiesResponse.oracle_data:type_name -> vega.OracleData
-	440, // 328: datanode.api.v2.ListEntitiesResponse.markets:type_name -> vega.Market
-	442, // 329: datanode.api.v2.ListEntitiesResponse.parties:type_name -> vega.Party
-	444, // 330: datanode.api.v2.ListEntitiesResponse.margin_levels:type_name -> vega.MarginLevels
-	445, // 331: datanode.api.v2.ListEntitiesResponse.rewards:type_name -> vega.Reward
-	448, // 332: datanode.api.v2.ListEntitiesResponse.deposits:type_name -> vega.Deposit
-	449, // 333: datanode.api.v2.ListEntitiesResponse.withdrawals:type_name -> vega.Withdrawal
-	450, // 334: datanode.api.v2.ListEntitiesResponse.assets:type_name -> vega.Asset
-	451, // 335: datanode.api.v2.ListEntitiesResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
-	477, // 336: datanode.api.v2.ListEntitiesResponse.proposals:type_name -> vega.Proposal
-	456, // 337: datanode.api.v2.ListEntitiesResponse.delegations:type_name -> vega.Delegation
+	431, // 325: datanode.api.v2.ListEntitiesResponse.trades:type_name -> vega.Trade
+	439, // 326: datanode.api.v2.ListEntitiesResponse.oracle_specs:type_name -> vega.OracleSpec
+	440, // 327: datanode.api.v2.ListEntitiesResponse.oracle_data:type_name -> vega.OracleData
+	441, // 328: datanode.api.v2.ListEntitiesResponse.markets:type_name -> vega.Market
+	443, // 329: datanode.api.v2.ListEntitiesResponse.parties:type_name -> vega.Party
+	445, // 330: datanode.api.v2.ListEntitiesResponse.margin_levels:type_name -> vega.MarginLevels
+	446, // 331: datanode.api.v2.ListEntitiesResponse.rewards:type_name -> vega.Reward
+	449, // 332: datanode.api.v2.ListEntitiesResponse.deposits:type_name -> vega.Deposit
+	450, // 333: datanode.api.v2.ListEntitiesResponse.withdrawals:type_name -> vega.Withdrawal
+	451, // 334: datanode.api.v2.ListEntitiesResponse.assets:type_name -> vega.Asset
+	452, // 335: datanode.api.v2.ListEntitiesResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
+	478, // 336: datanode.api.v2.ListEntitiesResponse.proposals:type_name -> vega.Proposal
+	457, // 337: datanode.api.v2.ListEntitiesResponse.delegations:type_name -> vega.Delegation
 	238, // 338: datanode.api.v2.ListEntitiesResponse.nodes:type_name -> datanode.api.v2.NodeBasic
-	460, // 339: datanode.api.v2.ListEntitiesResponse.node_signatures:type_name -> vega.commands.v1.NodeSignature
-	464, // 340: datanode.api.v2.ListEntitiesResponse.network_parameters:type_name -> vega.NetworkParameter
-	470, // 341: datanode.api.v2.ListEntitiesResponse.key_rotations:type_name -> vega.events.v1.KeyRotation
-	471, // 342: datanode.api.v2.ListEntitiesResponse.ethereum_key_rotations:type_name -> vega.events.v1.EthereumKeyRotation
-	473, // 343: datanode.api.v2.ListEntitiesResponse.protocol_upgrade_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
-	478, // 344: datanode.api.v2.GetPartyActivityStreakResponse.activity_streak:type_name -> vega.events.v1.PartyActivityStreak
+	461, // 339: datanode.api.v2.ListEntitiesResponse.node_signatures:type_name -> vega.commands.v1.NodeSignature
+	465, // 340: datanode.api.v2.ListEntitiesResponse.network_parameters:type_name -> vega.NetworkParameter
+	471, // 341: datanode.api.v2.ListEntitiesResponse.key_rotations:type_name -> vega.events.v1.KeyRotation
+	472, // 342: datanode.api.v2.ListEntitiesResponse.ethereum_key_rotations:type_name -> vega.events.v1.EthereumKeyRotation
+	474, // 343: datanode.api.v2.ListEntitiesResponse.protocol_upgrade_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	479, // 344: datanode.api.v2.GetPartyActivityStreakResponse.activity_streak:type_name -> vega.events.v1.PartyActivityStreak
 	6,   // 345: datanode.api.v2.ListFundingPaymentsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	315, // 346: datanode.api.v2.FundingPaymentEdge.node:type_name -> datanode.api.v2.FundingPayment
 	317, // 347: datanode.api.v2.FundingPaymentConnection.edges:type_name -> datanode.api.v2.FundingPaymentEdge
@@ -30653,344 +30814,346 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	318, // 349: datanode.api.v2.ListFundingPaymentsResponse.funding_payments:type_name -> datanode.api.v2.FundingPaymentConnection
 	288, // 350: datanode.api.v2.ListFundingPeriodsRequest.date_range:type_name -> datanode.api.v2.DateRange
 	6,   // 351: datanode.api.v2.ListFundingPeriodsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	479, // 352: datanode.api.v2.FundingPeriodEdge.node:type_name -> vega.events.v1.FundingPeriod
+	480, // 352: datanode.api.v2.FundingPeriodEdge.node:type_name -> vega.events.v1.FundingPeriod
 	321, // 353: datanode.api.v2.FundingPeriodConnection.edges:type_name -> datanode.api.v2.FundingPeriodEdge
 	7,   // 354: datanode.api.v2.FundingPeriodConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	322, // 355: datanode.api.v2.ListFundingPeriodsResponse.funding_periods:type_name -> datanode.api.v2.FundingPeriodConnection
 	288, // 356: datanode.api.v2.ListFundingPeriodDataPointsRequest.date_range:type_name -> datanode.api.v2.DateRange
-	480, // 357: datanode.api.v2.ListFundingPeriodDataPointsRequest.source:type_name -> vega.events.v1.FundingPeriodDataPoint.Source
+	481, // 357: datanode.api.v2.ListFundingPeriodDataPointsRequest.source:type_name -> vega.events.v1.FundingPeriodDataPoint.Source
 	6,   // 358: datanode.api.v2.ListFundingPeriodDataPointsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	481, // 359: datanode.api.v2.FundingPeriodDataPointEdge.node:type_name -> vega.events.v1.FundingPeriodDataPoint
+	482, // 359: datanode.api.v2.FundingPeriodDataPointEdge.node:type_name -> vega.events.v1.FundingPeriodDataPoint
 	325, // 360: datanode.api.v2.FundingPeriodDataPointConnection.edges:type_name -> datanode.api.v2.FundingPeriodDataPointEdge
 	7,   // 361: datanode.api.v2.FundingPeriodDataPointConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	326, // 362: datanode.api.v2.ListFundingPeriodDataPointsResponse.funding_period_data_points:type_name -> datanode.api.v2.FundingPeriodDataPointConnection
-	463, // 363: datanode.api.v2.OrderInfo.side:type_name -> vega.Side
+	464, // 363: datanode.api.v2.OrderInfo.side:type_name -> vega.Side
 	330, // 364: datanode.api.v2.EstimatePositionRequest.orders:type_name -> datanode.api.v2.OrderInfo
-	333, // 365: datanode.api.v2.EstimatePositionResponse.margin:type_name -> datanode.api.v2.MarginEstimate
-	334, // 366: datanode.api.v2.EstimatePositionResponse.liquidation:type_name -> datanode.api.v2.LiquidationEstimate
-	444, // 367: datanode.api.v2.MarginEstimate.worst_case:type_name -> vega.MarginLevels
-	444, // 368: datanode.api.v2.MarginEstimate.best_case:type_name -> vega.MarginLevels
-	335, // 369: datanode.api.v2.LiquidationEstimate.worst_case:type_name -> datanode.api.v2.LiquidationPrice
-	335, // 370: datanode.api.v2.LiquidationEstimate.best_case:type_name -> datanode.api.v2.LiquidationPrice
-	338, // 371: datanode.api.v2.GetCurrentReferralProgramResponse.current_referral_program:type_name -> datanode.api.v2.ReferralProgram
-	482, // 372: datanode.api.v2.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
-	483, // 373: datanode.api.v2.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
-	339, // 374: datanode.api.v2.ReferralSetEdge.node:type_name -> datanode.api.v2.ReferralSet
-	340, // 375: datanode.api.v2.ReferralSetConnection.edges:type_name -> datanode.api.v2.ReferralSetEdge
-	7,   // 376: datanode.api.v2.ReferralSetConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	6,   // 377: datanode.api.v2.ListReferralSetsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	341, // 378: datanode.api.v2.ListReferralSetsResponse.referral_sets:type_name -> datanode.api.v2.ReferralSetConnection
-	344, // 379: datanode.api.v2.ReferralSetRefereeEdge.node:type_name -> datanode.api.v2.ReferralSetReferee
-	345, // 380: datanode.api.v2.ReferralSetRefereeConnection.edges:type_name -> datanode.api.v2.ReferralSetRefereeEdge
-	7,   // 381: datanode.api.v2.ReferralSetRefereeConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	6,   // 382: datanode.api.v2.ListReferralSetRefereesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	346, // 383: datanode.api.v2.ListReferralSetRefereesResponse.referral_set_referees:type_name -> datanode.api.v2.ReferralSetRefereeConnection
-	6,   // 384: datanode.api.v2.GetReferralSetStatsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	351, // 385: datanode.api.v2.GetReferralSetStatsResponse.stats:type_name -> datanode.api.v2.ReferralSetStatsConnection
-	352, // 386: datanode.api.v2.ReferralSetStatsConnection.edges:type_name -> datanode.api.v2.ReferralSetStatsEdge
-	7,   // 387: datanode.api.v2.ReferralSetStatsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	353, // 388: datanode.api.v2.ReferralSetStatsEdge.node:type_name -> datanode.api.v2.ReferralSetStats
-	354, // 389: datanode.api.v2.TeamEdge.node:type_name -> datanode.api.v2.Team
-	355, // 390: datanode.api.v2.TeamConnection.edges:type_name -> datanode.api.v2.TeamEdge
-	7,   // 391: datanode.api.v2.TeamConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	6,   // 392: datanode.api.v2.ListTeamsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	356, // 393: datanode.api.v2.ListTeamsResponse.teams:type_name -> datanode.api.v2.TeamConnection
-	6,   // 394: datanode.api.v2.ListTeamsStatisticsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	361, // 395: datanode.api.v2.ListTeamsStatisticsResponse.statistics:type_name -> datanode.api.v2.TeamsStatisticsConnection
-	362, // 396: datanode.api.v2.TeamsStatisticsConnection.edges:type_name -> datanode.api.v2.TeamStatisticsEdge
-	7,   // 397: datanode.api.v2.TeamsStatisticsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	363, // 398: datanode.api.v2.TeamStatisticsEdge.node:type_name -> datanode.api.v2.TeamStatistics
-	364, // 399: datanode.api.v2.TeamStatistics.quantum_rewards:type_name -> datanode.api.v2.QuantumRewardsPerEpoch
-	6,   // 400: datanode.api.v2.ListTeamMembersStatisticsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	367, // 401: datanode.api.v2.ListTeamMembersStatisticsResponse.statistics:type_name -> datanode.api.v2.TeamMembersStatisticsConnection
-	368, // 402: datanode.api.v2.TeamMembersStatisticsConnection.edges:type_name -> datanode.api.v2.TeamMemberStatisticsEdge
-	7,   // 403: datanode.api.v2.TeamMembersStatisticsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	369, // 404: datanode.api.v2.TeamMemberStatisticsEdge.node:type_name -> datanode.api.v2.TeamMemberStatistics
-	364, // 405: datanode.api.v2.TeamMemberStatistics.quantum_rewards:type_name -> datanode.api.v2.QuantumRewardsPerEpoch
-	6,   // 406: datanode.api.v2.ListTeamRefereesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	371, // 407: datanode.api.v2.TeamRefereeEdge.node:type_name -> datanode.api.v2.TeamReferee
-	372, // 408: datanode.api.v2.TeamRefereeConnection.edges:type_name -> datanode.api.v2.TeamRefereeEdge
-	7,   // 409: datanode.api.v2.TeamRefereeConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	373, // 410: datanode.api.v2.ListTeamRefereesResponse.team_referees:type_name -> datanode.api.v2.TeamRefereeConnection
-	375, // 411: datanode.api.v2.TeamRefereeHistoryEdge.node:type_name -> datanode.api.v2.TeamRefereeHistory
-	376, // 412: datanode.api.v2.TeamRefereeHistoryConnection.edges:type_name -> datanode.api.v2.TeamRefereeHistoryEdge
-	7,   // 413: datanode.api.v2.TeamRefereeHistoryConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	6,   // 414: datanode.api.v2.ListTeamRefereeHistoryRequest.pagination:type_name -> datanode.api.v2.Pagination
-	377, // 415: datanode.api.v2.ListTeamRefereeHistoryResponse.team_referee_history:type_name -> datanode.api.v2.TeamRefereeHistoryConnection
-	484, // 416: datanode.api.v2.GetFeesStatsResponse.fees_stats:type_name -> vega.events.v1.FeesStats
-	392, // 417: datanode.api.v2.GetFeesStatsForPartyResponse.fees_stats_for_party:type_name -> datanode.api.v2.FeesStatsForParty
-	391, // 418: datanode.api.v2.GetCurrentVolumeDiscountProgramResponse.current_volume_discount_program:type_name -> datanode.api.v2.VolumeDiscountProgram
-	6,   // 419: datanode.api.v2.GetVolumeDiscountStatsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	388, // 420: datanode.api.v2.GetVolumeDiscountStatsResponse.stats:type_name -> datanode.api.v2.VolumeDiscountStatsConnection
-	389, // 421: datanode.api.v2.VolumeDiscountStatsConnection.edges:type_name -> datanode.api.v2.VolumeDiscountStatsEdge
-	7,   // 422: datanode.api.v2.VolumeDiscountStatsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	390, // 423: datanode.api.v2.VolumeDiscountStatsEdge.node:type_name -> datanode.api.v2.VolumeDiscountStats
-	485, // 424: datanode.api.v2.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
-	486, // 425: datanode.api.v2.ObserveTransactionResultsResponse.transaction_results:type_name -> vega.events.v1.TransactionResult
-	416, // 426: datanode.api.v2.EstimateTransferFeeRequest.from_account_type:type_name -> vega.AccountType
-	487, // 427: datanode.api.v2.ListGamesRequest.entity_scope:type_name -> vega.EntityScope
-	6,   // 428: datanode.api.v2.ListGamesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	401, // 429: datanode.api.v2.ListGamesResponse.games:type_name -> datanode.api.v2.GamesConnection
-	402, // 430: datanode.api.v2.GamesConnection.edges:type_name -> datanode.api.v2.GameEdge
-	7,   // 431: datanode.api.v2.GamesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	403, // 432: datanode.api.v2.GameEdge.node:type_name -> datanode.api.v2.Game
-	404, // 433: datanode.api.v2.Game.team:type_name -> datanode.api.v2.TeamGameEntities
-	405, // 434: datanode.api.v2.Game.individual:type_name -> datanode.api.v2.IndividualGameEntities
-	406, // 435: datanode.api.v2.TeamGameEntities.team:type_name -> datanode.api.v2.TeamGameEntity
-	408, // 436: datanode.api.v2.IndividualGameEntities.individual:type_name -> datanode.api.v2.IndividualGameEntity
-	407, // 437: datanode.api.v2.TeamGameEntity.team:type_name -> datanode.api.v2.TeamGameParticipation
-	408, // 438: datanode.api.v2.TeamGameParticipation.members_participating:type_name -> datanode.api.v2.IndividualGameEntity
-	6,   // 439: datanode.api.v2.ListPartyMarginModesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	411, // 440: datanode.api.v2.ListPartyMarginModesResponse.party_margin_modes:type_name -> datanode.api.v2.PartyMarginModesConnection
-	412, // 441: datanode.api.v2.PartyMarginModesConnection.edges:type_name -> datanode.api.v2.PartyMarginModeEdge
-	7,   // 442: datanode.api.v2.PartyMarginModesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	413, // 443: datanode.api.v2.PartyMarginModeEdge.node:type_name -> datanode.api.v2.PartyMarginMode
-	488, // 444: datanode.api.v2.PartyMarginMode.margin_mode:type_name -> vega.MarginMode
-	13,  // 445: datanode.api.v2.TradingDataService.ListAccounts:input_type -> datanode.api.v2.ListAccountsRequest
-	17,  // 446: datanode.api.v2.TradingDataService.ObserveAccounts:input_type -> datanode.api.v2.ObserveAccountsRequest
-	21,  // 447: datanode.api.v2.TradingDataService.Info:input_type -> datanode.api.v2.InfoRequest
-	23,  // 448: datanode.api.v2.TradingDataService.GetOrder:input_type -> datanode.api.v2.GetOrderRequest
-	26,  // 449: datanode.api.v2.TradingDataService.ListOrders:input_type -> datanode.api.v2.ListOrdersRequest
-	28,  // 450: datanode.api.v2.TradingDataService.ListOrderVersions:input_type -> datanode.api.v2.ListOrderVersionsRequest
-	30,  // 451: datanode.api.v2.TradingDataService.ObserveOrders:input_type -> datanode.api.v2.ObserveOrdersRequest
-	34,  // 452: datanode.api.v2.TradingDataService.GetStopOrder:input_type -> datanode.api.v2.GetStopOrderRequest
-	36,  // 453: datanode.api.v2.TradingDataService.ListStopOrders:input_type -> datanode.api.v2.ListStopOrdersRequest
-	41,  // 454: datanode.api.v2.TradingDataService.ListPositions:input_type -> datanode.api.v2.ListPositionsRequest
-	44,  // 455: datanode.api.v2.TradingDataService.ListAllPositions:input_type -> datanode.api.v2.ListAllPositionsRequest
-	48,  // 456: datanode.api.v2.TradingDataService.ObservePositions:input_type -> datanode.api.v2.ObservePositionsRequest
-	54,  // 457: datanode.api.v2.TradingDataService.ListLedgerEntries:input_type -> datanode.api.v2.ListLedgerEntriesRequest
-	55,  // 458: datanode.api.v2.TradingDataService.ExportLedgerEntries:input_type -> datanode.api.v2.ExportLedgerEntriesRequest
-	59,  // 459: datanode.api.v2.TradingDataService.ListBalanceChanges:input_type -> datanode.api.v2.ListBalanceChangesRequest
-	77,  // 460: datanode.api.v2.TradingDataService.GetLatestMarketData:input_type -> datanode.api.v2.GetLatestMarketDataRequest
-	75,  // 461: datanode.api.v2.TradingDataService.ListLatestMarketData:input_type -> datanode.api.v2.ListLatestMarketDataRequest
-	73,  // 462: datanode.api.v2.TradingDataService.GetLatestMarketDepth:input_type -> datanode.api.v2.GetLatestMarketDepthRequest
-	67,  // 463: datanode.api.v2.TradingDataService.ObserveMarketsDepth:input_type -> datanode.api.v2.ObserveMarketsDepthRequest
-	69,  // 464: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:input_type -> datanode.api.v2.ObserveMarketsDepthUpdatesRequest
-	71,  // 465: datanode.api.v2.TradingDataService.ObserveMarketsData:input_type -> datanode.api.v2.ObserveMarketsDataRequest
-	79,  // 466: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:input_type -> datanode.api.v2.GetMarketDataHistoryByIDRequest
-	83,  // 467: datanode.api.v2.TradingDataService.ListTransfers:input_type -> datanode.api.v2.ListTransfersRequest
-	88,  // 468: datanode.api.v2.TradingDataService.GetTransfer:input_type -> datanode.api.v2.GetTransferRequest
-	90,  // 469: datanode.api.v2.TradingDataService.GetNetworkLimits:input_type -> datanode.api.v2.GetNetworkLimitsRequest
-	98,  // 470: datanode.api.v2.TradingDataService.ListCandleData:input_type -> datanode.api.v2.ListCandleDataRequest
-	96,  // 471: datanode.api.v2.TradingDataService.ObserveCandleData:input_type -> datanode.api.v2.ObserveCandleDataRequest
-	92,  // 472: datanode.api.v2.TradingDataService.ListCandleIntervals:input_type -> datanode.api.v2.ListCandleIntervalsRequest
-	102, // 473: datanode.api.v2.TradingDataService.ListVotes:input_type -> datanode.api.v2.ListVotesRequest
-	106, // 474: datanode.api.v2.TradingDataService.ObserveVotes:input_type -> datanode.api.v2.ObserveVotesRequest
-	108, // 475: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest
-	114, // 476: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest
-	120, // 477: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:input_type -> datanode.api.v2.GetERC20ListAssetBundleRequest
-	122, // 478: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:input_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleRequest
-	124, // 479: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:input_type -> datanode.api.v2.GetERC20WithdrawalApprovalRequest
-	126, // 480: datanode.api.v2.TradingDataService.GetLastTrade:input_type -> datanode.api.v2.GetLastTradeRequest
-	128, // 481: datanode.api.v2.TradingDataService.ListTrades:input_type -> datanode.api.v2.ListTradesRequest
-	132, // 482: datanode.api.v2.TradingDataService.ObserveTrades:input_type -> datanode.api.v2.ObserveTradesRequest
-	134, // 483: datanode.api.v2.TradingDataService.GetOracleSpec:input_type -> datanode.api.v2.GetOracleSpecRequest
-	136, // 484: datanode.api.v2.TradingDataService.ListOracleSpecs:input_type -> datanode.api.v2.ListOracleSpecsRequest
-	138, // 485: datanode.api.v2.TradingDataService.ListOracleData:input_type -> datanode.api.v2.ListOracleDataRequest
-	144, // 486: datanode.api.v2.TradingDataService.GetMarket:input_type -> datanode.api.v2.GetMarketRequest
-	146, // 487: datanode.api.v2.TradingDataService.ListMarkets:input_type -> datanode.api.v2.ListMarketsRequest
-	150, // 488: datanode.api.v2.TradingDataService.ListSuccessorMarkets:input_type -> datanode.api.v2.ListSuccessorMarketsRequest
-	155, // 489: datanode.api.v2.TradingDataService.GetParty:input_type -> datanode.api.v2.GetPartyRequest
-	157, // 490: datanode.api.v2.TradingDataService.ListParties:input_type -> datanode.api.v2.ListPartiesRequest
-	161, // 491: datanode.api.v2.TradingDataService.ListPartiesProfiles:input_type -> datanode.api.v2.ListPartiesProfilesRequest
-	166, // 492: datanode.api.v2.TradingDataService.ListMarginLevels:input_type -> datanode.api.v2.ListMarginLevelsRequest
-	168, // 493: datanode.api.v2.TradingDataService.ObserveMarginLevels:input_type -> datanode.api.v2.ObserveMarginLevelsRequest
-	173, // 494: datanode.api.v2.TradingDataService.ListRewards:input_type -> datanode.api.v2.ListRewardsRequest
-	177, // 495: datanode.api.v2.TradingDataService.ListRewardSummaries:input_type -> datanode.api.v2.ListRewardSummariesRequest
-	180, // 496: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:input_type -> datanode.api.v2.ListEpochRewardSummariesRequest
-	186, // 497: datanode.api.v2.TradingDataService.GetDeposit:input_type -> datanode.api.v2.GetDepositRequest
-	188, // 498: datanode.api.v2.TradingDataService.ListDeposits:input_type -> datanode.api.v2.ListDepositsRequest
-	192, // 499: datanode.api.v2.TradingDataService.GetWithdrawal:input_type -> datanode.api.v2.GetWithdrawalRequest
-	194, // 500: datanode.api.v2.TradingDataService.ListWithdrawals:input_type -> datanode.api.v2.ListWithdrawalsRequest
-	198, // 501: datanode.api.v2.TradingDataService.GetAsset:input_type -> datanode.api.v2.GetAssetRequest
-	200, // 502: datanode.api.v2.TradingDataService.ListAssets:input_type -> datanode.api.v2.ListAssetsRequest
-	204, // 503: datanode.api.v2.TradingDataService.ListLiquidityProvisions:input_type -> datanode.api.v2.ListLiquidityProvisionsRequest
-	205, // 504: datanode.api.v2.TradingDataService.ListAllLiquidityProvisions:input_type -> datanode.api.v2.ListAllLiquidityProvisionsRequest
-	213, // 505: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:input_type -> datanode.api.v2.ObserveLiquidityProvisionsRequest
-	215, // 506: datanode.api.v2.TradingDataService.ListLiquidityProviders:input_type -> datanode.api.v2.ListLiquidityProvidersRequest
-	220, // 507: datanode.api.v2.TradingDataService.ListPaidLiquidityFees:input_type -> datanode.api.v2.ListPaidLiquidityFeesRequest
-	224, // 508: datanode.api.v2.TradingDataService.GetGovernanceData:input_type -> datanode.api.v2.GetGovernanceDataRequest
-	226, // 509: datanode.api.v2.TradingDataService.ListGovernanceData:input_type -> datanode.api.v2.ListGovernanceDataRequest
-	230, // 510: datanode.api.v2.TradingDataService.ObserveGovernance:input_type -> datanode.api.v2.ObserveGovernanceRequest
-	232, // 511: datanode.api.v2.TradingDataService.ListDelegations:input_type -> datanode.api.v2.ListDelegationsRequest
-	239, // 512: datanode.api.v2.TradingDataService.GetNetworkData:input_type -> datanode.api.v2.GetNetworkDataRequest
-	241, // 513: datanode.api.v2.TradingDataService.GetNode:input_type -> datanode.api.v2.GetNodeRequest
-	243, // 514: datanode.api.v2.TradingDataService.ListNodes:input_type -> datanode.api.v2.ListNodesRequest
-	247, // 515: datanode.api.v2.TradingDataService.ListNodeSignatures:input_type -> datanode.api.v2.ListNodeSignaturesRequest
-	251, // 516: datanode.api.v2.TradingDataService.GetEpoch:input_type -> datanode.api.v2.GetEpochRequest
-	253, // 517: datanode.api.v2.TradingDataService.EstimateFee:input_type -> datanode.api.v2.EstimateFeeRequest
-	255, // 518: datanode.api.v2.TradingDataService.EstimateMargin:input_type -> datanode.api.v2.EstimateMarginRequest
-	331, // 519: datanode.api.v2.TradingDataService.EstimatePosition:input_type -> datanode.api.v2.EstimatePositionRequest
-	257, // 520: datanode.api.v2.TradingDataService.ListNetworkParameters:input_type -> datanode.api.v2.ListNetworkParametersRequest
-	259, // 521: datanode.api.v2.TradingDataService.GetNetworkParameter:input_type -> datanode.api.v2.GetNetworkParameterRequest
-	264, // 522: datanode.api.v2.TradingDataService.ListCheckpoints:input_type -> datanode.api.v2.ListCheckpointsRequest
-	268, // 523: datanode.api.v2.TradingDataService.GetStake:input_type -> datanode.api.v2.GetStakeRequest
-	272, // 524: datanode.api.v2.TradingDataService.GetRiskFactors:input_type -> datanode.api.v2.GetRiskFactorsRequest
-	274, // 525: datanode.api.v2.TradingDataService.ObserveEventBus:input_type -> datanode.api.v2.ObserveEventBusRequest
-	276, // 526: datanode.api.v2.TradingDataService.ObserveLedgerMovements:input_type -> datanode.api.v2.ObserveLedgerMovementsRequest
-	278, // 527: datanode.api.v2.TradingDataService.ListKeyRotations:input_type -> datanode.api.v2.ListKeyRotationsRequest
-	282, // 528: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:input_type -> datanode.api.v2.ListEthereumKeyRotationsRequest
-	286, // 529: datanode.api.v2.TradingDataService.GetVegaTime:input_type -> datanode.api.v2.GetVegaTimeRequest
-	289, // 530: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:input_type -> datanode.api.v2.GetProtocolUpgradeStatusRequest
-	291, // 531: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:input_type -> datanode.api.v2.ListProtocolUpgradeProposalsRequest
-	295, // 532: datanode.api.v2.TradingDataService.ListCoreSnapshots:input_type -> datanode.api.v2.ListCoreSnapshotsRequest
-	300, // 533: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:input_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
-	302, // 534: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:input_type -> datanode.api.v2.ListAllNetworkHistorySegmentsRequest
-	304, // 535: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:input_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
-	306, // 536: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:input_type -> datanode.api.v2.GetNetworkHistoryStatusRequest
-	308, // 537: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:input_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
-	311, // 538: datanode.api.v2.TradingDataService.ListEntities:input_type -> datanode.api.v2.ListEntitiesRequest
-	320, // 539: datanode.api.v2.TradingDataService.ListFundingPeriods:input_type -> datanode.api.v2.ListFundingPeriodsRequest
-	324, // 540: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints:input_type -> datanode.api.v2.ListFundingPeriodDataPointsRequest
-	316, // 541: datanode.api.v2.TradingDataService.ListFundingPayments:input_type -> datanode.api.v2.ListFundingPaymentsRequest
-	313, // 542: datanode.api.v2.TradingDataService.GetPartyActivityStreak:input_type -> datanode.api.v2.GetPartyActivityStreakRequest
-	336, // 543: datanode.api.v2.TradingDataService.GetCurrentReferralProgram:input_type -> datanode.api.v2.GetCurrentReferralProgramRequest
-	342, // 544: datanode.api.v2.TradingDataService.ListReferralSets:input_type -> datanode.api.v2.ListReferralSetsRequest
-	347, // 545: datanode.api.v2.TradingDataService.ListReferralSetReferees:input_type -> datanode.api.v2.ListReferralSetRefereesRequest
-	349, // 546: datanode.api.v2.TradingDataService.GetReferralSetStats:input_type -> datanode.api.v2.GetReferralSetStatsRequest
-	357, // 547: datanode.api.v2.TradingDataService.ListTeams:input_type -> datanode.api.v2.ListTeamsRequest
-	359, // 548: datanode.api.v2.TradingDataService.ListTeamsStatistics:input_type -> datanode.api.v2.ListTeamsStatisticsRequest
-	365, // 549: datanode.api.v2.TradingDataService.ListTeamMembersStatistics:input_type -> datanode.api.v2.ListTeamMembersStatisticsRequest
-	370, // 550: datanode.api.v2.TradingDataService.ListTeamReferees:input_type -> datanode.api.v2.ListTeamRefereesRequest
-	378, // 551: datanode.api.v2.TradingDataService.ListTeamRefereeHistory:input_type -> datanode.api.v2.ListTeamRefereeHistoryRequest
-	380, // 552: datanode.api.v2.TradingDataService.GetFeesStats:input_type -> datanode.api.v2.GetFeesStatsRequest
-	382, // 553: datanode.api.v2.TradingDataService.GetFeesStatsForParty:input_type -> datanode.api.v2.GetFeesStatsForPartyRequest
-	384, // 554: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram:input_type -> datanode.api.v2.GetCurrentVolumeDiscountProgramRequest
-	386, // 555: datanode.api.v2.TradingDataService.GetVolumeDiscountStats:input_type -> datanode.api.v2.GetVolumeDiscountStatsRequest
-	10,  // 556: datanode.api.v2.TradingDataService.GetVestingBalancesSummary:input_type -> datanode.api.v2.GetVestingBalancesSummaryRequest
-	8,   // 557: datanode.api.v2.TradingDataService.GetPartyVestingStats:input_type -> datanode.api.v2.GetPartyVestingStatsRequest
-	393, // 558: datanode.api.v2.TradingDataService.ObserveTransactionResults:input_type -> datanode.api.v2.ObserveTransactionResultsRequest
-	395, // 559: datanode.api.v2.TradingDataService.EstimateTransferFee:input_type -> datanode.api.v2.EstimateTransferFeeRequest
-	397, // 560: datanode.api.v2.TradingDataService.GetTotalTransferFeeDiscount:input_type -> datanode.api.v2.GetTotalTransferFeeDiscountRequest
-	399, // 561: datanode.api.v2.TradingDataService.ListGames:input_type -> datanode.api.v2.ListGamesRequest
-	409, // 562: datanode.api.v2.TradingDataService.ListPartyMarginModes:input_type -> datanode.api.v2.ListPartyMarginModesRequest
-	310, // 563: datanode.api.v2.TradingDataService.ExportNetworkHistory:input_type -> datanode.api.v2.ExportNetworkHistoryRequest
-	328, // 564: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
-	14,  // 565: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
-	18,  // 566: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
-	22,  // 567: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
-	24,  // 568: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
-	27,  // 569: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
-	29,  // 570: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
-	31,  // 571: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
-	35,  // 572: datanode.api.v2.TradingDataService.GetStopOrder:output_type -> datanode.api.v2.GetStopOrderResponse
-	40,  // 573: datanode.api.v2.TradingDataService.ListStopOrders:output_type -> datanode.api.v2.ListStopOrdersResponse
-	42,  // 574: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
-	45,  // 575: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
-	49,  // 576: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
-	56,  // 577: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
-	489, // 578: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> google.api.HttpBody
-	60,  // 579: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
-	78,  // 580: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
-	76,  // 581: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
-	74,  // 582: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
-	68,  // 583: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
-	70,  // 584: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
-	72,  // 585: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
-	80,  // 586: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
-	84,  // 587: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
-	89,  // 588: datanode.api.v2.TradingDataService.GetTransfer:output_type -> datanode.api.v2.GetTransferResponse
-	91,  // 589: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
-	99,  // 590: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
-	97,  // 591: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
-	94,  // 592: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
-	103, // 593: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
-	107, // 594: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
-	109, // 595: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
-	115, // 596: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
-	121, // 597: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
-	123, // 598: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
-	125, // 599: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
-	127, // 600: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
-	129, // 601: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
-	133, // 602: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
-	135, // 603: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
-	137, // 604: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
-	139, // 605: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
-	145, // 606: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
-	147, // 607: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
-	154, // 608: datanode.api.v2.TradingDataService.ListSuccessorMarkets:output_type -> datanode.api.v2.ListSuccessorMarketsResponse
-	156, // 609: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
-	158, // 610: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
-	162, // 611: datanode.api.v2.TradingDataService.ListPartiesProfiles:output_type -> datanode.api.v2.ListPartiesProfilesResponse
-	167, // 612: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
-	169, // 613: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
-	174, // 614: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
-	178, // 615: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
-	181, // 616: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
-	187, // 617: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
-	189, // 618: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
-	193, // 619: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
-	195, // 620: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
-	199, // 621: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
-	201, // 622: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
-	206, // 623: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
-	207, // 624: datanode.api.v2.TradingDataService.ListAllLiquidityProvisions:output_type -> datanode.api.v2.ListAllLiquidityProvisionsResponse
-	214, // 625: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
-	219, // 626: datanode.api.v2.TradingDataService.ListLiquidityProviders:output_type -> datanode.api.v2.ListLiquidityProvidersResponse
-	221, // 627: datanode.api.v2.TradingDataService.ListPaidLiquidityFees:output_type -> datanode.api.v2.ListPaidLiquidityFeesResponse
-	225, // 628: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
-	227, // 629: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
-	231, // 630: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
-	233, // 631: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
-	240, // 632: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
-	242, // 633: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
-	244, // 634: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
-	248, // 635: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
-	252, // 636: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
-	254, // 637: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
-	256, // 638: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
-	332, // 639: datanode.api.v2.TradingDataService.EstimatePosition:output_type -> datanode.api.v2.EstimatePositionResponse
-	258, // 640: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
-	260, // 641: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
-	265, // 642: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
-	269, // 643: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
-	273, // 644: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
-	275, // 645: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
-	277, // 646: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
-	279, // 647: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
-	283, // 648: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
-	287, // 649: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
-	290, // 650: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
-	292, // 651: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
-	296, // 652: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
-	301, // 653: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
-	303, // 654: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
-	305, // 655: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
-	307, // 656: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:output_type -> datanode.api.v2.GetNetworkHistoryStatusResponse
-	309, // 657: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:output_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
-	312, // 658: datanode.api.v2.TradingDataService.ListEntities:output_type -> datanode.api.v2.ListEntitiesResponse
-	323, // 659: datanode.api.v2.TradingDataService.ListFundingPeriods:output_type -> datanode.api.v2.ListFundingPeriodsResponse
-	327, // 660: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints:output_type -> datanode.api.v2.ListFundingPeriodDataPointsResponse
-	319, // 661: datanode.api.v2.TradingDataService.ListFundingPayments:output_type -> datanode.api.v2.ListFundingPaymentsResponse
-	314, // 662: datanode.api.v2.TradingDataService.GetPartyActivityStreak:output_type -> datanode.api.v2.GetPartyActivityStreakResponse
-	337, // 663: datanode.api.v2.TradingDataService.GetCurrentReferralProgram:output_type -> datanode.api.v2.GetCurrentReferralProgramResponse
-	343, // 664: datanode.api.v2.TradingDataService.ListReferralSets:output_type -> datanode.api.v2.ListReferralSetsResponse
-	348, // 665: datanode.api.v2.TradingDataService.ListReferralSetReferees:output_type -> datanode.api.v2.ListReferralSetRefereesResponse
-	350, // 666: datanode.api.v2.TradingDataService.GetReferralSetStats:output_type -> datanode.api.v2.GetReferralSetStatsResponse
-	358, // 667: datanode.api.v2.TradingDataService.ListTeams:output_type -> datanode.api.v2.ListTeamsResponse
-	360, // 668: datanode.api.v2.TradingDataService.ListTeamsStatistics:output_type -> datanode.api.v2.ListTeamsStatisticsResponse
-	366, // 669: datanode.api.v2.TradingDataService.ListTeamMembersStatistics:output_type -> datanode.api.v2.ListTeamMembersStatisticsResponse
-	374, // 670: datanode.api.v2.TradingDataService.ListTeamReferees:output_type -> datanode.api.v2.ListTeamRefereesResponse
-	379, // 671: datanode.api.v2.TradingDataService.ListTeamRefereeHistory:output_type -> datanode.api.v2.ListTeamRefereeHistoryResponse
-	381, // 672: datanode.api.v2.TradingDataService.GetFeesStats:output_type -> datanode.api.v2.GetFeesStatsResponse
-	383, // 673: datanode.api.v2.TradingDataService.GetFeesStatsForParty:output_type -> datanode.api.v2.GetFeesStatsForPartyResponse
-	385, // 674: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram:output_type -> datanode.api.v2.GetCurrentVolumeDiscountProgramResponse
-	387, // 675: datanode.api.v2.TradingDataService.GetVolumeDiscountStats:output_type -> datanode.api.v2.GetVolumeDiscountStatsResponse
-	11,  // 676: datanode.api.v2.TradingDataService.GetVestingBalancesSummary:output_type -> datanode.api.v2.GetVestingBalancesSummaryResponse
-	9,   // 677: datanode.api.v2.TradingDataService.GetPartyVestingStats:output_type -> datanode.api.v2.GetPartyVestingStatsResponse
-	394, // 678: datanode.api.v2.TradingDataService.ObserveTransactionResults:output_type -> datanode.api.v2.ObserveTransactionResultsResponse
-	396, // 679: datanode.api.v2.TradingDataService.EstimateTransferFee:output_type -> datanode.api.v2.EstimateTransferFeeResponse
-	398, // 680: datanode.api.v2.TradingDataService.GetTotalTransferFeeDiscount:output_type -> datanode.api.v2.GetTotalTransferFeeDiscountResponse
-	400, // 681: datanode.api.v2.TradingDataService.ListGames:output_type -> datanode.api.v2.ListGamesResponse
-	410, // 682: datanode.api.v2.TradingDataService.ListPartyMarginModes:output_type -> datanode.api.v2.ListPartyMarginModesResponse
-	489, // 683: datanode.api.v2.TradingDataService.ExportNetworkHistory:output_type -> google.api.HttpBody
-	329, // 684: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
-	565, // [565:685] is the sub-list for method output_type
-	445, // [445:565] is the sub-list for method input_type
-	445, // [445:445] is the sub-list for extension type_name
-	445, // [445:445] is the sub-list for extension extendee
-	0,   // [0:445] is the sub-list for field type_name
+	483, // 365: datanode.api.v2.EstimatePositionRequest.margin_mode:type_name -> vega.MarginMode
+	334, // 366: datanode.api.v2.EstimatePositionResponse.margin:type_name -> datanode.api.v2.MarginEstimate
+	333, // 367: datanode.api.v2.EstimatePositionResponse.collateral_increase_estimate:type_name -> datanode.api.v2.CollateralIncreaseEstimate
+	335, // 368: datanode.api.v2.EstimatePositionResponse.liquidation:type_name -> datanode.api.v2.LiquidationEstimate
+	445, // 369: datanode.api.v2.MarginEstimate.worst_case:type_name -> vega.MarginLevels
+	445, // 370: datanode.api.v2.MarginEstimate.best_case:type_name -> vega.MarginLevels
+	336, // 371: datanode.api.v2.LiquidationEstimate.worst_case:type_name -> datanode.api.v2.LiquidationPrice
+	336, // 372: datanode.api.v2.LiquidationEstimate.best_case:type_name -> datanode.api.v2.LiquidationPrice
+	339, // 373: datanode.api.v2.GetCurrentReferralProgramResponse.current_referral_program:type_name -> datanode.api.v2.ReferralProgram
+	484, // 374: datanode.api.v2.ReferralProgram.benefit_tiers:type_name -> vega.BenefitTier
+	485, // 375: datanode.api.v2.ReferralProgram.staking_tiers:type_name -> vega.StakingTier
+	340, // 376: datanode.api.v2.ReferralSetEdge.node:type_name -> datanode.api.v2.ReferralSet
+	341, // 377: datanode.api.v2.ReferralSetConnection.edges:type_name -> datanode.api.v2.ReferralSetEdge
+	7,   // 378: datanode.api.v2.ReferralSetConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	6,   // 379: datanode.api.v2.ListReferralSetsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	342, // 380: datanode.api.v2.ListReferralSetsResponse.referral_sets:type_name -> datanode.api.v2.ReferralSetConnection
+	345, // 381: datanode.api.v2.ReferralSetRefereeEdge.node:type_name -> datanode.api.v2.ReferralSetReferee
+	346, // 382: datanode.api.v2.ReferralSetRefereeConnection.edges:type_name -> datanode.api.v2.ReferralSetRefereeEdge
+	7,   // 383: datanode.api.v2.ReferralSetRefereeConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	6,   // 384: datanode.api.v2.ListReferralSetRefereesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	347, // 385: datanode.api.v2.ListReferralSetRefereesResponse.referral_set_referees:type_name -> datanode.api.v2.ReferralSetRefereeConnection
+	6,   // 386: datanode.api.v2.GetReferralSetStatsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	352, // 387: datanode.api.v2.GetReferralSetStatsResponse.stats:type_name -> datanode.api.v2.ReferralSetStatsConnection
+	353, // 388: datanode.api.v2.ReferralSetStatsConnection.edges:type_name -> datanode.api.v2.ReferralSetStatsEdge
+	7,   // 389: datanode.api.v2.ReferralSetStatsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	354, // 390: datanode.api.v2.ReferralSetStatsEdge.node:type_name -> datanode.api.v2.ReferralSetStats
+	355, // 391: datanode.api.v2.TeamEdge.node:type_name -> datanode.api.v2.Team
+	356, // 392: datanode.api.v2.TeamConnection.edges:type_name -> datanode.api.v2.TeamEdge
+	7,   // 393: datanode.api.v2.TeamConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	6,   // 394: datanode.api.v2.ListTeamsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	357, // 395: datanode.api.v2.ListTeamsResponse.teams:type_name -> datanode.api.v2.TeamConnection
+	6,   // 396: datanode.api.v2.ListTeamsStatisticsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	362, // 397: datanode.api.v2.ListTeamsStatisticsResponse.statistics:type_name -> datanode.api.v2.TeamsStatisticsConnection
+	363, // 398: datanode.api.v2.TeamsStatisticsConnection.edges:type_name -> datanode.api.v2.TeamStatisticsEdge
+	7,   // 399: datanode.api.v2.TeamsStatisticsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	364, // 400: datanode.api.v2.TeamStatisticsEdge.node:type_name -> datanode.api.v2.TeamStatistics
+	365, // 401: datanode.api.v2.TeamStatistics.quantum_rewards:type_name -> datanode.api.v2.QuantumRewardsPerEpoch
+	6,   // 402: datanode.api.v2.ListTeamMembersStatisticsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	368, // 403: datanode.api.v2.ListTeamMembersStatisticsResponse.statistics:type_name -> datanode.api.v2.TeamMembersStatisticsConnection
+	369, // 404: datanode.api.v2.TeamMembersStatisticsConnection.edges:type_name -> datanode.api.v2.TeamMemberStatisticsEdge
+	7,   // 405: datanode.api.v2.TeamMembersStatisticsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	370, // 406: datanode.api.v2.TeamMemberStatisticsEdge.node:type_name -> datanode.api.v2.TeamMemberStatistics
+	365, // 407: datanode.api.v2.TeamMemberStatistics.quantum_rewards:type_name -> datanode.api.v2.QuantumRewardsPerEpoch
+	6,   // 408: datanode.api.v2.ListTeamRefereesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	372, // 409: datanode.api.v2.TeamRefereeEdge.node:type_name -> datanode.api.v2.TeamReferee
+	373, // 410: datanode.api.v2.TeamRefereeConnection.edges:type_name -> datanode.api.v2.TeamRefereeEdge
+	7,   // 411: datanode.api.v2.TeamRefereeConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	374, // 412: datanode.api.v2.ListTeamRefereesResponse.team_referees:type_name -> datanode.api.v2.TeamRefereeConnection
+	376, // 413: datanode.api.v2.TeamRefereeHistoryEdge.node:type_name -> datanode.api.v2.TeamRefereeHistory
+	377, // 414: datanode.api.v2.TeamRefereeHistoryConnection.edges:type_name -> datanode.api.v2.TeamRefereeHistoryEdge
+	7,   // 415: datanode.api.v2.TeamRefereeHistoryConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	6,   // 416: datanode.api.v2.ListTeamRefereeHistoryRequest.pagination:type_name -> datanode.api.v2.Pagination
+	378, // 417: datanode.api.v2.ListTeamRefereeHistoryResponse.team_referee_history:type_name -> datanode.api.v2.TeamRefereeHistoryConnection
+	486, // 418: datanode.api.v2.GetFeesStatsResponse.fees_stats:type_name -> vega.events.v1.FeesStats
+	393, // 419: datanode.api.v2.GetFeesStatsForPartyResponse.fees_stats_for_party:type_name -> datanode.api.v2.FeesStatsForParty
+	392, // 420: datanode.api.v2.GetCurrentVolumeDiscountProgramResponse.current_volume_discount_program:type_name -> datanode.api.v2.VolumeDiscountProgram
+	6,   // 421: datanode.api.v2.GetVolumeDiscountStatsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	389, // 422: datanode.api.v2.GetVolumeDiscountStatsResponse.stats:type_name -> datanode.api.v2.VolumeDiscountStatsConnection
+	390, // 423: datanode.api.v2.VolumeDiscountStatsConnection.edges:type_name -> datanode.api.v2.VolumeDiscountStatsEdge
+	7,   // 424: datanode.api.v2.VolumeDiscountStatsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	391, // 425: datanode.api.v2.VolumeDiscountStatsEdge.node:type_name -> datanode.api.v2.VolumeDiscountStats
+	487, // 426: datanode.api.v2.VolumeDiscountProgram.benefit_tiers:type_name -> vega.VolumeBenefitTier
+	488, // 427: datanode.api.v2.ObserveTransactionResultsResponse.transaction_results:type_name -> vega.events.v1.TransactionResult
+	417, // 428: datanode.api.v2.EstimateTransferFeeRequest.from_account_type:type_name -> vega.AccountType
+	489, // 429: datanode.api.v2.ListGamesRequest.entity_scope:type_name -> vega.EntityScope
+	6,   // 430: datanode.api.v2.ListGamesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	402, // 431: datanode.api.v2.ListGamesResponse.games:type_name -> datanode.api.v2.GamesConnection
+	403, // 432: datanode.api.v2.GamesConnection.edges:type_name -> datanode.api.v2.GameEdge
+	7,   // 433: datanode.api.v2.GamesConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	404, // 434: datanode.api.v2.GameEdge.node:type_name -> datanode.api.v2.Game
+	405, // 435: datanode.api.v2.Game.team:type_name -> datanode.api.v2.TeamGameEntities
+	406, // 436: datanode.api.v2.Game.individual:type_name -> datanode.api.v2.IndividualGameEntities
+	407, // 437: datanode.api.v2.TeamGameEntities.team:type_name -> datanode.api.v2.TeamGameEntity
+	409, // 438: datanode.api.v2.IndividualGameEntities.individual:type_name -> datanode.api.v2.IndividualGameEntity
+	408, // 439: datanode.api.v2.TeamGameEntity.team:type_name -> datanode.api.v2.TeamGameParticipation
+	409, // 440: datanode.api.v2.TeamGameParticipation.members_participating:type_name -> datanode.api.v2.IndividualGameEntity
+	6,   // 441: datanode.api.v2.ListPartyMarginModesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	412, // 442: datanode.api.v2.ListPartyMarginModesResponse.party_margin_modes:type_name -> datanode.api.v2.PartyMarginModesConnection
+	413, // 443: datanode.api.v2.PartyMarginModesConnection.edges:type_name -> datanode.api.v2.PartyMarginModeEdge
+	7,   // 444: datanode.api.v2.PartyMarginModesConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	414, // 445: datanode.api.v2.PartyMarginModeEdge.node:type_name -> datanode.api.v2.PartyMarginMode
+	483, // 446: datanode.api.v2.PartyMarginMode.margin_mode:type_name -> vega.MarginMode
+	13,  // 447: datanode.api.v2.TradingDataService.ListAccounts:input_type -> datanode.api.v2.ListAccountsRequest
+	17,  // 448: datanode.api.v2.TradingDataService.ObserveAccounts:input_type -> datanode.api.v2.ObserveAccountsRequest
+	21,  // 449: datanode.api.v2.TradingDataService.Info:input_type -> datanode.api.v2.InfoRequest
+	23,  // 450: datanode.api.v2.TradingDataService.GetOrder:input_type -> datanode.api.v2.GetOrderRequest
+	26,  // 451: datanode.api.v2.TradingDataService.ListOrders:input_type -> datanode.api.v2.ListOrdersRequest
+	28,  // 452: datanode.api.v2.TradingDataService.ListOrderVersions:input_type -> datanode.api.v2.ListOrderVersionsRequest
+	30,  // 453: datanode.api.v2.TradingDataService.ObserveOrders:input_type -> datanode.api.v2.ObserveOrdersRequest
+	34,  // 454: datanode.api.v2.TradingDataService.GetStopOrder:input_type -> datanode.api.v2.GetStopOrderRequest
+	36,  // 455: datanode.api.v2.TradingDataService.ListStopOrders:input_type -> datanode.api.v2.ListStopOrdersRequest
+	41,  // 456: datanode.api.v2.TradingDataService.ListPositions:input_type -> datanode.api.v2.ListPositionsRequest
+	44,  // 457: datanode.api.v2.TradingDataService.ListAllPositions:input_type -> datanode.api.v2.ListAllPositionsRequest
+	48,  // 458: datanode.api.v2.TradingDataService.ObservePositions:input_type -> datanode.api.v2.ObservePositionsRequest
+	54,  // 459: datanode.api.v2.TradingDataService.ListLedgerEntries:input_type -> datanode.api.v2.ListLedgerEntriesRequest
+	55,  // 460: datanode.api.v2.TradingDataService.ExportLedgerEntries:input_type -> datanode.api.v2.ExportLedgerEntriesRequest
+	59,  // 461: datanode.api.v2.TradingDataService.ListBalanceChanges:input_type -> datanode.api.v2.ListBalanceChangesRequest
+	77,  // 462: datanode.api.v2.TradingDataService.GetLatestMarketData:input_type -> datanode.api.v2.GetLatestMarketDataRequest
+	75,  // 463: datanode.api.v2.TradingDataService.ListLatestMarketData:input_type -> datanode.api.v2.ListLatestMarketDataRequest
+	73,  // 464: datanode.api.v2.TradingDataService.GetLatestMarketDepth:input_type -> datanode.api.v2.GetLatestMarketDepthRequest
+	67,  // 465: datanode.api.v2.TradingDataService.ObserveMarketsDepth:input_type -> datanode.api.v2.ObserveMarketsDepthRequest
+	69,  // 466: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:input_type -> datanode.api.v2.ObserveMarketsDepthUpdatesRequest
+	71,  // 467: datanode.api.v2.TradingDataService.ObserveMarketsData:input_type -> datanode.api.v2.ObserveMarketsDataRequest
+	79,  // 468: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:input_type -> datanode.api.v2.GetMarketDataHistoryByIDRequest
+	83,  // 469: datanode.api.v2.TradingDataService.ListTransfers:input_type -> datanode.api.v2.ListTransfersRequest
+	88,  // 470: datanode.api.v2.TradingDataService.GetTransfer:input_type -> datanode.api.v2.GetTransferRequest
+	90,  // 471: datanode.api.v2.TradingDataService.GetNetworkLimits:input_type -> datanode.api.v2.GetNetworkLimitsRequest
+	98,  // 472: datanode.api.v2.TradingDataService.ListCandleData:input_type -> datanode.api.v2.ListCandleDataRequest
+	96,  // 473: datanode.api.v2.TradingDataService.ObserveCandleData:input_type -> datanode.api.v2.ObserveCandleDataRequest
+	92,  // 474: datanode.api.v2.TradingDataService.ListCandleIntervals:input_type -> datanode.api.v2.ListCandleIntervalsRequest
+	102, // 475: datanode.api.v2.TradingDataService.ListVotes:input_type -> datanode.api.v2.ListVotesRequest
+	106, // 476: datanode.api.v2.TradingDataService.ObserveVotes:input_type -> datanode.api.v2.ObserveVotesRequest
+	108, // 477: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest
+	114, // 478: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest
+	120, // 479: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:input_type -> datanode.api.v2.GetERC20ListAssetBundleRequest
+	122, // 480: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:input_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleRequest
+	124, // 481: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:input_type -> datanode.api.v2.GetERC20WithdrawalApprovalRequest
+	126, // 482: datanode.api.v2.TradingDataService.GetLastTrade:input_type -> datanode.api.v2.GetLastTradeRequest
+	128, // 483: datanode.api.v2.TradingDataService.ListTrades:input_type -> datanode.api.v2.ListTradesRequest
+	132, // 484: datanode.api.v2.TradingDataService.ObserveTrades:input_type -> datanode.api.v2.ObserveTradesRequest
+	134, // 485: datanode.api.v2.TradingDataService.GetOracleSpec:input_type -> datanode.api.v2.GetOracleSpecRequest
+	136, // 486: datanode.api.v2.TradingDataService.ListOracleSpecs:input_type -> datanode.api.v2.ListOracleSpecsRequest
+	138, // 487: datanode.api.v2.TradingDataService.ListOracleData:input_type -> datanode.api.v2.ListOracleDataRequest
+	144, // 488: datanode.api.v2.TradingDataService.GetMarket:input_type -> datanode.api.v2.GetMarketRequest
+	146, // 489: datanode.api.v2.TradingDataService.ListMarkets:input_type -> datanode.api.v2.ListMarketsRequest
+	150, // 490: datanode.api.v2.TradingDataService.ListSuccessorMarkets:input_type -> datanode.api.v2.ListSuccessorMarketsRequest
+	155, // 491: datanode.api.v2.TradingDataService.GetParty:input_type -> datanode.api.v2.GetPartyRequest
+	157, // 492: datanode.api.v2.TradingDataService.ListParties:input_type -> datanode.api.v2.ListPartiesRequest
+	161, // 493: datanode.api.v2.TradingDataService.ListPartiesProfiles:input_type -> datanode.api.v2.ListPartiesProfilesRequest
+	166, // 494: datanode.api.v2.TradingDataService.ListMarginLevels:input_type -> datanode.api.v2.ListMarginLevelsRequest
+	168, // 495: datanode.api.v2.TradingDataService.ObserveMarginLevels:input_type -> datanode.api.v2.ObserveMarginLevelsRequest
+	173, // 496: datanode.api.v2.TradingDataService.ListRewards:input_type -> datanode.api.v2.ListRewardsRequest
+	177, // 497: datanode.api.v2.TradingDataService.ListRewardSummaries:input_type -> datanode.api.v2.ListRewardSummariesRequest
+	180, // 498: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:input_type -> datanode.api.v2.ListEpochRewardSummariesRequest
+	186, // 499: datanode.api.v2.TradingDataService.GetDeposit:input_type -> datanode.api.v2.GetDepositRequest
+	188, // 500: datanode.api.v2.TradingDataService.ListDeposits:input_type -> datanode.api.v2.ListDepositsRequest
+	192, // 501: datanode.api.v2.TradingDataService.GetWithdrawal:input_type -> datanode.api.v2.GetWithdrawalRequest
+	194, // 502: datanode.api.v2.TradingDataService.ListWithdrawals:input_type -> datanode.api.v2.ListWithdrawalsRequest
+	198, // 503: datanode.api.v2.TradingDataService.GetAsset:input_type -> datanode.api.v2.GetAssetRequest
+	200, // 504: datanode.api.v2.TradingDataService.ListAssets:input_type -> datanode.api.v2.ListAssetsRequest
+	204, // 505: datanode.api.v2.TradingDataService.ListLiquidityProvisions:input_type -> datanode.api.v2.ListLiquidityProvisionsRequest
+	205, // 506: datanode.api.v2.TradingDataService.ListAllLiquidityProvisions:input_type -> datanode.api.v2.ListAllLiquidityProvisionsRequest
+	213, // 507: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:input_type -> datanode.api.v2.ObserveLiquidityProvisionsRequest
+	215, // 508: datanode.api.v2.TradingDataService.ListLiquidityProviders:input_type -> datanode.api.v2.ListLiquidityProvidersRequest
+	220, // 509: datanode.api.v2.TradingDataService.ListPaidLiquidityFees:input_type -> datanode.api.v2.ListPaidLiquidityFeesRequest
+	224, // 510: datanode.api.v2.TradingDataService.GetGovernanceData:input_type -> datanode.api.v2.GetGovernanceDataRequest
+	226, // 511: datanode.api.v2.TradingDataService.ListGovernanceData:input_type -> datanode.api.v2.ListGovernanceDataRequest
+	230, // 512: datanode.api.v2.TradingDataService.ObserveGovernance:input_type -> datanode.api.v2.ObserveGovernanceRequest
+	232, // 513: datanode.api.v2.TradingDataService.ListDelegations:input_type -> datanode.api.v2.ListDelegationsRequest
+	239, // 514: datanode.api.v2.TradingDataService.GetNetworkData:input_type -> datanode.api.v2.GetNetworkDataRequest
+	241, // 515: datanode.api.v2.TradingDataService.GetNode:input_type -> datanode.api.v2.GetNodeRequest
+	243, // 516: datanode.api.v2.TradingDataService.ListNodes:input_type -> datanode.api.v2.ListNodesRequest
+	247, // 517: datanode.api.v2.TradingDataService.ListNodeSignatures:input_type -> datanode.api.v2.ListNodeSignaturesRequest
+	251, // 518: datanode.api.v2.TradingDataService.GetEpoch:input_type -> datanode.api.v2.GetEpochRequest
+	253, // 519: datanode.api.v2.TradingDataService.EstimateFee:input_type -> datanode.api.v2.EstimateFeeRequest
+	255, // 520: datanode.api.v2.TradingDataService.EstimateMargin:input_type -> datanode.api.v2.EstimateMarginRequest
+	331, // 521: datanode.api.v2.TradingDataService.EstimatePosition:input_type -> datanode.api.v2.EstimatePositionRequest
+	257, // 522: datanode.api.v2.TradingDataService.ListNetworkParameters:input_type -> datanode.api.v2.ListNetworkParametersRequest
+	259, // 523: datanode.api.v2.TradingDataService.GetNetworkParameter:input_type -> datanode.api.v2.GetNetworkParameterRequest
+	264, // 524: datanode.api.v2.TradingDataService.ListCheckpoints:input_type -> datanode.api.v2.ListCheckpointsRequest
+	268, // 525: datanode.api.v2.TradingDataService.GetStake:input_type -> datanode.api.v2.GetStakeRequest
+	272, // 526: datanode.api.v2.TradingDataService.GetRiskFactors:input_type -> datanode.api.v2.GetRiskFactorsRequest
+	274, // 527: datanode.api.v2.TradingDataService.ObserveEventBus:input_type -> datanode.api.v2.ObserveEventBusRequest
+	276, // 528: datanode.api.v2.TradingDataService.ObserveLedgerMovements:input_type -> datanode.api.v2.ObserveLedgerMovementsRequest
+	278, // 529: datanode.api.v2.TradingDataService.ListKeyRotations:input_type -> datanode.api.v2.ListKeyRotationsRequest
+	282, // 530: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:input_type -> datanode.api.v2.ListEthereumKeyRotationsRequest
+	286, // 531: datanode.api.v2.TradingDataService.GetVegaTime:input_type -> datanode.api.v2.GetVegaTimeRequest
+	289, // 532: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:input_type -> datanode.api.v2.GetProtocolUpgradeStatusRequest
+	291, // 533: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:input_type -> datanode.api.v2.ListProtocolUpgradeProposalsRequest
+	295, // 534: datanode.api.v2.TradingDataService.ListCoreSnapshots:input_type -> datanode.api.v2.ListCoreSnapshotsRequest
+	300, // 535: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:input_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
+	302, // 536: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:input_type -> datanode.api.v2.ListAllNetworkHistorySegmentsRequest
+	304, // 537: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:input_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
+	306, // 538: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:input_type -> datanode.api.v2.GetNetworkHistoryStatusRequest
+	308, // 539: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:input_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
+	311, // 540: datanode.api.v2.TradingDataService.ListEntities:input_type -> datanode.api.v2.ListEntitiesRequest
+	320, // 541: datanode.api.v2.TradingDataService.ListFundingPeriods:input_type -> datanode.api.v2.ListFundingPeriodsRequest
+	324, // 542: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints:input_type -> datanode.api.v2.ListFundingPeriodDataPointsRequest
+	316, // 543: datanode.api.v2.TradingDataService.ListFundingPayments:input_type -> datanode.api.v2.ListFundingPaymentsRequest
+	313, // 544: datanode.api.v2.TradingDataService.GetPartyActivityStreak:input_type -> datanode.api.v2.GetPartyActivityStreakRequest
+	337, // 545: datanode.api.v2.TradingDataService.GetCurrentReferralProgram:input_type -> datanode.api.v2.GetCurrentReferralProgramRequest
+	343, // 546: datanode.api.v2.TradingDataService.ListReferralSets:input_type -> datanode.api.v2.ListReferralSetsRequest
+	348, // 547: datanode.api.v2.TradingDataService.ListReferralSetReferees:input_type -> datanode.api.v2.ListReferralSetRefereesRequest
+	350, // 548: datanode.api.v2.TradingDataService.GetReferralSetStats:input_type -> datanode.api.v2.GetReferralSetStatsRequest
+	358, // 549: datanode.api.v2.TradingDataService.ListTeams:input_type -> datanode.api.v2.ListTeamsRequest
+	360, // 550: datanode.api.v2.TradingDataService.ListTeamsStatistics:input_type -> datanode.api.v2.ListTeamsStatisticsRequest
+	366, // 551: datanode.api.v2.TradingDataService.ListTeamMembersStatistics:input_type -> datanode.api.v2.ListTeamMembersStatisticsRequest
+	371, // 552: datanode.api.v2.TradingDataService.ListTeamReferees:input_type -> datanode.api.v2.ListTeamRefereesRequest
+	379, // 553: datanode.api.v2.TradingDataService.ListTeamRefereeHistory:input_type -> datanode.api.v2.ListTeamRefereeHistoryRequest
+	381, // 554: datanode.api.v2.TradingDataService.GetFeesStats:input_type -> datanode.api.v2.GetFeesStatsRequest
+	383, // 555: datanode.api.v2.TradingDataService.GetFeesStatsForParty:input_type -> datanode.api.v2.GetFeesStatsForPartyRequest
+	385, // 556: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram:input_type -> datanode.api.v2.GetCurrentVolumeDiscountProgramRequest
+	387, // 557: datanode.api.v2.TradingDataService.GetVolumeDiscountStats:input_type -> datanode.api.v2.GetVolumeDiscountStatsRequest
+	10,  // 558: datanode.api.v2.TradingDataService.GetVestingBalancesSummary:input_type -> datanode.api.v2.GetVestingBalancesSummaryRequest
+	8,   // 559: datanode.api.v2.TradingDataService.GetPartyVestingStats:input_type -> datanode.api.v2.GetPartyVestingStatsRequest
+	394, // 560: datanode.api.v2.TradingDataService.ObserveTransactionResults:input_type -> datanode.api.v2.ObserveTransactionResultsRequest
+	396, // 561: datanode.api.v2.TradingDataService.EstimateTransferFee:input_type -> datanode.api.v2.EstimateTransferFeeRequest
+	398, // 562: datanode.api.v2.TradingDataService.GetTotalTransferFeeDiscount:input_type -> datanode.api.v2.GetTotalTransferFeeDiscountRequest
+	400, // 563: datanode.api.v2.TradingDataService.ListGames:input_type -> datanode.api.v2.ListGamesRequest
+	410, // 564: datanode.api.v2.TradingDataService.ListPartyMarginModes:input_type -> datanode.api.v2.ListPartyMarginModesRequest
+	310, // 565: datanode.api.v2.TradingDataService.ExportNetworkHistory:input_type -> datanode.api.v2.ExportNetworkHistoryRequest
+	328, // 566: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
+	14,  // 567: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
+	18,  // 568: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
+	22,  // 569: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
+	24,  // 570: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
+	27,  // 571: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
+	29,  // 572: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
+	31,  // 573: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
+	35,  // 574: datanode.api.v2.TradingDataService.GetStopOrder:output_type -> datanode.api.v2.GetStopOrderResponse
+	40,  // 575: datanode.api.v2.TradingDataService.ListStopOrders:output_type -> datanode.api.v2.ListStopOrdersResponse
+	42,  // 576: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
+	45,  // 577: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
+	49,  // 578: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
+	56,  // 579: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
+	490, // 580: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> google.api.HttpBody
+	60,  // 581: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
+	78,  // 582: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
+	76,  // 583: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
+	74,  // 584: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
+	68,  // 585: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
+	70,  // 586: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
+	72,  // 587: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
+	80,  // 588: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
+	84,  // 589: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
+	89,  // 590: datanode.api.v2.TradingDataService.GetTransfer:output_type -> datanode.api.v2.GetTransferResponse
+	91,  // 591: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
+	99,  // 592: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
+	97,  // 593: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
+	94,  // 594: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
+	103, // 595: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
+	107, // 596: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
+	109, // 597: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
+	115, // 598: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
+	121, // 599: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
+	123, // 600: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
+	125, // 601: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
+	127, // 602: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
+	129, // 603: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
+	133, // 604: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
+	135, // 605: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
+	137, // 606: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
+	139, // 607: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
+	145, // 608: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
+	147, // 609: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
+	154, // 610: datanode.api.v2.TradingDataService.ListSuccessorMarkets:output_type -> datanode.api.v2.ListSuccessorMarketsResponse
+	156, // 611: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
+	158, // 612: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
+	162, // 613: datanode.api.v2.TradingDataService.ListPartiesProfiles:output_type -> datanode.api.v2.ListPartiesProfilesResponse
+	167, // 614: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
+	169, // 615: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
+	174, // 616: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
+	178, // 617: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
+	181, // 618: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
+	187, // 619: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
+	189, // 620: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
+	193, // 621: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
+	195, // 622: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
+	199, // 623: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
+	201, // 624: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
+	206, // 625: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
+	207, // 626: datanode.api.v2.TradingDataService.ListAllLiquidityProvisions:output_type -> datanode.api.v2.ListAllLiquidityProvisionsResponse
+	214, // 627: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
+	219, // 628: datanode.api.v2.TradingDataService.ListLiquidityProviders:output_type -> datanode.api.v2.ListLiquidityProvidersResponse
+	221, // 629: datanode.api.v2.TradingDataService.ListPaidLiquidityFees:output_type -> datanode.api.v2.ListPaidLiquidityFeesResponse
+	225, // 630: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
+	227, // 631: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
+	231, // 632: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
+	233, // 633: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
+	240, // 634: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
+	242, // 635: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
+	244, // 636: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
+	248, // 637: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
+	252, // 638: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
+	254, // 639: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
+	256, // 640: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
+	332, // 641: datanode.api.v2.TradingDataService.EstimatePosition:output_type -> datanode.api.v2.EstimatePositionResponse
+	258, // 642: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
+	260, // 643: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
+	265, // 644: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
+	269, // 645: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
+	273, // 646: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
+	275, // 647: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
+	277, // 648: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
+	279, // 649: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
+	283, // 650: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
+	287, // 651: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
+	290, // 652: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
+	292, // 653: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
+	296, // 654: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
+	301, // 655: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
+	303, // 656: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
+	305, // 657: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
+	307, // 658: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:output_type -> datanode.api.v2.GetNetworkHistoryStatusResponse
+	309, // 659: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:output_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
+	312, // 660: datanode.api.v2.TradingDataService.ListEntities:output_type -> datanode.api.v2.ListEntitiesResponse
+	323, // 661: datanode.api.v2.TradingDataService.ListFundingPeriods:output_type -> datanode.api.v2.ListFundingPeriodsResponse
+	327, // 662: datanode.api.v2.TradingDataService.ListFundingPeriodDataPoints:output_type -> datanode.api.v2.ListFundingPeriodDataPointsResponse
+	319, // 663: datanode.api.v2.TradingDataService.ListFundingPayments:output_type -> datanode.api.v2.ListFundingPaymentsResponse
+	314, // 664: datanode.api.v2.TradingDataService.GetPartyActivityStreak:output_type -> datanode.api.v2.GetPartyActivityStreakResponse
+	338, // 665: datanode.api.v2.TradingDataService.GetCurrentReferralProgram:output_type -> datanode.api.v2.GetCurrentReferralProgramResponse
+	344, // 666: datanode.api.v2.TradingDataService.ListReferralSets:output_type -> datanode.api.v2.ListReferralSetsResponse
+	349, // 667: datanode.api.v2.TradingDataService.ListReferralSetReferees:output_type -> datanode.api.v2.ListReferralSetRefereesResponse
+	351, // 668: datanode.api.v2.TradingDataService.GetReferralSetStats:output_type -> datanode.api.v2.GetReferralSetStatsResponse
+	359, // 669: datanode.api.v2.TradingDataService.ListTeams:output_type -> datanode.api.v2.ListTeamsResponse
+	361, // 670: datanode.api.v2.TradingDataService.ListTeamsStatistics:output_type -> datanode.api.v2.ListTeamsStatisticsResponse
+	367, // 671: datanode.api.v2.TradingDataService.ListTeamMembersStatistics:output_type -> datanode.api.v2.ListTeamMembersStatisticsResponse
+	375, // 672: datanode.api.v2.TradingDataService.ListTeamReferees:output_type -> datanode.api.v2.ListTeamRefereesResponse
+	380, // 673: datanode.api.v2.TradingDataService.ListTeamRefereeHistory:output_type -> datanode.api.v2.ListTeamRefereeHistoryResponse
+	382, // 674: datanode.api.v2.TradingDataService.GetFeesStats:output_type -> datanode.api.v2.GetFeesStatsResponse
+	384, // 675: datanode.api.v2.TradingDataService.GetFeesStatsForParty:output_type -> datanode.api.v2.GetFeesStatsForPartyResponse
+	386, // 676: datanode.api.v2.TradingDataService.GetCurrentVolumeDiscountProgram:output_type -> datanode.api.v2.GetCurrentVolumeDiscountProgramResponse
+	388, // 677: datanode.api.v2.TradingDataService.GetVolumeDiscountStats:output_type -> datanode.api.v2.GetVolumeDiscountStatsResponse
+	11,  // 678: datanode.api.v2.TradingDataService.GetVestingBalancesSummary:output_type -> datanode.api.v2.GetVestingBalancesSummaryResponse
+	9,   // 679: datanode.api.v2.TradingDataService.GetPartyVestingStats:output_type -> datanode.api.v2.GetPartyVestingStatsResponse
+	395, // 680: datanode.api.v2.TradingDataService.ObserveTransactionResults:output_type -> datanode.api.v2.ObserveTransactionResultsResponse
+	397, // 681: datanode.api.v2.TradingDataService.EstimateTransferFee:output_type -> datanode.api.v2.EstimateTransferFeeResponse
+	399, // 682: datanode.api.v2.TradingDataService.GetTotalTransferFeeDiscount:output_type -> datanode.api.v2.GetTotalTransferFeeDiscountResponse
+	401, // 683: datanode.api.v2.TradingDataService.ListGames:output_type -> datanode.api.v2.ListGamesResponse
+	411, // 684: datanode.api.v2.TradingDataService.ListPartyMarginModes:output_type -> datanode.api.v2.ListPartyMarginModesResponse
+	490, // 685: datanode.api.v2.TradingDataService.ExportNetworkHistory:output_type -> google.api.HttpBody
+	329, // 686: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
+	567, // [567:687] is the sub-list for method output_type
+	447, // [447:567] is the sub-list for method input_type
+	447, // [447:447] is the sub-list for extension type_name
+	447, // [447:447] is the sub-list for extension extendee
+	0,   // [0:447] is the sub-list for field type_name
 }
 
 func init() { file_data_node_api_v2_trading_data_proto_init() }
@@ -34924,7 +35087,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[327].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarginEstimate); i {
+			switch v := v.(*CollateralIncreaseEstimate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34936,7 +35099,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[328].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidationEstimate); i {
+			switch v := v.(*MarginEstimate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34948,7 +35111,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[329].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidationPrice); i {
+			switch v := v.(*LiquidationEstimate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34960,7 +35123,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[330].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCurrentReferralProgramRequest); i {
+			switch v := v.(*LiquidationPrice); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34972,7 +35135,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[331].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCurrentReferralProgramResponse); i {
+			switch v := v.(*GetCurrentReferralProgramRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34984,7 +35147,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[332].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralProgram); i {
+			switch v := v.(*GetCurrentReferralProgramResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -34996,7 +35159,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[333].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSet); i {
+			switch v := v.(*ReferralProgram); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35008,7 +35171,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[334].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetEdge); i {
+			switch v := v.(*ReferralSet); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35020,7 +35183,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[335].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetConnection); i {
+			switch v := v.(*ReferralSetEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35032,7 +35195,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[336].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListReferralSetsRequest); i {
+			switch v := v.(*ReferralSetConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35044,7 +35207,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[337].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListReferralSetsResponse); i {
+			switch v := v.(*ListReferralSetsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35056,7 +35219,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[338].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetReferee); i {
+			switch v := v.(*ListReferralSetsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35068,7 +35231,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[339].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetRefereeEdge); i {
+			switch v := v.(*ReferralSetReferee); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35080,7 +35243,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[340].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetRefereeConnection); i {
+			switch v := v.(*ReferralSetRefereeEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35092,7 +35255,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[341].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListReferralSetRefereesRequest); i {
+			switch v := v.(*ReferralSetRefereeConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35104,7 +35267,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[342].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListReferralSetRefereesResponse); i {
+			switch v := v.(*ListReferralSetRefereesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35116,7 +35279,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[343].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetReferralSetStatsRequest); i {
+			switch v := v.(*ListReferralSetRefereesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35128,7 +35291,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[344].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetReferralSetStatsResponse); i {
+			switch v := v.(*GetReferralSetStatsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35140,7 +35303,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[345].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetStatsConnection); i {
+			switch v := v.(*GetReferralSetStatsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35152,7 +35315,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[346].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetStatsEdge); i {
+			switch v := v.(*ReferralSetStatsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35164,7 +35327,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[347].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReferralSetStats); i {
+			switch v := v.(*ReferralSetStatsEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35176,7 +35339,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[348].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Team); i {
+			switch v := v.(*ReferralSetStats); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35188,7 +35351,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[349].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamEdge); i {
+			switch v := v.(*Team); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35200,7 +35363,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[350].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamConnection); i {
+			switch v := v.(*TeamEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35212,7 +35375,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[351].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamsRequest); i {
+			switch v := v.(*TeamConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35224,7 +35387,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[352].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamsResponse); i {
+			switch v := v.(*ListTeamsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35236,7 +35399,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[353].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamsStatisticsRequest); i {
+			switch v := v.(*ListTeamsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35248,7 +35411,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[354].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamsStatisticsResponse); i {
+			switch v := v.(*ListTeamsStatisticsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35260,7 +35423,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[355].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamsStatisticsConnection); i {
+			switch v := v.(*ListTeamsStatisticsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35272,7 +35435,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[356].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamStatisticsEdge); i {
+			switch v := v.(*TeamsStatisticsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35284,7 +35447,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[357].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamStatistics); i {
+			switch v := v.(*TeamStatisticsEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35296,7 +35459,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[358].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QuantumRewardsPerEpoch); i {
+			switch v := v.(*TeamStatistics); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35308,7 +35471,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[359].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamMembersStatisticsRequest); i {
+			switch v := v.(*QuantumRewardsPerEpoch); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35320,7 +35483,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[360].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamMembersStatisticsResponse); i {
+			switch v := v.(*ListTeamMembersStatisticsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35332,7 +35495,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[361].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamMembersStatisticsConnection); i {
+			switch v := v.(*ListTeamMembersStatisticsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35344,7 +35507,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[362].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamMemberStatisticsEdge); i {
+			switch v := v.(*TeamMembersStatisticsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35356,7 +35519,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[363].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamMemberStatistics); i {
+			switch v := v.(*TeamMemberStatisticsEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35368,7 +35531,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[364].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamRefereesRequest); i {
+			switch v := v.(*TeamMemberStatistics); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35380,7 +35543,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[365].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamReferee); i {
+			switch v := v.(*ListTeamRefereesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35392,7 +35555,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[366].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamRefereeEdge); i {
+			switch v := v.(*TeamReferee); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35404,7 +35567,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[367].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamRefereeConnection); i {
+			switch v := v.(*TeamRefereeEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35416,7 +35579,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[368].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamRefereesResponse); i {
+			switch v := v.(*TeamRefereeConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35428,7 +35591,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[369].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamRefereeHistory); i {
+			switch v := v.(*ListTeamRefereesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35440,7 +35603,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[370].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamRefereeHistoryEdge); i {
+			switch v := v.(*TeamRefereeHistory); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35452,7 +35615,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[371].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamRefereeHistoryConnection); i {
+			switch v := v.(*TeamRefereeHistoryEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35464,7 +35627,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[372].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamRefereeHistoryRequest); i {
+			switch v := v.(*TeamRefereeHistoryConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35476,7 +35639,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[373].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListTeamRefereeHistoryResponse); i {
+			switch v := v.(*ListTeamRefereeHistoryRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35488,7 +35651,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[374].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFeesStatsRequest); i {
+			switch v := v.(*ListTeamRefereeHistoryResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35500,7 +35663,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[375].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFeesStatsResponse); i {
+			switch v := v.(*GetFeesStatsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35512,7 +35675,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[376].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFeesStatsForPartyRequest); i {
+			switch v := v.(*GetFeesStatsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35524,7 +35687,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[377].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetFeesStatsForPartyResponse); i {
+			switch v := v.(*GetFeesStatsForPartyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35536,7 +35699,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[378].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCurrentVolumeDiscountProgramRequest); i {
+			switch v := v.(*GetFeesStatsForPartyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35548,7 +35711,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[379].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetCurrentVolumeDiscountProgramResponse); i {
+			switch v := v.(*GetCurrentVolumeDiscountProgramRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35560,7 +35723,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[380].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVolumeDiscountStatsRequest); i {
+			switch v := v.(*GetCurrentVolumeDiscountProgramResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35572,7 +35735,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[381].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVolumeDiscountStatsResponse); i {
+			switch v := v.(*GetVolumeDiscountStatsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35584,7 +35747,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[382].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeDiscountStatsConnection); i {
+			switch v := v.(*GetVolumeDiscountStatsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35596,7 +35759,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[383].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeDiscountStatsEdge); i {
+			switch v := v.(*VolumeDiscountStatsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35608,7 +35771,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[384].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeDiscountStats); i {
+			switch v := v.(*VolumeDiscountStatsEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35620,7 +35783,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[385].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*VolumeDiscountProgram); i {
+			switch v := v.(*VolumeDiscountStats); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35632,7 +35795,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[386].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FeesStatsForParty); i {
+			switch v := v.(*VolumeDiscountProgram); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35644,7 +35807,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[387].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveTransactionResultsRequest); i {
+			switch v := v.(*FeesStatsForParty); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35656,7 +35819,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[388].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveTransactionResultsResponse); i {
+			switch v := v.(*ObserveTransactionResultsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35668,7 +35831,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[389].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateTransferFeeRequest); i {
+			switch v := v.(*ObserveTransactionResultsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35680,7 +35843,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[390].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateTransferFeeResponse); i {
+			switch v := v.(*EstimateTransferFeeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35692,7 +35855,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[391].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTotalTransferFeeDiscountRequest); i {
+			switch v := v.(*EstimateTransferFeeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35704,7 +35867,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[392].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTotalTransferFeeDiscountResponse); i {
+			switch v := v.(*GetTotalTransferFeeDiscountRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35716,7 +35879,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[393].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGamesRequest); i {
+			switch v := v.(*GetTotalTransferFeeDiscountResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35728,7 +35891,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[394].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGamesResponse); i {
+			switch v := v.(*ListGamesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35740,7 +35903,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[395].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GamesConnection); i {
+			switch v := v.(*ListGamesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35752,7 +35915,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[396].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GameEdge); i {
+			switch v := v.(*GamesConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35764,7 +35927,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[397].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Game); i {
+			switch v := v.(*GameEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35776,7 +35939,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[398].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamGameEntities); i {
+			switch v := v.(*Game); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35788,7 +35951,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[399].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IndividualGameEntities); i {
+			switch v := v.(*TeamGameEntities); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35800,7 +35963,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[400].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamGameEntity); i {
+			switch v := v.(*IndividualGameEntities); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35812,7 +35975,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[401].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*TeamGameParticipation); i {
+			switch v := v.(*TeamGameEntity); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35824,7 +35987,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[402].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IndividualGameEntity); i {
+			switch v := v.(*TeamGameParticipation); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35836,7 +35999,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[403].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPartyMarginModesRequest); i {
+			switch v := v.(*IndividualGameEntity); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35848,7 +36011,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[404].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPartyMarginModesResponse); i {
+			switch v := v.(*ListPartyMarginModesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35860,7 +36023,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[405].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyMarginModesConnection); i {
+			switch v := v.(*ListPartyMarginModesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35872,7 +36035,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[406].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyMarginModeEdge); i {
+			switch v := v.(*PartyMarginModesConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -35884,6 +36047,18 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[407].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PartyMarginModeEdge); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[408].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PartyMarginMode); i {
 			case 0:
 				return &v.state
@@ -35975,35 +36150,35 @@ func file_data_node_api_v2_trading_data_proto_init() {
 	file_data_node_api_v2_trading_data_proto_msgTypes[314].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[318].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[325].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[332].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[336].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[341].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[343].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[348].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[351].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[353].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[359].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[364].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[372].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[374].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[376].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[380].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[385].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[387].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[393].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[397].OneofWrappers = []interface{}{
+	file_data_node_api_v2_trading_data_proto_msgTypes[333].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[337].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[342].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[344].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[349].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[352].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[354].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[360].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[365].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[373].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[375].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[377].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[381].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[386].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[388].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[394].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[398].OneofWrappers = []interface{}{
 		(*Game_Team)(nil),
 		(*Game_Individual)(nil),
 	}
-	file_data_node_api_v2_trading_data_proto_msgTypes[403].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[407].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[404].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[408].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_data_node_api_v2_trading_data_proto_rawDesc,
 			NumEnums:      6,
-			NumMessages:   408,
+			NumMessages:   409,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

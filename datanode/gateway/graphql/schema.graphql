@@ -135,9 +135,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-  @deprecated(
-    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-  )
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -642,7 +642,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-  @deprecated(reason: "Use estimateFees and estimatePosition instead")
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -670,10 +670,22 @@ type Query {
     marketId: ID!
     "Open volume - negative for short position (int64)"
     openVolume: String!
+    "Average entry price corresponding to the open volume. The price is an unsigned integer. For example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places"
+    averageEntryPrice: String!
     "Open and/or hypothetical orders"
     orders: [OrderInfo!]
-    "Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate"
-    collateralAvailable: String
+    "Margin account balance. Needs to be provided scaled to asset decimal places"
+    marginAccountBalance: String!
+    "General account balance. Needs to be provided scaled to asset decimal places"
+    generalAccountBalance: String!
+    "Order margin account balance. Needs to be provided scaled to asset decimal places"
+    orderMarginAccountBalance: String!
+    "Margin mode for the party, cross margin or isolated margin"
+    marginMode: MarginMode!
+    "Margin factor to be used along with isolated margin mode"
+    marginFactor: String
+    "Optional argument specifying if the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode."
+    includeCollateralIncreaseInAvailableCollateral: Boolean
     "Optional argument specifying if liquidation price estimates should be scaled to market decimal places, returned in asset decimal places by default"
     scaleLiquidationPriceToMarketDecimals: Boolean
   ): PositionEstimate
@@ -1265,7 +1277,7 @@ type Transfer {
 }
 
 union TransferKind =
-  OneOffTransfer
+    OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -2040,7 +2052,6 @@ type DataSourceSpecPerpetualBinding {
   settlementScheduleProperty: String!
 }
 
-
 """
 Describes which property of the data source data should be
 used as composite price source.
@@ -2048,7 +2059,6 @@ used as composite price source.
 type SpecBindingForCompositePrice {
   priceSourceProperty: String!
 }
-
 
 """
 DataSourceSpecToFutureBinding tells on which property data source data should be
@@ -2478,9 +2488,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -2522,7 +2532,7 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2535,7 +2545,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2716,9 +2726,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2734,7 +2744,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-  @deprecated(reason: "Use root positions query instead of sub-query")
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2799,7 +2809,7 @@ type Party {
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
-  @deprecated(reason: "Use liquidityProvisions instead")
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -3138,9 +3148,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -3340,6 +3350,8 @@ type OrderUpdate {
 type PositionEstimate {
   "Margin level range estimate for the specified position"
   margin: MarginEstimate!
+  "Estimated margin account balance increase"
+  collateralIncreaseEstimate: CollateralIncreaseEstimate!
   "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
   liquidation: LiquidationEstimate
 }
@@ -3350,6 +3362,14 @@ type MarginEstimate {
   worstCase: MarginLevels!
   "Margin level estimate assuming no slippage"
   bestCase: MarginLevels!
+}
+
+"Collateral increase estimate for the additional funds needed to support the specified position"
+type CollateralIncreaseEstimate {
+  "Estimate assuming slippage cap is applied"
+  worstCase: String!
+  "Estimate assuming no slippage"
+  bestCase: String!
 }
 
 "Liquidation estimate for both worst and best case possible"
@@ -4547,7 +4567,7 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
@@ -4610,7 +4630,7 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
-  @deprecated(reason: "This field will be removed in a future release")
+    @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
   "Specifies how the liquidity fee for the market will be calculated"
@@ -4662,7 +4682,7 @@ type UpdatePerpetualProduct {
 }
 
 union UpdateMarketRiskParameters =
-  UpdateMarketSimpleRiskModel
+    UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4743,7 +4763,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-  OneOffGovernanceTransfer
+    OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4904,7 +4924,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -6373,7 +6393,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-  DataSourceSpecConfigurationTime
+    DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -6395,7 +6415,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-  DataSourceDefinitionInternal
+    DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """

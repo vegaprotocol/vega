@@ -80,6 +80,43 @@ type NetworkHistoryService interface {
 	GetBootstrapPeers() []string
 }
 
+// MarketsService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/markets_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api MarketsService
+type MarketsService interface {
+	GetByID(ctx context.Context, marketID string) (entities.Market, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error)
+	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
+	ListSuccessorMarkets(ctx context.Context, marketID string, childrenOnly bool, pagination entities.CursorPagination) ([]entities.SuccessorMarket, entities.PageInfo, error)
+}
+
+// MarketDataService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api MarketDataService
+type MarketDataService interface {
+	GetMarketDataByID(ctx context.Context, marketID string) (entities.MarketData, error)
+	GetMarketsData(ctx context.Context) ([]entities.MarketData, error)
+	GetHistoricMarketData(ctx context.Context, marketID string, start, end *time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error)
+	ObserveMarketData(ctx context.Context, retries int, marketID []string) (<-chan []*entities.MarketData, uint64)
+}
+
+// RiskFactorService ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_factor_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api RiskFactorService
+type RiskFactorService interface {
+	GetMarketRiskFactors(ctx context.Context, marketID string) (entities.RiskFactor, error)
+}
+
+// Asset service ...
+//
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/asset_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api AssetService
+type AssetService interface {
+	GetByID(ctx context.Context, id string) (entities.Asset, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Asset, error)
+	GetAll(ctx context.Context) ([]entities.Asset, error)
+	GetAllWithCursorPagination(ctx context.Context, pagination entities.CursorPagination) ([]entities.Asset, entities.PageInfo, error)
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPCServer struct {
 	Config
@@ -94,7 +131,7 @@ type GRPCServer struct {
 	networkLimitsService          *service.NetworkLimits
 	marketDataService             *service.MarketData
 	tradeService                  *service.Trade
-	assetService                  *service.Asset
+	AssetService                  AssetService
 	accountService                *service.Account
 	rewardService                 *service.Reward
 	marketsService                *service.Markets
@@ -229,7 +266,7 @@ func NewGRPCServer(
 		orderService:                  orderService,
 		networkLimitsService:          networkLimitsService,
 		tradeService:                  tradeService,
-		assetService:                  assetService,
+		AssetService:                  assetService,
 		accountService:                accountService,
 		rewardService:                 rewardService,
 		marketsService:                marketsService,
@@ -460,17 +497,18 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	vegaprotoapi.RegisterCoreServiceServer(g.srv, coreProxySvc)
 
 	tradingDataSvcV2 := &TradingDataServiceV2{
-		config:                        g.Config,
-		log:                           g.log,
-		orderService:                  g.orderService,
-		networkLimitsService:          g.networkLimitsService,
-		marketDataService:             g.marketDataService,
-		tradeService:                  g.tradeService,
-		multiSigService:               g.multiSigService,
-		notaryService:                 g.notaryService,
-		assetService:                  g.assetService,
-		candleService:                 g.candleService,
-		marketsService:                g.marketsService,
+		config:               g.Config,
+		log:                  g.log,
+		orderService:         g.orderService,
+		networkLimitsService: g.networkLimitsService,
+		MarketDataService:    g.marketDataService,
+		tradeService:         g.tradeService,
+		multiSigService:      g.multiSigService,
+		notaryService:        g.notaryService,
+		AssetService:         g.AssetService,
+		candleService:        g.candleService,
+		MarketsService:       g.marketsService,
+
 		partyService:                  g.partyService,
 		riskService:                   g.riskService,
 		positionService:               g.positionService,
@@ -484,11 +522,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		governanceService:             g.governanceService,
 		transfersService:              g.transferService,
 		delegationService:             g.delegationService,
-		marketService:                 g.marketsService,
 		marketDepthService:            g.marketDepthService,
 		nodeService:                   g.nodeService,
 		epochService:                  g.epochService,
-		riskFactorService:             g.riskFactorService,
+		RiskFactorService:             g.riskFactorService,
 		networkParameterService:       g.networkParameterService,
 		checkpointService:             g.checkpointService,
 		stakeLinkingService:           g.stakeLinkingService,
