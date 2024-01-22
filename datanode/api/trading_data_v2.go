@@ -983,9 +983,13 @@ func (t *TradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, formatE(ErrInvalidProposalID)
 	}
 
-	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
+	proposal, err := t.governanceService.GetProposalByIDWithoutBatch(ctx, req.ProposalId)
 	if err != nil {
 		return nil, formatE(ErrGovernanceServiceGet, err)
+	}
+
+	if proposal.IsBatch() {
+		return nil, formatE(errors.New("can not get bundle for batch proposal"))
 	}
 
 	if proposal.Terms.GetUpdateAsset() == nil {
