@@ -2393,6 +2393,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.
 		accTy = *accType
 		if accTy != vegapb.AccountType_ACCOUNT_TYPE_GENERAL &&
 			accTy != vegapb.AccountType_ACCOUNT_TYPE_MARGIN &&
+			accTy != vegapb.AccountType_ACCOUNT_TYPE_ORDER_MARGIN &&
 			accTy != vegapb.AccountType_ACCOUNT_TYPE_BOND &&
 			accTy != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS &&
 			accTy != vega.AccountType_ACCOUNT_TYPE_VESTING_REWARDS {
