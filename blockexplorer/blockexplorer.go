@@ -98,7 +98,7 @@ func (a *BlockExplorer) Run(ctx context.Context) error {
 		return a.portal.Serve()
 	})
 
-	g.Go(func() error { return a.store.Migrate() })
+	g.Go(func() error { return a.store.Migrate(ctx) })
 
 	// Now we can do all the http 'handlers' that talk to the gateway
 	if err := a.grpcUI.Start(ctx); err != nil {

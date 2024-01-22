@@ -66,7 +66,7 @@ func TestMigratorMigrate(t *testing.T) {
 
 	migrator := store.NewMigrator(pool, true)
 
-	err = migrator.Migrate()
+	err = migrator.Migrate(ctx)
 
 	require.NoError(t, err)
 

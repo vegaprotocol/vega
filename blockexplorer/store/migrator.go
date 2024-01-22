@@ -66,7 +66,7 @@ func (m *Migrator) cleanupOldData() error {
 }
 
 // Migrate will run the data migration.
-func (m *Migrator) Migrate() error {
+func (m *Migrator) Migrate(ctx context.Context) error {
 	if !m.checkCanMigrate() {
 		return nil
 	}
@@ -87,7 +87,7 @@ func (m *Migrator) Migrate() error {
 		// we're going to make use of temporary tables which are only visible to the session that created them
 		// we therefore have to use a single connection and make sure that the same connection is used for the
 		// migration process.
-		conn, err := m.pool.Acquire(context.Background())
+		conn, err := m.pool.Acquire(ctx)
 		if err != nil {
 			return fmt.Errorf("could not acquire connection: %w", err)
 		}

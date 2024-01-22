@@ -70,8 +70,8 @@ func MustNewStore(config Config, log *logging.Logger) *Store {
 	return store
 }
 
-func (s *Store) Migrate() error {
-	err := s.migrator.Migrate()
+func (s *Store) Migrate(ctx context.Context) error {
+	err := s.migrator.Migrate(ctx)
 	if err != nil {
 		s.log.Errorf("error migrating database: %v", err)
 		return err
