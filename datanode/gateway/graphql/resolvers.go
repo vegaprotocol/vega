@@ -1310,8 +1310,14 @@ func (r *myQueryResolver) EstimatePosition(
 	ctx context.Context,
 	marketId string,
 	openVolume string,
+	averageEntryPrice string,
 	orders []*OrderInfo,
-	collateralAvailable *string,
+	marginAccountBalance string,
+	generalAccountBalance string,
+	orderMarginAccountBalance string,
+	marginMode vega.MarginMode,
+	marginFactor *string,
+	includeCollateralIncreaseInAvailableCollateral *bool,
 	scaleLiquidationPriceToMarketDecimals *bool,
 ) (*PositionEstimate, error) {
 	ov, err := safeStringInt64(openVolume)
@@ -1335,11 +1341,17 @@ func (r *myQueryResolver) EstimatePosition(
 	}
 
 	req := &v2.EstimatePositionRequest{
-		MarketId:                              marketId,
-		OpenVolume:                            ov,
-		Orders:                                ord,
-		CollateralAvailable:                   collateralAvailable,
-		ScaleLiquidationPriceToMarketDecimals: scaleLiquidationPriceToMarketDecimals,
+		MarketId:                  marketId,
+		OpenVolume:                ov,
+		AverageEntryPrice:         averageEntryPrice,
+		Orders:                    ord,
+		MarginAccountBalance:      marginAccountBalance,
+		GeneralAccountBalance:     generalAccountBalance,
+		OrderMarginAccountBalance: orderMarginAccountBalance,
+		MarginMode:                vegapb.MarginMode(vega.MarginMode_value[marginMode.String()]),
+		MarginFactor:              marginFactor,
+		IncludeCollateralIncreaseInAvailableCollateral: includeCollateralIncreaseInAvailableCollateral,
+		ScaleLiquidationPriceToMarketDecimals:          scaleLiquidationPriceToMarketDecimals,
 	}
 
 	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)

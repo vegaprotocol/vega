@@ -34,31 +34,49 @@ func TestCalcMarginForOrdersBySideBuyContinous(t *testing.T) {
 	marginFactor := num.DecimalFromFloat(0.5)
 	positionFactor := num.DecimalFromInt64(10)
 
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+
 	// no position
 	// orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
-	require.Equal(t, num.NewUint(95), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin := calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(95), orderSideMargin)
+
+	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position - similar to no position, nothing is covered
 	// orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	currentPos = 20
-	require.Equal(t, num.NewUint(95), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(95), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// part of the top order is covered, i.e. only 6 count:
 	// orderMargin = 0.5*(6 * 50 + 20 * 40 + 30 * 20)/10 = 85
 	currentPos = -4
-	require.Equal(t, num.NewUint(85), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(85), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// all of the top order is covered, a some of the second one too
 	// orderMargin = 0.5*(0 * 50 + 10 * 40 + 30 * 20)/10 = 50
 	currentPos = -20
-	require.Equal(t, num.NewUint(50), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(50), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// all of the orders are covered by position on the other side
 	currentPos = -60
-	require.Equal(t, num.UintZero(), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.UintZero(), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 }
 
 func TestCalcMarginForOrdersBySideSellContinous(t *testing.T) {
@@ -71,31 +89,48 @@ func TestCalcMarginForOrdersBySideSellContinous(t *testing.T) {
 	marginFactor := num.DecimalFromFloat(0.5)
 	positionFactor := num.DecimalFromInt64(10)
 
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+
 	// no position
 	// orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
-	require.Equal(t, num.NewUint(125), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin := calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(125), orderSideMargin)
+	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position - similar to no position, nothing is covered
 	// orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	currentPos = -20
-	require.Equal(t, num.NewUint(125), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(125), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// part of the top order is covered, i.e. only 6 count:
 	// orderMargin = 0.5*(6 * 20 + 20 * 40 + 30 * 50)/10 = 121
 	currentPos = 4
-	require.Equal(t, num.NewUint(121), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(121), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// all of the top order is covered, a some of the second one too
 	// orderMargin = 0.5*(0 * 20 + 10 * 40 + 30 * 50)/10 = 95
 	currentPos = 20
-	require.Equal(t, num.NewUint(95), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(95), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// all of the orders are covered by position on the other side
 	currentPos = 60
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil)
 	require.Equal(t, num.UintZero(), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, nil))
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 }
 
 func TestCalcMarginForOrdersBySideBuyAuction(t *testing.T) {
@@ -109,31 +144,48 @@ func TestCalcMarginForOrdersBySideBuyAuction(t *testing.T) {
 	positionFactor := num.DecimalFromInt64(10)
 	auctionPrice := num.NewUint(42)
 
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+
 	// no position
 	// orderMargin = 0.5*(10 * 50 + 20 * 42 + 30 * 42)/10 = 130 (using the max between the order and auction price)
-	require.Equal(t, num.NewUint(130), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin := calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(130), orderSideMargin)
+	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position - similar to no position, nothing is covered (using the max between the order and auction price)
 	// orderMargin = 0.5*(10 * 50 + 20 * 42 + 30 * 42)/10 = 130
 	currentPos = 20
-	require.Equal(t, num.NewUint(130), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(130), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// part of the top order is covered, i.e. only 6 count:
 	// orderMargin = 0.5*(6 * 50 + 20 * 42 + 30 * 42)/10 = 120
 	currentPos = -4
-	require.Equal(t, num.NewUint(120), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(120), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// all of the top order is covered, a some of the second one too
 	// orderMargin = 0.5*(0 * 50 + 10 * 42 + 30 * 42)/10 = 84
 	currentPos = -20
-	require.Equal(t, num.NewUint(84), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(84), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// all of the orders are covered by position on the other side
 	currentPos = -60
-	require.Equal(t, num.UintZero(), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.UintZero(), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 }
 
 func TestCalcMarginForOrdersBySideSellAuction(t *testing.T) {
@@ -147,31 +199,48 @@ func TestCalcMarginForOrdersBySideSellAuction(t *testing.T) {
 	positionFactor := num.DecimalFromInt64(10)
 	auctionPrice := num.NewUint(42)
 
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+
 	// no position
 	// orderMargin = 0.5*(10 * 42 + 20 * 42 + 30 * 50)/10 = 138
-	require.Equal(t, num.NewUint(138), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin := calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(138), orderSideMargin)
+	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position - similar to no position, nothing is covered
 	// orderMargin = 0.5*(10 * 42 + 20 * 42 + 30 * 50)/10 = 138
 	currentPos = -20
-	require.Equal(t, num.NewUint(138), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(138), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// part of the top order is covered, i.e. only 6 count:
 	// orderMargin = 0.5*(6 * 42 + 20 * 42 + 30 * 50)/10 = 129
 	currentPos = 4
-	require.Equal(t, num.NewUint(129), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(129), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.RoundDown(0).String(), orderSideMargin.String()) // equal within rounding
 
 	// long position
 	// all of the top order is covered, a some of the second one too
 	// orderMargin = 0.5*(0 * 42 + 10 * 42 + 30 * 50)/10 = 96
 	currentPos = 20
-	require.Equal(t, num.NewUint(96), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.NewUint(96), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// all of the orders are covered by position on the other side
 	currentPos = 60
-	require.Equal(t, num.UintZero(), calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice))
+	orderSideMargin = calcOrderSideMargin(currentPos, orders, positionFactor, marginFactor, auctionPrice)
+	require.Equal(t, num.UintZero(), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalFromUint(auctionPrice))
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 }
 
 func TestCalcOrderMarginContinous(t *testing.T) {
@@ -187,35 +256,52 @@ func TestCalcOrderMarginContinous(t *testing.T) {
 	marginFactor := num.DecimalFromFloat(0.5)
 	positionFactor := num.DecimalFromInt64(10)
 
+	buyOrderInfo, sellOrderInfo := extractOrderInfo(orders)
+
 	// no position
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	// order margin = max(95,125) = 125
-	require.Equal(t, num.NewUint(125), calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin := calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(125), orderSideMargin)
+	staticResult := CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// long position
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin = 0.5*(6 * 20 + 20 * 40 + 30 * 50)/10 = 121
 	currentPos = 4
-	require.Equal(t, num.NewUint(121), calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(121), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// longer position
 	// buy orderMargin = 0.5*(10 * 50 + 20 * 40 + 30 * 20)/10 = 95
 	// sell orderMargin =  0.5*(0 * 20 + 5 * 40 + 30 * 50)/10 = 85
 	currentPos = 25
-	require.Equal(t, num.NewUint(95), calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(95), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// short position
 	// buy orderMargin = 0.5*(6 * 50 + 20 * 40 + 30 * 20)/10 = 85
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	currentPos = -4
-	require.Equal(t, num.NewUint(125), calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(125), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 
 	// shorter position
 	// buy orderMargin = 0.5*(0 * 50 + 10 * 40 + 30 * 20)/10 = 50
 	// sell orderMargin = 0.5*(10 * 20 + 20 * 40 + 30 * 50)/10 = 125
 	currentPos = -20
-	require.Equal(t, num.NewUint(125), calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil))
+	orderSideMargin = calcOrderMargins(currentPos, orders, positionFactor, marginFactor, nil)
+	require.Equal(t, num.NewUint(125), orderSideMargin)
+	staticResult = CalcOrderMarginIsolatedMode(currentPos, buyOrderInfo, sellOrderInfo, positionFactor, marginFactor, num.DecimalZero())
+	require.Equal(t, staticResult.Round(0).String(), orderSideMargin.String())
 }
 
 func TestGetIsolatedMarginTransfersOnPositionChangeIncrease(t *testing.T) {
@@ -337,4 +423,22 @@ func TestGetIsolatedMarginTransfersOnPositionChangeSwitchSides(t *testing.T) {
 	require.Equal(t, types.TransferTypeMarginLow, transfer.Type)
 	require.Equal(t, num.NewUint(1), transfer.Amount.Amount)
 	require.Equal(t, num.NewUint(1), transfer.MinAmount)
+}
+
+func extractOrderInfo(orders []*types.Order) (buyOrders, sellOrders []*OrderInfo) {
+	buyOrders, sellOrders = []*OrderInfo{}, []*OrderInfo{}
+	for _, o := range orders {
+		if o.Status == types.OrderStatusActive {
+			remaining := o.TrueRemaining()
+			price := o.Price.ToDecimal()
+			isMarketOrder := o.Type == types.OrderTypeMarket
+			if o.Side == types.SideBuy {
+				buyOrders = append(buyOrders, &OrderInfo{TrueRemaining: remaining, Price: price, IsMarketOrder: isMarketOrder})
+			}
+			if o.Side == types.SideSell {
+				sellOrders = append(sellOrders, &OrderInfo{TrueRemaining: remaining, Price: price, IsMarketOrder: isMarketOrder})
+			}
+		}
+	}
+	return buyOrders, sellOrders
 }

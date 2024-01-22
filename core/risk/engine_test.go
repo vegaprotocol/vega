@@ -482,24 +482,24 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			positionSize:   9,
 			buyOrders: []*risk.OrderInfo{
 				{
-					Size:          3,
+					TrueRemaining: 3,
 					Price:         num.DecimalFromInt64(markPrice - 3),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice - 12),
 					IsMarketOrder: false,
 				},
 			},
 			sellOrders: []*risk.OrderInfo{
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice + 2),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          2,
+					TrueRemaining: 2,
 					Price:         num.DecimalFromInt64(markPrice + 7),
 					IsMarketOrder: false,
 				},
@@ -515,24 +515,24 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			positionSize:   9,
 			buyOrders: []*risk.OrderInfo{
 				{
-					Size:          3,
+					TrueRemaining: 3,
 					Price:         num.DecimalFromInt64(markPrice - 3),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice - 12),
 					IsMarketOrder: false,
 				},
 			},
 			sellOrders: []*risk.OrderInfo{
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice + 2),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          2,
+					TrueRemaining: 2,
 					Price:         num.DecimalFromInt64(markPrice + 7),
 					IsMarketOrder: false,
 				},
@@ -548,24 +548,24 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			positionSize:   -7,
 			buyOrders: []*risk.OrderInfo{
 				{
-					Size:          3,
+					TrueRemaining: 3,
 					Price:         num.DecimalFromInt64(markPrice - 3),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice - 12),
 					IsMarketOrder: false,
 				},
 			},
 			sellOrders: []*risk.OrderInfo{
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice + 2),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          2,
+					TrueRemaining: 2,
 					Price:         num.DecimalFromInt64(markPrice + 7),
 					IsMarketOrder: false,
 				},
@@ -581,24 +581,24 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			positionSize:   -7,
 			buyOrders: []*risk.OrderInfo{
 				{
-					Size:          3,
+					TrueRemaining: 3,
 					Price:         num.DecimalFromInt64(markPrice - 3),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice - 12),
 					IsMarketOrder: false,
 				},
 			},
 			sellOrders: []*risk.OrderInfo{
 				{
-					Size:          5,
+					TrueRemaining: 5,
 					Price:         num.DecimalFromInt64(markPrice + 2),
 					IsMarketOrder: false,
 				},
 				{
-					Size:          2,
+					TrueRemaining: 2,
 					Price:         num.DecimalFromInt64(markPrice + 7),
 					IsMarketOrder: false,
 				},
@@ -615,14 +615,14 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 		buy := int64(0)
 		buySumProduct := uint64(0)
 		for _, o := range tc.buyOrders {
-			buy += int64(o.Size)
-			buySumProduct += o.Size * o.Price.BigInt().Uint64()
+			buy += int64(o.TrueRemaining)
+			buySumProduct += o.TrueRemaining * o.Price.BigInt().Uint64()
 		}
 		sell := int64(0)
 		sellSumProduct := uint64(0)
 		for _, o := range tc.sellOrders {
-			sell += int64(o.Size)
-			sellSumProduct += o.Size * o.Price.BigInt().Uint64()
+			sell += int64(o.TrueRemaining)
+			sellSumProduct += o.TrueRemaining * o.Price.BigInt().Uint64()
 		}
 
 		evt := testMargin{
@@ -1284,7 +1284,7 @@ func TestMaintenanceMarign(t *testing.T) {
 
 		positionSize := tc.positionSize
 		for _, o := range tc.buyOrders {
-			s := int64(o.Size)
+			s := int64(o.TrueRemaining)
 			if o.IsMarketOrder {
 				positionSize += s
 			} else {
@@ -1294,7 +1294,7 @@ func TestMaintenanceMarign(t *testing.T) {
 		}
 
 		for _, o := range tc.sellOrders {
-			s := int64(o.Size)
+			s := int64(o.TrueRemaining)
 			if o.IsMarketOrder {
 				positionSize -= s
 			} else {
@@ -1813,7 +1813,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 				break
 			}
 			mtmDelta = mtmDelta.Add(num.DecimalFromInt64(newPositionSize).Mul(o.Price.Sub(lastMarkPrice)))
-			newPositionSize += int64(o.Size)
+			newPositionSize += int64(o.TrueRemaining)
 			lastMarkPrice = o.Price
 		}
 		collateralAfterMtm := collateral.Add(mtmDelta)
@@ -1845,7 +1845,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 				break
 			}
 			mtmDelta = mtmDelta.Add(num.DecimalFromInt64(newPositionSize).Div(positionFactor).Mul(o.Price.Sub(lastMarkPrice)))
-			newPositionSize -= int64(o.Size)
+			newPositionSize -= int64(o.TrueRemaining)
 			lastMarkPrice = o.Price
 		}
 		collateralAfterMtm = collateral.Add(mtmDelta)

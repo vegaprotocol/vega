@@ -20,14 +20,20 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"fmt"
 	"io"
+	"math"
+	"strconv"
 	"strings"
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -111,6 +117,442 @@ func TestExportNetworkHistory(t *testing.T) {
 	})
 }
 
+func TestEstimatePosition(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := context.TODO()
+	assetId := "assetID"
+	marketId := "marketID"
+
+	assetDecimals := 8
+	marketDecimals := 3
+	positionDecimalPlaces := 2
+	marginFundingFactor := 0.95
+	initialMarginScalingFactor := 1.5
+	linearSlippageFactor := num.DecimalFromFloat(0.005)
+	quadraticSlippageFactor := num.DecimalZero()
+	rfLong := num.DecimalFromFloat(0.1)
+	rfShort := num.DecimalFromFloat(0.2)
+
+	markPrice := num.DecimalFromFloat(123.456)
+	auctionEnd := int64(0)
+	fundingPayment := 1234.56789
+
+	asset := entities.Asset{
+		Decimals: assetDecimals,
+	}
+
+	mkt := entities.Market{
+		DecimalPlaces:           marketDecimals,
+		PositionDecimalPlaces:   positionDecimalPlaces,
+		LinearSlippageFactor:    &linearSlippageFactor,
+		QuadraticSlippageFactor: &quadraticSlippageFactor,
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{
+				Instrument: &vega.Instrument{
+					Product: &vega.Instrument_Perpetual{
+						Perpetual: &vega.Perpetual{
+							SettlementAsset:     assetId,
+							MarginFundingFactor: fmt.Sprintf("%f", marginFundingFactor),
+						},
+					},
+				},
+				MarginCalculator: &vega.MarginCalculator{
+					ScalingFactors: &vega.ScalingFactors{
+						InitialMargin: initialMarginScalingFactor,
+					},
+				},
+			},
+		},
+	}
+
+	mktData := entities.MarketData{
+		MarkPrice:  markPrice,
+		AuctionEnd: auctionEnd,
+		ProductData: &entities.ProductData{
+			ProductData: &vega.ProductData{
+				Data: &vega.ProductData_PerpetualData{
+					PerpetualData: &vega.PerpetualData{
+						FundingPayment: fmt.Sprintf("%f", fundingPayment),
+						FundingRate:    "0.05",
+					},
+				},
+			},
+		},
+	}
+
+	rf := entities.RiskFactor{
+		Long:  rfLong,
+		Short: rfShort,
+	}
+
+	assetService := mocks.NewMockAssetService(ctrl)
+	marketService := mocks.NewMockMarketsService(ctrl)
+	marketDataService := mocks.NewMockMarketDataService(ctrl)
+	riskFactorService := mocks.NewMockRiskFactorService(ctrl)
+
+	assetService.EXPECT().GetByID(ctx, assetId).Return(asset, nil).AnyTimes()
+	marketService.EXPECT().GetByID(ctx, marketId).Return(mkt, nil).AnyTimes()
+	marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
+	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, marketId).Return(rf, nil).AnyTimes()
+
+	apiService := api.TradingDataServiceV2{
+		AssetService:      assetService,
+		MarketsService:    marketService,
+		MarketDataService: marketDataService,
+		RiskFactorService: riskFactorService,
+	}
+
+	testCases := []struct {
+		openVolume                int64
+		avgEntryPrice             float64
+		orders                    []*v2.OrderInfo
+		marginAccountBalance      float64
+		generalAccountBalance     float64
+		orderMarginAccountBalance float64
+		marginMode                vega.MarginMode
+		marginFactor              float64
+	}{
+		{
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		},
+		{
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+		},
+		{
+			openVolume:    int64(10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		},
+		{
+			openVolume:    int64(-10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+		},
+		{
+			openVolume:    int64(-10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(11 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(11 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		},
+		{
+			openVolume:    int64(-10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(1 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+		},
+		{
+			openVolume:    int64(10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(3 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(101, marketDecimals),
+					Remaining:     uint64(4 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(105, marketDecimals),
+					Remaining:     uint64(5 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(95, marketDecimals),
+					Remaining:     uint64(2 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(94, marketDecimals),
+					Remaining:     uint64(3 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(90, marketDecimals),
+					Remaining:     uint64(10 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
+		},
+		{
+			openVolume:    int64(-10 * positionDecimalPlaces),
+			avgEntryPrice: 123.4 * float64(marketDecimals),
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(100, marketDecimals),
+					Remaining:     uint64(3 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(101, marketDecimals),
+					Remaining:     uint64(4 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideSell,
+					Price:         floatToStringWithDp(105, marketDecimals),
+					Remaining:     uint64(5 * positionDecimalPlaces),
+					IsMarketOrder: false,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(95, marketDecimals),
+					Remaining:     uint64(2 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(94, marketDecimals),
+					Remaining:     uint64(3 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+				{
+					Side:          entities.SideBuy,
+					Price:         floatToStringWithDp(90, marketDecimals),
+					Remaining:     uint64(10 * positionDecimalPlaces),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      100 * float64(assetDecimals),
+			generalAccountBalance:     1000 * float64(assetDecimals),
+			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+		},
+	}
+	for i, tc := range testCases {
+		marginFactor := fmt.Sprintf("%f", tc.marginFactor)
+		exclude := false
+		dontScale := false
+		req := &v2.EstimatePositionRequest{
+			MarketId:                  marketId,
+			OpenVolume:                tc.openVolume,
+			AverageEntryPrice:         fmt.Sprintf("%f", tc.avgEntryPrice),
+			Orders:                    tc.orders,
+			MarginAccountBalance:      fmt.Sprintf("%f", tc.marginAccountBalance),
+			GeneralAccountBalance:     fmt.Sprintf("%f", tc.generalAccountBalance),
+			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
+			MarginMode:                tc.marginMode,
+			MarginFactor:              &marginFactor,
+			IncludeCollateralIncreaseInAvailableCollateral: &exclude,
+			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+		}
+		include := true
+		req2 := &v2.EstimatePositionRequest{
+			MarketId:                  marketId,
+			OpenVolume:                tc.openVolume,
+			AverageEntryPrice:         fmt.Sprintf("%f", tc.avgEntryPrice),
+			Orders:                    tc.orders,
+			MarginAccountBalance:      fmt.Sprintf("%f", tc.marginAccountBalance),
+			GeneralAccountBalance:     fmt.Sprintf("%f", tc.generalAccountBalance),
+			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
+			MarginMode:                tc.marginMode,
+			MarginFactor:              &marginFactor,
+			IncludeCollateralIncreaseInAvailableCollateral: &include,
+			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+		}
+
+		res, err := apiService.EstimatePosition(ctx, req)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		require.NotNil(t, res, fmt.Sprintf("test case #%v", i+1))
+		colIncBest, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.BestCase, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		colIncWorst, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.WorstCase, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
+		if tc.openVolume == 0 {
+			require.Equal(t, colIncBest, colIncWorst, fmt.Sprintf("test case #%v", i+1))
+		} else {
+			if isolatedMargin {
+				require.Equal(t, colIncWorst, colIncBest, fmt.Sprintf("test case #%v", i+1))
+			} else {
+				require.GreaterOrEqual(t, colIncWorst, colIncBest, fmt.Sprintf("test case #%v", i+1))
+			}
+		}
+		initialMarginBest, err := strconv.ParseFloat(res.Margin.BestCase.InitialMargin, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		initialMarginWorst, err := strconv.ParseFloat(res.Margin.WorstCase.InitialMargin, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+
+		expectedCollIncBest := max(0, initialMarginBest-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+		expectedCollIncWorst := max(0, initialMarginWorst-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+		if isolatedMargin {
+			priceFactor := math.Pow10(assetDecimals - marketDecimals)
+			requiredPositionMargin := tc.avgEntryPrice * priceFactor * float64(tc.openVolume) / math.Pow10(positionDecimalPlaces) * tc.marginFactor
+			requiredOrderMargin := getOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
+			expectedCollIncBest = max(0, requiredPositionMargin+requiredOrderMargin-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+			expectedCollIncWorst = expectedCollIncBest
+		}
+
+		actualCollIncBest, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.BestCase, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		actualCollIncWorst, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.WorstCase, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+
+		require.Equal(t, expectedCollIncBest, actualCollIncBest, fmt.Sprintf("test case #%v", i+1))
+		require.Equal(t, expectedCollIncWorst, actualCollIncWorst, fmt.Sprintf("test case #%v", i+1))
+
+		res2, err := apiService.EstimatePosition(ctx, req2)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		require.NotNil(t, res2, fmt.Sprintf("test case #%v", i+1))
+
+		if isolatedMargin {
+			if actualCollIncWorst != 0 {
+				if countOrders(tc.orders, entities.SideBuy) > 0 {
+					require.NotEqual(t, res.Liquidation.WorstCase.IncludingBuyOrders, res2.Liquidation.WorstCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
+				}
+				if countOrders(tc.orders, entities.SideSell) > 0 {
+					require.NotEqual(t, res.Liquidation.WorstCase.IncludingSellOrders, res2.Liquidation.WorstCase.IncludingSellOrders, fmt.Sprintf("test case #%v", i+1))
+				}
+			}
+			if actualCollIncBest != 0 {
+				if countOrders(tc.orders, entities.SideBuy) > 0 {
+					require.NotEqual(t, res.Liquidation.BestCase.IncludingBuyOrders, res2.Liquidation.BestCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
+				}
+				if countOrders(tc.orders, entities.SideSell) > 0 {
+					require.NotEqual(t, res.Liquidation.BestCase.IncludingSellOrders, res2.Liquidation.BestCase.IncludingSellOrders, fmt.Sprintf("test case #%v", i+1))
+				}
+			}
+		}
+
+		scale := true
+		req2.ScaleLiquidationPriceToMarketDecimals = &scale
+
+		res3, err := apiService.EstimatePosition(ctx, req2)
+		require.NoError(t, err)
+		require.NotNil(t, res3)
+
+		dp := int64(assetDecimals - marketDecimals)
+		compareDps(t, res2.Liquidation.BestCase.OpenVolumeOnly, res3.Liquidation.BestCase.OpenVolumeOnly, dp)
+		compareDps(t, res2.Liquidation.BestCase.IncludingBuyOrders, res3.Liquidation.BestCase.IncludingBuyOrders, dp)
+		compareDps(t, res2.Liquidation.BestCase.IncludingSellOrders, res3.Liquidation.BestCase.IncludingSellOrders, dp)
+		compareDps(t, res2.Liquidation.WorstCase.OpenVolumeOnly, res3.Liquidation.WorstCase.OpenVolumeOnly, dp)
+		compareDps(t, res2.Liquidation.WorstCase.IncludingBuyOrders, res3.Liquidation.WorstCase.IncludingBuyOrders, dp)
+		compareDps(t, res2.Liquidation.WorstCase.IncludingSellOrders, res3.Liquidation.WorstCase.IncludingSellOrders, dp)
+	}
+}
+
+//nolint:unparam
+func floatToStringWithDp(value float64, dp int) string {
+	return fmt.Sprintf("%f", value*math.Pow10(dp))
+}
+
+func compareDps(t *testing.T, bigger, smaller string, dp int64) {
+	t.Helper()
+	b, err := strconv.ParseFloat(bigger, 64)
+	require.NoError(t, err)
+	s, err := strconv.ParseFloat(smaller, 64)
+	require.NoError(t, err)
+	if s != 0 {
+		l := int64(math.Round(math.Log10(b / s)))
+		require.Equal(t, dp, l)
+	}
+}
+
+func countOrders(orders []*v2.OrderInfo, side vega.Side) int {
+	c := 0
+	for _, o := range orders {
+		if o.Side == side {
+			c += 1
+		}
+	}
+	return c
+}
+
 type mockStream struct {
 	sent []*httpbody.HttpBody
 }
@@ -122,3 +564,14 @@ func (s *mockStream) SetTrailer(metadata.MD)          {}
 func (s *mockStream) Context() context.Context        { return context.Background() }
 func (s *mockStream) SendMsg(m interface{}) error     { return nil }
 func (s *mockStream) RecvMsg(m interface{}) error     { return nil }
+
+func getOrderNotional(t *testing.T, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {
+	t.Helper()
+	notional := 0.0
+	for _, o := range orders {
+		price, err := strconv.ParseFloat(o.Price, 64)
+		require.NoError(t, err)
+		notional += price * priceFactor * float64(o.Remaining) / math.Pow10(positionDecimals)
+	}
+	return notional
+}
