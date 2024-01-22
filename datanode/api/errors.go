@@ -106,6 +106,8 @@ var (
 	ErrNegativeOrderVersion = newInvalidArgumentError("negative order version")
 	// ErrLastPaginationNotSupported is returned when last pagination is not supported.
 	ErrLastPaginationNotSupported = newInvalidArgumentError("'last' pagination is not supported")
+	// ErrMissingMarginFactor is returned when isolated margin mode is specified, but margin factor is not supplied.
+	ErrMissingMarginFactor = newInvalidArgumentError("missing margin factor")
 
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
@@ -256,8 +258,8 @@ var (
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
 	// Positions...
-	ErrPositionsGetByTxHash             = errors.New("failed to get positions for tx hash")
-	ErrPositionsInvalidCollateralAmount = newInvalidArgumentError("invalid collateral amount")
+	ErrPositionsGetByTxHash           = errors.New("failed to get positions for tx hash")
+	ErrPositionsInvalidAccountBalance = newInvalidArgumentError("invalid account balance")
 	// Ledger entries...
 	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
 	// Transfers...

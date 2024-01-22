@@ -23,7 +23,7 @@ import (
 )
 
 type OrderInfo struct {
-	Size          uint64
+	TrueRemaining uint64
 	Price         num.Decimal
 	IsMarketOrder bool
 }
@@ -120,9 +120,9 @@ func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Deci
 
 		collateralWithOrders = collateralWithOrders.Add(mtm)
 		if buySide {
-			exposureWithOrders = exposureWithOrders.Add(num.DecimalFromInt64(int64(o.Size)).Div(positionFactor))
+			exposureWithOrders = exposureWithOrders.Add(num.DecimalFromInt64(int64(o.TrueRemaining)).Div(positionFactor))
 		} else {
-			exposureWithOrders = exposureWithOrders.Sub(num.DecimalFromInt64(int64(o.Size)).Div(positionFactor))
+			exposureWithOrders = exposureWithOrders.Sub(num.DecimalFromInt64(int64(o.TrueRemaining)).Div(positionFactor))
 		}
 
 		liquidationPrice, err = calculateLiquidationPrice(exposureWithOrders, o.Price, collateralWithOrders, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constant)

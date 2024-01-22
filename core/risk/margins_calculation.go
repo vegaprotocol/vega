@@ -16,6 +16,8 @@
 package risk
 
 import (
+	"sort"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -282,7 +284,7 @@ func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders
 	buySumProduct, sellSumProduct := num.DecimalZero(), num.DecimalZero()
 	sizeSells, sizeBuys := int64(0), int64(0)
 	for _, o := range buyOrders {
-		size := int64(o.Size)
+		size := int64(o.TrueRemaining)
 		if o.IsMarketOrder {
 			// assume market order fills
 			sizePosition += size
@@ -292,7 +294,7 @@ func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders
 		}
 	}
 	for _, o := range sellOrders {
-		size := int64(o.Size)
+		size := int64(o.TrueRemaining)
 		if o.IsMarketOrder {
 			// assume market order fills
 			sizePosition -= size
@@ -391,4 +393,67 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 		return marginMaintenanceSht
 	}
 	return num.DecimalZero()
+}
+
+// CalcOrderMarginIsolatedMode calculates the the order margin required for the party in isolated margin mode given their current orders and margin factor.
+func CalcOrderMarginIsolatedMode(positionSize int64, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor, auctionPrice num.Decimal) num.Decimal {
+	// sort orders from best to worst
+	sort.Slice(buyOrders, func(i, j int) bool { return buyOrders[i].Price.GreaterThan(buyOrders[j].Price) })
+	sort.Slice(sellOrders, func(i, j int) bool { return sellOrders[i].Price.LessThan(sellOrders[j].Price) })
+
+	// calc the side margin
+	marginByBuy := calcOrderSideMarginIsolatedMode(positionSize, buyOrders, positionFactor, marginFactor, auctionPrice, true)
+	marginBySell := calcOrderSideMarginIsolatedMode(positionSize, sellOrders, positionFactor, marginFactor, auctionPrice, false)
+	if marginBySell.GreaterThan(marginByBuy) {
+		return marginBySell
+	}
+	return marginByBuy
+}
+
+func calcOrderSideMarginIsolatedMode(currentPosition int64, orders []*OrderInfo, positionFactor, marginFactor num.Decimal, auctionPrice num.Decimal, buy bool) num.Decimal {
+	margin := num.DecimalZero()
+	remainingCovered := int64Abs(currentPosition)
+	for _, o := range orders {
+		if o.IsMarketOrder {
+			continue
+		}
+		size := o.TrueRemaining
+		// for long position we don't need to count margin for the top <currentPosition> size for sell orders
+		// for short position we don't need to count margin for the top <currentPosition> size for buy orders
+		if remainingCovered != 0 && (buy && currentPosition < 0) || (!buy && currentPosition > 0) {
+			if size >= remainingCovered { // part of the order doesn't require margin
+				size = size - remainingCovered
+				remainingCovered = 0
+			} else { // the entire order doesn't require margin
+				remainingCovered -= size
+				size = 0
+			}
+		}
+		if size > 0 {
+			// if we're in auction we need to use the larger between auction price (which is the max(indicativePrice, markPrice)) and the order price
+			p := o.Price
+			if auctionPrice.GreaterThan(p) {
+				p = auctionPrice
+			}
+			// add the margin for the given order
+			margin = margin.Add(num.DecimalFromInt64(int64(size)).Mul(p))
+		}
+	}
+	// factor the margin by margin factor and divide by position factor to get to the right decimals
+	return margin.Mul(marginFactor).Div(positionFactor)
+}
+
+func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal) (num.Decimal, num.Decimal) {
+	totalOrderNotional := num.DecimalZero()
+	for _, o := range buyOrders {
+		totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+	}
+	for _, o := range sellOrders {
+		totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+	}
+
+	requiredPositionMargin := averageEntryPrice.Mul(num.DecimalFromInt64(sizePosition)).Mul(marginFactor).Div(positionFactor)
+	requiredOrderMargin := totalOrderNotional.Mul(marginFactor).Div(positionFactor)
+
+	return requiredPositionMargin, requiredOrderMargin
 }
