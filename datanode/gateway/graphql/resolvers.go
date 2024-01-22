@@ -1360,8 +1360,9 @@ func (r *myQueryResolver) EstimatePosition(
 	}
 
 	return &PositionEstimate{
-		Margin:      resp.Margin,
-		Liquidation: resp.Liquidation,
+		Margin:                     resp.Margin,
+		CollateralIncreaseEstimate: resp.CollateralIncreaseEstimate,
+		Liquidation:                resp.Liquidation,
 	}, nil
 }
 

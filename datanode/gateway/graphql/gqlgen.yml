@@ -178,6 +178,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationPrice
   LiquidationEstimate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationEstimate
+  CollateralIncreaseEstimate:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CollateralIncreaseEstimate
   NodeSignature:
     model: code.vegaprotocol.io/vega/protos/vega/commands/v1.NodeSignature
   ProposalEvent:
