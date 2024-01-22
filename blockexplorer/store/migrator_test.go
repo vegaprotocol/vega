@@ -63,8 +63,10 @@ func TestMigratorMigrate(t *testing.T) {
 	require.NoError(t, pgxscan.Select(ctx, pool, &rows, query))
 
 	assert.Len(t, rows, 0)
+	cfg := store.NewDefaultConfig()
+	cfg.MigratePauseInterval = time.Millisecond * 10
 
-	migrator := store.NewMigrator(pool, true)
+	migrator := store.NewMigrator(pool, cfg)
 
 	err = migrator.Migrate(ctx)
 

@@ -52,7 +52,7 @@ func NewStore(config Config, log *logging.Logger) (*Store, error) {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	migrator := NewMigrator(pool, config.MigrateData)
+	migrator := NewMigrator(pool, config)
 
 	store := &Store{
 		log:      log,

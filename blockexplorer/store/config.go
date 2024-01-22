@@ -16,14 +16,18 @@
 package store
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/libs/config"
 )
 
 var namedLogger = "postgres.store"
 
 type Config struct {
-	Postgres    config.PostgresConnection `group:"database" namespace:"postgres"`
-	MigrateData bool                      `default:"true"   description:"Migrate data from the old database" group:"database" namespace:"postgres"`
+	Postgres             config.PostgresConnection `group:"database" namespace:"postgres"`
+	MigrateData          bool                      `default:"true"   description:"Migrate data from the old database"                                          group:"database" namespace:"postgres"`
+	MigrateBlockDuration time.Duration             `default:"1h"     description:"Amount of data to migrate at a time, in duration, i.e. 1h, 4h etc."          group:"database" namespace:"postgres"`
+	MigratePauseInterval time.Duration             `default:"1m"     description:"Pause migrations between dates to prevent block explorer from being blocked" group:"database" namespace:"postgres"`
 }
 
 func NewDefaultConfig() Config {
@@ -36,6 +40,8 @@ func NewDefaultConfig() Config {
 			Password:        "vega",
 			ApplicationName: "vega block explorer",
 		},
-		MigrateData: true,
+		MigrateData:          true,
+		MigrateBlockDuration: time.Hour,
+		MigratePauseInterval: time.Minute,
 	}
 }
