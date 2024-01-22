@@ -146,6 +146,7 @@
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10436](https://github.com/vegaprotocol/vega/issues/10436) - Fix source staleness validation when oracles are not defined.
 - [10434](https://github.com/vegaprotocol/vega/issues/10434) - Unsubscribe oracles when market is closed.
+- [10454](https://github.com/vegaprotocol/vega/issues/10454) - Fix account resolver validation to include order margin account.
 
 ## 0.73.0
 
