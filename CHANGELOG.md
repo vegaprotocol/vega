@@ -73,6 +73,7 @@
 - [10317](https://github.com/vegaprotocol/vega/issues/10317) - Add support in Ethereum oracles to data source from `L2s`
 - [10429](https://github.com/vegaprotocol/vega/issues/10429) - Restrict the mark price by book to prices from the last mark price duration.
 - [552](https://github.com/vegaprotocol/core-test-coverage/issues/552) - Add integration test for mark price `0053-PERP-034`
+- [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
 
 ### 🐛 Fixes
 

@@ -68,13 +68,12 @@ func PriceFromTrades(trades []*types.Trade, decayWeight, lambda, decayPower num.
 // by the factors. If there is no bid or ask price for the required quantity, returns nil.
 func PriceFromBookAtTime(C *num.Uint, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, orderBook *matching.CachedOrderBook) *num.Uint {
 	bestAsk, err := orderBook.GetBestAskPrice()
-	// no best bid
+	// no best ask
 	if err != nil {
 		return nil
 	}
-
 	bestBid, err := orderBook.GetBestBidPrice()
-	// no best ask
+	// no best bid
 	if err != nil {
 		return nil
 	}
