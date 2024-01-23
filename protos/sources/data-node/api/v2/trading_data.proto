@@ -3880,14 +3880,14 @@ message PingResponse {}
 // Basic description of an order.
 message OrderInfo {
   // Side for the order, e.g. buy or sell.
-  vega.Side side = 1;
+  vega.Side side = 1 [(google.api.field_behavior) = REQUIRED];
   // Price for the order. The price is an unsigned integer. For example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  string price = 2;
+  string price = 2 [(google.api.field_behavior) = REQUIRED];
   // Size remaining.
-  uint64 remaining = 3;
+  uint64 remaining = 3 [(google.api.field_behavior) = REQUIRED];
   // Boolean that indicates if it is a market order.
-  bool is_market_order = 4;
+  bool is_market_order = 4 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Request for the estimated margin level, margin account balance change, and liquidation price for the specified position.
@@ -3901,7 +3901,7 @@ message EstimatePositionRequest {
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   string average_entry_price = 3 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
-  repeated OrderInfo orders = 4 [(google.api.field_behavior) = REQUIRED];
+  optional repeated OrderInfo orders = 4
   // Margin account balance. Needs to be provided scaled to asset decimal places.
   string margin_account_balance = 5 [(google.api.field_behavior) = REQUIRED];
   // General account balance. Needs to be provided scaled to asset decimal places.
