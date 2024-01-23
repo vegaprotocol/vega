@@ -605,7 +605,7 @@ service TradingDataService {
 
   // Estimate position
   //
-  // Estimate the margin that would be required for maintaining the specified position, collateral increase needed to open the specified position and the liquidation price estimate. 
+  // Estimate the margin that would be required for maintaining the specified position, collateral increase needed to open the specified position and the liquidation price estimate.
   // Margin estimates are scaled to asset decimal places.
   // Liquidation price estimates are scaled to asset decimal places by default, unless an argument to scale to market decimal places is specified in the request.
   rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse) {
@@ -3901,7 +3901,7 @@ message EstimatePositionRequest {
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   string average_entry_price = 3 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
-  optional repeated OrderInfo orders = 4
+  repeated OrderInfo orders = 4;
   // Margin account balance. Needs to be provided scaled to asset decimal places.
   string margin_account_balance = 5 [(google.api.field_behavior) = REQUIRED];
   // General account balance. Needs to be provided scaled to asset decimal places.
