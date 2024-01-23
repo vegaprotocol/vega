@@ -17,6 +17,7 @@ package events
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -64,6 +65,10 @@ func (o Order) StreamMessage() *eventspb.BusEvent {
 	busEvent.Event = &eventspb.BusEvent_Order{
 		Order: o.o,
 	}
+
+	// The message is about to be sent out from the core to an external client
+	// (which might be the data node)
+	o.o.TimeStamps = append(o.o.TimeStamps, &ptypes.SystemTimestamp{Location: 3, TimeStamp: time.Now().UnixNano()})
 
 	return busEvent
 }

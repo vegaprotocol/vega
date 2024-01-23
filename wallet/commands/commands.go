@@ -18,6 +18,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/commands"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -38,6 +39,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	var cmdErr error
 	switch cmd := req.Command.(type) {
 	case *walletpb.SubmitTransactionRequest_OrderSubmission:
+
+		// At this point we have received the order but it has not been added to the mempool
+		cmd.OrderSubmission.Timestamps = append(cmd.OrderSubmission.Timestamps, &commandspb.SystemTimestamp{Location: 1, Timestamp: time.Now().UnixNano()})
+
 		cmdErr = commands.CheckOrderSubmission(cmd.OrderSubmission)
 	case *walletpb.SubmitTransactionRequest_OrderCancellation:
 		cmdErr = commands.CheckOrderCancellation(cmd.OrderCancellation)

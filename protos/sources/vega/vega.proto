@@ -268,6 +268,13 @@ message IcebergOrder {
   uint64 reserved_remaining = 3;
 }
 
+message SystemTimestamp {
+  // Location ID of the Timestamp
+  int64 location = 1;
+  // Local timestamp
+  int64 time_stamp = 2;
+}
+
 // Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 message Order {
   // Time In Force for an order
@@ -388,6 +395,8 @@ message Order {
   bool reduce_only = 21;
   // Details of an iceberg order
   optional IcebergOrder iceberg_order = 22;
+  // Timestamps
+  repeated SystemTimestamp time_stamps = 23;
 }
 
 // Used when cancelling an order

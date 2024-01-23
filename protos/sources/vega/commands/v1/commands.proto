@@ -72,6 +72,13 @@ message StopOrdersCancellation {
   optional string stop_order_id = 2;
 }
 
+message SystemTimestamp {
+  // Timestamp location
+  int64 location = 1;
+  // Timestamp value
+  int64 timestamp = 2;
+}
+
 // A command that submits an order to the Vega network for a given market.
 message OrderSubmission {
   // Market ID to submit the order to.
@@ -102,6 +109,8 @@ message OrderSubmission {
   bool reduce_only = 11;
   // Iceberg order details. If set, the order will exist on the order book in chunks.
   optional IcebergOpts iceberg_opts = 12;
+  // Timestamps recorded as the message is passed around the system
+  repeated SystemTimestamp timestamps = 13;
 }
 
 // Iceberg order options

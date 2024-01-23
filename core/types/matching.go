@@ -26,6 +26,11 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
+type SystemTimestamp struct {
+	Location  int64
+	Timestamp int64
+}
+
 type Order struct {
 	ID             string
 	MarketID       string
@@ -50,6 +55,7 @@ type Order struct {
 	ReduceOnly     bool
 	extraRemaining uint64
 	IcebergOrder   *IcebergOrder
+	Timestamps     []*SystemTimestamp
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -161,7 +167,7 @@ func (o Order) Clone() *Order {
 	} else {
 		cpy.Price = num.UintZero()
 	}
-	// this isn't really needed, to original order is about to be replaced, or the original price is getting reassinged
+	// this isn't really needed, to original order is about to be replaced, or the original price is getting reassigned
 	// but in case something goes wrong, we don't want a pointer to this field in 2 places
 	if o.OriginalPrice != nil {
 		cpy.OriginalPrice = o.OriginalPrice.Clone()
@@ -172,6 +178,7 @@ func (o Order) Clone() *Order {
 	if o.IcebergOrder != nil {
 		cpy.IcebergOrder = o.IcebergOrder.Clone()
 	}
+	cpy.Timestamps = nil
 	return &cpy
 }
 
@@ -228,6 +235,11 @@ func (o *Order) IntoProto() *proto.Order {
 		iceberg = o.IcebergOrder.IntoProto()
 	}
 
+	var timestamps []*proto.SystemTimestamp
+	for _, ts := range o.Timestamps {
+		timestamps = append(timestamps, &proto.SystemTimestamp{Location: ts.Location, TimeStamp: ts.Timestamp})
+	}
+
 	return &proto.Order{
 		Id:           o.ID,
 		MarketId:     o.MarketID,
@@ -250,6 +262,7 @@ func (o *Order) IntoProto() *proto.Order {
 		PostOnly:     o.PostOnly,
 		ReduceOnly:   o.ReduceOnly,
 		IcebergOrder: iceberg,
+		TimeStamps:   timestamps,
 	}
 }
 

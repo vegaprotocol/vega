@@ -1680,6 +1680,9 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 	if err != nil {
 		return err
 	}
+	// The order has come through the chain and is part of the current block being processed add a new timestamp
+	os.Timestamps = append(os.Timestamps, &types.SystemTimestamp{Location: 2, Timestamp: time.Now().UnixNano()})
+
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), idgen, idgen.NextID())

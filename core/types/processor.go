@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
+//lint:file-ignore ST1003 Ignore underscores in names, this is straight copied from the proto package to ease introducing the domain types
 
 package types
 
@@ -86,6 +86,7 @@ type OrderSubmission struct {
 	PostOnly     bool
 	ReduceOnly   bool
 	IcebergOrder *IcebergOrder
+	Timestamps   []*SystemTimestamp
 }
 
 func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
@@ -102,9 +103,13 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		}
 	}
 
+	var timestamps []*commandspb.SystemTimestamp
+	for _, ts := range o.Timestamps {
+		timestamps = append(timestamps, &commandspb.SystemTimestamp{Location: ts.Location, Timestamp: ts.Timestamp})
+	}
+
 	return &commandspb.OrderSubmission{
-		MarketId: o.MarketID,
-		// Need to update protobuf to use string TODO UINT
+		MarketId:    o.MarketID,
 		Price:       num.UintToString(o.Price),
 		Size:        o.Size,
 		Side:        o.Side,
@@ -116,6 +121,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		PostOnly:    o.PostOnly,
 		ReduceOnly:  o.ReduceOnly,
 		IcebergOpts: iceberg,
+		Timestamps:  timestamps,
 	}
 }
 
@@ -142,6 +148,11 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 		}
 	}
 
+	var timestamps []*SystemTimestamp
+	for _, ts := range p.Timestamps {
+		timestamps = append(timestamps, &SystemTimestamp{Location: ts.Location, Timestamp: ts.Timestamp})
+	}
+
 	return &OrderSubmission{
 		MarketID:     p.MarketId,
 		Price:        price,
@@ -155,6 +166,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 		PostOnly:     p.PostOnly,
 		ReduceOnly:   p.ReduceOnly,
 		IcebergOrder: iceberg,
+		Timestamps:   timestamps,
 	}, nil
 }
 
@@ -200,6 +212,7 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 		PostOnly:     o.PostOnly,
 		ReduceOnly:   o.ReduceOnly,
 		IcebergOrder: iceberg,
+		Timestamps:   o.Timestamps,
 	}
 }
 
