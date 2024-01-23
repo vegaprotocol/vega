@@ -3227,6 +3227,9 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 	dMarginFactor := num.DecimalZero()
 	if req.MarginMode == types.MarginModeIsolatedMargin {
+		if req.MarginFactor == nil {
+			return nil, formatE(ErrMissingMarginFactor, errors.New("margin factor are required with isolated margin"))
+		}
 		dMarginFactor, err = num.DecimalFromString(*req.MarginFactor)
 		if err != nil {
 			return nil, formatE(ErrMissingMarginFactor, err)
