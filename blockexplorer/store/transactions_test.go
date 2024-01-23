@@ -116,15 +116,20 @@ type txResult struct {
 	cmdType   string
 }
 
-func addTestTxResults(ctx context.Context, t *testing.T, txResults ...txResult) []*pb.Transaction {
+func addTestTxResults(ctx context.Context, t *testing.T, txResultTable string, txResults ...txResult) []*pb.Transaction {
 	t.Helper()
 
 	conn := connectionSource.Connection
 	rows := make([]*pb.Transaction, 0, len(txResults))
 	blockIDs := make(map[int64]int64)
 
+	// just in case
+	if txResultTable == "" {
+		txResultTable = "tx_results"
+	}
+
 	blockSQL := `INSERT INTO blocks (height, chain_id, created_at) VALUES ($1, $2, $3) ON CONFLICT (height, chain_id) DO UPDATE SET created_at = EXCLUDED.created_at RETURNING rowid`
-	resultSQL := `INSERT INTO tx_results (block_id, index, created_at, tx_hash, tx_result, submitter, cmd_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING rowid`
+	resultSQL := fmt.Sprintf(`INSERT INTO %s (block_id, index, created_at, tx_hash, tx_result, submitter, cmd_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING rowid`, txResultTable)
 
 	for _, txr := range txResults {
 		var blockID int64
@@ -158,6 +163,16 @@ func addTestTxResults(ctx context.Context, t *testing.T, txResults ...txResult) 
 	}
 
 	return rows
+}
+
+func cleanupTransactionsTest(ctx context.Context, t *testing.T) {
+	t.Helper()
+
+	conn := connectionSource.Connection
+	_, err := conn.Exec(ctx, `DELETE FROM tx_results`)
+	require.NoError(t, err)
+	_, err = conn.Exec(ctx, `DELETE FROM blocks`)
+	require.NoError(t, err)
 }
 
 func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction {
@@ -260,12 +275,15 @@ func setupTestTransactions(ctx context.Context, t *testing.T) []*pb.Transaction 
 		},
 	}
 
-	return addTestTxResults(ctx, t, txResults...)
+	return addTestTxResults(ctx, t, "tx_results", txResults...)
 }
 
 func TestStore_ListTransactions(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), postgresServerTimeout)
-	t.Cleanup(cancel)
+	t.Cleanup(func() {
+		cleanupTransactionsTest(ctx, t)
+		cancel()
+	})
 
 	inserted := setupTestTransactions(ctx, t)
 
