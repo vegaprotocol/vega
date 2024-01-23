@@ -169,16 +169,18 @@ func (app *App) FinalizeBlock(_ context.Context, req *types.RequestFinalizeBlock
 		txHash := hex.EncodeToString(tx.Hash())
 		ctx := vgcontext.WithTxHash(app.ctx, txHash)
 		// process the transaction and handle errors
+		var result *types.ExecTxResult
 		if err := fn(ctx, tx); err != nil {
 			if perr, ok := err.(MaybePartialError); ok && perr.IsPartial() {
-				results = append(results, blockchain.NewResponseDeliverTxError(blockchain.AbciTxnPartialProcessingError, err))
+				result = blockchain.NewResponseDeliverTxError(blockchain.AbciTxnPartialProcessingError, err)
 			} else {
-				results = append(results, blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err))
+				result = blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err)
 			}
 		} else {
-			results = append(results, blockchain.NewResponseDeliverTx(types.CodeTypeOK, ""))
+			result = blockchain.NewResponseDeliverTx(types.CodeTypeOK, "")
 		}
-		events = append(events, getBaseTxEvents(tx)...)
+		result.Events = getBaseTxEvents(tx)
+		results = append(results, result)
 	}
 	valUpdates, consensusUpdates := app.OnEndBlock(blockHeight)
 	events = append(events, types.Event{
