@@ -18,7 +18,7 @@ Feature: Composite mark price calculation
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | price type | decay weight | decay power | cash amount | source weights | source staleness tolerance | oracle1 |
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | weight     | 0            | 0           | 100         | 1,1,1,0        | 1m0s,1h0m0s,5m0s,0s        | oracle1 |
 
-  Scenario: Composite price composed of last traded, order book, and oracle price (00090-MKPR-022)(00090-MKPR-023)
+  Scenario: Composite price composed of last traded, order book, and oracle price (0090-MKPR-022)(0090-MKPR-023)
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount       |
       | buySideProvider  | USD   | 100000000000 |
