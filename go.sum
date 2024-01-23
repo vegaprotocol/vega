@@ -1445,8 +1445,8 @@ github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449 h1:X2/RVmrBNProT5+53SnPJvCAicmHmxrTGwtbnercH3Q=
 github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
-github.com/vegaprotocol/cometbft v0.38.4-logging.1 h1:FpmMY2jlz0Bk664+SpsUnDDFW32M72EG8isXvyGN8t4=
-github.com/vegaprotocol/cometbft v0.38.4-logging.1/go.mod h1:kyyCNpl66hAJkiKHJzCYCwrCnZuTWqYDqhP5JPHT4FM=
+github.com/vegaprotocol/cometbft v0.38.4-logging.2 h1:pIg5MrSO87MtXfvwczdd5FRN1e/6qfOhtpxg17kyGew=
+github.com/vegaprotocol/cometbft v0.38.4-logging.2/go.mod h1:kyyCNpl66hAJkiKHJzCYCwrCnZuTWqYDqhP5JPHT4FM=
 github.com/vegaprotocol/decimal v1.3.1-uint256 h1:Aj//9joGGuz+dAKo6W/r9Rt1HUXYrjH7oerdCg1q/So=
 github.com/vegaprotocol/decimal v1.3.1-uint256/go.mod h1:+mRbjtsnpvm5Qw6aiLEf3I6SHICNB4nhMTmH9y8hMtg=
 github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb h1:c7l0ESzXbIbr7ykEjWki6+aG+77gAJua3ETrAxd50HI=
