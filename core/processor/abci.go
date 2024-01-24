@@ -147,6 +147,7 @@ type TeamsEngine interface {
 
 type PartiesEngine interface {
 	UpdateProfile(context.Context, types.PartyID, *commandspb.UpdatePartyProfile) error
+	CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error
 }
 
 type ReferralProgram interface {
@@ -2665,8 +2666,16 @@ func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
 		return fmt.Errorf("could not deserialize UpdatePartyProfile command: %w", err)
 	}
 
+	err := app.partiesEngine.CheckSufficientBalanceToUpdateProfile(
+		types.PartyID(tx.Party()),
+		app.balanceChecker.GetPartyBalance(tx.Party()),
+	)
+	if err != nil {
+		return err
+	}
+
 	partyID := types.PartyID(tx.Party())
-	err := app.partiesEngine.UpdateProfile(ctx, partyID, params)
+	err = app.partiesEngine.UpdateProfile(ctx, partyID, params)
 	if err != nil {
 		return fmt.Errorf("couldn't update profile: %w", err)
 	}

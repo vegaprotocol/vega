@@ -578,6 +578,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				Watcher: svcs.spam.OnMaxCreateReferralSet,
 			},
 			{
+				Param:   netparams.SpamProtectionMaxUpdatePartyProfile,
+				Watcher: svcs.spam.OnMaxPartyProfile,
+			},
+			{
 				Param:   netparams.SpamProtectionMaxUpdateReferralSet,
 				Watcher: svcs.spam.OnMaxUpdateReferralSet,
 			},
@@ -957,6 +961,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.SpamProtectionApplyReferralMinFunds,
 			Watcher: svcs.referralProgram.OnMinBalanceForApplyReferralCodeUpdated,
+		},
+		{
+			Param:   netparams.SpamProtectionUpdateProfileMinFunds,
+			Watcher: svcs.partiesEngine.OnMinBalanceForUpdatePartyProfileUpdated,
 		},
 		{
 			Param:   netparams.RewardsActivityStreakBenefitTiers,
