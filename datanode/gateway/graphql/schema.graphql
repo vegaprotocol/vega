@@ -7055,7 +7055,7 @@ type IndividualGameEntity {
   "The volume traded by the individual"
   volume: String!
   "The reward metric applied to the game"
-  rewardMetric: String!
+  rewardMetric: DispatchMetric!
   "The rewards earned by the individual during the epoch"
   rewardEarned: String!
   "Total rewards earned by the individual during the game"
@@ -7079,7 +7079,7 @@ type TeamGameEntity {
   "Total volume traded by the team"
   volume: String!
   "Reward metric applied to the game."
-  rewardMetric: String!
+  rewardMetric: DispatchMetric!
   "Total rewards earned by the team during the epoch"
   rewardEarned: String!
   "Total rewards earned by the team for the game"

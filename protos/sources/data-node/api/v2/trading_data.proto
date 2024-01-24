@@ -4656,7 +4656,7 @@ message TeamGameEntity {
   // Volume traded by the team
   string volume = 3;
   // Reward metric applied to the team
-  string reward_metric = 4;
+  vega.DispatchMetric reward_metric = 4;
   // Reward earned by the team
   string reward_earned = 5;
   // Total rewards earned by the individual for the team
@@ -4682,7 +4682,7 @@ message IndividualGameEntity {
   // Volume traded by the individual
   string volume = 3;
   // Reward metric applied to the individual
-  string reward_metric = 4;
+  vega.DispatchMetric reward_metric = 4;
   // Reward earned by the individual during the epoch
   string reward_earned = 5;
   // Total rewards earned by the individual for the game

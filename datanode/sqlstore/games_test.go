@@ -418,7 +418,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 							Individual:   member.ID.String(),
 							Rank:         0,
 							Volume:       num.DecimalZero(),
-							RewardMetric: "DISPATCH_METRIC_MAKER_FEES_PAID",
+							RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 							RewardEarned: rewardEarned,
 						}
 						teamRewards = teamRewards.Add(teamRewards, individualEntity.RewardEarned)
@@ -451,7 +451,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 						},
 						Rank:         0,
 						Volume:       teamVolume,
-						RewardMetric: "DISPATCH_METRIC_MAKER_FEES_PAID",
+						RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 						RewardEarned: teamRewards,
 					}
 					if teamTotalRewards[gk][team] == nil {
@@ -511,7 +511,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 						Individual:   individual.ID.String(),
 						Rank:         uint64(i + 1),
 						Volume:       num.DecimalZero(),
-						RewardMetric: "DISPATCH_METRIC_MAKER_FEES_PAID",
+						RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
 						RewardEarned: rewardEarned,
 					}
 					individualEntities = append(individualEntities, &individualEntity)

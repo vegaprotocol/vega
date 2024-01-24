@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type _Game struct{}
@@ -93,7 +94,7 @@ type TeamGameEntity struct {
 	Team               TeamGameParticipation
 	Rank               uint64
 	Volume             num.Decimal
-	RewardMetric       string
+	RewardMetric       vega.DispatchMetric
 	RewardEarned       *num.Uint
 	TotalRewardsEarned *num.Uint
 }
@@ -114,7 +115,7 @@ type IndividualGameEntity struct {
 	Individual         string
 	Rank               uint64
 	Volume             num.Decimal
-	RewardMetric       string
+	RewardMetric       vega.DispatchMetric
 	RewardEarned       *num.Uint
 	TotalRewardsEarned *num.Uint
 }

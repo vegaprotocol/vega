@@ -246,7 +246,7 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 			Individual:         rewards[i].PartyID.String(),
 			Rank:               uint64(rewards[i].MemberRank),
 			Volume:             num.DecimalZero(),
-			RewardMetric:       rewards[i].DispatchStrategy.Metric.String(),
+			RewardMetric:       rewards[i].DispatchStrategy.Metric,
 			RewardEarned:       rewardEarned,
 			TotalRewardsEarned: totalRewardsEarned,
 		}
@@ -291,9 +291,9 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 				teamVolume := num.DecimalZero()
 				teamRewardEarned := num.NewUint(0)
 				teamTotalRewardsEarned := num.NewUint(0)
-				rewardMetric := ""
+				rewardMetric := vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED
 				for _, individual := range individuals {
-					if rewardMetric == "" {
+					if rewardMetric == vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED {
 						rewardMetric = individual.RewardMetric
 					}
 					teamVolume = teamVolume.Add(individual.Volume)
