@@ -196,7 +196,7 @@ func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
 	return nil, 0
 }
 
-// getTwapAsNilOrString return nil when TWAP cannot be calculated and a string (as pointer) otherwise
+// getTwapAsNilOrString return nil when TWAP cannot be calculated and a string (as pointer) otherwise.
 func (c *cachedTWAP) getTwapAsNilOrString(t int64) *string {
 	if !c.dataAvailable(t) {
 		return nil
@@ -577,6 +577,12 @@ func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
 
 	// left first auction, we can start the first funding-period
 	p.startedAt = t
+	// store internal data submitted at the end of opening auction
+	temp := p.internalTWAP
+	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
+	p.internalTWAP.sumProduct = temp.sumProduct.Clone()
+	p.internalTWAP.points = temp.points
+	p.externalTWAP = NewCachedTWAP(p.log, t, p.auctions)
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTwapAsNilOrString(p.startedAt), p.externalTWAP.getTwapAsNilOrString(p.startedAt)))
 }
 

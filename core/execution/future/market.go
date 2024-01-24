@@ -1559,13 +1559,35 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.risk.GetRiskFactors().Long)
 
 	if wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
-		m.markPriceCalculator.overridePrice(m.lastTradedPrice)
+		t := m.timeService.GetTimeNow().UnixNano()
+		if wasOpeningAuction {
+			// if we're in opening auction then orderbook-based price will have a duration of 0 (the price and funding period start coincide) hence we first calculate the orderbook price at current time and then calculate the composite price assuming time has moved by the smallest possible increment
+			m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
+			t += 1
+		}
+		m.markPriceCalculator.CalculateMarkPrice(
+			t,
+			m.matching,
+			m.mtmDelta,
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
+			m.mkt.LinearSlippageFactor,
+			m.risk.GetRiskFactors().Short,
+			m.risk.GetRiskFactors().Long)
+		if m.getCurrentMarkPrice().IsZero() {
+			m.markPriceCalculator.overridePrice(m.lastTradedPrice)
+		}
 	}
 
 	if m.perp {
 		if m.indexPriceCalculator != nil {
+			t := m.timeService.GetTimeNow().UnixNano()
+			if wasOpeningAuction {
+				// if we're in opening auction then orderbook-based price will have a duration of 0 (the price and funding period start coincide) hence we first calculate the orderbook price at current time and then calculate the composite price assuming time has moved by the smallest possible increment
+				m.indexPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
+				t += 1
+			}
 			m.indexPriceCalculator.CalculateMarkPrice(
-				m.timeService.GetTimeNow().UnixNano(),
+				t,
 				m.matching,
 				m.indexConfigFrequency,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
