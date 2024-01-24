@@ -76,6 +76,7 @@
 - [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
 - [10429](https://github.com/vegaprotocol/vega/issues/10439) - Account for isolated margin mode in `EstimatePosition` endpoint.
 - [10441](https://github.com/vegaprotocol/vega/issues/10441) - Remove active restore check in collateral snapshot loading, snapshot order change removes the need for it.
+- [10376](https://github.com/vegaprotocol/vega/issues/10376) - Add spam protection for update profile.
 
 ### 🐛 Fixes
 
