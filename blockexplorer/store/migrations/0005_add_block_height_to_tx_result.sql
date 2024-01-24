@@ -58,6 +58,7 @@ do $$
         CREATE INDEX tx_results_cmd_type_block_height_index ON tx_results
             USING btree (cmd_type, block_height, index);
         CREATE INDEX tx_results_cmd_type_index ON tx_results(cmd_type, submitter);
+        CREATE INDEX tx_results_block_height_index_idx ON tx_results(block_height, index);
 
         -- get the sequence name for the new tx_results serial
         select pg_get_serial_sequence('tx_results', 'rowid')
