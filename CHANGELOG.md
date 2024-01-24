@@ -76,6 +76,7 @@
 - [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
 - [10429](https://github.com/vegaprotocol/vega/issues/10439) - Account for isolated margin mode in `EstimatePosition` endpoint.
 - [10441](https://github.com/vegaprotocol/vega/issues/10441) - Remove active restore check in collateral snapshot loading, snapshot order change removes the need for it.
+- [10286](https://github.com/vegaprotocol/vega/issues/10286) - If probability of trading is less than or equal to the minimum, assign it weight of zero for liquidity score calculation and change the validation of the tau scaling network parameter. 
 
 ### 🐛 Fixes
 
