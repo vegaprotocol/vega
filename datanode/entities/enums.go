@@ -26,6 +26,38 @@ import (
 	"github.com/jackc/pgtype"
 )
 
+type DispatchMetric vega.DispatchMetric
+
+const (
+	DispatchMetricUnspecified       DispatchMetric = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED)
+	DispatchMetricMakerFeePaid                     = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)
+	DispatchMetricMakerFeesReceived                = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)
+	DispatchMetricLPFeesReceived                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)
+	DispatchMetricMarketValue                      = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)
+	DispatchMetricAveragePosition                  = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION)
+	DispatchMetricRelativeReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN)
+	DispatchMetricReturnVolatility                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY)
+	DispatchMetricValidatorRanking                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING)
+)
+
+func (m DispatchMetric) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := vega.DispatchMetric_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown dispatch metric: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *DispatchMetric) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.DispatchMetric_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown dispatch metric: %s", src)
+	}
+
+	*m = DispatchMetric(val)
+	return nil
+}
+
 type Side = vega.Side
 
 const (
