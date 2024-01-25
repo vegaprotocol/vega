@@ -60,7 +60,7 @@ type Transfer struct {
 	Factor           *decimal.Decimal
 	DispatchStrategy *vega.DispatchStrategy
 	Reason           *string
-	GameID           *GameID
+	GameID           GameID
 }
 
 type TransferFees struct {
@@ -111,7 +111,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	}
 
 	var gameID *string
-	if t.GameID != nil {
+	if len(t.GameID) > 0 {
 		gameID = ptr.From(t.GameID.String())
 	}
 
@@ -226,10 +226,9 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		return nil, fmt.Errorf("invalid transfer amount: %w", err)
 	}
 
-	var gameID *GameID
-
+	var gameID GameID
 	if t.GameId != nil {
-		gameID = ptr.From(GameID(*t.GameId))
+		gameID = GameID(*t.GameId)
 	}
 
 	transfer := Transfer{
