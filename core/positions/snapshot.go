@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -104,8 +105,12 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 
 			// This is for migration, on the first time we load from snapshot there won't be an average entry price
 			// so take the last price as the current average
-			if (p.AverageEntryPrice == nil || p.AverageEntryPrice.IsZero()) && pos.size != 0 && !pos.price.IsZero() {
-				pos.averageEntryPrice = pos.price.Clone()
+			if p.AverageEntryPrice == nil {
+				if pos.size != 0 && !pos.price.IsZero() {
+					pos.averageEntryPrice = pos.price.Clone()
+				} else {
+					pos.averageEntryPrice = num.UintZero()
+				}
 			}
 
 			// ensure these exists on the first snapshot after the upgrade
