@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -35,7 +36,20 @@ type Engine struct {
 	broker Broker
 
 	// profiles tracks all parties profiles by party ID.
-	profiles map[types.PartyID]*types.PartyProfile
+	profiles                  map[types.PartyID]*types.PartyProfile
+	minBalanceToUpdateProfile *num.Uint
+}
+
+func (e *Engine) OnMinBalanceForUpdatePartyProfileUpdated(_ context.Context, min *num.Uint) error {
+	e.minBalanceToUpdateProfile = min.Clone()
+	return nil
+}
+
+func (e *Engine) CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error {
+	if balance.LT(e.minBalanceToUpdateProfile) {
+		return fmt.Errorf("party %q does not have sufficient balance to update profile code, required balance %s available balance %s", party, e.minBalanceToUpdateProfile.String(), balance.String())
+	}
+	return nil
 }
 
 func (e *Engine) UpdateProfile(ctx context.Context, partyID types.PartyID, cmd *commandspb.UpdatePartyProfile) error {
@@ -113,7 +127,8 @@ func NewEngine(broker Broker) *Engine {
 	engine := &Engine{
 		broker: broker,
 
-		profiles: map[types.PartyID]*types.PartyProfile{},
+		profiles:                  map[types.PartyID]*types.PartyProfile{},
+		minBalanceToUpdateProfile: num.UintZero(),
 	}
 
 	return engine

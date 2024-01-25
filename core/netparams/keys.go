@@ -174,6 +174,9 @@ const (
 	SpamProtectionBalanceSnapshotFrequency = "spam.protection.balanceSnapshotFrequency"
 	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
 
+	SpamProtectionMaxUpdatePartyProfile = "spam.protection.max.updatePartyProfile"
+	SpamProtectionUpdateProfileMinFunds = "spam.protection.updatePartyProfile.min.funds"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
 	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
@@ -265,6 +268,8 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	SpamProtectionMaxUpdatePartyProfile:                          {},
+	SpamProtectionUpdateProfileMinFunds:                          {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},

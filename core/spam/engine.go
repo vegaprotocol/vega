@@ -101,21 +101,23 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	createReferralSetPolicy := NewSimpleSpamPolicy("createReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxCreateReferralSet, log, accounting)
 	updateReferralSetPolicy := NewSimpleSpamPolicy("updateReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxUpdateReferralSet, log, accounting)
 	applyReferralCodePolicy := NewSimpleSpamPolicy("applyReferralCode", "", netparams.SpamProtectionMaxApplyReferralCode, log, accounting)
+	updatePartyProfilePolicy := NewSimpleSpamPolicy("updatePartyProfile", "", netparams.SpamProtectionMaxUpdatePartyProfile, log, accounting)
 
 	// complex policies
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]Policy{
-		proposalPolicy.policyName:          proposalPolicy,
-		valJoinPolicy.policyName:           valJoinPolicy,
-		delegationPolicy.policyName:        delegationPolicy,
-		transferPolicy.policyName:          transferPolicy,
-		issuesSignaturesPolicy.policyName:  issuesSignaturesPolicy,
-		voteKey:                            votePolicy,
-		createReferralSetPolicy.policyName: createReferralSetPolicy,
-		updateReferralSetPolicy.policyName: updateReferralSetPolicy,
-		applyReferralCodePolicy.policyName: applyReferralCodePolicy,
+		proposalPolicy.policyName:           proposalPolicy,
+		valJoinPolicy.policyName:            valJoinPolicy,
+		delegationPolicy.policyName:         delegationPolicy,
+		transferPolicy.policyName:           transferPolicy,
+		issuesSignaturesPolicy.policyName:   issuesSignaturesPolicy,
+		voteKey:                             votePolicy,
+		createReferralSetPolicy.policyName:  createReferralSetPolicy,
+		updateReferralSetPolicy.policyName:  updateReferralSetPolicy,
+		applyReferralCodePolicy.policyName:  applyReferralCodePolicy,
+		updatePartyProfilePolicy.policyName: updatePartyProfilePolicy,
 	}
 	e.hashKeys = []string{
 		proposalPolicy.policyName,
@@ -126,6 +128,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		createReferralSetPolicy.policyName,
 		updateReferralSetPolicy.policyName,
 		applyReferralCodePolicy.policyName,
+		updatePartyProfilePolicy.policyName,
 		voteKey,
 	}
 
@@ -141,6 +144,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.CreateReferralSetCommand] = createReferralSetPolicy
 	e.transactionTypeToPolicy[txn.UpdateReferralSetCommand] = updateReferralSetPolicy
 	e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand] = applyReferralCodePolicy
+	e.transactionTypeToPolicy[txn.UpdatePartyProfileCommand] = updatePartyProfilePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
@@ -157,6 +161,11 @@ func (e *Engine) DisableSpamProtection() {
 // OnCreateReferralSet is called when the net param for max create referral set per epoch has changed.
 func (e *Engine) OnMaxCreateReferralSet(ctx context.Context, max int64) error {
 	return e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxCreateReferralSet, max)
+}
+
+// OnMaxPartyProfileUpdate is called when the net param for max update party profile per epoch has changed.
+func (e *Engine) OnMaxPartyProfile(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.UpdatePartyProfileCommand].UpdateIntParam(netparams.SpamProtectionMaxUpdatePartyProfile, max)
 }
 
 // OnMaxUpdateReferralSet is called when the net param for max update referral set per epoch has changed.

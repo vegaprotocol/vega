@@ -49,7 +49,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/cometbft/cometbft v0.38.4
+	github.com/cometbft/cometbft v0.38.5
 	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/dgraph-io/badger/v2 v2.2007.4
@@ -60,7 +60,7 @@ require (
 	github.com/fergusstrange/embedded-postgres v1.17.0
 	github.com/fullstorydev/grpcui v1.3.0
 	github.com/georgysavva/scany v1.0.0
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v50 v50.0.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0

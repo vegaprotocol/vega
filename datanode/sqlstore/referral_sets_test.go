@@ -122,16 +122,20 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 	})
 }
 
-func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets) (
+func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets, createStats bool) (
 	[]entities.ReferralSet, map[string][]entities.ReferralSetRefereeStats,
 ) {
 	t.Helper()
 
 	sets := make([]entities.ReferralSet, 0)
 	referees := make(map[string][]entities.ReferralSetRefereeStats, 0)
+	es := sqlstore.NewEpochs(connectionSource)
+	fs := sqlstore.NewFeesStats(connectionSource)
 
 	for i := 0; i < 10; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
+		endTime := block.VegaTime.Add(time.Minute)
+		addTestEpoch(t, ctx, es, int64(i), block.VegaTime, endTime, &endTime, block)
 		referrer := addTestParty(t, ctx, ps, block)
 		set := entities.ReferralSet{
 			ID:        entities.ReferralSetID(GenerateID()),
@@ -158,13 +162,61 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 					AtEpoch:       uint64(block.Height),
 					VegaTime:      block.VegaTime,
 				},
-				PeriodVolume:      num.DecimalFromInt64(0),
-				PeriodRewardsPaid: num.DecimalFromInt64(0),
+				PeriodVolume:      num.DecimalFromInt64(10),
+				PeriodRewardsPaid: num.DecimalFromInt64(10),
 			}
 
 			err := rs.RefereeJoinedReferralSet(ctx, &setReferee.ReferralSetReferee)
 			require.NoError(t, err)
 			referees[setID] = append(referees[setID], setReferee)
+			if createStats {
+				// Add some stats for the referral sets
+				stats := entities.ReferralSetStats{
+					SetID:                                 set.ID,
+					AtEpoch:                               uint64(block.Height),
+					WasEligible:                           true,
+					ReferralSetRunningNotionalTakerVolume: "10",
+					ReferrerTakerVolume:                   "10",
+					RefereesStats: []*eventspb.RefereeStats{
+						{
+							PartyId:                  referee.ID.String(),
+							DiscountFactor:           "10",
+							EpochNotionalTakerVolume: "10",
+						},
+					},
+					VegaTime:                block.VegaTime,
+					RewardFactor:            "1",
+					RewardsMultiplier:       "1",
+					RewardsFactorMultiplier: "1",
+				}
+				require.NoError(t, rs.AddReferralSetStats(ctx, &stats))
+				feeStats := entities.FeesStats{
+					MarketID: "deadbeef01",
+					AssetID:  "cafed00d01",
+					EpochSeq: uint64(block.Height),
+					TotalRewardsReceived: []*eventspb.PartyAmount{
+						{
+							Party:         referee.ID.String(),
+							Amount:        "10",
+							QuantumAmount: "10",
+						},
+					},
+					ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+						{
+							Referrer: "deadd00d01",
+							GeneratedReward: []*eventspb.PartyAmount{
+								{
+									Party:         referee.ID.String(),
+									Amount:        "10",
+									QuantumAmount: "10",
+								},
+							},
+						},
+					},
+					VegaTime: block.VegaTime,
+				}
+				require.NoError(t, fs.AddFeesStats(ctx, &feeStats))
+			}
 		}
 	}
 
@@ -188,7 +240,7 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, true)
 
 	t.Run("Should return all referral sets", func(t *testing.T) {
 		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, entities.DefaultCursorPagination(true))
@@ -329,7 +381,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, true)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := rand.New(src)
 	set := sets[r.Intn(len(sets))]
@@ -470,7 +522,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 
 	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, false)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := rand.New(src)
 	set := sets[r.Intn(len(sets))]

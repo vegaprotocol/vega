@@ -605,8 +605,8 @@ service TradingDataService {
 
   // Estimate position
   //
-  // Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
-  // If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+  // Estimate the margin that would be required for maintaining the specified position, collateral increase needed to open the specified position and the liquidation price estimate.
+  // Margin estimates are scaled to asset decimal places.
   // Liquidation price estimates are scaled to asset decimal places by default, unless an argument to scale to market decimal places is specified in the request.
   rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
@@ -3880,14 +3880,14 @@ message PingResponse {}
 // Basic description of an order.
 message OrderInfo {
   // Side for the order, e.g. buy or sell.
-  vega.Side side = 1;
+  vega.Side side = 1 [(google.api.field_behavior) = REQUIRED];
   // Price for the order. The price is an unsigned integer. For example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  string price = 2;
+  string price = 2 [(google.api.field_behavior) = REQUIRED];
   // Size remaining.
-  uint64 remaining = 3;
+  uint64 remaining = 3 [(google.api.field_behavior) = REQUIRED];
   // Boolean that indicates if it is a market order.
-  bool is_market_order = 4;
+  bool is_market_order = 4 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Request for the estimated margin level, margin account balance change, and liquidation price for the specified position.
@@ -3899,17 +3899,17 @@ message EstimatePositionRequest {
   int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
   // Average entry price corresponding to the open volume. The price is an unsigned integer. For example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  string average_entry_price = 3;
+  string average_entry_price = 3 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
   repeated OrderInfo orders = 4;
   // Margin account balance. Needs to be provided scaled to asset decimal places.
-  string margin_account_balance = 5;
+  string margin_account_balance = 5 [(google.api.field_behavior) = REQUIRED];
   // General account balance. Needs to be provided scaled to asset decimal places.
-  string general_account_balance = 6;
+  string general_account_balance = 6 [(google.api.field_behavior) = REQUIRED];
   // Order margin account balance. Needs to be provided scaled to asset decimal places.
-  string order_margin_account_balance = 7;
+  string order_margin_account_balance = 7 [(google.api.field_behavior) = REQUIRED];
   // Margin mode for the party, cross margin or isolated margin.
-  vega.MarginMode margin_mode = 8;
+  vega.MarginMode margin_mode = 8 [(google.api.field_behavior) = REQUIRED];
   // Margin factor to be used along with isolated margin mode
   optional string margin_factor = 9;
   // Whether the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode.
@@ -3918,7 +3918,7 @@ message EstimatePositionRequest {
   optional bool scale_liquidation_price_to_market_decimals = 11;
 }
 
-// Response for the estimate of the margin level and, if available collateral was provided in the request, liquidation price for the specified position.
+// Response for the estimated margin level, margin account balance change, and liquidation price for the specified position.
 message EstimatePositionResponse {
   // Margin level range estimate for the specified position.
   MarginEstimate margin = 1;
@@ -4656,7 +4656,7 @@ message TeamGameEntity {
   // Volume traded by the team
   string volume = 3;
   // Reward metric applied to the team
-  string reward_metric = 4;
+  vega.DispatchMetric reward_metric = 4;
   // Reward earned by the team
   string reward_earned = 5;
   // Total rewards earned by the individual for the team
@@ -4682,7 +4682,7 @@ message IndividualGameEntity {
   // Volume traded by the individual
   string volume = 3;
   // Reward metric applied to the individual
-  string reward_metric = 4;
+  vega.DispatchMetric reward_metric = 4;
   // Reward earned by the individual during the epoch
   string reward_earned = 5;
   // Total rewards earned by the individual for the game
