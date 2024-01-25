@@ -78,6 +78,7 @@ func testUpdatePartyProfileSucceeds(t *testing.T) {
 	}
 }
 
+// 0088-PPRF-001.
 func testUpdatePartyProfileWithInvalidAliasFails(t *testing.T) {
 	tcs := []struct {
 		name  string
@@ -102,6 +103,7 @@ func testUpdatePartyProfileWithInvalidAliasFails(t *testing.T) {
 	}
 }
 
+// 0088-PPRF-003, 0088-PPRF-004, 0088-PPRF-005.
 func testUpdatePartyProfileWithInvalidMetadataFails(t *testing.T) {
 	tcs := []struct {
 		name     string

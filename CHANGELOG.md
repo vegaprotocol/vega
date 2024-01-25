@@ -76,6 +76,7 @@
 - [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
 - [10429](https://github.com/vegaprotocol/vega/issues/10439) - Account for isolated margin mode in `EstimatePosition` endpoint.
 - [10441](https://github.com/vegaprotocol/vega/issues/10441) - Remove active restore check in collateral snapshot loading, snapshot order change removes the need for it.
+- [10376](https://github.com/vegaprotocol/vega/issues/10376) - Add spam protection for update profile.
 
 ### 🐛 Fixes
 
@@ -144,7 +145,6 @@
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
--
 - [10417](https://github.com/vegaprotocol/vega/issues/10417) - Party margin modes `API` always errors.
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10436](https://github.com/vegaprotocol/vega/issues/10436) - Fix source staleness validation when oracles are not defined.
@@ -152,6 +152,11 @@
 - [10454](https://github.com/vegaprotocol/vega/issues/10454) - Fix account resolver validation to include order margin account.
 - [10451](https://github.com/vegaprotocol/vega/issues/10451) - Fix get update asset bundle.
 - [10480](https://github.com/vegaprotocol/vega/issues/10480) - Fix migration of position average entry price.
+- [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
+- [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
+- [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
+- [10470](https://github.com/vegaprotocol/vega/issues/10470) - Mark non-optional parameters as required and update documentation strings.
+- [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
 
 ## 0.73.0
 

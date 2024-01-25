@@ -399,7 +399,7 @@ type IndividualGameEntity struct {
 	// The volume traded by the individual
 	Volume string `json:"volume"`
 	// The reward metric applied to the game
-	RewardMetric string `json:"rewardMetric"`
+	RewardMetric vega.DispatchMetric `json:"rewardMetric"`
 	// The rewards earned by the individual during the epoch
 	RewardEarned string `json:"rewardEarned"`
 	// Total rewards earned by the individual during the game
@@ -799,7 +799,7 @@ type TeamGameEntity struct {
 	// Total volume traded by the team
 	Volume string `json:"volume"`
 	// Reward metric applied to the game.
-	RewardMetric string `json:"rewardMetric"`
+	RewardMetric vega.DispatchMetric `json:"rewardMetric"`
 	// Total rewards earned by the team during the epoch
 	RewardEarned string `json:"rewardEarned"`
 	// Total rewards earned by the team for the game
