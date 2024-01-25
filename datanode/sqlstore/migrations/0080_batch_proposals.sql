@@ -2,7 +2,7 @@
 
 ALTER TABLE proposals
       ADD COLUMN batch_id BYTEA,
-      ADD COLUMN batch_terms JSONB,
+      ADD COLUMN batch_terms JSONB DEFAULT '{}' NOT NULL,
       ALTER COLUMN terms DROP NOT NULL;
 
 CREATE INDEX ON proposals (batch_id);
