@@ -305,9 +305,7 @@ func getTestMarket() *protoTypes.Market {
 				},
 			},
 		},
-		LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-			TriggeringRatio: "0.3",
-		},
+		LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 	}
 }
 

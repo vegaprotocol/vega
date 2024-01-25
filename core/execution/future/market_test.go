@@ -798,7 +798,6 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 				TimeWindow:    3600, // seconds = 1h
 				ScalingFactor: num.DecimalFromFloat(10),
 			},
-			TriggeringRatio: num.DecimalZero(),
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
 			PriceRange:                  num.DecimalOne(),

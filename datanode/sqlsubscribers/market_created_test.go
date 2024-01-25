@@ -168,8 +168,6 @@ func getTestMarket(termInt bool) types.Market {
 				TimeWindow:    0,
 				ScalingFactor: num.DecimalZero(),
 			},
-			TriggeringRatio:  num.DecimalZero(),
-			AuctionExtension: 0,
 		},
 		TradingMode: 0,
 		State:       0,

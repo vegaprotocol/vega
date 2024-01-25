@@ -478,8 +478,6 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 				TimeWindow:    100,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
-			TriggeringRatio:  num.DecimalFromFloat(0.9),
-			AuctionExtension: 10000,
 		},
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
