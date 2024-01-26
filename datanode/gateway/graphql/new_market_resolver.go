@@ -55,10 +55,7 @@ func (r *newMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj
 		return nil, nil
 	}
 
-	lmp := &LiquidityMonitoringParameters{
-		TriggeringRatio:      params.TriggeringRatio,
-		AuctionExtensionSecs: int(params.AuctionExtension),
-	}
+	lmp := &LiquidityMonitoringParameters{}
 
 	if params.TargetStakeParameters != nil {
 		lmp.TargetStakeParameters = &TargetStakeParameters{
