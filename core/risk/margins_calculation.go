@@ -411,12 +411,20 @@ func CalcOrderMarginIsolatedMode(positionSize int64, buyOrders, sellOrders []*Or
 }
 
 func calcOrderSideMarginIsolatedMode(currentPosition int64, orders []*OrderInfo, positionFactor, marginFactor num.Decimal, auctionPrice num.Decimal, buy bool) num.Decimal {
+	for _, o := range orders {
+		if o.IsMarketOrder {
+			// assume market order fills
+			if buy {
+				currentPosition += int64(o.TrueRemaining)
+			} else {
+				currentPosition -= int64(o.TrueRemaining)
+			}
+		}
+	}
+
 	margin := num.DecimalZero()
 	remainingCovered := int64Abs(currentPosition)
 	for _, o := range orders {
-		if o.IsMarketOrder {
-			continue
-		}
 		size := o.TrueRemaining
 		// for long position we don't need to count margin for the top <currentPosition> size for sell orders
 		// for short position we don't need to count margin for the top <currentPosition> size for buy orders
@@ -443,16 +451,27 @@ func calcOrderSideMarginIsolatedMode(currentPosition int64, orders []*OrderInfo,
 	return margin.Mul(marginFactor).Div(positionFactor)
 }
 
-func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal) (num.Decimal, num.Decimal) {
+func CalculateRequiredMarginInIsolatedMode(sizePosition int64, averageEntryPrice, marketObservable num.Decimal, buyOrders, sellOrders []*OrderInfo, positionFactor, marginFactor num.Decimal) (num.Decimal, num.Decimal) {
 	totalOrderNotional := num.DecimalZero()
+	marketOrderAdjustedPositionNotional := averageEntryPrice.Copy().Mul(num.DecimalFromInt64(sizePosition))
+
+	// assume market orders fill immediately at marketObservable price
 	for _, o := range buyOrders {
-		totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		if o.IsMarketOrder {
+			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Add(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		} else {
+			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		}
 	}
 	for _, o := range sellOrders {
-		totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		if o.IsMarketOrder {
+			marketOrderAdjustedPositionNotional = marketOrderAdjustedPositionNotional.Sub(marketObservable.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		} else {
+			totalOrderNotional = totalOrderNotional.Add(o.Price.Mul(num.DecimalFromInt64(int64(o.TrueRemaining))))
+		}
 	}
 
-	requiredPositionMargin := averageEntryPrice.Mul(num.DecimalFromInt64(sizePosition)).Mul(marginFactor).Div(positionFactor)
+	requiredPositionMargin := marketOrderAdjustedPositionNotional.Abs().Mul(marginFactor).Div(positionFactor)
 	requiredOrderMargin := totalOrderNotional.Mul(marginFactor).Div(positionFactor)
 
 	return requiredPositionMargin, requiredOrderMargin
