@@ -3360,7 +3360,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	)
 	var marginDeltaWorst, marginDeltaBest num.Decimal
 	if req.MarginMode == types.MarginModeIsolatedMargin {
-		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, buyOrders, sellOrders, positionFactor, dMarginFactor)
+		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
 		marginDeltaWorst = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(marginAccountBalance).Sub(orderAccountBalance))
 		marginDeltaBest = marginDeltaWorst
 	} else {
