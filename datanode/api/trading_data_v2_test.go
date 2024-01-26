@@ -133,7 +133,7 @@ func TestEstimatePosition(t *testing.T) {
 	rfLong := num.DecimalFromFloat(0.1)
 	rfShort := num.DecimalFromFloat(0.2)
 
-	markPrice := num.DecimalFromFloat(123.456)
+	markPrice := 123.456 * math.Pow10(marketDecimals)
 	auctionEnd := int64(0)
 	fundingPayment := 1234.56789
 
@@ -165,21 +165,6 @@ func TestEstimatePosition(t *testing.T) {
 		},
 	}
 
-	mktData := entities.MarketData{
-		MarkPrice:  markPrice,
-		AuctionEnd: auctionEnd,
-		ProductData: &entities.ProductData{
-			ProductData: &vega.ProductData{
-				Data: &vega.ProductData_PerpetualData{
-					PerpetualData: &vega.PerpetualData{
-						FundingPayment: fmt.Sprintf("%f", fundingPayment),
-						FundingRate:    "0.05",
-					},
-				},
-			},
-		},
-	}
-
 	rf := entities.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -192,7 +177,6 @@ func TestEstimatePosition(t *testing.T) {
 
 	assetService.EXPECT().GetByID(ctx, assetId).Return(asset, nil).AnyTimes()
 	marketService.EXPECT().GetByID(ctx, marketId).Return(mkt, nil).AnyTimes()
-	marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
 	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, marketId).Return(rf, nil).AnyTimes()
 
 	apiService := api.TradingDataServiceV2{
@@ -203,218 +187,398 @@ func TestEstimatePosition(t *testing.T) {
 	}
 
 	testCases := []struct {
-		openVolume                int64
-		avgEntryPrice             float64
-		orders                    []*v2.OrderInfo
-		marginAccountBalance      float64
-		generalAccountBalance     float64
-		orderMarginAccountBalance float64
-		marginMode                vega.MarginMode
-		marginFactor              float64
+		markPrice                         float64
+		openVolume                        int64
+		avgEntryPrice                     float64
+		orders                            []*v2.OrderInfo
+		marginAccountBalance              float64
+		generalAccountBalance             float64
+		orderMarginAccountBalance         float64
+		marginMode                        vega.MarginMode
+		marginFactor                      float64
+		expectedCollIncBest               string
+		expectedLiquidationBestVolumeOnly string
 	}{
 		{
+			markPrice:     markPrice,
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
-			generalAccountBalance:     1000 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
+			markPrice:     markPrice,
 			openVolume:    0,
 			avgEntryPrice: 0,
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
-			generalAccountBalance:     1000 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
 			marginFactor:              0.1,
 		},
 		{
-			openVolume:    int64(10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 			},
 			marginAccountBalance:      0,
-			generalAccountBalance:     1000 * float64(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			openVolume:    int64(-10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 			},
 			marginAccountBalance:      0,
-			generalAccountBalance:     1000 * float64(assetDecimals),
-			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
+			orderMarginAccountBalance: 10 * math.Pow10(assetDecimals),
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
 		},
 		{
-			openVolume:    int64(-10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(11 * positionDecimalPlaces),
+					Remaining:     uint64(11 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(11 * positionDecimalPlaces),
+					Remaining:     uint64(11 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			openVolume:    int64(-10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(1 * positionDecimalPlaces),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
-			generalAccountBalance:     1000 * float64(assetDecimals),
-			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
+			orderMarginAccountBalance: 10 * math.Pow10(assetDecimals),
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
 		},
 		{
-			openVolume:    int64(10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(3 * positionDecimalPlaces),
+					Remaining:     uint64(3 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(101, marketDecimals),
-					Remaining:     uint64(4 * positionDecimalPlaces),
+					Remaining:     uint64(4 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(105, marketDecimals),
-					Remaining:     uint64(5 * positionDecimalPlaces),
+					Remaining:     uint64(5 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(95, marketDecimals),
-					Remaining:     uint64(2 * positionDecimalPlaces),
+					Remaining:     uint64(2 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(94, marketDecimals),
-					Remaining:     uint64(3 * positionDecimalPlaces),
+					Remaining:     uint64(3 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(90, marketDecimals),
-					Remaining:     uint64(10 * positionDecimalPlaces),
+					Remaining:     uint64(10 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
-			generalAccountBalance:     1000 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_CROSS_MARGIN,
 		},
 		{
-			openVolume:    int64(-10 * positionDecimalPlaces),
-			avgEntryPrice: 123.4 * float64(marketDecimals),
+			markPrice:     markPrice,
+			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(100, marketDecimals),
-					Remaining:     uint64(3 * positionDecimalPlaces),
+					Remaining:     uint64(3 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(101, marketDecimals),
-					Remaining:     uint64(4 * positionDecimalPlaces),
+					Remaining:     uint64(4 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideSell,
 					Price:         floatToStringWithDp(105, marketDecimals),
-					Remaining:     uint64(5 * positionDecimalPlaces),
+					Remaining:     uint64(5 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: false,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(95, marketDecimals),
-					Remaining:     uint64(2 * positionDecimalPlaces),
+					Remaining:     uint64(2 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(94, marketDecimals),
-					Remaining:     uint64(3 * positionDecimalPlaces),
+					Remaining:     uint64(3 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 				{
 					Side:          entities.SideBuy,
 					Price:         floatToStringWithDp(90, marketDecimals),
-					Remaining:     uint64(10 * positionDecimalPlaces),
+					Remaining:     uint64(10 * math.Pow10(positionDecimalPlaces)),
 					IsMarketOrder: true,
 				},
 			},
-			marginAccountBalance:      100 * float64(assetDecimals),
-			generalAccountBalance:     1000 * float64(assetDecimals),
-			orderMarginAccountBalance: 10 * float64(assetDecimals),
+			marginAccountBalance:      100 * math.Pow10(assetDecimals),
+			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
+			orderMarginAccountBalance: 10 * math.Pow10(assetDecimals),
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         fmt.Sprintf("%f", markPrice),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         "0",
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:                 markPrice,
+			openVolume:                int64(1 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice:             markPrice,
+			orders:                    []*v2.OrderInfo{},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         fmt.Sprintf("%f", markPrice),
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: false,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    0,
+			avgEntryPrice: 0,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         "0",
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:                 markPrice,
+			openVolume:                -int64(1 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice:             markPrice,
+			orders:                    []*v2.OrderInfo{},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "1234560000",
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    -int64(1 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: markPrice,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideBuy,
+					Price:         "0",
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "0",
+		},
+		{
+			markPrice:     markPrice,
+			openVolume:    int64(1 * math.Pow10(positionDecimalPlaces)),
+			avgEntryPrice: markPrice,
+			orders: []*v2.OrderInfo{
+				{
+					Side:          entities.SideSell,
+					Price:         "0",
+					Remaining:     uint64(1 * math.Pow10(positionDecimalPlaces)),
+					IsMarketOrder: true,
+				},
+			},
+			marginAccountBalance:      0,
+			generalAccountBalance:     0,
+			orderMarginAccountBalance: 0,
+			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:              0.1,
+			expectedCollIncBest:       "0",
+		},
+		{
+			markPrice:                         67813,
+			openVolume:                        10000,
+			avgEntryPrice:                     68113,
+			orders:                            []*v2.OrderInfo{},
+			marginAccountBalance:              68389,
+			generalAccountBalance:             0,
+			orderMarginAccountBalance:         0,
+			marginMode:                        vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
+			marginFactor:                      0.01277,
+			expectedLiquidationBestVolumeOnly: "13717333877",
 		},
 	}
 	for i, tc := range testCases {
+		mktData := entities.MarketData{
+			MarkPrice:  num.DecimalFromFloat(tc.markPrice),
+			AuctionEnd: auctionEnd,
+			ProductData: &entities.ProductData{
+				ProductData: &vega.ProductData{
+					Data: &vega.ProductData_PerpetualData{
+						PerpetualData: &vega.PerpetualData{
+							FundingPayment: fmt.Sprintf("%f", fundingPayment),
+							FundingRate:    "0.05",
+						},
+					},
+				},
+			},
+		}
+		marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
+
 		marginFactor := fmt.Sprintf("%f", tc.marginFactor)
 		exclude := false
 		dontScale := false
@@ -453,6 +617,13 @@ func TestEstimatePosition(t *testing.T) {
 		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
 		colIncWorst, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.WorstCase, 64)
 		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		if tc.expectedCollIncBest != "" {
+			require.Equal(t, tc.expectedCollIncBest, res.CollateralIncreaseEstimate.BestCase, fmt.Sprintf("test case #%v", i+1))
+		}
+		if tc.expectedLiquidationBestVolumeOnly != "" {
+			require.Equal(t, tc.expectedLiquidationBestVolumeOnly, res.Liquidation.BestCase.OpenVolumeOnly, fmt.Sprintf("test case #%v", i+1))
+		}
+
 		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
 		if tc.openVolume == 0 {
 			require.Equal(t, colIncBest, colIncWorst, fmt.Sprintf("test case #%v", i+1))
@@ -472,8 +643,11 @@ func TestEstimatePosition(t *testing.T) {
 		expectedCollIncWorst := max(0, initialMarginWorst-tc.marginAccountBalance-tc.orderMarginAccountBalance)
 		if isolatedMargin {
 			priceFactor := math.Pow10(assetDecimals - marketDecimals)
-			requiredPositionMargin := tc.avgEntryPrice * priceFactor * float64(tc.openVolume) / math.Pow10(positionDecimalPlaces) * tc.marginFactor
-			requiredOrderMargin := getOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
+			marketOrderNotional := getMarketOrderNotional(tc.markPrice, tc.orders, priceFactor, positionDecimalPlaces)
+			adjNotional := (tc.avgEntryPrice*priceFactor*float64(tc.openVolume)/math.Pow10(positionDecimalPlaces) + marketOrderNotional)
+
+			requiredPositionMargin := math.Abs(adjNotional) * tc.marginFactor
+			requiredOrderMargin := getLimitOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
 			expectedCollIncBest = max(0, requiredPositionMargin+requiredOrderMargin-tc.marginAccountBalance-tc.orderMarginAccountBalance)
 			expectedCollIncWorst = expectedCollIncBest
 		}
@@ -492,18 +666,18 @@ func TestEstimatePosition(t *testing.T) {
 
 		if isolatedMargin {
 			if actualCollIncWorst != 0 {
-				if countOrders(tc.orders, entities.SideBuy) > 0 {
+				if countOrders(tc.orders, entities.SideBuy) > 0 && res.Liquidation.WorstCase.IncludingBuyOrders != "0" {
 					require.NotEqual(t, res.Liquidation.WorstCase.IncludingBuyOrders, res2.Liquidation.WorstCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
 				}
-				if countOrders(tc.orders, entities.SideSell) > 0 {
+				if countOrders(tc.orders, entities.SideSell) > 0 && res.Liquidation.WorstCase.IncludingSellOrders != "0" {
 					require.NotEqual(t, res.Liquidation.WorstCase.IncludingSellOrders, res2.Liquidation.WorstCase.IncludingSellOrders, fmt.Sprintf("test case #%v", i+1))
 				}
 			}
 			if actualCollIncBest != 0 {
-				if countOrders(tc.orders, entities.SideBuy) > 0 {
+				if countOrders(tc.orders, entities.SideBuy) > 0 && res.Liquidation.BestCase.IncludingBuyOrders != "0" {
 					require.NotEqual(t, res.Liquidation.BestCase.IncludingBuyOrders, res2.Liquidation.BestCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
 				}
-				if countOrders(tc.orders, entities.SideSell) > 0 {
+				if countOrders(tc.orders, entities.SideSell) > 0 && res.Liquidation.BestCase.IncludingSellOrders != "0" {
 					require.NotEqual(t, res.Liquidation.BestCase.IncludingSellOrders, res2.Liquidation.BestCase.IncludingSellOrders, fmt.Sprintf("test case #%v", i+1))
 				}
 			}
@@ -565,13 +739,31 @@ func (s *mockStream) Context() context.Context        { return context.Backgroun
 func (s *mockStream) SendMsg(m interface{}) error     { return nil }
 func (s *mockStream) RecvMsg(m interface{}) error     { return nil }
 
-func getOrderNotional(t *testing.T, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {
+func getLimitOrderNotional(t *testing.T, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {
 	t.Helper()
 	notional := 0.0
 	for _, o := range orders {
+		if o.IsMarketOrder {
+			continue
+		}
 		price, err := strconv.ParseFloat(o.Price, 64)
 		require.NoError(t, err)
 		notional += price * priceFactor * float64(o.Remaining) / math.Pow10(positionDecimals)
+	}
+	return notional
+}
+
+func getMarketOrderNotional(marketObservable float64, orders []*v2.OrderInfo, priceFactor float64, positionDecimals int) float64 {
+	notional := 0.0
+	for _, o := range orders {
+		if !o.IsMarketOrder {
+			continue
+		}
+		size := float64(o.Remaining) / math.Pow10(positionDecimals)
+		if o.Side == vega.Side_SIDE_SELL {
+			size = -size
+		}
+		notional += marketObservable * priceFactor * size
 	}
 	return notional
 }
