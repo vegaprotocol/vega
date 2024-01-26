@@ -64,9 +64,6 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a new market without liquidity monitoring fails", testNewMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a new market with liquidity monitoring succeeds", testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
-	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
-	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
-	t.Run("Submitting a liquidity monitoring change without triggering ratio parameter fails", testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change without target stake parameters fails", testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails)
 	t.Run("Submitting a liquidity monitoring change with target stake parameters succeeds", testLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds)
 	t.Run("Submitting a liquidity monitoring change with non-positive time window fails", testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails)
@@ -455,104 +452,13 @@ func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
-func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with probability of -1",
-			value: "-1",
-		}, {
-			msg:   "with probability of 2",
-			value: "2",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &vegapb.ProposalTerms{
-					Change: &vegapb.ProposalTerms_NewMarket{
-						NewMarket: &vegapb.NewMarket{
-							Changes: &vegapb.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.triggering_ratio"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with ratio of 0",
-			value: "0",
-		}, {
-			msg:   "with ratio of 0.5",
-			value: "0.5",
-		}, {
-			msg:   "with ratio of 1",
-			value: "1",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &vegapb.ProposalTerms{
-					Change: &vegapb.ProposalTerms_NewMarket{
-						NewMarket: &vegapb.NewMarket{
-							Changes: &vegapb.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.triggering_ratio"), commands.ErrIsNotValidNumber)
-}
-
 func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-							TriggeringRatio: "1",
-						},
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -601,7 +507,6 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
@@ -658,7 +563,6 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},

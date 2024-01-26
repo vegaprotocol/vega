@@ -24,7 +24,7 @@ func TestMarkets(t *testing.T) {
 		"Instrument":          "{ marketsConnection{ edges { node { id, tradableInstrument{ instrument{ id, code, name, metadata{ tags } } } } } } }",
 		"MarginCalculator":    "{ marketsConnection{ edges { node { id, tradableInstrument{ marginCalculator{ scalingFactors{ searchLevel, initialMargin,collateralRelease } } } } } } }",
 		"PriceMonitor":        "{ marketsConnection{ edges { node { id, priceMonitoringSettings{ parameters{ triggers{ horizonSecs, probability } } } } } } }",
-		"LiquidityMonitor":    "{ marketsConnection{ edges { node { id, liquidityMonitoringParameters{ targetStakeParameters{ timeWindow, scalingFactor } triggeringRatio} } } } }",
+		"LiquidityMonitor":    "{ marketsConnection{ edges { node { id, liquidityMonitoringParameters{ targetStakeParameters{ timeWindow, scalingFactor } } } } } }",
 		"Proposal":            "{ marketsConnection{ edges { node { id, proposal{ id, reference, party { id }, state, datetime, rejectionReason} } } } }",
 		"ProposalTerms":       "{ marketsConnection{ edges { node { id, proposal{ id, terms{ closingDatetime, enactmentDatetime } } } } } }",
 		"ProposalYes":         "{ marketsConnection{ edges { node { id, proposal{ id, votes{ yes{ totalNumber totalWeight totalTokens} } } } } } }",

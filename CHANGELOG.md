@@ -158,6 +158,7 @@
 - [10470](https://github.com/vegaprotocol/vega/issues/10470) - Mark non-optional parameters as required and update documentation strings.
 - [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
 - [10301](https://github.com/vegaprotocol/vega/issues/10301) - Fix get epoch by block.
+- [10343](https://github.com/vegaprotocol/vega/issues/10343) - Remove auction trigger extension and triggering ratio from liquidity monitoring parameters. 
 
 ## 0.73.0
 

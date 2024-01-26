@@ -280,10 +280,6 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvisi
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters
-	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio num.Decimal
-	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
-	AuctionExtension int64
 }
 
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
@@ -293,8 +289,6 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 	}
 	return &proto.LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
-		TriggeringRatio:       l.TriggeringRatio.String(),
-		AuctionExtension:      l.AuctionExtension,
 	}
 }
 
@@ -304,17 +298,13 @@ func (l LiquidityMonitoringParameters) DeepClone() *LiquidityMonitoringParameter
 		params = l.TargetStakeParameters.DeepClone()
 	}
 	return &LiquidityMonitoringParameters{
-		TriggeringRatio:       l.TriggeringRatio,
-		AuctionExtension:      l.AuctionExtension,
 		TargetStakeParameters: params,
 	}
 }
 
 func (l LiquidityMonitoringParameters) String() string {
 	return fmt.Sprintf(
-		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
-		l.AuctionExtension,
-		l.TriggeringRatio.String(),
+		"auctionExtension(%v)",
 		stringer.PtrToString(l.TargetStakeParameters),
 	)
 }
@@ -328,15 +318,8 @@ func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParamete
 		params = TargetStakeParametersFromProto(p.TargetStakeParameters)
 	}
 
-	tr, err := num.DecimalFromString(p.TriggeringRatio)
-	if err != nil {
-		return nil, fmt.Errorf("error getting trigerring ratio value from proto: %s", err)
-	}
-
 	return &LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
-		AuctionExtension:      p.AuctionExtension,
-		TriggeringRatio:       tr,
 	}, nil
 }
 

@@ -216,8 +216,6 @@ func TestMarketDeepClone(t *testing.T) {
 				TimeWindow:    1000,
 				ScalingFactor: 2.0,
 			},
-			TriggeringRatio:  "123.45",
-			AuctionExtension: 5000,
 		},
 		LiquiditySlaParams: &vegapb.LiquiditySLAParameters{
 			PriceRange:                  "0.95",
@@ -282,8 +280,6 @@ func TestMarketDeepClone(t *testing.T) {
 
 	me.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow = 999
 	me.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor = num.DecimalFromFloat(99.9)
-	me.LiquidityMonitoringParameters.TriggeringRatio = num.DecimalFromFloat(99.9)
-	me.LiquidityMonitoringParameters.AuctionExtension = 999
 
 	me.TradingMode = vegapb.Market_TRADING_MODE_UNSPECIFIED
 	me.State = vegapb.Market_STATE_UNSPECIFIED
@@ -332,8 +328,6 @@ func TestMarketDeepClone(t *testing.T) {
 	assert.NotEqual(t, me.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension, me2.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension)
 	assert.NotEqual(t, me.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow, me2.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow)
 	assert.NotEqual(t, me.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor, me2.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor)
-	assert.NotEqual(t, me.LiquidityMonitoringParameters.TriggeringRatio, me2.LiquidityMonitoringParameters.TriggeringRatio)
-	assert.NotEqual(t, me.LiquidityMonitoringParameters.AuctionExtension, me2.LiquidityMonitoringParameters.AuctionExtension)
 	assert.NotEqual(t, me.TradingMode, me2.TradingMode)
 	assert.NotEqual(t, me.State, me2.State)
 	assert.NotEqual(t, me.MarketTimestamps.Proposed, me2.MarketTimestamps.Proposed)
