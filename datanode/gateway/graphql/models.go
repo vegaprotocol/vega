@@ -412,10 +412,6 @@ func (IndividualGameEntity) IsGameEntity() {}
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
-	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio string `json:"triggeringRatio"`
-	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider

@@ -118,7 +118,6 @@ func (r *updateMarketConfigurationResolver) LiquidityMonitoringParameters(ctx co
 			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
 			ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
 		},
-		TriggeringRatio: obj.LiquidityMonitoringParameters.TriggeringRatio,
 	}, nil
 }
 

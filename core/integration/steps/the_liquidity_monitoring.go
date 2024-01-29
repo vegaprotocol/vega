@@ -31,8 +31,6 @@ func TheLiquidityMonitoring(config *market.Config, table *godog.Table) error {
 				TimeWindow:    r.timeWindow(),
 				ScalingFactor: r.scalingFactor(),
 			},
-			TriggeringRatio:  r.triggeringRatio(),
-			AuctionExtension: r.auctionExtension(),
 		}
 		if err := config.LiquidityMonitoring.Add(r.name(), p); err != nil {
 			return err
@@ -67,15 +65,4 @@ func (r liquidityMonitoringRow) timeWindow() int64 {
 
 func (r liquidityMonitoringRow) scalingFactor() float64 {
 	return r.row.MustF64("scaling factor")
-}
-
-func (r liquidityMonitoringRow) triggeringRatio() string {
-	return r.row.MustStr("triggering ratio")
-}
-
-func (r liquidityMonitoringRow) auctionExtension() int64 {
-	if !r.row.HasColumn("auction extension") {
-		return 0
-	}
-	return r.row.MustI64("auction extension")
 }

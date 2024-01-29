@@ -50,9 +50,6 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a update market without liquidity monitoring fails", testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a update market with liquidity monitoring succeeds", testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
-	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
-	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
-	t.Run("Submitting a liquidity monitoring change without triggering ratio parameter fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioParameterFails)
 	t.Run("Submitting a liquidity monitoring change without target stake parameters fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails)
 	t.Run("Submitting a liquidity monitoring change with target stake parameters succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds)
 	t.Run("Submitting a liquidity monitoring change with non-positive time window fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails)
@@ -271,104 +268,13 @@ func testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with probability of -1",
-			value: "-1",
-		}, {
-			msg:   "with probability of 2",
-			value: "2",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_UpdateMarket{
-						UpdateMarket: &protoTypes.UpdateMarket{
-							Changes: &protoTypes.UpdateMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters.triggering_ratio"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with ratio of 0",
-			value: "0",
-		}, {
-			msg:   "with ratio of 0.5",
-			value: "0.5",
-		}, {
-			msg:   "with ratio of 1",
-			value: "1",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_UpdateMarket{
-						UpdateMarket: &protoTypes.UpdateMarket{
-							Changes: &protoTypes.UpdateMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioParameterFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters.triggering_ratio"), commands.ErrIsNotValidNumber)
-}
-
 func testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_UpdateMarket{
 				UpdateMarket: &protoTypes.UpdateMarket{
 					Changes: &protoTypes.UpdateMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TriggeringRatio: "1",
-						},
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -385,7 +291,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithTargetStakeParameter
 				UpdateMarket: &protoTypes.UpdateMarket{
 					Changes: &protoTypes.UpdateMarketConfiguration{
 						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TriggeringRatio:       "1",
 							TargetStakeParameters: &protoTypes.TargetStakeParameters{},
 						},
 					},
@@ -418,7 +323,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindo
 						UpdateMarket: &protoTypes.UpdateMarket{
 							Changes: &protoTypes.UpdateMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
@@ -475,7 +379,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFa
 						UpdateMarket: &protoTypes.UpdateMarket{
 							Changes: &protoTypes.UpdateMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},

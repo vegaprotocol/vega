@@ -322,8 +322,6 @@ func (tsp TargetStakeParameters) ToProto() *vega.TargetStakeParameters {
 
 type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
-	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
-	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
 }
 
 type LiquiditySLAParameters struct {
@@ -420,8 +418,6 @@ func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringPara
 	}
 	return &vega.LiquidityMonitoringParameters{
 		TargetStakeParameters: lmp.TargetStakeParameters.ToProto(),
-		TriggeringRatio:       lmp.TriggeringRatio,
-		AuctionExtension:      lmp.AuctionExtension,
 	}
 }
 
@@ -441,8 +437,6 @@ func liquidityMonitoringParametersFromProto(lmp *vega.LiquidityMonitoringParamet
 
 	return LiquidityMonitoringParameters{
 		TargetStakeParameters: tsp,
-		TriggeringRatio:       lmp.TriggeringRatio,
-		AuctionExtension:      lmp.AuctionExtension,
 	}, nil
 }
 

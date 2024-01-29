@@ -319,8 +319,6 @@ func buildSpotMarketFromProposal(
 
 	liquidityMonitoring := &types.LiquidityMonitoringParameters{
 		TargetStakeParameters: definition.Changes.TargetStakeParameters,
-		TriggeringRatio:       num.DecimalZero(),
-		AuctionExtension:      0,
 	}
 
 	makerFeeDec, _ := num.DecimalFromString(makerFee)

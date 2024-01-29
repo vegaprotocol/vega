@@ -143,6 +143,7 @@
 - [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
 - [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - `ListTransfers` does not return staking rewards.
+- [10496](https://github.com/vegaprotocol/vega/issues/10496) - `MarketData` API now always report correct funding payment when a perpetual market is terminated.
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
@@ -158,6 +159,7 @@
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
 - [10470](https://github.com/vegaprotocol/vega/issues/10470) - Mark non-optional parameters as required and update documentation strings.
 - [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
+- [10343](https://github.com/vegaprotocol/vega/issues/10343) - Remove auction trigger extension and triggering ratio from liquidity monitoring parameters. 
 
 ## 0.73.0
 

@@ -244,7 +244,6 @@ func (r *myMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj 
 			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
 			ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
 		},
-		TriggeringRatio: obj.LiquidityMonitoringParameters.TriggeringRatio,
 	}, nil
 }
 

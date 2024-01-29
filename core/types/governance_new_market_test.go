@@ -137,8 +137,6 @@ func TestNewMarketProposalMapping(t *testing.T) {
 								TimeWindow:    10,
 								ScalingFactor: 0.1,
 							},
-							TriggeringRatio:  "0.01",
-							AuctionExtension: 1,
 						},
 						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
 							Simple: &vegapb.SimpleModelParams{
