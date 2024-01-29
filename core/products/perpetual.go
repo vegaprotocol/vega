@@ -88,6 +88,20 @@ func (a *auctionIntervals) update(t int64, enter bool) {
 	a.auctionStart = 0
 }
 
+// inAuction returns whether the given t exists in an auction period.
+func (a *auctionIntervals) inAuction(t int64) bool {
+	if a.auctionStart != 0 && t >= a.auctionStart {
+		return true
+	}
+
+	for i := len(a.auctions) - 2; i >= 0; i = i - 2 {
+		if a.auctions[i] <= t && a.auctions[i+1] < t {
+			return true
+		}
+	}
+	return false
+}
+
 // timeSpent returns how long the time interval [st, nd] was spent in auction in the current funding period.
 func (a *auctionIntervals) timeSpent(st, nd int64) int64 {
 	if nd < st {
@@ -204,6 +218,9 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 		return num.UintZero()
 	}
 	if t == c.start {
+		if c.auctions.inAuction(t) {
+			return num.UintZero()
+		}
 		return c.points[0].price.Clone()
 	}
 

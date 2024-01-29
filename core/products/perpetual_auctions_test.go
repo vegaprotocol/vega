@@ -152,6 +152,30 @@ func TestAuctionFundingPeriodReset(t *testing.T) {
 	assert.Equal(t, int64(100), fundingPayment.Int64())
 }
 
+func TestFundingDataAtInAuctionPeriodStart(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	expectedTWAP := 100
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	whenLeaveOpeningAuction(t, perp, points[0].t)
+
+	// submit the first point and enter an auction
+	submitPointWithDifference(t, perp, points[0], expectedTWAP)
+	whenAuctionStateChanges(t, perp, points[0].t+int64(time.Second), true)
+
+	end := points[0].t + int64(2*time.Second)
+	fundingPayment := whenTheFundingPeriodEnds(t, perp, end)
+	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+
+	// but if we query the funding payment right now it'll be zero because this 0 length, just started
+	// funding period is all in auction
+	fp := getFundingPayment(t, perp, end)
+	assert.Equal(t, "0", fp)
+}
+
 func whenTheFundingPeriodEnds(t *testing.T, perp *tstPerp, now int64) *num.Int {
 	t.Helper()
 	ctx := context.Background()
