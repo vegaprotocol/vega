@@ -330,7 +330,10 @@ type Resource struct {
 }
 
 type PayloadEventForwarder struct {
+	// keys are deprecated, to be removed after 74
 	Keys []string
+	// Buckets are used with the new upgrade
+	Buckets []*snapshot.EventForwarderBucket
 }
 
 type PayloadERC20MultiSigTopologyVerified struct {
@@ -4569,13 +4572,17 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
 	return &PayloadEventForwarder{
-		Keys: ef.EventForwarder.AckedEvents,
+		Keys:    ef.EventForwarder.AckedEvents,
+		Buckets: ef.EventForwarder.Buckets,
 	}
 }
 
 func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
 	return &snapshot.Payload_EventForwarder{
-		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Keys},
+		EventForwarder: &snapshot.EventForwarder{
+			AckedEvents: p.Keys,
+			Buckets:     p.Buckets,
+		},
 	}
 }
 

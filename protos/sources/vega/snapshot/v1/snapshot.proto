@@ -225,8 +225,15 @@ message Resource {
   uint32 state = 4;
 }
 
+message EventForwarderBucket {
+  int64 ts = 1;
+  repeated string hashes = 2;
+}
+
 message EventForwarder {
+  // this is deprecated, use the other one now
   repeated string acked_events = 1;
+  repeated EventForwarderBucket buckets = 2;
 }
 
 message CollateralAccounts {

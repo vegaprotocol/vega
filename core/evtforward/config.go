@@ -34,8 +34,9 @@ const (
 // Config represents governance specific configuration.
 type Config struct {
 	// Level specifies the logging level of the Event Forwarder engine.
-	Level     encoding.LogLevel `long:"log-level"`
-	RetryRate encoding.Duration `long:"retry-rate"`
+	Level                                    encoding.LogLevel `long:"log-level"`
+	RetryRate                                encoding.Duration `long:"retry-rate"`
+	KeepHashesDurationForTestOnlyDoNotChange encoding.Duration
 	// a list of allowlisted blockchain queue public keys
 	BlockchainQueueAllowlist []string `description:" " long:"blockchain-queue-allowlist"`
 	// Ethereum groups the configuration related to Ethereum implementation of
@@ -47,10 +48,11 @@ type Config struct {
 // NewDefaultConfig creates an instance of the package specific configuration.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:                    encoding.LogLevel{Level: logging.InfoLevel},
-		RetryRate:                encoding.Duration{Duration: defaultRetryRate},
-		BlockchainQueueAllowlist: []string{},
-		Ethereum:                 ethereum.NewDefaultConfig(),
-		EthCall:                  ethcall.NewDefaultConfig(),
+		Level:                                    encoding.LogLevel{Level: logging.InfoLevel},
+		RetryRate:                                encoding.Duration{Duration: defaultRetryRate},
+		KeepHashesDurationForTestOnlyDoNotChange: encoding.Duration{Duration: 24 * 7 * time.Hour},
+		BlockchainQueueAllowlist:                 []string{},
+		Ethereum:                                 ethereum.NewDefaultConfig(),
+		EthCall:                                  ethcall.NewDefaultConfig(),
 	}
 }
