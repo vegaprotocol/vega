@@ -526,6 +526,10 @@ func (r *VegaResolverRoot) CurrentReferralProgram() CurrentReferralProgramResolv
 	return (*currentReferralProgramResolver)(r)
 }
 
+func (r *VegaResolverRoot) ReferralSet() ReferralSetResolver {
+	return (*referralSetResolver)(r)
+}
+
 func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
 	return (*referralSetRefereeResolver)(r)
 }

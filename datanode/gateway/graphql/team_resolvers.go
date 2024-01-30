@@ -23,6 +23,10 @@ import (
 
 type teamResolver VegaResolverRoot
 
+func (t teamResolver) TotalMembers(_ context.Context, obj *v2.Team) (int, error) {
+	return int(obj.TotalMembers), nil
+}
+
 func (t teamResolver) CreatedAtEpoch(_ context.Context, obj *v2.Team) (int, error) {
 	return int(obj.CreatedAtEpoch), nil
 }

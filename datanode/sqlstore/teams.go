@@ -315,13 +315,25 @@ func (t *Teams) GetTeam(ctx context.Context, teamID entities.TeamID, partyID ent
 
 	var args []interface{}
 
-	var query string
+	query := `WITH
+  members_stats AS (
+    SELECT team_id, COUNT(DISTINCT party_id) AS total_members
+    FROM current_team_members
+    GROUP BY
+      team_id
+  )
+SELECT teams.*, members_stats.total_members
+FROM teams
+  LEFT JOIN members_stats on teams.id = members_stats.team_id %s`
 
+	var where string
 	if teamID != "" {
-		query = fmt.Sprintf("SELECT * FROM teams WHERE id = %s", nextBindVar(&args, teamID))
+		where = fmt.Sprintf("WHERE teams.id = %s", nextBindVar(&args, teamID))
 	} else if partyID != "" {
-		query = fmt.Sprintf("SELECT t.* FROM teams t LEFT JOIN current_team_members ctm ON t.id = ctm.team_id WHERE ctm.party_id = %s", nextBindVar(&args, partyID))
+		where = fmt.Sprintf("INNER JOIN current_team_members ON current_team_members.party_id = %s AND teams.id = current_team_members.team_id", nextBindVar(&args, partyID))
 	}
+
+	query = fmt.Sprintf(query, where)
 
 	if err := pgxscan.Get(ctx, t.Connection, &team, query, args...); err != nil {
 		return nil, err
@@ -339,7 +351,16 @@ func (t *Teams) ListTeams(ctx context.Context, pagination entities.CursorPaginat
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT * FROM teams`
+	query := `WITH
+  members_stats AS (
+    SELECT team_id, COUNT(DISTINCT party_id) AS total_members
+    FROM current_team_members
+    GROUP BY
+      team_id
+  )
+SELECT teams.*, members_stats.total_members
+FROM teams
+  LEFT JOIN members_stats on teams.id = members_stats.team_id`
 
 	query, args, err := PaginateQuery[entities.TeamCursor](query, args, teamsOrdering, pagination)
 	if err != nil {

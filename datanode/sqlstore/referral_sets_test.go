@@ -138,15 +138,15 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 		addTestEpoch(t, ctx, es, int64(i), block.VegaTime, endTime, &endTime, block)
 		referrer := addTestParty(t, ctx, ps, block)
 		set := entities.ReferralSet{
-			ID:        entities.ReferralSetID(GenerateID()),
-			Referrer:  referrer.ID,
-			CreatedAt: block.VegaTime,
-			UpdatedAt: block.VegaTime,
-			VegaTime:  block.VegaTime,
+			ID:           entities.ReferralSetID(GenerateID()),
+			Referrer:     referrer.ID,
+			TotalMembers: 1,
+			CreatedAt:    block.VegaTime,
+			UpdatedAt:    block.VegaTime,
+			VegaTime:     block.VegaTime,
 		}
 		err := rs.AddReferralSet(ctx, &set)
 		require.NoError(t, err)
-		sets = append(sets, set)
 
 		setID := set.ID.String()
 		referees[setID] = make([]entities.ReferralSetRefereeStats, 0)
@@ -168,6 +168,9 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 
 			err := rs.RefereeJoinedReferralSet(ctx, &setReferee.ReferralSetReferee)
 			require.NoError(t, err)
+
+			set.TotalMembers += 1
+
 			referees[setID] = append(referees[setID], setReferee)
 			if createStats {
 				// Add some stats for the referral sets
@@ -218,6 +221,8 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 				require.NoError(t, fs.AddFeesStats(ctx, &feeStats))
 			}
 		}
+
+		sets = append(sets, set)
 	}
 
 	sort.Slice(sets, func(i, j int) bool {
@@ -550,7 +555,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		require.NoError(t, err)
 
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 	})
@@ -573,7 +578,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		err := rs.AddReferralSetStats(ctx, &stats)
 		require.NoError(t, err)
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 

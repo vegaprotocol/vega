@@ -30,11 +30,12 @@ type (
 	ReferralSetID = ID[_ReferralSet]
 
 	ReferralSet struct {
-		ID        ReferralSetID
-		Referrer  PartyID
-		CreatedAt time.Time
-		UpdatedAt time.Time
-		VegaTime  time.Time
+		ID           ReferralSetID
+		Referrer     PartyID
+		TotalMembers uint64
+		CreatedAt    time.Time
+		UpdatedAt    time.Time
+		VegaTime     time.Time
 	}
 
 	ReferralSetReferee struct {
@@ -84,10 +85,11 @@ func ReferralSetRefereeFromProto(proto *eventspb.RefereeJoinedReferralSet, vegaT
 
 func (rs ReferralSet) ToProto() *v2.ReferralSet {
 	return &v2.ReferralSet{
-		Id:        rs.ID.String(),
-		Referrer:  rs.Referrer.String(),
-		CreatedAt: rs.CreatedAt.UnixNano(),
-		UpdatedAt: rs.UpdatedAt.UnixNano(),
+		Id:           rs.ID.String(),
+		Referrer:     rs.Referrer.String(),
+		TotalMembers: rs.TotalMembers,
+		CreatedAt:    rs.CreatedAt.UnixNano(),
+		UpdatedAt:    rs.UpdatedAt.UnixNano(),
 	}
 }
 

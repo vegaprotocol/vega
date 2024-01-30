@@ -53,6 +53,7 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 			ID:             entities.TeamID(GenerateID()),
 			Referrer:       referrer.ID,
 			Name:           fmt.Sprintf("Test Team %02d", i+1),
+			TotalMembers:   1, // The referrer.
 			CreatedAt:      block.VegaTime,
 			CreatedAtEpoch: 1,
 			VegaTime:       block.VegaTime,
@@ -71,7 +72,7 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	for _, team := range teams {
+	for iTeam, team := range teams {
 		block := addTestBlock(t, ctx, bs)
 		for i := 0; i < 10; i++ {
 			referee := addTestParty(t, ctx, ps, block)
@@ -85,21 +86,26 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 			err := ts.RefereeJoinedTeam(ctx, &teamReferee)
 			require.NoError(t, err)
 			teamsHistory = append(teamsHistory, teamReferee)
+
+			team.TotalMembers += 1
+			teams[iTeam] = team
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 
 	switchingReferee := teamsHistory[len(teams)].PartyID
 
-	for i, team := range teams {
+	for i, toTeam := range teams {
 		if i == 0 {
 			continue
 		}
 
+		fromTeam := teams[i-1]
+
 		block := addTestBlock(t, ctx, bs)
 		switchTeam := entities.RefereeTeamSwitch{
-			FromTeamID:      teams[i-1].ID,
-			ToTeamID:        team.ID,
+			FromTeamID:      fromTeam.ID,
+			ToTeamID:        toTeam.ID,
 			PartyID:         switchingReferee,
 			SwitchedAtEpoch: uint64(3 + i),
 			SwitchedAt:      block.VegaTime,
@@ -109,12 +115,19 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		require.NoError(t, ts.RefereeSwitchedTeam(ctx, &switchTeam))
 
 		teamsHistory = append(teamsHistory, entities.TeamMember{
-			TeamID:        team.ID,
+			TeamID:        toTeam.ID,
 			PartyID:       switchingReferee,
 			JoinedAtEpoch: uint64(3 + i),
 			JoinedAt:      block.VegaTime,
 			VegaTime:      block.VegaTime,
 		})
+
+		fromTeam.TotalMembers -= 1
+		teams[i-1] = fromTeam
+
+		toTeam.TotalMembers += 1
+		teams[i] = toTeam
+
 		time.Sleep(10 * time.Millisecond)
 	}
 
