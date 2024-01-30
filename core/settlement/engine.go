@@ -440,7 +440,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 		delete(e.trades, key)
 	}
 	e.settledPosition[types.NetworkParty] = netSize
-	e.trades[types.NetworkParty] = netTrades
+	if len(netTrades) > 0 {
+		e.trades[types.NetworkParty] = netTrades
+	}
 	e.mu.Unlock()
 	e.broker.SendBatch(devts)
 }
