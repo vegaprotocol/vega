@@ -113,23 +113,23 @@ type Engine struct {
 }
 
 type netParamsValues struct {
-	feeDistributionTimeStep              time.Duration
-	marketValueWindowLength              time.Duration
-	suppliedStakeToObligationFactor      num.Decimal
-	infrastructureFee                    num.Decimal
-	makerFee                             num.Decimal
-	scalingFactors                       *types.ScalingFactors
-	maxLiquidityFee                      num.Decimal
-	bondPenaltyFactor                    num.Decimal
-	auctionMinDuration                   time.Duration
-	auctionMaxDuration                   time.Duration
-	probabilityOfTradingTauScaling       num.Decimal
-	minProbabilityOfTradingLPOrders      num.Decimal
-	minLpStakeQuantumMultiple            num.Decimal
-	marketCreationQuantumMultiple        num.Decimal
-	markPriceUpdateMaximumFrequency      time.Duration
-	indexPriceUpdateFrequency            time.Duration
-	marketPartiesMaximumStopOrdersUpdate *num.Uint
+	feeDistributionTimeStep               time.Duration
+	marketValueWindowLength               time.Duration
+	suppliedStakeToObligationFactor       num.Decimal
+	infrastructureFee                     num.Decimal
+	makerFee                              num.Decimal
+	scalingFactors                        *types.ScalingFactors
+	maxLiquidityFee                       num.Decimal
+	bondPenaltyFactor                     num.Decimal
+	auctionMinDuration                    time.Duration
+	auctionMaxDuration                    time.Duration
+	probabilityOfTradingTauScaling        num.Decimal
+	minProbabilityOfTradingLPOrders       num.Decimal
+	minLpStakeQuantumMultiple             num.Decimal
+	marketCreationQuantumMultiple         num.Decimal
+	markPriceUpdateMaximumFrequency       time.Duration
+	internalCompositePriceUpdateFrequency time.Duration
+	marketPartiesMaximumStopOrdersUpdate  *num.Uint
 
 	// Liquidity version 2.
 	liquidityV2BondPenaltyFactor                 num.Decimal
@@ -155,14 +155,14 @@ func defaultNetParamsValues() netParamsValues {
 		maxLiquidityFee:                 num.DecimalFromInt64(-1),
 		bondPenaltyFactor:               num.DecimalFromInt64(-1),
 
-		auctionMinDuration:                   -1,
-		probabilityOfTradingTauScaling:       num.DecimalFromInt64(-1),
-		minProbabilityOfTradingLPOrders:      num.DecimalFromInt64(-1),
-		minLpStakeQuantumMultiple:            num.DecimalFromInt64(-1),
-		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
-		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
-		indexPriceUpdateFrequency:            5 * time.Second,
-		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
+		auctionMinDuration:                    -1,
+		probabilityOfTradingTauScaling:        num.DecimalFromInt64(-1),
+		minProbabilityOfTradingLPOrders:       num.DecimalFromInt64(-1),
+		minLpStakeQuantumMultiple:             num.DecimalFromInt64(-1),
+		marketCreationQuantumMultiple:         num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency:       5 * time.Second, // default is 5 seconds, should come from net params though
+		internalCompositePriceUpdateFrequency: 5 * time.Second,
+		marketPartiesMaximumStopOrdersUpdate:  num.UintZero(),
 
 		// Liquidity version 2.
 		liquidityV2BondPenaltyFactor:                 num.DecimalFromInt64(-1),
@@ -886,8 +886,8 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	if e.npv.markPriceUpdateMaximumFrequency > 0 {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
 	}
-	if e.npv.indexPriceUpdateFrequency > 0 {
-		mkt.OnIndexPriceUpdateFrequency(ctx, e.npv.indexPriceUpdateFrequency)
+	if e.npv.internalCompositePriceUpdateFrequency > 0 {
+		mkt.OnInternalCompositePriceUpdateFrequency(ctx, e.npv.internalCompositePriceUpdateFrequency)
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
@@ -1546,11 +1546,11 @@ func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	return nil
 }
 
-func (e *Engine) OnIndexPriceUpdateFrequency(ctx context.Context, d time.Duration) error {
+func (e *Engine) OnInternalCompositePriceUpdateFrequency(ctx context.Context, d time.Duration) error {
 	for _, mkt := range e.futureMarkets {
-		mkt.OnIndexPriceUpdateFrequency(ctx, d)
+		mkt.OnInternalCompositePriceUpdateFrequency(ctx, d)
 	}
-	e.npv.indexPriceUpdateFrequency = d
+	e.npv.internalCompositePriceUpdateFrequency = d
 	return nil
 }
 

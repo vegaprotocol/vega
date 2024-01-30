@@ -72,8 +72,8 @@ message Perpetual {
   optional string funding_rate_lower_bound = 11;
   // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
   optional string funding_rate_upper_bound = 12;
-  // Optional configuration for the index price used in funding payment calculation.
-  optional CompositePriceConfiguration index_price_config = 13;
+  // Optional configuration for the internal composite price used in funding payment calculation.
+  optional CompositePriceConfiguration internal_composite_price_config = 13;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -438,7 +438,7 @@ message CompositePriceConfiguration {
   repeated string source_staleness_tolerance = 5;
   // Which method is used for the calculation of the composite price for the market.
   CompositePriceType composite_price_type = 6;
-  // Additional price sources to be used for index price calculation.
+  // Additional price sources to be used for internal composite price calculation.
   repeated vega.DataSourceDefinition data_sources_spec = 7;
   // List of each price source and its corresponding binding
   repeated vega.SpecBindingForCompositePrice data_sources_spec_binding = 8;

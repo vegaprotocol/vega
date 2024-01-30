@@ -176,7 +176,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
-	t.Run("Submitting a perps market change with index price config", testNewPerpsMarketChangeSubmissionWithIndexPriceConfig)
+	t.Run("Submitting a perps market change with intenal composite price config", testNewPerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
 	t.Run("Submitting a new market with invalid SLA price range fails", testNewMarketChangeSubmissionWithInvalidLpRangeFails)
 	t.Run("Submitting a new market with valid SLA price range succeeds", testNewMarketChangeSubmissionWithValidLpRangeSucceeds)
 	t.Run("Submitting a new market with invalid min time fraction fails", testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails)
@@ -4874,7 +4874,7 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
 
-func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
+func testNewPerpsMarketChangeSubmissionWithInternalCompositePriceConfig(t *testing.T) {
 	cases := getCompositePriceConfigurationCases()
 	for _, c := range cases {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -4888,7 +4888,7 @@ func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
 										DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{
 											SettlementDataProperty: "My property",
 										},
-										IndexPriceConfiguration: c.mpc,
+										InternalCompositePriceConfiguration: c.mpc,
 									},
 								},
 							},
@@ -4899,12 +4899,12 @@ func testNewPerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
 		})
 		if len(c.field) > 0 {
 			if c.err != nil {
-				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field), c.err)
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field), c.err)
 			} else {
-				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration."+c.field))
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field))
 			}
 		} else {
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.index_price_configuration"), c.err)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration"), c.err)
 		}
 	}
 }

@@ -100,15 +100,15 @@ func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	m.mtmDelta = d
 }
 
-func (m *Market) OnIndexPriceUpdateFrequency(ctx context.Context, d time.Duration) {
+func (m *Market) OnInternalCompositePriceUpdateFrequency(ctx context.Context, d time.Duration) {
 	if !m.perp {
 		return
 	}
-	if !m.nextIndexPriceCalc.IsZero() {
-		m.nextIndexPriceCalc = m.nextIndexPriceCalc.Add(-m.mtmDelta)
+	if !m.nextInternalCompositePriceCalc.IsZero() {
+		m.nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.Add(-m.mtmDelta)
 	}
-	m.nextIndexPriceCalc = m.nextIndexPriceCalc.Add(d)
-	m.indexConfigFrequency = d
+	m.nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.Add(d)
+	m.internalCompositePriceFrequency = d
 }
 
 func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) {

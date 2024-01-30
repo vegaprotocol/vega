@@ -251,9 +251,9 @@ func NewMarketFromSnapshot(
 
 	markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 
-	if em.IndexPriceCalculator != nil {
-		market.indexPriceCalculator = NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.IndexPriceCalculator)
-		market.indexPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+	if em.InternalCompositePriceCalculator != nil {
+		market.internalCompositePriceCalculator = NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
+		market.internalCompositePriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 	}
 
 	for _, p := range em.Parties {
@@ -287,8 +287,8 @@ func NewMarketFromSnapshot(
 		market.closed = true
 		market.tradableInstrument.Instrument.Unsubscribe(ctx)
 		market.markPriceCalculator.Close(ctx)
-		if market.indexPriceCalculator != nil {
-			market.indexPriceCalculator.Close(ctx)
+		if market.internalCompositePriceCalculator != nil {
+			market.internalCompositePriceCalculator.Close(ctx)
 		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
@@ -323,37 +323,37 @@ func (m *Market) GetState() *types.ExecMarket {
 	})
 
 	em := &types.ExecMarket{
-		Market:                     m.mkt.DeepClone(),
-		PriceMonitor:               m.pMonitor.GetState(),
-		AuctionState:               m.as.GetState(),
-		PeggedOrders:               m.peggedOrders.GetState(),
-		ExpiringOrders:             m.expiringOrders.GetState(),
-		LastBestBid:                m.lastBestBidPrice.Clone(),
-		LastBestAsk:                m.lastBestAskPrice.Clone(),
-		LastMidBid:                 m.lastMidBuyPrice.Clone(),
-		LastMidAsk:                 m.lastMidSellPrice.Clone(),
-		LastMarketValueProxy:       m.lastMarketValueProxy,
-		LastTradedPrice:            m.lastTradedPrice,
-		EquityShare:                m.equityShares.GetState(),
-		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
-		ShortRiskFactor:            rf.Short,
-		LongRiskFactor:             rf.Long,
-		FeeSplitter:                m.feeSplitter.GetState(),
-		SettlementData:             sp,
-		NextMTM:                    m.nextMTM.UnixNano(),
-		NextIndexPriceCalc:         m.nextIndexPriceCalc.UnixNano(),
-		Parties:                    parties,
-		Closed:                     m.closed,
-		IsSucceeded:                m.succeeded,
-		StopOrders:                 m.stopOrders.ToProto(),
-		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
-		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
-		FeesStats:                  m.fee.GetState(assetQuantum),
-		PartyMarginFactors:         partyMarginFactors,
-		MarkPriceCalculator:        m.markPriceCalculator.IntoProto(),
+		Market:                         m.mkt.DeepClone(),
+		PriceMonitor:                   m.pMonitor.GetState(),
+		AuctionState:                   m.as.GetState(),
+		PeggedOrders:                   m.peggedOrders.GetState(),
+		ExpiringOrders:                 m.expiringOrders.GetState(),
+		LastBestBid:                    m.lastBestBidPrice.Clone(),
+		LastBestAsk:                    m.lastBestAskPrice.Clone(),
+		LastMidBid:                     m.lastMidBuyPrice.Clone(),
+		LastMidAsk:                     m.lastMidSellPrice.Clone(),
+		LastMarketValueProxy:           m.lastMarketValueProxy,
+		LastTradedPrice:                m.lastTradedPrice,
+		EquityShare:                    m.equityShares.GetState(),
+		RiskFactorConsensusReached:     m.risk.IsRiskFactorInitialised(),
+		ShortRiskFactor:                rf.Short,
+		LongRiskFactor:                 rf.Long,
+		FeeSplitter:                    m.feeSplitter.GetState(),
+		SettlementData:                 sp,
+		NextMTM:                        m.nextMTM.UnixNano(),
+		NextInternalCompositePriceCalc: m.nextInternalCompositePriceCalc.UnixNano(),
+		Parties:                        parties,
+		Closed:                         m.closed,
+		IsSucceeded:                    m.succeeded,
+		StopOrders:                     m.stopOrders.ToProto(),
+		ExpiringStopOrders:             m.expiringStopOrders.GetState(),
+		Product:                        m.tradableInstrument.Instrument.Product.Serialize(),
+		FeesStats:                      m.fee.GetState(assetQuantum),
+		PartyMarginFactors:             partyMarginFactors,
+		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
 	}
-	if m.perp && m.indexPriceCalculator != nil {
-		em.IndexPriceCalculator = m.indexPriceCalculator.IntoProto()
+	if m.perp && m.internalCompositePriceCalculator != nil {
+		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()
 	}
 
 	return em

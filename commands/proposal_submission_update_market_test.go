@@ -135,10 +135,10 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a perps market product parameters", testUpdatePerpsMarketChangeSubmissionProductParameters)
 	t.Run("Submitting a perps market with funding rate modifiers", testUpdatePerpetualMarketWithFundingRateModifiers)
 	t.Run("Submitting a market update with invalid mark price configuration ", testUpdateMarketCompositePriceConfiguration)
-	t.Run("Submitting a market update with invalid index price configuration ", testUpdatePerpsMarketChangeSubmissionWithIndexPriceConfig)
+	t.Run("Submitting a market update with invalid intenal composite price configuration ", testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
 }
 
-func testUpdatePerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
+func testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig(t *testing.T) {
 	cases := getCompositePriceConfigurationCases()
 	for _, c := range cases {
 		err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -149,7 +149,7 @@ func testUpdatePerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
 							Instrument: &vegapb.UpdateInstrumentConfiguration{
 								Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
 									Perpetual: &vegapb.UpdatePerpetualProduct{
-										IndexPriceConfiguration: c.mpc,
+										InternalCompositePriceConfiguration: c.mpc,
 									},
 								},
 							},
@@ -160,12 +160,12 @@ func testUpdatePerpsMarketChangeSubmissionWithIndexPriceConfig(t *testing.T) {
 		})
 		if len(c.field) > 0 {
 			if c.err != nil {
-				assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.index_price_configuration."+c.field), c.err)
+				assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field), c.err)
 			} else {
-				assert.Empty(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.index_price_configuration."+c.field))
+				assert.Empty(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field))
 			}
 		} else {
-			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.index_price_configuration"), c.err)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration"), c.err)
 		}
 	}
 }

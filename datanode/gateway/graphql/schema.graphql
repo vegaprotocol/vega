@@ -239,12 +239,12 @@ type PerpetualData {
   seqNum: Int!
   "Time at which the funding period started"
   startTime: Timestamp!
-  "The index price used for external VWAP calculation"
-  indexPrice: String!
-  "The methodology used to calculated index price for perps"
-  indexPriceType: CompositePriceType!
-  "RFC3339Nano time indicating the next time index price will be calculated for perps where applicable"
-  nextIndexPriceCalc: String!
+  "Internal composite price used as input to the internal VWAP"
+  internalCompositePrice: String!
+  "The methodology used to calculated internal composite price for perpetual markets"
+  internalCompositePriceType: CompositePriceType!
+  "RFC3339Nano time indicating the next time internal composite price will be calculated for perpetual markets, where applicable"
+  nextInternalCompositePriceCalc: String!
 }
 
 union ProductData = PerpetualData
@@ -2030,8 +2030,8 @@ type Perpetual {
   fundingRateLowerBound: String!
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
   fundingRateUpperBound: String!
-  "Optional configuration driving the index price calculation for perpetual product"
-  indexPriceConfig: CompositePriceConfiguration
+  "Optional configuration driving the internal composite price calculation for perpetual product"
+  internalCompositePriceConfig: CompositePriceConfiguration
 }
 
 """

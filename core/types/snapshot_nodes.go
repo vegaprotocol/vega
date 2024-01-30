@@ -430,37 +430,37 @@ type ExecutionMarkets struct {
 }
 
 type ExecMarket struct {
-	Market                     *Market
-	PriceMonitor               *PriceMonitor
-	AuctionState               *AuctionState
-	PeggedOrders               *PeggedOrdersState
-	ExpiringOrders             []*Order
-	LastBestBid                *num.Uint
-	LastBestAsk                *num.Uint
-	LastMidBid                 *num.Uint
-	LastMidAsk                 *num.Uint
-	LastMarketValueProxy       num.Decimal
-	LastEquityShareDistributed int64
-	EquityShare                *EquityShare
-	CurrentMarkPrice           *num.Uint
-	LastTradedPrice            *num.Uint
-	ShortRiskFactor            num.Decimal
-	LongRiskFactor             num.Decimal
-	RiskFactorConsensusReached bool
-	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Numeric
-	NextMTM                    int64
-	NextIndexPriceCalc         int64
-	Parties                    []string
-	Closed                     bool
-	IsSucceeded                bool
-	StopOrders                 *snapshot.StopOrders
-	ExpiringStopOrders         []*Order
-	Product                    *snapshot.Product
-	FeesStats                  *eventspb.FeesStats
-	PartyMarginFactors         []*snapshot.PartyMarginFactor
-	MarkPriceCalculator        *snapshot.CompositePriceCalculator
-	IndexPriceCalculator       *snapshot.CompositePriceCalculator
+	Market                           *Market
+	PriceMonitor                     *PriceMonitor
+	AuctionState                     *AuctionState
+	PeggedOrders                     *PeggedOrdersState
+	ExpiringOrders                   []*Order
+	LastBestBid                      *num.Uint
+	LastBestAsk                      *num.Uint
+	LastMidBid                       *num.Uint
+	LastMidAsk                       *num.Uint
+	LastMarketValueProxy             num.Decimal
+	LastEquityShareDistributed       int64
+	EquityShare                      *EquityShare
+	CurrentMarkPrice                 *num.Uint
+	LastTradedPrice                  *num.Uint
+	ShortRiskFactor                  num.Decimal
+	LongRiskFactor                   num.Decimal
+	RiskFactorConsensusReached       bool
+	FeeSplitter                      *FeeSplitter
+	SettlementData                   *num.Numeric
+	NextMTM                          int64
+	NextInternalCompositePriceCalc   int64
+	Parties                          []string
+	Closed                           bool
+	IsSucceeded                      bool
+	StopOrders                       *snapshot.StopOrders
+	ExpiringStopOrders               []*Order
+	Product                          *snapshot.Product
+	FeesStats                        *eventspb.FeesStats
+	PartyMarginFactors               []*snapshot.PartyMarginFactor
+	MarkPriceCalculator              *snapshot.CompositePriceCalculator
+	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
 }
 
 type ExecSpotMarket struct {
@@ -3687,36 +3687,36 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 
 	m, _ := MarketFromProto(em.Market)
 	ret := ExecMarket{
-		Market:                     m,
-		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
-		AuctionState:               AuctionStateFromProto(em.AuctionState),
-		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
-		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
-		LastEquityShareDistributed: em.LastEquityShareDistributed,
-		EquityShare:                EquityShareFromProto(em.EquityShare),
-		LastBestAsk:                lastBA,
-		LastBestBid:                lastBB,
-		LastMidAsk:                 lastMA,
-		LastMidBid:                 lastMB,
-		LastMarketValueProxy:       lastMVP,
-		CurrentMarkPrice:           markPrice,
-		ShortRiskFactor:            shortRF,
-		LongRiskFactor:             longRF,
-		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
-		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
-		SettlementData:             sp,
-		NextMTM:                    em.NextMarkToMarket,
-		NextIndexPriceCalc:         em.NextIndexPriceCalc,
-		LastTradedPrice:            lastTradedPrice,
-		Parties:                    em.Parties,
-		Closed:                     em.Closed,
-		IsSucceeded:                em.Succeeded,
-		StopOrders:                 em.StopOrders,
-		Product:                    em.Product,
-		FeesStats:                  em.FeesStats,
-		PartyMarginFactors:         em.PartyMarginFactor,
-		MarkPriceCalculator:        em.MarkPriceCalculator,
-		IndexPriceCalculator:       em.IndexPriceCalculator,
+		Market:                           m,
+		PriceMonitor:                     PriceMonitorFromProto(em.PriceMonitor),
+		AuctionState:                     AuctionStateFromProto(em.AuctionState),
+		PeggedOrders:                     PeggedOrdersStateFromProto(em.PeggedOrders),
+		ExpiringOrders:                   make([]*Order, 0, len(em.ExpiringOrders)),
+		LastEquityShareDistributed:       em.LastEquityShareDistributed,
+		EquityShare:                      EquityShareFromProto(em.EquityShare),
+		LastBestAsk:                      lastBA,
+		LastBestBid:                      lastBB,
+		LastMidAsk:                       lastMA,
+		LastMidBid:                       lastMB,
+		LastMarketValueProxy:             lastMVP,
+		CurrentMarkPrice:                 markPrice,
+		ShortRiskFactor:                  shortRF,
+		LongRiskFactor:                   longRF,
+		RiskFactorConsensusReached:       em.RiskFactorConsensusReached,
+		FeeSplitter:                      FeeSplitterFromProto(em.FeeSplitter),
+		SettlementData:                   sp,
+		NextMTM:                          em.NextMarkToMarket,
+		NextInternalCompositePriceCalc:   em.NextInternalCompositePriceCalc,
+		LastTradedPrice:                  lastTradedPrice,
+		Parties:                          em.Parties,
+		Closed:                           em.Closed,
+		IsSucceeded:                      em.Succeeded,
+		StopOrders:                       em.StopOrders,
+		Product:                          em.Product,
+		FeesStats:                        em.FeesStats,
+		PartyMarginFactors:               em.PartyMarginFactor,
+		MarkPriceCalculator:              em.MarkPriceCalculator,
+		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3732,34 +3732,34 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
 	ret := snapshot.Market{
-		Market:                     e.Market.IntoProto(),
-		PriceMonitor:               e.PriceMonitor.IntoProto(),
-		AuctionState:               e.AuctionState.IntoProto(),
-		PeggedOrders:               e.PeggedOrders.IntoProto(),
-		ExpiringOrders:             make([]*vega.Order, 0, len(e.ExpiringOrders)),
-		LastEquityShareDistributed: e.LastEquityShareDistributed,
-		EquityShare:                e.EquityShare.IntoProto(),
-		LastBestAsk:                e.LastBestAsk.String(),
-		LastBestBid:                e.LastBestBid.String(),
-		LastMidAsk:                 e.LastMidAsk.String(),
-		LastMidBid:                 e.LastMidBid.String(),
-		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
-		RiskFactorShort:            e.ShortRiskFactor.String(),
-		RiskFactorLong:             e.LongRiskFactor.String(),
-		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
-		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementData:             num.NumericToString(e.SettlementData),
-		NextMarkToMarket:           e.NextMTM,
-		NextIndexPriceCalc:         e.NextIndexPriceCalc,
-		Parties:                    e.Parties,
-		Closed:                     e.Closed,
-		Succeeded:                  e.IsSucceeded,
-		StopOrders:                 e.StopOrders,
-		Product:                    e.Product,
-		FeesStats:                  e.FeesStats,
-		PartyMarginFactor:          e.PartyMarginFactors,
-		MarkPriceCalculator:        e.MarkPriceCalculator,
-		IndexPriceCalculator:       e.IndexPriceCalculator,
+		Market:                           e.Market.IntoProto(),
+		PriceMonitor:                     e.PriceMonitor.IntoProto(),
+		AuctionState:                     e.AuctionState.IntoProto(),
+		PeggedOrders:                     e.PeggedOrders.IntoProto(),
+		ExpiringOrders:                   make([]*vega.Order, 0, len(e.ExpiringOrders)),
+		LastEquityShareDistributed:       e.LastEquityShareDistributed,
+		EquityShare:                      e.EquityShare.IntoProto(),
+		LastBestAsk:                      e.LastBestAsk.String(),
+		LastBestBid:                      e.LastBestBid.String(),
+		LastMidAsk:                       e.LastMidAsk.String(),
+		LastMidBid:                       e.LastMidBid.String(),
+		LastMarketValueProxy:             e.LastMarketValueProxy.String(),
+		RiskFactorShort:                  e.ShortRiskFactor.String(),
+		RiskFactorLong:                   e.LongRiskFactor.String(),
+		RiskFactorConsensusReached:       e.RiskFactorConsensusReached,
+		FeeSplitter:                      e.FeeSplitter.IntoProto(),
+		SettlementData:                   num.NumericToString(e.SettlementData),
+		NextMarkToMarket:                 e.NextMTM,
+		NextInternalCompositePriceCalc:   e.NextInternalCompositePriceCalc,
+		Parties:                          e.Parties,
+		Closed:                           e.Closed,
+		Succeeded:                        e.IsSucceeded,
+		StopOrders:                       e.StopOrders,
+		Product:                          e.Product,
+		FeesStats:                        e.FeesStats,
+		PartyMarginFactor:                e.PartyMarginFactors,
+		MarkPriceCalculator:              e.MarkPriceCalculator,
+		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
 	}
 
 	if e.CurrentMarkPrice != nil {
