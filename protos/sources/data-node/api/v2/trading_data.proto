@@ -406,14 +406,14 @@ service TradingDataService {
   //
   // Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
   rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin levels"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
   // Observe margin levels
   //
   // Subscribe to a stream of margin levels updates
   rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin levels"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
   // List rewards
@@ -895,7 +895,7 @@ service TradingDataService {
   //
   // Subscribe to a stream of transaction results, optionally filtered by party/hash/status
   rpc ObserveTransactionResults(ObserveTransactionResultsRequest) returns (stream ObserveTransactionResultsResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "TransactionResults"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Transaction results"};
   }
 
   // Estimate transfer fee costs
@@ -923,7 +923,7 @@ service TradingDataService {
   //
   // Get a list of all margin modes, or for a specific market ID, or party ID.
   rpc ListPartyMarginModes(ListPartyMarginModesRequest) returns (ListPartyMarginModesResponse) {
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "MarginModes"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
   // Export network history as CSV
