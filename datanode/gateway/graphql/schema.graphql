@@ -6639,6 +6639,8 @@ type ReferralSet {
   id: ID!
   "Party that created the set."
   referrer: ID!
+  "Current number of members in the referral set."
+  totalMembers: Int!
   "Timestamp as RFC3339Nano when the referral set was created."
   createdAt: Timestamp!
   "Timestamp as RFC3339Nano when the referral set was updated."

@@ -102,17 +102,24 @@ func (rs *ReferralSets) ListReferralSets(ctx context.Context, referralSetID *ent
 		pageInfo entities.PageInfo
 	)
 
-	query := `SELECT DISTINCT rs.id AS id, rs.referrer AS referrer, rs.created_at AS created_at, rs.updated_at AS updated_at, rs.vega_time AS vega_time
-			  FROM referral_sets rs
-			  LEFT JOIN referral_set_referees r ON rs.id = r.referral_set_id` // LEFT JOIN because a referral set may not have any referees joined yet.
+	query := `WITH
+  referees_stats AS (
+    SELECT referral_set_id, COUNT(DISTINCT referee) AS total_referees
+    FROM current_referral_set_referees
+    GROUP BY
+      referral_set_id
+  )
+SELECT referral_sets.*, COALESCE(referees_stats.total_referees, 0) + 1 AS total_members -- plus the referrer
+FROM referral_sets
+  LEFT JOIN referees_stats ON referral_sets.id = referees_stats.referral_set_id`
 
 	// we only allow one of the following to be used as the filter
 	if referralSetID != nil {
-		query = fmt.Sprintf("%s where rs.id = %s", query, nextBindVar(&args, referralSetID))
+		query = fmt.Sprintf("%s WHERE referral_sets.id = %s", query, nextBindVar(&args, referralSetID))
 	} else if referrer != nil {
-		query = fmt.Sprintf("%s where rs.referrer = %s", query, nextBindVar(&args, referrer))
+		query = fmt.Sprintf("%s WHERE referral_sets.referrer = %s", query, nextBindVar(&args, referrer))
 	} else if referee != nil {
-		query = fmt.Sprintf("%s where r.referee = %s", query, nextBindVar(&args, referee))
+		query = fmt.Sprintf("%s INNER JOIN current_referral_set_referees ON current_referral_set_referees.referee = %s AND referral_sets.id = current_referral_set_referees.referral_set_id", query, nextBindVar(&args, referee))
 	}
 
 	query, args, err = PaginateQuery[entities.ReferralSetCursor](query, args, referralSetOrdering, pagination)

@@ -4003,6 +4003,8 @@ message ReferralSet {
   int64 created_at = 3;
   // Timestamp, in Unix nanoseconds, when the set was updated.
   int64 updated_at = 4;
+  // Current number of members in the referral set.
+  uint64 total_members = 5;
 }
 
 // Referral set data with the corresponding cursor.

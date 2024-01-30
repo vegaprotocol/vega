@@ -23,6 +23,12 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
+type referralSetResolver VegaResolverRoot
+
+func (t referralSetResolver) TotalMembers(_ context.Context, obj *v2.ReferralSet) (int, error) {
+	return int(obj.TotalMembers), nil
+}
+
 type referralSetRefereeResolver VegaResolverRoot
 
 func (r *referralSetRefereeResolver) AtEpoch(ctx context.Context, obj *v2.ReferralSetReferee) (int, error) {
