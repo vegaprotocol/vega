@@ -65,6 +65,10 @@ message InputData {
     UpdateMarginMode update_margin_mode = 1021;
     // Command to join a team.
     JoinTeam join_team = 1022;
+    // Command to submit a batch governance proposal.
+    BatchProposalSubmission batch_proposal_submission = 1023;
+    // Command to update a party's profile.
+    UpdatePartyProfile update_party_profile = 1024;
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
     // Validator command sent automatically to provide signatures for the Ethereum bridge.
@@ -85,10 +89,6 @@ message InputData {
     IssueSignatures issue_signatures = 2010;
     // Command to submit external oracle data.
     OracleDataSubmission oracle_data_submission = 3001;
-    // Command to submit a batch governance proposal.
-    BatchProposalSubmission batch_proposal_submission = 3002;
-    // Command to update a party's profile.
-    UpdatePartyProfile update_party_profile = 3003;
   }
 }
 
