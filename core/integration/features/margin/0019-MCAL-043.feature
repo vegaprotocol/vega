@@ -645,8 +645,8 @@ Feature: Iceberg orders in isolated margin mode
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general    | order margin |
-      | party1 | BTC   | ETH/DEC19 | 0      | 9999999995 | 0            |
+      | party  | asset | market id | margin | general     | order margin |
+      | party1 | BTC   | ETH/DEC19 | 0      | 10000000000 | 0            |
 
   @iceberg
   Scenario: 011 An aggressive iceberg order crosses an order with volume < iceberg volume

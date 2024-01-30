@@ -320,11 +320,11 @@ func TestGetIsolatedMarginTransfersOnPositionChangeIncrease(t *testing.T) {
 
 	// position going up from 0 to 15 (increasing)
 	// required margin topup is equal to: 0.5 * (5*12+10*10)/10 = 8
-	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, 15, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, 15, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 	// i.e. take from order margin account to the margin account
-	require.Equal(t, types.TransferTypeIsolatedMarginLow, transfer.Type)
-	require.Equal(t, num.NewUint(8), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(8), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeIsolatedMarginLow, transfer[0].Type)
+	require.Equal(t, num.NewUint(8), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(8), transfer[0].MinAmount)
 
 	// position going up from 0 to -15 (increasing)
 	// go short trades
@@ -333,11 +333,11 @@ func TestGetIsolatedMarginTransfersOnPositionChangeIncrease(t *testing.T) {
 		{Size: 5, Price: num.NewUint(12)},
 	}
 	// required margin topup is equal to: 0.5 * (5*12+10*10)/10 = 8
-	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -15, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -15, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 	// i.e. take from order margin account to the margin account
-	require.Equal(t, types.TransferTypeIsolatedMarginLow, transfer.Type)
-	require.Equal(t, num.NewUint(8), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(8), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeIsolatedMarginLow, transfer[0].Type)
+	require.Equal(t, num.NewUint(8), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(8), transfer[0].MinAmount)
 }
 
 func TestGetIsolatedMarginTransfersOnPositionChangeDecrease(t *testing.T) {
@@ -355,11 +355,11 @@ func TestGetIsolatedMarginTransfersOnPositionChangeDecrease(t *testing.T) {
 	markPrice := num.NewUint(12)
 	// position going down from 20 to 5 (decreasing)
 	// required margin topup is equal to: (40+20/10*-2)  * 15/20) = 27
-	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, 5, positionFactor, marginFactor, curMarginBalance, markPrice, false)
+	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, 5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), markPrice, false, false)
 	// i.e. release from the margin account to the general account
-	require.Equal(t, types.TransferTypeMarginHigh, transfer.Type)
-	require.Equal(t, num.NewUint(27), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(27), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginHigh, transfer[0].Type)
+	require.Equal(t, num.NewUint(27), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(27), transfer[0].MinAmount)
 
 	// position going down from 20 to 5 (decreasing)
 	trades = []*types.Trade{
@@ -367,11 +367,11 @@ func TestGetIsolatedMarginTransfersOnPositionChangeDecrease(t *testing.T) {
 		{Size: 10, Price: num.NewUint(12)},
 	}
 	// required margin release is equal to: (40+20/10*-1)  * 15/20) = 28
-	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, -5, positionFactor, marginFactor, curMarginBalance, markPrice, false)
+	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, -5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), markPrice, false, false)
 	// i.e. release from margin account general account
-	require.Equal(t, types.TransferTypeMarginHigh, transfer.Type)
-	require.Equal(t, num.NewUint(28), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(28), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginHigh, transfer[0].Type)
+	require.Equal(t, num.NewUint(28), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(28), transfer[0].MinAmount)
 }
 
 func TestGetIsolatedMarginTransfersOnPositionChangeSwitchSides(t *testing.T) {
@@ -388,19 +388,19 @@ func TestGetIsolatedMarginTransfersOnPositionChangeSwitchSides(t *testing.T) {
 	}
 	// position going from 20 to -5 (switching sides)
 	// required margin release is equal to: we release all 1000 margin, then require 0.5 * 5 * 12 / 10
-	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer := getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 	// i.e. release from the margin account to the general account
-	require.Equal(t, types.TransferTypeMarginHigh, transfer.Type)
-	require.Equal(t, num.NewUint(997), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(997), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginHigh, transfer[0].Type)
+	require.Equal(t, num.NewUint(997), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(997), transfer[0].MinAmount)
 
 	curMarginBalance = num.NewUint(1)
-	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 
 	// now we expect to need 2 more to be added from the order margin account
-	require.Equal(t, types.TransferTypeMarginLow, transfer.Type)
-	require.Equal(t, num.NewUint(2), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(2), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginLow, transfer[0].Type)
+	require.Equal(t, num.NewUint(2), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(2), transfer[0].MinAmount)
 
 	curMarginBalance = num.NewUint(1000)
 	trades = []*types.Trade{
@@ -409,20 +409,20 @@ func TestGetIsolatedMarginTransfersOnPositionChangeSwitchSides(t *testing.T) {
 	}
 	// position going from -20 to 5 (switching sides)
 	// required margin release is equal to: we release all 1000 margin, then require 0.5 * 5 * 11 / 10
-	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, 5, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideBuy, 5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 	// i.e. release from the margin account to the general account
-	require.Equal(t, types.TransferTypeMarginHigh, transfer.Type)
-	require.Equal(t, num.NewUint(998), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(998), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginHigh, transfer[0].Type)
+	require.Equal(t, num.NewUint(998), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(998), transfer[0].MinAmount)
 
 	// try the same as above for switching sides to short
 	curMarginBalance = num.NewUint(1)
-	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, nil, false)
+	transfer = getIsolatedMarginTransfersOnPositionChange(party, asset, trades, types.SideSell, -5, positionFactor, marginFactor, curMarginBalance, num.UintZero(), nil, false, false)
 
 	// now we expect to need 1 more to be added from the order margin account
-	require.Equal(t, types.TransferTypeMarginLow, transfer.Type)
-	require.Equal(t, num.NewUint(1), transfer.Amount.Amount)
-	require.Equal(t, num.NewUint(1), transfer.MinAmount)
+	require.Equal(t, types.TransferTypeMarginLow, transfer[0].Type)
+	require.Equal(t, num.NewUint(1), transfer[0].Amount.Amount)
+	require.Equal(t, num.NewUint(1), transfer[0].MinAmount)
 }
 
 func extractOrderInfo(orders []*types.Order) (buyOrders, sellOrders []*OrderInfo) {
