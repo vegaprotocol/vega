@@ -134,11 +134,11 @@ type Market struct {
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
 
-	settlementDataInMarket *num.Numeric
-	nextMTM                time.Time
-	nextIndexPriceCalc     time.Time
-	mtmDelta               time.Duration
-	indexConfigFrequency   time.Duration
+	settlementDataInMarket          *num.Numeric
+	nextMTM                         time.Time
+	nextInternalCompositePriceCalc  time.Time
+	mtmDelta                        time.Duration
+	internalCompositePriceFrequency time.Duration
 
 	settlementAsset string
 	succeeded       bool
@@ -161,9 +161,9 @@ type Market struct {
 	epoch              types.Epoch
 
 	// party ID to isolated margin factor
-	partyMarginFactor    map[string]num.Decimal
-	markPriceCalculator  *CompositePriceCalculator
-	indexPriceCalculator *CompositePriceCalculator
+	partyMarginFactor                map[string]num.Decimal
+	markPriceCalculator              *CompositePriceCalculator
+	internalCompositePriceCalculator *CompositePriceCalculator
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -339,10 +339,10 @@ func NewMarket(
 	market.markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 
 	if market.IsPerp() {
-		indexPriceConfig := mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
-		if indexPriceConfig != nil {
-			market.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, timeService)
-			market.indexPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+		internalCompositePriceConfig := mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
+		if internalCompositePriceConfig != nil {
+			market.internalCompositePriceCalculator = NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, timeService)
+			market.internalCompositePriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 		}
 	}
 
@@ -564,8 +564,8 @@ func (m *Market) SetSucceeded() {
 	m.succeeded = true
 }
 
-func (m *Market) SetNextIndexPriceCalc(tm time.Time) {
-	m.nextIndexPriceCalc = tm
+func (m *Market) SetNextInternalCompositePriceCalc(tm time.Time) {
+	m.nextInternalCompositePriceCalc = tm
 }
 
 func (m *Market) SetNextMTM(tm time.Time) {
@@ -607,20 +607,20 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		return err
 	}
 	if m.IsPerp() {
-		indexPriceConfig := m.mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
-		if indexPriceConfig == nil && m.indexPriceCalculator != nil {
+		internalCompositePriceConfig := m.mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
+		if internalCompositePriceConfig == nil && m.internalCompositePriceCalculator != nil {
 			// unsubscribe existing oracles if any
-			m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, nil)
-			m.indexPriceCalculator = nil
-		} else if m.indexPriceCalculator != nil {
-			// there was previously a index price calculator
-			if err := m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
-				m.indexPriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
+			m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, nil)
+			m.internalCompositePriceCalculator = nil
+		} else if m.internalCompositePriceCalculator != nil {
+			// there was previously a intenal composite price calculator
+			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+				m.internalCompositePriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
 				return err
 			}
-		} else if indexPriceConfig != nil {
+		} else if internalCompositePriceConfig != nil {
 			// it's a new index calculator
-			m.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, m.timeService)
+			m.internalCompositePriceCalculator = NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, m.timeService)
 		}
 	}
 
@@ -747,29 +747,29 @@ func (m *Market) GetMarketData() types.MarketData {
 		mode = m.mkt.TradingMode
 	}
 
-	var indexPrice *num.Uint
-	var nextIndexPriceCalc int64
-	var indexPriceType vega.CompositePriceType
+	var internalCompositePrice *num.Uint
+	var nextInternalCompositePriceCalc int64
+	var internalCompositePriceType vega.CompositePriceType
 	pd := m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano())
 	if m.perp && pd != nil {
-		if m.indexPriceCalculator != nil {
-			indexPriceType = m.indexPriceCalculator.config.CompositePriceType
-			indexPrice = m.indexPriceCalculator.price
-			if indexPrice == nil {
-				indexPrice = num.UintZero()
+		if m.internalCompositePriceCalculator != nil {
+			internalCompositePriceType = m.internalCompositePriceCalculator.config.CompositePriceType
+			internalCompositePrice = m.internalCompositePriceCalculator.price
+			if internalCompositePrice == nil {
+				internalCompositePrice = num.UintZero()
 			} else {
-				indexPrice = m.priceToMarketPrecision(indexPrice)
+				internalCompositePrice = m.priceToMarketPrecision(internalCompositePrice)
 			}
-			nextIndexPriceCalc = m.nextIndexPriceCalc.UnixNano()
+			nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.UnixNano()
 		} else {
-			indexPriceType = m.markPriceCalculator.config.CompositePriceType
-			indexPrice = m.priceToMarketPrecision(m.getCurrentMarkPrice())
-			nextIndexPriceCalc = m.nextMTM.UnixNano()
+			internalCompositePriceType = m.markPriceCalculator.config.CompositePriceType
+			internalCompositePrice = m.priceToMarketPrecision(m.getCurrentMarkPrice())
+			nextInternalCompositePriceCalc = m.nextMTM.UnixNano()
 		}
 		perpData := pd.Data.(*types.PerpetualData)
-		perpData.IndexPrice = indexPrice
-		perpData.NextIndexPriceCalc = nextIndexPriceCalc
-		perpData.IndexPriceType = indexPriceType
+		perpData.InternalCompositePrice = internalCompositePrice
+		perpData.NextInternalCompositePriceCalc = nextInternalCompositePriceCalc
+		perpData.InternalCompositePriceType = internalCompositePriceType
 	}
 
 	md := types.MarketData{
@@ -1032,24 +1032,24 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 	t := m.timeService.GetTimeNow()
 	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
-	if m.indexPriceCalculator != nil {
-		m.indexPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+	if m.internalCompositePriceCalculator != nil {
+		m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
 	}
 
-	// if we do have a separate configuration for the index price and we have a new index price we push it to the perp
-	if m.indexPriceCalculator != nil && (m.nextIndexPriceCalc.IsZero() ||
-		!m.nextIndexPriceCalc.After(t) &&
+	// if we do have a separate configuration for the intenal composite price and we have a new intenal composite price we push it to the perp
+	if m.internalCompositePriceCalculator != nil && (m.nextInternalCompositePriceCalc.IsZero() ||
+		!m.nextInternalCompositePriceCalc.After(t) &&
 			!m.as.InAuction()) {
-		prevIndexPrice := m.indexPriceCalculator.price
-		m.indexPriceCalculator.CalculateMarkPrice(
+		prevInternalCompositePrice := m.internalCompositePriceCalculator.price
+		m.internalCompositePriceCalculator.CalculateMarkPrice(
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
 			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
-		m.nextIndexPriceCalc = t.Add(m.indexConfigFrequency)
-		if (prevIndexPrice == nil || !m.indexPriceCalculator.price.EQ(prevIndexPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentIndexPrice().IsZero() {
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+		m.nextInternalCompositePriceCalc = t.Add(m.internalCompositePriceFrequency)
+		if (prevInternalCompositePrice == nil || !m.internalCompositePriceCalculator.price.EQ(prevInternalCompositePrice) || m.settlement.HasTraded()) &&
+			!m.getCurrentInternalCompositePrice().IsZero() {
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentInternalCompositePrice(), m.timeService.GetTimeNow().UnixNano())
 		}
 	}
 
@@ -1065,7 +1065,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
 		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
 		// on the standard mark price
-		if m.indexPriceCalculator == nil && m.perp &&
+		if m.internalCompositePriceCalculator == nil && m.perp &&
 			(prevMarkPrice == nil || !m.markPriceCalculator.price.EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
 			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
@@ -1173,8 +1173,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	m.markPriceCalculator.Close(ctx)
-	if m.indexPriceCalculator != nil {
-		m.indexPriceCalculator.Close(ctx)
+	if m.internalCompositePriceCalculator != nil {
+		m.internalCompositePriceCalculator.Close(ctx)
 	}
 
 	m.mkt.State = mktState
@@ -1450,11 +1450,20 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 	evts := make([]events.Event, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
 		// handle fees first
-		err := m.applyFees(ctx, uncrossedOrder.Order, uncrossedOrder.Trades)
+		fees, err := m.calcFees(uncrossedOrder.Trades)
 		if err != nil {
 			// @TODO this ought to be an event
-			m.log.Error("Unable to apply fees to order",
+			m.log.Error("Unable to calculate fees to order",
 				logging.String("OrderID", uncrossedOrder.Order.ID))
+		} else {
+			if fees != nil {
+				err = m.applyFees(ctx, uncrossedOrder.Order, fees)
+				if err != nil {
+					// @TODO this ought to be an event
+					m.log.Error("Unable to apply fees to order",
+						logging.String("OrderID", uncrossedOrder.Order.ID))
+				}
+			}
 		}
 
 		// then do the confirmation
@@ -1563,20 +1572,20 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	if m.perp {
-		if m.indexPriceCalculator != nil {
-			m.indexPriceCalculator.CalculateMarkPrice(
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateMarkPrice(
 				m.timeService.GetTimeNow().UnixNano(),
 				m.matching,
-				m.indexConfigFrequency,
+				m.internalCompositePriceFrequency,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long)
 
-			if wasOpeningAuction && (m.getCurrentIndexPrice().IsZero()) {
-				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
+			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
+				m.internalCompositePriceCalculator.overridePrice(m.lastTradedPrice)
 			}
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentInternalCompositePrice(), m.timeService.GetTimeNow().UnixNano())
 		} else {
 			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
 		}
@@ -2247,6 +2256,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
+	var fees events.FeesTransfer
 	// we're not in auction (not opening, not any other auction
 	if !m.as.InAuction() {
 		// first we call the order book to evaluate auction triggers and get the list of trades
@@ -2257,7 +2267,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 
 		// try to apply fees on the trade
-		err = m.applyFees(ctx, order, trades)
+		fees, err = m.calcFees(trades)
 		if err != nil {
 			return nil, nil, m.unregisterAndReject(ctx, order, err)
 		}
@@ -2320,7 +2330,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// If the order is not persistent this is the end, if it is persistent any portion of the order which
 		// has not traded in step 1 will move to being placed on the order book.
 		if len(trades) > 0 {
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades); err != nil {
+			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*order), logging.Error(err))
@@ -2343,6 +2353,15 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
 			return nil, nil, common.ErrMarginCheckFailed
+		}
+	}
+
+	if fees != nil {
+		err = m.applyFees(ctx, order, fees)
+		if err != nil {
+			_ = m.unregisterAndReject(
+				ctx, order, types.OrderErrorMarginCheckFailed)
+			m.matching.RemoveOrder(order.ID)
 		}
 	}
 
@@ -2396,11 +2415,11 @@ func (m *Market) addParty(party string) bool {
 	return !registered
 }
 
-func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
+func (m *Market) calcFees(trades []*types.Trade) (events.FeesTransfer, error) {
 	// if we have some trades, let's try to get the fees
 
 	if len(trades) <= 0 || m.as.IsOpeningAuction() {
-		return nil
+		return nil, nil
 	}
 
 	// first we get the fees for these trades
@@ -2419,10 +2438,14 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return fees, nil
+}
 
+func (m *Market) applyFees(ctx context.Context, order *types.Order, fees events.FeesTransfer) error {
 	var transfers []*types.LedgerMovement
+	var err error
 
 	if !m.as.InAuction() {
 		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), m.settlementAsset, fees)
@@ -2515,8 +2538,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
 		m.markPriceCalculator.NewTrade(trade)
-		if m.indexPriceCalculator != nil {
-			m.indexPriceCalculator.NewTrade(trade)
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.NewTrade(trade)
 		}
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 		if tradeT != nil {
@@ -2938,19 +2961,19 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // updateIsolatedMarginOnAggressor is called when a new or amended order is matched immediately upon submission.
 // it checks that new margin requirements can be satisfied and if so transfers the margin from the general account to the margin account.
-func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade) error {
+func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, isAmend bool) error {
 	marketObservable, mpos, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pos, order)
 	if err != nil {
 		return err
 	}
-	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, orders, trades, marginFactor, order.Side)
+	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, orders, trades, marginFactor, order.Side, isAmend)
 	if err != nil {
 		return err
 	}
 	if risk == nil {
 		return nil
 	}
-	return m.transferMargins(ctx, []events.Risk{risk}, nil)
+	return m.transferMargins(ctx, risk, nil)
 }
 
 func (m *Market) updateIsolatedMarginOnOrder(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) error {
@@ -3690,6 +3713,8 @@ func (m *Market) orderCancelReplace(
 	ctx context.Context,
 	existingOrder, newOrder *types.Order,
 ) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
+	var fees events.FeesTransfer
+
 	defer func() {
 		if err != nil {
 			// if an error happen, the order never hit the book, so we can
@@ -3697,7 +3722,12 @@ func (m *Market) orderCancelReplace(
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
 			return
 		}
-
+		if fees != nil {
+			if err = m.applyFees(ctx, newOrder, fees); err != nil {
+				_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
+				return
+			}
+		}
 		orders = m.handleConfirmation(ctx, conf, nil)
 		m.broker.Send(events.NewOrderEvent(ctx, conf.Order))
 	}()
@@ -3749,8 +3779,8 @@ func (m *Market) orderCancelReplace(
 	}
 
 	// try to apply fees on the trade
-	if err := m.applyFees(ctx, newOrder, trades); err != nil {
-		return nil, nil, errors.New("could not apply fees for order")
+	if fees, err = m.calcFees(trades); err != nil {
+		return nil, nil, errors.New("could not calculate fees for order")
 	}
 
 	// "hot-swap" of the orders
@@ -3766,28 +3796,24 @@ func (m *Market) orderCancelReplace(
 		if len(trades) > 0 {
 			posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
 			// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades); err != nil {
+			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*newOrder), logging.Error(err))
 				}
-				conf, err = m.matching.ReplaceOrder(newOrder, existingOrder)
-				if err != nil {
-					m.log.Panic("unable to submit order", logging.Error(err))
-				}
+				newOrder.Status = types.OrderStatusStopped
+				m.broker.Send(events.NewOrderEvent(ctx, newOrder))
 				return nil, nil, common.ErrMarginCheckFailed
 			}
 		}
-		if err := m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
+		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
 					logging.Order(*newOrder), logging.Error(err))
 			}
 			existingOrder.Status = newOrder.Status
-			conf, err = m.matching.ReplaceOrder(newOrder, existingOrder)
-			if err != nil {
-				m.log.Panic("unable to submit order", logging.Error(err))
-			}
+			newOrder.Status = types.OrderStatusStopped
+			m.broker.Send(events.NewOrderEvent(ctx, newOrder))
 			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
@@ -4227,11 +4253,11 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long)
 
-			if m.indexPriceCalculator != nil {
-				m.indexPriceCalculator.CalculateMarkPrice(
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.CalculateMarkPrice(
 					m.timeService.GetTimeNow().UnixNano(),
 					m.matching,
-					m.indexConfigFrequency,
+					m.internalCompositePriceFrequency,
 					m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 					m.mkt.LinearSlippageFactor,
 					m.risk.GetRiskFactors().Short,
@@ -4239,14 +4265,14 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			}
 
 			if m.perp {
-				// if perp and we have an index price (direct or by mark price), feed it to the perp before the mark to market
-				if m.indexPriceCalculator != nil {
-					if indexPrice := m.getCurrentIndexPrice(); !indexPrice.IsZero() {
-						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+				// if perp and we have an intenal composite price (direct or by mark price), feed it to the perp before the mark to market
+				if m.internalCompositePriceCalculator != nil {
+					if internalCompositePrice := m.getCurrentInternalCompositePrice(); !internalCompositePrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, internalCompositePrice, m.timeService.GetTimeNow().UnixNano())
 					}
 				} else {
-					if indexPrice := m.getCurrentMarkPrice(); !indexPrice.IsZero() {
-						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+					if internalCompositePrice := m.getCurrentMarkPrice(); !internalCompositePrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, internalCompositePrice, m.timeService.GetTimeNow().UnixNano())
 					}
 				}
 			}
@@ -4425,8 +4451,8 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 			m.lastTradedPrice = settlementDataInAsset.Clone()
 			// the settlement price is the final mark price
 			m.markPriceCalculator.overridePrice(m.lastTradedPrice)
-			if m.indexPriceCalculator != nil {
-				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.overridePrice(m.lastTradedPrice)
 			}
 		}
 
@@ -4546,14 +4572,14 @@ func (m *Market) getReferencePrice() *num.Uint {
 	return ip
 }
 
-func (m *Market) getCurrentIndexPrice() *num.Uint {
-	if !m.perp || m.indexPriceCalculator == nil {
-		m.log.Panic("trying to get current index price in a market with no index price configuration or not a perp market")
+func (m *Market) getCurrentInternalCompositePrice() *num.Uint {
+	if !m.perp || m.internalCompositePriceCalculator == nil {
+		m.log.Panic("trying to get current internal composite price in a market with no intenal composite price configuration or not a perp market")
 	}
-	if m.indexPriceCalculator.price == nil {
+	if m.internalCompositePriceCalculator.price == nil {
 		return num.UintZero()
 	}
-	return m.indexPriceCalculator.price.Clone()
+	return m.internalCompositePriceCalculator.price.Clone()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {

@@ -62,10 +62,10 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			if err := netParams.Update(ctx, netparams.MarkPriceUpdateMaximumFrequency, str); err != nil {
 				return err
 			}
-		case netparams.IndexPriceUpdateFrequency:
+		case netparams.InternalCompositePriceUpdateFrequency:
 			f := row.MustDurationStr("value")
 			str := f.String()
-			if err := netParams.Update(ctx, netparams.IndexPriceUpdateFrequency, str); err != nil {
+			if err := netParams.Update(ctx, netparams.InternalCompositePriceUpdateFrequency, str); err != nil {
 				return err
 			}
 		default:

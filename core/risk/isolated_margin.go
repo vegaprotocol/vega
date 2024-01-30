@@ -74,7 +74,7 @@ func (e *Engine) ReleaseExcessMarginAfterAuctionUncrossing(ctx context.Context, 
 // NB: evt has the position after the trades + orders need to include the new order with the updated remaining.
 // returns an error if the new margin is invalid or if the margin account cannot be topped up from general account.
 // if successful it updates the margin level and returns the transfer that is needed for the topup of the margin account or release from the margin account excess.
-func (e *Engine) UpdateIsolatedMarginOnAggressor(ctx context.Context, evt events.Margin, marketObservable *num.Uint, increment num.Decimal, orders []*types.Order, trades []*types.Trade, marginFactor num.Decimal, traderSide types.Side) (events.Risk, error) {
+func (e *Engine) UpdateIsolatedMarginOnAggressor(ctx context.Context, evt events.Margin, marketObservable *num.Uint, increment num.Decimal, orders []*types.Order, trades []*types.Trade, marginFactor num.Decimal, traderSide types.Side, isAmend bool) ([]events.Risk, error) {
 	if evt == nil {
 		return nil, nil
 	}
@@ -96,7 +96,10 @@ func (e *Engine) UpdateIsolatedMarginOnAggressor(ctx context.Context, evt events
 			if num.Sum(requiredMargin, evt.MarginBalance()).LT(margins.MaintenanceMargin) {
 				return nil, ErrInsufficientFundsForMaintenanceMargin
 			}
-			if requiredMargin.GT(evt.GeneralAccountBalance()) {
+			if !isAmend && requiredMargin.GT(evt.GeneralAccountBalance()) {
+				return nil, ErrInsufficientFundsForMarginInGeneralAccount
+			}
+			if isAmend && requiredMargin.GT(num.Sum(evt.GeneralAccountBalance(), evt.OrderMarginBalance())) {
 				return nil, ErrInsufficientFundsForMarginInGeneralAccount
 			}
 		}
@@ -130,16 +133,19 @@ func (e *Engine) UpdateIsolatedMarginOnAggressor(ctx context.Context, evt events
 	}
 
 	e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
-	transfer := getIsolatedMarginTransfersOnPositionChange(evt.Party(), evt.Asset(), trades, traderSide, evt.Size(), e.positionFactor, marginFactor, evt.MarginBalance(), marketObservable, true)
-	if transfer == nil {
+	transfers := getIsolatedMarginTransfersOnPositionChange(evt.Party(), evt.Asset(), trades, traderSide, evt.Size(), e.positionFactor, marginFactor, evt.MarginBalance(), evt.OrderMarginBalance(), marketObservable, true, isAmend)
+	if transfers == nil {
 		return nil, nil
 	}
-	change := &marginChange{
-		Margin:   evt,
-		transfer: transfer,
-		margins:  margins,
+	ret := []events.Risk{}
+	for _, t := range transfers {
+		ret = append(ret, &marginChange{
+			Margin:   evt,
+			transfer: t,
+			margins:  margins,
+		})
 	}
-	return change, nil
+	return ret, nil
 }
 
 // UpdateIsolatedMarginOnOrder checks that the party has sufficient cover for the given orders including the new one. It returns an error if the party doesn't have sufficient cover and the necessary transfers otherwise.
@@ -199,19 +205,19 @@ func (e *Engine) UpdateIsolatedMarginsOnPositionChange(ctx context.Context, evt 
 		return nil, nil
 	}
 	margins := e.calculateIsolatedMargins(evt, marketObservable, increment, marginFactor, nil, orders)
-	transfer := getIsolatedMarginTransfersOnPositionChange(evt.Party(), evt.Asset(), trades, traderSide, evt.Size(), e.positionFactor, marginFactor, evt.MarginBalance(), marketObservable, false)
+	transfer := getIsolatedMarginTransfersOnPositionChange(evt.Party(), evt.Asset(), trades, traderSide, evt.Size(), e.positionFactor, marginFactor, evt.MarginBalance(), evt.OrderMarginBalance(), marketObservable, false, false)
 	e.updateMarginLevels(events.NewMarginLevelsEvent(ctx, *margins))
 	ret := []events.Risk{
 		&marginChange{
 			Margin:   evt,
-			transfer: transfer,
+			transfer: transfer[0],
 			margins:  margins,
 		},
 	}
 
 	var amtForRelease *num.Uint
-	if !evt.OrderMarginBalance().IsZero() && margins.OrderMargin.IsZero() && transfer != nil && evt.OrderMarginBalance().GT(transfer.Amount.Amount) {
-		amtForRelease = num.UintZero().Sub(evt.OrderMarginBalance(), transfer.Amount.Amount)
+	if !evt.OrderMarginBalance().IsZero() && margins.OrderMargin.IsZero() && transfer != nil && evt.OrderMarginBalance().GT(transfer[0].Amount.Amount) {
+		amtForRelease = num.UintZero().Sub(evt.OrderMarginBalance(), transfer[0].Amount.Amount)
 	}
 
 	// if there's no more order margin requirement, release remaining order margin
@@ -304,7 +310,7 @@ func (e *Engine) SwitchFromIsolatedMargin(ctx context.Context, evt events.Margin
 // getIsolatedMarginTransfersOnPositionChange returns the transfers that need to be made to/from the margin account in isolated margin mode
 // when the position changes. This handles the 3 different cases of position change (increase, decrease, switch sides).
 // NB: positionSize is *after* the trades.
-func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*types.Trade, traderSide types.Side, positionSize int64, positionFactor, marginFactor num.Decimal, curMarginBalance, markPrice *num.Uint, aggressiveSide bool) *types.Transfer {
+func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*types.Trade, traderSide types.Side, positionSize int64, positionFactor, marginFactor num.Decimal, curMarginBalance, orderMarginBalance, markPrice *num.Uint, aggressiveSide bool, isAmend bool) []*types.Transfer {
 	positionDelta := int64(0)
 	marginToAdd := num.UintZero()
 	vwap := num.UintZero()
@@ -322,21 +328,54 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 	if positionSize*oldPosition >= 0 { // position didn't switch sides
 		if int64Abs(oldPosition) < int64Abs(positionSize) { // position increased
 			marginToAdd, _ = num.UintFromDecimal(marginToAdd.ToDecimal().Div(positionFactor).Mul(marginFactor))
-			// need to top up the margin account from the order margin account
-			var tp types.TransferType
-			if aggressiveSide {
-				tp = types.TransferTypeMarginLow
-			} else {
-				tp = types.TransferTypeIsolatedMarginLow
+			if !isAmend {
+				// need to top up the margin account from the order margin account
+				var tp types.TransferType
+				if aggressiveSide {
+					tp = types.TransferTypeMarginLow
+				} else {
+					tp = types.TransferTypeIsolatedMarginLow
+				}
+				return []*types.Transfer{{
+					Owner: party,
+					Type:  tp,
+					Amount: &types.FinancialAmount{
+						Asset:  asset,
+						Amount: marginToAdd,
+					},
+					MinAmount: marginToAdd,
+				}}
 			}
-			return &types.Transfer{
-				Owner: party,
-				Type:  tp,
-				Amount: &types.FinancialAmount{
-					Asset:  asset,
-					Amount: marginToAdd,
+			if marginToAdd.LTE(orderMarginBalance) {
+				return []*types.Transfer{{
+					Owner: party,
+					Type:  types.TransferTypeIsolatedMarginLow,
+					Amount: &types.FinancialAmount{
+						Asset:  asset,
+						Amount: marginToAdd,
+					},
+					MinAmount: marginToAdd,
+				}}
+			}
+			generalTopUp := num.UintZero().Sub(marginToAdd, orderMarginBalance)
+			return []*types.Transfer{
+				{
+					Owner: party,
+					Type:  types.TransferTypeIsolatedMarginLow,
+					Amount: &types.FinancialAmount{
+						Asset:  asset,
+						Amount: orderMarginBalance,
+					},
+					MinAmount: orderMarginBalance,
+				}, {
+					Owner: party,
+					Type:  types.TransferTypeMarginLow,
+					Amount: &types.FinancialAmount{
+						Asset:  asset,
+						Amount: generalTopUp,
+					},
+					MinAmount: generalTopUp,
 				},
-				MinAmount: marginToAdd,
 			}
 		}
 		// position decreased
@@ -344,7 +383,7 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 		theoreticalAccountBalance, _ := num.UintFromDecimal(vwap.ToDecimal().Sub(markPrice.ToDecimal()).Mul(num.DecimalFromInt64(int64(int64Abs(oldPosition)))).Div(positionFactor).Add(curMarginBalance.ToDecimal()))
 		marginToRelease := num.UintZero().Div(num.UintZero().Mul(theoreticalAccountBalance, num.NewUint(int64Abs(positionDelta))), num.NewUint(int64Abs(oldPosition)))
 		// need to top up the margin account
-		return &types.Transfer{
+		return []*types.Transfer{{
 			Owner: party,
 			Type:  types.TransferTypeMarginHigh,
 			Amount: &types.FinancialAmount{
@@ -352,7 +391,7 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 				Amount: marginToRelease,
 			},
 			MinAmount: marginToRelease,
-		}
+		}}
 	}
 
 	// position switched sides, we need to handles the two sides separately
@@ -396,7 +435,7 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 		return nil
 	}
 
-	return &types.Transfer{
+	return []*types.Transfer{{
 		Owner: party,
 		Type:  tp,
 		Amount: &types.FinancialAmount{
@@ -404,7 +443,7 @@ func getIsolatedMarginTransfersOnPositionChange(party, asset string, trades []*t
 			Amount: amt,
 		},
 		MinAmount: amt,
-	}
+	}}
 }
 
 func (e *Engine) CalcOrderMarginsForClosedOutParty(orders []*types.Order, marginFactor num.Decimal) *num.Uint {

@@ -78,6 +78,7 @@
 - [10441](https://github.com/vegaprotocol/vega/issues/10441) - Remove active restore check in collateral snapshot loading, snapshot order change removes the need for it.
 - [10286](https://github.com/vegaprotocol/vega/issues/10286) - If probability of trading is less than or equal to the minimum, assign it weight of zero for liquidity score calculation and change the validation of the tau scaling network parameter. 
 - [10376](https://github.com/vegaprotocol/vega/issues/10376) - Add spam protection for update profile.
+- [10502](https://github.com/vegaprotocol/vega/issues/10502) - Rename index price to `internalCompositePrice`
 - [10464](https://github.com/vegaprotocol/vega/issues/10464) - Add total of members in teams API.
 - [10464](https://github.com/vegaprotocol/vega/issues/10464) - Add total of members in referral sets API.
 - [10508](https://github.com/vegaprotocol/vega/issues/10508) - Change the behaviour of aggregation epochs for teams statistics API.
@@ -160,10 +161,12 @@
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
+- [10510](https://github.com/vegaprotocol/vega/issues/10510) - Removing distressed position who hasn't traded does not populate trade map for network.
 - [10470](https://github.com/vegaprotocol/vega/issues/10470) - Mark non-optional parameters as required and update documentation strings.
 - [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
 - [10301](https://github.com/vegaprotocol/vega/issues/10301) - Fix get epoch by block.
 - [10343](https://github.com/vegaprotocol/vega/issues/10343) - Remove auction trigger extension and triggering ratio from liquidity monitoring parameters. 
+- [10493](https://github.com/vegaprotocol/vega/issues/10493) - Fix isolated margin panic on amend order.
 - [10490](https://github.com/vegaprotocol/vega/issues/10490) - Handle the `quant` library returning `NaN`
 - [10504](https://github.com/vegaprotocol/vega/issues/10504) - Make sure the referral sets API accounts for referees switch.
 

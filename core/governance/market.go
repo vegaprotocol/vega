@@ -134,7 +134,7 @@ func assignProduct(
 				DataSourceSpecForSettlementData:     datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementData),
 				DataSourceSpecForSettlementSchedule: datasource.SpecFromDefinition(product.Perps.DataSourceSpecForSettlementSchedule),
 				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
-				IndexPriceConfig:                    product.Perps.IndexPriceConfig,
+				InternalCompositePriceConfig:        product.Perps.InternalCompositePriceConfig,
 			},
 		}
 	case *types.InstrumentConfigurationSpot:
@@ -617,8 +617,8 @@ func validatePerps(perps *types.PerpsProduct, decimals uint64, assets Assets, et
 		return types.ProposalErrorInvalidPerpsProduct, fmt.Errorf("time trigger only supported for now")
 	}
 
-	if perps.IndexPriceConfig != nil {
-		for _, v := range perps.IndexPriceConfig.DataSources {
+	if perps.InternalCompositePriceConfig != nil {
+		for _, v := range perps.InternalCompositePriceConfig.DataSources {
 			if !v.Data.EnsureValidChainID(evmChainIDs) {
 				return types.ProposalErrorInvalidFutureProduct, ErrInvalidEVMChainIDInEthereumOracleSpec
 			}

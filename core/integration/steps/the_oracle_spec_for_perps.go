@@ -65,23 +65,23 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 			},
 		}
 
-		indexPriceConfig := &protoTypes.CompositePriceConfiguration{}
-		indexPriceConfig.CompositePriceType = row.row.MarkPriceType()
+		internalCompositePriceConfig := &protoTypes.CompositePriceConfiguration{}
+		internalCompositePriceConfig.CompositePriceType = row.row.MarkPriceType()
 
 		if row.row.HasColumn("decay power") {
-			indexPriceConfig.DecayPower = row.DecayPower()
+			internalCompositePriceConfig.DecayPower = row.DecayPower()
 		}
 		if row.row.HasColumn("decay weight") {
-			indexPriceConfig.DecayWeight = row.DecayWeight()
+			internalCompositePriceConfig.DecayWeight = row.DecayWeight()
 		}
 		if row.row.HasColumn("cash amount") {
-			indexPriceConfig.CashAmount = row.CashAmount()
+			internalCompositePriceConfig.CashAmount = row.CashAmount()
 		}
 		if row.row.HasColumn("source weights") {
-			indexPriceConfig.SourceWeights = row.PriceSourceWeights()
+			internalCompositePriceConfig.SourceWeights = row.PriceSourceWeights()
 		}
 		if row.row.HasColumn("source staleness tolerance") {
-			indexPriceConfig.SourceStalenessTolerance = row.PriceSourceStalnessTolerance()
+			internalCompositePriceConfig.SourceStalenessTolerance = row.PriceSourceStalnessTolerance()
 		}
 
 		perp := &protoTypes.Perpetual{
@@ -120,8 +120,8 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 					},
 				),
 			},
-			DataSourceSpecBinding: binding,
-			IndexPriceConfig:      indexPriceConfig,
+			DataSourceSpecBinding:        binding,
+			InternalCompositePriceConfig: internalCompositePriceConfig,
 		}
 		if err := config.OracleConfigs.AddPerp(name, perp); err != nil {
 			return err
