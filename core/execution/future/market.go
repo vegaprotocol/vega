@@ -1450,11 +1450,20 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 	evts := make([]events.Event, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
 		// handle fees first
-		err := m.applyFees(ctx, uncrossedOrder.Order, uncrossedOrder.Trades)
+		fees, err := m.calcFees(uncrossedOrder.Trades)
 		if err != nil {
 			// @TODO this ought to be an event
-			m.log.Error("Unable to apply fees to order",
+			m.log.Error("Unable to calculate fees to order",
 				logging.String("OrderID", uncrossedOrder.Order.ID))
+		} else {
+			if fees != nil {
+				err = m.applyFees(ctx, uncrossedOrder.Order, fees)
+				if err != nil {
+					// @TODO this ought to be an event
+					m.log.Error("Unable to apply fees to order",
+						logging.String("OrderID", uncrossedOrder.Order.ID))
+				}
+			}
 		}
 
 		// then do the confirmation
@@ -2247,6 +2256,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// If we are not in an opening auction, apply fees
 	var trades []*types.Trade
+	var fees events.FeesTransfer
 	// we're not in auction (not opening, not any other auction
 	if !m.as.InAuction() {
 		// first we call the order book to evaluate auction triggers and get the list of trades
@@ -2257,7 +2267,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 
 		// try to apply fees on the trade
-		err = m.applyFees(ctx, order, trades)
+		fees, err = m.calcFees(trades)
 		if err != nil {
 			return nil, nil, m.unregisterAndReject(ctx, order, err)
 		}
@@ -2320,7 +2330,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// If the order is not persistent this is the end, if it is persistent any portion of the order which
 		// has not traded in step 1 will move to being placed on the order book.
 		if len(trades) > 0 {
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades); err != nil {
+			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*order), logging.Error(err))
@@ -2343,6 +2353,15 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
 			return nil, nil, common.ErrMarginCheckFailed
+		}
+	}
+
+	if fees != nil {
+		err = m.applyFees(ctx, order, fees)
+		if err != nil {
+			_ = m.unregisterAndReject(
+				ctx, order, types.OrderErrorMarginCheckFailed)
+			m.matching.RemoveOrder(order.ID)
 		}
 	}
 
@@ -2396,11 +2415,11 @@ func (m *Market) addParty(party string) bool {
 	return !registered
 }
 
-func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*types.Trade) error {
+func (m *Market) calcFees(trades []*types.Trade) (events.FeesTransfer, error) {
 	// if we have some trades, let's try to get the fees
 
 	if len(trades) <= 0 || m.as.IsOpeningAuction() {
-		return nil
+		return nil, nil
 	}
 
 	// first we get the fees for these trades
@@ -2419,10 +2438,14 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return fees, nil
+}
 
+func (m *Market) applyFees(ctx context.Context, order *types.Order, fees events.FeesTransfer) error {
 	var transfers []*types.LedgerMovement
+	var err error
 
 	if !m.as.InAuction() {
 		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), m.settlementAsset, fees)
@@ -2938,19 +2961,19 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // updateIsolatedMarginOnAggressor is called when a new or amended order is matched immediately upon submission.
 // it checks that new margin requirements can be satisfied and if so transfers the margin from the general account to the margin account.
-func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade) error {
+func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, isAmend bool) error {
 	marketObservable, mpos, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pos, order)
 	if err != nil {
 		return err
 	}
-	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, orders, trades, marginFactor, order.Side)
+	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, orders, trades, marginFactor, order.Side, isAmend)
 	if err != nil {
 		return err
 	}
 	if risk == nil {
 		return nil
 	}
-	return m.transferMargins(ctx, []events.Risk{risk}, nil)
+	return m.transferMargins(ctx, risk, nil)
 }
 
 func (m *Market) updateIsolatedMarginOnOrder(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) error {
@@ -3690,6 +3713,8 @@ func (m *Market) orderCancelReplace(
 	ctx context.Context,
 	existingOrder, newOrder *types.Order,
 ) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
+	var fees events.FeesTransfer
+
 	defer func() {
 		if err != nil {
 			// if an error happen, the order never hit the book, so we can
@@ -3697,7 +3722,12 @@ func (m *Market) orderCancelReplace(
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
 			return
 		}
-
+		if fees != nil {
+			if err = m.applyFees(ctx, newOrder, fees); err != nil {
+				_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
+				return
+			}
+		}
 		orders = m.handleConfirmation(ctx, conf, nil)
 		m.broker.Send(events.NewOrderEvent(ctx, conf.Order))
 	}()
@@ -3749,8 +3779,8 @@ func (m *Market) orderCancelReplace(
 	}
 
 	// try to apply fees on the trade
-	if err := m.applyFees(ctx, newOrder, trades); err != nil {
-		return nil, nil, errors.New("could not apply fees for order")
+	if fees, err = m.calcFees(trades); err != nil {
+		return nil, nil, errors.New("could not calculate fees for order")
 	}
 
 	// "hot-swap" of the orders
@@ -3766,28 +3796,24 @@ func (m *Market) orderCancelReplace(
 		if len(trades) > 0 {
 			posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
 			// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades); err != nil {
+			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*newOrder), logging.Error(err))
 				}
-				conf, err = m.matching.ReplaceOrder(newOrder, existingOrder)
-				if err != nil {
-					m.log.Panic("unable to submit order", logging.Error(err))
-				}
+				newOrder.Status = types.OrderStatusStopped
+				m.broker.Send(events.NewOrderEvent(ctx, newOrder))
 				return nil, nil, common.ErrMarginCheckFailed
 			}
 		}
-		if err := m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
+		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
 					logging.Order(*newOrder), logging.Error(err))
 			}
 			existingOrder.Status = newOrder.Status
-			conf, err = m.matching.ReplaceOrder(newOrder, existingOrder)
-			if err != nil {
-				m.log.Panic("unable to submit order", logging.Error(err))
-			}
+			newOrder.Status = types.OrderStatusStopped
+			m.broker.Send(events.NewOrderEvent(ctx, newOrder))
 			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
