@@ -1425,7 +1425,6 @@ func (te *testEngine) getMockMarketPositions(data []posValue) ([]settlement.Mark
 }
 
 func TestRemoveDistressedNoTrades(t *testing.T) {
-
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(markPrice *num.Uint, settlementData *num.Uint, size num.Decimal) (*types.FinancialAmount, bool, num.Decimal, error) {
@@ -1457,7 +1456,6 @@ func TestRemoveDistressedNoTrades(t *testing.T) {
 	engine.Update(evts)
 	engine.RemoveDistressed(context.Background(), marginEvts)
 	assert.False(t, engine.HasTraded())
-
 }
 
 func TestConcurrent(t *testing.T) {
