@@ -83,7 +83,7 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMinimumDuration:              NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:              NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
 		MarketLiquidityTargetStakeTriggeringRatio: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		MarketProbabilityOfTradingTauScaling:      NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
+		MarketProbabilityOfTradingTauScaling:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.0001")), lteD1000).Mutable(true).MustUpdate("1"),
 		MarketMinProbabilityOfTradingForLPOrders:  NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-12")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
 		MarketTargetStakeTimeWindow:               NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:            NewDecimal(gtD0, lteD100).Mutable(true).MustUpdate("10"),
