@@ -107,5 +107,9 @@ func TestEpochs(t *testing.T) {
 		actual, err := es.GetByBlock(ctx, uint64(block2.Height))
 		require.NoError(t, err)
 		assert.Equal(t, epoch2b, actual)
+
+		actual, err = es.GetByBlock(ctx, uint64(block3.Height))
+		require.NoError(t, err)
+		assert.Equal(t, epoch3, actual)
 	})
 }
