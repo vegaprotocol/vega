@@ -4754,7 +4754,7 @@ func (t *TradingDataServiceV2) ListTeamsStatistics(ctx context.Context, req *v2.
 
 	stats, pageInfo, err := t.teamsService.ListTeamsStatistics(ctx, pagination, filters)
 	if err != nil {
-		return nil, formatE(ErrListTeamReferees, err)
+		return nil, formatE(ErrListTeamStatistics, err)
 	}
 
 	edges, err := makeEdges[*v2.TeamStatisticsEdge](stats)

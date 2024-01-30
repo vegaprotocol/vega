@@ -319,6 +319,7 @@ var (
 	// Teams.
 	ErrListTeams              = errors.New("failed to list teams")
 	ErrListTeamReferees       = errors.New("failed to list team referees")
+	ErrListTeamStatistics     = errors.New("failed to list team statistics")
 	ErrListTeamRefereeHistory = errors.New("failed to list team referee history")
 
 	// Volume discount Programs.
