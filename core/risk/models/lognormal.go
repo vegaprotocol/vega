@@ -90,6 +90,10 @@ func (f *LogNormal) ProbabilityOfTrading(currentP, orderP num.Decimal, minP, max
 	min := math.Max(minP.InexactFloat64(), 0)
 	// still, quant uses floats
 	prob := pd.ProbabilityOfTrading(dist, orderP.InexactFloat64(), isBid, applyMinMax, min, maxP.InexactFloat64())
+	if math.IsNaN(prob) {
+		return num.DecimalZero()
+	}
+
 	return num.DecimalFromFloat(prob)
 }
 
