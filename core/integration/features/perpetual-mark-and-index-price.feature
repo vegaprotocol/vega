@@ -8,13 +8,13 @@ Feature: Simple tests for perpetual market mark price.
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.01             | 10s         | 5              |  
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 0.01             | 10s         | 5              |
 
     And the following network parameters are set:
       | name                                             | value |
       | network.markPriceUpdateMaximumFrequency          | 1s    |
-      | network.indexPriceUpdateFrequency                | 1s    |
+      | network.internalCompositePriceUpdateFrequency    | 1s    |
       | market.auction.minimumDuration                   | 1     |
       | market.fee.factors.infrastructureFee             | 0.001 |
       | market.fee.factors.makerFee                      | 0.004 |
@@ -108,8 +108,8 @@ Feature: Simple tests for perpetual market mark price.
       | perp.ETH.value | 140   | -1s         |
 
     And the oracles broadcast data with block time signed with "0xCAFECAFE2":
-      | name             | value   | time offset |
-      | prices.ETH.value | 500     | -1s         |
+      | name             | value | time offset |
+      | prices.ETH.value | 500   | -1s         |
 
     And the network moves ahead "15" blocks
 
@@ -118,13 +118,13 @@ Feature: Simple tests for perpetual market mark price.
       | 500        | TRADING_MODE_CONTINUOUS |
 
     And the product data for the market "ETH/DEC19" should be:
-      | internal twap     | external twap |
-      | 1050              | 140           |
-  
+      | internal twap | external twap |
+      | 1050          | 140           |
+
   Scenario: 0053-PERP-035
     When the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals | price type | cash amount | source weights | source staleness tolerance |
-      | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 5                   | weight     | 0        | 1,1,0,0        | 30s,100s,0s,0s             |
+      | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 5                   | weight     | 0           | 1,1,0,0        | 30s,100s,0s,0s             |
     And the composite price oracles from "0xCAFECAFE2":
       | name    | price property   | price type   | price decimals |
       | oracle1 | prices.ETH.value | TYPE_INTEGER | 5              |
@@ -158,8 +158,8 @@ Feature: Simple tests for perpetual market mark price.
       | perp.ETH.value | 140   | -1s         |
 
     And the oracles broadcast data with block time signed with "0xCAFECAFE2":
-      | name             | value   | time offset |
-      | prices.ETH.value | 500     | -1s         |
+      | name             | value | time offset |
+      | prices.ETH.value | 500   | -1s         |
 
     And the network moves ahead "15" blocks
 
@@ -168,5 +168,5 @@ Feature: Simple tests for perpetual market mark price.
       | 500        | TRADING_MODE_CONTINUOUS |
 
     And the product data for the market "ETH/DEC19" should be:
-      | internal twap     | external twap |
-      | 1013              | 140           |
+      | internal twap | external twap |
+      | 1013          | 140           |

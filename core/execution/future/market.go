@@ -134,11 +134,11 @@ type Market struct {
 	positionFactor        num.Decimal // 10^pdp
 	assetDP               uint32
 
-	settlementDataInMarket *num.Numeric
-	nextMTM                time.Time
-	nextIndexPriceCalc     time.Time
-	mtmDelta               time.Duration
-	indexConfigFrequency   time.Duration
+	settlementDataInMarket          *num.Numeric
+	nextMTM                         time.Time
+	nextInternalCompositePriceCalc  time.Time
+	mtmDelta                        time.Duration
+	internalCompositePriceFrequency time.Duration
 
 	settlementAsset string
 	succeeded       bool
@@ -161,9 +161,9 @@ type Market struct {
 	epoch              types.Epoch
 
 	// party ID to isolated margin factor
-	partyMarginFactor    map[string]num.Decimal
-	markPriceCalculator  *CompositePriceCalculator
-	indexPriceCalculator *CompositePriceCalculator
+	partyMarginFactor                map[string]num.Decimal
+	markPriceCalculator              *CompositePriceCalculator
+	internalCompositePriceCalculator *CompositePriceCalculator
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -339,10 +339,10 @@ func NewMarket(
 	market.markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 
 	if market.IsPerp() {
-		indexPriceConfig := mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
-		if indexPriceConfig != nil {
-			market.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, timeService)
-			market.indexPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+		internalCompositePriceConfig := mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
+		if internalCompositePriceConfig != nil {
+			market.internalCompositePriceCalculator = NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, timeService)
+			market.internalCompositePriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 		}
 	}
 
@@ -564,8 +564,8 @@ func (m *Market) SetSucceeded() {
 	m.succeeded = true
 }
 
-func (m *Market) SetNextIndexPriceCalc(tm time.Time) {
-	m.nextIndexPriceCalc = tm
+func (m *Market) SetNextInternalCompositePriceCalc(tm time.Time) {
+	m.nextInternalCompositePriceCalc = tm
 }
 
 func (m *Market) SetNextMTM(tm time.Time) {
@@ -607,20 +607,20 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		return err
 	}
 	if m.IsPerp() {
-		indexPriceConfig := m.mkt.TradableInstrument.Instrument.GetPerps().IndexPriceConfig
-		if indexPriceConfig == nil && m.indexPriceCalculator != nil {
+		internalCompositePriceConfig := m.mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
+		if internalCompositePriceConfig == nil && m.internalCompositePriceCalculator != nil {
 			// unsubscribe existing oracles if any
-			m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, nil)
-			m.indexPriceCalculator = nil
-		} else if m.indexPriceCalculator != nil {
-			// there was previously a index price calculator
-			if err := m.indexPriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
-				m.indexPriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
+			m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, nil)
+			m.internalCompositePriceCalculator = nil
+		} else if m.internalCompositePriceCalculator != nil {
+			// there was previously a intenal composite price calculator
+			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+				m.internalCompositePriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
 				return err
 			}
-		} else if indexPriceConfig != nil {
+		} else if internalCompositePriceConfig != nil {
 			// it's a new index calculator
-			m.indexPriceCalculator = NewCompositePriceCalculator(ctx, indexPriceConfig, oracleEngine, m.timeService)
+			m.internalCompositePriceCalculator = NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, m.timeService)
 		}
 	}
 
@@ -747,29 +747,29 @@ func (m *Market) GetMarketData() types.MarketData {
 		mode = m.mkt.TradingMode
 	}
 
-	var indexPrice *num.Uint
-	var nextIndexPriceCalc int64
-	var indexPriceType vega.CompositePriceType
+	var internalCompositePrice *num.Uint
+	var nextInternalCompositePriceCalc int64
+	var internalCompositePriceType vega.CompositePriceType
 	pd := m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano())
 	if m.perp && pd != nil {
-		if m.indexPriceCalculator != nil {
-			indexPriceType = m.indexPriceCalculator.config.CompositePriceType
-			indexPrice = m.indexPriceCalculator.price
-			if indexPrice == nil {
-				indexPrice = num.UintZero()
+		if m.internalCompositePriceCalculator != nil {
+			internalCompositePriceType = m.internalCompositePriceCalculator.config.CompositePriceType
+			internalCompositePrice = m.internalCompositePriceCalculator.price
+			if internalCompositePrice == nil {
+				internalCompositePrice = num.UintZero()
 			} else {
-				indexPrice = m.priceToMarketPrecision(indexPrice)
+				internalCompositePrice = m.priceToMarketPrecision(internalCompositePrice)
 			}
-			nextIndexPriceCalc = m.nextIndexPriceCalc.UnixNano()
+			nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.UnixNano()
 		} else {
-			indexPriceType = m.markPriceCalculator.config.CompositePriceType
-			indexPrice = m.priceToMarketPrecision(m.getCurrentMarkPrice())
-			nextIndexPriceCalc = m.nextMTM.UnixNano()
+			internalCompositePriceType = m.markPriceCalculator.config.CompositePriceType
+			internalCompositePrice = m.priceToMarketPrecision(m.getCurrentMarkPrice())
+			nextInternalCompositePriceCalc = m.nextMTM.UnixNano()
 		}
 		perpData := pd.Data.(*types.PerpetualData)
-		perpData.IndexPrice = indexPrice
-		perpData.NextIndexPriceCalc = nextIndexPriceCalc
-		perpData.IndexPriceType = indexPriceType
+		perpData.InternalCompositePrice = internalCompositePrice
+		perpData.NextInternalCompositePriceCalc = nextInternalCompositePriceCalc
+		perpData.InternalCompositePriceType = internalCompositePriceType
 	}
 
 	md := types.MarketData{
@@ -1032,24 +1032,24 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 	t := m.timeService.GetTimeNow()
 	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
-	if m.indexPriceCalculator != nil {
-		m.indexPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+	if m.internalCompositePriceCalculator != nil {
+		m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
 	}
 
-	// if we do have a separate configuration for the index price and we have a new index price we push it to the perp
-	if m.indexPriceCalculator != nil && (m.nextIndexPriceCalc.IsZero() ||
-		!m.nextIndexPriceCalc.After(t) &&
+	// if we do have a separate configuration for the intenal composite price and we have a new intenal composite price we push it to the perp
+	if m.internalCompositePriceCalculator != nil && (m.nextInternalCompositePriceCalc.IsZero() ||
+		!m.nextInternalCompositePriceCalc.After(t) &&
 			!m.as.InAuction()) {
-		prevIndexPrice := m.indexPriceCalculator.price
-		m.indexPriceCalculator.CalculateMarkPrice(
+		prevInternalCompositePrice := m.internalCompositePriceCalculator.price
+		m.internalCompositePriceCalculator.CalculateMarkPrice(
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
 			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
-		m.nextIndexPriceCalc = t.Add(m.indexConfigFrequency)
-		if (prevIndexPrice == nil || !m.indexPriceCalculator.price.EQ(prevIndexPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentIndexPrice().IsZero() {
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+		m.nextInternalCompositePriceCalc = t.Add(m.internalCompositePriceFrequency)
+		if (prevInternalCompositePrice == nil || !m.internalCompositePriceCalculator.price.EQ(prevInternalCompositePrice) || m.settlement.HasTraded()) &&
+			!m.getCurrentInternalCompositePrice().IsZero() {
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentInternalCompositePrice(), m.timeService.GetTimeNow().UnixNano())
 		}
 	}
 
@@ -1065,7 +1065,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
 		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
 		// on the standard mark price
-		if m.indexPriceCalculator == nil && m.perp &&
+		if m.internalCompositePriceCalculator == nil && m.perp &&
 			(prevMarkPrice == nil || !m.markPriceCalculator.price.EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
 			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
@@ -1173,8 +1173,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	m.markPriceCalculator.Close(ctx)
-	if m.indexPriceCalculator != nil {
-		m.indexPriceCalculator.Close(ctx)
+	if m.internalCompositePriceCalculator != nil {
+		m.internalCompositePriceCalculator.Close(ctx)
 	}
 
 	m.mkt.State = mktState
@@ -1563,20 +1563,20 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	}
 
 	if m.perp {
-		if m.indexPriceCalculator != nil {
-			m.indexPriceCalculator.CalculateMarkPrice(
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateMarkPrice(
 				m.timeService.GetTimeNow().UnixNano(),
 				m.matching,
-				m.indexConfigFrequency,
+				m.internalCompositePriceFrequency,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long)
 
-			if wasOpeningAuction && (m.getCurrentIndexPrice().IsZero()) {
-				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
+			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
+				m.internalCompositePriceCalculator.overridePrice(m.lastTradedPrice)
 			}
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentIndexPrice(), m.timeService.GetTimeNow().UnixNano())
+			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentInternalCompositePrice(), m.timeService.GetTimeNow().UnixNano())
 		} else {
 			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
 		}
@@ -2515,8 +2515,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
 		m.markPriceCalculator.NewTrade(trade)
-		if m.indexPriceCalculator != nil {
-			m.indexPriceCalculator.NewTrade(trade)
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.NewTrade(trade)
 		}
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 		if tradeT != nil {
@@ -4227,11 +4227,11 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long)
 
-			if m.indexPriceCalculator != nil {
-				m.indexPriceCalculator.CalculateMarkPrice(
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.CalculateMarkPrice(
 					m.timeService.GetTimeNow().UnixNano(),
 					m.matching,
-					m.indexConfigFrequency,
+					m.internalCompositePriceFrequency,
 					m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 					m.mkt.LinearSlippageFactor,
 					m.risk.GetRiskFactors().Short,
@@ -4239,14 +4239,14 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			}
 
 			if m.perp {
-				// if perp and we have an index price (direct or by mark price), feed it to the perp before the mark to market
-				if m.indexPriceCalculator != nil {
-					if indexPrice := m.getCurrentIndexPrice(); !indexPrice.IsZero() {
-						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+				// if perp and we have an intenal composite price (direct or by mark price), feed it to the perp before the mark to market
+				if m.internalCompositePriceCalculator != nil {
+					if internalCompositePrice := m.getCurrentInternalCompositePrice(); !internalCompositePrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, internalCompositePrice, m.timeService.GetTimeNow().UnixNano())
 					}
 				} else {
-					if indexPrice := m.getCurrentMarkPrice(); !indexPrice.IsZero() {
-						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, indexPrice, m.timeService.GetTimeNow().UnixNano())
+					if internalCompositePrice := m.getCurrentMarkPrice(); !internalCompositePrice.IsZero() {
+						m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, internalCompositePrice, m.timeService.GetTimeNow().UnixNano())
 					}
 				}
 			}
@@ -4425,8 +4425,8 @@ func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.Ma
 			m.lastTradedPrice = settlementDataInAsset.Clone()
 			// the settlement price is the final mark price
 			m.markPriceCalculator.overridePrice(m.lastTradedPrice)
-			if m.indexPriceCalculator != nil {
-				m.indexPriceCalculator.overridePrice(m.lastTradedPrice)
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.overridePrice(m.lastTradedPrice)
 			}
 		}
 
@@ -4546,14 +4546,14 @@ func (m *Market) getReferencePrice() *num.Uint {
 	return ip
 }
 
-func (m *Market) getCurrentIndexPrice() *num.Uint {
-	if !m.perp || m.indexPriceCalculator == nil {
-		m.log.Panic("trying to get current index price in a market with no index price configuration or not a perp market")
+func (m *Market) getCurrentInternalCompositePrice() *num.Uint {
+	if !m.perp || m.internalCompositePriceCalculator == nil {
+		m.log.Panic("trying to get current internal composite price in a market with no intenal composite price configuration or not a perp market")
 	}
-	if m.indexPriceCalculator.price == nil {
+	if m.internalCompositePriceCalculator.price == nil {
 		return num.UintZero()
 	}
-	return m.indexPriceCalculator.price.Clone()
+	return m.internalCompositePriceCalculator.price.Clone()
 }
 
 func (m *Market) getCurrentMarkPrice() *num.Uint {

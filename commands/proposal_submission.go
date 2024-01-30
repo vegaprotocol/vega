@@ -1280,8 +1280,8 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Er
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", fmt.Sprintf("%s.perps", parentProperty), true))
 	errs.Merge(checkNewPerpsOracleBinding(perps))
 
-	if perps.IndexPriceConfiguration != nil {
-		errs.Merge(checkCompositePriceConfiguration(perps.IndexPriceConfiguration, fmt.Sprintf("%s.perps.index_price_configuration", parentProperty)))
+	if perps.InternalCompositePriceConfiguration != nil {
+		errs.Merge(checkCompositePriceConfiguration(perps.InternalCompositePriceConfiguration, fmt.Sprintf("%s.perps.internal_composite_price_configuration", parentProperty)))
 	}
 
 	return errs
@@ -1429,8 +1429,8 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty s
 	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementSchedule, "data_source_spec_for_settlement_schedule", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
 	errs.Merge(checkUpdatePerpsOracleBinding(perps))
 
-	if perps.IndexPriceConfiguration != nil {
-		errs.Merge(checkCompositePriceConfiguration(perps.IndexPriceConfiguration, fmt.Sprintf("%s.perps.index_price_configuration", parentProperty)))
+	if perps.InternalCompositePriceConfiguration != nil {
+		errs.Merge(checkCompositePriceConfiguration(perps.InternalCompositePriceConfiguration, fmt.Sprintf("%s.perps.internal_composite_price_configuration", parentProperty)))
 	}
 
 	return errs

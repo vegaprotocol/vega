@@ -498,7 +498,7 @@ type Perps struct {
 	DataSourceSpecForSettlementSchedule *datasource.Spec
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
 
-	IndexPriceConfig *CompositePriceConfiguration
+	InternalCompositePriceConfig *CompositePriceConfiguration
 }
 
 func PerpsFromProto(p *vegapb.Perpetual) *Perps {
@@ -517,9 +517,9 @@ func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 		lowerBound = ptr.From(num.MustDecimalFromString(*p.FundingRateLowerBound))
 	}
 
-	var indexPriceConfig *CompositePriceConfiguration
-	if p.IndexPriceConfig != nil {
-		indexPriceConfig = CompositePriceConfigurationFromProto(p.IndexPriceConfig)
+	var internalCompositePriceConfig *CompositePriceConfiguration
+	if p.InternalCompositePriceConfig != nil {
+		internalCompositePriceConfig = CompositePriceConfigurationFromProto(p.InternalCompositePriceConfig)
 	}
 
 	return &Perps{
@@ -535,7 +535,7 @@ func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 		DataSourceSpecForSettlementData:     datasource.SpecFromProto(p.DataSourceSpecForSettlementData),
 		DataSourceSpecForSettlementSchedule: datasource.SpecFromProto(p.DataSourceSpecForSettlementSchedule),
 		DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(p.DataSourceSpecBinding),
-		IndexPriceConfig:                    indexPriceConfig,
+		InternalCompositePriceConfig:        internalCompositePriceConfig,
 	}
 }
 
@@ -555,9 +555,9 @@ func (p Perps) IntoProto() *vegapb.Perpetual {
 		lowerBound = ptr.From(p.FundingRateLowerBound.String())
 	}
 
-	var indexPriceConfig *vega.CompositePriceConfiguration
-	if p.IndexPriceConfig != nil {
-		indexPriceConfig = p.IndexPriceConfig.IntoProto()
+	var internalCompositePriceConfig *vega.CompositePriceConfiguration
+	if p.InternalCompositePriceConfig != nil {
+		internalCompositePriceConfig = p.InternalCompositePriceConfig.IntoProto()
 	}
 
 	return &vegapb.Perpetual{
@@ -573,13 +573,13 @@ func (p Perps) IntoProto() *vegapb.Perpetual {
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
-		IndexPriceConfig:                    indexPriceConfig,
+		InternalCompositePriceConfig:        internalCompositePriceConfig,
 	}
 }
 
 func (p Perps) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) marginFundingFactore(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) tradingTermination(%s) binding(%s), indexPriceConfig(%s)",
+		"quoteName(%s) settlementAsset(%s) marginFundingFactore(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) tradingTermination(%s) binding(%s), internalCompositePriceConfig(%s)",
 		p.QuoteName,
 		p.SettlementAsset,
 		p.MarginFundingFactor.String(),
@@ -589,7 +589,7 @@ func (p Perps) String() string {
 		stringer.PtrToString(p.DataSourceSpecForSettlementData),
 		stringer.PtrToString(p.DataSourceSpecForSettlementSchedule),
 		stringer.PtrToString(p.DataSourceSpecBinding),
-		stringer.PtrToString(p.IndexPriceConfig),
+		stringer.PtrToString(p.InternalCompositePriceConfig),
 	)
 }
 
@@ -834,30 +834,30 @@ type ProductData struct {
 }
 
 type PerpetualData struct {
-	FundingRate        string
-	FundingPayment     string
-	InternalTWAP       string
-	ExternalTWAP       string
-	SeqNum             uint64
-	StartTime          int64
-	IndexPrice         *num.Uint
-	NextIndexPriceCalc int64
-	IndexPriceType     CompositePriceType
+	FundingRate                    string
+	FundingPayment                 string
+	InternalTWAP                   string
+	ExternalTWAP                   string
+	SeqNum                         uint64
+	StartTime                      int64
+	InternalCompositePrice         *num.Uint
+	NextInternalCompositePriceCalc int64
+	InternalCompositePriceType     CompositePriceType
 }
 
 func (p PerpetualData) IntoProto() *vegapb.ProductData {
 	return &vegapb.ProductData{
 		Data: &vegapb.ProductData_PerpetualData{
 			PerpetualData: &vegapb.PerpetualData{
-				FundingRate:        p.FundingRate,
-				FundingPayment:     p.FundingPayment,
-				InternalTwap:       p.InternalTWAP,
-				ExternalTwap:       p.ExternalTWAP,
-				SeqNum:             p.SeqNum,
-				StartTime:          p.StartTime,
-				IndexPrice:         num.UintToString(p.IndexPrice),
-				NextIndexPriceCalc: p.NextIndexPriceCalc,
-				IndexPriceType:     p.IndexPriceType,
+				FundingRate:                    p.FundingRate,
+				FundingPayment:                 p.FundingPayment,
+				InternalTwap:                   p.InternalTWAP,
+				ExternalTwap:                   p.ExternalTWAP,
+				SeqNum:                         p.SeqNum,
+				StartTime:                      p.StartTime,
+				InternalCompositePrice:         num.UintToString(p.InternalCompositePrice),
+				NextInternalCompositePriceCalc: p.NextInternalCompositePriceCalc,
+				InternalCompositePriceType:     p.InternalCompositePriceType,
 			},
 		},
 	}

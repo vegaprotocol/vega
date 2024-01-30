@@ -1236,12 +1236,12 @@ message PerpetualData {
   uint64 seq_num = 5;
   // Funding period start time
   int64 start_time = 6;
-  // The index price used for perps.
-  string index_price = 7;
-  // The next time the index price is calculated for perps.
-  int64 next_index_price_calc = 8;
-  // The method used for calculating the index price (perps only).
-  CompositePriceType index_price_type = 9;
+  // The internal composite price used for perpetual markets.
+  string internal_composite_price = 7;
+  // The next time the internal composite price is calculated for the perpetual market, in Unix nanoseconds.
+  int64 next_internal_composite_price_calc = 8;
+  // The method used for calculating the internal composite price, for perpetual markets only.
+  CompositePriceType internal_composite_price_type = 9;
 }
 
 // Represents market data specific to a particular product type.

@@ -205,7 +205,7 @@ func TestPerpMarketFromIntoProto(t *testing.T) {
 						InterestRate:        "0.2",
 						ClampLowerBound:     "0.1",
 						ClampUpperBound:     "0.6",
-						IndexPriceConfig: &vegapb.CompositePriceConfiguration{
+						InternalCompositePriceConfig: &vegapb.CompositePriceConfiguration{
 							DecayWeight:              "0.5",
 							DecayPower:               1,
 							CashAmount:               "0",

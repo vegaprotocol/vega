@@ -189,9 +189,9 @@ func getLatestMarketData(t *testing.T) {
 			ProductData: &vega.ProductData{
 				Data: &vega.ProductData_PerpetualData{
 					PerpetualData: &vega.PerpetualData{
-						IndexPrice:         "100",
-						NextIndexPriceCalc: 200,
-						IndexPriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+						InternalCompositePrice:         "100",
+						NextInternalCompositePriceCalc: 200,
+						InternalCompositePriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
 					},
 				},
 			},
@@ -1091,9 +1091,9 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 			ProductData: &vega.ProductData{
 				Data: &vega.ProductData_PerpetualData{
 					PerpetualData: &vega.PerpetualData{
-						IndexPrice:         "100",
-						NextIndexPriceCalc: 200,
-						IndexPriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+						InternalCompositePrice:         "100",
+						NextInternalCompositePriceCalc: 200,
+						InternalCompositePriceType:     vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
 					},
 				},
 			},
