@@ -19,7 +19,9 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
 )
@@ -32,9 +34,7 @@ var (
 	}
 )
 
-type efSnapshotState struct {
-	serialised []byte
-}
+type efSnapshotState struct{}
 
 func (f *Forwarder) Namespace() types.SnapshotNamespace {
 	return types.EventForwarderSnapshot
@@ -49,14 +49,19 @@ func (f *Forwarder) Stopped() bool {
 }
 
 func (f *Forwarder) serialise() ([]byte, error) {
-	slice := make([]string, 0, f.ackedEvts.Size())
-	iter := f.ackedEvts.Iterator()
+	slice := make([]*snapshotpb.EventForwarderBucket, 0, f.ackedEvts.Size())
+	iter := f.ackedEvts.events.Iterator()
 	for iter.Next() {
-		slice = append(slice, (iter.Value().(string)))
+		v := (iter.Value().(*ackedEvtBucket))
+		slice = append(slice, &snapshotpb.EventForwarderBucket{
+			Ts:     v.ts,
+			Hashes: v.hashes,
+		})
 	}
+
 	payload := types.Payload{
 		Data: &types.PayloadEventForwarder{
-			Keys: slice,
+			Buckets: slice,
 		},
 	}
 	return proto.Marshal(payload.IntoProto())
@@ -68,12 +73,7 @@ func (f *Forwarder) getSerialised(k string) (data []byte, err error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	f.efss.serialised, err = f.serialise()
-	if err != nil {
-		return nil, err
-	}
-
-	return f.efss.serialised, nil
+	return f.serialise()
 }
 
 func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
@@ -81,24 +81,38 @@ func (f *Forwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (f *Forwarder) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if f.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
-		return nil, f.restore(pl.Keys, p)
+		f.restore(ctx, pl)
+		return nil, nil
 	}
 
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(keys []string, p *types.Payload) error {
-	f.ackedEvts = treeset.NewWithStringComparator()
-	for _, v := range keys {
-		f.ackedEvts.Add(v)
+func (f *Forwarder) restore(ctx context.Context, p *types.PayloadEventForwarder) {
+	f.ackedEvts = &ackedEvents{
+		timeService: f.timeService,
+		events:      treeset.NewWith(ackedEvtBucketComparator),
 	}
-	var err error
-	f.efss.serialised, err = proto.Marshal(p.IntoProto())
-	return err
+
+	// upgrading from 73.12, we need to load previous snapshot format
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.12") {
+		// add at 0 time, so it's always way in the past.
+		bucket := &ackedEvtBucket{
+			ts:     0,
+			hashes: []string{},
+		}
+		bucket.hashes = append(bucket.hashes, p.Keys...)
+		f.ackedEvts.events.Add(bucket)
+		return
+	}
+
+	for _, v := range p.Buckets {
+		f.ackedEvts.AddAt(v.Ts, v.Hashes...)
+	}
 }
