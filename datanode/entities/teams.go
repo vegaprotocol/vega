@@ -38,6 +38,7 @@ type Team struct {
 	AvatarURL      *string
 	Closed         bool
 	AllowList      []string
+	TotalMembers   uint64
 	CreatedAt      time.Time
 	CreatedAtEpoch uint64
 	VegaTime       time.Time
@@ -62,6 +63,7 @@ func (t Team) ToProto() *v2.Team {
 		Closed:         t.Closed,
 		AllowList:      t.AllowList,
 		CreatedAtEpoch: t.CreatedAtEpoch,
+		TotalMembers:   t.TotalMembers,
 	}
 }
 

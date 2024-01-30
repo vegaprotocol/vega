@@ -4172,6 +4172,8 @@ message Team {
   // List of public keys that are allowed to join the team.
   // Only applicable to closed teams.
   repeated string allow_list = 9;
+  // Current number of members in the team.
+  uint64 total_members = 10;
 }
 
 // Team data item with the corresponding cursor.
