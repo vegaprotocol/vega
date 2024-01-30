@@ -297,7 +297,7 @@ with epoch_range as (select GREATEST(max(id) - %d, 0) as start_epoch, GREATEST(m
     group by gen_rewards->>'party'
 )
 SELECT rf.referral_set_id, rf.referee, rf.joined_at, rf.at_epoch, rf.vega_time, coalesce(pv.period_volume, 0) period_volume, coalesce(pr.period_rewards, 0) period_rewards_paid
-from referral_set_referees rf
+from current_referral_set_referees rf
 join referral_sets rs on rf.referral_set_id = rs.id
 left join ref_period_volume pv on rf.referee = pv.party
 left join ref_period_rewards pr on rf.referee = pr.party
