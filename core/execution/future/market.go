@@ -1482,7 +1482,7 @@ func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfi
 	for k, d := range m.partyMarginFactor {
 		partyPos, _ := m.position.GetPositionByPartyID(k)
 		if partyPos != nil && (partyPos.Buy() != 0 || partyPos.Sell() != 0) {
-			marketObservable, mpos, increment, _, _, orders, err := m.getIsolatedMarginContext(partyPos, nil)
+			marketObservable, mpos, increment, _, _, orders, err := m.getIsolatedMarginContext(partyPos, nil, nil)
 			if err != nil {
 				continue
 			}
@@ -2330,7 +2330,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// If the order is not persistent this is the end, if it is persistent any portion of the order which
 		// has not traded in step 1 will move to being placed on the order book.
 		if len(trades) > 0 {
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
+			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, nil); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*order), logging.Error(err))
@@ -2888,7 +2888,7 @@ func (m *Market) finalizePartiesCloseOut(
 			if pp == nil {
 				continue
 			}
-			marketObservable, evt, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pp, nil)
+			marketObservable, evt, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pp, nil, nil)
 			if err != nil {
 				m.log.Panic("failed to get isolated margin context")
 			}
@@ -2961,8 +2961,8 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 
 // updateIsolatedMarginOnAggressor is called when a new or amended order is matched immediately upon submission.
 // it checks that new margin requirements can be satisfied and if so transfers the margin from the general account to the margin account.
-func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, isAmend bool) error {
-	marketObservable, mpos, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pos, order)
+func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *positions.MarketPosition, order *types.Order, trades []*types.Trade, fees events.FeesTransfer) error {
+	marketObservable, mpos, increment, _, marginFactor, orders, err := m.getIsolatedMarginContext(pos, order, fees)
 	if err != nil {
 		return err
 	}
@@ -2977,7 +2977,7 @@ func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *posit
 }
 
 func (m *Market) updateIsolatedMarginOnOrder(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) error {
-	marketObservable, pos, increment, auctionPrice, marginFactor, orders, err := m.getIsolatedMarginContext(mpos, order)
+	marketObservable, pos, increment, auctionPrice, marginFactor, orders, err := m.getIsolatedMarginContext(mpos, order, nil)
 	if err != nil {
 		return err
 	}
@@ -3796,7 +3796,7 @@ func (m *Market) orderCancelReplace(
 		if len(trades) > 0 {
 			posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
 			// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
+			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, fees); err != nil {
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*newOrder), logging.Error(err))

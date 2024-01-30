@@ -48,7 +48,7 @@ func (m *Market) updateIsolatedMarginsOnPositionChange(ctx context.Context, mpos
 	return err
 }
 
-func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order *types.Order) (*num.Uint, events.Margin, num.Decimal, *num.Uint, num.Decimal, []*types.Order, error) {
+func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order *types.Order, fees events.FeesTransfer) (*num.Uint, events.Margin, num.Decimal, *num.Uint, num.Decimal, []*types.Order, error) {
 	var orderPrice *num.Uint
 	if order != nil {
 		orderPrice = order.Price.Clone()
@@ -57,7 +57,7 @@ func (m *Market) getIsolatedMarginContext(mpos *positions.MarketPosition, order 
 	}
 	marketObservable := m.getMarketObservable(orderPrice)
 	mID := m.GetID()
-	pos, err := m.collateral.GetPartyMargin(mpos, m.settlementAsset, mID)
+	pos, err := m.collateral.GetPartyMarginWithFees(mpos, fees, m.settlementAsset, mID)
 	if err != nil {
 		return nil, nil, num.DecimalZero(), nil, num.DecimalZero(), nil, err
 	}

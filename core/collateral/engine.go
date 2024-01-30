@@ -1594,6 +1594,14 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 
 // GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
+	r, err := e.getPartyMargin(pos, asset, marketID)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (e *Engine) getPartyMargin(pos events.MarketPosition, asset, marketID string) (marginUpdate, error) {
 	if pos.Party() == types.NetworkParty {
 		ins, err := e.GetMarketInsurancePoolAccount(marketID, asset)
 		if err != nil {
@@ -1645,6 +1653,44 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		marketID:        marketID,
 		marginShortFall: num.UintZero(),
 	}, nil
+}
+
+func (e *Engine) GetPartyMarginWithFees(pos events.MarketPosition, feeEvts events.FeesTransfer, asset, marketID string) (events.Margin, error) {
+	mu, err := e.getPartyMargin(pos, asset, marketID)
+	if err != nil {
+		return nil, err
+	}
+	if feeEvts == nil {
+		return mu, nil
+	}
+	fees := feeEvts.TotalFeesAmountPerParty()
+	if len(fees) == 0 {
+		return mu, nil
+	}
+	fee, ok := fees[pos.Party()]
+	if !ok {
+		return mu, nil
+	}
+	// have a pointer to all account balances ready in case we have to subtract the fee amount
+	balances := make([]*num.Uint, 0, 4)
+	if mu.orderMargin != nil {
+		balances = append(balances, mu.orderMargin.Balance)
+	}
+	balances = append(balances, mu.margin.Balance, mu.general.Balance)
+	if mu.bond != nil {
+		balances = append(balances, mu.bond.Balance)
+	}
+	// now iterate over balances until the fee is paid in full, or all balances are zero
+	for _, b := range balances {
+		// this balance covers what's left of the fee, subtract and break
+		if b.GTE(fee) {
+			b.Sub(b, fee)
+			break
+		}
+		fee.Sub(fee, b) // subtract this balance from the fee total
+		b.Sub(b, b)     // set the balance in question to zero
+	}
+	return mu, nil
 }
 
 // IsolatedMarginUpdate returns margin events for parties that don't meet their margin requirement (i.e. margin balance < maintenance).
