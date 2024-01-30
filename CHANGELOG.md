@@ -160,6 +160,7 @@
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
 - [10431](https://github.com/vegaprotocol/vega/issues/10431) - Fix source staleness validation.
 - [10419](https://github.com/vegaprotocol/vega/issues/10419) - Block explorer database migration is slow.
+- [10510](https://github.com/vegaprotocol/vega/issues/10510) - Removing distressed position who hasn't traded does not populate trade map for network.
 - [10470](https://github.com/vegaprotocol/vega/issues/10470) - Mark non-optional parameters as required and update documentation strings.
 - [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
 - [10301](https://github.com/vegaprotocol/vega/issues/10301) - Fix get epoch by block.
