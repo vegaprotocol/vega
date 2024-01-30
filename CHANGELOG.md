@@ -76,6 +76,7 @@
 - [10459](https://github.com/vegaprotocol/vega/issues/10459) - Update `pMedian` to consider staleness of the inputs.
 - [10429](https://github.com/vegaprotocol/vega/issues/10439) - Account for isolated margin mode in `EstimatePosition` endpoint.
 - [10441](https://github.com/vegaprotocol/vega/issues/10441) - Remove active restore check in collateral snapshot loading, snapshot order change removes the need for it.
+- [10286](https://github.com/vegaprotocol/vega/issues/10286) - If probability of trading is less than or equal to the minimum, assign it weight of zero for liquidity score calculation and change the validation of the tau scaling network parameter. 
 - [10376](https://github.com/vegaprotocol/vega/issues/10376) - Add spam protection for update profile.
 
 ### 🐛 Fixes
@@ -142,6 +143,7 @@
 - [10393](https://github.com/vegaprotocol/vega/issues/10393) - Fixed source weight validation.
 - [10396](https://github.com/vegaprotocol/vega/issues/10396) - `ListTransfers` returns error.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - `ListTransfers` does not return staking rewards.
+- [10496](https://github.com/vegaprotocol/vega/issues/10496) - `MarketData` API now always report correct funding payment when a perpetual market is terminated.
 - [10407](https://github.com/vegaprotocol/vega/issues/10407) - Workaround to allow running feature test with invalid 0 mark price frequency.
 - [10378](https://github.com/vegaprotocol/vega/issues/10378) - Ensure network position has price set at all times.
 - [10409](https://github.com/vegaprotocol/vega/issues/10499) - Block explorer `API` failing in release `0.74.0`.
