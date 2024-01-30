@@ -163,6 +163,7 @@
 - [10456](https://github.com/vegaprotocol/vega/issues/10456) - Expose proper enum for `GraphQL` dispatch metric.
 - [10301](https://github.com/vegaprotocol/vega/issues/10301) - Fix get epoch by block.
 - [10343](https://github.com/vegaprotocol/vega/issues/10343) - Remove auction trigger extension and triggering ratio from liquidity monitoring parameters. 
+- [10493](https://github.com/vegaprotocol/vega/issues/10493) - Fix isolated margin panic on amend order.
 - [10490](https://github.com/vegaprotocol/vega/issues/10490) - Handle the `quant` library returning `NaN`
 - [10504](https://github.com/vegaprotocol/vega/issues/10504) - Make sure the referral sets API accounts for referees switch.
 
