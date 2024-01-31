@@ -108,6 +108,7 @@
 - [10189](https://github.com/vegaprotocol/vega/issues/10189) - Votes for assets while proposal is waiting for node votes are included in the snapshot state.
 - [10166](https://github.com/vegaprotocol/vega/issues/10166) - Closed markets should not be subscribed to data sources when restored from a snapshot.
 - [10127](https://github.com/vegaprotocol/vega/issues/10127) - Untangle `ApplyReferralCode` and `JoinTeam` command verification.
+- [10520](https://github.com/vegaprotocol/vega/issues/10520) - Fix `TWAP` calculations due to differences in time precision.
 - [10153](https://github.com/vegaprotocol/vega/issues/10153) - Add metrics and reduce amount of request sent to the Ethereum `RPC`.
 - [10147](https://github.com/vegaprotocol/vega/issues/10147) - Add network transfer largest share to the transfers if needed.
 - [10158](https://github.com/vegaprotocol/vega/issues/10158) - Add the network as the zero-share default party in settlement engine.
