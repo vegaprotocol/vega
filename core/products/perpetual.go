@@ -142,7 +142,7 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 	if t < point.t {
 		sumProduct, idx := c.unwind(t)
 		p := c.points[idx]
-		delta := t - p.t
+		delta := t - num.MaxV(p.t, c.start)
 		sumProduct.Add(sumProduct, num.UintZero().Mul(p.price, num.NewUint(uint64(delta))))
 		return num.UintZero().Div(sumProduct, num.NewUint(uint64(t-c.start)))
 	}
