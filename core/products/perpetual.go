@@ -237,8 +237,10 @@ func (c *cachedTWAP) calculate(t int64) *num.Uint {
 		sumProduct, idx := c.unwind(t)
 		p := c.points[idx]
 
-		delta := t - p.t
-		delta -= c.auctions.timeSpent(p.t, t)
+		// if the point we're winding forward from was a carry over, its time will be before the start-period.
+		from := num.MaxV(p.t, c.start)
+		delta := t - from
+		delta -= c.auctions.timeSpent(from, t)
 
 		period := t - c.start
 		period -= c.auctions.timeSpent(c.start, t)

@@ -31,8 +31,11 @@ import (
 func TestPerpetualsWithAuctions(t *testing.T) {
 	t.Run("funding period is all an auction", testFundingPeriodIsAllAnAuction)
 	t.Run("data point in auction is ignored", testDataPointInAuctionIgnored)
-	t.Run("data points in auction received out of order", TestDataPointsInAuctionOutOfOrder)
-	t.Run("auction preserved when period resets", TestAuctionFundingPeriodReset)
+	t.Run("data points in auction received out of order", testDataPointsInAuctionOutOfOrder)
+	t.Run("auction preserved when period resets", testAuctionFundingPeriodReset)
+	t.Run("funding data in auction period start", testFundingDataAtInAuctionPeriodStart)
+	t.Run("past funding payment calculation", testPastFundingPayment)
+	t.Run("past funding payment calculation in auction", testPastFundingPaymentInAuction)
 }
 
 func testFundingPeriodIsAllAnAuction(t *testing.T) {
@@ -84,7 +87,7 @@ func testDataPointInAuctionIgnored(t *testing.T) {
 	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
 }
 
-func TestDataPointsInAuctionOutOfOrder(t *testing.T) {
+func testDataPointsInAuctionOutOfOrder(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	expectedTWAP := 100
@@ -118,7 +121,7 @@ func TestDataPointsInAuctionOutOfOrder(t *testing.T) {
 	assert.Equal(t, "150", getFundingPayment(t, perp, nd))
 }
 
-func TestAuctionFundingPeriodReset(t *testing.T) {
+func testAuctionFundingPeriodReset(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	expectedTWAP := 100
@@ -152,7 +155,7 @@ func TestAuctionFundingPeriodReset(t *testing.T) {
 	assert.Equal(t, int64(100), fundingPayment.Int64())
 }
 
-func TestFundingDataAtInAuctionPeriodStart(t *testing.T) {
+func testFundingDataAtInAuctionPeriodStart(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 	expectedTWAP := 100
@@ -174,6 +177,62 @@ func TestFundingDataAtInAuctionPeriodStart(t *testing.T) {
 	// funding period is all in auction
 	fp := getFundingPayment(t, perp, end)
 	assert.Equal(t, "0", fp)
+}
+
+func testPastFundingPaymentInAuction(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	expectedTWAP := 100000000000
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	whenLeaveOpeningAuction(t, perp, points[0].t)
+
+	// submit the first point and enter an auction
+	submitPointWithDifference(t, perp, points[0], expectedTWAP)
+
+	// funding period ends so we have a carry-over
+	end := points[0].t + int64(2*time.Second)
+	fundingPayment := whenTheFundingPeriodEnds(t, perp, end)
+	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+
+	whenAuctionStateChanges(t, perp, points[1].t, true)
+
+	// now add another just an internal point
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	require.NoError(t, perp.perpetual.SubmitDataPoint(context.Background(), points[2].price, points[2].t))
+
+	end = points[2].t - int64(500*time.Millisecond)
+	fundingPayment = whenTheFundingPeriodEnds(t, perp, end)
+	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+}
+
+func testPastFundingPayment(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+	expectedTWAP := 100000000000
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	whenLeaveOpeningAuction(t, perp, points[0].t)
+
+	// submit the first point and enter an auction
+	submitPointWithDifference(t, perp, points[0], expectedTWAP)
+
+	// funding period ends so we have a carry-over
+	end := points[0].t + int64(2*time.Second)
+	fundingPayment := whenTheFundingPeriodEnds(t, perp, end)
+	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
+
+	// now add another just an internal point
+	perp.broker.EXPECT().Send(gomock.Any()).Times(1)
+	require.NoError(t, perp.perpetual.SubmitDataPoint(context.Background(), points[2].price, points[2].t))
+
+	end = points[2].t - int64(500*time.Millisecond)
+	fundingPayment = whenTheFundingPeriodEnds(t, perp, end)
+	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
 }
 
 func whenTheFundingPeriodEnds(t *testing.T, perp *tstPerp, now int64) *num.Int {
