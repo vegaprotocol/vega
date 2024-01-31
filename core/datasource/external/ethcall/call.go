@@ -97,6 +97,8 @@ func (c Call) Call(ctx context.Context, ethClient EthReaderCaller, blockNumber u
 		Data: c.args,
 	}
 
+	fmt.Printf("%#v\n", msg)
+
 	n := big.NewInt(0).SetUint64(blockNumber)
 	bytes, err := ethClient.CallContract(ctx, msg, n)
 	if err != nil {
