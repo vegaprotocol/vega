@@ -70,7 +70,7 @@ CREATE TRIGGER update_teams_stats
   AFTER INSERT
   ON rewards
   FOR EACH ROW
-EXECUTE PROCEDURE update_teams_stats();
+EXECUTE FUNCTION update_teams_stats();
 
 -- +goose Down
 

@@ -31,42 +31,13 @@ const (
 	listTeamsStatsQuery = `
 WITH
   -- This CTE retrieves the all teams statistics reported for the last N epochs.
-  windowed_teams_stats AS (
+  eligible_stats AS (
     SELECT *
     FROM teams_stats
     WHERE at_epoch > (
       SELECT MAX(at_epoch) - $1
       FROM teams_stats
     ) %s
-  ),
-  -- This CTE is used to determine at which epoch the teams have stats within
-  -- the aggregation window.
-  teams_per_epochs AS (
-    SELECT team_id,
-           at_epoch
-    FROM windowed_teams_stats
-    GROUP BY
-      team_id,
-      at_epoch
-  ),
-  -- This CTE filters the team that have exactly N epochs worth of statistics.
-  -- We are exclusively computing the stats for teams that have at least N epochs worth of data.
-  -- If we are looking at the stats for the last 30 epochs, a team that has less than 30 epochs
-  -- worth of data aggregated, then it's ignored.
-  eligible_teams AS (
-    SELECT team_id
-    FROM teams_per_epochs
-    GROUP BY
-      team_id
-    HAVING COUNT(*) = $1
-  ),
-  eligible_stats AS (
-    SELECT *
-    FROM windowed_teams_stats
-    WHERE team_id IN (
-      SELECT *
-      FROM eligible_teams
-    )
   ),
   team_rewards AS (
     SELECT t.team_id,
@@ -98,42 +69,13 @@ FROM team_rewards mr
 	listTeamMembersStatsQuery = `
 WITH
   -- This CTE retrieves the all teams statistics reported for the last N epochs.
-  windowed_teams_stats AS (
+  eligible_stats AS (
     SELECT *
     FROM teams_stats
     WHERE at_epoch > (
       SELECT MAX(at_epoch) - $1
       FROM teams_stats
     ) AND team_id = $2 %s
-  ),
-  -- This CTE is used to determine at which epoch the teams have stats within
-  -- the aggregation window.
-  teams_per_epochs AS (
-    SELECT team_id,
-           at_epoch
-    FROM windowed_teams_stats
-    GROUP BY
-      team_id,
-      at_epoch
-  ),
-  -- This CTE filters the team that have exactly N epochs worth of statistics.
-  -- We are exclusively computing the stats for teams that have at least N epochs worth of data.
-  -- If we are looking at the stats for the last 30 epochs, a team that has less than 30 epochs
-  -- worth of data aggregated, then it's ignored.
-  eligible_teams AS (
-    SELECT team_id
-    FROM teams_per_epochs
-    GROUP BY
-      team_id
-    HAVING COUNT(*) = $1
-  ),
-  eligible_stats AS (
-    SELECT *
-    FROM windowed_teams_stats
-    WHERE team_id IN (
-      SELECT *
-      FROM eligible_teams
-    )
   ),
   members_rewards AS (
     SELECT team_id,
