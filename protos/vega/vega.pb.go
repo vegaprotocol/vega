@@ -5554,9 +5554,9 @@ type PerpetualData struct {
 	NextInternalCompositePriceCalc int64 `protobuf:"varint,8,opt,name=next_internal_composite_price_calc,json=nextInternalCompositePriceCalc,proto3" json:"next_internal_composite_price_calc,omitempty"`
 	// The method used for calculating the internal composite price, for perpetual markets only.
 	InternalCompositePriceType CompositePriceType `protobuf:"varint,9,opt,name=internal_composite_price_type,json=internalCompositePriceType,proto3,enum=vega.CompositePriceType" json:"internal_composite_price_type,omitempty"`
-	// The last seen value of the settlement oracle.
+	// Last seen value of the settlement oracle.
 	UnderlyingIndexPrice string `protobuf:"bytes,10,opt,name=underlying_index_price,json=underlyingIndexPrice,proto3" json:"underlying_index_price,omitempty"`
-	// The internal state of the composite price.
+	// State of the internal composite price.
 	InternalCompositePriceState *CompositePriceState `protobuf:"bytes,11,opt,name=internal_composite_price_state,json=internalCompositePriceState,proto3" json:"internal_composite_price_state,omitempty"`
 }
 
@@ -5819,7 +5819,7 @@ type MarketData struct {
 	NextNetworkCloseout int64 `protobuf:"varint,33,opt,name=next_network_closeout,json=nextNetworkCloseout,proto3" json:"next_network_closeout,omitempty"`
 	// The method used for calculating the mark price.
 	MarkPriceType CompositePriceType `protobuf:"varint,34,opt,name=mark_price_type,json=markPriceType,proto3,enum=vega.CompositePriceType" json:"mark_price_type,omitempty"`
-	// The internal state of the composite price.
+	// State of the internal composite price.
 	MarkPriceState *CompositePriceState `protobuf:"bytes,35,opt,name=mark_price_state,json=markPriceState,proto3" json:"mark_price_state,omitempty"`
 }
 
@@ -6105,9 +6105,12 @@ type CompositePriceSource struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Source of the price.
 	PriceSource string `protobuf:"bytes,1,opt,name=price_source,json=priceSource,proto3" json:"price_source,omitempty"`
-	Price       string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
-	LastUpdated int64  `protobuf:"varint,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	// Current value of the composite source price.
+	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
+	// Timestamp in Unix nanoseconds when the price source was last updated.
+	LastUpdated int64 `protobuf:"varint,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 }
 
 func (x *CompositePriceSource) Reset() {
@@ -6163,6 +6166,7 @@ func (x *CompositePriceSource) GetLastUpdated() int64 {
 	return 0
 }
 
+// Underlying state of the composite price..
 type CompositePriceState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
