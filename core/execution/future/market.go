@@ -3725,6 +3725,9 @@ func (m *Market) orderCancelReplace(
 			// if an error happen, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
+			// we have an error, but a non-nil confirmation object meaning we updated the book,
+			// but the amend was rejected because of the margin check, we have to restore the book
+			// to its original state
 			return
 		}
 		if fees != nil {
@@ -3782,6 +3785,34 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
+	// get the orders in their current state
+	passiveOrders := make([]*types.Order, 0, len(trades))
+	checkBuy := newOrder.Side == types.SideSell
+	for _, t := range trades {
+		id := t.SellOrder
+		if checkBuy {
+			id = t.BuyOrder
+		}
+		o, _ := m.matching.GetOrderByID(id)
+		if o == nil {
+			// this shouldn't be possible
+			continue
+		}
+		// clone the order
+		passiveOrders = append(passiveOrders, o.Clone())
+	}
+	// now set up a defer call to roll back the orderbook if needed
+	defer func() {
+		// this is a very specific case, this check is slightly overkill
+		// but it does prevent this rollback to happen in any case other than a failed margin check
+		if err != nil && conf != nil && len(orders) > 0 && len(conf.Trades) == 0 {
+			// set passive orders affected to whatever state they were in before we uncrossed the book
+			conf.PassiveOrdersAffected = orders
+			m.matching.RollbackConfirmation(conf)
+			// this confirmation should not be returned/be valid after this point
+			conf = nil
+		}
+	}()
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
@@ -3808,7 +3839,7 @@ func (m *Market) orderCancelReplace(
 				}
 				newOrder.Status = types.OrderStatusStopped
 				m.broker.Send(events.NewOrderEvent(ctx, newOrder))
-				return nil, nil, common.ErrMarginCheckFailed
+				return conf, nil, common.ErrMarginCheckFailed
 			}
 		}
 		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
@@ -3819,7 +3850,7 @@ func (m *Market) orderCancelReplace(
 			existingOrder.Status = newOrder.Status
 			newOrder.Status = types.OrderStatusStopped
 			m.broker.Send(events.NewOrderEvent(ctx, newOrder))
-			return nil, nil, common.ErrMarginCheckFailed
+			return conf, nil, common.ErrMarginCheckFailed
 		}
 	}
 
