@@ -83,6 +83,7 @@
 - [10464](https://github.com/vegaprotocol/vega/issues/10464) - Add total of members in referral sets API.
 - [10508](https://github.com/vegaprotocol/vega/issues/10508) - Change the behaviour of aggregation epochs for teams statistics API.
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
+- [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 
 ### 🐛 Fixes
 

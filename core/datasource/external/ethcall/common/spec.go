@@ -16,9 +16,12 @@
 package common
 
 import (
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/datasource/common"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -62,9 +65,29 @@ func SpecFromProto(proto *vegapb.EthCallSpec) (Spec, error) {
 
 	jsonArgs := []string{}
 	for _, protoArg := range proto.Args {
-		jsonArg, err := protoArg.MarshalJSON()
-		if err != nil {
-			return Spec{}, errors.Join(ErrInvalidCallArgs, err)
+		// special case for string starting with 0x? and are 32bytes long.
+		// this is to match the ethereum bytes32 type
+		// down the line we are trying to call the contract with strings
+		// instead here we want to encode the value into a base64 string
+		// which gets unwrapped into a [32]byte by the ethereum library
+		var isBytes bool
+		var jsonArg []byte
+		stringValue := protoArg.GetStringValue()
+
+		if stringValue != "" && strings.HasPrefix(stringValue, "0x") {
+			bytes, err := hex.DecodeString(stringValue[2:])
+			if err == nil && len(bytes) == 32 {
+				base64Value := base64.StdEncoding.EncodeToString(bytes)
+				jsonArg = []byte(fmt.Sprintf("\"%v\"", base64Value))
+				isBytes = true
+			}
+		}
+
+		if !isBytes {
+			jsonArg, err = protoArg.MarshalJSON()
+			if err != nil {
+				return Spec{}, errors.Join(ErrInvalidCallArgs, err)
+			}
 		}
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}
