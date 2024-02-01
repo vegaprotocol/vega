@@ -1244,7 +1244,7 @@ message PerpetualData {
   CompositePriceType internal_composite_price_type = 9;
   // Last seen value of the settlement oracle.
   string underlying_index_price = 10;
-   // State of the internal composite price.
+  // State of the internal composite price.
   CompositePriceState internal_composite_price_state = 11;
 }
 
@@ -1339,16 +1339,16 @@ message MarketData {
 
 message CompositePriceSource {
   // Source of the price.
-	string price_source = 1;
+  string price_source = 1;
   // Current value of the composite source price.
-	string price = 2;
-   // Timestamp in Unix nanoseconds when the price source was last updated.
+  string price = 2;
+  // Timestamp in Unix nanoseconds when the price source was last updated.
   int64 last_updated = 3;
 }
 
 // Underlying state of the composite price..
 message CompositePriceState {
-	repeated CompositePriceSource price_sources = 1;
+  repeated CompositePriceSource price_sources = 1;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
