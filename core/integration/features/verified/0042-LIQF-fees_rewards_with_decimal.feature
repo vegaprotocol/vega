@@ -163,7 +163,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
       | party2 | USD   |           |            | 10000000000    |            |
 
   @SLABug
-  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0038-OLIQ-002; 0038-OLIQ-006; 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
+  Scenario: 002: 0070-MKTD-007, 0042-LIQF-001, 0019-MCAL-008, check updated version of dpd feature in 0038-OLIQ-liquidity_provision_order_type.md
     Given the following network parameters are set:
       | name                                          | value |
       | market.value.windowLength                     | 1h    |

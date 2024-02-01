@@ -33,9 +33,9 @@ Feature: Position resolution case 5 lognormal risk model
       | network.markPriceUpdateMaximumFrequency      | 0s    |
       | market.liquidity.successorLaunchWindowLength | 1s    |
       | limits.markets.maxPeggedOrders               | 2     |
-      
+
   @Liquidation
-  Scenario: 001 using lognormal risk model, setup a scenario where designatedLoser gets closed out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  Scenario: 001 using lognormal risk model, setup a scenario where designatedLoser gets closed out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -92,8 +92,8 @@ Feature: Position resolution case 5 lognormal risk model
 
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
-      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLoser  | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedLoser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
@@ -250,7 +250,7 @@ Feature: Position resolution case 5 lognormal risk model
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
   @Liquidation
-  Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout immediately after trade 
+  Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout immediately after trade
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -324,6 +324,6 @@ Feature: Position resolution case 5 lognormal risk model
       | sellSideProvider | -290   | 0              | 0            |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-     
 
-   
+
+

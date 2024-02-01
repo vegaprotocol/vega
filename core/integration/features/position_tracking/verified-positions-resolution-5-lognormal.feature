@@ -24,8 +24,8 @@ Feature: Position resolution case 5 lognormal risk model
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
-  @MTMDelta @Liquidation @NoPerp
-  Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book (0007-POSN-013, 0038-OLIQ-011)
+  @MTMDelta
+  Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book (0007-POSN-013)
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

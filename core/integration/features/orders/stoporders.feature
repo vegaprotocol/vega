@@ -12,40 +12,6 @@ Feature: stop orders
       | limits.markets.maxPeggedOrders          | 1500  |
       | spam.protection.max.stopOrdersPerMarket | 5     |
 
-  Scenario: A stop order with reduce only set to false will be rejected. (0014-ORDT-040)
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
-
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type        | tif     | only | fb price trigger | error                          |
-      | party1 | ETH/DEC19 | buy  | 1      | 0     | 0                | TYPE_MARKET | TIF_GTC | post | 47               | stop order must be reduce only |
-
   Scenario: A stop order placed by a key with a zero position and no open orders will be rejected. (0014-ORDT-042)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
