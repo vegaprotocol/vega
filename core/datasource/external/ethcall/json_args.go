@@ -55,6 +55,11 @@ func JsonArgsToAny(methodName string, jsonArgs []string, abiJSON []byte) ([]any,
 
 		newArgValue := reflect.New(argType) // A reflect.Value of kind 'Pointer' to new instance of argType
 
+		// here we handle specifically this type because the type returned by GetType() method
+		// is a [32]uint8, which is not assignable by the json marshaller
+		// we then instantiate specifically a []byte
+		// then set the reflect instatiated type with unsafe (...) by addressing to the first
+		// element of the byte slice
 		if argType.String() == "[32]uint8" {
 			b := []byte{}
 			err := json.Unmarshal([]byte(jsonArg), &b)
@@ -62,8 +67,6 @@ func JsonArgsToAny(methodName string, jsonArgs []string, abiJSON []byte) ([]any,
 				return nil, fmt.Errorf("unable to unmarshal json argument %s: %w", jsonArg, err)
 			}
 			newArgValue = reflect.NewAt(argType, unsafe.Pointer(&b[0]))
-
-			fmt.Printf("JSONARG: isPoint(%v) %v %v %v %v\n", argIsPointer, argType, jsonArg, newArgValue.Interface(), b)
 		} else {
 			err := json.Unmarshal([]byte(jsonArg), newArgValue.Interface())
 			if err != nil {
@@ -71,7 +74,6 @@ func JsonArgsToAny(methodName string, jsonArgs []string, abiJSON []byte) ([]any,
 			}
 		}
 
-		fmt.Printf("AFTER: %v\n", newArgValue.Interface())
 		if argIsPointer {
 			args = append(args, newArgValue.Interface())
 		} else {

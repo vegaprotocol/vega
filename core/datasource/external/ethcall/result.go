@@ -80,8 +80,6 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 		return nil, fmt.Errorf("unable to serialse values: %v", err)
 	}
 
-	fmt.Printf("VALUES JSON: %v\n", string(valuesJson))
-
 	valuesSimple := []interface{}{}
 	d := json.NewDecoder(bytes.NewBuffer(valuesJson))
 	// Keep numbers as a json.Number, which holds the original string representation
@@ -92,8 +90,6 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 		return nil, fmt.Errorf("unable to deserialse values: %v", err)
 	}
 
-	fmt.Printf("valuesSimple: %v\n", valuesSimple)
-
 	res := make(map[string]string)
 
 	for key, path := range rules {
@@ -102,14 +98,10 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 
 			return nil, fmt.Errorf("unable to normalise key %v: %v", key, err)
 		}
-		fmt.Printf("KEY: %v, PATH: %v\n", key, path)
-		fmt.Printf("VALUE: %v, ERR: %v\n", value, err)
 		switch v := value.(type) {
 		case json.Number:
-			fmt.Printf("\nNUMBER: %v\n", v.String())
 			res[key] = v.String()
 		case int64:
-			fmt.Printf("\nint64\n")
 			// all of the numbers in the json from the ethereum call result will be
 			// json.Number and handled above; this case is just for the corner case
 			// where someone specifies a number as a static value in the json path itself
