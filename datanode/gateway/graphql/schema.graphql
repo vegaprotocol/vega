@@ -4984,7 +4984,7 @@ type BatchProposalTermsChange {
   change: ProposalChange!
 }
 
-"The rationale for the proposal"
+"The terms for the batch proposal"
 type BatchProposalTerms {
   """
   RFC3339Nano time and date when voting closes for this proposal.
@@ -4992,7 +4992,7 @@ type BatchProposalTerms {
   """
   closingDatetime: Timestamp!
 
-  "Actual changes being introduced by the proposal - actions the proposal triggers if passed and enacted."
+  "Actual changes being introduced by the batch proposal - actions the proposal triggers if passed and enacted."
   changes: [BatchProposalTermsChange]!
 }
 
@@ -5094,6 +5094,8 @@ type BatchProposal {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached the network"
   datetime: Timestamp!
+  "Terms of all the proposals in the batch"
+  batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Votes cast for this proposal"
@@ -5127,9 +5129,9 @@ type ProposalDetail {
   state: ProposalState!
   "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
-  "Terms of the proposal for proposal"
+  "Terms of the proposal"
   terms: ProposalTerms
-  "Terms of the proposal for a batch proposal"
+  "Terms of all the proposals in the batch"
   batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
