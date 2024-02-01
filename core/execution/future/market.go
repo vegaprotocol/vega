@@ -3814,14 +3814,26 @@ func (m *Market) orderCancelReplace(
 	}
 	// now set up a defer call to roll back the orderbook if needed
 	defer func() {
+		if err == nil || conf == nil {
+			return
+		}
+		if conf.Order.TrueRemaining() > 0 {
+			m.position.UnregisterOrder(ctx, conf.Order)
+			m.matching.DeleteOrder(conf.Order)
+			err = nil
+			return
+		}
 		// this can only happen if we failed the margin check
-		if err != nil && conf != nil && len(passiveOrders) > 0 {
+		if len(passiveOrders) > 0 {
 			m.matching.RollbackConfirmation(conf, passiveOrders)
 			// conf should not be returned/used after this
 			conf = nil
 		}
 	}()
 
+	// replace the trades in the confirmation to have
+	// the ones with the fees embedded
+	conf.Trades = trades
 	marginMode := m.getMarginMode(newOrder.Party)
 	if marginMode == types.MarginModeIsolatedMargin {
 		pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
@@ -3850,10 +3862,6 @@ func (m *Market) orderCancelReplace(
 			return conf, nil, common.ErrMarginCheckFailed
 		}
 	}
-
-	// replace the trades in the confirmation to have
-	// the ones with the fees embedded
-	conf.Trades = trades
 
 	// if the order is not staying in the book, then we remove it
 	// from the potential positions

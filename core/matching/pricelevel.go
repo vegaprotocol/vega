@@ -90,8 +90,17 @@ func (l *PriceLevel) replaceOrder(o *types.Order) {
 			return
 		}
 	}
-	// the order was already removed, add it back
-	l.addOrder(o)
+	// the order was already removed, add it back according to its CreatedAt timestamp
+	i := sort.Search(len(l.orders), func(i int) bool { return l.orders[i].CreatedAt >= o.CreatedAt })
+	if i >= len(l.orders) {
+		l.orders = append(l.orders, o)
+		l.volume += o.TrueRemaining()
+		return
+	}
+	l.orders = append(l.orders, nil)
+	copy(l.orders[i+1:], l.orders[i:])
+	l.orders[i] = o
+	l.volume += o.TrueRemaining()
 }
 
 func (l *PriceLevel) removeOrder(index int) {
@@ -283,6 +292,10 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 
 		// New Trade
 		trade := newTrade(agg, order, size)
+		trade.SellOrder, trade.BuyOrder = agg.ID, order.ID
+		if agg.Side == types.SideBuy {
+			trade.SellOrder, trade.BuyOrder = trade.BuyOrder, trade.SellOrder
+		}
 
 		// Update Remaining for both aggressive and passive
 		agg.Remaining -= size

@@ -107,9 +107,11 @@ Feature: Amending orders with isolated margins should never panic
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/FEB23 | 14220  | 4650    |
 
+    And debug detailed orderbook volumes for market "ETH/FEB23"
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader5 | ETH/FEB23 | buy  | 90     | 15802 | 1                | TYPE_LIMIT | TIF_GTC |           |
     Then the following trades should be executed:
       | buyer   | seller  | price | size |
       | trader5 | trader2 | 15802 | 90   |
+    And debug detailed orderbook volumes for market "ETH/FEB23"
