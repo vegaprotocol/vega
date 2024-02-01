@@ -95,7 +95,6 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 	for key, path := range rules {
 		value, err := myJSONPathGet(path, valuesSimple)
 		if err != nil {
-
 			return nil, fmt.Errorf("unable to normalise key %v: %v", key, err)
 		}
 		switch v := value.(type) {
@@ -114,8 +113,6 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 			return nil, fmt.Errorf("unable to normalise key %v of type %T", key, value)
 		}
 	}
-
-	fmt.Printf("RES: %v\n", res)
 
 	return res, nil
 }
