@@ -3801,18 +3801,6 @@ func (m *Market) orderCancelReplace(
 		// clone the order
 		passiveOrders = append(passiveOrders, o.Clone())
 	}
-	// now set up a defer call to roll back the orderbook if needed
-	defer func() {
-		// this is a very specific case, this check is slightly overkill
-		// but it does prevent this rollback to happen in any case other than a failed margin check
-		if err != nil && conf != nil && len(orders) > 0 && len(conf.Trades) == 0 {
-			// set passive orders affected to whatever state they were in before we uncrossed the book
-			conf.PassiveOrdersAffected = orders
-			m.matching.RollbackConfirmation(conf)
-			// this confirmation should not be returned/be valid after this point
-			conf = nil
-		}
-	}()
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
@@ -3824,6 +3812,15 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		m.log.Panic("unable to submit order", logging.Error(err))
 	}
+	// now set up a defer call to roll back the orderbook if needed
+	defer func() {
+		// this can only happen if we failed the margin check
+		if err != nil && conf != nil && len(passiveOrders) > 0 {
+			m.matching.RollbackConfirmation(conf, passiveOrders)
+			// conf should not be returned/used after this
+			conf = nil
+		}
+	}()
 
 	marginMode := m.getMarginMode(newOrder.Party)
 	if marginMode == types.MarginModeIsolatedMargin {

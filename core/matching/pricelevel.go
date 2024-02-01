@@ -81,6 +81,19 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 	l.volume += o.TrueRemaining()
 }
 
+func (l *PriceLevel) replaceOrder(o *types.Order) {
+	for i, co := range l.orders {
+		if co.ID == o.ID {
+			l.volume -= co.TrueRemaining()
+			l.volume += o.TrueRemaining()
+			l.orders[i] = o
+			return
+		}
+	}
+	// the order was already removed, add it back
+	l.addOrder(o)
+}
+
 func (l *PriceLevel) removeOrder(index int) {
 	// decrease total volume
 	l.volume -= l.orders[index].TrueRemaining()
@@ -166,8 +179,7 @@ func (l *PriceLevel) uncrossIcebergs(agg *types.Order, tracked []*trackIceberg, 
 func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *types.Order, trades []*types.Trade, err error) {
 	// work on a copy of the order, so we can submit it a second time
 	// after we've done the price monitoring and fees checks
-	cpy := *o
-	agg = &cpy
+	agg = o.Clone()
 	if len(l.orders) == 0 {
 		return
 	}
@@ -198,6 +210,11 @@ func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *typ
 
 		// New Trade
 		trade := newTrade(agg, order, size)
+		trade.SellOrder = agg.ID
+		trade.BuyOrder = order.ID
+		if agg.Side == types.SideBuy {
+			trade.SellOrder, trade.BuyOrder = trade.BuyOrder, trade.SellOrder
+		}
 
 		// Update Remaining for aggressive only
 		agg.Remaining -= size
