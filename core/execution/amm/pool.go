@@ -86,6 +86,7 @@ func NewPoolFromProto(
 	collateral Collateral,
 	position Position,
 	state *snapshotpb.PoolMapEntry_Pool,
+	party string,
 ) *Pool {
 	return &Pool{
 		ID:         state.Id,
@@ -98,6 +99,7 @@ func NewPoolFromProto(
 			MarginRatioAtLowerBound: ptr.From(num.MustDecimalFromString(state.Parameters.MarginRatioAtLowerBound)),
 			MarginRatioAtUpperBound: ptr.From(num.MustDecimalFromString(state.Parameters.MarginRatioAtUpperBound)),
 		},
+		party:      party,
 		market:     state.Market,
 		asset:      state.Asset,
 		sqrt:       sqrt,
