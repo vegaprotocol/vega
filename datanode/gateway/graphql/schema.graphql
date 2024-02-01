@@ -245,6 +245,24 @@ type PerpetualData {
   internalCompositePriceType: CompositePriceType!
   "RFC3339Nano time indicating the next time internal composite price will be calculated for perpetual markets, where applicable"
   nextInternalCompositePriceCalc: String!
+  "The last value from the external oracle"
+  underlyingIndexPrice: String!
+  "The internal state of the underlying internal composite price"
+  internalCompositePriceState: CompositePriceState
+}
+
+type CompositePriceSource {
+  "The current value of the composite source price"
+  price: String!
+  "The last time the price source was updated in RFC3339Nano"
+  lastUpdated: Timestamp!
+  "The source of the price"
+  PriceSource: String! 
+}
+
+type CompositePriceState {
+  "Underlying state of the composite price"
+  priceSources: [CompositePriceSource!]
 }
 
 union ProductData = PerpetualData
@@ -330,6 +348,8 @@ type MarketData {
   productData: ProductData
   "RFC3339Nano time indicating the next time the network will attempt to close part of its position"
   nextNetworkCloseout: String!
+  "State of the underlying internal composite price"
+  markPriceState: CompositePriceState
 }
 
 "Live data of a Market"
@@ -400,6 +420,8 @@ type ObservableMarketData {
   productData: ProductData
   "The methodology used to calculated mark price"
   markPriceType: CompositePriceType!
+  "State of the underlying internal composite price"
+  markPriceState: CompositePriceState
 }
 
 "Timestamps for when the market changes state"

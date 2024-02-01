@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -158,6 +159,72 @@ func (n NewMarket) String() string {
 type SuccessorConfig struct {
 	ParentID              string
 	InsurancePoolFraction num.Decimal
+}
+
+type CompositePriceSource struct {
+	PriceSource string
+	Price       *num.Uint
+	LastUpdated int64
+}
+
+func (cps *CompositePriceSource) DeepClone() *CompositePriceSource {
+	if cps == nil {
+		return nil
+	}
+	var price *num.Uint
+	if cps.Price != nil {
+		price = cps.Price.Clone()
+	}
+	return &CompositePriceSource{
+		PriceSource: cps.PriceSource,
+		LastUpdated: cps.LastUpdated,
+		Price:       price,
+	}
+}
+
+type CompositePriceState struct {
+	PriceSources []*CompositePriceSource
+}
+
+func (cps *CompositePriceState) DeepClone() *CompositePriceState {
+	priceSources := make([]*CompositePriceSource, 0, len(cps.PriceSources))
+	for _, c := range cps.PriceSources {
+		priceSources = append(priceSources, c.DeepClone())
+	}
+	return &CompositePriceState{PriceSources: priceSources}
+}
+
+func CompositePriceStateFromProto(cps *vega.CompositePriceState) *CompositePriceState {
+	priceSources := make([]*CompositePriceSource, 0, len(cps.PriceSources))
+	for _, c := range cps.PriceSources {
+		var price *num.Uint
+		if len(c.Price) > 0 {
+			p, _ := num.UintFromString(c.Price, 10)
+			if p != nil {
+				price = p
+			}
+		}
+		priceSources = append(priceSources, &CompositePriceSource{
+			Price:       price,
+			LastUpdated: c.LastUpdated,
+			PriceSource: c.PriceSource,
+		})
+	}
+	return &CompositePriceState{PriceSources: priceSources}
+}
+
+func (cps *CompositePriceState) IntoProto() *vega.CompositePriceState {
+	priceSources := make([]*vega.CompositePriceSource, 0, len(cps.PriceSources))
+	for _, c := range cps.PriceSources {
+		priceSources = append(priceSources, &vega.CompositePriceSource{
+			Price:       num.UintToString(c.Price),
+			LastUpdated: c.LastUpdated,
+			PriceSource: c.PriceSource,
+		})
+	}
+	return &vega.CompositePriceState{
+		PriceSources: priceSources,
+	}
 }
 
 type CompositePriceConfiguration struct {

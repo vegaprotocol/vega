@@ -1242,6 +1242,10 @@ message PerpetualData {
   int64 next_internal_composite_price_calc = 8;
   // The method used for calculating the internal composite price, for perpetual markets only.
   CompositePriceType internal_composite_price_type = 9;
+  // Last seen value of the settlement oracle.
+  string underlying_index_price = 10;
+   // State of the internal composite price.
+  CompositePriceState internal_composite_price_state = 11;
 }
 
 // Represents market data specific to a particular product type.
@@ -1329,6 +1333,22 @@ message MarketData {
   int64 next_network_closeout = 33;
   // The method used for calculating the mark price.
   CompositePriceType mark_price_type = 34;
+  // State of the internal composite price.
+  CompositePriceState mark_price_state = 35;
+}
+
+message CompositePriceSource {
+  // Source of the price.
+	string price_source = 1;
+  // Current value of the composite source price.
+	string price = 2;
+   // Timestamp in Unix nanoseconds when the price source was last updated.
+  int64 last_updated = 3;
+}
+
+// Underlying state of the composite price..
+message CompositePriceState {
+	repeated CompositePriceSource price_sources = 1;
 }
 
 // Equity like share of liquidity fee for each liquidity provider

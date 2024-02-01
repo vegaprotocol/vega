@@ -750,9 +750,11 @@ func (m *Market) GetMarketData() types.MarketData {
 	var internalCompositePrice *num.Uint
 	var nextInternalCompositePriceCalc int64
 	var internalCompositePriceType vega.CompositePriceType
+	var internalCompositePriceState *types.CompositePriceState
 	pd := m.tradableInstrument.Instrument.Product.GetData(m.timeService.GetTimeNow().UnixNano())
 	if m.perp && pd != nil {
 		if m.internalCompositePriceCalculator != nil {
+			internalCompositePriceState = m.internalCompositePriceCalculator.GetData()
 			internalCompositePriceType = m.internalCompositePriceCalculator.config.CompositePriceType
 			internalCompositePrice = m.internalCompositePriceCalculator.price
 			if internalCompositePrice == nil {
@@ -762,6 +764,7 @@ func (m *Market) GetMarketData() types.MarketData {
 			}
 			nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.UnixNano()
 		} else {
+			internalCompositePriceState = m.markPriceCalculator.GetData()
 			internalCompositePriceType = m.markPriceCalculator.config.CompositePriceType
 			internalCompositePrice = m.priceToMarketPrecision(m.getCurrentMarkPrice())
 			nextInternalCompositePriceCalc = m.nextMTM.UnixNano()
@@ -770,6 +773,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		perpData.InternalCompositePrice = internalCompositePrice
 		perpData.NextInternalCompositePriceCalc = nextInternalCompositePriceCalc
 		perpData.InternalCompositePriceType = internalCompositePriceType
+		perpData.InternalCompositePriceState = internalCompositePriceState
 	}
 
 	md := types.MarketData{
@@ -807,6 +811,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		ProductData:               pd,
 		NextNetClose:              m.liquidation.GetNextCloseoutTS(),
 		MarkPriceType:             m.markPriceCalculator.config.CompositePriceType,
+		MarkPriceState:            m.markPriceCalculator.GetData(),
 	}
 	return md
 }
@@ -4374,6 +4379,7 @@ func (m *Market) settlementDataPerp(ctx context.Context, settlementData *num.Num
 	if sdi == nil {
 		return
 	}
+
 	transfers, round := m.settlement.SettleFundingPeriod(ctx, m.position.Positions(), settlementData.Int())
 	if len(transfers) == 0 {
 		m.log.Debug("Failed to get settle positions for funding period")

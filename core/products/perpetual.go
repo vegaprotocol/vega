@@ -747,14 +747,21 @@ func (p *Perpetual) GetData(t int64) *types.ProductData {
 
 	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
 	r := p.calculateFundingPayment(t)
+
+	var underlyingIndexPrice *num.Uint
+	if len(p.externalTWAP.points) > 0 {
+		underlyingIndexPrice = p.externalTWAP.points[len(p.externalTWAP.points)-1].price.Clone()
+	}
+
 	return &types.ProductData{
 		Data: &types.PerpetualData{
-			FundingRate:    r.fundingRate.String(),
-			FundingPayment: r.fundingPayment.String(),
-			InternalTWAP:   r.internalTWAP.String(),
-			ExternalTWAP:   r.externalTWAP.String(),
-			SeqNum:         p.seq,
-			StartTime:      p.startedAt,
+			FundingRate:          r.fundingRate.String(),
+			FundingPayment:       r.fundingPayment.String(),
+			InternalTWAP:         r.internalTWAP.String(),
+			ExternalTWAP:         r.externalTWAP.String(),
+			SeqNum:               p.seq,
+			StartTime:            p.startedAt,
+			UnderlyingIndexPrice: underlyingIndexPrice,
 		},
 	}
 }

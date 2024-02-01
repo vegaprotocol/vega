@@ -168,6 +168,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
+  CompositePriceState:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceState
+  CompositePriceSource:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceSource
   MarginLevels:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   MarginLevelsUpdate:
