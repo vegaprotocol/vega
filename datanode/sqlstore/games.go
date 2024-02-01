@@ -64,7 +64,7 @@ type GameReward struct {
 	GameID             []byte
 	DispatchStrategy   vega.DispatchStrategy
 	TeamID             entities.TeamID
-	MemberRank         int64
+	MemberRank         *int64
 	TeamRank           *int64
 	TotalRewards       num.Decimal
 	TeamTotalRewards   *num.Decimal
@@ -242,9 +242,14 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 		rewardEarned, _ := num.UintFromDecimal(rewards[i].Amount)
 		totalRewardsEarned, _ := num.UintFromDecimal(rewards[i].TotalRewards)
 
+		var rank uint64
+		if rewards[i].MemberRank != nil {
+			rank = uint64(*rewards[i].MemberRank)
+		}
+
 		individual := entities.IndividualGameEntity{
 			Individual:         rewards[i].PartyID.String(),
-			Rank:               uint64(rewards[i].MemberRank),
+			Rank:               rank,
 			Volume:             num.DecimalZero(),
 			RewardMetric:       rewards[i].DispatchStrategy.Metric,
 			RewardEarned:       rewardEarned,
