@@ -170,6 +170,7 @@
 - [10493](https://github.com/vegaprotocol/vega/issues/10493) - Fix isolated margin panic on amend order.
 - [10490](https://github.com/vegaprotocol/vega/issues/10490) - Handle the `quant` library returning `NaN`
 - [10504](https://github.com/vegaprotocol/vega/issues/10504) - Make sure the referral sets API accounts for referees switch.
+- [10525](https://github.com/vegaprotocol/vega/issues/10525) - Move `batchTerms` to parent object in batch proposals API.
 
 ## 0.73.0
 
