@@ -132,7 +132,8 @@ type Engine struct {
 	priceFactor *num.Uint
 
 	// map of party -> pool
-	pools map[string]*Pool
+	pools    map[string]*Pool
+	poolsCpy []*Pool
 
 	// sqrt calculator with cache
 	rooter *Sqrter
@@ -160,6 +161,7 @@ func New(
 		position:             position,
 		market:               market,
 		pools:                map[string]*Pool{},
+		poolsCpy:             []*Pool{},
 		subAccounts:          map[string]string{},
 		minCommitmentQuantum: num.UintZero(),
 		rooter:               &Sqrter{cache: map[string]num.Decimal{}},
@@ -189,7 +191,7 @@ func NewFromProto(
 	}
 
 	for _, v := range state.Pools {
-		e.pools[v.Party] = NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool)
+		e.add(NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party))
 	}
 
 	return e
@@ -218,14 +220,12 @@ func (e *Engine) IntoProto() *v1.AmmState {
 	}
 	sort.Slice(state.SubAccounts, func(i, j int) bool { return state.SubAccounts[i].Key < state.SubAccounts[j].Key })
 
-	for k, v := range e.pools {
+	for _, v := range e.poolsCpy {
 		state.Pools = append(state.Pools, &v1.PoolMapEntry{
-			Party: k,
+			Party: v.party,
 			Pool:  v.IntoProto(),
 		})
 	}
-	sort.Slice(state.Pools, func(i, j int) bool { return state.Pools[i].Party < state.Pools[j].Party })
-
 	return state
 }
 
@@ -333,8 +333,7 @@ func (e *Engine) SubmitAMM(
 			return err
 		}
 	}
-
-	e.pools[submit.Party] = pool
+	e.add(pool)
 	e.broker.Send(
 		events.NewAMMPoolEvent(
 			ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
@@ -414,9 +413,7 @@ func (e *Engine) StopPool(
 	if !ok {
 		return ErrNoPoolMatchingParty
 	}
-
-	_ = party
-
+	e.remove(party)
 	return nil
 }
 
@@ -551,6 +548,20 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 		return ErrRebaseOrderDidNotTrade
 	}
 	return nil
+}
+
+func (e *Engine) add(p *Pool) {
+	e.pools[p.party] = p
+	e.poolsCpy = append(e.poolsCpy, p)
+}
+
+func (e *Engine) remove(party string) {
+	for i := range e.poolsCpy {
+		if e.poolsCpy[i].party == party {
+			e.poolsCpy = append(e.poolsCpy[:i], e.poolsCpy[i+1:]...)
+		}
+	}
+	delete(e.pools, party)
 }
 
 func DeriveSubAccount(
