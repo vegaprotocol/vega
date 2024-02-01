@@ -84,6 +84,7 @@
 - [10508](https://github.com/vegaprotocol/vega/issues/10508) - Change the behaviour of aggregation epochs for teams statistics API.
 - [10502](https://github.com/vegaprotocol/vega/issues/10502) - Add `underlyingIndexPrice` to perpetual data.
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
+- [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 
 ### 🐛 Fixes
 
@@ -172,6 +173,7 @@
 - [10493](https://github.com/vegaprotocol/vega/issues/10493) - Fix isolated margin panic on amend order.
 - [10490](https://github.com/vegaprotocol/vega/issues/10490) - Handle the `quant` library returning `NaN`
 - [10504](https://github.com/vegaprotocol/vega/issues/10504) - Make sure the referral sets API accounts for referees switch.
+- [10525](https://github.com/vegaprotocol/vega/issues/10525) - Move `batchTerms` to parent object in batch proposals API.
 
 ## 0.73.0
 

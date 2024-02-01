@@ -19,8 +19,8 @@ import (
 	"context"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type proposalEdgeResolver VegaResolverRoot
@@ -71,6 +71,7 @@ func (r *proposalEdgeResolver) BatchProposal(ctx context.Context, data *types.Go
 		State:                   proposal.State,
 		Datetime:                proposal.Timestamp,
 		Rationale:               proposal.Rationale,
+		BatchTerms:              proposal.BatchTerms,
 		Votes:                   votes,
 		RejectionReason:         proposal.Reason,
 		ErrorDetails:            proposal.ErrorDetails,

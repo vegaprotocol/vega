@@ -128,6 +128,8 @@ type BatchProposal struct {
 	State vega.Proposal_State `json:"state"`
 	// RFC3339Nano time and date when the proposal reached the network
 	Datetime int64 `json:"datetime"`
+	// Terms of all the proposals in the batch
+	BatchTerms *vega.BatchProposalTerms `json:"batchTerms"`
 	// Rationale behind the proposal
 	Rationale *vega.ProposalRationale `json:"rationale"`
 	// Votes cast for this proposal
