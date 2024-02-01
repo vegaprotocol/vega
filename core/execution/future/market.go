@@ -3814,7 +3814,7 @@ func (m *Market) orderCancelReplace(
 	}
 	// now set up a defer call to roll back the orderbook if needed
 	defer func() {
-		if err == nil || conf == nil {
+		if err == nil || conf == nil || len(passiveOrders) == 0 {
 			return
 		}
 		if conf.Order.TrueRemaining() > 0 {
@@ -3824,11 +3824,9 @@ func (m *Market) orderCancelReplace(
 			return
 		}
 		// this can only happen if we failed the margin check
-		if len(passiveOrders) > 0 {
-			m.matching.RollbackConfirmation(conf, passiveOrders)
-			// conf should not be returned/used after this
-			conf = nil
-		}
+		m.matching.RollbackConfirmation(conf, passiveOrders)
+		// conf should not be returned/used after this
+		conf = nil
 	}()
 
 	// replace the trades in the confirmation to have

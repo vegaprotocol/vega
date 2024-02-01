@@ -261,7 +261,7 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 
 // RollbackConfirmation is only used to restore the book if the margin check fails after a cancel and replace
 // amendment of an order. We need to uncross the book to determine the exit price and calculate the margin correctly.
-// if the margin check then fails, we should restore the passive orders to their original state on the book
+// if the margin check then fails, we should restore the passive orders to their original state on the book.
 func (b *OrderBook) RollbackConfirmation(conf *types.OrderConfirmation, orders []*types.Order) error {
 	b.DeleteOrder(conf.Order) // the order that resulted in trades, but shouldn't go through should be removed
 	for _, o := range orders {

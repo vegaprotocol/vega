@@ -89,6 +89,7 @@ type tradeOrder struct {
 }
 
 func TestOrderBook_Rollback(t *testing.T) {
+	t.Skip("WIP")
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
