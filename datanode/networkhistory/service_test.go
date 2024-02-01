@@ -383,7 +383,7 @@ func TestMain(t *testing.M) {
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmWsqrcdZu34t6auG9Ts7FAvYpQa6yRAQjnffArcjYdPLq", snapshots)
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "Qmd1Jb7jVvfoi6gVmdQ7ivVUcKQ78B7QhdA6Qior9h6z2j", snapshots)
 		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTTuWtiNCyXDAsfnP7hFusNgRchdkqNcTkxzR8MzFtxwz", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUggyvvpYJS5qVtLM4wwf4VsPaaE3YAe29SzxCZxnZreMx", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmUggyvvpYJS5qVtLM4wwf4VsPaaE3YAe29SzxCZxnZreM", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {

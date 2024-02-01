@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.13
+
+### 🐛 Fixes
+
+- Fix invalid funding payment and add test: unwinding to first carry-over point should wind forward from period start.
+
 ## 0.73.12
 
 ### 🐛 Fixes
