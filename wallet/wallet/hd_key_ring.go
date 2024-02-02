@@ -27,7 +27,7 @@ type HDKeyRing struct {
 func NewHDKeyRing() *HDKeyRing {
 	return &HDKeyRing{
 		keys:      map[string]HDKeyPair{},
-		nextIndex: 1,
+		nextIndex: 0,
 	}
 }
 
