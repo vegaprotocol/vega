@@ -1,6 +1,12 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS teams_stats (
-    team_id BYTEA NOT NULL, party_id BYTEA NOT NULL, at_epoch BIGINT NOT NULL, total_volume NUMERIC(1000, 16) NOT NULL, total_quantum_reward NUMERIC(1000, 16) NOT NULL, games_played JSONB NOT NULL, PRIMARY KEY (team_id, party_id, at_epoch)
+    team_id BYTEA NOT NULL,
+	party_id BYTEA NOT NULL,
+	at_epoch BIGINT NOT NULL,
+	total_volume NUMERIC(1000, 16) NOT NULL,
+	total_quantum_reward NUMERIC(1000, 16) NOT NULL,
+	games_played JSONB NOT NULL,
+	PRIMARY KEY (team_id, party_id, at_epoch)
 );
 
 CREATE INDEX idx_teams_stats_at_epoch ON teams_stats (at_epoch DESC);
