@@ -164,9 +164,11 @@ Feature: Test magin under isolated margin mode when there is not enough collater
       | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |            |
       | party            | ETH/FEB23 | buy  | 1      | 15000  | 0                | TYPE_LIMIT | TIF_GTC | party-buy  |
       | party1           | ETH/FEB23 | buy  | 10     | 15000  | 0                | TYPE_LIMIT | TIF_GTC | party1-buy |
+      | buySideProvider  | ETH/FEB23 | buy  | 10     | 15400  | 0                | TYPE_LIMIT | TIF_GTC |            |
       | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |            |
       | sellSideProvider | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |            |
       | sellSideProvider | ETH/FEB23 | sell | 3      | 16900  | 0                | TYPE_LIMIT | TIF_GTC |            |
+      | sellSideProvider | ETH/FEB23 | sell | 3      | 17000  | 0                | TYPE_LIMIT | TIF_GTC |            |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |            |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |            |
 
@@ -212,27 +214,23 @@ Feature: Test magin under isolated margin mode when there is not enough collater
       | party  | party-buy  | STATUS_STOPPED |
       | party1 | party1-buy | STATUS_STOPPED |
 
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party3 | ETH/FEB23 | buy  | 3      | 27900 | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party2 | ETH/FEB23 | sell | 3      | 27900 | 1                | TYPE_LIMIT | TIF_GTC |           |
     Then the network moves ahead "2" blocks
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party  | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 29295       | 0      | 35154   |         | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 5070        | 0      | 6084    |         | isolated margin | 0.2           | 0     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
       | party  | USD   | ETH/FEB23 | 0      | 3000    | 0            |
-      | party1 | USD   | ETH/FEB23 | 43140  | 0       | 19860        |
+      | party1 | USD   | ETH/FEB23 | 10140  | 0       | 19860        |
     When the parties submit update margin mode:
       | party  | market    | margin_mode  |
       | party1 | ETH/FEB23 | cross margin |
     Then the network moves ahead "2" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 63000  | 0       | 0            |
+      | party1 | USD   | ETH/FEB23 | 30000  | 0       | 0            |
 
   Scenario: 003 test when party holds short orders
     #and for party1, part of the orders are filled immediately, and the rest should fail

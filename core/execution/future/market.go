@@ -3722,7 +3722,12 @@ func (m *Market) orderCancelReplace(
 
 	defer func() {
 		if err != nil {
-			// if an error happen, the order never hit the book, so we can
+			if err == common.ErrMarginCheckFailed {
+				// we failed the margin check, the order traded in full, and is stopped
+				// the position was already updated
+				return
+			}
+			// if an error happens, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
 			// we have an error, but a non-nil confirmation object meaning we updated the book,
@@ -3814,17 +3819,31 @@ func (m *Market) orderCancelReplace(
 	}
 	// now set up a defer call to roll back the orderbook if needed
 	defer func() {
-		if err == nil || conf == nil || len(passiveOrders) == 0 {
+		if err == nil || conf == nil {
 			return
 		}
-		if conf.Order.TrueRemaining() > 0 {
-			m.position.UnregisterOrder(ctx, conf.Order)
-			m.matching.DeleteOrder(conf.Order)
+		// we have a confirmation and error, so margin check failed
+		// if we have passive orders here, that means the order was submitted to the book and traded
+		// check if the order uncrossed either partially or in full
+		if len(passiveOrders) > 0 {
+			// we failed the margin check, and the order uncrossed in full. We have to roll the orders back
+			if conf.Order.TrueRemaining() == 0 {
+				m.matching.RollbackConfirmation(conf, passiveOrders)
+				conf = nil // the confirmation cannot be used/relied on, the amend failed
+				return
+			}
+			// in this case, we have traded, but not the full amended order. The order is stopped
+			// but the trades must go through
 			err = nil
 			return
 		}
-		// this can only happen if we failed the margin check
-		m.matching.RollbackConfirmation(conf, passiveOrders)
+		// now we had an error and no trades, the order is stopped, but we must remove it from the book explicitly
+		m.matching.DeleteOrder(conf.Order)
+		// ensure the position is restored. We update the position restoring the old order, so we really must be setting that to size of zero
+		existingOrder.Size = 0
+		if existingOrder.IcebergOrder != nil {
+			existingOrder.IcebergOrder.ReservedRemaining = 0
+		}
 		// conf should not be returned/used after this
 		conf = nil
 	}()
@@ -3849,6 +3868,7 @@ func (m *Market) orderCancelReplace(
 				return conf, nil, common.ErrMarginCheckFailed
 			}
 		}
+		fmt.Println(">>> HERE")
 		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
