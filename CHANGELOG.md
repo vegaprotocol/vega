@@ -176,6 +176,7 @@
 - [10525](https://github.com/vegaprotocol/vega/issues/10525) - Move `batchTerms` to parent object in batch proposals API.
 - [10530](https://github.com/vegaprotocol/vega/issues/10530) - Game API returns errors.
 - [10531](https://github.com/vegaprotocol/vega/issues/10531) - Team Members Statistics API doesn't return data.
+- [10533](https://github.com/vegaprotocol/vega/issues/10533) - Fix `EstiamtePosition` returning an error when trying to access the party id field via GraphQL.
 
 ## 0.73.0
 
