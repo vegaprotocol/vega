@@ -514,11 +514,11 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	}
 
 	if target.GT(fairPrice) {
-		// pool base price is higher than market price, it will need to sell to lower its fair-price
-		order.Side = types.SideSell
+		// pool base price is higher than market price, it will need to buy to lower its fair-price
+		order.Side = types.SideBuy
 		order.Price.Sub(target, slippage)
 	} else {
-		order.Side = types.SideBuy
+		order.Side = types.SideSell
 		order.Price.Add(target, slippage)
 	}
 

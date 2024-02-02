@@ -261,9 +261,9 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 	}
 
 	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with a sell order will make the pool short, so we take the upper curve.
+	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
 	var cu *curve
-	if pos < 0 || (pos == 0 && side == types.SideSell) {
+	if pos < 0 || (pos == 0 && side == types.SideBuy) {
 		cu = p.upper
 	} else {
 		cu = p.lower
