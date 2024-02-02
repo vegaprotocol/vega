@@ -174,6 +174,8 @@
 - [10490](https://github.com/vegaprotocol/vega/issues/10490) - Handle the `quant` library returning `NaN`
 - [10504](https://github.com/vegaprotocol/vega/issues/10504) - Make sure the referral sets API accounts for referees switch.
 - [10525](https://github.com/vegaprotocol/vega/issues/10525) - Move `batchTerms` to parent object in batch proposals API.
+- [10530](https://github.com/vegaprotocol/vega/issues/10530) - Game API returns errors.
+- [10531](https://github.com/vegaprotocol/vega/issues/10531) - Team Members Statistics API doesn't return data.
 
 ## 0.73.0
 
