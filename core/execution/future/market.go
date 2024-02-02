@@ -3868,7 +3868,6 @@ func (m *Market) orderCancelReplace(
 				return conf, nil, common.ErrMarginCheckFailed
 			}
 		}
-		fmt.Println(">>> HERE")
 		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
