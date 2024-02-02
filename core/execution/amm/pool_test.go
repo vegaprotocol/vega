@@ -50,28 +50,28 @@ func testVolumeBetweenPrices(t *testing.T) {
 			name:           "full volume upper curve",
 			price1:         num.NewUint(2000),
 			price2:         num.NewUint(2200),
-			side:           types.SideSell,
+			side:           types.SideBuy,
 			expectedVolume: 1818,
 		},
 		{
 			name:           "full volume upper curve with bound creep",
 			price1:         num.NewUint(1500),
 			price2:         num.NewUint(3500),
-			side:           types.SideSell,
+			side:           types.SideBuy,
 			expectedVolume: 1818,
 		},
 		{
 			name:           "full volume lower curve",
 			price1:         num.NewUint(1800),
 			price2:         num.NewUint(2000),
-			side:           types.SideBuy,
+			side:           types.SideSell,
 			expectedVolume: 2222,
 		},
 		{
 			name:           "full volume lower curve with bound creep",
 			price1:         num.NewUint(500),
 			price2:         num.NewUint(2500),
-			side:           types.SideBuy,
+			side:           types.SideSell,
 			expectedVolume: 2222,
 		},
 	}
@@ -192,22 +192,22 @@ func TestNotebook(t *testing.T) {
 	pos := int64(0)
 
 	ensurePosition(t, p, pos, nil)
-	volume := p.pool.VolumeBetweenPrices(types.SideBuy, base, low)
+	volume := p.pool.VolumeBetweenPrices(types.SideSell, base, low)
 	assert.Equal(t, int(2222), int(volume))
 
 	ensurePosition(t, p, pos, nil)
-	volume = p.pool.VolumeBetweenPrices(types.SideSell, up, base)
+	volume = p.pool.VolumeBetweenPrices(types.SideBuy, up, base)
 	assert.Equal(t, int(1818), int(volume))
 
 	lowmid := num.NewUint(1900)
 	upmid := num.NewUint(2100)
 
 	ensurePosition(t, p, pos, nil)
-	volume = p.pool.VolumeBetweenPrices(types.SideBuy, low, lowmid)
+	volume = p.pool.VolumeBetweenPrices(types.SideSell, low, lowmid)
 	assert.Equal(t, int(1155), int(volume))
 
 	ensurePosition(t, p, pos, nil)
-	volume = p.pool.VolumeBetweenPrices(types.SideSell, upmid, up)
+	volume = p.pool.VolumeBetweenPrices(types.SideBuy, upmid, up)
 	assert.Equal(t, int(876), int(volume))
 
 	ensurePosition(t, p, -876, upmid.Clone())
