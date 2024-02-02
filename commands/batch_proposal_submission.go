@@ -64,6 +64,10 @@ func checkBatchProposalSubmission(cmd *commandspb.BatchProposalSubmission) Error
 		return errs.FinalAddForProperty("batch_proposal_submission.terms.changes", ErrIsRequired)
 	}
 
+	if len(cmd.Terms.Changes) > 250 {
+		return errs.FinalAddForProperty("batch_proposal_submission.terms.changes", ErrMustBeAtMost250)
+	}
+
 	if cmd.Terms.ClosingTimestamp <= 0 {
 		errs.AddForProperty("batch_proposal_submission.terms.closing_timestamp", ErrMustBePositive)
 	}
