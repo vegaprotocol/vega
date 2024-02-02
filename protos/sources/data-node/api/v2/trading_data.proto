@@ -601,6 +601,7 @@ service TradingDataService {
   // Estimate the margin that would be required for submitting this order
   rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
+    option deprecated = true;
   }
 
   // Estimate position
