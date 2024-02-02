@@ -83,13 +83,7 @@ func TestOrderBook_CancelBulk(t *testing.T) {
 	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
 }
 
-type tradeOrder struct {
-	Trades []*types.Trade
-	Orders []*types.Order
-}
-
 func TestOrderBook_Rollback(t *testing.T) {
-	t.Skip("WIP")
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -114,57 +108,46 @@ func TestOrderBook_Rollback(t *testing.T) {
 	// populate a book with buy orders ranging between 50 and 90
 	// sell orders starting at 100, up to 150. All orders have a size of 2
 	orders := getTestOrders(t, market, 2, buyPrices, sellPrices)
+	clonedOrders := make([]*types.Order, 0, len(orders))
 	for i, o := range orders {
 		o.ID = fmt.Sprintf("%s-%02d", o.Side, i)
+		o.Party = "fixture"
 		_, err := book.ob.SubmitOrder(o)
+		clonedOrders = append(clonedOrders, o.Clone())
 		assert.NoError(t, err)
 	}
+	book.ob.LeaveAuction(time.Now())
 	// get the order that we'll have uncross, and then have it roll back the trade
 	cross := getTestOrders(t, market, 3, []uint64{105}, []uint64{85})
 	// first get the trades that we'd expect to see:
-	expTrades := make([]tradeOrder, len(cross))
 	for i, c := range cross {
 		c.ID = fmt.Sprintf("CROSS-%02d", i)
-		trades, err := book.ob.GetTrades(c)
-		require.NoError(t, err)
-		require.Equal(t, 2, len(trades))
-		orders := make([]*types.Order, 0, len(trades))
-		for _, tr := range trades {
-			id := tr.SellOrder
-			if id == c.ID {
-				id = tr.BuyOrder
-			}
-			o, _ := book.ob.GetOrderByID(id)
-			orders = append(orders, o.Clone())
-		}
-		expTrades[i] = tradeOrder{
-			Trades: trades,
-			Orders: orders,
-		}
-	}
-	// OK, now that we have the original order state, we can go ahead and submit the order, and then roll back the book uncrossing
-	confirmations := make([]*types.OrderConfirmation, 0, len(cross))
-	for i, c := range cross {
-		exp := expTrades[i]
+		c.Party = "trader"
+		c2 := c.Clone()
 		conf, err := book.ob.SubmitOrder(c)
+		// trades, err := book.ob.GetTrades(c)
 		require.NoError(t, err)
-		require.Equal(t, len(conf.Trades), len(exp.Trades))
-		require.EqualValues(t, conf.Trades, exp.Trades) // wait and see about this one
-		confirmations = append(confirmations, conf)
-		// make sure the book is in the state we expect it to be, the second order should still be on the book
-		// but only have 1 remaining, of its original size of 2
-		got, err := book.ob.GetOrderByID(exp.Orders[1].ID)
-		require.NoError(t, err)
-		require.NotEqual(t, got.Size, got.TrueRemaining())
-	}
-	// now roll back the confirmations:
-	for i, conf := range confirmations {
-		require.NoError(t, book.ob.RollbackConfirmation(conf, expTrades[i].Orders)) // pass in the original state for the orders
-		for _, eo := range expTrades[i].Orders {
-			got, err := book.ob.GetOrderByID(eo.ID)
-			require.NoError(t, err)
-			require.EqualValues(t, got, eo)
+		require.Equal(t, 2, len(conf.Trades))
+		// get the original orders
+		checkSell := c.Side == types.SideBuy
+		restore := make([]*types.Order, 0, len(conf.Trades))
+		for _, tr := range conf.Trades {
+			id := tr.BuyOrder
+			if checkSell {
+				id = tr.SellOrder
+			}
+			for _, co := range clonedOrders {
+				if co.ID == id {
+					restore = append(restore, co)
+					break
+				}
+			}
 		}
+		book.ob.RollbackConfirmation(conf, restore)
+		// now submitting the order a second time should yield the same confirmation object:
+		conf2, err := book.ob.SubmitOrder(c2)
+		require.NoError(t, err)
+		require.EqualValues(t, conf, conf2)
 	}
 }
 
