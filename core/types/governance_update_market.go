@@ -600,7 +600,7 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
 		lowerBound = ptr.From(p.FundingRateLowerBound.String())
 	}
 	if p.FundingRateUpperBound != nil {
-		lowerBound = ptr.From(p.FundingRateUpperBound.String())
+		upperBound = ptr.From(p.FundingRateUpperBound.String())
 	}
 
 	return &vegapb.UpdatePerpetualProduct{
