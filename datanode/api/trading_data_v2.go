@@ -4779,13 +4779,15 @@ func (t *TradingDataServiceV2) ListTeamMembersStatistics(ctx context.Context, re
 	}
 
 	filters := sqlstore.ListTeamMembersStatisticsFilters{
+		TeamID:            entities.TeamID(req.TeamId),
 		AggregationEpochs: 10,
 	}
 
 	if req.PartyId != nil {
 		filters.PartyID = ptr.From(entities.PartyID(*req.PartyId))
 	}
-	if req.AggregationEpochs != nil {
+
+	if req.AggregationEpochs != nil && *req.AggregationEpochs > 0 {
 		filters.AggregationEpochs = *req.AggregationEpochs
 	}
 

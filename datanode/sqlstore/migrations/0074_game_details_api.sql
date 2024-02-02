@@ -52,32 +52,51 @@ create trigger insert_game_reward_totals after insert on game_reward_totals
     for each row execute procedure insert_game_reward_totals();
 
 create or replace view game_team_rankings as
-with team_totals as (
-    select game_id, asset_id, epoch_id, team_id, sum(total_rewards) as total_rewards
-    from game_reward_totals
-    where team_id != '\x'
-    group by game_id, asset_id, epoch_id, team_id
+with team_games as (
+  -- get the games where the entity scope is individuals
+  select distinct game_id from transfers
+  where dispatch_strategy ->> 'entity_scope' = '2'
+  and game_id is not null
+), team_totals as (
+    select t.game_id, t.asset_id, t.epoch_id, t.team_id, sum(t.total_rewards) as total_rewards
+    from game_reward_totals t
+    join team_games g on t.game_id = g.game_id
+    where t.team_id != '\x'
+    group by t.game_id, t.asset_id, t.epoch_id, t.team_id
 )
 select game_id, epoch_id, team_id, total_rewards, rank() over (partition by game_id, epoch_id order by total_rewards desc) as rank
 from team_totals;
 
 create or replace view game_team_member_rankings as
-with team_totals as (
-    select game_id, asset_id, team_id, party_id, epoch_id, sum(total_rewards) as total_rewards
-    from game_reward_totals
-    where team_id != '\x'
-    group by game_id, asset_id, team_id, party_id, epoch_id
+with team_games as (
+  -- get the games where the entity scope is individuals
+  select distinct game_id from transfers
+  where dispatch_strategy ->> 'entity_scope' = '2'
+  and game_id is not null
+), team_totals as (
+    select t.game_id, t.asset_id, t.team_id, t.party_id, t.epoch_id, sum(t.total_rewards) as total_rewards
+    from game_reward_totals t
+    join team_games g on t.game_id = g.game_id
+    where t.team_id != '\x'
+    group by t.game_id, t.asset_id, t.team_id, t.party_id, t.epoch_id
 )
 select game_id, epoch_id, team_id, party_id, total_rewards, rank() over (partition by game_id, epoch_id, team_id order by total_rewards desc) as rank
 from team_totals;
 
 create or replace view game_individual_rankings as
-with individual_totals as (
-  select game_id, epoch_id, asset_id, party_id, sum(total_rewards) as total_rewards
-  from game_reward_totals
-  where team_id = '\x'
-  group by game_id, epoch_id, asset_id, party_id
+with individual_games as (
+  -- get the games where the entity scope is individuals
+  select game_id from transfers
+  where dispatch_strategy ->> 'entity_scope' = '1'
+  and game_id is not null
+), individual_totals as (
+  -- calculate the total rewards for each individual in each individual entity scoped game
+  select t.game_id, t.epoch_id, t.asset_id, t.party_id, sum(t.total_rewards) as total_rewards
+  from game_reward_totals t
+  join individual_games i on t.game_id = i.game_id
+  group by t.game_id, t.epoch_id, t.asset_id, t.party_id
 )
+-- rank the individuals for each game at each epoch
 select game_id, epoch_id, party_id, total_rewards, rank() over (partition by game_id, epoch_id order by total_rewards desc) as rank
 from individual_totals;
 
