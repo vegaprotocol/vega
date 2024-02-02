@@ -56,6 +56,7 @@ import (
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -5024,13 +5025,16 @@ func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
 
+	// if we can't get a transfer fee discount, the discount should just be 0, i.e. no discount available
 	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
 		ctx,
 		entities.PartyID(req.FromAccount),
 		entities.AssetID(req.AssetId),
 	)
 	if err != nil {
-		return nil, formatE(ErrTransferServiceGetFeeDiscount, err)
+		transferFeesDiscount = &entities.TransferFeesDiscount{
+			Amount: decimal.Zero,
+		}
 	}
 
 	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
