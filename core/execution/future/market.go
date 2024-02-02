@@ -3722,9 +3722,17 @@ func (m *Market) orderCancelReplace(
 
 	defer func() {
 		if err != nil {
-			// if an error happen, the order never hit the book, so we can
+			if err == common.ErrMarginCheckFailed {
+				// we failed the margin check, the order traded in full, and is stopped
+				// the position was already updated
+				return
+			}
+			// if an error happens, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
+			// we have an error, but a non-nil confirmation object meaning we updated the book,
+			// but the amend was rejected because of the margin check, we have to restore the book
+			// to its original state
 			return
 		}
 		if fees != nil {
@@ -3782,6 +3790,22 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
+	// get the orders in their current state
+	passiveOrders := make([]*types.Order, 0, len(trades))
+	checkBuy := newOrder.Side == types.SideSell
+	for _, t := range trades {
+		id := t.SellOrder
+		if checkBuy {
+			id = t.BuyOrder
+		}
+		o, _ := m.matching.GetOrderByID(id)
+		if o == nil {
+			// this shouldn't be possible
+			continue
+		}
+		// clone the order
+		passiveOrders = append(passiveOrders, o.Clone())
+	}
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
@@ -3793,7 +3817,40 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		m.log.Panic("unable to submit order", logging.Error(err))
 	}
+	// now set up a defer call to roll back the orderbook if needed
+	defer func() {
+		if err == nil || conf == nil {
+			return
+		}
+		// we have a confirmation and error, so margin check failed
+		// if we have passive orders here, that means the order was submitted to the book and traded
+		// check if the order uncrossed either partially or in full
+		if len(passiveOrders) > 0 {
+			// we failed the margin check, and the order uncrossed in full. We have to roll the orders back
+			if conf.Order.TrueRemaining() == 0 {
+				m.matching.RollbackConfirmation(conf, passiveOrders)
+				conf = nil // the confirmation cannot be used/relied on, the amend failed
+				return
+			}
+			// in this case, we have traded, but not the full amended order. The order is stopped
+			// but the trades must go through
+			err = nil
+			return
+		}
+		// now we had an error and no trades, the order is stopped, but we must remove it from the book explicitly
+		m.matching.DeleteOrder(conf.Order)
+		// ensure the position is restored. We update the position restoring the old order, so we really must be setting that to size of zero
+		existingOrder.Size = 0
+		if existingOrder.IcebergOrder != nil {
+			existingOrder.IcebergOrder.ReservedRemaining = 0
+		}
+		// conf should not be returned/used after this
+		conf = nil
+	}()
 
+	// replace the trades in the confirmation to have
+	// the ones with the fees embedded
+	conf.Trades = trades
 	marginMode := m.getMarginMode(newOrder.Party)
 	if marginMode == types.MarginModeIsolatedMargin {
 		pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
@@ -3808,7 +3865,7 @@ func (m *Market) orderCancelReplace(
 				}
 				newOrder.Status = types.OrderStatusStopped
 				m.broker.Send(events.NewOrderEvent(ctx, newOrder))
-				return nil, nil, common.ErrMarginCheckFailed
+				return conf, nil, common.ErrMarginCheckFailed
 			}
 		}
 		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
@@ -3819,13 +3876,9 @@ func (m *Market) orderCancelReplace(
 			existingOrder.Status = newOrder.Status
 			newOrder.Status = types.OrderStatusStopped
 			m.broker.Send(events.NewOrderEvent(ctx, newOrder))
-			return nil, nil, common.ErrMarginCheckFailed
+			return conf, nil, common.ErrMarginCheckFailed
 		}
 	}
-
-	// replace the trades in the confirmation to have
-	// the ones with the fees embedded
-	conf.Trades = trades
 
 	// if the order is not staying in the book, then we remove it
 	// from the potential positions

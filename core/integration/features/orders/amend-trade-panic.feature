@@ -28,6 +28,7 @@ Feature: Amending orders with isolated margins should never panic
       | trader2 | USD   | 100000000000 |
       | trader3 | USD   | 100000000000 |
       | trader4 | USD   | 100000000000 |
+      | trader5 | USD   | 100000000000 |
       | lprov1  | USD   | 100000000000 |
 
     And the parties submit the following liquidity provision:
@@ -93,8 +94,8 @@ Feature: Amending orders with isolated margins should never panic
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | trader3 | ETH/FEB23 | 5070        | 0      | 6084    | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader3 | USD   | ETH/FEB23 | 14220  | 0       |
+      | party   | asset | market id | margin | general | order margin |
+      | trader3 | USD   | ETH/FEB23 | 14220  | 0       | 4650         |
 
     When the parties amend the following orders:
       | party   | reference   | price | size delta | tif     | error               |
@@ -105,3 +106,12 @@ Feature: Amending orders with isolated margins should never panic
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/FEB23 | 14220  | 4650    |
+
+    And debug detailed orderbook volumes for market "ETH/FEB23"
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader5 | ETH/FEB23 | buy  | 90     | 15802 | 1                | TYPE_LIMIT | TIF_GTC |           |
+    Then the following trades should be executed:
+      | buyer   | seller  | price | size |
+      | trader5 | trader2 | 15802 | 90   |
+    And debug detailed orderbook volumes for market "ETH/FEB23"

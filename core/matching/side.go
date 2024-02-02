@@ -79,6 +79,10 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 	s.getPriceLevel(o.Price).addOrder(o)
 }
 
+func (s *OrderBookSide) replaceOrder(o *types.Order) {
+	s.getPriceLevel(o.Price).replaceOrder(o)
+}
+
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty.
 func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {

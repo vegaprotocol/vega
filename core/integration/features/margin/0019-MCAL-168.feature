@@ -67,34 +67,36 @@ Feature: when party holds both orders and positions, amend order so order is fil
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 4770        | 0      | 5724    | 0       | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 0.2           | 0     |
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | order margin |
-      | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
-      | party1 | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
+  Then the parties should have the following account balances:
+    | party  | asset | market id | margin | general | order margin |
+    | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
+    | party1 | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
 
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party  | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
-      | party1 | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+  And the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+    | party  | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
+    | party1 | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
 
-    #AC: 0019-MCAL-168, 0019-MCAL-169, amend order size when party has/does not have enough collateral
-    When the parties amend the following orders:
-      | party  | reference   | price | size delta | tif     | error               |
-      | party  | party-sell  | 16900 | 1          | TIF_GTC | margin check failed |
-      | party1 | party1-sell | 16900 | -1         | TIF_GTC |                     |
-    When the network moves ahead "2" blocks
+  #AC: 0019-MCAL-168, 0019-MCAL-169, amend order size when party has/does not have enough collateral
+  When the parties amend the following orders:
+    | party  | reference   | price | size delta | tif     | error               |
+    | party  | party-sell  | 16900 | 1          | TIF_GTC | margin check failed |
+    | party1 | party1-sell | 16900 | -1         | TIF_GTC |                     |
+  When the network moves ahead "2" blocks
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 4770        | 0      | 5724    | 0       | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 4770        | 0      | 5724    | 0       | isolated margin | 0.2           | 13520 |
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 0     |
+    | party1 | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 13520 |
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | order margin |
-      | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
-      | party1 | USD   | ETH/FEB23 | 9540   | 3380    | 13520        |
+  Then the parties should have the following account balances:
+    | party  | asset | market id | margin | general | order margin |
+    | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
+    | party1 | USD   | ETH/FEB23 | 9540   | 3380    | 13520        |
+
+
 
 
 
