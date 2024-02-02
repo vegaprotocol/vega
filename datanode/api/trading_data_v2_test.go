@@ -158,7 +158,9 @@ func TestEstimatePosition(t *testing.T) {
 				},
 				MarginCalculator: &vega.MarginCalculator{
 					ScalingFactors: &vega.ScalingFactors{
-						InitialMargin: initialMarginScalingFactor,
+						SearchLevel:       initialMarginScalingFactor * 0.9,
+						InitialMargin:     initialMarginScalingFactor,
+						CollateralRelease: initialMarginScalingFactor * 1.1,
 					},
 				},
 			},
@@ -610,9 +612,28 @@ func TestEstimatePosition(t *testing.T) {
 			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
 		}
 
+		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
+
 		res, err := apiService.EstimatePosition(ctx, req)
 		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
 		require.NotNil(t, res, fmt.Sprintf("test case #%v", i+1))
+
+		if res.Margin.WorstCase.MaintenanceMargin != "0" {
+			require.NotEqual(t, "0", res.Margin.BestCase.InitialMargin, fmt.Sprintf("test case #%v", i+1))
+			require.NotEqual(t, "0", res.Margin.WorstCase.InitialMargin, fmt.Sprintf("test case #%v", i+1))
+			if isolatedMargin {
+				require.Equal(t, "0", res.Margin.BestCase.SearchLevel, fmt.Sprintf("test case #%v", i+1))
+				require.Equal(t, "0", res.Margin.BestCase.CollateralReleaseLevel, fmt.Sprintf("test case #%v", i+1))
+				require.Equal(t, "0", res.Margin.WorstCase.SearchLevel, fmt.Sprintf("test case #%v", i+1))
+				require.Equal(t, "0", res.Margin.WorstCase.CollateralReleaseLevel, fmt.Sprintf("test case #%v", i+1))
+			} else {
+				require.NotEqual(t, "0", res.Margin.BestCase.SearchLevel, fmt.Sprintf("test case #%v", i+1))
+				require.NotEqual(t, "0", res.Margin.BestCase.CollateralReleaseLevel, fmt.Sprintf("test case #%v", i+1))
+				require.NotEqual(t, "0", res.Margin.WorstCase.SearchLevel, fmt.Sprintf("test case #%v", i+1))
+				require.NotEqual(t, "0", res.Margin.WorstCase.CollateralReleaseLevel, fmt.Sprintf("test case #%v", i+1))
+			}
+		}
+
 		colIncBest, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.BestCase, 64)
 		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
 		colIncWorst, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.WorstCase, 64)
@@ -624,7 +645,6 @@ func TestEstimatePosition(t *testing.T) {
 			require.Equal(t, tc.expectedLiquidationBestVolumeOnly, res.Liquidation.BestCase.OpenVolumeOnly, fmt.Sprintf("test case #%v", i+1))
 		}
 
-		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
 		if tc.openVolume == 0 {
 			require.Equal(t, colIncBest, colIncWorst, fmt.Sprintf("test case #%v", i+1))
 		} else {
