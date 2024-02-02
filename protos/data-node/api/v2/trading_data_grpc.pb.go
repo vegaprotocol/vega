@@ -366,6 +366,7 @@ type TradingDataServiceClient interface {
 	// Estimate the fee that would be incurred for submitting an order
 	// with the specified price and size on the market.
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	// Deprecated: Do not use.
 	// Estimate margin
 	//
 	// Estimate the margin that would be required for submitting this order
@@ -1588,6 +1589,7 @@ func (c *tradingDataServiceClient) EstimateFee(ctx context.Context, in *Estimate
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error) {
 	out := new(EstimateMarginResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimateMargin", in, out, opts...)
@@ -2449,6 +2451,7 @@ type TradingDataServiceServer interface {
 	// Estimate the fee that would be incurred for submitting an order
 	// with the specified price and size on the market.
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	// Deprecated: Do not use.
 	// Estimate margin
 	//
 	// Estimate the margin that would be required for submitting this order

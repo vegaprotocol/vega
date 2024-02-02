@@ -3189,6 +3189,7 @@ func implyMarginLevels(maintenanceMargin, orderMargin, marginFactor num.Decimal,
 	if isolatedMarginMode {
 		marginLevels.OrderMargin = orderMargin.Round(0).String()
 		marginLevels.SearchLevel = num.UintZero().String()
+		marginLevels.CollateralReleaseLevel = num.UintZero().String()
 		marginLevels.MarginMode = types.MarginModeIsolatedMargin
 		marginLevels.MarginFactor = marginFactor.String()
 	}
