@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -785,6 +786,9 @@ func TestListTeamStatistics(t *testing.T) {
 	teamsStore := sqlstore.NewTeams(connectionSource)
 	blocksStore := sqlstore.NewBlocks(connectionSource)
 	rewardsStore := sqlstore.NewRewards(ctx, connectionSource)
+	assetsStore := sqlstore.NewAssets(connectionSource)
+	transfersStore := sqlstore.NewTransfers(connectionSource)
+	accountsStore := sqlstore.NewAccounts(connectionSource)
 
 	member11 := entities.PartyID(GenerateID())
 	member12 := entities.PartyID(GenerateID())
@@ -841,25 +845,19 @@ func TestListTeamStatistics(t *testing.T) {
 
 	for epoch := int64(1); epoch < 4; epoch++ {
 		blockTime := startTime.Add(time.Duration(epoch) * time.Minute).Truncate(time.Microsecond)
-
-		require.NoError(t, blocksStore.Add(ctx, entities.Block{
+		block := entities.Block{
 			VegaTime: blockTime,
 			Height:   epoch,
 			Hash:     []byte(vgcrypto.RandomHash()),
-		}))
+		}
+		require.NoError(t, blocksStore.Add(ctx, block))
 
 		seqNum := uint64(0)
 		for teamIdx, teamID := range teamIDs {
-			for memberIdx, member := range teams[teamID] {
+			for _, member := range teams[teamID] {
 				seqNum += 1
 
-				var gameID *entities.GameID
-				// This helps to test the query doesn't ignore rewards of parties
-				// that did not participated in a game.
-				if memberIdx%2 == 0 {
-					gameID = ptr.From(gameIDs[teamIdx%4])
-				}
-
+				gameID := gameIDs[teamIdx]
 				require.NoError(t, rewardsStore.Add(ctx, entities.Reward{
 					PartyID:            member,
 					AssetID:            entities.AssetID(GenerateID()),
@@ -874,8 +872,33 @@ func TestListTeamStatistics(t *testing.T) {
 					VegaTime:           blockTime,
 					SeqNum:             seqNum,
 					LockedUntilEpochID: epoch,
-					GameID:             gameID,
+					GameID:             ptr.From(gameID),
 				}))
+
+				// add transfer
+				asset := CreateAsset(t, ctx, assetsStore, block)
+				fromAccount := CreateAccount(t, ctx, accountsStore, block, AccountForAsset(asset))
+				toAccount := CreateAccount(t, ctx, accountsStore, block, AccountWithType(vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD), AccountForAsset(asset))
+
+				transfer := NewTransfer(t, ctx, accountsStore, block,
+					TransferWithAsset(asset),
+					TransferFromToAccounts(fromAccount, toAccount),
+					TransferAsRecurring(&eventspb.RecurringTransfer{
+						StartEpoch: 1,
+						Factor:     "0.1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       asset.ID.String(),
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+							EntityScope:          vega.EntityScope_ENTITY_SCOPE_TEAMS,
+							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
+							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+						},
+					}),
+					TransferWithGameID(ptr.From(gameID.String())),
+				)
+
+				err := transfersStore.Upsert(ctx, transfer)
+				require.NoError(t, err)
 			}
 		}
 	}
@@ -1054,8 +1077,8 @@ func TestListTeamStatistics(t *testing.T) {
 						Total: decimal.NewFromInt(7),
 					},
 				},
-				TotalGamesPlayed: 0,
-				GamesPlayed:      []entities.GameID{},
+				TotalGamesPlayed: 1,
+				GamesPlayed:      []entities.GameID{gameIDs[1]},
 			},
 		}
 		slices.SortStableFunc(expectedStats, func(a, b entities.TeamMembersStatistics) int {
