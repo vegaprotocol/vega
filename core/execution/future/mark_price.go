@@ -17,6 +17,7 @@ package future
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -336,4 +337,30 @@ func (mpc *CompositePriceCalculator) IntoProto() *snapshot.CompositePriceCalcula
 		PriceSourceLastUpdate: mpc.sourceLastUpdate,
 		BookPriceAtTime:       bookPriceAtTime,
 	}
+}
+
+func (mpc *CompositePriceCalculator) GetData() *types.CompositePriceState {
+	priceSources := make([]*types.CompositePriceSource, 0, len(mpc.priceSources))
+
+	for i, ps := range mpc.priceSources {
+		if ps != nil {
+			var priceSourceName string
+			if i == TradePriceIndex {
+				priceSourceName = "priceFromTrades"
+			} else if i == BookPriceIndex {
+				priceSourceName = "priceFromOrderBook"
+			} else if i == len(mpc.priceSources)-1 {
+				priceSourceName = "medianPrice"
+			} else {
+				priceSourceName = fmt.Sprintf("priceFromOracle%d", i-FirstOraclePriceIndex+1)
+			}
+			priceSources = append(priceSources, &types.CompositePriceSource{
+				PriceSource: priceSourceName,
+				Price:       ps,
+				LastUpdated: mpc.sourceLastUpdate[i],
+			})
+		}
+	}
+
+	return &types.CompositePriceState{PriceSources: priceSources}
 }

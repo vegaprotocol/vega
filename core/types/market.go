@@ -843,9 +843,15 @@ type PerpetualData struct {
 	InternalCompositePrice         *num.Uint
 	NextInternalCompositePriceCalc int64
 	InternalCompositePriceType     CompositePriceType
+	UnderlyingIndexPrice           *num.Uint
+	InternalCompositePriceState    *CompositePriceState
 }
 
 func (p PerpetualData) IntoProto() *vegapb.ProductData {
+	var internalCompositePriceState *vegapb.CompositePriceState
+	if p.InternalCompositePriceState != nil {
+		internalCompositePriceState = p.InternalCompositePriceState.IntoProto()
+	}
 	return &vegapb.ProductData{
 		Data: &vegapb.ProductData_PerpetualData{
 			PerpetualData: &vegapb.PerpetualData{
@@ -858,6 +864,8 @@ func (p PerpetualData) IntoProto() *vegapb.ProductData {
 				InternalCompositePrice:         num.UintToString(p.InternalCompositePrice),
 				NextInternalCompositePriceCalc: p.NextInternalCompositePriceCalc,
 				InternalCompositePriceType:     p.InternalCompositePriceType,
+				InternalCompositePriceState:    internalCompositePriceState,
+				UnderlyingIndexPrice:           num.UintToString(p.UnderlyingIndexPrice),
 			},
 		},
 	}
@@ -894,11 +902,12 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 	LiquidityProviderSLA      []*LiquidityProviderSLA
 
-	NextMTM       int64
-	MarketGrowth  num.Decimal
-	ProductData   *ProductData
-	NextNetClose  int64
-	MarkPriceType CompositePriceType
+	NextMTM        int64
+	MarketGrowth   num.Decimal
+	ProductData    *ProductData
+	NextNetClose   int64
+	MarkPriceType  CompositePriceType
+	MarkPriceState *CompositePriceState
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -929,11 +938,16 @@ func (m MarketData) DeepClone() *MarketData {
 		lpsla = append(lpsla, proto.Clone(sla).(*LiquidityProviderSLA))
 	}
 	cpy.LiquidityProviderSLA = lpsla
-
+	cpy.MarkPriceState = m.MarkPriceState.DeepClone()
 	return &cpy
 }
 
 func (m MarketData) IntoProto() *vegapb.MarketData {
+	var markPriceState *vegapb.CompositePriceState
+	if m.MarkPriceState != nil {
+		markPriceState = m.MarkPriceState.IntoProto()
+	}
+
 	r := &vegapb.MarketData{
 		MarkPrice:                 num.UintToString(m.MarkPrice),
 		LastTradedPrice:           num.UintToString(m.LastTradedPrice),
@@ -968,6 +982,7 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		MarketGrowth:              m.MarketGrowth.String(),
 		NextNetworkCloseout:       m.NextNetClose,
 		MarkPriceType:             m.MarkPriceType,
+		MarkPriceState:            markPriceState,
 	}
 
 	for _, pmb := range m.PriceMonitoringBounds {

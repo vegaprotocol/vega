@@ -112,6 +112,8 @@ type MarketData struct {
 	NextNetworkCloseout time.Time
 	// The methodology used for the calculation of the mark price.
 	MarkPriceType string
+	// The internal state of the mark price composite price.
+	MarkPriceState *CompositePriceState
 }
 
 type PriceMonitoringTrigger struct {
@@ -213,6 +215,10 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		MarkPriceType:              data.MarkPriceType.String(),
 	}
 
+	if data.MarkPriceState != nil {
+		marketData.MarkPriceState = &CompositePriceState{data.MarkPriceState}
+	}
+
 	if data.ProductData != nil {
 		marketData.ProductData = &ProductData{data.ProductData}
 	}
@@ -242,6 +248,16 @@ func (md MarketData) Equal(other MarketData) bool {
 	if other.ProductData != nil {
 		productData2, _ = other.ProductData.MarshalJSON()
 	}
+
+	markPriceState1 := []byte{}
+	markPriceState2 := []byte{}
+	if md.MarkPriceState != nil {
+		markPriceState1, _ = md.MarkPriceState.MarshalJSON()
+	}
+	if other.MarkPriceState != nil {
+		markPriceState2, _ = other.MarkPriceState.MarshalJSON()
+	}
+
 	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
 		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
@@ -275,7 +291,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketGrowth.Equal(other.MarketGrowth) &&
 		bytes.Equal(productData1, productData2) &&
 		md.NextNetworkCloseout.Equal(other.NextNetworkCloseout) &&
-		md.MarkPriceType == other.MarkPriceType
+		md.MarkPriceType == other.MarkPriceType &&
+		bytes.Equal(markPriceState1, markPriceState2)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -379,6 +396,10 @@ func (md MarketData) ToProto() *types.MarketData {
 
 	if md.ProductData != nil {
 		result.ProductData = md.ProductData.ProductData
+	}
+
+	if md.MarkPriceState != nil {
+		result.MarkPriceState = md.MarkPriceState.CompositePriceState
 	}
 
 	return &result
