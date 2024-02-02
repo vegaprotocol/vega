@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS teams_stats (
-    team_id BYTEA NOT NULL,
+	team_id BYTEA NOT NULL,
 	party_id BYTEA NOT NULL,
 	at_epoch BIGINT NOT NULL,
 	total_volume NUMERIC(1000, 16) NOT NULL,
