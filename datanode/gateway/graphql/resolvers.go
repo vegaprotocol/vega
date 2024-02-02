@@ -121,6 +121,11 @@ func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
 
+// MarginLevels returns the market levels resolver.
+func (r *VegaResolverRoot) AbstractMarginLevels() AbstractMarginLevelsResolver {
+	return (*myAbstractMarginLevelsResolver)(r)
+}
+
 // MarginLevelsUpdate returns the market levels resolver.
 func (r *VegaResolverRoot) MarginLevelsUpdate() MarginLevelsUpdateResolver {
 	return (*myMarginLevelsUpdateResolver)(r)
@@ -2514,6 +2519,44 @@ func (r *myMarginLevelsUpdateResolver) OrderMarginLevel(_ context.Context, m *ve
 }
 
 func (r *myMarginLevelsUpdateResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.MarginFactor, nil
+}
+
+// BEGIN: AbstractMarginLevels Resolver
+
+type myAbstractMarginLevelsResolver VegaResolverRoot
+
+// END: AbstractMarginLevels Resolver
+
+func (r *myAbstractMarginLevelsResolver) Market(ctx context.Context, m *vegapb.MarginLevels) (*vegapb.Market, error) {
+	return r.r.getMarketByID(ctx, m.MarketId)
+}
+
+func (r *myAbstractMarginLevelsResolver) Asset(ctx context.Context, m *vegapb.MarginLevels) (*vegapb.Asset, error) {
+	return r.r.getAssetByID(ctx, m.Asset)
+}
+
+func (r *myAbstractMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.CollateralReleaseLevel, nil
+}
+
+func (r *myAbstractMarginLevelsResolver) InitialLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.InitialMargin, nil
+}
+
+func (r *myAbstractMarginLevelsResolver) SearchLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.SearchLevel, nil
+}
+
+func (r *myAbstractMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.MaintenanceMargin, nil
+}
+
+func (r *myAbstractMarginLevelsResolver) OrderMarginLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.OrderMargin, nil
+}
+
+func (r *myAbstractMarginLevelsResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
 	return m.MarginFactor, nil
 }
 
