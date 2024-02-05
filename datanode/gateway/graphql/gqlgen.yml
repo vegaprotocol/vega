@@ -178,6 +178,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   MarginEstimate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarginEstimate
+  OrderInfo:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.OrderInfo
   LiquidationPrice:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationPrice
   LiquidationEstimate:

@@ -103,6 +103,29 @@ type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
 
+// Margins for a hypothetical position not related to any existing party
+type AbstractMarginLevels struct {
+	// Market in which the margin is required for this party
+	Market *vega.Market `json:"market"`
+	// Asset for the current margins
+	Asset *vega.Asset `json:"asset"`
+	// Minimal margin for the position to be maintained in the network (unsigned integer)
+	MaintenanceLevel string `json:"maintenanceLevel"`
+	// If the margin is between maintenance and search, the network will initiate a collateral search, expressed as unsigned integer
+	SearchLevel string `json:"searchLevel"`
+	// This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer
+	InitialLevel string `json:"initialLevel"`
+	// When in isolated margin, the required order margin level, otherwise, 0
+	OrderMarginLevel string `json:"orderMarginLevel"`
+	// If the margin of the party is greater than this level, then collateral will be released from the margin account into
+	// the general account of the party for the given asset.
+	CollateralReleaseLevel string `json:"collateralReleaseLevel"`
+	// Margin mode of the party, cross margin or isolated margin
+	MarginMode vega.MarginMode `json:"marginMode"`
+	// Margin factor, only relevant for isolated margin mode, else 0
+	MarginFactor string `json:"marginFactor"`
+}
+
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 // The auction will last for at least N seconds.
@@ -571,18 +594,6 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
-}
-
-// Basic description of an order
-type OrderInfo struct {
-	// Whether the order is to buy or sell
-	Side vega.Side `json:"side"`
-	// Price for the order
-	Price string `json:"price"`
-	// Number of units remaining of the total that have not yet been bought or sold (uint64)
-	Remaining string `json:"remaining"`
-	// Boolean indicating a market order
-	IsMarketOrder bool `json:"isMarketOrder"`
 }
 
 // Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position

@@ -805,6 +805,7 @@
 - [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
 - [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
+- [10516](https://github.com/vegaprotocol/vega/issues/10516) - Fix mapping of estimate position. 
 
 ## 0.70.0
 
