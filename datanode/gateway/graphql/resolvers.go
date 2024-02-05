@@ -573,6 +573,10 @@ func (r *VegaResolverRoot) QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolv
 	return (*quantumRewardsPerEpochResolver)(r)
 }
 
+func (r *VegaResolverRoot) QuantumVolumesPerEpoch() QuantumVolumesPerEpochResolver {
+	return (*quantumVolumesPerEpochResolver)(r)
+}
+
 func (r *VegaResolverRoot) TeamMemberStatistics() TeamMemberStatisticsResolver {
 	return (*teamMemberStatsResolver)(r)
 }

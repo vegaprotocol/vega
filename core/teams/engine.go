@@ -381,6 +381,8 @@ func NewEngine(broker Broker, timeSvc TimeService) *Engine {
 		teams:          map[types.TeamID]*types.Team{},
 		allTeamMembers: map[types.PartyID]types.TeamID{},
 		teamSwitches:   map[types.PartyID]teamSwitch{},
+
+		minStakedVegaTokens: num.UintZero(),
 	}
 
 	return engine

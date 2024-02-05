@@ -326,13 +326,12 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
-	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e2.broker.EXPECT().Send(gomock.Any()).Times(3)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// now end epoch 2 and expect the second transfer to be delivered and the transfer to be terminated
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	e2.broker.EXPECT().Send(gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 2, StartTime: time.Unix(30, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 2, StartTime: time.Unix(30, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 

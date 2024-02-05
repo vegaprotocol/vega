@@ -554,6 +554,20 @@ func (mr *MockMarketActivityTrackerMockRecorder) MarketTrackedForAsset(arg0, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarketTrackedForAsset", reflect.TypeOf((*MockMarketActivityTracker)(nil).MarketTrackedForAsset), arg0, arg1)
 }
 
+// TeamStatsForMarkets mocks base method.
+func (m *MockMarketActivityTracker) TeamStatsForMarkets(arg0, arg1 []string) map[string]map[string]*num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TeamStatsForMarkets", arg0, arg1)
+	ret0, _ := ret[0].(map[string]map[string]*num.Uint)
+	return ret0
+}
+
+// TeamStatsForMarkets indicates an expected call of TeamStatsForMarkets.
+func (mr *MockMarketActivityTrackerMockRecorder) TeamStatsForMarkets(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TeamStatsForMarkets", reflect.TypeOf((*MockMarketActivityTracker)(nil).TeamStatsForMarkets), arg0, arg1)
+}
+
 // MockERC20BridgeView is a mock of ERC20BridgeView interface.
 type MockERC20BridgeView struct {
 	ctrl     *gomock.Controller

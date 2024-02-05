@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
@@ -140,7 +141,9 @@ func TestMarketTracker(t *testing.T) {
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
-	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+	additionalProvider, err := trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+	require.NoError(t, err)
+	assert.Nil(t, additionalProvider)
 
 	state2, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
@@ -609,7 +612,10 @@ func TestFeesTracker(t *testing.T) {
 
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state2, &pl))
-	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+
+	additionalProvider, err := trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+	require.NoError(t, err)
+	assert.Nil(t, additionalProvider)
 
 	state3, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
@@ -672,7 +678,10 @@ func TestSnapshot(t *testing.T) {
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
-	trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+	additionalProvider, err := trackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+	require.NoError(t, err)
+	assert.Nil(t, additionalProvider)
+
 	state2, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state1, state2))
@@ -688,7 +697,8 @@ func TestCheckpoint(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
-	trackerLoad.Load(context.Background(), b)
+
+	require.NoError(t, trackerLoad.Load(context.Background(), b))
 
 	bLoad, err := trackerLoad.Checkpoint()
 	require.NoError(t, err)
@@ -1101,6 +1111,114 @@ func TestRelativeReturnMetric(t *testing.T) {
 	require.Equal(t, "0.0125", scores[0].Score.String())
 }
 
+func TestTeamStatsForMarkets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	teams := mocks.NewMockTeams(ctrl)
+	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+
+	asset1 := vgrand.RandomStr(5)
+	asset2 := vgrand.RandomStr(5)
+	asset3 := vgrand.RandomStr(5)
+
+	market1 := "market1"
+	market2 := "market2"
+	market3 := "market3"
+	market4 := "market4"
+	market5 := "market5"
+	market6 := "market6"
+	market7 := "market7"
+
+	team1 := "team1"
+	team2 := "team2"
+	member11 := "member11"
+	member12 := "member12"
+	member21 := "member21"
+	member22 := "member22"
+	lonewolf1 := "lone-wolf1"
+	lonewolf2 := "lone-wolf2"
+
+	// 1. Need markets with different assets.
+	tracker.MarketProposed(asset1, market1, vgrand.RandomStr(5))
+	tracker.MarketProposed(asset1, market2, vgrand.RandomStr(5))
+	tracker.MarketProposed(asset1, market3, vgrand.RandomStr(5))
+
+	tracker.MarketProposed(asset2, market4, vgrand.RandomStr(5))
+	tracker.MarketProposed(asset2, market5, vgrand.RandomStr(5))
+
+	tracker.MarketProposed(asset3, market6, vgrand.RandomStr(5))
+	tracker.MarketProposed(asset3, market7, vgrand.RandomStr(5))
+
+	// 2. Need to define teams.
+	teams.EXPECT().GetAllTeamsWithParties(uint64(0)).Return(map[string][]string{
+		team1: {member11, member12},
+		team2: {member21, member22},
+	}).Times(1)
+
+	// 3. Need parties generating volume on these markets.
+	tracker.RecordNotionalTakerVolume(market1, member11, num.NewUint(1))
+	tracker.RecordNotionalTakerVolume(market1, member12, num.NewUint(2))
+	tracker.RecordNotionalTakerVolume(market1, member21, num.NewUint(3))
+	tracker.RecordNotionalTakerVolume(market1, member22, num.NewUint(4))
+	tracker.RecordNotionalTakerVolume(market1, lonewolf1, num.NewUint(5))
+	tracker.RecordNotionalTakerVolume(market1, lonewolf2, num.NewUint(6))
+
+	tracker.RecordNotionalTakerVolume(market2, member11, num.NewUint(1))
+	tracker.RecordNotionalTakerVolume(market2, member12, num.NewUint(2))
+	tracker.RecordNotionalTakerVolume(market2, member21, num.NewUint(3))
+	tracker.RecordNotionalTakerVolume(market2, member22, num.NewUint(4))
+	tracker.RecordNotionalTakerVolume(market2, lonewolf1, num.NewUint(5))
+	tracker.RecordNotionalTakerVolume(market2, lonewolf2, num.NewUint(6))
+
+	// No participation of team 2 in market 3.
+	tracker.RecordNotionalTakerVolume(market3, member11, num.NewUint(1))
+	tracker.RecordNotionalTakerVolume(market3, member12, num.NewUint(2))
+	tracker.RecordNotionalTakerVolume(market3, lonewolf1, num.NewUint(5))
+	tracker.RecordNotionalTakerVolume(market3, lonewolf2, num.NewUint(6))
+
+	// No participation of team 1 in market 4.
+	tracker.RecordNotionalTakerVolume(market4, member21, num.NewUint(3))
+	tracker.RecordNotionalTakerVolume(market4, member22, num.NewUint(4))
+	tracker.RecordNotionalTakerVolume(market4, lonewolf1, num.NewUint(5))
+	tracker.RecordNotionalTakerVolume(market4, lonewolf2, num.NewUint(6))
+
+	// Market 5 is not expected to be filtered on, so none of these volume
+	// should show up in the stats.
+	tracker.RecordNotionalTakerVolume(market5, member11, num.NewUint(1000))
+	tracker.RecordNotionalTakerVolume(market5, member12, num.NewUint(2000))
+	tracker.RecordNotionalTakerVolume(market5, member12, num.NewUint(3000))
+	tracker.RecordNotionalTakerVolume(market5, member22, num.NewUint(4000))
+	tracker.RecordNotionalTakerVolume(market5, lonewolf1, num.NewUint(5000))
+	tracker.RecordNotionalTakerVolume(market5, lonewolf2, num.NewUint(6000))
+
+	// Nobody likes market 6. So, no participation of any kind.
+
+	// Only lone-wolves in market 7.
+	tracker.RecordNotionalTakerVolume(market7, lonewolf1, num.NewUint(5))
+	tracker.RecordNotionalTakerVolume(market7, lonewolf2, num.NewUint(6))
+
+	// Regarding the dataset above, this should result in gathering the data from
+	// the market 1, 2, 3, 4, and 7, but not 5 and 6, because:
+	//   - we want all markets from asset 1 -> market 1, 2, and 3.
+	//   - we want specific market 1, 3, 4, and 7.
+	//
+	// NB: It's on purpose we have duplicated references to the market 1 and 3, so
+	// we can ensure it's duplicated and we don't add up stats from a market multiple
+	// times.
+	teamsStats := tracker.TeamStatsForMarkets([]string{asset1}, []string{market1, market3, market4, market7})
+
+	assert.Equal(t, map[string]map[string]*num.Uint{
+		team1: {
+			member11: num.NewUint(3),
+			member12: num.NewUint(6),
+		},
+		team2: {
+			member21: num.NewUint(9),
+			member22: num.NewUint(12),
+		},
+	}, teamsStats)
+}
+
 func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	t.Helper()
 
@@ -1131,6 +1249,23 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	tracker.RecordM2M("asset1", "p1", "market1", num.DecimalOne())
 	tracker.RecordM2M("asset1", "p1", "market2", num.DecimalFromInt64(5))
 
+	tracker.RecordNotionalTakerVolume("market1", "p1", num.NewUint(10))
+	tracker.RecordNotionalTakerVolume("market1", "p2", num.NewUint(10))
+	tracker.RecordNotionalTakerVolume("market1", "p3", num.NewUint(10))
+	tracker.RecordNotionalTakerVolume("market1", "p4", num.NewUint(10))
+	tracker.RecordNotionalTakerVolume("market2", "p1", num.NewUint(20))
+	tracker.RecordNotionalTakerVolume("market2", "p2", num.NewUint(20))
+	tracker.RecordNotionalTakerVolume("market2", "p3", num.NewUint(20))
+	tracker.RecordNotionalTakerVolume("market2", "p4", num.NewUint(20))
+	tracker.RecordNotionalTakerVolume("market3", "p1", num.NewUint(30))
+	tracker.RecordNotionalTakerVolume("market3", "p2", num.NewUint(30))
+	tracker.RecordNotionalTakerVolume("market3", "p3", num.NewUint(30))
+	tracker.RecordNotionalTakerVolume("market3", "p4", num.NewUint(30))
+	tracker.RecordNotionalTakerVolume("market4", "p1", num.NewUint(40))
+	tracker.RecordNotionalTakerVolume("market4", "p2", num.NewUint(40))
+	tracker.RecordNotionalTakerVolume("market4", "p3", num.NewUint(40))
+	tracker.RecordNotionalTakerVolume("market4", "p4", num.NewUint(40))
+
 	// update with a few transfers
 	transfersM1 := []*types.Transfer{
 		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
@@ -1160,5 +1295,6 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(450)}},
 	}
 	tracker.UpdateFeesFromTransfers("asset2", "market3", transfersM3)
+
 	return tracker
 }

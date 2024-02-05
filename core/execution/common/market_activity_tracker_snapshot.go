@@ -18,7 +18,9 @@ package common
 import (
 	"context"
 	"errors"
+	"slices"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -165,6 +167,22 @@ func timeWeightedPositionToProto(partyPositions map[string]*twPosition) []*check
 	return data
 }
 
+func marketToPartyTakerNotionalToProto(stats map[string]map[string]*num.Uint) []*checkpoint.MarketToPartyTakerNotionalVolume {
+	ret := make([]*checkpoint.MarketToPartyTakerNotionalVolume, 0, len(stats))
+	for marketID, partiesStats := range stats {
+		ret = append(ret, &checkpoint.MarketToPartyTakerNotionalVolume{
+			Market:              marketID,
+			TakerNotionalVolume: takerNotionalToProto(partiesStats),
+		})
+	}
+
+	slices.SortStableFunc(ret, func(a, b *checkpoint.MarketToPartyTakerNotionalVolume) int {
+		return strings.Compare(a.Market, b.Market)
+	})
+
+	return ret
+}
+
 func takerNotionalToProto(takerNotional map[string]*num.Uint) []*checkpoint.TakerNotionalVolume {
 	ret := make([]*checkpoint.TakerNotionalVolume, 0, len(takerNotional))
 	for k, u := range takerNotional {
@@ -264,8 +282,9 @@ func (mat *MarketActivityTracker) serialiseFeesTracker() *snapshot.MarketTracker
 	}
 
 	return &snapshot.MarketTracker{
-		MarketActivity:      marketActivity,
-		TakerNotionalVolume: takerNotionalToProto(mat.partyTakerNotionalVolume),
+		MarketActivity:                   marketActivity,
+		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
+		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
 	}
 }
 
@@ -294,7 +313,7 @@ func (mat *MarketActivityTracker) GetState(k string) ([]byte, []types.StateProvi
 	return state, nil, err
 }
 
-func (mat *MarketActivityTracker) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (mat *MarketActivityTracker) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if mat.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
@@ -493,9 +512,17 @@ func (mat *MarketActivityTracker) restore(tracker *snapshot.MarketTracker) {
 			mat.partyTakerNotionalVolume[tnv.Party] = num.UintFromBytes(tnv.Volume)
 		}
 	}
+	for _, marketToPartyStats := range tracker.MarketToPartyTakerNotionalVolume {
+		mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market] = map[string]*num.Uint{}
+		for _, partyStats := range marketToPartyStats.TakerNotionalVolume {
+			if len(partyStats.Volume) > 0 {
+				mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market][partyStats.Party] = num.UintFromBytes(partyStats.Volume)
+			}
+		}
+	}
 }
 
-// onEpochRestore is called when the state of the epoch changes, we only care about new epochs starting.
+// OnEpochRestore is called when the state of the epoch changes, we only care about new epochs starting.
 func (mat *MarketActivityTracker) OnEpochRestore(_ context.Context, epoch types.Epoch) {
 	mat.currentEpoch = epoch.Seq
 	mat.epochStartTime = epoch.StartTime

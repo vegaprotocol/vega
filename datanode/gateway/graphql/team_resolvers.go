@@ -55,6 +55,12 @@ func (q quantumRewardsPerEpochResolver) Epoch(_ context.Context, obj *v2.Quantum
 	return int(obj.Epoch), nil
 }
 
+type quantumVolumesPerEpochResolver VegaResolverRoot
+
+func (q quantumVolumesPerEpochResolver) Epoch(_ context.Context, obj *v2.QuantumVolumesPerEpoch) (int, error) {
+	return int(obj.Epoch), nil
+}
+
 type teamMemberStatsResolver VegaResolverRoot
 
 func (t teamMemberStatsResolver) TotalGamesPlayed(_ context.Context, obj *v2.TeamMemberStatistics) (int, error) {
