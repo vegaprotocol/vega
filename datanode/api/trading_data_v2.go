@@ -3189,8 +3189,8 @@ func implyMarginLevels(maintenanceMargin, orderMargin, marginFactor num.Decimal,
 	}
 	if isolatedMarginMode {
 		marginLevels.OrderMargin = orderMargin.Round(0).String()
-		marginLevels.SearchLevel = num.UintZero().String()
-		marginLevels.CollateralReleaseLevel = num.UintZero().String()
+		marginLevels.SearchLevel = "0"
+		marginLevels.CollateralReleaseLevel = "0"
 		marginLevels.MarginMode = types.MarginModeIsolatedMargin
 		marginLevels.MarginFactor = marginFactor.String()
 	}
@@ -3212,19 +3212,17 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	if err != nil {
 		return nil, formatE(ErrPositionsInvalidAccountBalance, err)
 	}
-	collateralAvailable := marginAccountBalance.Copy()
-	collateralAvailable = collateralAvailable.Add(orderAccountBalance)
+	mkt, err := t.MarketsService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetByID, err)
+	}
+	collateralAvailable := marginAccountBalance.Add(orderAccountBalance)
 	if req.MarginMode == types.MarginModeCrossMargin {
 		generalAccountBalance, err := num.DecimalFromString(req.GeneralAccountBalance)
 		if err != nil {
 			return nil, formatE(ErrPositionsInvalidAccountBalance, err)
 		}
 		collateralAvailable = collateralAvailable.Add(generalAccountBalance)
-	}
-
-	mkt, err := t.MarketsService.GetByID(ctx, req.MarketId)
-	if err != nil {
-		return nil, formatE(ErrMarketServiceGetByID, err)
 	}
 
 	dMarginFactor := num.DecimalZero()
@@ -3363,23 +3361,22 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	var marginDeltaWorst, marginDeltaBest num.Decimal
 	if req.MarginMode == types.MarginModeIsolatedMargin {
 		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(marginAccountBalance).Sub(orderAccountBalance))
+		marginDeltaWorst = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(collateralAvailable))
 		marginDeltaBest = marginDeltaWorst
 	} else {
-		worstInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
-		bestInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstInitial.Sub(marginAccountBalance).Sub(orderAccountBalance))
-		marginDeltaBest = num.MaxD(num.DecimalZero(), bestInitial.Sub(marginAccountBalance).Sub(orderAccountBalance))
+		worstMaintenance, _ := num.DecimalFromString(marginEstimate.WorstCase.MaintenanceMargin)
+		bestMaintenance, _ := num.DecimalFromString(marginEstimate.BestCase.MaintenanceMargin)
+		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstMaintenance.Sub(collateralAvailable))
+		marginDeltaBest = num.MaxD(num.DecimalZero(), bestMaintenance.Sub(collateralAvailable))
 	}
 
 	bColAvail := collateralAvailable
 	wColAvail := collateralAvailable
-	if req.MarginMode == types.MarginModeIsolatedMargin && req.IncludeCollateralIncreaseInAvailableCollateral != nil && *req.IncludeCollateralIncreaseInAvailableCollateral {
+	if req.MarginMode == types.MarginModeIsolatedMargin && ptr.UnBox(req.IncludeCollateralIncreaseInAvailableCollateral) {
 		bColAvail = bColAvail.Add(marginDeltaBest)
 		wColAvail = wColAvail.Add(marginDeltaWorst)
 	}
 
-	var liquidationEstimate *v2.LiquidationEstimate
 	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, bColAvail, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
 	if err != nil {
 		return nil, err
@@ -3390,7 +3387,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, err
 	}
 
-	if req.ScaleLiquidationPriceToMarketDecimals != nil && *req.ScaleLiquidationPriceToMarketDecimals {
+	if ptr.UnBox(req.ScaleLiquidationPriceToMarketDecimals) {
 		bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
 		bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
 		bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)
@@ -3399,7 +3396,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
 	}
 
-	liquidationEstimate = &v2.LiquidationEstimate{
+	liquidationEstimate := &v2.LiquidationEstimate{
 		WorstCase: &v2.LiquidationPrice{
 			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
 			IncludingBuyOrders:  wWithBuy.Round(0).String(),
