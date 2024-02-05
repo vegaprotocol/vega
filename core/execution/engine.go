@@ -142,6 +142,7 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
 	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
+	liquidityELSFeeFraction                      num.Decimal
 
 	// only used for protocol upgrade to v0.74
 	chainID uint64
@@ -895,6 +896,9 @@ func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Ma
 	if !e.npv.liquidityV2StakeToCCYVolume.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
 		mkt.OnMarketLiquidityV2StakeToCCYVolume(e.npv.liquidityV2StakeToCCYVolume)
 	}
+	if !e.npv.liquidityELSFeeFraction.IsZero() {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(e.npv.liquidityELSFeeFraction)
+	}
 	return nil
 }
 
@@ -941,6 +945,9 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 	if e.npv.internalCompositePriceUpdateFrequency > 0 {
 		mkt.OnInternalCompositePriceUpdateFrequency(ctx, e.npv.internalCompositePriceUpdateFrequency)
+	}
+	if !e.npv.liquidityELSFeeFraction.IsZero() {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(e.npv.liquidityELSFeeFraction)
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
@@ -1823,6 +1830,19 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(_ context
 	}
 	e.npv.maxLiquidityFee = d
 
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityEquityLikeShareFeeFractionUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity equityLikeShareFeeFraction",
+			logging.Decimal("market.liquidity.equityLikeShareFeeFraction", d),
+		)
+	}
+	for _, mkt := range e.allMarketsCpy {
+		mkt.OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d)
+	}
+	e.npv.liquidityELSFeeFraction = d
 	return nil
 }
 

@@ -81,6 +81,7 @@
 - [10502](https://github.com/vegaprotocol/vega/issues/10502) - Rename index price to `internalCompositePrice`
 - [10464](https://github.com/vegaprotocol/vega/issues/10464) - Add total of members in teams API.
 - [10464](https://github.com/vegaprotocol/vega/issues/10464) - Add total of members in referral sets API.
+- [10543](https://github.com/vegaprotocol/vega/issues/10543) - Add `ELS` for `vAMM`.
 
 ### 🐛 Fixes
 
