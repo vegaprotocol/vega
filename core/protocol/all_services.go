@@ -963,6 +963,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.referralProgram.OnMinBalanceForApplyReferralCodeUpdated,
 		},
 		{
+			Param:   netparams.SpamProtectionReferralProgramMinFunds,
+			Watcher: svcs.referralProgram.OnMinBalanceForReferralProgramUpdated,
+		},
+		{
 			Param:   netparams.SpamProtectionUpdateProfileMinFunds,
 			Watcher: svcs.partiesEngine.OnMinBalanceForUpdatePartyProfileUpdated,
 		},

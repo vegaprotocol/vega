@@ -225,6 +225,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),
 		SpamProtectionBalanceSnapshotFrequency:         NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
+		SpamProtectionReferralProgramMinFunds:          NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("0"),
 		SpamProtectionMaxUpdatePartyProfile:            NewInt(gteI0).Mutable(true).MustUpdate("5"),
 		SpamProtectionUpdateProfileMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
 

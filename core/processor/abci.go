@@ -156,6 +156,7 @@ type ReferralProgram interface {
 	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
+	CheckSufficientBalanceForCreateOrUpdateReferralProgram(types.PartyID, *num.Uint) error
 }
 
 type VolumeDiscountProgram interface {
@@ -376,7 +377,9 @@ func NewApp(
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
 		HandleCheckTx(txn.BatchProposeCommand, addDeterministicID(app.CheckBatchPropose)).
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
-		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
+		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode).
+		HandleCheckTx(txn.CreateReferralSetCommand, app.CheckCreateOrUpdateReferralProgram).
+		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralProgram)
 
 	app.abci.
 		// node commands
@@ -1568,6 +1571,13 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 
 func (app *App) CheckApplyReferralCode(_ context.Context, tx abci.Tx) error {
 	if err := app.referralProgram.CheckSufficientBalanceForApplyReferralCode(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckCreateOrUpdateReferralProgram(_ context.Context, tx abci.Tx) error {
+	if err := app.referralProgram.CheckSufficientBalanceForCreateOrUpdateReferralProgram(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
 		return err
 	}
 	return nil
