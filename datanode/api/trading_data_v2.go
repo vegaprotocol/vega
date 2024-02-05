@@ -3364,10 +3364,11 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		marginDeltaWorst = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(collateralAvailable))
 		marginDeltaBest = marginDeltaWorst
 	} else {
+		combinedMargin := marginAccountBalance.Add(ordeAccountBalance)
 		worstMaintenance, _ := num.DecimalFromString(marginEstimate.WorstCase.MaintenanceMargin)
 		bestMaintenance, _ := num.DecimalFromString(marginEstimate.BestCase.MaintenanceMargin)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstMaintenance.Sub(marginAccountBalance))
-		marginDeltaBest = num.MaxD(num.DecimalZero(), bestMaintenance.Sub(marginAccountBalance))
+		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstMaintenance.Sub(combinedMargin))
+		marginDeltaBest = num.MaxD(num.DecimalZero(), bestMaintenance.Sub(combinedMargin))
 	}
 
 	bColAvail := collateralAvailable
