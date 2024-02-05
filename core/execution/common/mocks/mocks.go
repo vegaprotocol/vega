@@ -2386,6 +2386,18 @@ func (mr *MockMarketLiquidityEngineMockRecorder) ProvisionsPerParty() *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProvisionsPerParty", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).ProvisionsPerParty))
 }
 
+// SetELSFeeFraction mocks base method.
+func (m *MockMarketLiquidityEngine) SetELSFeeFraction(arg0 decimal.Decimal) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetELSFeeFraction", arg0)
+}
+
+// SetELSFeeFraction indicates an expected call of SetELSFeeFraction.
+func (mr *MockMarketLiquidityEngineMockRecorder) SetELSFeeFraction(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetELSFeeFraction", reflect.TypeOf((*MockMarketLiquidityEngine)(nil).SetELSFeeFraction), arg0)
+}
+
 // StopAllLiquidityProvision mocks base method.
 func (m *MockMarketLiquidityEngine) StopAllLiquidityProvision(arg0 context.Context) {
 	m.ctrl.T.Helper()
