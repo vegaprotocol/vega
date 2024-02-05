@@ -3366,8 +3366,8 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	} else {
 		worstMaintenance, _ := num.DecimalFromString(marginEstimate.WorstCase.MaintenanceMargin)
 		bestMaintenance, _ := num.DecimalFromString(marginEstimate.BestCase.MaintenanceMargin)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstMaintenance.Sub(collateralAvailable))
-		marginDeltaBest = num.MaxD(num.DecimalZero(), bestMaintenance.Sub(collateralAvailable))
+		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstMaintenance.Sub(marginAccountBalance))
+		marginDeltaBest = num.MaxD(num.DecimalZero(), bestMaintenance.Sub(marginAccountBalance))
 	}
 
 	bColAvail := collateralAvailable
