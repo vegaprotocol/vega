@@ -84,18 +84,16 @@ func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralA
 		rf = riskFactorShort
 	}
 
-	denominator := calculateSlippageFactor(openVolume, linearSlippageFactor, quadraticSlippageFactor).Add(openVolume.Abs().Mul(rf)).Sub(openVolume)
+	denominator := calculateSlippageFactor(openVolume, linearSlippageFactor, quadraticSlippageFactor).Add(openVolume.Mul(rf)).Sub(openVolume)
 	if denominator.IsZero() {
 		return num.DecimalZero(), fmt.Errorf("liquidation price not defined")
 	}
 
 	numerator := collateralAvailable
 
-	if !openVolume.IsZero() {
-		numerator = numerator.Sub(openVolume.Mul(currentPrice))
-		if !fundingPaymentPerUnitPosition.IsZero() {
-			numerator = numerator.Sub(num.MaxD(num.DecimalZero(), openVolume.Mul(fundingPaymentPerUnitPosition)))
-		}
+	numerator = numerator.Sub(openVolume.Mul(currentPrice))
+	if !fundingPaymentPerUnitPosition.IsZero() {
+		numerator = numerator.Sub(num.MaxD(num.DecimalZero(), openVolume.Mul(fundingPaymentPerUnitPosition)))
 	}
 
 	ret := numerator.Div(denominator)
