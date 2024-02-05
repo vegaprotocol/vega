@@ -993,6 +993,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarketAMMMinCommitmentQuantum,
 			Watcher: svcs.executionEngine.OnMarketAMMMinCommitmentQuantum,
 		},
+		{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: svcs.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)

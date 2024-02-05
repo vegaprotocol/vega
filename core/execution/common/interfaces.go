@@ -301,6 +301,7 @@ type MarketLiquidityEngine interface {
 	ProvisionsPerParty() liquidity.ProvisionsPerParty
 	OnMarketClosed(context.Context, time.Time)
 	CalculateSuppliedStake() *num.Uint
+	SetELSFeeFraction(d num.Decimal)
 }
 
 type EquityLikeShares interface {
@@ -346,6 +347,7 @@ type CommonMarket interface {
 	OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal)
 	OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal)
 	OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(t time.Duration)
+	OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal)
 
 	// liquidity provision
 	CancelLiquidityProvision(context.Context, *types.LiquidityProvisionCancellation, string) error
