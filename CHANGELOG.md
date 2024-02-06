@@ -180,6 +180,7 @@
 - [10533](https://github.com/vegaprotocol/vega/issues/10533) - Fix `EstiamtePosition` returning an error when trying to access the party id field via GraphQL.
 - [10546](https://github.com/vegaprotocol/vega/issues/10546) - `EstimateTransferFee` API errors when there is no discount.
 - [10532](https://github.com/vegaprotocol/vega/issues/10532) - Fix for games statistics.
+- [10568](https://github.com/vegaprotocol/vega/issues/10568) - Fix for `PnL` underflow.
 
 ## 0.73.0
 

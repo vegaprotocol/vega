@@ -2927,7 +2927,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			Balance: num.UintZero(),
 		})
 	}
-	amount := req.Amount
+	amount := req.Amount.Clone()
 	now := e.timeService.GetTimeNow().UnixNano()
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
