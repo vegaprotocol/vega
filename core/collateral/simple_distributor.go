@@ -72,7 +72,6 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		if v.request.Owner == types.NetworkParty {
 			v := v
 			netReq = &v
-			continue // network events are to be ignored
 		}
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		s.log.Warn("loss socialization missing funds to be distributed",
@@ -90,14 +89,16 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		}
 		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
-		// decAmt is negative
-		loss := mismatch.Sub(evt.Amount().U, mismatch)
+		// if the remainder > the loss amount, this rounding error was profitable
+		// so the loss socialisation event should be flagged as profit
+		// profit will be true if the shortfall < mismatch amount
+		loss, profit := mismatch.Delta(evt.Amount().U, mismatch)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
 			loss,
-			true,
+			!profit, // true if party still lost out, false if mismatch > shortfall
 			s.ts)
 	}
 	return evts

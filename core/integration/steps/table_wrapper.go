@@ -224,6 +224,14 @@ func (r RowWrapper) MustU64(name string) uint64 {
 	return value
 }
 
+func (r RowWrapper) MustInt(name string) *num.Int {
+	val, ok := num.IntFromString(r.MustStr(name), 10)
+	if ok {
+		panicW(name, fmt.Errorf("failed to parse int"))
+	}
+	return val
+}
+
 func (r RowWrapper) MustUint(name string) *num.Uint {
 	value, err := Uint(r.mustColumn(name))
 	panicW(name, err)
