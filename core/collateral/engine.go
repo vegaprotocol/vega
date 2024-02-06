@@ -1163,7 +1163,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		responses = append(responses, res)
 
 		// Update to see how much we still need
-		requestAmount = requestAmount.Sub(requestAmount, amountCollected)
+		requestAmount.Sub(requestAmount, amountCollected)
 		if transfer.Owner != types.NetworkParty {
 			// no error possible here, we're just reloading the accounts to ensure the correct balance
 			general, margin, bond, _ := e.getMTMPartyAccounts(transfer.Owner, marketID, asset)
@@ -1412,7 +1412,7 @@ func (e *Engine) mtmOrFundingSettlement(ctx context.Context, marketID string, tr
 		responses = append(responses, res)
 
 		// Update to see how much we still need
-		requestAmount = requestAmount.Sub(requestAmount, amountCollected)
+		requestAmount.Sub(requestAmount, amountCollected)
 
 		// here we check if we were able to collect all monies,
 		// if not send an event to notify the plugins
@@ -2927,7 +2927,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			Balance: num.UintZero(),
 		})
 	}
-	amount := req.Amount.Clone()
+	amount := req.Amount
 	now := e.timeService.GetTimeNow().UnixNano()
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
