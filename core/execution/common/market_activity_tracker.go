@@ -929,6 +929,9 @@ func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
 func (mt *marketTracker) processM2MEndOfEpoch() {
 	m := map[string]num.Decimal{}
 	for party, m2m := range mt.partyM2M {
+		if _, ok := mt.twPosition[party]; !ok {
+			continue
+		}
 		p := mt.twPosition[party].currentEpochTWPosition
 		var v num.Decimal
 		if p == 0 {
