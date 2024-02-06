@@ -85,7 +85,7 @@ type Engine struct {
 
 	// minBalanceForReferralProgram defines the minimum balance a party should possess
 	// to create/update referral program.
-	minBalanceForReferralProgram *num.Uint
+	minBalanceForReferralSet *num.Uint
 
 	// latestProgramVersion tracks the latest version of the program. It used to
 	// value any new program that comes in. It starts at 1.
@@ -119,15 +119,15 @@ func (e *Engine) CheckSufficientBalanceForApplyReferralCode(party types.PartyID,
 	return nil
 }
 
-func (e *Engine) CheckSufficientBalanceForCreateOrUpdateReferralProgram(party types.PartyID, balance *num.Uint) error {
-	if balance.LT(e.minBalanceForReferralProgram) {
-		return fmt.Errorf("party %q does not have sufficient balance to create or update a referral program, required balance %s available balance %s", party, e.minBalanceForReferralProgram.String(), balance.String())
+func (e *Engine) CheckSufficientBalanceForCreateOrUpdateReferralSet(party types.PartyID, balance *num.Uint) error {
+	if balance.LT(e.minBalanceForReferralSet) {
+		return fmt.Errorf("party %q does not have sufficient balance to create or update a referral set, required balance %s available balance %s", party, e.minBalanceForReferralSet.String(), balance.String())
 	}
 	return nil
 }
 
 func (e *Engine) OnMinBalanceForReferralProgramUpdated(_ context.Context, min *num.Uint) error {
-	e.minBalanceForReferralProgram = min
+	e.minBalanceForReferralSet = min
 	return nil
 }
 
