@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.73.13 patched
+
+### 🐛 Fixes
+
+- [10568](https://github.com/vegaprotocol/vega/issues/10568) - Fix for `PnL` underflow.
+
+
 ## 0.73.13
 
 ### 🐛 Fixes

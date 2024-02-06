@@ -2198,6 +2198,104 @@ func TestGetPartyMarginEmpty(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestMTMLossSocializationUnderflow(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	lossParty1 := "lossparty1"
+	winParty1 := "winparty1"
+	winParty2 := "winparty2"
+	winParty3 := "winparty3"
+
+	// create parties
+	eng.broker.EXPECT().Send(gomock.Any()).Times(13)
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), lossParty1, testMarketAsset)
+	margin, err := eng.CreatePartyMarginAccount(context.Background(), lossParty1, testMarketID, testMarketAsset)
+	eng.IncrementBalance(context.Background(), margin, num.NewUint(2))
+	assert.Nil(t, err)
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), winParty1, testMarketAsset)
+	_, err = eng.CreatePartyMarginAccount(context.Background(), winParty1, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), winParty2, testMarketAsset)
+	_, err = eng.CreatePartyMarginAccount(context.Background(), winParty2, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), winParty3, testMarketAsset)
+	_, err = eng.CreatePartyMarginAccount(context.Background(), winParty3, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	// 1 party loses 3, 3 parties win 1, losing party only has a balance of 2 available
+	pos := []*types.Transfer{
+		{
+			Owner: lossParty1,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(3),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypeMTMLoss,
+		},
+		{
+			Owner: winParty3,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypeMTMWin,
+		},
+		{
+			Owner: winParty1,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypeMTMWin,
+		},
+		{
+			Owner: winParty2,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferTypeMTMWin,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == winParty3 && acc.Type == types.AccountTypeMargin {
+			assert.Equal(t, 0, stringToInt(acc.Balance))
+		}
+		if acc.Owner == winParty1 && acc.Type == types.AccountTypeMargin {
+			assert.Equal(t, 0, stringToInt(acc.Balance))
+		}
+		if acc.Owner == winParty2 && acc.Type == types.AccountTypeMargin {
+			assert.Equal(t, 2, stringToInt(acc.Balance))
+		}
+	})
+	transfers := eng.getTestMTMTransfer(pos)
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
+	assert.NotEmpty(t, evts)
+
+	assert.Equal(t, 1, len(raw[0].Entries))
+	assert.Equal(t, num.NewUint(2), raw[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(2), raw[0].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[1].Entries))
+	assert.Equal(t, num.NewUint(0), raw[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(0), raw[1].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[2].Entries))
+	assert.Equal(t, num.NewUint(0), raw[2].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(0), raw[2].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[3].Entries))
+	assert.Equal(t, num.NewUint(2), raw[3].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(2), raw[3].Entries[0].ToAccountBalance)
+}
+
 func TestMTMLossSocialization(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()

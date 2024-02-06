@@ -617,6 +617,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^a total of "([0-9]+)" events should be emitted$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
+	s.Step(`^the loss socialisation amounts are:$`, func(table *godog.Table) error {
+		return steps.TheLossSocialisationAmountsAre(execsetup.broker, table)
+	})
+	s.Step(`^debug loss socialisation events$`, func() error {
+		return steps.DebugLossSocialisationEvents(execsetup.broker, execsetup.log)
+	})
 
 	// Decimal places steps
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
