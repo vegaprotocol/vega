@@ -234,6 +234,21 @@ func (b *BrokerStub) GetLossSocializationEvents() []events.LossSocialization {
 	return typed
 }
 
+func (b *BrokerStub) GetLossSoc() []*events.LossSoc {
+	evts := b.GetImmBatch(events.LossSocializationEvent)
+	typed := make([]*events.LossSoc, 0, len(evts))
+	for _, e := range evts {
+		switch le := e.(type) {
+		case events.LossSoc:
+			cpy := le
+			typed = append(typed, &cpy)
+		case *events.LossSoc:
+			typed = append(typed, le)
+		}
+	}
+	return typed
+}
+
 func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
 	b.data = map[events.Type][]events.Event{}
