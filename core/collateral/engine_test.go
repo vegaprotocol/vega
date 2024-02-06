@@ -2274,7 +2274,7 @@ func TestMTMLossSocializationUnderflow(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
