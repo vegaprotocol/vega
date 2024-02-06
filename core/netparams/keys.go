@@ -173,7 +173,7 @@ const (
 	SpamProtectionMaxApplyReferralCode     = "spam.protection.max.applyReferralCode"
 	SpamProtectionBalanceSnapshotFrequency = "spam.protection.balanceSnapshotFrequency"
 	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
-	SpamProtectionReferralProgramMinFunds  = "spam.protection.referralProgram.min.funds"
+	SpamProtectionReferralSetMinFunds      = "spam.protection.referralSet.min.funds"
 
 	SpamProtectionMaxUpdatePartyProfile = "spam.protection.max.updatePartyProfile"
 	SpamProtectionUpdateProfileMinFunds = "spam.protection.updatePartyProfile.min.funds"
@@ -446,6 +446,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxApplyReferralCode:                           {},
 	SpamProtectionBalanceSnapshotFrequency:                       {},
 	SpamProtectionApplyReferralMinFunds:                          {},
-	SpamProtectionReferralProgramMinFunds:                        {},
+	SpamProtectionReferralSetMinFunds:                            {},
 	BlockchainsEthereumL2Configs:                                 {},
 }
