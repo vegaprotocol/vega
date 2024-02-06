@@ -717,6 +717,7 @@ func (e *Engine) remove(party string) {
 	for i := range e.poolsCpy {
 		if e.poolsCpy[i].party == party {
 			e.poolsCpy = append(e.poolsCpy[:i], e.poolsCpy[i+1:]...)
+			break
 		}
 	}
 	delete(e.pools, party)
