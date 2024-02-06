@@ -916,7 +916,7 @@ func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, end
 
 // recordM2M records the amount corresponding to mark to market (profit or loss).
 func (mt *marketTracker) recordM2M(party string, amount num.Decimal) {
-	if party == "network" {
+	if party == "network" || amount.IsZero() {
 		return
 	}
 	if _, ok := mt.partyM2M[party]; !ok {
