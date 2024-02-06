@@ -14,7 +14,7 @@ Feature: Replication a loss socialisation bug
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
 
-  Scenario: 001 closeout when party's open position is under maintenance level 
+  Scenario: 001 closeout when party's open position is under maintenance level
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount       |
       | buySideProvider  | USD   | 100000000000 |
@@ -89,10 +89,11 @@ Feature: Replication a loss socialisation bug
       | market | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/FEB23 | 11000  | USD   |
 
     #trigger more MTM with party has short position
+    #MTM: 84400-(25442-17000)*10=0-20
     And the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     |
-      | buySideProvider  | ETH/FEB23 | buy  | 1      | 26142 | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideProvider | ETH/FEB23 | sell | 1      | 26142 | 1                | TYPE_LIMIT | TIF_GTC |
+      | buySideProvider  | ETH/FEB23 | buy  | 1      | 25442 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideProvider | ETH/FEB23 | sell | 1      | 25442 | 1                | TYPE_LIMIT | TIF_GTC |
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
       | 17000      | TRADING_MODE_CONTINUOUS |
@@ -104,7 +105,7 @@ Feature: Replication a loss socialisation bug
 
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
-      | 26142      | TRADING_MODE_CONTINUOUS |
+      | 25442      | TRADING_MODE_CONTINUOUS |
 
     And the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |
