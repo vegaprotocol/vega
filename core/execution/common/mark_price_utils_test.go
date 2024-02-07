@@ -125,6 +125,7 @@ func TestMarkPriceFromTrades(t *testing.T) {
 
 func TestPBookAtTimeT(t *testing.T) {
 	book := matching.NewCachedOrderBook(logging.NewTestLogger(), matching.NewDefaultConfig(), "market1", false, func(int64) {})
+	book.SetOffbookSource(&Offbook{})
 	C := num.NewUint(1000)
 	initialScaling := num.DecimalFromFloat(0.2)
 	slippage := num.DecimalFromFloat(0.1)
@@ -198,3 +199,10 @@ func newOrder(price *num.Uint, size uint64, side types.Side) *types.Order {
 		TimeInForce:   types.OrderTimeInForceGTC,
 	}
 }
+
+type Offbook struct{}
+
+func (ob *Offbook) SubmitOrder(_ *types.Order, _, _ *num.Uint) []*types.Order {
+	return nil
+}
+func (ob *Offbook) NotifyFinished() {}

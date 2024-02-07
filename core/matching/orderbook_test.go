@@ -63,7 +63,7 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 		log: logging.NewTestLogger(),
 	}
 	tob.ob = matching.NewCachedOrderBook(tob.log, matching.NewDefaultConfig(), market, false, peggedOrderCounterForTest)
-
+	tob.ob.SetOffbookSource(&matching.Offbook{})
 	tob.ob.LogRemovedOrdersDebug = true
 	return &tob
 }

@@ -78,7 +78,7 @@ func testVolumeBetweenPrices(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ensurePosition(t, p, tt.position, nil)
+			ensurePosition(t, p.pos, tt.position, num.UintZero())
 			volume := p.pool.VolumeBetweenPrices(tt.side, tt.price1, tt.price2)
 			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
@@ -143,29 +143,29 @@ func testTradePrice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			order := tt.order
-			ensurePosition(t, p, tt.position, tt.averageEntryPrice)
+			ensurePosition(t, p.pos, tt.position, tt.averageEntryPrice)
 
 			if tt.position < 0 {
-				ensureBalances(t, p, tt.balance)
+				ensureBalances(t, p.col, tt.balance)
 			}
-			fairPrice := p.pool.TradePrice(order)
+			fairPrice := p.pool.BestPrice(order)
 			assert.Equal(t, tt.expectedPrice, fairPrice.String())
 		})
 	}
 }
 
-func ensurePosition(t *testing.T, p *tstPool, pos int64, averageEntry *num.Uint) {
+func ensurePosition(t *testing.T, p *mocks.MockPosition, pos int64, averageEntry *num.Uint) {
 	t.Helper()
 
-	p.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(1).Return(
+	p.EXPECT().GetPositionsByParty(gomock.Any()).Times(1).Return(
 		[]events.MarketPosition{&marketPosition{size: pos, averageEntry: averageEntry}},
 	)
 }
 
-func ensureBalances(t *testing.T, p *tstPool, balance uint64) {
+func ensureBalances(t *testing.T, col *mocks.MockCollateral, balance uint64) {
 	t.Helper()
 
-	// split the balance equall across general and margin
+	// split the balance equally across general and margin
 	split := balance / 2
 	gen := &types.Account{
 		Balance: num.NewUint(split),
@@ -174,8 +174,8 @@ func ensureBalances(t *testing.T, p *tstPool, balance uint64) {
 		Balance: num.NewUint(balance - split),
 	}
 
-	p.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(gen, nil)
-	p.col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(mar, nil)
+	col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(gen, nil)
+	col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(mar, nil)
 }
 
 func TestNotebook(t *testing.T) {
@@ -191,32 +191,32 @@ func TestNotebook(t *testing.T) {
 
 	pos := int64(0)
 
-	ensurePosition(t, p, pos, nil)
+	ensurePosition(t, p.pos, pos, num.UintZero())
 	volume := p.pool.VolumeBetweenPrices(types.SideSell, base, low)
 	assert.Equal(t, int(2222), int(volume))
 
-	ensurePosition(t, p, pos, nil)
+	ensurePosition(t, p.pos, pos, num.UintZero())
 	volume = p.pool.VolumeBetweenPrices(types.SideBuy, up, base)
 	assert.Equal(t, int(1818), int(volume))
 
 	lowmid := num.NewUint(1900)
 	upmid := num.NewUint(2100)
 
-	ensurePosition(t, p, pos, nil)
+	ensurePosition(t, p.pos, pos, num.UintZero())
 	volume = p.pool.VolumeBetweenPrices(types.SideSell, low, lowmid)
 	assert.Equal(t, int(1155), int(volume))
 
-	ensurePosition(t, p, pos, nil)
+	ensurePosition(t, p.pos, pos, num.UintZero())
 	volume = p.pool.VolumeBetweenPrices(types.SideBuy, upmid, up)
 	assert.Equal(t, int(876), int(volume))
 
-	ensurePosition(t, p, -876, upmid.Clone())
-	ensureBalances(t, p, 100000)
-	fairPrice := p.pool.TradePrice(nil)
+	ensurePosition(t, p.pos, -876, upmid.Clone())
+	ensureBalances(t, p.col, 100000)
+	fairPrice := p.pool.BestPrice(nil)
 	assert.Equal(t, "2094", fairPrice.String())
 
-	ensurePosition(t, p, 1154, lowmid.Clone())
-	fairPrice = p.pool.TradePrice(nil)
+	ensurePosition(t, p.pos, 1154, lowmid.Clone())
+	fairPrice = p.pool.BestPrice(nil)
 	assert.Equal(t, "1893", fairPrice.String())
 }
 

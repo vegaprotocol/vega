@@ -16,11 +16,18 @@
 package amm
 
 import (
+	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
+
+// ephemeralPosition keeps track of the pools position as if its generated orders had traded.
+type ephemeralPosition struct {
+	size         int64
+	averageEntry *num.Uint
+}
 
 type curve struct {
 	l    *num.Uint   // virtual liquidity
@@ -49,6 +56,14 @@ type Pool struct {
 	// lower is used when the pool is long.
 	lower *curve
 	upper *curve
+
+	// during the matching process across price levels we need to keep tracking of the pools potential positions
+	// as if those matching orders were to trade. This is so that when we generate more orders at the next price level
+	// for the same incoming order, the second round of generated orders are priced as if the first round had traded.
+	eph *ephemeralPosition
+
+	// one price tick
+	oneTick *num.Uint
 }
 
 func NewPool(
@@ -76,6 +91,7 @@ func NewPool(
 		collateral:  collateral,
 		position:    position,
 		priceFactor: priceFactor,
+		oneTick:     num.UintZero().Mul(num.UintOne(), priceFactor),
 	}
 	pool.setCurves(rf, sf, linearSlippage)
 	return pool
@@ -87,6 +103,7 @@ func NewPoolFromProto(
 	position Position,
 	state *snapshotpb.PoolMapEntry_Pool,
 	party string,
+	priceFactor *num.Uint,
 ) *Pool {
 	return &Pool{
 		ID:         state.Id,
@@ -117,6 +134,8 @@ func NewPoolFromProto(
 			low:  num.MustUintFromString(state.Upper.Low, 10),
 			rf:   num.MustDecimalFromString(state.Upper.Rf),
 		},
+		priceFactor: priceFactor,
+		oneTick:     num.UintZero().Mul(num.UintOne(), priceFactor),
 	}
 }
 
@@ -244,21 +263,10 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l *num.Uint) *num.Uint {
 }
 
 // VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
-// being placed by the pool.
+// being placed by the pool. If `nil` is provided for either price then we take the full volume in that direction.
 func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
-	var pos int64
-	if pp := p.position.GetPositionsByParty(p.SubAccount); len(pp) > 0 {
-		pos = pp[0].Size()
-	}
-
+	pos, _ := p.getPosition()
 	st, nd := price1, price2
-	if st.EQ(nd) {
-		return 0
-	}
-
-	if st.GT(nd) {
-		st, nd = nd, st
-	}
 
 	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
 	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
@@ -269,9 +277,28 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 		cu = p.lower
 	}
 
+	if price1 == nil {
+		st = cu.low
+	}
+
+	if price2 == nil {
+		nd = cu.high
+	}
+
+	if st.EQ(nd) {
+		return 0
+	}
+
+	if st.GT(nd) {
+		st, nd = nd, st
+	}
+
 	// there is no volume outside of the bounds for the curve so we snap st, nd to the boundaries
 	st = num.Max(st, cu.low)
 	nd = num.Min(nd, cu.high)
+	if st.GTE(nd) {
+		return 0
+	}
 
 	// abs(P(st) - P(nd))
 	volume, _ := num.UintZero().Delta(
@@ -296,8 +323,47 @@ func (p *Pool) getBalance() *num.Uint {
 	return num.UintZero().AddSum(general.Balance, margin.Balance)
 }
 
+// setEphemeralPosition is called when we are starting the matching process against this pool
+// so that we can track its position and average-entry as it goes through the matching process.
+func (p *Pool) setEphemeralPosition() {
+	if p.eph != nil {
+		return
+	}
+	p.eph = &ephemeralPosition{
+		size:         0,
+		averageEntry: num.UintZero(),
+	}
+
+	if pos := p.position.GetPositionsByParty(p.SubAccount); len(pos) != 0 {
+		p.eph.size = pos[0].Size()
+		p.eph.averageEntry = pos[0].AverageEntryPrice()
+	}
+}
+
+// updateEphemeralPosition sets the pools transient position given a generated order.
+func (p *Pool) updateEphemeralPosition(order *types.Order) {
+	if order.Side == types.SideSell {
+		p.eph.averageEntry = positions.CalcVWAP(p.eph.averageEntry, -p.eph.size, int64(order.Size), order.Price)
+		p.eph.size -= int64(order.Size)
+		return
+	}
+
+	p.eph.averageEntry = positions.CalcVWAP(p.eph.averageEntry, p.eph.size, int64(order.Size), order.Price)
+	p.eph.size += int64(order.Size)
+}
+
+// clearEphemeralPosition signifies that the matching process has finished
+// and the pool can continue to read it's position from the positions engine.
+func (p *Pool) clearEphemeralPosition() {
+	p.eph = nil
+}
+
 // getPosition gets the pools current position an average-entry price.
 func (p *Pool) getPosition() (int64, *num.Uint) {
+	if p.eph != nil {
+		return p.eph.size, p.eph.averageEntry.Clone()
+	}
+
 	if pos := p.position.GetPositionsByParty(p.SubAccount); len(pos) != 0 {
 		return pos[0].Size(), pos[0].AverageEntryPrice()
 	}
@@ -345,8 +411,6 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 // y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
 func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.lower
-	// balance := p.getBalance()
-
 	// lets start with x
 
 	// P
@@ -368,27 +432,38 @@ func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.De
 	return x, y
 }
 
-// virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
+// fairPrice returns the fair price of the pool given its current position.
 func (p *Pool) fairPrice() *num.Uint {
-	fairPrice := num.UintZero()
 	pos, ae := p.getPosition()
-
-	switch {
-	case pos == 0:
-		fairPrice = p.lower.high.Clone()
-	case pos < 0:
-		x, y := p.virtualBalancesShort(pos, ae)
-		fairPrice, _ = num.UintFromDecimal(y.Div(x))
-	case pos > 0:
-		x, y := p.virtualBalancesLong(pos, ae)
-		fairPrice, _ = num.UintFromDecimal(y.Div(x))
+	if pos == 0 {
+		return p.lower.high.Clone()
 	}
 
+	x, y := p.virtualBalances(pos, ae, types.SideUnspecified)
+	fairPrice, _ := num.UintFromDecimal(y.Div(x))
 	return fairPrice
 }
 
-// TradePrice returns the price that the pool is willing to trade for the given order and its volume.
-func (p *Pool) TradePrice(order *types.Order) *num.Uint {
+// virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
+func (p *Pool) virtualBalances(pos int64, ae *num.Uint, side types.Side) (num.Decimal, num.Decimal) {
+	switch {
+	case pos < 0:
+		return p.virtualBalancesShort(pos, ae)
+	case pos > 0:
+		return p.virtualBalancesLong(pos, ae)
+	case side == types.SideBuy:
+		// zero position but incoming is buy which will make pool short
+		return p.virtualBalancesShort(pos, ae)
+	case side == types.SideSell:
+		// zero position but incoming is sell which will make pool long
+		return p.virtualBalancesLong(pos, ae)
+	default:
+		panic("should not reach here")
+	}
+}
+
+// BestPrice returns the price that the pool is willing to trade for the given order side.
+func (p *Pool) BestPrice(order *types.Order) *num.Uint {
 	fairPrice := p.fairPrice()
 	switch {
 	case order == nil:
@@ -396,10 +471,10 @@ func (p *Pool) TradePrice(order *types.Order) *num.Uint {
 		return fairPrice
 	case order.Side == types.SideBuy:
 		// incoming is a buy, so we +1 to the fair price
-		return fairPrice.AddSum(num.UintOne())
+		return fairPrice.AddSum(p.oneTick)
 	case order.Side == types.SideSell:
 		// incoming is a sell so we - 1 the fair price
-		return fairPrice.Sub(fairPrice, num.UintOne())
+		return fairPrice.Sub(fairPrice, p.oneTick)
 	default:
 		panic("should never reach here")
 	}
