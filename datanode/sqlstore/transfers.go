@@ -308,9 +308,10 @@ func (t *Transfers) getRecurringTransfers(ctx context.Context, pagination entiti
 	whereStr, args := t.buildWhereClause(filters, where, args)
 
 	query := `WITH recurring_transfers AS (
-	SELECT *
-	FROM transfers_current
-	WHERE jsonb_typeof(dispatch_strategy) != 'null' AND transfer_type IN ($1, $2)
+		SELECT tc.* FROM transfers_current as tc
+		JOIN accounts as a on tc.from_account_id = a.id
+		WHERE transfer_type IN ($1, $2)
+		AND (a.type = 12 OR jsonb_typeof(tc.dispatch_strategy) != 'null')
 )
 SELECT *
 FROM recurring_transfers
