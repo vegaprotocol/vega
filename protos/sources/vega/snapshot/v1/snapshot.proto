@@ -578,7 +578,6 @@ message StringMapEntry {
   string value = 2;
 }
 
-
 // eventually support multiple products
 message Product {
   oneof type {
