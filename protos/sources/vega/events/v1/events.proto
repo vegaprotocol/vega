@@ -1373,13 +1373,13 @@ enum BusEventType {
   BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
 
   // Event indicating that teams' statistics have been updated.
-  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 88;
+  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 87;
 
   // Event indicating time weighted notional position has been updated.
-  BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 89;
+  BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 88;
 
   // Event use to notify for a amm pool update.
-  BUS_EVENT_TYPE_AMM_POOL = 90;
+  BUS_EVENT_TYPE_AMM_POOL = 89;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
