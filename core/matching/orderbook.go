@@ -42,6 +42,12 @@ var (
 	ErrNotCrossed        = errors.New("not crossed")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/matching OffbookSource
+type OffbookSource interface {
+	SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order
+	NotifyFinished()
+}
+
 // OrderBook represents the book holding all orders in the system.
 type OrderBook struct {
 	log *logging.Logger
@@ -127,6 +133,11 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 	b.cfgMu.Lock()
 	b.Config = cfg
 	b.cfgMu.Unlock()
+}
+
+func (b *OrderBook) SetOffbookSource(obs OffbookSource) {
+	b.buy.offbook = obs
+	b.sell.offbook = obs
 }
 
 // GetOrderBookLevelCount returns the number of levels in the book.
@@ -580,7 +591,7 @@ func (b *OrderBook) uncrossBookSide(
 		}
 
 		// try to get the market price value from the order
-		trades, affectedOrders, _, err := opSide.uncross(order, false)
+		trades, affectedOrders, _, err := opSide.uncross(order, false, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -774,7 +785,8 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	trades, err := b.getOppositeSide(order.Side).fakeUncross(order, true)
+	idealPrice := b.theoreticalBestTradePrice(order)
+	trades, err := b.getOppositeSide(order.Side).fakeUncross(order, true, idealPrice)
 	// it's fine for the error to be a wash trade here,
 	// it's just be stopped when really uncrossing.
 	if err != nil && err != ErrWashTrade {
@@ -823,6 +835,25 @@ func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	b.add(order)
 }
 
+// theoreticalBestTradePrice returns the best possible price the incoming order could trade
+// as if the spread were as small as possible. This will be used to construct the first
+// interval to query offbook orders matching with the other side.
+func (b *OrderBook) theoreticalBestTradePrice(order *types.Order) *num.Uint {
+	bp, _, err := b.getSide(order.Side).BestPriceAndVolume()
+	if err != nil {
+		return nil
+	}
+
+	switch order.Side {
+	case types.SideBuy:
+		return bp.Add(bp, num.UintOne())
+	case types.SideSell:
+		return bp.Sub(bp, num.UintOne())
+	default:
+		panic("unexpected order side")
+	}
+}
+
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
@@ -847,7 +878,8 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	if !b.auction {
 		// uncross with opposite
-		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true)
+		idealPrice := b.theoreticalBestTradePrice(order)
+		trades, impactedOrders, lastTradedPrice, err = b.getOppositeSide(order.Side).uncross(order, true, idealPrice)
 		if !lastTradedPrice.IsZero() {
 			b.lastTradedPrice = lastTradedPrice
 		}
@@ -1171,6 +1203,10 @@ func (b *OrderBook) remove(o *types.Order) {
 
 // add adds the given order too all the lookup maps.
 func (b *OrderBook) add(o *types.Order) {
+	if o.GeneratedOffbook {
+		b.log.Panic("Can not add offbook order to the orderbook", logging.Order(o))
+	}
+
 	b.ordersByID[o.ID] = o
 	if orders, ok := b.ordersPerParty[o.Party]; !ok {
 		b.ordersPerParty[o.Party] = map[string]struct{}{
