@@ -39,6 +39,10 @@ func NewCachedOrderBook(
 	}
 }
 
+func (b *CachedOrderBook) SetOffbookSource(obs OffbookSource) {
+	b.OrderBook.SetOffbookSource(obs)
+}
+
 func (b *CachedOrderBook) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	providers, err := b.OrderBook.LoadState(ctx, payload)
 	if err != nil {
