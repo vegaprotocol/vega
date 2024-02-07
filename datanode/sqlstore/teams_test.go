@@ -27,7 +27,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/ptr"
-	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -786,9 +785,6 @@ func TestListTeamStatistics(t *testing.T) {
 	teamsStore := sqlstore.NewTeams(connectionSource)
 	blocksStore := sqlstore.NewBlocks(connectionSource)
 	rewardsStore := sqlstore.NewRewards(ctx, connectionSource)
-	assetsStore := sqlstore.NewAssets(connectionSource)
-	transfersStore := sqlstore.NewTransfers(connectionSource)
-	accountsStore := sqlstore.NewAccounts(connectionSource)
 
 	member11 := entities.PartyID(GenerateID())
 	member12 := entities.PartyID(GenerateID())
@@ -857,7 +853,6 @@ func TestListTeamStatistics(t *testing.T) {
 			for _, member := range teams[teamID] {
 				seqNum += 1
 
-				gameID := gameIDs[teamIdx]
 				require.NoError(t, rewardsStore.Add(ctx, entities.Reward{
 					PartyID:            member,
 					AssetID:            entities.AssetID(GenerateID()),
@@ -872,33 +867,31 @@ func TestListTeamStatistics(t *testing.T) {
 					VegaTime:           blockTime,
 					SeqNum:             seqNum,
 					LockedUntilEpochID: epoch,
-					GameID:             ptr.From(gameID),
+					GameID:             ptr.From(gameIDs[teamIdx]),
 				}))
+			}
+		}
 
-				// add transfer
-				asset := CreateAsset(t, ctx, assetsStore, block)
-				fromAccount := CreateAccount(t, ctx, accountsStore, block, AccountForAsset(asset))
-				toAccount := CreateAccount(t, ctx, accountsStore, block, AccountWithType(vega.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD), AccountForAsset(asset))
+		// Add non-game rewards to ensure we only account for game rewards.
+		for _, teamID := range teamIDs {
+			for _, member := range teams[teamID] {
+				seqNum += 1
 
-				transfer := NewTransfer(t, ctx, accountsStore, block,
-					TransferWithAsset(asset),
-					TransferFromToAccounts(fromAccount, toAccount),
-					TransferAsRecurring(&eventspb.RecurringTransfer{
-						StartEpoch: 1,
-						Factor:     "0.1",
-						DispatchStrategy: &vega.DispatchStrategy{
-							AssetForMetric:       asset.ID.String(),
-							Metric:               vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
-							EntityScope:          vega.EntityScope_ENTITY_SCOPE_TEAMS,
-							IndividualScope:      vega.IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM,
-							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
-						},
-					}),
-					TransferWithGameID(ptr.From(gameID.String())),
-				)
-
-				err := transfersStore.Upsert(ctx, transfer)
-				require.NoError(t, err)
+				require.NoError(t, rewardsStore.Add(ctx, entities.Reward{
+					PartyID:            member,
+					AssetID:            entities.AssetID(GenerateID()),
+					MarketID:           entities.MarketID(GenerateID()),
+					EpochID:            epoch,
+					Amount:             decimal.NewFromInt(int64(seqNum)),
+					QuantumAmount:      decimal.NewFromInt(epoch + int64(seqNum)),
+					PercentOfTotal:     0.1 * float64(epoch),
+					RewardType:         "NICE_BOY",
+					Timestamp:          blockTime,
+					TxHash:             generateTxHash(),
+					VegaTime:           blockTime.Add(time.Second),
+					SeqNum:             seqNum,
+					LockedUntilEpochID: epoch,
+				}))
 			}
 		}
 	}
