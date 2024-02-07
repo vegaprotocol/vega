@@ -731,7 +731,7 @@ type Query {
     marginMode: MarginMode!
     "Margin factor to be used along with isolated margin mode"
     marginFactor: String
-    "Optional argument specifying if the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode."
+    "Optional argument specifying if the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode."
     includeCollateralIncreaseInAvailableCollateral: Boolean
     "Optional argument specifying if liquidation price estimates should be scaled to market decimal places, returned in asset decimal places by default"
     scaleLiquidationPriceToMarketDecimals: Boolean

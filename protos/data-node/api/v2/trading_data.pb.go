@@ -19773,7 +19773,7 @@ type EstimatePositionRequest struct {
 	MarginMode vega.MarginMode `protobuf:"varint,8,opt,name=margin_mode,json=marginMode,proto3,enum=vega.MarginMode" json:"margin_mode,omitempty"`
 	// Margin factor to be used along with isolated margin mode
 	MarginFactor *string `protobuf:"bytes,9,opt,name=margin_factor,json=marginFactor,proto3,oneof" json:"margin_factor,omitempty"`
-	// Whether the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode.
+	// Whether the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode.
 	IncludeCollateralIncreaseInAvailableCollateral *bool `protobuf:"varint,10,opt,name=include_collateral_increase_in_available_collateral,json=includeCollateralIncreaseInAvailableCollateral,proto3,oneof" json:"include_collateral_increase_in_available_collateral,omitempty"`
 	// Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
 	ScaleLiquidationPriceToMarketDecimals *bool `protobuf:"varint,11,opt,name=scale_liquidation_price_to_market_decimals,json=scaleLiquidationPriceToMarketDecimals,proto3,oneof" json:"scale_liquidation_price_to_market_decimals,omitempty"`
