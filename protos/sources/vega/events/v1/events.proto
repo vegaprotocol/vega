@@ -1353,7 +1353,7 @@ enum BusEventType {
 
   // Event indicating that a party updated their profile.
   BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
-  
+
   // Event use to notify for a amm pool update.
   BUS_EVENT_TYPE_AMM_POOL = 87;
 

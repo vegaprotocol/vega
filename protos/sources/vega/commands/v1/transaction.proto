@@ -76,7 +76,6 @@ message InputData {
     // Command to cancel an AMM pool to a market
     CancelAMM cancel_amm = 1027;
 
-
     // Validator command sent automatically to vote on that validity of an external resource.
     NodeVote node_vote = 2002;
     // Validator command sent automatically to provide signatures for the Ethereum bridge.
