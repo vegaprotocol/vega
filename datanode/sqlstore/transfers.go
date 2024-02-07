@@ -309,7 +309,7 @@ func (t *Transfers) getRecurringTransfers(ctx context.Context, pagination entiti
 
 	query := `WITH recurring_transfers AS (
 		SELECT tc.* FROM transfers_current as tc
-		JOIN accounts as a on tc.from_account_id = a.id
+		JOIN accounts as a on tc.to_account_id = a.id
 		WHERE transfer_type IN ($1, $2)
 		AND (a.type = 12 OR jsonb_typeof(tc.dispatch_strategy) != 'null')
 )
