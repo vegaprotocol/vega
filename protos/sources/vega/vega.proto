@@ -1552,6 +1552,24 @@ message EthereumConfig {
   EthereumContractConfig multisig_control_contract = 7;
 }
 
+// Arbitrum configuration details.
+message ArbitrumConfig {
+  // Network ID of this Ethereum network.
+  string network_id = 1;
+  // Chain ID of this Ethereum network.
+  string chain_id = 2;
+  //// Contract configuration of the collateral bridge contract for this Ethereum network.
+  EthereumContractConfig collateral_bridge_contract = 3;
+  // Number of block confirmations to wait to consider an Ethereum transaction trusted.
+  // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
+  // network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
+  // and the current block to be forged (or mined) on Ethereum is block 14, block
+  // 10 would be considered as trusted, but not block 11.
+  uint32 confirmations = 4;
+  // Contract configuration of the multisig control contract for this Ethereum network.
+  EthereumContractConfig multisig_control_contract = 5;
+}
+
 message EthereumContractConfig {
   // Address of the contract for this Ethereum network. The address should start with "0x".
   string address = 1;
