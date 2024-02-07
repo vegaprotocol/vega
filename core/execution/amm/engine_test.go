@@ -18,11 +18,13 @@ package amm
 import (
 	"context"
 	"testing"
+	"time"
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/amm/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -40,6 +42,14 @@ func TestSubmitAMM(t *testing.T) {
 	t.Run("test rebase on submit order did not trade", testRebaseOnSubmitOrderDidNotTrade)
 	t.Run("test rebase on submit order target is base", testSubmitTargetIsBase)
 	t.Run("test rebase on submit order target out of bounds", testSubmitTargetIsOutOfBounds)
+
+	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit order pro rata", testSubmitOrderProRata)
+}
+
+func TestAMMTrading(t *testing.T) {
+	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit order pro rata", testSubmitOrderProRata)
 }
 
 func TestAmendAMM(t *testing.T) {
@@ -206,6 +216,65 @@ func testAmendAMMWithRebase(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func testBasicSubmitOrder(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2100),
+	}
+
+	ensureBalances(t, tst.col, 10000000000)
+	ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2004", orders[0].Price.String())
+	assert.Equal(t, uint64(120731), orders[0].Size)
+}
+
+func testSubmitOrderProRata(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	// create three pools
+	for i := 0; i < 3; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
+
+		expectSubaccountCreation(t, tst, party, subAccount)
+		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	}
+
+	for i := 0; i < 3; i++ {
+		ensureBalances(t, tst.col, 10000000000)
+		ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	}
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      666,
+		Remaining: 666,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2100),
+	}
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
+	require.Len(t, orders, 3)
+	for _, o := range orders {
+		assert.Equal(t, "2000", o.Price.String())
+		assert.Equal(t, uint64(222), o.Size)
+	}
+}
+
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
 	t.Helper()
 
@@ -332,6 +401,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 	risk.EXPECT().GetSlippage().AnyTimes().Return(num.DecimalOne())
 
 	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne())
+
+	// do an ontick to initialise the idgen
+	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	eng.OnTick(ctx, time.Now())
+
 	return &tstEngine{
 		engine:   eng,
 		broker:   broker,
