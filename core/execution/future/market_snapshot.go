@@ -273,6 +273,8 @@ func NewMarketFromSnapshot(
 		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor)
 	}
 
+	book.SetOffbookSource(market.amm)
+
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
 	}

@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -127,6 +128,7 @@ type Engine struct {
 	collateral Collateral
 	position   Position
 	market     Market
+	idgen      *idgeneration.IDGenerator
 
 	// gets us from the price in the submission -> price in full asset dp
 	priceFactor *num.Uint
@@ -191,7 +193,7 @@ func NewFromProto(
 	}
 
 	for _, v := range state.Pools {
-		e.add(NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party))
+		e.add(NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool, v.Party, priceFactor))
 	}
 
 	return e
@@ -236,11 +238,163 @@ func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) 
 // TBD.
 func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// check sub account balances (margin, general)
+
+	// seed an id-generator to create IDs for any orders generated in this block
+	_, blockHash := vgcontext.TraceIDFromContext(ctx)
+	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.market.GetID()))
 }
 
 func (e *Engine) IsPoolSubAccount(key string) bool {
 	_, yes := e.subAccounts[key]
 	return yes
+}
+
+// SubmitOrder takes an aggressive order and generates matching orders with the registered AMMs such that
+// volume is only taken in the interval (inner, outer) where inner and outer are price-levels on the orderbook.
+func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order {
+	if len(e.pools) == 0 {
+		return nil
+	}
+
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("looking for match with order",
+			logging.Int("n-pools", len(e.pools)),
+			logging.Order(agg),
+		)
+		e.log.Debug("between prices",
+			logging.String("inner", inner.String()),
+			logging.String("outer", outer.String()),
+		)
+	}
+
+	active := []*Pool{}
+	orders := []*types.Order{}
+	best := outer.Clone()
+
+	// first we find all amm's whose best-price would allow a trade with the incoming order
+	for _, p := range e.poolsCpy {
+		p.setEphemeralPosition()
+
+		price := p.BestPrice(agg)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("best price for pool",
+				logging.String("id", p.ID),
+				logging.String("best-price", price.String()),
+			)
+		}
+
+		if agg.Side == types.SideBuy {
+			if price.GTE(outer) || price.GT(agg.Price) {
+				// either fair price is out of bounds, or is selling at higher than incoming buy
+				continue
+			}
+			active = append(active, p)
+			best = num.Min(best, p.upper.high)
+		}
+
+		if agg.Side == types.SideSell {
+			if price.LTE(outer) || price.LT(agg.Price) {
+				// either fair price is out of bounds, or is buying at lower than incoming sell
+				continue
+			}
+			active = append(active, p)
+			best = num.Max(best, p.lower.low)
+		}
+	}
+
+	if agg.Side == types.SideSell {
+		inner, best = best, inner
+	}
+
+	// calculate the volume each pool has
+	var total uint64
+	volumes := []uint64{}
+	for _, p := range active {
+		volume := p.VolumeBetweenPrices(agg.Side, inner, best)
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("volume available to trade",
+				logging.String("id", p.ID),
+				logging.Uint64("volume", volume),
+			)
+		}
+
+		volumes = append(volumes, volume)
+		total += volume
+	}
+
+	// if the pools consume the whole incoming order's volume, share it out pro-rata
+	if agg.Remaining < total {
+		var retotal uint64
+		for i := range volumes {
+			volumes[i] = agg.Remaining * volumes[i] / total
+			retotal += volumes[i]
+		}
+
+		// any lost crumbs due to integer division is given to the first pool
+		if d := agg.Remaining - retotal; d != 0 {
+			volumes[0] += d
+		}
+	}
+
+	// now generate offbook orders
+	for i, p := range active {
+		volume := volumes[i]
+		if volume == 0 {
+			continue
+		}
+
+		pos, ae := p.getPosition()
+		x, y := p.virtualBalances(pos, ae, agg.Side)
+		dx := num.DecimalFromInt64(int64(volume))
+
+		// dy = x*y / (x - dx) - y
+		// where y and x are the balances on either side of the pool, and dx is the change in volume
+		// then the trade price is dy/dx
+		dy := x.Mul(y).Div(x.Sub(dx)).Sub(y)
+		price, _ := num.UintFromDecimal(dy.Div(dx))
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("generated order at price",
+				logging.String("id", p.ID),
+				logging.String("price", price.String()),
+				logging.Int64("pos", pos),
+				logging.String("average-entry", ae.String()),
+				logging.String("y", y.String()),
+				logging.String("x", x.String()),
+				logging.String("dy", dy.String()),
+				logging.String("dx", dx.String()),
+			)
+		}
+
+		// construct the orders
+		o := &types.Order{
+			ID:               e.idgen.NextID(),
+			MarketID:         p.market,
+			Party:            p.SubAccount,
+			Size:             volume,
+			Remaining:        volume,
+			Price:            price,
+			OriginalPrice:    num.UintZero().Div(price, e.priceFactor),
+			Side:             types.OtherSide(agg.Side),
+			TimeInForce:      types.OrderTimeInForceFOK,
+			Type:             types.OrderTypeMarket,
+			CreatedAt:        agg.CreatedAt,
+			Status:           types.OrderStatusFilled,
+			Reference:        "vamm-" + p.SubAccount,
+			GeneratedOffbook: true,
+		}
+		orders = append(orders, o)
+		p.updateEphemeralPosition(o)
+	}
+
+	return orders
+}
+
+// NotifyFinished is called when the matching engine has finished matching an order and is returning it to
+// the market for processing.
+func (e *Engine) NotifyFinished() {
+	for _, p := range e.poolsCpy {
+		p.clearEphemeralPosition()
+	}
 }
 
 func (e *Engine) SubmitAMM(
@@ -301,7 +455,6 @@ func (e *Engine) SubmitAMM(
 
 		return err
 	}
-
 	pool := NewPool(
 		deterministicID,
 		subAccount,
@@ -357,7 +510,7 @@ func (e *Engine) AmendAMM(
 		return err
 	}
 
-	fairPrice := pool.TradePrice(nil)
+	fairPrice := pool.BestPrice(nil)
 	oldCommitment := pool.Commitment.Clone()
 
 	err := e.updateSubAccountBalance(
@@ -490,7 +643,7 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	}
 
 	// get the pools current fair-price
-	fairPrice := pool.TradePrice(nil)
+	fairPrice := pool.BestPrice(nil)
 	e.log.Debug("rebasing pool",
 		logging.String("id", pool.ID),
 		logging.String("fair-price", fairPrice.String()),
