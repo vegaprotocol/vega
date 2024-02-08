@@ -4668,7 +4668,7 @@ message TeamGameEntity {
   string reward_earned = 5;
   // Total rewards earned by the individual for the team
   string total_rewards_earned = 6;
-  // Reward earned by the team in quantum value
+  // Rewards earned by the team in quantum value
   string reward_earned_quantum = 7;
   // Total rewards earned by the team in quantum value
   string total_rewards_earned_quantum = 8;
@@ -4698,7 +4698,7 @@ message IndividualGameEntity {
   string reward_earned = 5;
   // Total rewards earned by the individual for the game
   string total_rewards_earned = 6;
-  // Reward earned by the individual in quantum value
+  // Rewards earned by the individual in quantum value
   string reward_earned_quantum = 7;
   // Total rewards earned by the individual in quantum value
   string total_rewards_earned_quantum = 8;

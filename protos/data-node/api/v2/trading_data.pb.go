@@ -24794,7 +24794,7 @@ type TeamGameEntity struct {
 	RewardEarned string `protobuf:"bytes,5,opt,name=reward_earned,json=rewardEarned,proto3" json:"reward_earned,omitempty"`
 	// Total rewards earned by the individual for the team
 	TotalRewardsEarned string `protobuf:"bytes,6,opt,name=total_rewards_earned,json=totalRewardsEarned,proto3" json:"total_rewards_earned,omitempty"`
-	// Reward earned by the team in quantum value
+	// Rewards earned by the team in quantum value
 	RewardEarnedQuantum string `protobuf:"bytes,7,opt,name=reward_earned_quantum,json=rewardEarnedQuantum,proto3" json:"reward_earned_quantum,omitempty"`
 	// Total rewards earned by the team in quantum value
 	TotalRewardsEarnedQuantum string `protobuf:"bytes,8,opt,name=total_rewards_earned_quantum,json=totalRewardsEarnedQuantum,proto3" json:"total_rewards_earned_quantum,omitempty"`
@@ -24966,7 +24966,7 @@ type IndividualGameEntity struct {
 	RewardEarned string `protobuf:"bytes,5,opt,name=reward_earned,json=rewardEarned,proto3" json:"reward_earned,omitempty"`
 	// Total rewards earned by the individual for the game
 	TotalRewardsEarned string `protobuf:"bytes,6,opt,name=total_rewards_earned,json=totalRewardsEarned,proto3" json:"total_rewards_earned,omitempty"`
-	// Reward earned by the individual in quantum value
+	// Rewards earned by the individual in quantum value
 	RewardEarnedQuantum string `protobuf:"bytes,7,opt,name=reward_earned_quantum,json=rewardEarnedQuantum,proto3" json:"reward_earned_quantum,omitempty"`
 	// Total rewards earned by the individual in quantum value
 	TotalRewardsEarnedQuantum string `protobuf:"bytes,8,opt,name=total_rewards_earned_quantum,json=totalRewardsEarnedQuantum,proto3" json:"total_rewards_earned_quantum,omitempty"`
