@@ -25,19 +25,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Offbook struct{}
-
-func (ob *Offbook) SubmitOrder(_ *types.Order, _, _ *num.Uint) []*types.Order {
-	return nil
-}
-func (ob *Offbook) NotifyFinished() {}
-
 func getTestSide(side types.Side) *OrderBookSide {
 	return &OrderBookSide{
-		log:     logging.NewTestLogger(),
-		levels:  []*PriceLevel{},
-		side:    side,
-		offbook: &Offbook{},
+		log:    logging.NewTestLogger(),
+		levels: []*PriceLevel{},
+		side:   side,
 	}
 }
 
