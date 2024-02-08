@@ -37,6 +37,11 @@ func isMigrationNeeded(ipfsDir string) (bool, error) {
 	return repoVersion < latestSupportedVersion(), nil
 }
 
+func isIpfsDirExisting(ipfsDir string) (bool, error) {
+
+	return false, nil
+}
+
 func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 	isMigrationNeeded, err := isMigrationNeeded(ipfsDir)
 	if err != nil {
