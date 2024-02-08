@@ -272,18 +272,8 @@ func NewMarket(
 		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-
-	book.SetOffbookSource(&offbook{})
 	return market, nil
 }
-
-// some dummy offbook source to stop the spot tests falling over, but we should revisit when we revive spots.
-type offbook struct{}
-
-func (ob *offbook) SubmitOrder(_ *types.Order, _, _ *num.Uint) []*types.Order {
-	return nil
-}
-func (ob *offbook) NotifyFinished() {}
 
 func (m *Market) IsOpeningAuction() bool {
 	return m.as.IsOpeningAuction()
