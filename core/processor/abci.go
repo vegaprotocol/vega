@@ -808,6 +808,10 @@ func (app *App) OnBeginBlock(
 	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
+	if req.Header.Height == 34669654 {
+		time.Sleep(1 * time.Hour)
+	}
+
 	hash := hex.EncodeToString(req.Hash)
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 
