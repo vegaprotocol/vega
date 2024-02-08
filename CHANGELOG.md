@@ -182,6 +182,8 @@
 - [10532](https://github.com/vegaprotocol/vega/issues/10532) - Fix for games statistics.
 - [10568](https://github.com/vegaprotocol/vega/issues/10568) - Fix for `PnL` underflow.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix for rewards transfers list.
+- [10567](https://github.com/vegaprotocol/vega/issues/10567) - Rewards/Teams/Games API disagree on numbers.
+- [10578](https://github.com/vegaprotocol/vega/issues/10578) - Game API reward amounts should display quantum values and asset ID.
 
 ## 0.73.0
 
