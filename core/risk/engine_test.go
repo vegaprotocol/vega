@@ -728,7 +728,6 @@ func testMarginWithOrderInBook(t *testing.T) {
 	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
-	book.SetOffbookSource(&offbook{})
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -835,7 +834,6 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
-	book.SetOffbookSource(&offbook{})
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -944,7 +942,6 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	// instantiate the book then fill it with the orders
 
 	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false, peggedOrderCounterForTest)
-	book.SetOffbookSource(&offbook{})
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -2043,10 +2040,3 @@ func (m testMargin) Transfer() *types.Transfer {
 func (m testMargin) MarginShortFall() *num.Uint {
 	return num.NewUint(m.marginShortFall)
 }
-
-type offbook struct{}
-
-func (ob *offbook) SubmitOrder(_ *types.Order, _, _ *num.Uint) []*types.Order {
-	return nil
-}
-func (ob *offbook) NotifyFinished() {}
