@@ -651,8 +651,8 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 		margins := riskevt.MarginLevels()
 		require.Equal(t, tc.expectedMargin, margins.MaintenanceMargin.String())
 
-		// marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction)
-		// require.Equal(t, margins.MaintenanceMargin.Float64(), marginRecalcualted.RoundUp(0).InexactFloat64())
+		marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction)
+		require.Equal(t, margins.MaintenanceMargin.Float64(), marginRecalcualted.RoundUp(0).InexactFloat64())
 	}
 }
 
@@ -1350,26 +1350,26 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		funding_payment_to_date float64
 		expectError             bool
 	}{
-		// {
-		// 	markPrice:               123.4,
-		// 	positionFactor:          1,
-		// 	positionSize:            40000,
-		// 	linearSlippageFactor:    0,
-		// 	quadraticSlippageFactor: 0,
-		// 	riskFactorLong:          0.1,
-		// 	riskFactorShort:         0.11,
-		// 	collateralFactor:        1.7,
-		// },
-		// {
-		// 	markPrice:               1234.5,
-		// 	positionFactor:          10,
-		// 	positionSize:            40000,
-		// 	linearSlippageFactor:    0.5,
-		// 	quadraticSlippageFactor: 0,
-		// 	riskFactorLong:          0.1,
-		// 	riskFactorShort:         0.11,
-		// 	collateralFactor:        1.1,
-		// },
+		{
+			markPrice:               123.4,
+			positionFactor:          1,
+			positionSize:            40000,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        1.7,
+		},
+		{
+			markPrice:               1234.5,
+			positionFactor:          10,
+			positionSize:            40000,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        1.1,
+		},
 		{
 			markPrice:               1234.5,
 			positionFactor:          100,
