@@ -34,7 +34,8 @@ import (
 
 type Rewards struct {
 	*ConnectionSource
-	runningTotals map[entities.GameID]map[entities.PartyID]decimal.Decimal
+	runningTotals        map[entities.GameID]map[entities.PartyID]decimal.Decimal
+	runningTotalsQuantum map[entities.GameID]map[entities.PartyID]decimal.Decimal
 }
 
 var rewardsOrdering = TableOrdering{
@@ -46,6 +47,7 @@ func NewRewards(ctx context.Context, connectionSource *ConnectionSource) *Reward
 		ConnectionSource: connectionSource,
 	}
 	r.runningTotals = make(map[entities.GameID]map[entities.PartyID]decimal.Decimal)
+	r.runningTotalsQuantum = make(map[entities.GameID]map[entities.PartyID]decimal.Decimal)
 	r.fetchRunningTotals(ctx)
 	return r
 }
@@ -61,7 +63,11 @@ func (rs *Rewards) fetchRunningTotals(ctx context.Context) {
 		if _, ok := rs.runningTotals[total.GameID]; !ok {
 			rs.runningTotals[total.GameID] = make(map[entities.PartyID]decimal.Decimal)
 		}
+		if _, ok := rs.runningTotalsQuantum[total.GameID]; !ok {
+			rs.runningTotalsQuantum[total.GameID] = make(map[entities.PartyID]decimal.Decimal)
+		}
 		rs.runningTotals[total.GameID][total.PartyID] = total.TotalRewards
+		rs.runningTotalsQuantum[total.GameID][total.PartyID] = total.TotalRewardsQuantum
 	}
 }
 
@@ -94,8 +100,13 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			rs.runningTotals[gID] = make(map[entities.PartyID]decimal.Decimal)
 			rs.runningTotals[gID][r.PartyID] = num.DecimalZero()
 		}
+		if _, ok := rs.runningTotalsQuantum[gID]; !ok {
+			rs.runningTotalsQuantum[gID] = make(map[entities.PartyID]decimal.Decimal)
+			rs.runningTotalsQuantum[gID][r.PartyID] = num.DecimalZero()
+		}
 
-		rs.runningTotals[gID][r.PartyID] = rs.runningTotals[gID][r.PartyID].Add(r.QuantumAmount)
+		rs.runningTotals[gID][r.PartyID] = rs.runningTotals[gID][r.PartyID].Add(r.Amount)
+		rs.runningTotalsQuantum[gID][r.PartyID] = rs.runningTotalsQuantum[gID][r.PartyID].Add(r.QuantumAmount)
 
 		defer metrics.StartSQLQuery("GameRewardTotals", "Add")()
 		_, err = rs.Connection.Exec(ctx, `INSERT INTO game_reward_totals(
@@ -105,15 +116,17 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			market_id,
 			epoch_id,
             team_id,
-			total_rewards
-		) VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+			total_rewards,
+			total_rewards_quantum
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
 			r.GameID,
 			r.PartyID,
 			r.AssetID,
 			r.MarketID,
 			r.EpochID,
 			entities.TeamID(""),
-			rs.runningTotals[gID][r.PartyID])
+			rs.runningTotals[gID][r.PartyID],
+			rs.runningTotalsQuantum[gID][r.PartyID])
 	}
 	return err
 }

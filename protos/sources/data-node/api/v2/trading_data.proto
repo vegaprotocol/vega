@@ -4638,6 +4638,8 @@ message Game {
     // Individual entities that are participating in the game
     IndividualGameEntities individual = 5;
   }
+  // ID of the asset rewarded for involvement in the game.
+  string reward_asset_id = 6;
 }
 
 // List of teams that are participating in a game
@@ -4666,6 +4668,10 @@ message TeamGameEntity {
   string reward_earned = 5;
   // Total rewards earned by the individual for the team
   string total_rewards_earned = 6;
+  // Rewards earned by the team in quantum value
+  string reward_earned_quantum = 7;
+  // Total rewards earned by the team in quantum value
+  string total_rewards_earned_quantum = 8;
 }
 
 // Breakdown of a team's participation in a game.
@@ -4692,6 +4698,10 @@ message IndividualGameEntity {
   string reward_earned = 5;
   // Total rewards earned by the individual for the game
   string total_rewards_earned = 6;
+  // Rewards earned by the individual in quantum value
+  string reward_earned_quantum = 7;
+  // Total rewards earned by the individual in quantum value
+  string total_rewards_earned_quantum = 8;
 }
 
 // Request to retrieve party margin modes.

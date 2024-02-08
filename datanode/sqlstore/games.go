@@ -48,27 +48,29 @@ func NewGames(connectionSource *ConnectionSource) *Games {
 }
 
 type GameReward struct {
-	PartyID            entities.PartyID
-	AssetID            entities.AssetID
-	MarketID           entities.MarketID
-	EpochID            int64
-	Amount             decimal.Decimal
-	QuantumAmount      decimal.Decimal
-	PercentOfTotal     float64
-	RewardType         string
-	Timestamp          time.Time
-	TxHash             entities.TxHash
-	VegaTime           time.Time
-	SeqNum             uint64
-	LockedUntilEpochID int64
-	GameID             []byte
-	DispatchStrategy   vega.DispatchStrategy
-	TeamID             entities.TeamID
-	MemberRank         *int64
-	TeamRank           *int64
-	TotalRewards       num.Decimal
-	TeamTotalRewards   *num.Decimal
-	EntityScope        string
+	PartyID                 entities.PartyID
+	AssetID                 entities.AssetID
+	MarketID                entities.MarketID
+	EpochID                 int64
+	Amount                  decimal.Decimal
+	QuantumAmount           decimal.Decimal
+	PercentOfTotal          float64
+	RewardType              string
+	Timestamp               time.Time
+	TxHash                  entities.TxHash
+	VegaTime                time.Time
+	SeqNum                  uint64
+	LockedUntilEpochID      int64
+	GameID                  []byte
+	DispatchStrategy        vega.DispatchStrategy
+	TeamID                  entities.TeamID
+	MemberRank              *int64
+	TeamRank                *int64
+	TotalRewards            num.Decimal
+	TotalRewardsQuantum     num.Decimal
+	TeamTotalRewards        *num.Decimal
+	TeamTotalRewardsQuantum *num.Decimal
+	EntityScope             string
 }
 
 func (g *Games) ListGames(ctx context.Context, gameID *string, entityScope *vega.EntityScope, epochFrom, epochTo *uint64,
@@ -227,10 +229,11 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 			}
 
 			game = entities.Game{
-				ID:           currentGameID,
-				Epoch:        uint64(currentEpochID),
-				Participants: participants,
-				Entities:     []entities.GameEntity{},
+				ID:            currentGameID,
+				Epoch:         uint64(currentEpochID),
+				Participants:  participants,
+				Entities:      []entities.GameEntity{},
+				RewardAssetID: rewards[i].AssetID,
 			}
 
 			lastGameID = currentGameID
@@ -241,6 +244,8 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 
 		rewardEarned, _ := num.UintFromDecimal(rewards[i].Amount)
 		totalRewardsEarned, _ := num.UintFromDecimal(rewards[i].TotalRewards)
+		rewardEarnedQuantum, _ := num.UintFromDecimal(rewards[i].QuantumAmount)
+		totalRewardsEarnedQuantum, _ := num.UintFromDecimal(rewards[i].TotalRewardsQuantum)
 
 		var rank uint64
 		if rewards[i].MemberRank != nil {
@@ -248,12 +253,14 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 		}
 
 		individual := entities.IndividualGameEntity{
-			Individual:         rewards[i].PartyID.String(),
-			Rank:               rank,
-			Volume:             num.DecimalZero(),
-			RewardMetric:       rewards[i].DispatchStrategy.Metric,
-			RewardEarned:       rewardEarned,
-			TotalRewardsEarned: totalRewardsEarned,
+			Individual:                rewards[i].PartyID.String(),
+			Rank:                      rank,
+			Volume:                    num.DecimalZero(),
+			RewardMetric:              rewards[i].DispatchStrategy.Metric,
+			RewardEarned:              rewardEarned,
+			TotalRewardsEarned:        totalRewardsEarned,
+			RewardEarnedQuantum:       rewardEarnedQuantum,
+			TotalRewardsEarnedQuantum: totalRewardsEarnedQuantum,
 		}
 
 		if rewards[i].TeamID != "" {
@@ -296,6 +303,8 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 				teamVolume := num.DecimalZero()
 				teamRewardEarned := num.NewUint(0)
 				teamTotalRewardsEarned := num.NewUint(0)
+				teamRewardEarnedQuantum := num.NewUint(0)
+				teamTotalRewardsEarnedQuantum := num.NewUint(0)
 				rewardMetric := vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED
 				for _, individual := range individuals {
 					if rewardMetric == vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED {
@@ -304,14 +313,18 @@ func parseGameRewards(rewards []GameReward) ([]entities.Game, error) {
 					teamVolume = teamVolume.Add(individual.Volume)
 					teamRewardEarned = teamRewardEarned.Add(teamRewardEarned, individual.RewardEarned)
 					teamTotalRewardsEarned = teamTotalRewardsEarned.Add(teamTotalRewardsEarned, individual.TotalRewardsEarned)
+					teamRewardEarnedQuantum = teamRewardEarnedQuantum.Add(teamRewardEarnedQuantum, individual.RewardEarnedQuantum)
+					teamTotalRewardsEarnedQuantum = teamTotalRewardsEarnedQuantum.Add(teamTotalRewardsEarnedQuantum, individual.TotalRewardsEarnedQuantum)
 				}
 				game.Entities = append(game.Entities, &entities.TeamGameEntity{
-					Team:               team,
-					Rank:               teamRanks[key][teamID],
-					Volume:             teamVolume,
-					RewardMetric:       rewardMetric,
-					RewardEarned:       teamRewardEarned,
-					TotalRewardsEarned: teamTotalRewardsEarned,
+					Team:                      team,
+					Rank:                      teamRanks[key][teamID],
+					Volume:                    teamVolume,
+					RewardMetric:              rewardMetric,
+					RewardEarned:              teamRewardEarned,
+					TotalRewardsEarned:        teamTotalRewardsEarned,
+					RewardEarnedQuantum:       teamRewardEarnedQuantum,
+					TotalRewardsEarnedQuantum: teamTotalRewardsEarnedQuantum,
 				})
 			}
 			sort.Slice(game.Entities, func(i, j int) bool {

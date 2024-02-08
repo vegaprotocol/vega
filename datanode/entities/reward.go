@@ -48,13 +48,14 @@ type Reward struct {
 }
 
 type RewardTotals struct {
-	GameID       GameID
-	PartyID      PartyID
-	AssetID      AssetID
-	MarketID     MarketID
-	EpochID      int64
-	TeamID       TeamID
-	TotalRewards decimal.Decimal
+	GameID              GameID
+	PartyID             PartyID
+	AssetID             AssetID
+	MarketID            MarketID
+	EpochID             int64
+	TeamID              TeamID
+	TotalRewards        decimal.Decimal
+	TotalRewardsQuantum decimal.Decimal
 }
 
 func (r Reward) String() string {

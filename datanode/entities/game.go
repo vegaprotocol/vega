@@ -29,10 +29,11 @@ type _Game struct{}
 type GameID = ID[_Game]
 
 type Game struct {
-	ID           GameID
-	Epoch        uint64
-	Participants uint64
-	Entities     []GameEntity
+	ID            GameID
+	Epoch         uint64
+	Participants  uint64
+	Entities      []GameEntity
+	RewardAssetID AssetID
 }
 
 func (g Game) Cursor() *Cursor {
@@ -91,54 +92,63 @@ func (t TeamGameParticipation) ToProto() *v2.TeamGameParticipation {
 }
 
 type TeamGameEntity struct {
-	Team               TeamGameParticipation
-	Rank               uint64
-	Volume             num.Decimal
-	RewardMetric       vega.DispatchMetric
-	RewardEarned       *num.Uint
-	TotalRewardsEarned *num.Uint
+	Team                      TeamGameParticipation
+	Rank                      uint64
+	Volume                    num.Decimal
+	RewardMetric              vega.DispatchMetric
+	RewardEarned              *num.Uint
+	RewardEarnedQuantum       *num.Uint
+	TotalRewardsEarned        *num.Uint
+	TotalRewardsEarnedQuantum *num.Uint
 }
 
 func (*TeamGameEntity) IsGameEntity() {}
 func (t *TeamGameEntity) ToProto() *v2.TeamGameEntity {
 	return &v2.TeamGameEntity{
-		Team:               t.Team.ToProto(),
-		Rank:               t.Rank,
-		Volume:             t.Volume.String(),
-		RewardMetric:       t.RewardMetric,
-		RewardEarned:       t.RewardEarned.String(),
-		TotalRewardsEarned: t.TotalRewardsEarned.String(),
+		Team:                      t.Team.ToProto(),
+		Rank:                      t.Rank,
+		Volume:                    t.Volume.String(),
+		RewardMetric:              t.RewardMetric,
+		RewardEarned:              t.RewardEarned.String(),
+		TotalRewardsEarned:        t.TotalRewardsEarned.String(),
+		RewardEarnedQuantum:       t.RewardEarnedQuantum.String(),
+		TotalRewardsEarnedQuantum: t.TotalRewardsEarnedQuantum.String(),
 	}
 }
 
 type IndividualGameEntity struct {
-	Individual         string
-	Rank               uint64
-	Volume             num.Decimal
-	RewardMetric       vega.DispatchMetric
-	RewardEarned       *num.Uint
-	TotalRewardsEarned *num.Uint
+	Individual                string
+	Rank                      uint64
+	Volume                    num.Decimal
+	RewardMetric              vega.DispatchMetric
+	RewardEarned              *num.Uint
+	RewardEarnedQuantum       *num.Uint
+	TotalRewardsEarned        *num.Uint
+	TotalRewardsEarnedQuantum *num.Uint
 }
 
 func (*IndividualGameEntity) IsGameEntity() {}
 
 func (i *IndividualGameEntity) ToProto() *v2.IndividualGameEntity {
 	return &v2.IndividualGameEntity{
-		Individual:         i.Individual,
-		Rank:               i.Rank,
-		Volume:             i.Volume.String(),
-		RewardMetric:       i.RewardMetric,
-		RewardEarned:       i.RewardEarned.String(),
-		TotalRewardsEarned: i.TotalRewardsEarned.String(),
+		Individual:                i.Individual,
+		Rank:                      i.Rank,
+		Volume:                    i.Volume.String(),
+		RewardMetric:              i.RewardMetric,
+		RewardEarned:              i.RewardEarned.String(),
+		TotalRewardsEarned:        i.TotalRewardsEarned.String(),
+		RewardEarnedQuantum:       i.RewardEarnedQuantum.String(),
+		TotalRewardsEarnedQuantum: i.TotalRewardsEarnedQuantum.String(),
 	}
 }
 
 func (g Game) ToProto() *v2.Game {
 	gg := &v2.Game{
-		Id:           g.ID.String(),
-		Epoch:        g.Epoch,
-		Participants: g.Participants,
-		Entities:     nil,
+		Id:            g.ID.String(),
+		RewardAssetId: g.RewardAssetID.String(),
+		Epoch:         g.Epoch,
+		Participants:  g.Participants,
+		Entities:      nil,
 	}
 	teamEntities := make([]*v2.TeamGameEntity, 0)
 	individualEntities := make([]*v2.IndividualGameEntity, 0)

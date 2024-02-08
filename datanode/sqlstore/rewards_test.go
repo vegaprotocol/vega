@@ -944,38 +944,41 @@ func TestRewardsGameTotals(t *testing.T) {
 	// populate the game reward totals with some test data
 	existingTotals := []entities.RewardTotals{
 		{
-			GameID:       "deadbeef01",
-			PartyID:      "cafedaad01",
-			AssetID:      "deadbaad01",
-			MarketID:     "beefcafe01",
-			EpochID:      1,
-			TeamID:       "deadd00d01",
-			TotalRewards: decimal.NewFromFloat(1000),
+			GameID:              "deadbeef01",
+			PartyID:             "cafedaad01",
+			AssetID:             "deadbaad01",
+			MarketID:            "beefcafe01",
+			EpochID:             1,
+			TeamID:              "deadd00d01",
+			TotalRewards:        decimal.NewFromFloat(1000),
+			TotalRewardsQuantum: decimal.NewFromFloat(1000),
 		},
 		{
-			GameID:       "deadbeef02",
-			PartyID:      "cafedaad02",
-			AssetID:      "deadbaad02",
-			MarketID:     "beefcafe02",
-			EpochID:      1,
-			TeamID:       "deadd00d02",
-			TotalRewards: decimal.NewFromFloat(2000),
+			GameID:              "deadbeef02",
+			PartyID:             "cafedaad02",
+			AssetID:             "deadbaad02",
+			MarketID:            "beefcafe02",
+			EpochID:             1,
+			TeamID:              "deadd00d02",
+			TotalRewards:        decimal.NewFromFloat(2000),
+			TotalRewardsQuantum: decimal.NewFromFloat(2000),
 		},
 		{
-			GameID:       "deadbeef03",
-			PartyID:      "cafedaad03",
-			AssetID:      "deadbaad03",
-			MarketID:     "beefcafe03",
-			EpochID:      1,
-			TeamID:       "deadd00d03",
-			TotalRewards: decimal.NewFromFloat(3000),
+			GameID:              "deadbeef03",
+			PartyID:             "cafedaad03",
+			AssetID:             "deadbaad03",
+			MarketID:            "beefcafe03",
+			EpochID:             1,
+			TeamID:              "deadd00d03",
+			TotalRewards:        decimal.NewFromFloat(3000),
+			TotalRewardsQuantum: decimal.NewFromFloat(3000),
 		},
 	}
 	for _, total := range existingTotals {
 		_, err := connectionSource.Connection.Exec(ctx,
-			`INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards)
+			`INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards, total_rewards_quantum)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards, total.TotalRewardsQuantum)
 		require.NoError(t, err)
 	}
 
@@ -1125,6 +1128,7 @@ func TestRewardsGameTotals(t *testing.T) {
 			tc.game_id, tc.party_id, tc.epoch_id))
 		assert.Equal(t, 1, len(totals))
 		assert.True(t, tc.want.Equal(totals[0].TotalRewards), "totals don't match, got: %s, want: %s", totals[0].TotalRewards, tc.want)
+		assert.True(t, tc.want.Equal(totals[0].TotalRewardsQuantum), "totals don't match, got: %s, want: %s", totals[0].TotalRewardsQuantum, tc.want)
 	}
 }
 
