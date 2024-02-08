@@ -398,7 +398,7 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 // fakeUncross returns hypothetical trades if the order book side were to be uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idealPrice *num.Uint) ([]*types.Trade, error) {
-	defer s.offbook.NotifyFinished()
+	defer s.uncrossFinished()
 
 	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
 	fake := agg.Clone()
@@ -454,7 +454,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 		}
 
 		// reset the offbook source so we can then do it all again....
-		s.offbook.NotifyFinished()
+		s.uncrossFinished()
 	}
 
 	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
@@ -592,7 +592,17 @@ func (s *OrderBookSide) betweenLevels(idx int, first, last *num.Uint) (*num.Uint
 	return s.levels[idx].price, s.levels[idx-1].price
 }
 
+func (s *OrderBookSide) uncrossFinished() {
+	if s.offbook != nil {
+		s.offbook.NotifyFinished()
+	}
+}
+
 func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *num.Uint, fake bool) ([]*types.Trade, []*types.Order) {
+	if s.offbook == nil {
+		return nil, nil
+	}
+
 	// get the bounds between price levels for the given price level index
 	inner, outer := s.betweenLevels(idx, idealPrice, agg.Price)
 
@@ -616,7 +626,7 @@ func (s *OrderBookSide) uncrossOffbook(idx int, agg *types.Order, idealPrice *nu
 // uncross returns trades after order book side gets uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreticalBestTrade *num.Uint) ([]*types.Trade, []*types.Order, *num.Uint, error) {
-	defer s.offbook.NotifyFinished()
+	defer s.uncrossFinished()
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
@@ -678,7 +688,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 		}
 
 		// reset the offsource book so we can then do it all again....
-		s.offbook.NotifyFinished()
+		s.uncrossFinished()
 	}
 
 	var (
