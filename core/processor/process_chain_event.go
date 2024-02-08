@@ -113,21 +113,21 @@ func (app *App) processChainEvent(
 		switch pevt := c.Erc20Multisig.Action.(type) {
 		case *vgproto.ERC20MultiSigEvent_SignerAdded:
 			evt, err := types.SignerEventFromSignerAddedProto(
-				pevt.SignerAdded, blockNumber, logIndex, ce.TxId, id)
+				pevt.SignerAdded, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
 			if err != nil {
 				return err
 			}
 			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
 		case *vgproto.ERC20MultiSigEvent_SignerRemoved:
 			evt, err := types.SignerEventFromSignerRemovedProto(
-				pevt.SignerRemoved, blockNumber, logIndex, ce.TxId, id)
+				pevt.SignerRemoved, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
 			if err != nil {
 				return err
 			}
 			return app.erc20MultiSigTopology.ProcessSignerEvent(evt)
 		case *vgproto.ERC20MultiSigEvent_ThresholdSet:
 			evt, err := types.SignerThresholdSetEventFromProto(
-				pevt.ThresholdSet, blockNumber, logIndex, ce.TxId, id)
+				pevt.ThresholdSet, blockNumber, logIndex, ce.TxId, id, c.Erc20Multisig.ChainId)
 			if err != nil {
 				return err
 			}

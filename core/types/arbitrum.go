@@ -129,7 +129,7 @@ func CheckArbitrumConfig(cfgProto *proto.ArbitrumConfig) error {
 func toArbitrumConfigProto(v interface{}) (*proto.ArbitrumConfig, error) {
 	cfg, ok := v.(*proto.ArbitrumConfig)
 	if !ok {
-		return nil, fmt.Errorf("type \"%s\" is not a ArbitrumConfig proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type %q is not a ArbitrumConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
 }

@@ -40,6 +40,7 @@ type SignerEvent struct {
 	Address   string
 	Nonce     string
 	BlockTime int64
+	ChainID   string
 
 	Kind SignerEventKind
 }
@@ -63,7 +64,7 @@ func (s SignerEvent) Hash() string {
 func SignerEventFromSignerAddedProto(
 	s *vgproto.ERC20SignerAdded,
 	blockNumber, logIndex uint64,
-	txhash, id string,
+	txhash, id, chainID string,
 ) (*SignerEvent, error) {
 	return &SignerEvent{
 		ID:          id,
@@ -74,6 +75,7 @@ func SignerEventFromSignerAddedProto(
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindAdded,
 		BlockTime:   s.BlockTime,
+		ChainID:     chainID,
 	}, nil
 }
 
@@ -89,6 +91,7 @@ func SignerEventFromEventProto(
 		Nonce:       event.Nonce,
 		Kind:        event.Type,
 		BlockTime:   event.BlockTime,
+		ChainID:     event.ChainId,
 	}
 }
 
@@ -102,12 +105,13 @@ func (s *SignerEvent) IntoProto() *eventspb.ERC20MultiSigSignerEvent {
 		TxHash:      s.TxHash,
 		BlockNumber: s.BlockNumber,
 		LogIndex:    s.LogIndex,
+		ChainId:     s.ChainID,
 	}
 }
 
 func (s *SignerEvent) String() string {
 	return fmt.Sprintf(
-		"blockNumber(%v) txHash(%s) ID(%s) address(%s) nonce(%s) blockTime(%v) kind(%s) ",
+		"blockNumber(%v) txHash(%s) ID(%s) address(%s) nonce(%s) blockTime(%v) kind(%s) chainID(%s)",
 		s.BlockNumber,
 		s.TxHash,
 		s.ID,
@@ -115,13 +119,14 @@ func (s *SignerEvent) String() string {
 		s.Nonce,
 		s.BlockTime,
 		s.Kind.String(),
+		s.ChainID,
 	)
 }
 
 func SignerEventFromSignerRemovedProto(
 	s *vgproto.ERC20SignerRemoved,
 	blockNumber, logIndex uint64,
-	txhash, id string,
+	txhash, id, chainID string,
 ) (*SignerEvent, error) {
 	return &SignerEvent{
 		ID:          id,
@@ -132,6 +137,7 @@ func SignerEventFromSignerRemovedProto(
 		Nonce:       s.Nonce,
 		Kind:        SignerEventKindRemoved,
 		BlockTime:   s.BlockTime,
+		ChainID:     chainID,
 	}, nil
 }
 
@@ -143,6 +149,7 @@ type SignerThresholdSetEvent struct {
 	Threshold uint32
 	Nonce     string
 	BlockTime int64
+	ChainID   string
 }
 
 func (s SignerThresholdSetEvent) Hash() string {
@@ -157,7 +164,7 @@ func (s SignerThresholdSetEvent) Hash() string {
 func SignerThresholdSetEventFromProto(
 	s *vgproto.ERC20ThresholdSet,
 	blockNumber, logIndex uint64,
-	txhash, id string,
+	txhash, id, chainID string,
 ) (*SignerThresholdSetEvent, error) {
 	return &SignerThresholdSetEvent{
 		ID:          id,
@@ -167,6 +174,7 @@ func SignerThresholdSetEventFromProto(
 		Threshold:   s.NewThreshold,
 		Nonce:       s.Nonce,
 		BlockTime:   s.BlockTime,
+		ChainID:     chainID,
 	}, nil
 }
 
@@ -181,6 +189,7 @@ func SignerThresholdSetEventFromEventProto(
 		Threshold:   event.NewThreshold,
 		Nonce:       event.Nonce,
 		BlockTime:   event.BlockTime,
+		ChainID:     event.ChainId,
 	}
 }
 
@@ -193,12 +202,13 @@ func (s *SignerThresholdSetEvent) IntoProto() *eventspb.ERC20MultiSigThresholdSe
 		TxHash:       s.TxHash,
 		BlockNumber:  s.BlockNumber,
 		LogIndex:     s.LogIndex,
+		ChainId:      s.ChainID,
 	}
 }
 
 func (s *SignerThresholdSetEvent) String() string {
 	return fmt.Sprintf(
-		"ID(%s) blockNumber(%v) logIndex(%v) txHash(%s) threshold(%v) nonce(%s) blockTime(%v)",
+		"ID(%s) blockNumber(%v) logIndex(%v) txHash(%s) threshold(%v) nonce(%s) blockTime(%v) chainID(%s)",
 		s.ID,
 		s.BlockNumber,
 		s.LogIndex,
@@ -206,5 +216,6 @@ func (s *SignerThresholdSetEvent) String() string {
 		s.Threshold,
 		s.Nonce,
 		s.BlockTime,
+		s.ChainID,
 	)
 }
