@@ -41,7 +41,7 @@ Feature: Spot order gets filled partially among three parties
     And "party2" should have general account balance of "0" for asset "BTC"
     And "party3" should have general account balance of "996500000" for asset "ETH"
 
-
+    # Force a partial fill to make sure the assets in the holding account are reduced (0080-SPOT-009)
     And the parties amend the following orders:
       | party  | reference    | price  | size delta | tif     |
       | party2 | party-order2 | 750000 | 0          | TIF_GTC |
@@ -56,6 +56,7 @@ Feature: Spot order gets filled partially among three parties
       | buyer  | price  | size | seller |
       | party1 | 750000 | 1    | party2 |
 
+    # holding account is reduced when the order is partially filled (0080-SPOT-013)
     Then "party1" should have holding account balance of "0" for asset "ETH"
     Then "party2" should have holding account balance of "4" for asset "BTC"
     Then "party3" should have holding account balance of "3500000" for asset "ETH"

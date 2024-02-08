@@ -1,6 +1,6 @@
 Feature:  Amend the price up above the account balance
 
-  Scenario: Amend the price up above the account balance
+  Scenario: Amend the price up above the account balance (0080-SPOT-012)
 
   Background:
     Given the fees configuration named "fees-config-1":

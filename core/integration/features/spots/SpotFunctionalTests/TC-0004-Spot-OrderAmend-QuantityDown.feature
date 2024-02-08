@@ -1,6 +1,6 @@
 Feature: Amend the quantity down for a spot order
 
-  Scenario: Amend the quantity down for a spot order
+  Scenario: Amend the quantity down for a spot order (0080-SPOT-015)
 
   Background:
     Given the fees configuration named "fees-config-1":
@@ -26,7 +26,9 @@ Feature: Amend the quantity down for a spot order
       | party1 | BTC/ETH   | buy  | 2      | 100   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
       | party2 | BTC/ETH   | sell | 2      | 100   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
     Then "party2" should have holding account balance of "2" for asset "BTC"
+    Then "party2" should have general account balance of "98" for asset "BTC"
     Then "party1" should have holding account balance of "200" for asset "ETH"
+    Then "party1" should have general account balance of "800" for asset "ETH"
 
     Then the orders should have the following states:
       | party  | market id | side | volume | remaining | price | status        |
@@ -42,6 +44,12 @@ Feature: Amend the quantity down for a spot order
       | party  | market id | side | volume | remaining | price | status        |
       | party1 | BTC/ETH   | buy  | 1      | 1         | 100   | STATUS_ACTIVE |
       | party2 | BTC/ETH   | sell | 1      | 1         | 100   | STATUS_ACTIVE |
+
+    # Funds should be moved from the holding accounts to general accounts when an order size is reduced (0080-SPOT-015)
+    Then "party2" should have holding account balance of "1" for asset "BTC"
+    Then "party2" should have general account balance of "99" for asset "BTC"
+    Then "party1" should have holding account balance of "100" for asset "ETH"
+    Then "party1" should have general account balance of "900" for asset "ETH"
 
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
