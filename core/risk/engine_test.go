@@ -1495,6 +1495,10 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 			require.True(t, liquidationPrice.IsZero(), fmt.Sprintf("Test case %v:", i+1))
 			require.True(t, collateralAfterLoss.IsNegative(), fmt.Sprintf("Test case %v:", i+1))
 		}
+
+		liquidationPriceIsolatedMode, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, true, num.DecimalOne())
+		require.NoError(t, err)
+		require.Equal(t, liquidationPrice, liquidationPrice, liquidationPriceIsolatedMode)
 	}
 }
 
