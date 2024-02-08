@@ -272,7 +272,6 @@ func NewMarket(
 		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
-
 	return market, nil
 }
 
