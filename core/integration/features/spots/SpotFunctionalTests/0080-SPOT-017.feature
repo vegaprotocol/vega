@@ -1,8 +1,7 @@
 Feature: Spot Markets
 
-  Scenario: When entering an auction, for any open "buy" orders, the network must transfer additional funds from the parties'
-            general_account to their respective holding_account to cover any potential fees resulting from the order trading
-            in the auction.(0080-SPOT-016).
+  Scenario: When going into auction a buy order requires any possible fees to be moved to the holding account in the case the order is matched.
+            If the party does not have sufficient funds in their general account to cover this transfer, the order should be cancelled (0080-SPOT-017).
 
   Background:
     Given the following network parameters are set:
@@ -30,7 +29,7 @@ Feature: Spot Markets
       | party  | asset | amount |
       | party1 | ETH   | 20000  |
       | party2 | BTC   | 100    |
-      | party3 | ETH   | 10000   |
+      | party3 | ETH   | 1000   |
       
     # place orders and generate trades
     And the parties place the following orders:
@@ -39,10 +38,18 @@ Feature: Spot Markets
       | party2 | BTC/ETH   | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
       | party3 | BTC/ETH   | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | bla-bla   |
 
+    And the orders should have the following status:
+      | party   | reference    | status        |
+      | party3  | bla-bla      | STATUS_ACTIVE |
+
     Then the opening auction period ends for market "BTC/ETH"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
     And the mark price should be "100" for the market "BTC/ETH"
     When the network moves ahead "1" blocks
+
+    And the orders should have the following status:
+      | party   | reference    | status        |
+      | party3  | bla-bla      | STATUS_ACTIVE |
 
     # Place an order outside the price range to trigger a price monitoring auction
     And the parties place the following orders:
@@ -52,7 +59,7 @@ Feature: Spot Markets
 
     # Check the account details for party3 while in continuous trading
     Then "party3" should have holding account balance of "1000" for asset "ETH"
-    Then "party3" should have general account balance of "9000" for asset "ETH"
+    Then "party3" should have general account balance of "0" for asset "ETH"
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
@@ -61,9 +68,12 @@ Feature: Spot Markets
     When the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "BTC/ETH"
 
-    # We are now in a monitoring auction, check that the accounts have been reflected to show the fee amount being budgeted for
-    Then "party3" should have holding account balance of "1001" for asset "ETH"
-    Then "party3" should have general account balance of "8999" for asset "ETH"
+    # We have moved into monitoring auction and need to transfer more funds to the holding account but we do not have enough
+    # so we have to cancel the order
+    And the orders should have the following status:
+      | party   | reference    | status           |
+      | party3  | bla-bla      | STATUS_CANCELLED |
+
 
 
 
