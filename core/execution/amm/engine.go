@@ -703,6 +703,14 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	return nil
 }
 
+func (e *Engine) GetAMMPools() map[string]common.AMMPool {
+	ret := make(map[string]common.AMMPool, len(e.pools))
+	for k, v := range e.pools {
+		ret[k] = v
+	}
+	return ret
+}
+
 func (e *Engine) add(p *Pool) {
 	e.pools[p.party] = p
 	e.poolsCpy = append(e.poolsCpy, p)

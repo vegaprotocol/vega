@@ -168,9 +168,11 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	// @TODO pass in AMM
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
 	)
 
 	// backward compatibility check for nil
@@ -250,18 +252,18 @@ func NewMarketFromSnapshot(
 		markPriceCalculator:           markPriceCalculator,
 	}
 
+	if em.Amm == nil {
+		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor)
+	} else {
+		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor)
+	}
+	market.liquidity.SetAMM(market.amm)
+
 	markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 
 	if em.InternalCompositePriceCalculator != nil {
 		market.internalCompositePriceCalculator = NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
 		market.internalCompositePriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
-	}
-
-	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
-	if em.Amm == nil {
-		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor)
-	} else {
-		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor)
 	}
 
 	book.SetOffbookSource(market.amm)
