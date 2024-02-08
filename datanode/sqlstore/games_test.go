@@ -415,11 +415,12 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 						rewards[gk] = append(rewards[gk], reward)
 						rewardEarned, _ := num.UintFromDecimal(amount)
 						individualEntity := entities.IndividualGameEntity{
-							Individual:   member.ID.String(),
-							Rank:         0,
-							Volume:       num.DecimalZero(),
-							RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
-							RewardEarned: rewardEarned,
+							Individual:          member.ID.String(),
+							Rank:                0,
+							Volume:              num.DecimalZero(),
+							RewardMetric:        vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+							RewardEarned:        rewardEarned,
+							RewardEarnedQuantum: rewardEarned,
 						}
 						teamRewards = teamRewards.Add(teamRewards, individualEntity.RewardEarned)
 						teamVolume = teamVolume.Add(individualEntity.Volume)
@@ -432,6 +433,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 						teamMemberTotalRewards[gk][team][member.ID.String()] = teamMemberTotalRewards[gk][team][member.ID.String()].
 							Add(teamMemberTotalRewards[gk][team][member.ID.String()], individualEntity.RewardEarned)
 						individualEntity.TotalRewardsEarned = teamMemberTotalRewards[gk][team][member.ID.String()]
+						individualEntity.TotalRewardsEarnedQuantum = teamMemberTotalRewards[gk][team][member.ID.String()]
 						memberEntities = append(memberEntities, &individualEntity)
 						participants++
 						seqNum++
@@ -449,10 +451,11 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 							TeamID:               entities.TeamID(team),
 							MembersParticipating: memberEntities,
 						},
-						Rank:         0,
-						Volume:       teamVolume,
-						RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
-						RewardEarned: teamRewards,
+						Rank:                0,
+						Volume:              teamVolume,
+						RewardMetric:        vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+						RewardEarned:        teamRewards,
+						RewardEarnedQuantum: teamRewards,
 					}
 					if teamTotalRewards[gk][team] == nil {
 						if teamTotalRewards[pk] == nil || teamTotalRewards[pk][team] == nil {
@@ -463,6 +466,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					}
 					teamTotalRewards[gk][team] = teamTotalRewards[gk][team].Add(teamTotalRewards[gk][team], teamRewards)
 					teamEntity.TotalRewardsEarned = teamTotalRewards[gk][team]
+					teamEntity.TotalRewardsEarnedQuantum = teamTotalRewards[gk][team]
 					teamEntities = append(teamEntities, &teamEntity)
 				}
 				// now let's order the team totals and set the ranks for each team
@@ -490,6 +494,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 				gameEntity := gameEntities[gk]
 				gameEntity.Participants = participants
 				gameEntity.Entities = teamEntities
+				gameEntity.RewardAssetID = asset.ID
 
 				gameEntities[gk] = gameEntity
 			} else {
@@ -508,11 +513,12 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					rewards[gk] = append(rewards[gk], reward)
 					rewardEarned, _ := num.UintFromDecimal(amount)
 					individualEntity := entities.IndividualGameEntity{
-						Individual:   individual.ID.String(),
-						Rank:         uint64(i + 1),
-						Volume:       num.DecimalZero(),
-						RewardMetric: vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
-						RewardEarned: rewardEarned,
+						Individual:          individual.ID.String(),
+						Rank:                uint64(i + 1),
+						Volume:              num.DecimalZero(),
+						RewardMetric:        vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID,
+						RewardEarned:        rewardEarned,
+						RewardEarnedQuantum: rewardEarned,
 					}
 					individualEntities = append(individualEntities, &individualEntity)
 					seqNum++
@@ -526,6 +532,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 					individualTotalRewards[gk][individual.ID.String()].
 						Add(individualTotalRewards[gk][individual.ID.String()], individualEntity.RewardEarned)
 					individualEntity.TotalRewardsEarned = individualTotalRewards[gk][individual.ID.String()]
+					individualEntity.TotalRewardsEarnedQuantum = individualTotalRewards[gk][individual.ID.String()]
 				}
 				individualRanking := rankEntity(individualTotalRewards[gk])
 				for _, ge := range individualEntities {
@@ -540,6 +547,7 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 				gameEntity := gameEntities[gk]
 				gameEntity.Participants = participants
 				gameEntity.Entities = individualEntities
+				gameEntity.RewardAssetID = asset.ID
 
 				gameEntities[gk] = gameEntity
 			}

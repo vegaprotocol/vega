@@ -429,6 +429,10 @@ type IndividualGameEntity struct {
 	RewardEarned string `json:"rewardEarned"`
 	// Total rewards earned by the individual during the game
 	TotalRewardsEarned string `json:"totalRewardsEarned"`
+	// The rewards earned by the individual during the epoch in quantum value
+	RewardEarnedQuantum string `json:"rewardEarnedQuantum"`
+	// Total rewards earned by the individual during the game in quantum value
+	TotalRewardsEarnedQuantum string `json:"totalRewardsEarnedQuantum"`
 }
 
 func (IndividualGameEntity) IsGameEntity() {}
@@ -813,6 +817,10 @@ type TeamGameEntity struct {
 	RewardEarned string `json:"rewardEarned"`
 	// Total rewards earned by the team for the game
 	TotalRewardsEarned string `json:"totalRewardsEarned"`
+	// Total rewards earned by the team during the epoch in quantum value
+	RewardEarnedQuantum string `json:"rewardEarnedQuantum"`
+	// Total rewards earned by the team for the game in quantum value
+	TotalRewardsEarnedQuantum string `json:"totalRewardsEarnedQuantum"`
 }
 
 func (TeamGameEntity) IsGameEntity() {}

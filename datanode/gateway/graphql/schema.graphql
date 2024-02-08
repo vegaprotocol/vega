@@ -7109,6 +7109,10 @@ type IndividualGameEntity {
   rewardEarned: String!
   "Total rewards earned by the individual during the game"
   totalRewardsEarned: String!
+  "The rewards earned by the individual during the epoch in quantum value"
+  rewardEarnedQuantum: String!
+  "Total rewards earned by the individual during the game in quantum value"
+  totalRewardsEarnedQuantum: String!
 }
 
 "Team participation information, i.e. the team ID and the metrics for each participating team member."
@@ -7133,6 +7137,10 @@ type TeamGameEntity {
   rewardEarned: String!
   "Total rewards earned by the team for the game"
   totalRewardsEarned: String!
+  "Total rewards earned by the team during the epoch in quantum value"
+  rewardEarnedQuantum: String!
+  "Total rewards earned by the team for the game in quantum value"
+  totalRewardsEarnedQuantum: String!
 }
 
 union GameEntity = TeamGameEntity | IndividualGameEntity
@@ -7147,6 +7155,8 @@ type Game {
   numberOfParticipants: Int!
   "Entities that were rewarded during the epoch."
   entities: [GameEntity!]!
+  "ID of asset in which the rewards were paid."
+  rewardAssetId: ID!
 }
 
 "Edge type containing the game metrics and cursor information returned by a GameConnection"
