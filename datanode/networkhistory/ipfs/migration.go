@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/ipfs/kubo/repo/fsrepo"
 	"github.com/ipfs/kubo/repo/fsrepo/migrations"
 )
@@ -36,13 +37,13 @@ func createFetcher(distPath string, ipfsDir string) migrations.Fetcher {
 		migrations.NewHttpFetcher(distPath, "", userAgent, 0))
 }
 
-// LatestSupportedVersion returns the latest version supported by the kubo library
+// LatestSupportedVersion returns the latest version supported by the kubo library.
 func latestSupportedVersion() int {
 	// TODO: Maybe We should hardcode it to be safe and control when the migration happens?
 	return fsrepo.RepoVersion
 }
 
-// IsMigrationNeeded check if migration of the IPFS repository is needed
+// IsMigrationNeeded check if migration of the IPFS repository is needed.
 func isMigrationNeeded(ipfsDir string) (bool, error) {
 	repoVersion, err := migrations.RepoVersion(ipfsDir)
 	if err != nil {
@@ -52,6 +53,13 @@ func isMigrationNeeded(ipfsDir string) (bool, error) {
 	return repoVersion < latestSupportedVersion(), nil
 }
 
+// MigrateIpfsStorageVersion migrates the IPFS store to the latest supported by the
+// library version.
+// High level overview:
+//  1. Check version of the local store,
+//  2. Check max supported version for the kubo library,
+//  3. Connect to local or remote IPFS node and download required migration binaries,
+//  4. Run downloaded binaries to migrate the file system.
 func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 	isMigrationNeeded, err := isMigrationNeeded(ipfsDir)
 	if err != nil {
