@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS teams_stats
   team_id              BYTEA             NOT NULL,
   party_id             BYTEA             NOT NULL,
   at_epoch             BIGINT            NOT NULL,
-  total_volume         NUMERIC(1000, 16) NOT NULL,
+  total_quantum_volume HUGEINT           NOT NULL,
   total_quantum_reward NUMERIC(1000, 16) NOT NULL,
   games_played         JSONB             NOT NULL,
   PRIMARY KEY (team_id, party_id, at_epoch)
@@ -20,8 +20,8 @@ CREATE OR REPLACE FUNCTION update_teams_stats()
 AS
 $$
 DECLARE
-  party_team_id      BYTEA;
-  additional_game_id JSONB;
+  party_team_id          BYTEA;
+  additional_game_id     JSONB;
 BEGIN
   -- Exclude any reward that is not associated to a game, as we only account for
   -- game rewards in teams.
@@ -51,7 +51,7 @@ BEGIN
   additional_game_id = JSONB_BUILD_OBJECT(new.game_id, TRUE);
 
   INSERT INTO
-    teams_stats (team_id, party_id, at_epoch, total_volume, total_quantum_reward, games_played)
+    teams_stats (team_id, party_id, at_epoch, total_quantum_volume, total_quantum_reward, games_played)
   VALUES
     (party_team_id, new.party_id, new.epoch_id, 0, new.quantum_amount, additional_game_id)
   ON CONFLICT (team_id, party_id, at_epoch) DO UPDATE

@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"math/big"
+	"slices"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -39,6 +40,7 @@ import (
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"golang.org/x/exp/maps"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource
@@ -113,6 +115,7 @@ type MarketActivityTracker interface {
 	GetMarketsWithEligibleProposer(asset string, markets []string, payoutAsset string, funder string) []*types.MarketContributionScore
 	MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string)
 	MarketTrackedForAsset(market, asset string) bool
+	TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint
 }
 
 type EthereumEventSource interface {
@@ -205,7 +208,6 @@ func New(
 	notary Notary,
 	broker broker.Interface,
 	top Topology,
-	epoch EpochService,
 	marketActivityTracker MarketActivityTracker,
 	bridgeView ERC20BridgeView,
 	ethEventSource EthereumEventSource,
@@ -288,6 +290,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.distributeRecurringTransfers(ctx, e.currentEpoch)
 		e.distributeRecurringGovernanceTransfers(ctx)
 		e.applyPendingFeeDiscountsUpdates(ctx)
+		e.sendTeamsStats(ctx, ep.Seq)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}
@@ -544,6 +547,43 @@ func (e *Engine) GetDispatchStrategy(hash string) *proto.DispatchStrategy {
 	}
 
 	return ds.ds
+}
+
+// sendTeamsStats sends the teams statistics, which only account for games.
+// This is located here not because this is where it should be, but because
+// we don't know where to put it, as we need to have access to the dispatch
+// strategy.
+func (e *Engine) sendTeamsStats(ctx context.Context, seq uint64) {
+	onlyTheseMarkets := map[string]interface{}{}
+	allMarketsForAssets := map[string]interface{}{}
+	for _, ds := range e.hashToStrategy {
+		if ds.ds.EntityScope == proto.EntityScope_ENTITY_SCOPE_TEAMS {
+			if len(ds.ds.Markets) != 0 {
+				// If there is no markets specified, then we need gather data from
+				// all markets tied to this asset.
+				allMarketsForAssets[ds.ds.AssetForMetric] = nil
+			} else {
+				for _, market := range ds.ds.Markets {
+					onlyTheseMarkets[market] = nil
+				}
+			}
+		}
+	}
+
+	if len(allMarketsForAssets) == 0 && len(onlyTheseMarkets) == 0 {
+		return
+	}
+
+	allMarketsForAssetsS := maps.Keys(allMarketsForAssets)
+	slices.Sort(allMarketsForAssetsS)
+	onlyTheseMarketsS := maps.Keys(onlyTheseMarkets)
+	slices.Sort(onlyTheseMarketsS)
+
+	teamsStats := e.marketActivityTracker.TeamStatsForMarkets(allMarketsForAssetsS, onlyTheseMarketsS)
+
+	if len(teamsStats) > 0 {
+		e.broker.Send(events.NewTeamsStatsUpdatedEvent(ctx, seq, teamsStats))
+	}
 }
 
 func getRefKey(ref snapshot.TxRef) (string, error) {

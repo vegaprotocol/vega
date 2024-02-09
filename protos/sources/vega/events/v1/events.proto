@@ -1081,6 +1081,28 @@ message PartyProfileUpdated {
   vega.PartyProfile updated_profile = 1;
 }
 
+// Stats for all teams.
+message TeamsStatsUpdated {
+  // Epoch at which the statistics are updated.
+  uint64 at_epoch = 1;
+  // All teams' stats.
+  repeated TeamStats stats = 2;
+}
+
+message TeamStats {
+  // The unique identifier of the team.
+  string team_id = 1;
+  // Statistics for each team member.
+  repeated TeamMemberStats members_stats = 2;
+}
+
+message TeamMemberStats {
+  // The party ID of the team member.
+  string party_id = 1;
+  // Team members' notional volume for the epoch.
+  string notional_volume = 2;
+}
+
 // Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
@@ -1291,6 +1313,9 @@ enum BusEventType {
   // Event indicating that a party updated their profile.
   BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
 
+  // Event indicating that teams' statistics have been updated.
+  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 87;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1472,6 +1497,8 @@ message BusEvent {
     PartyMarginModeUpdated party_margin_mode_updated = 183;
     // Event notifying of a party's profile update.
     PartyProfileUpdated party_profile_updated = 184;
+    // Event notifying of an update of teams' statistics.
+    TeamsStatsUpdated teams_stats_updated = 185;
 
     // Market tick events
     MarketEvent market = 1001;

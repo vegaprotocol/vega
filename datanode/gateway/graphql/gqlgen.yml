@@ -709,6 +709,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatistics
   QuantumRewardsPerEpoch:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.QuantumRewardsPerEpoch
+  QuantumVolumesPerEpoch:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.QuantumVolumesPerEpoch
   TeamStatisticsEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatisticsEdge
   TeamsStatisticsConnection:
