@@ -2277,6 +2277,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return nil, nil, m.unregisterAndReject(ctx, order, err)
 		}
 	}
+	passiveOrders := m.getPassiveOrdersCopy(order, trades)
 
 	// if an auction was trigger, and we are a pegged order
 	// or a liquidity order, let's return now.
@@ -2340,6 +2341,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*order), logging.Error(err))
 				}
+				m.matching.RollbackConfirmation(confirmation, passiveOrders)
 				_ = m.unregisterAndReject(
 					ctx, order, types.OrderErrorIsolatedMarginCheckFailed)
 				m.matching.RemoveOrder(order.ID)
@@ -2364,9 +2366,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	if fees != nil {
 		err = m.applyFees(ctx, order, fees)
 		if err != nil {
+			m.matching.RollbackConfirmation(confirmation, passiveOrders)
 			_ = m.unregisterAndReject(
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
+			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
 
@@ -3787,21 +3791,7 @@ func (m *Market) orderCancelReplace(
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
 	// get the orders in their current state
-	passiveOrders := make([]*types.Order, 0, len(trades))
-	checkBuy := newOrder.Side == types.SideSell
-	for _, t := range trades {
-		id := t.SellOrder
-		if checkBuy {
-			id = t.BuyOrder
-		}
-		o, _ := m.matching.GetOrderByID(id)
-		if o == nil {
-			// this shouldn't be possible
-			continue
-		}
-		// clone the order
-		passiveOrders = append(passiveOrders, o.Clone())
-	}
+	passiveOrders := m.getPassiveOrdersCopy(newOrder, trades)
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
@@ -3876,6 +3866,21 @@ func (m *Market) orderCancelReplace(
 	}
 
 	return conf, orders, nil
+}
+
+func (m *Market) getPassiveOrdersCopy(order *types.Order, trades []*types.Trade) []*types.Order {
+	ret := make([]*types.Order, 0, len(trades))
+	checkBuy := order.Side == types.SideSell
+	for _, t := range trades {
+		id := t.SellOrder
+		if checkBuy {
+			id = t.BuyOrder
+		}
+		if o, _ := m.matching.GetOrderByID(id); o != nil {
+			ret = append(ret, o.Clone())
+		}
+	}
+	return ret
 }
 
 func (m *Market) orderAmendInPlace(
