@@ -20,6 +20,8 @@ import (
 	"errors"
 	"strings"
 
+	vgversion "code.vegaprotocol.io/vega/version"
+
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -137,12 +139,18 @@ func WithTxHash(ctx context.Context, txHash string) context.Context {
 }
 
 type snapshotInfo struct {
-	version string
-	upgrade bool
+	version    string
+	newVersion string
+	upgrade    bool
 }
 
 func WithSnapshotInfo(ctx context.Context, version string, upgrade bool) context.Context {
-	return context.WithValue(ctx, snapshotKey, snapshotInfo{version: version, upgrade: upgrade})
+	current := strings.Split(strings.Split(vgversion.Get(), "-")[0], "+")[0]
+	return context.WithValue(ctx, snapshotKey, snapshotInfo{
+		version:    version,
+		newVersion: current,
+		upgrade:    upgrade,
+	})
 }
 
 // InProgressSnapshotRestore returns whether the data in the contexts tells us that a
@@ -168,4 +176,18 @@ func InProgressUpgradeFrom(ctx context.Context, from string) bool {
 		return false
 	}
 	return from == si.version && si.upgrade
+}
+
+// InProgressUpgradeTo returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot as part of an upgrade to a specific version.
+// This ignores suffixes (preview/rc/dev/commit hash) are ignored, only the semver part is checked.
+func InProgressUpgradeTo(ctx context.Context, to string) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	if si, ok := v.(snapshotInfo); ok && si.upgrade {
+		return to == si.newVersion
+	}
+	return false
 }

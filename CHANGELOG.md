@@ -117,6 +117,7 @@
 - [10563](https://github.com/vegaprotocol/vega/issues/10563) - Spam protection for create/update referral program.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
+- [10400](https://github.com/vegaprotocol/vega/issues/10400) - Add support for an `InProgressUpgradeTo` check instead of the `InProgressUpgradeFrom`.
 
 ### 🐛 Fixes
 

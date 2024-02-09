@@ -255,7 +255,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
@@ -265,7 +265,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			invalidVotes: votesAsMap(p.Invalid),
 		}
 
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
 				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
@@ -279,7 +279,7 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 				}
 			}
 		}
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 			if pp.Terms.IsNewMarket() {
 				pp.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
 			}
@@ -324,7 +324,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.BatchProposals)))
 	for _, bpp := range active.BatchProposals {
 		bpt := types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals)
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 			e.ensureChainIDSet(bpt.Proposals...)
 		}
 		bp := &batchProposal{
@@ -336,7 +336,7 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
 		for _, p := range bp.BatchProposal.Proposals {
-			if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+			if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 				if p.Terms.IsNewMarket() {
 					p.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
 				}
@@ -380,7 +380,7 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
 			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
