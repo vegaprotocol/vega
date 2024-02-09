@@ -594,8 +594,8 @@ func TestEstimatePosition(t *testing.T) {
 			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
 			MarginMode:                tc.marginMode,
 			MarginFactor:              &marginFactor,
-			IncludeCollateralIncreaseInAvailableCollateral: &exclude,
-			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+			IncludeRequiredPositionMarginInAvailableCollateral: &exclude,
+			ScaleLiquidationPriceToMarketDecimals:              &dontScale,
 		}
 		include := true
 		req2 := &v2.EstimatePositionRequest{
@@ -608,8 +608,8 @@ func TestEstimatePosition(t *testing.T) {
 			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
 			MarginMode:                tc.marginMode,
 			MarginFactor:              &marginFactor,
-			IncludeCollateralIncreaseInAvailableCollateral: &include,
-			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+			IncludeRequiredPositionMarginInAvailableCollateral: &include,
+			ScaleLiquidationPriceToMarketDecimals:              &dontScale,
 		}
 
 		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN

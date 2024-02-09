@@ -3914,7 +3914,7 @@ message EstimatePositionRequest {
   // Margin factor to be used along with isolated margin mode
   optional string margin_factor = 9;
   // Whether the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode.
-  optional bool include_collateral_increase_in_available_collateral = 10;
+  optional bool include_required_position_margin_in_available_collateral = 10;
   // Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
   optional bool scale_liquidation_price_to_market_decimals = 11;
 }

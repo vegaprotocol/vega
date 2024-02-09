@@ -3377,7 +3377,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		bMarginDelta = num.MaxD(num.DecimalZero(), bestInitial.Sub(combinedMargin))
 	}
 
-	if isolatedMarginMode && ptr.UnBox(req.IncludeCollateralIncreaseInAvailableCollateral) {
+	if isolatedMarginMode && ptr.UnBox(req.IncludeRequiredPositionMarginInAvailableCollateral) {
 		collateralAvailable = collateralAvailable.Add(posMarginDelta)
 	}
 
