@@ -226,7 +226,7 @@ func defaultNetParams() map[string]value {
 		SpamProtectionBalanceSnapshotFrequency:         NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
 		SpamProtectionReferralSetMinFunds:              NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
-		SpamProtectionMaxUpdatePartyProfile:            NewInt(gteI0).Mutable(true).MustUpdate("5"),
+		SpamProtectionMaxUpdatePartyProfile:            NewInt(gteI0).Mutable(true).MustUpdate("10"),
 		SpamProtectionUpdateProfileMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
 
 		// no validation for this initially as we configure the
@@ -237,7 +237,10 @@ func defaultNetParams() map[string]value {
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"collateral_bridge_contract\": { \"address\": \"0xXXX\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }}"),
-		BlockchainsEthereumL2Configs: NewJSON(&proto.EthereumL2Configs{}, types.CheckUntypedEthereumL2Configs).Mutable(true).MustUpdate(`{"configs": []}`),
+		BlockchainsEthereumL2Configs: NewJSON(&proto.EthereumL2Configs{}, types.CheckUntypedEthereumL2Configs).Mutable(true).
+			MustUpdate(
+				`{"configs":[{"network_id":"100","chain_id":"100","confirmations":3,"name":"Gnosis Chain"}, {"network_id":"42161","chain_id":"42161","confirmations":3,"name":"Arbitrum One"}]}`,
+			),
 
 		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 
@@ -264,8 +267,8 @@ func defaultNetParams() map[string]value {
 		TransferMinTransferQuantumMultiple:      NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:             NewInt(gteI0).Mutable(true).MustUpdate("20"),
 		TransferFeeMaxQuantumAmount:             NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
-		TransferFeeDiscountDecayFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.5"),
-		TransferFeeDiscountMinimumTrackedAmount: NewDecimal(gteD0).Mutable(true).MustUpdate("0.001"),
+		TransferFeeDiscountDecayFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.8"),
+		TransferFeeDiscountMinimumTrackedAmount: NewDecimal(gteD0).Mutable(true).MustUpdate("0.01"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
