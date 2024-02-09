@@ -16,7 +16,10 @@
 package teams
 
 import (
+	"strings"
+
 	"code.vegaprotocol.io/vega/core/types"
+
 	"golang.org/x/exp/slices"
 )
 
@@ -33,7 +36,7 @@ func (e *Engine) ListTeams() []types.Team {
 }
 
 func SortByTeamID(teamsToSort []types.Team) {
-	slices.SortStableFunc(teamsToSort, func(a, b types.Team) bool {
-		return a.ID < b.ID
+	slices.SortStableFunc(teamsToSort, func(a, b types.Team) int {
+		return strings.Compare(string(a.ID), string(b.ID))
 	})
 }

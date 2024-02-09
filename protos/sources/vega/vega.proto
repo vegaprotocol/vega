@@ -6,7 +6,40 @@ import "vega/markets.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+// Holds metadata associated to a party.
+message PartyProfile {
+  // Party ID associated to the profile.
+  string party_id = 1;
+  // Alias given to the party.
+  string alias = 2;
+  // Metadata to associate to a party, in a key/value format where the key
+  // describes the type of metadata in the value field.
+  repeated vega.Metadata metadata = 3;
+}
+
+// Generic structure holding a key/value pair.
+message Metadata {
+  // Key of the metadata.
+  string key = 1;
+  // Value of the metadata.
+  string value = 2;
+}
+
 message StopOrder {
+  message SizeOverrideValue {
+    // Scaling percentage of the current position’s size
+    string percentage = 1;
+  }
+
+  enum SizeOverrideSetting {
+    // Never valid
+    SIZE_OVERRIDE_SETTING_UNSPECIFIED = 0;
+    // No override, the size within the contained normal order submission will be used
+    SIZE_OVERRIDE_SETTING_NONE = 1;
+    // Use the total position of the trader
+    SIZE_OVERRIDE_SETTING_POSITION = 2;
+  }
+
   enum ExpiryStrategy {
     // Never valid
     EXPIRY_STRATEGY_UNSPECIFIED = 0;
@@ -57,6 +90,12 @@ message StopOrder {
     REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION = 5;
     // This stop order does not close the position
     REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION = 6;
+    // The percentage value for the linked stop order is invalid
+    REJECTION_REASON_STOP_ORDER_LINKED_PERCENTAGE_INVALID = 7;
+    // Stop orders are not allowed during the opening auction
+    REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION = 8;
+    // Stop OCO orders cannot have the same expiry timestamp
+    REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES = 9;
   }
 
   // ID of this stop order
@@ -84,6 +123,10 @@ message StopOrder {
   string market_id = 11;
   // An optional reason for why a stop order was rejected
   optional RejectionReason rejection_reason = 12;
+  // Size override setting
+  SizeOverrideSetting size_override_setting = 13;
+  // Size override value
+  optional SizeOverrideValue size_override_value = 14;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
@@ -122,12 +165,22 @@ enum Interval {
   INTERVAL_I5M = 300;
   // 15 minutes.
   INTERVAL_I15M = 900;
+  // 30 minutes.
+  INTERVAL_I30M = 1800;
   // 1 hour.
   INTERVAL_I1H = 3600;
+  // 4 hours.
+  INTERVAL_I4H = 14400;
   // 6 hours.
   INTERVAL_I6H = 21600;
+  // 8 hours.
+  INTERVAL_I8H = 28800;
+  // 12 hours.
+  INTERVAL_I12H = 43200;
   // 1 day.
   INTERVAL_I1D = 86400;
+  // 7 days.
+  INTERVAL_I7D = 604800;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
@@ -146,6 +199,11 @@ enum PositionStatus {
 message Party {
   // Unique ID for the party, typically represented by a public key.
   string id = 1;
+  // Alias given to the party.
+  string alias = 2;
+  // Metadata to associate to a party, in a key/value format where the key
+  // describes the type of metadata in the value field.
+  repeated vega.Metadata metadata = 3;
 }
 
 // Risk factors are used to calculate the current risk associated with orders trading on a given market
@@ -468,6 +526,10 @@ enum OrderError {
   ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE = 49;
   // Post order would trade
   ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION = 50;
+  // Isolated margin check failed
+  ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED = 51;
+  // In isolated margin pegged orders are rejected
+  ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE = 52;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -526,6 +588,9 @@ message Trade {
   uint64 buyer_auction_batch = 14;
   // Auction batch number that the sell side order was placed in.
   uint64 seller_auction_batch = 15;
+  // Price for the trade using asset decimals, as opposed to market decimals used
+  // in the price field. This is only used in trade events for position updates.
+  string asset_price = 16;
 }
 
 // Represents any fees paid by a party, resulting from a trade
@@ -848,6 +913,9 @@ enum AccountType {
   // Per asset account for pending fee referral reward payouts
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD = 28;
 
+  // Per asset market account for party in isolated margin mode
+  ACCOUNT_TYPE_ORDER_MARGIN = 29;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -961,6 +1029,14 @@ enum TransferType {
   TRANSFER_TYPE_FEE_REFERRER_REWARD_PAY = 39;
   // Fee referrer reward received into general account of the referrer.
   TRANSFER_TYPE_FEE_REFERRER_REWARD_DISTRIBUTE = 44;
+  // Funds transferred from general account to meet order margin requirement in isolated margin mode.
+  TRANSFER_TYPE_ORDER_MARGIN_LOW = 45;
+  // Excess order margin amount returned to general account.
+  TRANSFER_TYPE_ORDER_MARGIN_HIGH = 46;
+  // Transfer from order margin account to margin account due to increase of position.
+  TRANSFER_TYPE_ISOLATED_MARGIN_LOW = 47;
+  // Transfer from excess order margin account to general account.
+  TRANSFER_TYPE_ISOLATED_MARGIN_HIGH = 48;
 }
 
 // Represents a financial transfer within Vega
@@ -1101,6 +1177,8 @@ message LedgerEntry {
   string from_account_balance = 6;
   // Receiver account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string to_account_balance = 7;
+  // Transfer ID the ledger entry relates to.
+  optional string transfer_id = 8;
 }
 
 // Represents the balance for an account during a transfer
@@ -1136,6 +1214,12 @@ message MarginLevels {
   string asset = 7;
   // Timestamp in Unix nanoseconds for when the ledger entry was created.
   int64 timestamp = 8;
+  // Margin required to cover orders in isolated margin mode.
+  string order_margin = 9;
+  // Margin mode for the party, cross margin or isolated margin.
+  MarginMode margin_mode = 10;
+  // Margin factor, relevant only for isolated margin, 0 otherwise.
+  string margin_factor = 11;
 }
 
 // Represents market data specific to a perpetual market.
@@ -1148,6 +1232,20 @@ message PerpetualData {
   string internal_twap = 3;
   // Time-weighted-average the external data points for the in-progress funding period.
   string external_twap = 4;
+  // Funding period sequence number
+  uint64 seq_num = 5;
+  // Funding period start time
+  int64 start_time = 6;
+  // The internal composite price used for perpetual markets.
+  string internal_composite_price = 7;
+  // The next time the internal composite price is calculated for the perpetual market, in Unix nanoseconds.
+  int64 next_internal_composite_price_calc = 8;
+  // The method used for calculating the internal composite price, for perpetual markets only.
+  CompositePriceType internal_composite_price_type = 9;
+  // Last seen value of the settlement oracle.
+  string underlying_index_price = 10;
+  // State of the internal composite price.
+  CompositePriceState internal_composite_price_state = 11;
 }
 
 // Represents market data specific to a particular product type.
@@ -1231,6 +1329,26 @@ message MarketData {
   optional ProductData product_data = 31;
   // SLA performance for each liquidity provider.
   repeated LiquidityProviderSLA liquidity_provider_sla = 32;
+  // Time in Unix nanoseconds when the market will next submit a trade to reduce its position.
+  int64 next_network_closeout = 33;
+  // The method used for calculating the mark price.
+  CompositePriceType mark_price_type = 34;
+  // State of the internal composite price.
+  CompositePriceState mark_price_state = 35;
+}
+
+message CompositePriceSource {
+  // Source of the price.
+  string price_source = 1;
+  // Current value of the composite source price.
+  string price = 2;
+  // Timestamp in Unix nanoseconds when the price source was last updated.
+  int64 last_updated = 3;
+}
+
+// Underlying state of the composite price..
+message CompositePriceState {
+  repeated CompositePriceSource price_sources = 1;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
@@ -1391,6 +1509,25 @@ message LiquidityProvision {
   Status status = 11;
   // Reference shared between this liquidity provision and all its orders.
   string reference = 12;
+}
+
+message EthereumL2Config {
+  // Network ID of this Ethereum layer 2 network.
+  string network_id = 1;
+  // Chain ID of this Ethereum layer 2 network.
+  string chain_id = 2;
+  // Number of block confirmations to wait to consider an Ethereum transaction trusted.
+  // An Ethereum block is trusted when there are at least "n" blocks confirmed by the
+  // network, "n" being the number of `confirmations` required. If `confirmations` was set to `3`,
+  // and the current block to be forged, or mined, on the L2 is block 14, block
+  // 10 would be considered as trusted, but not block 11.
+  uint32 confirmations = 3;
+  // Display name of this network
+  string name = 4;
+}
+
+message EthereumL2Configs {
+  repeated EthereumL2Config configs = 1;
 }
 
 // Ethereum configuration details.
@@ -1623,6 +1760,14 @@ message Reward {
   string reward_type = 8;
   // The epoch when the reward is being released.
   uint64 locked_until_epoch = 9;
+  // Amount paid as a reward, expressed in asset's quantum unit.
+  string quantum_amount = 10;
+  // ID of the game the reward payment was made for if the payment was made for participation in a game.
+  optional string game_id = 11;
+  // ID of the team the party is a member of, if the party is a member of a participating team,
+  // and the reward payment was made for participation in a game.
+  // This field is currently only populated by the rewards API.
+  optional string team_id = 12;
 }
 
 // Details for rewards for a single asset
@@ -1770,4 +1915,13 @@ message ActivityStreakBenefitTier {
   string reward_multiplier = 2;
   // Vesting bonus applicable to this tier.
   string vesting_multiplier = 3;
+}
+
+enum MarginMode {
+  // Never valid.
+  MARGIN_MODE_UNSPECIFIED = 0;
+  // Cross margin mode - margin is dynamically acquired and released as a position is marked to market
+  MARGIN_MODE_CROSS_MARGIN = 1;
+  // Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
+  MARGIN_MODE_ISOLATED_MARGIN = 2;
 }

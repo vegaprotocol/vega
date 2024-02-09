@@ -13,45 +13,62 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
-
-	"github.com/georgysavva/scany/pgxscan"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 )
 
 type Rewards struct {
 	*ConnectionSource
+	runningTotals        map[entities.GameID]map[entities.PartyID]decimal.Decimal
+	runningTotalsQuantum map[entities.GameID]map[entities.PartyID]decimal.Decimal
 }
 
 var rewardsOrdering = TableOrdering{
 	ColumnOrdering{Name: "epoch_id", Sorting: ASC},
 }
 
-func NewRewards(connectionSource *ConnectionSource) *Rewards {
+func NewRewards(ctx context.Context, connectionSource *ConnectionSource) *Rewards {
 	r := &Rewards{
 		ConnectionSource: connectionSource,
 	}
+	r.runningTotals = make(map[entities.GameID]map[entities.PartyID]decimal.Decimal)
+	r.runningTotalsQuantum = make(map[entities.GameID]map[entities.PartyID]decimal.Decimal)
+	r.fetchRunningTotals(ctx)
 	return r
+}
+
+func (rs *Rewards) fetchRunningTotals(ctx context.Context) {
+	query := `SELECT * FROM current_game_reward_totals`
+	var totals []entities.RewardTotals
+	err := pgxscan.Select(ctx, rs.Connection, &totals, query)
+	if err != nil && !pgxscan.NotFound(err) {
+		panic(fmt.Errorf("could not retrieve game reward totals: %w", err))
+	}
+	for _, total := range totals {
+		if _, ok := rs.runningTotals[total.GameID]; !ok {
+			rs.runningTotals[total.GameID] = make(map[entities.PartyID]decimal.Decimal)
+		}
+		if _, ok := rs.runningTotalsQuantum[total.GameID]; !ok {
+			rs.runningTotalsQuantum[total.GameID] = make(map[entities.PartyID]decimal.Decimal)
+		}
+		rs.runningTotals[total.GameID][total.PartyID] = total.TotalRewards
+		rs.runningTotalsQuantum[total.GameID][total.PartyID] = total.TotalRewardsQuantum
+	}
 }
 
 func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
@@ -64,37 +81,97 @@ func (rs *Rewards) Add(ctx context.Context, r entities.Reward) error {
 			reward_type,
 			epoch_id,
 			amount,
+			quantum_amount,
 			percent_of_total,
 			timestamp,
 			tx_hash,
 			vega_time,
 			seq_num,
-			locked_until_epoch_id
+			locked_until_epoch_id,
+            game_id
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12);`,
-		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.PercentOfTotal, r.Timestamp, r.TxHash,
-		r.VegaTime, r.SeqNum, r.LockedUntilEpochID)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14);`,
+		r.PartyID, r.AssetID, r.MarketID, r.RewardType, r.EpochID, r.Amount, r.QuantumAmount, r.PercentOfTotal, r.Timestamp, r.TxHash,
+		r.VegaTime, r.SeqNum, r.LockedUntilEpochID, r.GameID)
+
+	if r.GameID != nil && *r.GameID != "" {
+		gID := *r.GameID
+		if _, ok := rs.runningTotals[gID]; !ok {
+			rs.runningTotals[gID] = make(map[entities.PartyID]decimal.Decimal)
+			rs.runningTotals[gID][r.PartyID] = num.DecimalZero()
+		}
+		if _, ok := rs.runningTotalsQuantum[gID]; !ok {
+			rs.runningTotalsQuantum[gID] = make(map[entities.PartyID]decimal.Decimal)
+			rs.runningTotalsQuantum[gID][r.PartyID] = num.DecimalZero()
+		}
+
+		rs.runningTotals[gID][r.PartyID] = rs.runningTotals[gID][r.PartyID].Add(r.Amount)
+		rs.runningTotalsQuantum[gID][r.PartyID] = rs.runningTotalsQuantum[gID][r.PartyID].Add(r.QuantumAmount)
+
+		defer metrics.StartSQLQuery("GameRewardTotals", "Add")()
+		_, err = rs.Connection.Exec(ctx, `INSERT INTO game_reward_totals(
+			game_id,
+			party_id,
+			asset_id,
+			market_id,
+			epoch_id,
+            team_id,
+			total_rewards,
+			total_rewards_quantum
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
+			r.GameID,
+			r.PartyID,
+			r.AssetID,
+			r.MarketID,
+			r.EpochID,
+			entities.TeamID(""),
+			rs.runningTotals[gID][r.PartyID],
+			rs.runningTotalsQuantum[gID][r.PartyID])
+	}
 	return err
+}
+
+// scany does not like deserializing byte arrays to strings so if an ID
+// needs to be nillable, we need to scan it into a temporary struct that will
+// define the ID field as a byte array and then parse the value accordingly.
+type scannedRewards struct {
+	PartyID            entities.PartyID
+	AssetID            entities.AssetID
+	MarketID           entities.MarketID
+	EpochID            int64
+	Amount             decimal.Decimal
+	QuantumAmount      decimal.Decimal
+	PercentOfTotal     float64
+	RewardType         string
+	Timestamp          time.Time
+	TxHash             entities.TxHash
+	VegaTime           time.Time
+	SeqNum             uint64
+	LockedUntilEpochID int64
+	GameID             []byte
+	TeamID             []byte
 }
 
 func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetAll")()
-	rewards := []entities.Reward{}
-	err := pgxscan.Select(ctx, rs.Connection, &rewards, `
-		SELECT * from rewards;`)
-	return rewards, err
+	scanned := []scannedRewards{}
+	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards;`)
+	if err != nil {
+		return nil, err
+	}
+	return parseScannedRewards(scanned), nil
 }
 
 func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error) {
 	defer metrics.StartSQLQuery("Rewards", "GetByTxHash")()
 
-	var rewards []entities.Reward
-	err := pgxscan.Select(ctx, rs.Connection, &rewards, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
+	scanned := []scannedRewards{}
+	err := pgxscan.Select(ctx, rs.Connection, &scanned, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
 	if err != nil {
 		return nil, err
 	}
 
-	return rewards, nil
+	return parseScannedRewards(scanned), nil
 }
 
 func (rs *Rewards) GetByCursor(ctx context.Context,
@@ -103,22 +180,30 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 	fromEpoch *uint64,
 	toEpoch *uint64,
 	pagination entities.CursorPagination,
+	teamIDHex, gameIDHex *string,
 ) ([]entities.Reward, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT * from rewards`
+	query := `
+	WITH cte_rewards AS (
+		SELECT r.*, grt.team_id
+		FROM rewards r
+		LEFT JOIN game_reward_totals grt ON r.game_id = grt.game_id AND r.party_id = grt.party_id and r.epoch_id = grt.epoch_id
+	)
+	SELECT * from cte_rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, fromEpoch, toEpoch)
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, teamIDHex, gameIDHex, fromEpoch, toEpoch)
 
 	query, args, err := PaginateQuery[entities.RewardCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	rewards := []entities.Reward{}
-	if err := pgxscan.Select(ctx, rs.Connection, &rewards, query, args...); err != nil {
+	scanned := []scannedRewards{}
+	if err := pgxscan.Select(ctx, rs.Connection, &scanned, query, args...); err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("querying rewards: %w", err)
 	}
 
+	rewards := parseScannedRewards(scanned)
 	rewards, pageInfo = entities.PageEntities[*v2.RewardEdge](rewards, pagination)
 	return rewards, pageInfo, nil
 }
@@ -126,9 +211,9 @@ func (rs *Rewards) GetByCursor(ctx context.Context,
 func (rs *Rewards) GetSummaries(ctx context.Context,
 	partyIDHex *string, assetIDHex *string,
 ) ([]entities.RewardSummary, error) {
-	query := `SELECT party_id, asset_id, sum(amount) as amount FROM rewards`
+	query := `SELECT party_id, asset_id, SUM(amount) AS amount FROM rewards`
 	args := []interface{}{}
-	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil)
+	query, args = addRewardWhereClause(query, args, partyIDHex, assetIDHex, nil, nil, nil, nil)
 	query = fmt.Sprintf("%s GROUP BY party_id, asset_id", query)
 
 	summaries := []entities.RewardSummary{}
@@ -146,7 +231,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 	pagination entities.CursorPagination,
 ) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
-	query := `SELECT epoch_id, asset_id, market_id, reward_type, sum(amount) as amount FROM rewards `
+	query := `SELECT epoch_id, asset_id, market_id, reward_type, SUM(amount) AS amount FROM rewards `
 	where, args, err := FilterRewardsQuery(filter)
 	if err != nil {
 		return nil, pageInfo, err
@@ -172,7 +257,7 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 
 // -------------------------------------------- Utility Methods
 
-func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
+func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDHex, teamIDHex, gameIDHex *string, fromEpoch, toEpoch *uint64) (string, []interface{}) {
 	predicates := []string{}
 
 	if partyIDHex != nil && *partyIDHex != "" {
@@ -183,6 +268,16 @@ func addRewardWhereClause(query string, args []interface{}, partyIDHex, assetIDH
 	if assetIDHex != nil && *assetIDHex != "" {
 		assetID := entities.AssetID(*assetIDHex)
 		predicates = append(predicates, fmt.Sprintf("asset_id = %s", nextBindVar(&args, assetID)))
+	}
+
+	if teamIDHex != nil && *teamIDHex != "" {
+		teamID := entities.TeamID(*teamIDHex)
+		predicates = append(predicates, fmt.Sprintf("team_id = %s", nextBindVar(&args, teamID)))
+	}
+
+	if gameIDHex != nil && *gameIDHex != "" {
+		gameID := entities.GameID(*gameIDHex)
+		predicates = append(predicates, fmt.Sprintf("game_id = %s", nextBindVar(&args, gameID)))
 	}
 
 	if fromEpoch != nil {
@@ -243,4 +338,42 @@ func FilterRewardsQuery(filter entities.RewardSummaryFilter) (string, []any, err
 		return "", nil, nil
 	}
 	return " WHERE " + strings.Join(conditions, " AND "), args, nil
+}
+
+func parseScannedRewards(scanned []scannedRewards) []entities.Reward {
+	rewards := make([]entities.Reward, len(scanned))
+	for i, s := range scanned {
+		var gID *entities.GameID
+		var teamID *entities.TeamID
+		if s.GameID != nil {
+			id := hex.EncodeToString(s.GameID)
+			if id != "" {
+				gID = ptr.From(entities.GameID(id))
+			}
+		}
+		if s.TeamID != nil {
+			id := hex.EncodeToString(s.TeamID)
+			if id != "" {
+				teamID = ptr.From(entities.TeamID(id))
+			}
+		}
+		rewards[i] = entities.Reward{
+			PartyID:            s.PartyID,
+			AssetID:            s.AssetID,
+			MarketID:           s.MarketID,
+			EpochID:            s.EpochID,
+			Amount:             s.Amount,
+			QuantumAmount:      s.QuantumAmount,
+			PercentOfTotal:     s.PercentOfTotal,
+			RewardType:         s.RewardType,
+			Timestamp:          s.Timestamp,
+			TxHash:             s.TxHash,
+			VegaTime:           s.VegaTime,
+			SeqNum:             s.SeqNum,
+			LockedUntilEpochID: s.LockedUntilEpochID,
+			GameID:             gID,
+			TeamID:             teamID,
+		}
+	}
+	return rewards
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -31,6 +31,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,9 +64,6 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a new market without liquidity monitoring fails", testNewMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a new market with liquidity monitoring succeeds", testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
-	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
-	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
-	t.Run("Submitting a liquidity monitoring change without triggering ratio parameter fails", testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails)
 	t.Run("Submitting a liquidity monitoring change without target stake parameters fails", testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails)
 	t.Run("Submitting a liquidity monitoring change with target stake parameters succeeds", testLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds)
 	t.Run("Submitting a liquidity monitoring change with non-positive time window fails", testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails)
@@ -148,6 +146,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with external data sources for settlement and termination with no signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails)
 	t.Run("Submitting a future market with internal time trigger termination data fails", testFutureMarketSubmissionWithInternalTimeTriggerTerminationDataFails)
 	t.Run("Submitting a future market with internal time trigger settlement data fails", testFutureMarketSubmissionWithInternalTimeTriggerSettlementDataFails)
+	t.Run("Submitting a future market with valid liquidation strategy succeeds", testFutureMarketSubmissionWithValidLiquidationStrategySucceeds)
+	t.Run("Submitting a future market with invalid liquidation strategy fails", testFutureMarketSubmissionWithInvalidLiquidationStrategyFails)
 
 	t.Run("Submitting a perps market change without perps fails", testNewPerpsMarketChangeSubmissionWithoutPerpsFails)
 	t.Run("Submitting a perps market change with perps succeeds", testNewPerpsMarketChangeSubmissionWithPerpsSucceeds)
@@ -172,9 +172,11 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a perps market change with filter with condition value succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
 	t.Run("Submitting a perps market change without oracle spec bindings fails", testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails)
 	t.Run("Submitting a perps market change with oracle spec binding succeeds", testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds)
+	t.Run("Submitting a perps market with funding rate modifiers", testNewPerpsMarketWithFundingRateModifiers)
 	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
 	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
+	t.Run("Submitting a perps market change with intenal composite price config", testNewPerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
 	t.Run("Submitting a new market with invalid SLA price range fails", testNewMarketChangeSubmissionWithInvalidLpRangeFails)
 	t.Run("Submitting a new market with valid SLA price range succeeds", testNewMarketChangeSubmissionWithValidLpRangeSucceeds)
 	t.Run("Submitting a new market with invalid min time fraction fails", testNewMarketChangeSubmissionWithInvalidMinTimeFractionFails)
@@ -183,6 +185,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with valid competition factor succeeds", testNewMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a new market with invalid hysteresis epochs fails", testNewMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new market with valid hysteresis epochs succeeds", testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
+	t.Run("Submitting a new market with invalid liquidity fee settings", testLiquidityFeeSettings)
+	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -372,19 +376,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) {
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "banana",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
@@ -400,19 +391,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "-0.1",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
@@ -428,19 +406,6 @@ func testNewMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
-
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						QuadraticSlippageFactor: "1000000.000001",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor"), commands.ErrMustBeAtMost1M)
 }
 
 func testNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
@@ -487,104 +452,13 @@ func testNewMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.T) 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
-func testLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with probability of -1",
-			value: "-1",
-		}, {
-			msg:   "with probability of 2",
-			value: "2",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &vegapb.ProposalTerms{
-					Change: &vegapb.ProposalTerms_NewMarket{
-						NewMarket: &vegapb.NewMarket{
-							Changes: &vegapb.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.triggering_ratio"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with ratio of 0",
-			value: "0",
-		}, {
-			msg:   "with ratio of 0.5",
-			value: "0.5",
-		}, {
-			msg:   "with ratio of 1",
-			value: "1",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &vegapb.ProposalTerms{
-					Change: &vegapb.ProposalTerms_NewMarket{
-						NewMarket: &vegapb.NewMarket{
-							Changes: &vegapb.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &vegapb.ProposalTerms{
-			Change: &vegapb.ProposalTerms_NewMarket{
-				NewMarket: &vegapb.NewMarket{
-					Changes: &vegapb.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.triggering_ratio"), commands.ErrIsNotValidNumber)
-}
-
 func testLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
-						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-							TriggeringRatio: "1",
-						},
+						LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -633,7 +507,6 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails(t *te
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
@@ -690,7 +563,6 @@ func testLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails(t 
 						NewMarket: &vegapb.NewMarket{
 							Changes: &vegapb.NewMarketConfiguration{
 								LiquidityMonitoringParameters: &vegapb.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &vegapb.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},
@@ -5002,6 +4874,41 @@ func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *tes
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
 
+func testNewPerpsMarketChangeSubmissionWithInternalCompositePriceConfig(t *testing.T) {
+	cases := getCompositePriceConfigurationCases()
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.PerpetualProduct{
+										DataSourceSpecBinding: &vegapb.DataSourceSpecToPerpetualBinding{
+											SettlementDataProperty: "My property",
+										},
+										InternalCompositePriceConfiguration: c.mpc,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.internal_composite_price_configuration"), c.err)
+		}
+	}
+}
+
 func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 	cases := []struct {
 		product vegapb.PerpetualProduct
@@ -5096,7 +5003,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.interest_rate",
 			desc: "interest_rate is valid",
 		},
-		// clamp_lower_bound
+		// clamp_lower_bound (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "",
@@ -5143,7 +5050,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_lower_bound",
 			desc: "clamp_lower_bound is valid",
 		},
-		// clamp_upper_bound
+		// clamp_upper_bound (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampUpperBound: "",
@@ -5190,7 +5097,7 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.clamp_upper_bound",
 			desc: "clamp_upper_bound is valid",
 		},
-		// clamp lower and upper
+		// clamp lower and upper (0053-PERP-042)
 		{
 			product: vegapb.PerpetualProduct{
 				ClampLowerBound: "0.5",
@@ -5244,6 +5151,105 @@ func TestNewPerpsMarketChangeSubmissionProductParameters(t *testing.T) {
 				return
 			}
 
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func testNewPerpsMarketWithFundingRateModifiers(t *testing.T) {
+	cases := []struct {
+		product vegapb.PerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("-10"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0.1"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateLowerBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateLowerBound: ptr.From("-100"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_upper_bound",
+		},
+		{
+			product: vegapb.PerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+				FundingRateLowerBound: ptr.From("200"),
+			},
+			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValid,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_NewMarket{
+						NewMarket: &vegapb.NewMarket{
+							Changes: &vegapb.NewMarketConfiguration{
+								Instrument: &vegapb.InstrumentConfiguration{
+									Product: &vegapb.InstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
 			assert.Contains(t, errs, v.err, v.desc)
 		})
 	}
@@ -5869,4 +5875,707 @@ func testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds(t
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.sla_params.performance_hysteresis_epochs"), commands.ErrMustBePositive)
+}
+
+func testLiquidityFeeSettings(t *testing.T) {
+	cases := []struct {
+		lfs   *vega.LiquidityFeeSettings
+		field string
+		err   error
+	}{
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE,
+				FeeConstant: ptr.From("0.1"),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: nil,
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("hello"),
+			},
+			field: "fee_constant",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("-0.1"), // (0042-LIQF-060)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method:      vegapb.LiquidityFeeSettings_METHOD_CONSTANT,
+				FeeConstant: ptr.From("1.1"), // (0042-LIQF-060)
+			},
+			field: "fee_constant",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_METHOD_UNSPECIFIED,
+			},
+			field: "method",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			lfs: &vega.LiquidityFeeSettings{
+				Method: vegapb.LiquidityFeeSettings_Method(int32(100)),
+			},
+			field: "method",
+			err:   commands.ErrIsNotValid,
+		},
+	}
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.PerpetualProduct{},
+								},
+							},
+							LiquidityFeeSettings: c.lfs,
+						},
+					},
+				},
+			},
+		})
+		assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_fee_settings."+c.field), c.err)
+	}
+}
+
+func testFutureMarketSubmissionWithValidLiquidationStrategySucceeds(t *testing.T) {
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
+	}
+
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.timestamp",
+															Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+																Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    20,
+							DisposalFraction:    "0.05",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed"))
+	assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step"))
+}
+
+type compositePriceConfigCase struct {
+	mpc   *vega.CompositePriceConfiguration
+	field string
+	err   error
+}
+
+func getCompositePriceConfigurationCases() []compositePriceConfigCase {
+	cases := []compositePriceConfigCase{
+		{
+			mpc:   &vega.CompositePriceConfiguration{},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 0,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 4,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsNotValid,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "banana",
+			},
+			field: "decay_weight",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "-1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayWeight:        "1.1",
+			},
+			field: "decay_weight",
+			err:   commands.ErrMustBeWithinRange01,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayWeight:        "",
+			},
+			field: "decay_weight",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayPower:         4,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				DecayPower:         0,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must be in {1, 2, 3}"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayPower:         0,
+			},
+			field: "decay_power",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "banana",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "-1",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+				CashAmount:         "1.2",
+			},
+			field: "cash_amount",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				CashAmount:         "",
+			},
+			field: "cash_amount",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"1", "2", "3"},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"1", "2", "3"},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:      []string{"", "", ""},
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be defined for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"1", "2", "3", "4", "5"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"1", "2", "3", "4", "5", "6", "7"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				SourceWeights:            []string{"1", "2", "3"},
+			},
+			field: "source_staleness_tolerance",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+			},
+			field: "source_staleness_tolerance",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceStalenessTolerance: []string{"1s", "2s", "3s"},
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must included staleness information for all price sources"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+				SourceStalenessTolerance: nil,
+			},
+			field: "source_staleness_tolerance",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights:            []string{"", "", "", ""},
+				SourceStalenessTolerance: []string{"", "", "", "", ""},
+				CompositePriceType:       protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must have the same length as source_weights"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED,
+				SourceWeights:      []string{"0", "0", "0", "0"},
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must have at least one none zero weight"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN,
+				SourceWeights:      []string{"0", "0", "0", "0"},
+			},
+			field: "source_weights",
+			err:   fmt.Errorf("must be empty if composite price type is not weighted"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.0",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.1",
+			err:   commands.ErrIsNotValidNumber,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceWeights: []string{"", "banana", "-1", ""},
+			},
+			field: "source_weights.2",
+			err:   commands.ErrMustBePositiveOrZero,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.0",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				SourceStalenessTolerance: []string{"", "banana", "-1", ""},
+			},
+			field: "source_staleness_tolerance.1",
+			err:   fmt.Errorf("must be a valid duration"),
+		},
+	}
+	return cases
+}
+
+func testCompositePriceConfiguration(t *testing.T) {
+	cases := getCompositePriceConfigurationCases()
+	cases = append(cases, compositePriceConfigCase{
+		mpc:   nil,
+		field: "",
+		err:   commands.ErrIsRequired,
+	})
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.PerpetualProduct{},
+								},
+							},
+							MarkPriceConfiguration: c.mpc,
+						},
+					},
+				},
+			},
+		})
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.mark_price_configuration"), c.err)
+		}
+	}
+}
+
+func testFutureMarketSubmissionWithInvalidLiquidationStrategyFails(t *testing.T) {
+	pubKey := []*dstypes.Signer{
+		dstypes.CreateSignerFromString("bd069246503a57271375f1995c46e03db88c4e1a564077b33a9872f905650dc4", dstypes.SignerTypePubKey),
+	}
+
+	submission := &commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewMarket{
+				NewMarket: &vegapb.NewMarket{
+					Changes: &vegapb.NewMarketConfiguration{
+						Instrument: &vegapb.InstrumentConfiguration{
+							Product: &vegapb.InstrumentConfiguration_Future{
+								Future: &vegapb.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "prices.ETH.value",
+															Type: datapb.PropertyKey_TYPE_INTEGER,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceContentTypeOracle,
+									).SetOracleConfig(
+										&vegapb.DataSourceDefinitionExternal_Oracle{
+											Oracle: &vegapb.DataSourceSpecConfiguration{
+												Signers: dstypes.SignersIntoProto(pubKey),
+												Filters: []*datapb.Filter{
+													{
+														Key: &datapb.PropertyKey{
+															Name: "vegaprotocol.builtin.timestamp",
+															Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+														},
+														Conditions: []*datapb.Condition{
+															{
+																Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+																Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+															},
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    20,
+							DisposalFraction:    "0.05",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	data := map[string]struct {
+		ls  *vegapb.LiquidationStrategy
+		err error
+	}{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "123",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.01",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "-0.1",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    0,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.1",
+			},
+			err: commands.ErrMustBePositive,
+		},
+	}
+	checks := []string{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed",
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step",
+	}
+	for ec, exp := range data {
+		nm := submission.Terms.GetNewMarket()
+		nm.Changes.LiquidationStrategy = exp.ls
+		submission.Terms.Change = &vegapb.ProposalTerms_NewMarket{
+			NewMarket: nm,
+		}
+		err := checkProposalSubmission(submission)
+		for _, k := range checks {
+			if k != ec {
+				assert.Empty(t, err.Get(k))
+			} else {
+				assert.Contains(t, err.Get(k), exp.err)
+			}
+		}
+	}
+	// pretty much the same as above, only this time set the disposal fraction to a negative value
+	// and max fraction consumed to a large positive
+	// finally set the disposal time step to a large int value, this changes the error
+	data = map[string]struct {
+		ls  *vegapb.LiquidationStrategy
+		err error
+	}{
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_fraction": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "-2",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.01",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.max_fraction_consumed": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    20,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "2",
+			},
+			err: commands.ErrMustBeBetween01,
+		},
+		"proposal_submission.terms.change.new_market.changes.liquidation_strategy.disposal_time_step": {
+			ls: &vegapb.LiquidationStrategy{
+				DisposalTimeStep:    3601,
+				DisposalFraction:    "0.1",
+				FullDisposalSize:    20,
+				MaxFractionConsumed: "0.1",
+			},
+			err: commands.ErrMustBeAtMost3600,
+		},
+	}
+	for ec, exp := range data {
+		nm := submission.Terms.GetNewMarket()
+		nm.Changes.LiquidationStrategy = exp.ls
+		submission.Terms.Change = &vegapb.ProposalTerms_NewMarket{
+			NewMarket: nm,
+		}
+		err := checkProposalSubmission(submission)
+		for _, k := range checks {
+			if k != ec {
+				assert.Empty(t, err.Get(k))
+			} else {
+				assert.Contains(t, err.Get(k), exp.err)
+			}
+		}
+	}
 }

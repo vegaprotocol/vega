@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities_test
 
 import (
@@ -33,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
@@ -205,6 +194,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 	}
 
 	nextMTM := time.Now()
+	nextNC := time.Now()
 	zeroTime := time.Unix(0, 0)
 
 	testCases := []struct {
@@ -218,70 +208,81 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				marketdata: types.MarketData{},
 			},
 			want: &entities.MarketData{
-				AuctionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
-				MarketState:       "STATE_UNSPECIFIED",
-				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
-				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-				TxHash:            generateTxHash(),
-				NextMarkToMarket:  zeroTime,
+				AuctionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
+				MarketState:         "STATE_UNSPECIFIED",
+				MarketTradingMode:   "TRADING_MODE_UNSPECIFIED",
+				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				TxHash:              generateTxHash(),
+				NextMarkToMarket:    zeroTime,
+				NextNetworkCloseout: zeroTime,
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 			},
 		},
 		{
 			name: "Market data with auction trigger specified",
 			args: args{
 				marketdata: types.MarketData{
-					Trigger:          types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
-					NextMarkToMarket: nextMTM.UnixNano(),
+					Trigger:             types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
+					NextMarkToMarket:    nextMTM.UnixNano(),
+					NextNetworkCloseout: nextNC.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
-				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
-				MarketState:       "STATE_UNSPECIFIED",
-				MarketTradingMode: "TRADING_MODE_UNSPECIFIED",
-				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-				NextMarkToMarket:  nextMTM,
-				TxHash:            generateTxHash(),
+				AuctionTrigger:      "AUCTION_TRIGGER_PRICE",
+				MarketState:         "STATE_UNSPECIFIED",
+				MarketTradingMode:   "TRADING_MODE_UNSPECIFIED",
+				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
+				NextMarkToMarket:    nextMTM,
+				NextNetworkCloseout: nextNC,
+				TxHash:              generateTxHash(),
 			},
 		},
 		{
 			name: "Market data with auction trigger and market trading mode specified",
 			args: args{
 				marketdata: types.MarketData{
-					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
-					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
-					NextMarkToMarket:  nextMTM.UnixNano(),
+					Trigger:             types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
+					MarketTradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
+					NextMarkToMarket:    nextMTM.UnixNano(),
+					NextNetworkCloseout: nextNC.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
-				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
-				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
-				MarketState:       "STATE_UNSPECIFIED",
-				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-				NextMarkToMarket:  nextMTM,
-				TxHash:            generateTxHash(),
+				AuctionTrigger:      "AUCTION_TRIGGER_PRICE",
+				MarketTradingMode:   "TRADING_MODE_CONTINUOUS",
+				MarketState:         "STATE_UNSPECIFIED",
+				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
+				NextMarkToMarket:    nextMTM,
+				NextNetworkCloseout: nextNC,
+				TxHash:              generateTxHash(),
 			},
 		},
 		{
 			name: "Market data with best bid and best offer specified",
 			args: args{
 				marketdata: types.MarketData{
-					BestBidPrice:      "100.0",
-					BestOfferPrice:    "110.0",
-					Trigger:           types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
-					MarketTradingMode: types.Market_TRADING_MODE_CONTINUOUS,
-					MarketState:       types.Market_STATE_ACTIVE,
-					NextMarkToMarket:  nextMTM.UnixNano(),
+					BestBidPrice:        "100.0",
+					BestOfferPrice:      "110.0",
+					Trigger:             types.AuctionTrigger_AUCTION_TRIGGER_PRICE,
+					MarketTradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
+					MarketState:         types.Market_STATE_ACTIVE,
+					NextMarkToMarket:    nextMTM.UnixNano(),
+					NextNetworkCloseout: nextNC.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
-				BestBidPrice:      decimal.NewFromFloat(100.0),
-				BestOfferPrice:    decimal.NewFromFloat(110.0),
-				AuctionTrigger:    "AUCTION_TRIGGER_PRICE",
-				MarketState:       "STATE_ACTIVE",
-				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
-				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-				TxHash:            generateTxHash(),
-				NextMarkToMarket:  nextMTM,
+				BestBidPrice:        decimal.NewFromFloat(100.0),
+				BestOfferPrice:      decimal.NewFromFloat(110.0),
+				AuctionTrigger:      "AUCTION_TRIGGER_PRICE",
+				MarketState:         "STATE_ACTIVE",
+				MarketTradingMode:   "TRADING_MODE_CONTINUOUS",
+				ExtensionTrigger:    "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:       "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
+				TxHash:              generateTxHash(),
+				NextMarkToMarket:    nextMTM,
+				NextNetworkCloseout: nextNC,
 			},
 		},
 		{
@@ -298,7 +299,8 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 							MaxValidPrice: "200",
 						},
 					},
-					NextMarkToMarket: nextMTM.UnixNano(),
+					NextMarkToMarket:    nextMTM.UnixNano(),
+					NextNetworkCloseout: nextNC.UnixNano(),
 				},
 			},
 			want: &entities.MarketData{
@@ -308,6 +310,7 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 				MarketTradingMode: "TRADING_MODE_CONTINUOUS",
 				MarketState:       "STATE_UNSPECIFIED",
 				ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
+				MarkPriceType:     "COMPOSITE_PRICE_TYPE_UNSPECIFIED",
 				PriceMonitoringBounds: []*types.PriceMonitoringBounds{
 					{
 						MinValidPrice:  "100",
@@ -315,8 +318,9 @@ func testParseMarketDataSuccessfully(t *testing.T) {
 						ReferencePrice: "",
 					},
 				},
-				TxHash:           generateTxHash(),
-				NextMarkToMarket: nextMTM,
+				TxHash:              generateTxHash(),
+				NextMarkToMarket:    nextMTM,
+				NextNetworkCloseout: nextNC,
 			},
 		},
 	}

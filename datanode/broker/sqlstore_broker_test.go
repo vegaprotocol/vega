@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package broker_test
 
 import (
@@ -43,10 +31,10 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var logger = logging.NewTestLogger()
@@ -594,7 +582,7 @@ func (t *testSQLBrokerSubscriber) Types() []events.Type {
 
 type blockEventSource struct {
 	vegaTime    time.Time
-	blockHeight int64
+	blockHeight uint64
 }
 
 func newBlockEventSource() *blockEventSource {
@@ -609,7 +597,7 @@ func (s *blockEventSource) NextBeginBlockEvent() *events.BeginBlock {
 	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
 
 	event := events.NewBeginBlock(ctx, eventsv1.BeginBlock{
-		Height:    uint64(s.blockHeight),
+		Height:    s.blockHeight,
 		Timestamp: s.vegaTime.UnixNano(),
 	})
 
@@ -621,7 +609,7 @@ func (s *blockEventSource) NextEndBlockEvent() *events.EndBlock {
 	ctx = vgcontext.WithBlockHeight(ctx, s.blockHeight)
 
 	event := events.NewEndBlock(ctx, eventsv1.EndBlock{
-		Height: uint64(s.blockHeight),
+		Height: s.blockHeight,
 	})
 
 	s.vegaTime = s.vegaTime.Add(1 * time.Second)

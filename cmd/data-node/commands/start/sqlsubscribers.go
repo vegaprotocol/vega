@@ -79,6 +79,8 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsStore *sqlstore.PaidLiquidityFeesStats
 	partyLockedBalancesStore    *sqlstore.PartyLockedBalance
 	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
+	gamesStore                  *sqlstore.Games
+	marginModesStore            *sqlstore.MarginModes
 
 	// Services
 	candleService                 *candlesv2.Svc
@@ -131,6 +133,9 @@ type SQLSubscribers struct {
 	paidLiquidityFeesStatsService *service.PaidLiquidityFeesStats
 	partyLockedBalancesService    *service.PartyLockedBalances
 	partyVestingBalancesService   *service.PartyVestingBalances
+	transactionResultsService     *service.TransactionResults
+	gamesService                  *service.Games
+	marginModesService            *service.MarginModes
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -180,6 +185,8 @@ type SQLSubscribers struct {
 	volumeDiscountProgramSub  *sqlsubscribers.VolumeDiscountProgram
 	paidLiquidityFeesStatsSub *sqlsubscribers.PaidLiquidityFeesStats
 	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
+	transactionResultsSub     *sqlsubscribers.TransactionResults
+	marginModesSub            *sqlsubscribers.MarginModes
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -233,6 +240,8 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.volumeDiscountProgramSub,
 		s.paidLiquidityFeesStatsSub,
 		s.vestingSummarySub,
+		s.transactionResultsSub,
+		s.marginModesSub,
 	}
 }
 
@@ -250,7 +259,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.tradeStore = sqlstore.NewTrades(transactionalConnectionSource)
 	s.networkLimitsStore = sqlstore.NewNetworkLimits(transactionalConnectionSource)
 	s.marketDataStore = sqlstore.NewMarketData(transactionalConnectionSource)
-	s.rewardStore = sqlstore.NewRewards(transactionalConnectionSource)
+	s.rewardStore = sqlstore.NewRewards(ctx, transactionalConnectionSource)
 	s.marketsStore = sqlstore.NewMarkets(transactionalConnectionSource)
 	s.delegationStore = sqlstore.NewDelegations(transactionalConnectionSource)
 	s.epochStore = sqlstore.NewEpochs(transactionalConnectionSource)
@@ -291,6 +300,8 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.paidLiquidityFeesStatsStore = sqlstore.NewPaidLiquidityFeesStats(transactionalConnectionSource)
 	s.partyLockedBalancesStore = sqlstore.NewPartyLockedBalances(transactionalConnectionSource)
 	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
+	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
+	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -344,6 +355,11 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.paidLiquidityFeesStatsService = service.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsStore)
 	s.partyLockedBalancesService = service.NewPartyLockedBalances(s.partyLockedBalancesStore)
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
+	s.gamesService = service.NewGames(s.gamesStore)
+	s.marginModesService = service.NewMarginModes(s.marginModesStore)
+
+	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
+	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -408,4 +424,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.volumeDiscountProgramSub = sqlsubscribers.NewVolumeDiscountProgram(s.volumeDiscountProgramService)
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
+	s.marginModesSub = sqlsubscribers.NewMarginModes(s.marginModesService)
 }

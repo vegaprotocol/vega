@@ -18,31 +18,15 @@ package spam
 import (
 	"context"
 	"encoding/hex"
-	"strconv"
 	"sync"
-	"time"
-
-	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
-
-	"code.vegaprotocol.io/vega/core/netparams"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-)
-
-var (
-	increaseFactor             = num.NewUint(2)
-	banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
-	banFactor                  = num.DecimalFromFloat(0.5)
-	rejectRatioForIncrease     = num.DecimalFromFloat(0.3)
-)
-
-const (
-	numberOfBlocksForIncreaseCheck uint64 = 10
-	minBanDuration                        = time.Second * 30 // minimum ban duration
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
 type StakingAccounts interface {
@@ -63,16 +47,15 @@ type Engine struct {
 	currentEpoch            *types.Epoch
 	policyNameToPolicy      map[string]Policy
 	hashKeys                []string
-	banDuration             time.Duration
-
-	noSpamProtection bool // flag that disables chesk for the spam policies, that is useful for the nullchain
+	noSpamProtection        bool // flag that disables chesk for the spam policies, that is useful for the nullchain
 }
 
 type Policy interface {
 	Reset(epoch types.Epoch)
-	EndOfBlock(blockHeight uint64, now time.Time, banDuration time.Duration)
-	PreBlockAccept(tx abci.Tx) (bool, error)
-	PostBlockAccept(tx abci.Tx) (bool, error)
+	UpdateTx(tx abci.Tx)
+	RollbackProposal()
+	CheckBlockTx(abci.Tx) error
+	PreBlockAccept(tx abci.Tx) error
 	UpdateUintParam(name string, value *num.Uint) error
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
@@ -118,21 +101,23 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	createReferralSetPolicy := NewSimpleSpamPolicy("createReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxCreateReferralSet, log, accounting)
 	updateReferralSetPolicy := NewSimpleSpamPolicy("updateReferralSet", netparams.ReferralProgramMinStakedVegaTokens, netparams.SpamProtectionMaxUpdateReferralSet, log, accounting)
 	applyReferralCodePolicy := NewSimpleSpamPolicy("applyReferralCode", "", netparams.SpamProtectionMaxApplyReferralCode, log, accounting)
+	updatePartyProfilePolicy := NewSimpleSpamPolicy("updatePartyProfile", "", netparams.SpamProtectionMaxUpdatePartyProfile, log, accounting)
 
 	// complex policies
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]Policy{
-		proposalPolicy.policyName:          proposalPolicy,
-		valJoinPolicy.policyName:           valJoinPolicy,
-		delegationPolicy.policyName:        delegationPolicy,
-		transferPolicy.policyName:          transferPolicy,
-		issuesSignaturesPolicy.policyName:  issuesSignaturesPolicy,
-		createReferralSetPolicy.policyName: createReferralSetPolicy,
-		updateReferralSetPolicy.policyName: updateReferralSetPolicy,
-		applyReferralCodePolicy.policyName: applyReferralCodePolicy,
-		voteKey:                            votePolicy,
+		proposalPolicy.policyName:           proposalPolicy,
+		valJoinPolicy.policyName:            valJoinPolicy,
+		delegationPolicy.policyName:         delegationPolicy,
+		transferPolicy.policyName:           transferPolicy,
+		issuesSignaturesPolicy.policyName:   issuesSignaturesPolicy,
+		voteKey:                             votePolicy,
+		createReferralSetPolicy.policyName:  createReferralSetPolicy,
+		updateReferralSetPolicy.policyName:  updateReferralSetPolicy,
+		applyReferralCodePolicy.policyName:  applyReferralCodePolicy,
+		updatePartyProfilePolicy.policyName: updatePartyProfilePolicy,
 	}
 	e.hashKeys = []string{
 		proposalPolicy.policyName,
@@ -143,10 +128,12 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		createReferralSetPolicy.policyName,
 		updateReferralSetPolicy.policyName,
 		applyReferralCodePolicy.policyName,
+		updatePartyProfilePolicy.policyName,
 		voteKey,
 	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
+	e.transactionTypeToPolicy[txn.BatchProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
@@ -157,6 +144,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.CreateReferralSetCommand] = createReferralSetPolicy
 	e.transactionTypeToPolicy[txn.UpdateReferralSetCommand] = updateReferralSetPolicy
 	e.transactionTypeToPolicy[txn.ApplyReferralCodeCommand] = applyReferralCodePolicy
+	e.transactionTypeToPolicy[txn.UpdatePartyProfileCommand] = updatePartyProfilePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
@@ -170,21 +158,14 @@ func (e *Engine) DisableSpamProtection() {
 	e.noSpamProtection = true
 }
 
-// OnEpochDurationChanged updates the ban duration as a fraction of the epoch duration.
-func (e *Engine) OnEpochDurationChanged(_ context.Context, duration time.Duration) error {
-	epochImpliedDurationNano, _ := num.UintFromDecimal(num.DecimalFromInt64(duration.Nanoseconds()).Mul(banDurationAsEpochFraction))
-	epochImpliedDurationDuration := time.Duration(epochImpliedDurationNano.Uint64())
-	if epochImpliedDurationDuration < minBanDuration {
-		e.banDuration = minBanDuration
-	} else {
-		e.banDuration = epochImpliedDurationDuration
-	}
-	return nil
-}
-
 // OnCreateReferralSet is called when the net param for max create referral set per epoch has changed.
 func (e *Engine) OnMaxCreateReferralSet(ctx context.Context, max int64) error {
 	return e.transactionTypeToPolicy[txn.CreateReferralSetCommand].UpdateIntParam(netparams.SpamProtectionMaxCreateReferralSet, max)
+}
+
+// OnMaxPartyProfileUpdate is called when the net param for max update party profile per epoch has changed.
+func (e *Engine) OnMaxPartyProfile(ctx context.Context, max int64) error {
+	return e.transactionTypeToPolicy[txn.UpdatePartyProfileCommand].UpdateIntParam(netparams.SpamProtectionMaxUpdatePartyProfile, max)
 }
 
 // OnMaxUpdateReferralSet is called when the net param for max update referral set per epoch has changed.
@@ -277,66 +258,76 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	}
 }
 
-// EndOfBlock is called when the block is finished.
-func (e *Engine) EndOfBlock(blockHeight uint64, now time.Time) {
-	if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
+func (e *Engine) BeginBlock(txs []abci.Tx) {
+	for _, tx := range txs {
+		if _, ok := e.transactionTypeToPolicy[tx.Command()]; !ok {
+			continue
+		}
+		e.transactionTypeToPolicy[tx.Command()].UpdateTx(tx)
 	}
+}
 
-	if e.noSpamProtection {
-		e.log.Info("Spam protection EndOfBlock disabled", logging.Uint64("blockHeight", blockHeight))
-		return
-	}
-
+func (e *Engine) EndPrepareProposal() {
 	for _, policy := range e.transactionTypeToPolicy {
-		policy.EndOfBlock(blockHeight, now, e.banDuration)
+		policy.RollbackProposal()
 	}
 }
 
 // PreBlockAccept is called from onCheckTx before a tx is added to mempool
 // returns false is rejected by spam engine with a corresponding error.
-func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
+func (e *Engine) PreBlockAccept(tx abci.Tx) error {
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
-		return true, nil
+		return nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
-
 	if e.noSpamProtection {
 		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
-		return true, nil
+		return nil
 	}
-
 	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
+}
+
+func (e *Engine) ProcessProposal(txs []abci.Tx) bool {
+	success := true
+	for _, tx := range txs {
+		command := tx.Command()
+		if _, ok := e.transactionTypeToPolicy[command]; !ok {
+			continue
+		}
+		if e.noSpamProtection {
+			e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
+			continue
+		}
+
+		if err := e.transactionTypeToPolicy[command].CheckBlockTx(tx); err != nil {
+			success = false
+		}
+	}
+	for _, p := range e.transactionTypeToPolicy {
+		p.RollbackProposal()
+	}
+	return success
 }
 
 // PostBlockAccept is called from onDeliverTx before the block is processed
 // returns false is rejected by spam engine with a corresponding error.
-func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
+func (e *Engine) CheckBlockTx(tx abci.Tx) error {
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
-		return true, nil
+		return nil
 	}
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
 
 	if e.noSpamProtection {
-		e.log.Debug("Spam protection PostBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
-		return true, nil
-	}
-
-	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
-}
-
-func parseBannedUntil(until int64) *string {
-	if until == 0 {
+		e.log.Debug("Spam protection PreBlockAccept disabled for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 		return nil
 	}
-	t := strconv.FormatInt(until, 10)
-	return &t
+	return e.transactionTypeToPolicy[command].CheckBlockTx(tx)
 }
 
 func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
@@ -344,7 +335,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
 
 	for txType, policy := range e.transactionTypeToPolicy {
 		switch txType {
-		case txn.ProposeCommand:
+		case txn.ProposeCommand, txn.BatchProposeCommand:
 			stats.Proposals = policy.GetSpamStats(partyID)
 		case txn.DelegateCommand:
 			stats.Delegations = policy.GetSpamStats(partyID)

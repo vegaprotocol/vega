@@ -39,31 +39,37 @@ type ProposalTermsUpdateAsset struct {
 func (a ProposalTermsUpdateAsset) String() string {
 	return fmt.Sprintf(
 		"updateAsset(%v)",
-		stringer.ReflectPointerToString(a.UpdateAsset),
+		stringer.PtrToString(a.UpdateAsset),
 	)
 }
 
-func (a ProposalTermsUpdateAsset) IntoProto() *vegapb.ProposalTerms_UpdateAsset {
+func (a ProposalTermsUpdateAsset) IntoProto() *vegapb.UpdateAsset {
 	var updateAsset *vegapb.UpdateAsset
 	if a.UpdateAsset != nil {
 		updateAsset = a.UpdateAsset.IntoProto()
 	}
-	return &vegapb.ProposalTerms_UpdateAsset{
-		UpdateAsset: updateAsset,
-	}
+	return updateAsset
 }
 
 func (a ProposalTermsUpdateAsset) isPTerm() {}
 
-func (a ProposalTermsUpdateAsset) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateAsset) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_UpdateAsset{
+		UpdateAsset: a.UpdateAsset.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateAsset) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateAsset{
+		UpdateAsset: a.UpdateAsset.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateAsset) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateAsset
 }
 
-func (a ProposalTermsUpdateAsset) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateAsset) DeepClone() ProposalTerm {
 	if a.UpdateAsset == nil {
 		return &ProposalTermsUpdateAsset{}
 	}
@@ -72,16 +78,16 @@ func (a ProposalTermsUpdateAsset) DeepClone() proposalTerm {
 	}
 }
 
-func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTermsUpdateAsset, error) {
+func NewUpdateAssetFromProto(updateAssetProto *vegapb.UpdateAsset) (*ProposalTermsUpdateAsset, error) {
 	var updateAsset *UpdateAsset
-	if p.UpdateAsset != nil {
+	if updateAssetProto != nil {
 		updateAsset = &UpdateAsset{
-			AssetID: p.UpdateAsset.GetAssetId(),
+			AssetID: updateAssetProto.GetAssetId(),
 		}
 
-		if p.UpdateAsset.Changes != nil {
+		if updateAssetProto.Changes != nil {
 			var err error
-			updateAsset.Changes, err = AssetDetailsUpdateFromProto(p.UpdateAsset.Changes)
+			updateAsset.Changes, err = AssetDetailsUpdateFromProto(updateAssetProto.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -120,7 +126,7 @@ func (a UpdateAsset) String() string {
 	return fmt.Sprintf(
 		"assetID(%s) changes(%s)",
 		a.AssetID,
-		stringer.ReflectPointerToString(a.Changes),
+		stringer.PtrToString(a.Changes),
 	)
 }
 
@@ -158,7 +164,7 @@ func (a AssetDetailsUpdate) String() string {
 	return fmt.Sprintf(
 		"quantum(%s) (%s)",
 		a.Quantum.String(),
-		stringer.ReflectPointerToString(a.Source),
+		stringer.ObjToString(a.Source),
 	)
 }
 
@@ -244,7 +250,7 @@ type AssetDetailsUpdateERC20 struct {
 func (a AssetDetailsUpdateERC20) String() string {
 	return fmt.Sprintf(
 		"erc20Update(%s)",
-		stringer.ReflectPointerToString(a.ERC20Update),
+		stringer.PtrToString(a.ERC20Update),
 	)
 }
 
@@ -350,7 +356,7 @@ func (e ERC20Update) DeepClone() *ERC20Update {
 func (e ERC20Update) String() string {
 	return fmt.Sprintf(
 		"lifetimeLimit(%s) withdrawThreshold(%s)",
-		stringer.UintPointerToString(e.LifetimeLimit),
-		stringer.UintPointerToString(e.WithdrawThreshold),
+		stringer.PtrToString(e.LifetimeLimit),
+		stringer.PtrToString(e.WithdrawThreshold),
 	)
 }

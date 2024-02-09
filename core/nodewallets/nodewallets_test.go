@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	ethnw "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	vgnw "code.vegaprotocol.io/vega/core/nodewallets/vega"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

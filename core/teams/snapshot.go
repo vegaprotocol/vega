@@ -18,10 +18,12 @@ package teams
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/slices"
 )
 
@@ -118,11 +120,19 @@ func (e *SnapshottedEngine) serialiseTeams() ([]byte, error) {
 			CreatedAt: team.CreatedAt.UnixNano(),
 			Closed:    team.Closed,
 		}
+
+		if len(team.AllowList) > 0 {
+			teamSnapshot.AllowList = make([]string, 0, len(team.AllowList))
+			for _, partyID := range team.AllowList {
+				teamSnapshot.AllowList = append(teamSnapshot.AllowList, partyID.String())
+			}
+		}
+
 		teamsSnapshot = append(teamsSnapshot, teamSnapshot)
 	}
 
-	slices.SortStableFunc(teamsSnapshot, func(a, b *snapshotpb.Team) bool {
-		return a.Id < b.Id
+	slices.SortStableFunc(teamsSnapshot, func(a, b *snapshotpb.Team) int {
+		return strings.Compare(a.Id, b.Id)
 	})
 
 	payload := &snapshotpb.Payload{
@@ -154,8 +164,8 @@ func (e *SnapshottedEngine) serialiseTeamSwitches() ([]byte, error) {
 		teamSwitchesSnapshot = append(teamSwitchesSnapshot, teamSwitchSnapshot)
 	}
 
-	slices.SortStableFunc(teamSwitchesSnapshot, func(a, b *snapshotpb.TeamSwitch) bool {
-		return a.PartyId < b.PartyId
+	slices.SortStableFunc(teamSwitchesSnapshot, func(a, b *snapshotpb.TeamSwitch) int {
+		return strings.Compare(a.PartyId, b.PartyId)
 	})
 
 	payload := &snapshotpb.Payload{

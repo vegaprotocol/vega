@@ -17,8 +17,11 @@ package events
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -42,18 +45,25 @@ func (t TeamCreated) TeamCreated() *eventspb.TeamCreated {
 }
 
 func NewTeamCreatedEvent(ctx context.Context, epoch uint64, t *types.Team) *TeamCreated {
+	e := eventspb.TeamCreated{
+		TeamId:    string(t.ID),
+		Referrer:  string(t.Referrer.PartyID),
+		Name:      t.Name,
+		TeamUrl:   ptr.From(t.TeamURL),
+		AvatarUrl: ptr.From(t.AvatarURL),
+		CreatedAt: t.CreatedAt.UnixNano(),
+		AtEpoch:   epoch,
+		Closed:    t.Closed,
+	}
+
+	e.AllowList = make([]string, 0, len(t.AllowList))
+	for _, id := range t.AllowList {
+		e.AllowList = append(e.AllowList, id.String())
+	}
+
 	return &TeamCreated{
 		Base: newBase(ctx, TeamCreatedEvent),
-		e: eventspb.TeamCreated{
-			TeamId:    string(t.ID),
-			Referrer:  string(t.Referrer.PartyID),
-			Name:      t.Name,
-			TeamUrl:   ptr.From(t.TeamURL),
-			AvatarUrl: ptr.From(t.AvatarURL),
-			CreatedAt: t.CreatedAt.UnixNano(),
-			AtEpoch:   epoch,
-			Closed:    t.Closed,
-		},
+		e:    e,
 	}
 }
 
@@ -83,15 +93,22 @@ func (t TeamUpdated) TeamUpdated() *eventspb.TeamUpdated {
 }
 
 func NewTeamUpdatedEvent(ctx context.Context, t *types.Team) *TeamUpdated {
+	e := eventspb.TeamUpdated{
+		TeamId:    string(t.ID),
+		Name:      t.Name,
+		TeamUrl:   ptr.From(t.TeamURL),
+		AvatarUrl: ptr.From(t.AvatarURL),
+		Closed:    t.Closed,
+	}
+
+	e.AllowList = make([]string, 0, len(t.AllowList))
+	for _, id := range t.AllowList {
+		e.AllowList = append(e.AllowList, id.String())
+	}
+
 	return &TeamUpdated{
 		Base: newBase(ctx, TeamUpdatedEvent),
-		e: eventspb.TeamUpdated{
-			TeamId:    string(t.ID),
-			Name:      t.Name,
-			TeamUrl:   ptr.From(t.TeamURL),
-			AvatarUrl: ptr.From(t.AvatarURL),
-			Closed:    t.Closed,
-		},
+		e:    e,
 	}
 }
 
@@ -174,5 +191,64 @@ func RefereeJoinedTeamEventFromStream(ctx context.Context, be *eventspb.BusEvent
 	return &RefereeJoinedTeam{
 		Base: newBaseFromBusEvent(ctx, RefereeJoinedTeamEvent, be),
 		e:    *be.GetRefereeJoinedTeam(),
+	}
+}
+
+type TeamsStatsUpdated struct {
+	*Base
+	e eventspb.TeamsStatsUpdated
+}
+
+func (t TeamsStatsUpdated) StreamMessage() *eventspb.BusEvent {
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_TeamsStatsUpdated{
+		TeamsStatsUpdated: &t.e,
+	}
+
+	return busEvent
+}
+
+func (t TeamsStatsUpdated) TeamsStatsUpdated() *eventspb.TeamsStatsUpdated {
+	return &t.e
+}
+
+func NewTeamsStatsUpdatedEvent(ctx context.Context, seq uint64, rawTeamsStats map[string]map[string]*num.Uint) *TeamsStatsUpdated {
+	teamsStats := make([]*eventspb.TeamStats, 0, len(rawTeamsStats))
+	for teamID, rawTeamStats := range rawTeamsStats {
+		ts := make([]*eventspb.TeamMemberStats, 0, len(rawTeamStats))
+		for partyID, notionalVolume := range rawTeamStats {
+			ts = append(ts, &eventspb.TeamMemberStats{
+				PartyId:        partyID,
+				NotionalVolume: notionalVolume.String(),
+			})
+		}
+
+		slices.SortStableFunc(ts, func(a, b *eventspb.TeamMemberStats) int {
+			return strings.Compare(a.PartyId, b.PartyId)
+		})
+
+		teamsStats = append(teamsStats, &eventspb.TeamStats{
+			TeamId:       teamID,
+			MembersStats: ts,
+		})
+	}
+
+	slices.SortStableFunc(teamsStats, func(a, b *eventspb.TeamStats) int {
+		return strings.Compare(a.TeamId, b.TeamId)
+	})
+
+	return &TeamsStatsUpdated{
+		Base: newBase(ctx, TeamsStatsUpdatedEvent),
+		e: eventspb.TeamsStatsUpdated{
+			Stats:   teamsStats,
+			AtEpoch: seq,
+		},
+	}
+}
+
+func TeamsStatsUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TeamsStatsUpdated {
+	return &TeamsStatsUpdated{
+		Base: newBaseFromBusEvent(ctx, TeamsStatsUpdatedEvent, be),
+		e:    *be.GetTeamsStatsUpdated(),
 	}
 }

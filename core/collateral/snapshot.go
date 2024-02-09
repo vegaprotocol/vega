@@ -22,9 +22,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/pkg/errors"
 )
 
@@ -111,7 +111,6 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 	e.state.serialisedAccounts, err = proto.Marshal(p.IntoProto())
 	e.updateNextBalanceSnapshot(accs.NextBalanceSnapshot)
 	e.snapshotBalances()
-	e.activeRestore = true
 	return err
 }
 

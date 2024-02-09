@@ -151,8 +151,4 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | party2 | ETH/MAR22 | 220809      | 242889  | 264970  | 309132  |
 
     # move to the next epoch to perform liquidity check
-    Then the network moves ahead "7" blocks
-    And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 533535       | 56341          | 150           |
-
+    # We used to check for liquidity auctions here, but those are now removed

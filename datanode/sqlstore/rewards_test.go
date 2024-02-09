@@ -13,37 +13,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
+
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 func addTestReward(t *testing.T,
@@ -59,6 +50,7 @@ func addTestReward(t *testing.T,
 	seqNum uint64,
 	amount num.Decimal,
 	txHash entities.TxHash,
+	gameID *entities.GameID,
 ) entities.Reward {
 	t.Helper()
 	r := entities.Reward{
@@ -68,14 +60,15 @@ func addTestReward(t *testing.T,
 		RewardType:     rewardType,
 		EpochID:        epochID,
 		Amount:         amount,
+		QuantumAmount:  amount,
 		PercentOfTotal: 0.2,
 		Timestamp:      timestamp.Truncate(time.Microsecond),
 		VegaTime:       block.VegaTime,
 		SeqNum:         seqNum,
 		TxHash:         txHash,
+		GameID:         gameID,
 	}
-	err := rs.Add(ctx, r)
-	require.NoError(t, err)
+	require.NoError(t, rs.Add(ctx, r))
 	return r
 }
 
@@ -102,7 +95,7 @@ func TestRewards(t *testing.T) {
 
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
@@ -119,11 +112,11 @@ func TestRewards(t *testing.T) {
 
 	now := time.Now()
 	amount := num.DecimalFromInt64(100)
-	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash())
-	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash())
-	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash())
-	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash())
-	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash())
+	reward1 := addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, amount, generateTxHash(), nil)
+	reward2 := addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 2, amount, generateTxHash(), nil)
+	reward3 := addTestReward(t, ctx, rs, party2, asset1, market2, 3, "GlobalReward", now, block, 3, amount, generateTxHash(), nil)
+	reward4 := addTestReward(t, ctx, rs, party2, asset2, market2, 4, "GlobalReward", now, block, 4, amount, generateTxHash(), nil)
+	reward5 := addTestReward(t, ctx, rs, party2, asset2, market2, 5, "GlobalReward", now, block, 5, amount, generateTxHash(), nil)
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Reward{reward1, reward2, reward3, reward4, reward5}
@@ -156,7 +149,7 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	bs := sqlstore.NewBlocks(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
@@ -171,56 +164,56 @@ func TestEpochRewardSummary(t *testing.T) {
 
 	now := time.Now()
 	// rewards for epoch1
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash())
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerPaidFees", now, block, 1, num.DecimalFromInt64(100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerPaidFees", now, block, 2, num.DecimalFromInt64(200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerPaidFees", now, block, 3, num.DecimalFromInt64(300), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "RewardMakerPaidFees", now, block, 4, num.DecimalFromInt64(110), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "RewardMakerPaidFees", now, block, 5, num.DecimalFromInt64(220), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "RewardMakerPaidFees", now, block, 6, num.DecimalFromInt64(330), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerPaidFees", now, block, 7, num.DecimalFromInt64(400), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerPaidFees", now, block, 8, num.DecimalFromInt64(500), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerPaidFees", now, block, 9, num.DecimalFromInt64(600), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "RewardMakerPaidFees", now, block, 10, num.DecimalFromInt64(410), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "RewardMakerPaidFees", now, block, 11, num.DecimalFromInt64(520), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "RewardMakerPaidFees", now, block, 12, num.DecimalFromInt64(630), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 13, num.DecimalFromInt64(1000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 14, num.DecimalFromInt64(2000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 1, "RewardMakerReceivedFees", now, block, 15, num.DecimalFromInt64(3000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 1, "GlobalReward", now, block, 16, num.DecimalFromInt64(1100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 1, "GlobalReward", now, block, 17, num.DecimalFromInt64(2200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 1, "GlobalReward", now, block, 18, num.DecimalFromInt64(3300), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 19, num.DecimalFromInt64(4000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 20, num.DecimalFromInt64(5000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 1, "RewardMakerReceivedFees", now, block, 21, num.DecimalFromInt64(6000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 1, "GlobalReward", now, block, 22, num.DecimalFromInt64(4100), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 1, "GlobalReward", now, block, 23, num.DecimalFromInt64(5200), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 1, "GlobalReward", now, block, 24, num.DecimalFromInt64(6300), generateTxHash(), nil)
 
 	// rewards for epoch2
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash())
-	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash())
-	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash())
-	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash())
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerPaidFees", now, block, 25, num.DecimalFromInt64(10000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerPaidFees", now, block, 26, num.DecimalFromInt64(20000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerPaidFees", now, block, 27, num.DecimalFromInt64(30000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "RewardMakerPaidFees", now, block, 28, num.DecimalFromInt64(11000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "RewardMakerPaidFees", now, block, 29, num.DecimalFromInt64(22000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "RewardMakerPaidFees", now, block, 30, num.DecimalFromInt64(33000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerPaidFees", now, block, 31, num.DecimalFromInt64(40000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerPaidFees", now, block, 32, num.DecimalFromInt64(50000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerPaidFees", now, block, 33, num.DecimalFromInt64(60000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "RewardMakerPaidFees", now, block, 34, num.DecimalFromInt64(41000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "RewardMakerPaidFees", now, block, 35, num.DecimalFromInt64(52000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "RewardMakerPaidFees", now, block, 36, num.DecimalFromInt64(63000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 37, num.DecimalFromInt64(100000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 38, num.DecimalFromInt64(200000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market1, 2, "RewardMakerReceivedFees", now, block, 39, num.DecimalFromInt64(300000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset1, market2, 2, "GlobalReward", now, block, 40, num.DecimalFromInt64(110000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset1, market2, 2, "GlobalReward", now, block, 41, num.DecimalFromInt64(220000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset1, market2, 2, "GlobalReward", now, block, 42, num.DecimalFromInt64(330000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 43, num.DecimalFromInt64(400000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 44, num.DecimalFromInt64(500000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market1, 2, "RewardMakerReceivedFees", now, block, 45, num.DecimalFromInt64(600000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party1, asset2, market2, 2, "GlobalReward", now, block, 46, num.DecimalFromInt64(410000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party2, asset2, market2, 2, "GlobalReward", now, block, 47, num.DecimalFromInt64(520000), generateTxHash(), nil)
+	addTestReward(t, ctx, rs, party3, asset2, market2, 2, "GlobalReward", now, block, 48, num.DecimalFromInt64(630000), generateTxHash(), nil)
 
 	first := int32(1000)
 	pagination, _ := entities.NewCursorPagination(&first, nil, nil, nil, false)
@@ -331,10 +324,10 @@ func verifyRewardsForEpoch(t *testing.T, summaries []entities.EpochRewardSummary
 	}
 }
 
-func setupRewardsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets) {
+func setupRewardsTest(t *testing.T, ctx context.Context) (*sqlstore.Blocks, *sqlstore.Rewards, *sqlstore.Parties, *sqlstore.Assets) {
 	t.Helper()
 	bs := sqlstore.NewBlocks(connectionSource)
-	rs := sqlstore.NewRewards(connectionSource)
+	rs := sqlstore.NewRewards(ctx, connectionSource)
 	ps := sqlstore.NewParties(connectionSource)
 	as := sqlstore.NewAssets(connectionSource)
 
@@ -488,8 +481,8 @@ func TestRewardsPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPagination(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, false)
@@ -497,7 +490,7 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -511,8 +504,8 @@ func testRewardsCursorPaginationNoPagination(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPage(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
@@ -521,7 +514,7 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(637), got[0].EpochID)
@@ -535,8 +528,8 @@ func testRewardsCursorPaginationFirstPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPage(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
@@ -545,7 +538,7 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(757), got[0].EpochID)
@@ -559,8 +552,8 @@ func testRewardsCursorPaginationLastPage(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -571,7 +564,7 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(737), got[0].EpochID)
@@ -585,8 +578,8 @@ func testRewardsCursorPaginationFirstPageAfter(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -596,7 +589,7 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 757}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, false)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(741), got[0].EpochID)
@@ -610,8 +603,8 @@ func testRewardsCursorPaginationLastPageBefore(t *testing.T) {
 }
 
 func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	pagination, err := entities.NewCursorPagination(nil, nil, nil, nil, true)
@@ -619,7 +612,7 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -633,8 +626,8 @@ func testRewardsCursorPaginationNoPaginationNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	first := int32(3)
@@ -643,7 +636,7 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(1027), got[0].EpochID)
@@ -657,8 +650,8 @@ func testRewardsCursorPaginationFirstPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	last := int32(3)
@@ -667,7 +660,7 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
 	assetID := "8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(643), got[0].EpochID)
@@ -681,8 +674,8 @@ func testRewardsCursorPaginationLastPageNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -693,7 +686,7 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 	pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 	require.NoError(t, err)
 
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(747), got[0].EpochID)
@@ -707,8 +700,8 @@ func testRewardsCursorPaginationFirstPageAfterNewestFirst(t *testing.T) {
 }
 
 func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
-	bs, rs, ps, as := setupRewardsTest(t)
 	ctx := tempTransaction(t)
+	bs, rs, ps, as := setupRewardsTest(t, ctx)
 
 	populateTestRewards(ctx, t, bs, ps, as, rs)
 	partyID := "89c701d1ae2819263e45538d0b25022988bc2508a02c654462d22e0afb626a7d"
@@ -718,7 +711,7 @@ func testRewardsCursorPaginationLastPageBeforeNewestFirst(t *testing.T) {
 	before := entities.NewCursor(entities.RewardCursor{PartyID: partyID, AssetID: assetID, EpochID: 643}.String()).Encode()
 	pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 	require.NoError(t, err)
-	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination)
+	got, pageInfo, err := rs.GetByCursor(ctx, &partyID, &assetID, nil, nil, pagination, nil, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(got))
 	assert.Equal(t, int64(744), got[0].EpochID)
@@ -750,16 +743,16 @@ func Test_FilterRewardsQuery(t *testing.T) {
 				inFilter: entities.RewardSummaryFilter{
 					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
 					MarketIDs: []entities.MarketID{"deadbeef"},
-					FromEpoch: toPtr(uint64(123)),
-					ToEpoch:   toPtr(uint64(124)),
+					FromEpoch: ptr.From(uint64(123)),
+					ToEpoch:   ptr.From(uint64(124)),
 				},
 			},
 			wantQuery: ` WHERE asset_id = ANY($1) AND market_id = ANY($2) AND epoch_id >= $3 AND epoch_id <= $4`,
 			wantArgs: []any{
 				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
 				"deadbeef",
-				toPtr(uint64(123)),
-				toPtr(uint64(124)),
+				ptr.From(uint64(123)),
+				ptr.From(uint64(124)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -802,12 +795,12 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					FromEpoch: toPtr(uint64(123)),
+					FromEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id >= $1`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -815,12 +808,12 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					ToEpoch: toPtr(uint64(123)),
+					ToEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id <= $1`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -828,14 +821,14 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			args: args{
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
-					FromEpoch: toPtr(uint64(123)),
-					ToEpoch:   toPtr(uint64(124)),
+					FromEpoch: ptr.From(uint64(123)),
+					ToEpoch:   ptr.From(uint64(124)),
 				},
 			},
 			wantQuery: ` WHERE epoch_id >= $1 AND epoch_id <= $2`,
 			wantArgs: []any{
-				toPtr(uint64(123)),
-				toPtr(uint64(124)),
+				ptr.From(uint64(123)),
+				ptr.From(uint64(124)),
 			},
 			wantErr: assert.NoError,
 		}, {
@@ -844,13 +837,13 @@ func Test_FilterRewardsQuery(t *testing.T) {
 				table: "test",
 				inFilter: entities.RewardSummaryFilter{
 					AssetIDs:  []entities.AssetID{"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa"},
-					FromEpoch: toPtr(uint64(123)),
+					FromEpoch: ptr.From(uint64(123)),
 				},
 			},
 			wantQuery: ` WHERE asset_id = ANY($1) AND epoch_id >= $2`,
 			wantArgs: []any{
 				"8aa92225c32adb54e527fcb1aee2930cbadb4df6f068ab2c2d667eb057ef00fa",
-				toPtr(uint64(123)),
+				ptr.From(uint64(123)),
 			},
 			wantErr: assert.NoError,
 		},
@@ -870,4 +863,371 @@ func Test_FilterRewardsQuery(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRewardsGameTotals(t *testing.T) {
+	ctx := tempTransaction(t)
+	// teams
+	teams := []entities.Team{
+		{
+			ID:             "deadd00d01",
+			Referrer:       "beefbeef01",
+			Name:           "aaaa",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+		{
+			ID:             "deadd00d02",
+			Referrer:       "beefbeef02",
+			Name:           "bbbb",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+		{
+			ID:             "deadd00d03",
+			Referrer:       "beefbeef03",
+			Name:           "cccc",
+			TeamURL:        nil,
+			AvatarURL:      nil,
+			Closed:         false,
+			CreatedAt:      time.Now(),
+			CreatedAtEpoch: 0,
+			VegaTime:       time.Now(),
+		},
+	}
+	for _, team := range teams {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`INSERT INTO teams (id, referrer, name, team_url, avatar_url, closed, created_at_epoch, created_at, vega_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			team.ID, team.Referrer, team.Name, team.TeamURL, team.AvatarURL, team.Closed, team.CreatedAtEpoch, team.CreatedAt, team.VegaTime)
+		require.NoError(t, err)
+	}
+	// team members data
+	teamMembers := []entities.TeamMember{
+		{
+			TeamID:        "deadd00d01",
+			PartyID:       "deadbeef01",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+		{
+			TeamID:        "deadd00d02",
+			PartyID:       "deadbeef02",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+		{
+			TeamID:        "deadd00d03",
+			PartyID:       "deadbeef03",
+			JoinedAt:      time.Now(),
+			JoinedAtEpoch: 0,
+			VegaTime:      time.Now(),
+		},
+	}
+	for _, member := range teamMembers {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`INSERT INTO team_members (team_id, party_id, joined_at_epoch, joined_at, vega_time)
+		VALUES ($1, $2, $3, $4, $5)`,
+			member.TeamID, member.PartyID, member.JoinedAtEpoch, member.JoinedAt, member.VegaTime)
+		require.NoError(t, err)
+	}
+	// populate the game reward totals with some test data
+	existingTotals := []entities.RewardTotals{
+		{
+			GameID:              "deadbeef01",
+			PartyID:             "cafedaad01",
+			AssetID:             "deadbaad01",
+			MarketID:            "beefcafe01",
+			EpochID:             1,
+			TeamID:              "deadd00d01",
+			TotalRewards:        decimal.NewFromFloat(1000),
+			TotalRewardsQuantum: decimal.NewFromFloat(1000),
+		},
+		{
+			GameID:              "deadbeef02",
+			PartyID:             "cafedaad02",
+			AssetID:             "deadbaad02",
+			MarketID:            "beefcafe02",
+			EpochID:             1,
+			TeamID:              "deadd00d02",
+			TotalRewards:        decimal.NewFromFloat(2000),
+			TotalRewardsQuantum: decimal.NewFromFloat(2000),
+		},
+		{
+			GameID:              "deadbeef03",
+			PartyID:             "cafedaad03",
+			AssetID:             "deadbaad03",
+			MarketID:            "beefcafe03",
+			EpochID:             1,
+			TeamID:              "deadd00d03",
+			TotalRewards:        decimal.NewFromFloat(3000),
+			TotalRewardsQuantum: decimal.NewFromFloat(3000),
+		},
+	}
+	for _, total := range existingTotals {
+		_, err := connectionSource.Connection.Exec(ctx,
+			`INSERT INTO game_reward_totals (game_id, party_id, asset_id, market_id, epoch_id, team_id, total_rewards, total_rewards_quantum)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			total.GameID, total.PartyID, total.AssetID, total.MarketID, total.EpochID, total.TeamID, total.TotalRewards, total.TotalRewardsQuantum)
+		require.NoError(t, err)
+	}
+
+	ts := time.Now()
+	ts2 := ts.Add(time.Minute)
+	// add rewards
+	rewardsToAdd := []entities.Reward{
+		{
+			PartyID:            "cafedaad01",
+			AssetID:            "deadbaad01",
+			MarketID:           "beefcafe01",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             1,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef01")),
+		},
+		{
+			PartyID:            "cafedaad02",
+			AssetID:            "deadbaad02",
+			MarketID:           "beefcafe02",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             2,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef02")),
+		},
+		{
+			PartyID:            "cafedaad03",
+			AssetID:            "deadbaad03",
+			MarketID:           "beefcafe03",
+			EpochID:            2,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts,
+			TxHash:             "",
+			VegaTime:           ts,
+			SeqNum:             3,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef03")),
+		},
+		{
+			PartyID:            "cafedaad01",
+			AssetID:            "deadbaad01",
+			MarketID:           "beefcafe01",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             1,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef01")),
+		},
+		{
+			PartyID:            "cafedaad02",
+			AssetID:            "deadbaad02",
+			MarketID:           "beefcafe02",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             2,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef02")),
+		},
+		{
+			PartyID:            "cafedaad03",
+			AssetID:            "deadbaad03",
+			MarketID:           "beefcafe03",
+			EpochID:            3,
+			Amount:             decimal.NewFromFloat(1000),
+			QuantumAmount:      decimal.NewFromFloat(1000),
+			PercentOfTotal:     0,
+			RewardType:         "ACCOUNT_TYPE_UNSPECIFIED",
+			Timestamp:          ts2,
+			TxHash:             "",
+			VegaTime:           ts2,
+			SeqNum:             3,
+			LockedUntilEpochID: 30,
+			GameID:             ptr.From(entities.GameID("deadbeef03")),
+		},
+	}
+
+	rs := sqlstore.NewRewards(ctx, connectionSource)
+	for _, r := range rewardsToAdd {
+		require.NoError(t, rs.Add(ctx, r))
+	}
+
+	// Now make sure the totals are updated and correct
+	testCases := []struct {
+		game_id  entities.GameID
+		party_id entities.PartyID
+		epoch_id int64
+		want     decimal.Decimal
+	}{
+		{
+			game_id:  "deadbeef01",
+			party_id: "cafedaad01",
+			epoch_id: 2,
+			want:     decimal.NewFromFloat(2000),
+		},
+		{
+			game_id:  "deadbeef01",
+			party_id: "cafedaad01",
+			epoch_id: 3,
+			want:     decimal.NewFromFloat(3000),
+		},
+		{
+			game_id:  "deadbeef02",
+			party_id: "cafedaad02",
+			epoch_id: 2,
+			want:     decimal.NewFromFloat(3000),
+		},
+		{
+			game_id:  "deadbeef02",
+			party_id: "cafedaad02",
+			epoch_id: 3,
+			want:     decimal.NewFromFloat(4000),
+		},
+	}
+	for _, tc := range testCases {
+		var totals []entities.RewardTotals
+		require.NoError(t, pgxscan.Select(ctx, connectionSource.Connection, &totals,
+			`SELECT * FROM game_reward_totals WHERE game_id = $1 AND party_id = $2 AND epoch_id = $3`,
+			tc.game_id, tc.party_id, tc.epoch_id))
+		assert.Equal(t, 1, len(totals))
+		assert.True(t, tc.want.Equal(totals[0].TotalRewards), "totals don't match, got: %s, want: %s", totals[0].TotalRewards, tc.want)
+		assert.True(t, tc.want.Equal(totals[0].TotalRewardsQuantum), "totals don't match, got: %s, want: %s", totals[0].TotalRewardsQuantum, tc.want)
+	}
+}
+
+func filterRewardsByParty(rewards []entities.Reward, partyID entities.PartyID) []entities.Reward {
+	filtered := make([]entities.Reward, 0)
+	for _, r := range rewards {
+		if r.PartyID == partyID {
+			filtered = append(filtered, r)
+		}
+	}
+
+	return filtered
+}
+
+func filterRewardsByTeam(rewards []entities.Reward, teamID entities.TeamID) []entities.Reward {
+	filtered := make([]entities.Reward, 0)
+	for _, r := range rewards {
+		if r.TeamID != nil && *r.TeamID == teamID {
+			filtered = append(filtered, r)
+		}
+	}
+
+	return filtered
+}
+
+func filterRewardsByGame(rewards []entities.Reward, gameID entities.GameID) []entities.Reward {
+	filtered := make([]entities.Reward, 0)
+	for _, r := range rewards {
+		if *r.GameID == gameID {
+			filtered = append(filtered, r)
+		}
+	}
+
+	return filtered
+}
+
+func TestRewardFilterByTeamIDAndGameID(t *testing.T) {
+	// going to use the games setup because we need to make sure the rewards have game and associated team data too.
+	ctx := tempTransaction(t)
+	stores := setupGamesTest(t, ctx)
+	startingBlock := addTestBlockForTime(t, ctx, stores.blocks, time.Now())
+	_, gameIDs, gameRewards, teams := setupGamesData(ctx, t, stores, startingBlock, 50)
+	rewards := make([]entities.Reward, 0)
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+	// setup, get the unique individuals and from all the rewards
+	individuals := make(map[entities.PartyID]struct{})
+	for _, gr := range gameRewards {
+		for _, r := range gr {
+			rewards = append(rewards, r)
+			individuals[r.PartyID] = struct{}{}
+		}
+	}
+
+	t.Run("Should return rewards for all teams the party has been a member of if no team ID is provided", func(t *testing.T) {
+		// create a list of parties so we can pick one at random
+		parties := make([]entities.PartyID, 0)
+		for p := range individuals {
+			parties = append(parties, p)
+		}
+		// pick a random party
+		i := r.Intn(len(parties))
+		partyID := parties[i]
+		page := entities.DefaultCursorPagination(true)
+		// get the rewards for that party
+		got, _, err := stores.rewards.GetByCursor(ctx, ptr.From(partyID.String()), nil, nil, nil, page, nil, nil)
+		require.NoError(t, err)
+		want := filterRewardsByParty(rewards, partyID)
+		// we don't care about the ordering as other tests already validate that, we just want to make sure we have all the rewards for the party
+		assert.ElementsMatchf(t, want, got, "got: %v, want: %v", got, want)
+	})
+
+	t.Run("Should return rewards for the specified team if a team ID is provided", func(t *testing.T) {
+		allTeams := make(map[string]struct{})
+		for team := range teams {
+			allTeams[team] = struct{}{}
+		}
+		teamIDs := make([]string, 0)
+		for team := range allTeams {
+			teamIDs = append(teamIDs, team)
+		}
+		i := r.Intn(len(teamIDs))
+		teamID := teamIDs[i]
+		i = r.Intn(len(teams[teamID]))
+		party := teams[teamID][i]
+		page := entities.DefaultCursorPagination(true)
+		got, _, err := stores.rewards.GetByCursor(ctx, ptr.From(party.ID.String()), nil, nil, nil, page, ptr.From(teamID), nil)
+		require.NoError(t, err)
+		want := filterRewardsByParty(filterRewardsByTeam(rewards, entities.TeamID(teamID)), party.ID)
+		assert.ElementsMatchf(t, want, got, "got: %v, want: %v", got, want)
+	})
+
+	t.Run("Should return rewards for the specified game if a game ID is provided", func(t *testing.T) {
+		i := r.Intn(len(gameIDs))
+		gameID := gameIDs[i]
+		page := entities.DefaultCursorPagination(true)
+		got, _, err := stores.rewards.GetByCursor(ctx, nil, nil, nil, nil, page, nil, ptr.From(gameID))
+		require.NoError(t, err)
+		want := filterRewardsByGame(rewards, entities.GameID(gameID))
+		assert.ElementsMatchf(t, want, got, "got: %v, want: %v", got, want)
+	})
 }

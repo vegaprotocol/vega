@@ -20,10 +20,9 @@ import (
 	"errors"
 	"sync"
 
-	lb "code.vegaprotocol.io/vega/libs/broker"
-
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/coreapi/services"
+	lb "code.vegaprotocol.io/vega/libs/broker"
 	"code.vegaprotocol.io/vega/logging"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )

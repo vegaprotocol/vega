@@ -76,14 +76,8 @@ func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context,
 	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(d)
 }
 
-func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, d num.Decimal) {
-	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, d)
-	// TODO: Send an event containing updated parameter
-}
-
 func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
 	m.pMonitor.SetMinDuration(d)
-	m.lMonitor.SetMinDuration(d)
 	m.minDuration = d
 	evt := m.as.UpdateMinDuration(ctx, d)
 	// we were in an auction, and the duration of the auction was updated
@@ -104,6 +98,17 @@ func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	}
 	m.nextMTM = m.nextMTM.Add(d)
 	m.mtmDelta = d
+}
+
+func (m *Market) OnInternalCompositePriceUpdateFrequency(ctx context.Context, d time.Duration) {
+	if !m.perp {
+		return
+	}
+	if !m.nextInternalCompositePriceCalc.IsZero() {
+		m.nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.Add(-m.mtmDelta)
+	}
+	m.nextInternalCompositePriceCalc = m.nextInternalCompositePriceCalc.Add(d)
+	m.internalCompositePriceFrequency = d
 }
 
 func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) {

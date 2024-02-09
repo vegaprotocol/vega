@@ -62,6 +62,9 @@ models:
   OrderStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.OrderStatus
+  LiquidityFeeMethod:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.LiquidityFeeMethod
   DepositStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DepositStatus
@@ -77,6 +80,9 @@ models:
   TransferStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferStatus
+  TransferScope:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferScope
   TransferType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.TransferType
@@ -119,6 +125,9 @@ models:
   StopOrderTriggerDirection:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderTriggerDirection
+  StopOrderSizeOverrideSetting:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderSizeOverrideSetting
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   OrderUpdate:
@@ -159,16 +168,24 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
   ObservableMarketData:
     model: code.vegaprotocol.io/vega/protos/vega.MarketData
+  CompositePriceState:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceState
+  CompositePriceSource:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceSource
   MarginLevels:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   MarginLevelsUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   MarginEstimate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarginEstimate
+  OrderInfo:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.OrderInfo
   LiquidationPrice:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationPrice
   LiquidationEstimate:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationEstimate
+  CollateralIncreaseEstimate:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CollateralIncreaseEstimate
   NodeSignature:
     model: code.vegaprotocol.io/vega/protos/vega/commands/v1.NodeSignature
   ProposalEvent:
@@ -270,6 +287,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalRationale
   ProposalTerms:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
+  BatchProposalTerms:
+    model: code.vegaprotocol.io/vega/protos/vega.BatchProposalTerms
+  BatchProposalTermsChange:
+    model: code.vegaprotocol.io/vega/protos/vega.BatchProposalTermsChange
   ProposalDetail:
     model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:
@@ -312,6 +333,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateSpotMarketConfiguration
   LiquiditySLAParameters:
     model: code.vegaprotocol.io/vega/protos/vega.LiquiditySLAParameters
+  LiquidationStrategy:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquidationStrategy
+  CompositePriceConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.CompositePriceConfiguration
+  LiquidityFeeSettings:
+    model: code.vegaprotocol.io/vega/protos/vega.LiquidityFeeSettings
   Asset:
     model: code.vegaprotocol.io/vega/protos/vega.Asset
     fields:
@@ -330,6 +357,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.IcebergOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceSpecPerpetualBinding:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToPerpetualBinding
   DataSourceDefinition:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinition
   DataSourceDefinitionExternal:
@@ -450,6 +479,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketConfiguration_LogNormal
   UpdateFutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateFutureProduct
+  UpdatePerpetualProduct:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdatePerpetualProduct
   TradeConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TradeConnection
   TradeEdge:
@@ -674,6 +705,22 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamEdge
   TeamConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamConnection
+  TeamStatistics:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatistics
+  QuantumRewardsPerEpoch:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.QuantumRewardsPerEpoch
+  QuantumVolumesPerEpoch:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.QuantumVolumesPerEpoch
+  TeamStatisticsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamStatisticsEdge
+  TeamsStatisticsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamsStatisticsConnection
+  TeamMemberStatistics:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMemberStatistics
+  TeamMemberStatisticsEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMemberStatisticsEdge
+  TeamMembersStatisticsConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamMembersStatisticsConnection
   TeamReferee:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TeamReferee
   TeamRefereeEdge:
@@ -726,3 +773,29 @@ models:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.EntityScope
   DistributionStrategy:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.DistributionStrategy
+  TotalTransferFeeDiscount:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GetTotalTransferFeeDiscountResponse
+  EstimatedTransferFee:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EstimateTransferFeeResponse
+  Game:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.Game
+  GameEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GameEdge
+  GamesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.GamesConnection
+  PartyMarginMode:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginMode
+  PartyMarginModeEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModeEdge
+  PartyMarginModesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyMarginModesConnection
+  PartiesProfilesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartiesProfilesConnection
+  PartyProfileEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PartyProfileEdge
+  PartyProfile:
+    model: code.vegaprotocol.io/vega/protos/vega.PartyProfile
+  Metadata:
+    model: code.vegaprotocol.io/vega/protos/vega.Metadata
+  MarginMode:
+    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarginMode

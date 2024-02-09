@@ -22,13 +22,12 @@ import (
 	"path/filepath"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
-	vgjson "code.vegaprotocol.io/vega/libs/json"
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
 var errNoHistorySegmentFound = fmt.Errorf("no history segments found")

@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -37,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -110,7 +99,7 @@ type MarketData struct {
 	VegaTime time.Time
 	// SeqNum is the order in which the market data was received in the block
 	SeqNum uint64
-	// NextMarkToMarket is the next timestamp when the market wil be marked to market
+	// NextMarkToMarket is the next timestamp when the market will be marked to market
 	NextMarkToMarket time.Time
 	// market growth for the last market window
 	MarketGrowth num.Decimal
@@ -119,6 +108,12 @@ type MarketData struct {
 	LastTradedPrice num.Decimal
 	// Data specific to the product type
 	ProductData *ProductData
+	// NextNetworkCloseout is the time at which the network will attempt its next closeout order.
+	NextNetworkCloseout time.Time
+	// The methodology used for the calculation of the mark price.
+	MarkPriceType string
+	// The internal state of the mark price composite price.
+	MarkPriceState *CompositePriceState
 }
 
 type PriceMonitoringTrigger struct {
@@ -182,6 +177,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		return nil, err
 	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
+	nextNC := time.Unix(0, data.NextNetworkCloseout)
 
 	marketData := &MarketData{
 		LastTradedPrice:            lastTradedPrice,
@@ -215,6 +211,12 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
 		MarketGrowth:               growth,
+		NextNetworkCloseout:        nextNC,
+		MarkPriceType:              data.MarkPriceType.String(),
+	}
+
+	if data.MarkPriceState != nil {
+		marketData.MarkPriceState = &CompositePriceState{data.MarkPriceState}
 	}
 
 	if data.ProductData != nil {
@@ -246,6 +248,16 @@ func (md MarketData) Equal(other MarketData) bool {
 	if other.ProductData != nil {
 		productData2, _ = other.ProductData.MarshalJSON()
 	}
+
+	markPriceState1 := []byte{}
+	markPriceState2 := []byte{}
+	if md.MarkPriceState != nil {
+		markPriceState1, _ = md.MarkPriceState.MarshalJSON()
+	}
+	if other.MarkPriceState != nil {
+		markPriceState2, _ = other.MarkPriceState.MarshalJSON()
+	}
+
 	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
 		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
@@ -277,7 +289,10 @@ func (md MarketData) Equal(other MarketData) bool {
 		md.MarketState == other.MarketState &&
 		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
 		md.MarketGrowth.Equal(other.MarketGrowth) &&
-		bytes.Equal(productData1, productData2)
+		bytes.Equal(productData1, productData2) &&
+		md.NextNetworkCloseout.Equal(other.NextNetworkCloseout) &&
+		md.MarkPriceType == other.MarkPriceType &&
+		bytes.Equal(markPriceState1, markPriceState2)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -375,10 +390,16 @@ func (md MarketData) ToProto() *types.MarketData {
 		LiquidityProviderSla:      md.LiquidityProviderSLA,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
 		MarketGrowth:              md.MarketGrowth.String(),
+		NextNetworkCloseout:       md.NextNetworkCloseout.UnixNano(),
+		MarkPriceType:             types.CompositePriceType(types.CompositePriceType_value[md.MarkPriceType]),
 	}
 
 	if md.ProductData != nil {
 		result.ProductData = md.ProductData.ProductData
+	}
+
+	if md.MarkPriceState != nil {
+		result.MarkPriceState = md.MarkPriceState.CompositePriceState
 	}
 
 	return &result

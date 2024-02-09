@@ -137,7 +137,6 @@ func TestRecordPriceChange(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -195,7 +194,6 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(19)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(14)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(15)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(10)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -379,7 +377,6 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	// auctionStateMock.EXPECT().InAuction().Return(false).Times(25)
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
 
 	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
@@ -604,8 +601,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(2)
+	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(3)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -633,7 +629,6 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	// auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
@@ -668,7 +663,6 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(4)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(3)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -698,7 +692,6 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
 	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 
@@ -741,7 +734,6 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -866,7 +858,6 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -989,7 +980,6 @@ func TestMarketInGenericAuction(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(5)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(5)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().IsPriceExtension().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -1094,7 +1084,6 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(11)
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).Times(11)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 

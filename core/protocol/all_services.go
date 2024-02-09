@@ -50,6 +50,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams/dispatch"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/parties"
 	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -84,6 +85,7 @@ type EthCallEngine interface {
 	GetInitialTriggerTime(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
+	EnsureChainID(chainID string, confirmWithClient bool)
 }
 
 type allServices struct {
@@ -124,6 +126,8 @@ type allServices struct {
 	codec                   abci.Codec
 	ethereumOraclesVerifier *ethverifier.Verifier
 
+	partiesEngine *parties.SnapshottedEngine
+
 	assets                *assets.Service
 	topology              *validators.Topology
 	notary                *notary.SnapshotNotary
@@ -154,6 +158,12 @@ type allServices struct {
 	activityStreak *activitystreak.SnapshotEngine
 	vesting        *vesting.SnapshotEngine
 	volumeDiscount *volumediscount.SnapshottedEngine
+
+	// l2 stuff
+	// TODO: instantiate
+	l2Clients     *ethclient.L2Clients
+	l2Verifiers   *ethverifier.L2Verifiers
+	l2CallEngines *L2EthCallEngines
 }
 
 func newServices(
@@ -167,6 +177,8 @@ func newServices(
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
+
+	l2Clients *ethclient.L2Clients,
 ) (_ *allServices, err error) {
 	svcs := &allServices{
 		ctx:              ctx,
@@ -174,6 +186,7 @@ func newServices(
 		confWatcher:      conf,
 		conf:             conf.Get(),
 		ethClient:        ethClient,
+		l2Clients:        l2Clients,
 		ethConfirmations: ethConfirmations,
 		blockchainClient: blockchainClient,
 		stats:            stats,
@@ -239,8 +252,13 @@ func newServices(
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.ethClient, svcs.eventForwarder)
 
+	svcs.l2CallEngines = NewL2EthCallEngines(svcs.log, svcs.conf.EvtForward.EthCall, svcs.conf.IsValidator(), svcs.l2Clients, svcs.eventForwarder, svcs.oracle.AddSpecActivationListener)
+
 	svcs.ethereumOraclesVerifier = ethverifier.New(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	svcs.l2Verifiers = ethverifier.NewL2Verifiers(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
+		svcs.oracle, svcs.l2Clients, svcs.l2CallEngines, svcs.conf.IsValidator())
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
 	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
@@ -258,6 +276,8 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
 	svcs.teamsEngine = teams.NewSnapshottedEngine(svcs.broker, svcs.timeService)
+
+	svcs.partiesEngine = parties.NewSnapshottedEngine(svcs.broker)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
 	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.teamsEngine, svcs.stakingAccounts)
@@ -289,15 +309,19 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
+
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(
-		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar, svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount,
+		svcs.log, svcs.conf.Execution, svcs.timeService, svcs.collateral, svcs.oracle, svcs.broker, svcs.statevar,
+		svcs.marketActivityTracker, svcs.assets, svcs.referralProgram, svcs.volumeDiscount, svcs.banking,
 	)
 	svcs.epochService.NotifyOnEpoch(svcs.executionEngine.OnEpochEvent, svcs.executionEngine.OnEpochRestore)
 	svcs.epochService.NotifyOnEpoch(svcs.marketActivityTracker.OnEpochEvent, svcs.marketActivityTracker.OnEpochRestore)
+	svcs.epochService.NotifyOnEpoch(svcs.banking.OnEpoch, svcs.banking.OnEpochRestore)
+
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -309,6 +333,12 @@ func newServices(
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 		} else {
 			stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
+			svcs.netParams.Watch([]netparams.WatchParam{
+				{
+					Param:   netparams.RewardAsset,
+					Watcher: stakingLoop.OnStakingAsstUpdate,
+				},
+			}...)
 			svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 			svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 		}
@@ -330,6 +360,7 @@ func newServices(
 	)
 
 	svcs.vesting = vesting.NewSnapshotEngine(svcs.log, svcs.collateral, svcs.activityStreak, svcs.broker, svcs.assets)
+	svcs.timeService.NotifyOnTick(svcs.vesting.OnTick)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology, svcs.vesting, svcs.banking, svcs.activityStreak)
 
 	// register this after the rewards engine is created to make sure the on epoch is called in the right order.
@@ -378,11 +409,10 @@ func newServices(
 	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
 		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier, svcs.vesting, svcs.activityStreak, svcs.referralProgram, svcs.volumeDiscount,
-		svcs.teamsEngine)
+		svcs.teamsEngine, svcs.spam, svcs.l2Verifiers)
 
-	svcs.snapshotEngine.AddProviders(svcs.spam)
+	pow := pow.New(svcs.log, svcs.conf.PoW)
 
-	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		pow.DisableVerification()
 	}
@@ -408,10 +438,6 @@ func newServices(
 		{
 			Param:   netparams.SpamPoWNumberOfTxPerBlock,
 			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-		},
-		{
-			Param:   netparams.ValidatorsEpochLength,
-			Watcher: pow.OnEpochDurationChanged,
 		},
 	}
 
@@ -454,6 +480,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.limits.OnTick,
 
 		svcs.ethereumOraclesVerifier.OnTick,
+		svcs.l2Verifiers.OnTick,
 	)
 }
 
@@ -477,6 +504,13 @@ func (svcs *allServices) registerConfigWatchers() {
 		func(cfg config.Config) { svcs.governance.ReloadConf(cfg.Governance) },
 		func(cfg config.Config) { svcs.stats.ReloadConf(cfg.Stats) },
 	)
+
+	if svcs.conf.HaveEthClient() {
+		svcs.confListenerIDs = svcs.confWatcher.OnConfigUpdateWithID(
+			func(cfg config.Config) { svcs.l2Clients.ReloadConf(cfg.Ethereum) },
+		)
+	}
+
 	svcs.timeService.NotifyOnTick(svcs.confWatcher.OnTimeUpdate)
 }
 
@@ -497,10 +531,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	spamWatchers := []netparams.WatchParam{}
 	if svcs.spam != nil {
 		spamWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: svcs.spam.OnEpochDurationChanged,
-			},
 			{
 				Param:   netparams.SpamProtectionMaxVotes,
 				Watcher: svcs.spam.OnMaxVotesChanged,
@@ -544,6 +574,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			{
 				Param:   netparams.SpamProtectionMaxCreateReferralSet,
 				Watcher: svcs.spam.OnMaxCreateReferralSet,
+			},
+			{
+				Param:   netparams.SpamProtectionMaxUpdatePartyProfile,
+				Watcher: svcs.spam.OnMaxPartyProfile,
 			},
 			{
 				Param:   netparams.SpamProtectionMaxUpdateReferralSet,
@@ -779,6 +813,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
 		},
 		{
+			Param:   netparams.TransferFeeMaxQuantumAmount,
+			Watcher: svcs.banking.OnMaxQuantumAmountUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeDiscountDecayFraction,
+			Watcher: svcs.banking.OnTransferFeeDiscountDecayFractionUpdate,
+		},
+		{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: svcs.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
+		},
+		{
 			Param:   netparams.GovernanceTransferMaxFraction,
 			Watcher: svcs.banking.OnMaxFractionChanged,
 		},
@@ -811,6 +857,46 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID(), svcs.conf.HaveEthClient())
+
+				// nothing to do if not a validator
+				if !svcs.conf.HaveEthClient() {
+					return nil
+				}
+
+				svcs.witness.SetDefaultConfirmations(ethCfg.Confirmations())
+				return nil
+			},
+		},
+		{
+			Param: netparams.BlockchainsEthereumL2Configs,
+			Watcher: func(ctx context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumL2ConfigsFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum l2 configuration: %w", err)
+				}
+
+				if svcs.conf.HaveEthClient() {
+					svcs.l2Clients.UpdateConfirmations(ethCfg)
+				}
+
+				// non-validators still need to create these engine's for consensus reasons
+				svcs.l2CallEngines.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+				svcs.l2Verifiers.OnEthereumL2ConfigsUpdated(
+					ctx, ethCfg)
+
+				return nil
+			},
+		},
+		{
 			Param:   netparams.LimitsProposeMarketEnabledFrom,
 			Watcher: svcs.limits.OnLimitsProposeMarketEnabledFromUpdate,
 		},
@@ -829,6 +915,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		{
+			Param:   netparams.InternalCompositePriceUpdateFrequency,
+			Watcher: svcs.executionEngine.OnInternalCompositePriceUpdateFrequency,
 		},
 		{
 			Param:   netparams.MarketSuccessorLaunchWindow,
@@ -869,6 +959,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.SpamProtectionApplyReferralMinFunds,
 			Watcher: svcs.referralProgram.OnMinBalanceForApplyReferralCodeUpdated,
+		},
+		{
+			Param:   netparams.SpamProtectionReferralSetMinFunds,
+			Watcher: svcs.referralProgram.OnMinBalanceForReferralProgramUpdated,
+		},
+		{
+			Param:   netparams.SpamProtectionUpdateProfileMinFunds,
+			Watcher: svcs.partiesEngine.OnMinBalanceForUpdatePartyProfileUpdated,
 		},
 		{
 			Param:   netparams.RewardsActivityStreakBenefitTiers,

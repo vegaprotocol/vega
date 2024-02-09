@@ -159,6 +159,26 @@ func MarshalTransferType(t vega.TransferType) graphql.Marshaler {
 	})
 }
 
+func MarshalTransferScope(s v2.ListTransfersRequest_Scope) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalTransferScope(v interface{}) (v2.ListTransfersRequest_Scope, error) {
+	s, ok := v.(string)
+	if !ok {
+		return v2.ListTransfersRequest_SCOPE_UNSPECIFIED, fmt.Errorf("expected transfer scope to be a string")
+	}
+
+	t, ok := v2.ListGovernanceDataRequest_Type_value[s]
+	if !ok {
+		return v2.ListTransfersRequest_SCOPE_UNSPECIFIED, fmt.Errorf("failed to convert transfer scope from GraphQL to Proto: %v", s)
+	}
+
+	return v2.ListTransfersRequest_Scope(t), nil
+}
+
 func UnmarshalTransferType(v interface{}) (vega.TransferType, error) {
 	s, ok := v.(string)
 	if !ok {
@@ -595,6 +615,24 @@ func UnmarshalStopOrderTriggerDirection(v interface{}) (vega.StopOrder_TriggerDi
 	return vega.StopOrder_TriggerDirection(t), nil
 }
 
+func MarshalStopOrderSizeOverrideSetting(s vega.StopOrder_SizeOverrideSetting) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderSizeOverrideSetting(v interface{}) (vega.StopOrder_SizeOverrideSetting, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED, fmt.Errorf("expected stop order size override setting to be a string")
+	}
+	t, ok := vega.StopOrder_SizeOverrideSetting_value[s]
+	if !ok {
+		return vega.StopOrder_SIZE_OVERRIDE_SETTING_UNSPECIFIED, fmt.Errorf("failed to convert stop order size override setting to Proto: %v", s)
+	}
+	return vega.StopOrder_SizeOverrideSetting(t), nil
+}
+
 func MarshalFundingPeriodDataPointSource(s eventspb.FundingPeriodDataPoint_Source) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		w.Write([]byte(strconv.Quote(s.String())))
@@ -611,4 +649,44 @@ func UnmarshalFundingPeriodDataPointSource(v interface{}) (eventspb.FundingPerio
 		return eventspb.FundingPeriodDataPoint_SOURCE_UNSPECIFIED, fmt.Errorf("failed to convert funding period source to Proto: %v", s)
 	}
 	return eventspb.FundingPeriodDataPoint_Source(t), nil
+}
+
+func MarshalLiquidityFeeMethod(s vega.LiquidityFeeSettings_Method) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalLiquidityFeeMethod(v interface{}) (vega.LiquidityFeeSettings_Method, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.LiquidityFeeSettings_METHOD_UNSPECIFIED, fmt.Errorf("expected method state to be a string")
+	}
+
+	side, ok := vega.Proposal_State_value[s]
+	if !ok {
+		return vega.LiquidityFeeSettings_METHOD_UNSPECIFIED, fmt.Errorf("failed to convert method from GraphQL to Proto: %v", s)
+	}
+
+	return vega.LiquidityFeeSettings_Method(side), nil
+}
+
+func MarshalMarginMode(s vega.MarginMode) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalMarginMode(v interface{}) (vega.MarginMode, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.MarginMode_MARGIN_MODE_UNSPECIFIED, fmt.Errorf("expected margin mode to be a string")
+	}
+
+	side, ok := vega.MarginMode_value[s]
+	if !ok {
+		return vega.MarginMode_MARGIN_MODE_UNSPECIFIED, fmt.Errorf("failed to convert margin mode from GraphQL to Proto: %v", s)
+	}
+
+	return vega.MarginMode(side), nil
 }

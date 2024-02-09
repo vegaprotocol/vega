@@ -23,9 +23,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/shopspring/decimal"
-	"google.golang.org/grpc"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -38,6 +35,9 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/shopspring/decimal"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -121,9 +121,28 @@ func (r *VegaResolverRoot) MarginLevels() MarginLevelsResolver {
 	return (*myMarginLevelsResolver)(r)
 }
 
+// MarginLevels returns the market levels resolver.
+func (r *VegaResolverRoot) MarginEstimate() MarginEstimateResolver {
+	return (*myMarginEstimateResolver)(r)
+}
+
 // MarginLevelsUpdate returns the market levels resolver.
 func (r *VegaResolverRoot) MarginLevelsUpdate() MarginLevelsUpdateResolver {
 	return (*myMarginLevelsUpdateResolver)(r)
+}
+
+func (r *VegaResolverRoot) OrderInfo() OrderInfoResolver {
+	return (*myOrderInfoResolver)(r)
+}
+
+type myOrderInfoResolver VegaResolverRoot
+
+func (r *myOrderInfoResolver) Remaining(ctx context.Context, obj *v2.OrderInfo, data string) error {
+	remaining, err := strconv.ParseUint(data, 10, 64)
+	if err == nil {
+		obj.Remaining = remaining
+	}
+	return err
 }
 
 // PriceLevel returns the price levels resolver.
@@ -189,6 +208,11 @@ func (r *VegaResolverRoot) AccountDetails() AccountDetailsResolver {
 // Proposal returns the proposal resolver.
 func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
+}
+
+// Proposal returns the proposal resolver.
+func (r *VegaResolverRoot) ProposalEdge() ProposalEdgeResolver {
+	return (*proposalEdgeResolver)(r)
 }
 
 // ProposalDetail returns the Proposal detail resolver.
@@ -266,6 +290,14 @@ func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
 
 func (r *VegaResolverRoot) ProposalTerms() ProposalTermsResolver {
 	return (*proposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTerms() BatchProposalTermsResolver {
+	return (*batchProposalTermsResolver)(r)
+}
+
+func (r *VegaResolverRoot) BatchProposalTermsChange() BatchProposalTermsChangeResolver {
+	return (*batchProposalTermsChangeResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateMarket() UpdateMarketResolver {
@@ -481,6 +513,14 @@ func (r *VegaResolverRoot) LiquiditySLAParameters() LiquiditySLAParametersResolv
 	return (*liquiditySLAParametersResolver)(r)
 }
 
+func (r *VegaResolverRoot) LiquidationStrategy() LiquidationStrategyResolver {
+	return (*liquidationStrategyResolver)(r)
+}
+
+func (r *VegaResolverRoot) CompositePriceConfiguration() CompositePriceConfigurationResolver {
+	return (*compositePriceConfigurationResolver)(r)
+}
+
 func (r *VegaResolverRoot) NewSpotMarket() NewSpotMarketResolver {
 	return (*newSpotMarketResolver)(r)
 }
@@ -505,6 +545,10 @@ func (r *VegaResolverRoot) CurrentReferralProgram() CurrentReferralProgramResolv
 	return (*currentReferralProgramResolver)(r)
 }
 
+func (r *VegaResolverRoot) ReferralSet() ReferralSetResolver {
+	return (*referralSetResolver)(r)
+}
+
 func (r *VegaResolverRoot) ReferralSetReferee() ReferralSetRefereeResolver {
 	return (*referralSetRefereeResolver)(r)
 }
@@ -519,6 +563,22 @@ func (r *VegaResolverRoot) BenefitTier() BenefitTierResolver {
 
 func (r *VegaResolverRoot) Team() TeamResolver {
 	return (*teamResolver)(r)
+}
+
+func (r *VegaResolverRoot) TeamStatistics() TeamStatisticsResolver {
+	return (*teamStatsResolver)(r)
+}
+
+func (r *VegaResolverRoot) QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolver {
+	return (*quantumRewardsPerEpochResolver)(r)
+}
+
+func (r *VegaResolverRoot) QuantumVolumesPerEpoch() QuantumVolumesPerEpochResolver {
+	return (*quantumVolumesPerEpochResolver)(r)
+}
+
+func (r *VegaResolverRoot) TeamMemberStatistics() TeamMemberStatisticsResolver {
+	return (*teamMemberStatsResolver)(r)
 }
 
 func (r *VegaResolverRoot) TeamReferee() TeamRefereeResolver {
@@ -587,6 +647,18 @@ func (r *VegaResolverRoot) PartyVestingStats() PartyVestingStatsResolver {
 
 func (r *VegaResolverRoot) DispatchStrategy() DispatchStrategyResolver {
 	return (*dispatchStrategyResolver)(r)
+}
+
+func (r *VegaResolverRoot) Game() GameResolver {
+	return (*gameResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyMarginMode() PartyMarginModeResolver {
+	return (*marginModeResolver)(r)
+}
+
+func (r *VegaResolverRoot) PerpetualData() PerpetualDataResolver {
+	return (*perpetualDataResolver)(r)
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot
@@ -696,6 +768,59 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
+	req := v2.ListPartiesProfilesRequest{
+		Parties:    ids,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListPartiesProfiles(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Profiles, nil
+}
+
+func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string, partyID *string, pagination *v2.Pagination) (*v2.PartyMarginModesConnection, error) {
+	req := v2.ListPartyMarginModesRequest{
+		MarketId:   marketID,
+		PartyId:    partyID,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListPartyMarginModes(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.PartyMarginModes, nil
+}
+
+func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, pagination *v2.Pagination) (*v2.GamesConnection, error) {
+	var from *uint64
+	var to *uint64
+
+	if epochFrom != nil {
+		from = ptr.From(uint64(*epochFrom))
+	}
+
+	if epochTo != nil {
+		to = ptr.From(uint64(*epochTo))
+	}
+
+	req := v2.ListGamesRequest{
+		GameId:      gameID,
+		EpochFrom:   from,
+		EpochTo:     to,
+		EntityScope: entityScope,
+		Pagination:  pagination,
+	}
+	res, err := r.tradingDataClientV2.ListGames(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return res.Games, nil
+}
+
 func (r *myQueryResolver) FundingPayments(
 	ctx context.Context,
 	partyID string,
@@ -776,13 +901,21 @@ func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFil
 	return resp.Positions, nil
 }
 
-func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
-	pagination *v2.Pagination, isReward *bool,
+func (r *myQueryResolver) TransfersConnection(
+	ctx context.Context,
+	partyID *string,
+	direction *TransferDirection,
+	pagination *v2.Pagination,
+	isReward *bool,
+	fromEpoch *int,
+	toEpoch *int,
+	status *eventspb.Transfer_Status,
+	scope *v2.ListTransfersRequest_Scope,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
-func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Transfer, error) {
+func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*v2.TransferNode, error) {
 	req := v2.GetTransferRequest{
 		TransferId: id,
 	}
@@ -790,7 +923,7 @@ func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*eventspb.Tr
 	if err != nil {
 		return nil, err
 	}
-	return resp.Transfer, nil
+	return resp.TransferNode, nil
 }
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
@@ -1204,8 +1337,14 @@ func (r *myQueryResolver) EstimatePosition(
 	ctx context.Context,
 	marketId string,
 	openVolume string,
-	orders []*OrderInfo,
-	collateralAvailable *string,
+	averageEntryPrice string,
+	orders []*v2.OrderInfo,
+	marginAccountBalance string,
+	generalAccountBalance string,
+	orderMarginAccountBalance string,
+	marginMode vega.MarginMode,
+	marginFactor *string,
+	incluedRequiredPositionMarginInAvailableCollateral *bool,
 	scaleLiquidationPriceToMarketDecimals *bool,
 ) (*PositionEstimate, error) {
 	ov, err := safeStringInt64(openVolume)
@@ -1213,27 +1352,18 @@ func (r *myQueryResolver) EstimatePosition(
 		return nil, err
 	}
 
-	ord := make([]*v2.OrderInfo, 0, len(orders))
-	for _, o := range orders {
-		r, err := safeStringUint64(o.Remaining)
-		if err != nil {
-			return nil, err
-		}
-
-		ord = append(ord, &v2.OrderInfo{
-			Side:          o.Side,
-			Price:         o.Price,
-			Remaining:     r,
-			IsMarketOrder: o.IsMarketOrder,
-		})
-	}
-
 	req := &v2.EstimatePositionRequest{
-		MarketId:                              marketId,
-		OpenVolume:                            ov,
-		Orders:                                ord,
-		CollateralAvailable:                   collateralAvailable,
-		ScaleLiquidationPriceToMarketDecimals: scaleLiquidationPriceToMarketDecimals,
+		MarketId:                  marketId,
+		OpenVolume:                ov,
+		AverageEntryPrice:         averageEntryPrice,
+		Orders:                    orders,
+		MarginAccountBalance:      marginAccountBalance,
+		GeneralAccountBalance:     generalAccountBalance,
+		OrderMarginAccountBalance: orderMarginAccountBalance,
+		MarginMode:                vegapb.MarginMode(vega.MarginMode_value[marginMode.String()]),
+		MarginFactor:              marginFactor,
+		IncludeRequiredPositionMarginInAvailableCollateral: incluedRequiredPositionMarginInAvailableCollateral,
+		ScaleLiquidationPriceToMarketDecimals:              scaleLiquidationPriceToMarketDecimals,
 	}
 
 	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)
@@ -1242,8 +1372,9 @@ func (r *myQueryResolver) EstimatePosition(
 	}
 
 	return &PositionEstimate{
-		Margin:      resp.Margin,
-		Liquidation: resp.Liquidation,
+		Margin:                     resp.Margin,
+		CollateralIncreaseEstimate: resp.CollateralIncreaseEstimate,
+		Liquidation:                resp.Liquidation,
 	}, nil
 }
 
@@ -1333,7 +1464,7 @@ func (r *myQueryResolver) ProposalsConnection(ctx context.Context, proposalType 
 	return handleProposalsRequest(ctx, r.tradingDataClientV2, nil, nil, proposalType, inState, pagination)
 }
 
-func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (*vegapb.GovernanceData, error) {
+func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *string) (ProposalNode, error) {
 	if id != nil {
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 			ProposalId: id,
@@ -1341,6 +1472,12 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	} else if reference != nil {
 		resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
@@ -1349,6 +1486,12 @@ func (r *myQueryResolver) Proposal(ctx context.Context, id *string, reference *s
 		if err != nil {
 			return nil, err
 		}
+
+		resolver := (*proposalEdgeResolver)(r)
+		if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+			return resolver.BatchProposal(ctx, resp.GetData())
+		}
+
 		return resp.Data, nil
 	}
 
@@ -1729,6 +1872,43 @@ func (r *myQueryResolver) Teams(ctx context.Context, teamID *string, partyID *st
 	return teams.Teams, nil
 }
 
+func (r *myQueryResolver) TeamsStatistics(ctx context.Context, teamID *string, aggregationEpochs *int, pagination *v2.Pagination) (*v2.TeamsStatisticsConnection, error) {
+	filters := &v2.ListTeamsStatisticsRequest{
+		TeamId:     teamID,
+		Pagination: pagination,
+	}
+
+	if aggregationEpochs != nil {
+		filters.AggregationEpochs = ptr.From(uint64(*aggregationEpochs))
+	}
+
+	stats, err := r.tradingDataClientV2.ListTeamsStatistics(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats.Statistics, nil
+}
+
+func (r *myQueryResolver) TeamMembersStatistics(ctx context.Context, teamID string, partyID *string, aggregationEpochs *int, pagination *v2.Pagination) (*v2.TeamMembersStatisticsConnection, error) {
+	filters := &v2.ListTeamMembersStatisticsRequest{
+		TeamId:     teamID,
+		PartyId:    partyID,
+		Pagination: pagination,
+	}
+
+	if aggregationEpochs != nil {
+		filters.AggregationEpochs = ptr.From(uint64(*aggregationEpochs))
+	}
+
+	stats, err := r.tradingDataClientV2.ListTeamMembersStatistics(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats.Statistics, nil
+}
+
 func (r *myQueryResolver) TeamReferees(ctx context.Context, teamID string, pagination *v2.Pagination) (*v2.TeamRefereeConnection, error) {
 	referees, err := r.tradingDataClientV2.ListTeamReferees(ctx, &v2.ListTeamRefereesRequest{
 		TeamId:     teamID,
@@ -1831,6 +2011,44 @@ func (r *myQueryResolver) PaidLiquidityFees(
 	return resp.PaidLiquidityFees, nil
 }
 
+func (r *myQueryResolver) TotalTransferFeeDiscount(
+	ctx context.Context,
+	partyId string,
+	assetId string,
+) (*v2.GetTotalTransferFeeDiscountResponse, error) {
+	resp, err := r.tradingDataClientV2.GetTotalTransferFeeDiscount(ctx, &v2.GetTotalTransferFeeDiscountRequest{
+		PartyId: partyId,
+		AssetId: assetId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (r *myQueryResolver) EstimateTransferFee(
+	ctx context.Context,
+	fromAccount string,
+	fromAccountType vega.AccountType,
+	toAccount string,
+	amount string,
+	assetId string,
+) (*v2.EstimateTransferFeeResponse, error) {
+	resp, err := r.tradingDataClientV2.EstimateTransferFee(ctx, &v2.EstimateTransferFeeRequest{
+		FromAccount:     fromAccount,
+		FromAccountType: fromAccountType,
+		ToAccount:       toAccount,
+		Amount:          amount,
+		AssetId:         assetId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
@@ -1903,11 +2121,16 @@ func (r *myPartyResolver) TransfersConnection(
 	direction *TransferDirection,
 	pagination *v2.Pagination,
 	isReward *bool,
+	fromEpoch, toEpoch *int,
+	status *eventspb.Transfer_Status,
+	scope *v2.ListTransfersRequest_Scope,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,
+	fromEpoch *int, toEpoch *int, teamID, gameID *string,
+) (*v2.RewardsConnection, error) {
 	var from, to *uint64
 
 	if fromEpoch != nil {
@@ -1931,6 +2154,8 @@ func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.P
 		Pagination: pagination,
 		FromEpoch:  from,
 		ToEpoch:    to,
+		TeamId:     teamID,
+		GameId:     gameID,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -2193,6 +2418,7 @@ func (r *myPartyResolver) AccountsConnection(ctx context.Context, party *vegapb.
 		accTy = *accType
 		if accTy != vegapb.AccountType_ACCOUNT_TYPE_GENERAL &&
 			accTy != vegapb.AccountType_ACCOUNT_TYPE_MARGIN &&
+			accTy != vegapb.AccountType_ACCOUNT_TYPE_ORDER_MARGIN &&
 			accTy != vegapb.AccountType_ACCOUNT_TYPE_BOND &&
 			accTy != vega.AccountType_ACCOUNT_TYPE_VESTED_REWARDS &&
 			accTy != vega.AccountType_ACCOUNT_TYPE_VESTING_REWARDS {
@@ -2291,6 +2517,14 @@ func (r *myMarginLevelsUpdateResolver) MaintenanceLevel(_ context.Context, m *ve
 	return m.MaintenanceMargin, nil
 }
 
+func (r *myMarginLevelsUpdateResolver) OrderMarginLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.OrderMargin, nil
+}
+
+func (r *myMarginLevelsUpdateResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.MarginFactor, nil
+}
+
 // BEGIN: MarginLevels Resolver
 
 type myMarginLevelsResolver VegaResolverRoot
@@ -2333,6 +2567,14 @@ func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *vegapb.Margin
 
 func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
 	return m.MaintenanceMargin, nil
+}
+
+func (r *myMarginLevelsResolver) OrderMarginLevel(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.OrderMargin, nil
+}
+
+func (r *myMarginLevelsResolver) MarginFactor(_ context.Context, m *vegapb.MarginLevels) (string, error) {
+	return m.MarginFactor, nil
 }
 
 // END: MarginLevels Resolver
@@ -2672,6 +2914,14 @@ func (m *myDataSourceSpecConfigurationTimeTriggerResolver) Conditions(ctx contex
 
 // BEGIN: EthCallSpec Resolver.
 type ethCallSpecResolver VegaResolverRoot
+
+func (m *ethCallSpecResolver) SourceChainID(ctx context.Context, obj *vegapb.EthCallSpec) (int, error) {
+	if obj != nil {
+		return int(obj.SourceChainId), nil
+	}
+
+	return 0, nil
+}
 
 func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vegapb.EthCallSpec) ([]string, error) {
 	if obj != nil {

@@ -155,6 +155,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the perpetual oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
 		return steps.ThePerpsOracleSpec(marketConfig, signers, table)
 	})
+	s.Step(`^the composite price oracles from "([^"]+)":`, func(signers string, table *godog.Table) error {
+		return steps.TheCompositePriceOracleSpec(marketConfig, signers, table)
+	})
 	s.Step(`the price monitoring named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, table)
 	})
@@ -167,6 +170,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the margin calculator named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
+	s.Step(`^the parties submit update margin mode:$`, func(table *godog.Table) error {
+		return steps.ThePartiesUpdateMarginMode(execsetup.executionEngine, table)
+	})
+
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
 		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
@@ -219,6 +226,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
+	})
+
+	s.Step(`^the mark price algo should be "([^"]+)" for the market "([^"]+)"$`, func(mpAlgo, marketID string) error {
+		return steps.TheMarkPriceAlgoShouldBeForMarket(execsetup.broker, marketID, mpAlgo)
 	})
 
 	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {
@@ -311,6 +322,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the parties submit the following transfer cancellations:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelTransfers(execsetup.banking, table)
+	})
+	s.Step(`^the parties have the following transfer fee discounts`, func(table *godog.Table) error {
+		return steps.PartiesAvailableFeeDiscounts(execsetup.banking, table)
 	})
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
 		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
@@ -491,6 +505,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the market data for the market "([^"]+)" should be:$`, func(marketID string, table *godog.Table) error {
 		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
 	})
+	s.Step(`^the product data for the market "([^"]+)" should be:$`, func(marketID string, table *godog.Table) error {
+		return steps.TheProductDataShouldBe(execsetup.executionEngine, marketID, table)
+	})
 	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
 		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
@@ -565,6 +582,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugAllEvents(execsetup.broker, execsetup.log)
 		return nil
 	})
+	s.Step(`^debug all events as JSON file "([^"]+)"$`, func(fname string) error {
+		return steps.DebugAllEventsJSONFile(execsetup.broker, execsetup.log, fname)
+	})
 	s.Step(`^debug auction events$`, func() error {
 		steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
 		return nil
@@ -617,10 +637,19 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^a total of "([0-9]+)" events should be emitted$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
+	s.Step(`^the loss socialisation amounts are:$`, func(table *godog.Table) error {
+		return steps.TheLossSocialisationAmountsAre(execsetup.broker, table)
+	})
+	s.Step(`^debug loss socialisation events$`, func() error {
+		return steps.DebugLossSocialisationEvents(execsetup.broker, execsetup.log)
+	})
 
 	// Decimal places steps
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
 		return steps.RegisterAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
+	})
+	s.Step(`^the following assets are updated:$`, func(table *godog.Table) error {
+		return steps.UpdateAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
 	})
 	s.Step(`^set assets to strict$`, func() error {
 		execsetup.assetsEngine.SetStrict()
@@ -657,6 +686,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^create the network treasury account for asset "([^"]*)"$`, func(asset string) error {
 		return steps.CreateNetworkTreasuryAccount(execsetup.collateralEngine, asset)
+	})
+
+	s.Step(`the liquidation strategies:$`, func(table *godog.Table) error {
+		return steps.TheLiquidationStrategies(marketConfig, table)
+	})
+
+	s.Step(`^clear trade events$`, func() error {
+		return steps.ClearTradeEvents(execsetup.broker)
 	})
 }
 

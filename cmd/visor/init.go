@@ -18,6 +18,7 @@ package main
 import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor"
+
 	"github.com/spf13/cobra"
 )
 

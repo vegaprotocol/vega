@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,6 +32,9 @@ func TestEthereumConfig(t *testing.T) {
 	t.Run("Missing both staking and vesting contract addresses fails", testMissingBothStakingAndVestingContractAddressesFails)
 	t.Run("At least one of staking of vesting contract addresses succeeds", testAtLeastOneOfStackingOrVestingContractAddressesSucceeds)
 	t.Run("Confirmations set to 0 fails", testConfirmationsSetTo0Fails)
+	t.Run("Basic checks on fields of the EVM config", testEVMConfigBasic)
+	t.Run("Check that a network cannot appear twice in the config", testEVMConfigRejectDuplicateFields)
+	t.Run("Check that an EVM config can not be removed", testEVMAmendOrAppendOnly)
 }
 
 func testValidEthereumConfigSucceeds(t *testing.T) {
@@ -209,6 +213,144 @@ func testConfirmationsSetTo0Fails(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrConfirmationsMustBeHigherThan0)
 }
 
+func testEVMConfigBasic(t *testing.T) {
+	tcs := []struct {
+		name          string
+		chainID       string
+		networkID     string
+		confirmations uint32
+		expect        error
+	}{
+		{
+			name:          "hello",
+			chainID:       "11",
+			networkID:     "12",
+			confirmations: 1,
+		},
+		{
+			chainID:       "11",
+			networkID:     "12",
+			confirmations: 1,
+			expect:        types.ErrMissingNetworkName,
+		},
+		{
+			name:          "hello",
+			networkID:     "12",
+			confirmations: 1,
+			expect:        types.ErrMissingChainID,
+		},
+		{
+			name:          "hello",
+			chainID:       "11",
+			confirmations: 1,
+			expect:        types.ErrMissingNetworkID,
+		},
+		{
+			name:          "hello",
+			chainID:       "11",
+			networkID:     "12",
+			confirmations: 0,
+			expect:        types.ErrConfirmationsMustBeHigherThan0,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			cfgs := &proto.EthereumL2Configs{
+				Configs: []*proto.EthereumL2Config{
+					{
+						NetworkId:     tc.networkID,
+						ChainId:       tc.chainID,
+						Name:          tc.name,
+						Confirmations: tc.confirmations,
+					},
+				},
+			}
+
+			// when
+			err := types.CheckEthereumL2Configs(cfgs, nil)
+
+			// then
+			require.ErrorIs(t, tc.expect, err)
+		})
+	}
+}
+
+func testEVMConfigRejectDuplicateFields(t *testing.T) {
+	cfgs := validEVMConfigs()
+
+	original := proto.EthereumL2Config{
+		NetworkId:     "999",
+		ChainId:       "9999",
+		Name:          "999999",
+		Confirmations: 100,
+	}
+
+	c := original
+	cfgs.Configs = append(cfgs.Configs, &c)
+	err := types.CheckEthereumL2Configs(cfgs, nil)
+	require.ErrorIs(t, nil, err)
+
+	c.Name = cfgs.Configs[0].Name
+	err = types.CheckEthereumL2Configs(cfgs, nil)
+	require.ErrorIs(t, types.ErrDuplicateNetworkName, err)
+	c.Name = original.Name
+
+	c.ChainId = cfgs.Configs[0].ChainId
+	err = types.CheckEthereumL2Configs(cfgs, nil)
+	require.ErrorIs(t, types.ErrDuplicateChainID, err)
+	c.ChainId = original.ChainId
+
+	c.NetworkId = cfgs.Configs[0].NetworkId
+	err = types.CheckEthereumL2Configs(cfgs, nil)
+	require.ErrorIs(t, types.ErrDuplicateNetworkID, err)
+}
+
+func testEVMAmendOrAppendOnly(t *testing.T) {
+	cfgs1 := validEVMConfigs()
+	cfgs2 := validEVMConfigs()
+
+	// update to itself
+	err := types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, nil, err)
+
+	// change only confirmations
+	cfgs2.Configs[0].Confirmations += 1
+	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, nil, err)
+
+	// try to change the name
+	cfgs2 = validEVMConfigs()
+	cfgs2.Configs[0].Name += "hello"
+	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+
+	// try to change the chainID
+	cfgs2 = validEVMConfigs()
+	cfgs2.Configs[0].ChainId += "1"
+	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+
+	// try to change the networkID (counts as a remove)
+	cfgs2 = validEVMConfigs()
+	cfgs2.Configs[0].NetworkId += "1"
+	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, types.ErrCannotRemoveL2Config, err)
+
+	// add a new config that clashes with existing
+	cfgs2 = validEVMConfigs()
+	new_cfg := proto.EthereumL2Config{
+		NetworkId:     cfgs2.Configs[0].NetworkId,
+		ChainId:       "9999",
+		Name:          "999999",
+		Confirmations: 100,
+	}
+	cfgs2.Configs = append(cfgs2.Configs, &new_cfg)
+	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+}
+
 func validEthereumConfig() *proto.EthereumConfig {
 	return &proto.EthereumConfig{
 		NetworkId: "1",
@@ -228,6 +370,25 @@ func validEthereumConfig() *proto.EthereumConfig {
 		TokenVestingContract: &proto.EthereumContractConfig{
 			Address:               "0x1234",
 			DeploymentBlockHeight: 567,
+		},
+	}
+}
+
+func validEVMConfigs() *proto.EthereumL2Configs {
+	return &proto.EthereumL2Configs{
+		Configs: []*proto.EthereumL2Config{
+			{
+				NetworkId:     "1",
+				ChainId:       "2",
+				Name:          "hello",
+				Confirmations: 12,
+			},
+			{
+				NetworkId:     "2",
+				ChainId:       "3",
+				Name:          "helloagain",
+				Confirmations: 13,
+			},
 		},
 	}
 }

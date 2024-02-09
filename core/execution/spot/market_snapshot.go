@@ -21,8 +21,6 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -39,6 +37,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -62,6 +62,7 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
 	if len(em.Market.ID) == 0 {
@@ -116,7 +117,7 @@ func NewMarketFromSnapshot(
 	}
 	els := common.NewEquitySharesFromSnapshot(em.EquityShare)
 	liquidity := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, riskModel, pMonitor, book, as, quoteAsset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
-	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.FutureMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
+	marketLiquidity := common.NewMarketLiquidity(log, liquidity, collateralEngine, broker, book, els, marketActivityTracker, feeEngine, common.SpotMarketType, mkt.ID, quoteAsset, priceFactor, mkt.LiquiditySLAParams.PriceRange)
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -175,6 +176,7 @@ func NewMarketFromSnapshot(
 		expiringStopOrders:            expiringStopOrders,
 		hasTraded:                     em.HasTraded,
 		orderHoldingTracker:           NewHoldingAccountTracker(mkt.ID, log, collateralEngine),
+		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	for _, p := range em.Parties {

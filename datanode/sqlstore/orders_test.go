@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -35,16 +23,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block entities.Block, party entities.Party, market entities.Market, reference string,
@@ -139,7 +127,7 @@ func TestOrders(t *testing.T) {
 		}
 
 		order := addTestOrder(t, os,
-			entities.OrderID(helpers.GenerateID()),
+			entities.OrderID(GenerateID()),
 			block,
 			parties[i%3],
 			markets[i%2],
@@ -242,7 +230,7 @@ func TestOrders(t *testing.T) {
 	})
 
 	t.Run("GetOrderNotFound", func(t *testing.T) {
-		notAnOrderID := entities.OrderID(helpers.GenerateID())
+		notAnOrderID := entities.OrderID(GenerateID())
 		fetchedOrder, err := os.GetOrder(ctx, notAnOrderID.String(), nil)
 		require.Error(t, err)
 		assert.Equal(t, entities.ErrNotFound, err)
@@ -299,7 +287,7 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	t.Helper()
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
-		orderIDs[i] = entities.OrderID(helpers.GenerateID())
+		orderIDs[i] = entities.OrderID(GenerateID())
 	}
 
 	return orderIDs

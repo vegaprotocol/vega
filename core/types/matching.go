@@ -195,11 +195,11 @@ func (o Order) String() string {
 		o.CreatedAt,
 		o.UpdatedAt,
 		o.ExpiresAt,
-		stringer.UintPointerToString(o.OriginalPrice),
-		stringer.ReflectPointerToString(o.PeggedOrder),
+		stringer.PtrToString(o.OriginalPrice),
+		stringer.PtrToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
-		stringer.ReflectPointerToString(o.IcebergOrder),
+		stringer.PtrToString(o.IcebergOrder),
 	)
 }
 
@@ -378,8 +378,13 @@ func (o *Order) applyOrderAmendmentSizeIceberg(delta int64) {
 	o.IcebergOrder.ReservedRemaining = 0
 }
 
-// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
-func (o *Order) applyOrderAmendmentSizeDelta(delta int64) {
+func (o *Order) amendSize(size uint64) {
+	o.amendSizeWithDelta(int64(size) - int64(o.Size))
+}
+
+// amendSizeWithDelta update the orders size/remaining fields based on the size
+// an direction of the given delta.
+func (o *Order) amendSizeWithDelta(delta int64) {
 	if o.IcebergOrder != nil {
 		o.applyOrderAmendmentSizeIceberg(delta)
 		return
@@ -426,9 +431,12 @@ func (o *Order) ApplyOrderAmendment(amendment *OrderAmendment, updatedAtNano int
 		order.OriginalPrice = amendment.Price.Clone()
 	}
 
-	// apply size changes
+	if amendment.Size != nil {
+		order.amendSize(*amendment.Size)
+	}
+
 	if delta := amendment.SizeDelta; delta != 0 {
-		order.applyOrderAmendmentSizeDelta(delta)
+		order.amendSizeWithDelta(delta)
 	}
 
 	// apply tif
@@ -534,7 +542,7 @@ func (p PeggedOrder) String() string {
 	return fmt.Sprintf(
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
-		stringer.UintPointerToString(p.Offset),
+		stringer.PtrToString(p.Offset),
 	)
 }
 
@@ -667,13 +675,37 @@ func (t *Trade) IntoProto() *proto.Trade {
 	}
 }
 
+func TradeFromProto(t *proto.Trade) *Trade {
+	if t == nil {
+		return nil
+	}
+
+	return &Trade{
+		ID:                 t.Id,
+		MarketID:           t.MarketId,
+		Price:              num.MustUintFromString(t.Price, 10),
+		Size:               t.Size,
+		Buyer:              t.Buyer,
+		Seller:             t.Seller,
+		Aggressor:          t.Aggressor,
+		BuyOrder:           t.BuyOrder,
+		SellOrder:          t.SellOrder,
+		Timestamp:          t.Timestamp,
+		Type:               t.Type,
+		BuyerFee:           FeeFromProto(t.BuyerFee),
+		SellerFee:          FeeFromProto(t.SellerFee),
+		BuyerAuctionBatch:  t.BuyerAuctionBatch,
+		SellerAuctionBatch: t.SellerAuctionBatch,
+	}
+}
+
 func (t Trade) String() string {
 	return fmt.Sprintf(
 		"ID(%s) marketID(%s) price(%s) marketPrice(%s) size(%v) buyer(%s) seller(%s) aggressor(%s) buyOrder(%s) sellOrder(%s) timestamp(%v) type(%s) buyerAuctionBatch(%v) sellerAuctionBatch(%v) buyerFee(%s) sellerFee(%s)",
 		t.ID,
 		t.MarketID,
-		stringer.UintPointerToString(t.Price),
-		stringer.UintPointerToString(t.MarketPrice),
+		stringer.PtrToString(t.Price),
+		stringer.PtrToString(t.MarketPrice),
 		t.Size,
 		t.Buyer,
 		t.Seller,
@@ -684,8 +716,8 @@ func (t Trade) String() string {
 		t.Type.String(),
 		t.BuyerAuctionBatch,
 		t.SellerAuctionBatch,
-		stringer.ReflectPointerToString(t.SellerFee),
-		stringer.ReflectPointerToString(t.BuyerFee),
+		stringer.PtrToString(t.SellerFee),
+		stringer.PtrToString(t.BuyerFee),
 	)
 }
 
@@ -892,9 +924,11 @@ const (
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = proto.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 	// Unable to submit pegged order, temporarily too many pegged orders across all markets.
-	OrderErrorTooManyPeggedOrders                   OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
-	OrderErrorPostOnlyOrderWouldTrade               OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
-	OrderErrorReduceOnlyOrderWouldNotReducePosition OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
+	OrderErrorTooManyPeggedOrders                    OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
+	OrderErrorPostOnlyOrderWouldTrade                OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
+	OrderErrorReduceOnlyOrderWouldNotReducePosition  OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
+	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
+	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 )
 
 var (
@@ -922,6 +956,7 @@ var (
 	ErrTooManyPeggedOrders                         = OrderErrorTooManyPeggedOrders
 	ErrPostOnlyOrderWouldTrade                     = OrderErrorPostOnlyOrderWouldTrade
 	ErrReduceOnlyOrderWouldNotReducePosition       = OrderErrorReduceOnlyOrderWouldNotReducePosition
+	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -932,5 +967,7 @@ func IsOrderError(err error) (OrderError, bool) {
 func IsStoppingOrder(o OrderError) bool {
 	return o == OrderErrorNonPersistentOrderOutOfPriceBounds ||
 		o == ErrPostOnlyOrderWouldTrade ||
-		o == ErrReduceOnlyOrderWouldNotReducePosition
+		o == ErrReduceOnlyOrderWouldNotReducePosition ||
+		o == OrderErrorIsolatedMarginCheckFailed ||
+		o == OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
 }

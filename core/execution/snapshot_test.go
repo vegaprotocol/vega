@@ -45,8 +45,10 @@ import (
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -476,14 +478,15 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 				TimeWindow:    100,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
-			TriggeringRatio:  num.DecimalFromFloat(0.9),
-			AuctionExtension: 10000,
 		},
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				MakerFee:          num.DecimalFromFloat(0.1),
 				InfrastructureFee: num.DecimalFromFloat(0.1),
 				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -571,6 +574,14 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0.5),
 		},
 		State: types.MarketStateActive,
+		MarkPriceConfiguration: &types.CompositePriceConfiguration{
+			DecayWeight:              num.DecimalZero(),
+			DecayPower:               num.DecimalZero(),
+			CashAmount:               num.UintZero(),
+			SourceWeights:            []num.Decimal{num.DecimalFromFloat(0.1), num.DecimalFromFloat(0.2), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0.4)},
+			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
+			CompositePriceType:       types.CompositePriceTypeByLastTrade,
+		},
 	}
 }
 
@@ -606,6 +617,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	eng := execution.NewEngine(
 		log,
@@ -619,6 +631,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		banking,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())
@@ -673,6 +686,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	eng := execution.NewEngine(
 		log,
@@ -686,6 +700,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 		stubs.NewAssetStub(),
 		referralDiscountReward,
 		volumeDiscount,
+		banking,
 	)
 
 	statsData := stats.New(log, stats.NewDefaultConfig())

@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+
+	"github.com/cucumber/godog"
 )
 
 func OraclesBroadcastDataSignedWithKeys(

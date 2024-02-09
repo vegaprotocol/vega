@@ -17,9 +17,12 @@ package abci
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/txn"
-	"github.com/tendermint/tendermint/abci/types"
+
+	"github.com/cometbft/cometbft/abci/types"
+	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
 )
 
 //nolint:interfacebloat
@@ -36,6 +39,7 @@ type Tx interface {
 	GetPoWNonce() uint64
 	GetPoWTID() string
 	GetVersion() uint32
+	GetLength() int
 	GetNonce() uint64
 }
 
@@ -45,17 +49,19 @@ type Codec interface {
 
 // ABCI hooks.
 type (
-	OnInitChainHandler        func(types.RequestInitChain) types.ResponseInitChain
-	OnBeginBlockHandler       func(types.RequestBeginBlock) (context.Context, types.ResponseBeginBlock)
-	OnEndBlockHandler         func(types.RequestEndBlock) (context.Context, types.ResponseEndBlock)
-	OnCheckTxHandler          func(context.Context, types.RequestCheckTx, Tx) (context.Context, types.ResponseCheckTx)
-	OnDeliverTxHandler        func(context.Context, types.RequestDeliverTx, Tx) (context.Context, types.ResponseDeliverTx)
-	OnCommitHandler           func() types.ResponseCommit
-	ListSnapshotsHandler      func(types.RequestListSnapshots) types.ResponseListSnapshots
-	OfferSnapshotHandler      func(types.RequestOfferSnapshot) types.ResponseOfferSnapshot
-	LoadSnapshotChunkHandler  func(types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk
-	ApplySnapshotChunkHandler func(context.Context, types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk
-	InfoHandler               func(types.RequestInfo) types.ResponseInfo
+	PrepareProposalHandler    func(txs []Tx, raWtxs [][]byte) [][]byte
+	ProcessProposalHandler    func(txs []Tx) bool
+	OnInitChainHandler        func(*types.RequestInitChain) (*types.ResponseInitChain, error)
+	OnBeginBlockHandler       func(uint64, string, time.Time, string, []Tx) context.Context
+	OnEndBlockHandler         func(blockHeight uint64) (types.ValidatorUpdates, types1.ConsensusParams)
+	OnCheckTxHandler          func(context.Context, *types.RequestCheckTx, Tx) (context.Context, *types.ResponseCheckTx)
+	OnDeliverTxHandler        func(context.Context, Tx)
+	OnCommitHandler           func() (*types.ResponseCommit, error)
+	ListSnapshotsHandler      func(context.Context, *types.RequestListSnapshots) (*types.ResponseListSnapshots, error)
+	OfferSnapshotHandler      func(context.Context, *types.RequestOfferSnapshot) (*types.ResponseOfferSnapshot, error)
+	LoadSnapshotChunkHandler  func(context.Context, *types.RequestLoadSnapshotChunk) (*types.ResponseLoadSnapshotChunk, error)
+	ApplySnapshotChunkHandler func(context.Context, *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error)
+	InfoHandler               func(context.Context, *types.RequestInfo) (*types.ResponseInfo, error)
 	OnCheckTxSpamHandler      func(Tx) types.ResponseCheckTx
-	OnDeliverTxSpamHandler    func(context.Context, Tx) types.ResponseDeliverTx
+	FinalizeHandler           func() []byte
 )

@@ -36,7 +36,7 @@ func TestSingleStopOrders(t *testing.T) {
 	pool.Insert(newPricedStopOrder("a", "p1", "", num.NewUint(40), types.StopOrderTriggerDirectionFallsBelow))
 	pool.Insert(newPricedStopOrder("b", "p1", "", num.NewUint(57), types.StopOrderTriggerDirectionRisesAbove))
 
-	// this will be triggered when going from 60 to 57, and triggre the falls below
+	// this will be triggered when going from 60 to 57, and trigger the falls below
 	pool.Insert(newTrailingStopOrder("c", "p2", "", num.MustDecimalFromString("0.05"), types.StopOrderTriggerDirectionFallsBelow))
 	pool.Insert(newTrailingStopOrder("d", "p2", "", num.MustDecimalFromString("0.5"), types.StopOrderTriggerDirectionRisesAbove))
 
@@ -44,7 +44,11 @@ func TestSingleStopOrders(t *testing.T) {
 	pool.Insert(newPricedStopOrder("e", "p2", "", num.NewUint(40), types.StopOrderTriggerDirectionFallsBelow))
 	pool.Insert(newTrailingStopOrder("f", "p2", "", num.MustDecimalFromString("0.5"), types.StopOrderTriggerDirectionRisesAbove))
 
-	assert.Equal(t, pool.Len(), 6)
+	// mixing around both, will be triggered by the end
+	pool.Insert(newPricedStopOrderWithOverride("g", "p2", "", num.MustDecimalFromString("1.0"), num.NewUint(20), types.StopOrderTriggerDirectionFallsBelow))
+	pool.Insert(newTrailingStopOrderWithOverride("h", "p2", "", num.MustDecimalFromString("1.0"), num.MustDecimalFromString("1"), types.StopOrderTriggerDirectionRisesAbove))
+
+	assert.Equal(t, pool.Len(), 8)
 
 	// move the price a little, nothing should happen.
 	triggeredOrders, cancelledOrders := pool.PriceUpdated(num.NewUint(55))
@@ -56,7 +60,7 @@ func TestSingleStopOrders(t *testing.T) {
 		triggeredOrders, cancelledOrders = pool.PriceUpdated(num.NewUint(60))
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 0)
-		assert.Equal(t, pool.Len(), 5)
+		assert.Equal(t, pool.Len(), 7)
 		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "b")
 	})
@@ -73,7 +77,7 @@ func TestSingleStopOrders(t *testing.T) {
 		triggeredOrders, cancelledOrders = pool.PriceUpdated(num.NewUint(57))
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 0)
-		assert.Equal(t, pool.Len(), 4)
+		assert.Equal(t, pool.Len(), 6)
 		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "c")
 	})
@@ -90,7 +94,7 @@ func TestSingleStopOrders(t *testing.T) {
 		triggeredOrders, cancelledOrders = pool.PriceUpdated(num.NewUint(75))
 		assert.Len(t, triggeredOrders, 2)
 		assert.Len(t, cancelledOrders, 0)
-		assert.Equal(t, pool.Len(), 2)
+		assert.Equal(t, pool.Len(), 4)
 		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "d")
 		assert.Equal(t, triggeredOrders[1].Status, types.StopOrderStatusTriggered)
@@ -187,7 +191,7 @@ func TestRemoveExpiredStopOrders(t *testing.T) {
 	assert.Equal(t, affectedOrders[0].ID, "b")
 	assert.Equal(t, affectedOrders[0].Status, types.StopOrderStatusExpired)
 	assert.Equal(t, affectedOrders[1].ID, "e")
-	assert.Equal(t, affectedOrders[1].Status, types.StopOrderStatusExpired)
+	assert.Equal(t, affectedOrders[1].Status, types.StopOrderStatusStopped)
 	assert.Equal(t, affectedOrders[2].ID, "f")
 	assert.Equal(t, affectedOrders[2].Status, types.StopOrderStatusExpired)
 
@@ -308,6 +312,34 @@ func newPricedStopOrder(
 	}
 }
 
+func newPricedStopOrderWithOverride(
+	id, party, ocoLinkID string,
+	sizeOverrideScale num.Decimal,
+	price *num.Uint,
+	direction types.StopOrderTriggerDirection,
+) *types.StopOrder {
+	return &types.StopOrder{
+		ID:        id,
+		Party:     party,
+		OCOLinkID: ocoLinkID,
+		Trigger:   types.NewPriceStopOrderTrigger(direction, price),
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingPosition,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{PercentageSize: sizeOverrideScale},
+	}
+}
+
 //nolint:unparam
 func newTrailingStopOrder(
 	id, party, ocoLinkID string,
@@ -331,5 +363,34 @@ func newTrailingStopOrder(
 			TimeInForce: types.OrderTimeInForceIOC,
 			Side:        types.SideBuy,
 		},
+	}
+}
+
+//nolint:unparam
+func newTrailingStopOrderWithOverride(
+	id, party, ocoLinkID string,
+	sizeOverrideScale num.Decimal,
+	offset num.Decimal,
+	direction types.StopOrderTriggerDirection,
+) *types.StopOrder {
+	return &types.StopOrder{
+		ID:        id,
+		Party:     party,
+		OCOLinkID: ocoLinkID,
+		Trigger:   types.NewTrailingStopOrderTrigger(direction, offset),
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
+		SizeOverrideSetting: types.StopOrderSizeOverrideSettingPosition,
+		SizeOverrideValue:   &types.StopOrderSizeOverrideValue{PercentageSize: sizeOverrideScale},
 	}
 }

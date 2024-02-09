@@ -82,7 +82,8 @@ type Vote struct {
 	TotalGovernanceTokenWeight num.Decimal
 	// TotalEquityLikeShareWeight is the weight of the vote compared to the
 	// total number of equity-like share on the market.
-	TotalEquityLikeShareWeight num.Decimal
+	TotalEquityLikeShareWeight     num.Decimal
+	PerMarketEquityLikeShareWeight map[string]num.Decimal
 }
 
 func (v Vote) IntoProto() *vegapb.Vote {

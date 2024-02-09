@@ -34,7 +34,10 @@ func (m *Market) SubmitLiquidityProvision(
 
 	// add the party to the list of all parties involved with
 	// this market
-	m.addParty(party)
+	if m.addParty(party) {
+		// First time seeing the party, we report his margin mode.
+		m.emitPartyMarginModeUpdated(ctx, party, m.getMarginMode(party), m.getMarginFactor(party))
+	}
 
 	_, err := m.collateral.CreatePartyMarginAccount(ctx, party, m.GetID(), m.settlementAsset)
 	if err != nil {

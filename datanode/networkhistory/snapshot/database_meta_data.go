@@ -23,12 +23,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/pressly/goose/v3"
-
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
 )
 

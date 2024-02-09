@@ -19,9 +19,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/protos/vega"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 func (s *Svc) serialise() error {

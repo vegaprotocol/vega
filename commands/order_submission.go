@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,7 @@ package commands
 
 import (
 	"errors"
+	"math"
 	"math/big"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -70,6 +71,11 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 
 	if cmd.Size <= 0 {
 		errs.AddForProperty("order_submission.size", ErrMustBePositive)
+	}
+
+	// just make sure its not some silly big number because we do sometimes cast to int64s
+	if cmd.Size > math.MaxInt64/2 {
+		errs.AddForProperty("order_submission.size", ErrSizeIsTooLarge)
 	}
 
 	if cmd.TimeInForce == types.Order_TIME_IN_FORCE_GTT {

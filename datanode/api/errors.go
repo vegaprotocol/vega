@@ -106,6 +106,8 @@ var (
 	ErrNegativeOrderVersion = newInvalidArgumentError("negative order version")
 	// ErrLastPaginationNotSupported is returned when last pagination is not supported.
 	ErrLastPaginationNotSupported = newInvalidArgumentError("'last' pagination is not supported")
+	// ErrMissingMarginFactor is returned when isolated margin mode is specified, but margin factor is not supplied.
+	ErrMissingMarginFactor = newInvalidArgumentError("missing margin factor")
 
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
@@ -172,9 +174,10 @@ var (
 	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")
 	ErrCandleServiceGetCandlesForMarket = errors.New("failed to get candles for market")
 	// PartyService...
-	ErrPartyServiceGetAll      = errors.New("failed to get parties")
-	ErrPartyServiceGetByID     = errors.New("failed to get party for ID")
-	ErrPartyServiceGetByTxHash = errors.New("failed to get parties for tx hash")
+	ErrPartyServiceGetAll       = errors.New("failed to get parties")
+	ErrPartyServiceListProfiles = errors.New("failed to get parties' profiles")
+	ErrPartyServiceGetByID      = errors.New("failed to get party for ID")
+	ErrPartyServiceGetByTxHash  = errors.New("failed to get parties for tx hash")
 	// NotaryService...
 	ErrNotaryServiceGetByResourceID = errors.New("failed to get notary for resource ID")
 	// OracleSpecService...
@@ -192,8 +195,9 @@ var (
 	// DepositService...
 	ErrDepositServiceGet = errors.New("failed to get deposit")
 	// TransferService...
-	ErrTransferServiceGet = errors.New("failed to get transfer")
-	ErrMissingTransferID  = errors.New("missing transfer id")
+	ErrTransferServiceGet            = errors.New("failed to get transfer")
+	ErrTransferServiceGetFeeDiscount = errors.New("failed to get current transfer fee discount")
+	ErrMissingTransferID             = errors.New("missing transfer id")
 	// NetworkLimits...
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// ErrGetNetworkParameters is returned when the network parameters cannot be retrieved.
@@ -254,8 +258,8 @@ var (
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
 	// Positions...
-	ErrPositionsGetByTxHash             = errors.New("failed to get positions for tx hash")
-	ErrPositionsInvalidCollateralAmount = newInvalidArgumentError("invalid collateral amount")
+	ErrPositionsGetByTxHash           = errors.New("failed to get positions for tx hash")
+	ErrPositionsInvalidAccountBalance = newInvalidArgumentError("invalid account balance")
 	// Ledger entries...
 	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
 	// Transfers...
@@ -308,14 +312,14 @@ var (
 	ErrGetReferralSetStats       = errors.New("failed to get referral set stats")
 
 	// Fees stats.
-	ErrGetFeesStats             = errors.New("failed to get current fees stats")
-	ErrFeesStatsRequest         = errors.New("marketID or assetID must be provided")
-	ErrGetFeesStatsForParty     = errors.New("failed to get current fees stats for party")
-	ErrFeesStatsForPartyRequest = errors.New("fromEpoch must be set when toEpoch is set")
+	ErrGetFeesStats         = errors.New("failed to get current fees stats")
+	ErrFeesStatsRequest     = errors.New("marketID or assetID must be provided")
+	ErrGetFeesStatsForParty = errors.New("failed to get current fees stats for party")
 
 	// Teams.
 	ErrListTeams              = errors.New("failed to list teams")
 	ErrListTeamReferees       = errors.New("failed to list team referees")
+	ErrListTeamStatistics     = errors.New("failed to list team statistics")
 	ErrListTeamRefereeHistory = errors.New("failed to list team referee history")
 
 	// Volume discount Programs.
@@ -324,6 +328,13 @@ var (
 
 	// Paid liquidity fees.
 	ErrListPaidLiquidityFees = errors.New("failed to list paid liquidity fees")
+	// List Games.
+	ErrListGames = errors.New("failed to list games")
+
+	// Transfer fee estimates.
+	ErrInvalidTransferAmount = newInvalidArgumentError("invalid transfer amount")
+
+	ErrListPartyMarginModes = errors.New("failed to list parties margin modes")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

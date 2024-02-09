@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/stretchr/testify/assert"
 )
 

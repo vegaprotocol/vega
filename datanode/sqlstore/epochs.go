@@ -13,27 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
 	"context"
 
-	"github.com/georgysavva/scany/pgxscan"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 type Epochs struct {
@@ -95,7 +83,8 @@ func (es *Epochs) GetByBlock(ctx context.Context, height uint64) (entities.Epoch
 	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id, vega_time DESC)
 		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
 		LEFT JOIN blocks bs on e.start_time = bs.vega_time
-		LEFT JOIN blocks be on e.end_time = be.vega_time WHERE bs.height <= $1 AND be.height > $1;`
+		LEFT JOIN blocks be on e.end_time = be.vega_time 
+		WHERE bs.height <= $1 AND (be.height > $1 or be.height is NULL);`
 
 	epoch := entities.Epoch{}
 	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, height))

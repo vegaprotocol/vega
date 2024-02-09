@@ -18,15 +18,15 @@ package positions_test
 import (
 	"context"
 	"encoding/hex"
+	"math"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/stretchr/testify/assert"
@@ -35,8 +35,70 @@ import (
 
 func TestUpdatePosition(t *testing.T) {
 	t.Run("Update position regular", testUpdatePositionRegular)
-	t.Run("Update position network trade as buyer", testUpdatePositionNetworkBuy)
-	t.Run("Update position network trade as seller", testUpdatePositionNetworkSell)
+}
+
+func TestRegisterLargeOrder(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	ctx := context.Background()
+	e := getTestEngine(t)
+	orderBuy := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
+		Price:     num.UintZero(),
+	}
+
+	assert.NoError(t, e.ValidateOrder(&orderBuy))
+	_ = e.RegisterOrder(ctx, &orderBuy)
+
+	// now say we're going to do another MASSIVE one
+	orderBuy2 := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      math.MaxInt64,
+		Remaining: math.MaxInt64,
+		Price:     num.UintZero(),
+	}
+	assert.Error(t, e.ValidateOrder(&orderBuy2)) // should fail because if we registered it'll overflow
+	require.Panics(t, func() {
+		e.RegisterOrder(ctx, &orderBuy2) // should panic and not silently overflow
+	})
+}
+
+func TestAmendLargeOrder(t *testing.T) {
+	const (
+		buysize  int64 = 123
+		sellsize int64 = 456
+	)
+	ctx := context.Background()
+	e := getTestEngine(t)
+	orderBuy := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      uint64(buysize),
+		Remaining: uint64(buysize),
+		Price:     num.UintZero(),
+	}
+
+	assert.NoError(t, e.ValidateOrder(&orderBuy))
+	_ = e.RegisterOrder(ctx, &orderBuy)
+
+	// now say we're going to do an amend to a massive one
+	orderBuy2 := types.Order{
+		Party:     "test_party",
+		Side:      types.SideBuy,
+		Size:      math.MaxUint64,
+		Remaining: math.MaxUint64,
+		Price:     num.UintZero(),
+	}
+	assert.Error(t, e.ValidateAmendOrder(&orderBuy, &orderBuy2)) // should fail because if we registered it'll overflow
+	require.Panics(t, func() {
+		e.RegisterOrder(ctx, &orderBuy2) // should panic and not silently overflow
+	})
 }
 
 func TestGetOpenInterest(t *testing.T) {
@@ -154,60 +216,6 @@ func testUpdatePositionRegular(t *testing.T) {
 			assert.Equal(t, num.UintZero(), p.VWSell())
 		}
 	}
-}
-
-func testUpdatePositionNetworkBuy(t *testing.T) {
-	engine := getTestEngine(t)
-	assert.Empty(t, engine.Positions())
-	buyer := "network"
-	seller := "seller_id"
-	size := int64(10)
-	trade := types.Trade{
-		Type:      types.TradeTypeDefault,
-		ID:        "trade_id",
-		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(size),
-		Buyer:     buyer,
-		Seller:    seller,
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
-		Timestamp: time.Now().Unix(),
-	}
-	passiveOrder := registerOrder(engine, types.SideSell, seller, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
-	pos := engine.Positions()
-	assert.Equal(t, 1, len(pos))
-	assert.Equal(t, 1, len(positions))
-	assert.Equal(t, seller, pos[0].Party())
-	assert.Equal(t, -size, pos[0].Size())
-}
-
-func testUpdatePositionNetworkSell(t *testing.T) {
-	engine := getTestEngine(t)
-	assert.Empty(t, engine.Positions())
-	buyer := "buyer_id"
-	seller := "network"
-	size := int64(10)
-	trade := types.Trade{
-		Type:      types.TradeTypeDefault,
-		ID:        "trade_id",
-		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(size),
-		Buyer:     buyer,
-		Seller:    seller,
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
-		Timestamp: time.Now().Unix(),
-	}
-	passiveOrder := registerOrder(engine, types.SideBuy, buyer, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
-	pos := engine.Positions()
-	assert.Equal(t, 1, len(pos))
-	assert.Equal(t, 1, len(positions))
-	assert.Equal(t, buyer, pos[0].Party())
-	assert.Equal(t, size, pos[0].Size())
 }
 
 func TestRemoveDistressedEmpty(t *testing.T) {
@@ -597,6 +605,10 @@ type mp struct {
 	price           *num.Uint
 }
 
+func (m mp) AverageEntryPrice() *num.Uint {
+	return num.UintZero()
+}
+
 func (m mp) Party() string {
 	return m.party
 }
@@ -717,4 +729,36 @@ func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, p
 	}
 	e.RegisterOrder(context.TODO(), order)
 	return order
+}
+
+func TestCalcVWAP(t *testing.T) {
+	// no previous size, new long position acquired at 100
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.UintZero(), 0, 10, num.NewUint(100)))
+
+	// position decreased, not flipping sides
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.NewUint(100), 10, -5, num.NewUint(25)))
+
+	// position closed
+	require.Equal(t, num.UintZero(), positions.CalcVWAP(num.NewUint(100), 10, -10, num.NewUint(25)))
+
+	// no previous size, new short position acquired at 100
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.UintZero(), 0, -10, num.NewUint(100)))
+
+	// position decreased, not flipping sides
+	require.Equal(t, num.NewUint(100), positions.CalcVWAP(num.NewUint(100), -10, 5, num.NewUint(25)))
+
+	// position closed
+	require.Equal(t, num.UintZero(), positions.CalcVWAP(num.NewUint(100), -10, 10, num.NewUint(25)))
+
+	// long position increased => (100 * 10 + 25 * 5) / 15
+	require.Equal(t, num.NewUint(75), positions.CalcVWAP(num.NewUint(100), 10, 5, num.NewUint(25)))
+
+	// short position increased => (100 * -10 + 25 * -5) / 15
+	require.Equal(t, num.NewUint(75), positions.CalcVWAP(num.NewUint(100), -10, -5, num.NewUint(25)))
+
+	// flipping from long to short => (100 * 10 + 15 * 15)/25
+	require.Equal(t, num.NewUint(49), positions.CalcVWAP(num.NewUint(100), -10, 25, num.NewUint(15)))
+
+	// flipping from short to long => (100 * 10 + 15 * 15)/25
+	require.Equal(t, num.NewUint(49), positions.CalcVWAP(num.NewUint(100), 10, -25, num.NewUint(15)))
 }

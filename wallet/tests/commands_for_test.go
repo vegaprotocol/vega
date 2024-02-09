@@ -26,6 +26,7 @@ import (
 	"time"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
+
 	"github.com/stretchr/testify/assert"
 )
 

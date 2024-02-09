@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
+	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -34,55 +34,56 @@ var (
 	}
 )
 
-type verifierSnapshotState struct {
-	serialisedPendingCallEvents []byte
-	serialisedLastEthBlock      []byte
-}
-
-func (s *Verifier) serialisePendingContractCallEvents() ([]byte, error) {
-	s.log.Info("serialising pending call events", logging.Int("n", len(s.pendingCallEvents)))
+func (s *Verifier) pendingContractCallEventsPayloadData() *types.PayloadEthContractCallEvent {
 	pendingCallEvents := make([]*ethcall.ContractCallEvent, 0, len(s.pendingCallEvents))
 
 	for _, p := range s.pendingCallEvents {
 		pendingCallEvents = append(pendingCallEvents, &p.callEvent)
 	}
 
-	pl := types.Payload{
-		Data: &types.PayloadEthContractCallEvent{
-			EthContractCallEvent: pendingCallEvents,
-		},
+	return &types.PayloadEthContractCallEvent{
+		EthContractCallEvent: pendingCallEvents,
 	}
+}
+
+func (s *Verifier) serialisePendingContractCallEvents() ([]byte, error) {
+	s.log.Info("serialising pending call events", logging.Int("n", len(s.pendingCallEvents)))
+
+	pl := types.Payload{
+		Data: s.pendingContractCallEventsPayloadData(),
+	}
+
 	return proto.Marshal(pl.IntoProto())
+}
+
+func (s *Verifier) lastEthBlockPayloadData() *types.PayloadEthOracleLastBlock {
+	if s.lastBlock != nil {
+		return &types.PayloadEthOracleLastBlock{
+			EthOracleLastBlock: &types.EthBlock{
+				Height: s.lastBlock.Height,
+				Time:   s.lastBlock.Time,
+			},
+		}
+	}
+
+	return &types.PayloadEthOracleLastBlock{}
 }
 
 func (s *Verifier) serialiseLastEthBlock() ([]byte, error) {
 	s.log.Info("serialising last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", s.lastBlock)))
 
-	var pl types.Payload
-	if s.lastBlock != nil {
-		pl = types.Payload{
-			Data: &types.PayloadEthOracleLastBlock{
-				EthOracleLastBlock: &types.EthBlock{
-					Height: s.lastBlock.Height,
-					Time:   s.lastBlock.Time,
-				},
-			},
-		}
-	} else {
-		pl = types.Payload{
-			Data: &types.PayloadEthOracleLastBlock{},
-		}
+	pl := types.Payload{
+		Data: s.lastEthBlockPayloadData(),
 	}
 
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (s *Verifier) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
+func (s *Verifier) serialiseK(serialFunc func() ([]byte, error)) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
 		return nil, err
 	}
-	*dataField = data
 	return data, nil
 }
 
@@ -90,9 +91,9 @@ func (s *Verifier) serialiseK(serialFunc func() ([]byte, error), dataField *[]by
 func (s *Verifier) serialise(k string) ([]byte, error) {
 	switch k {
 	case contractCall:
-		return s.serialiseK(s.serialisePendingContractCallEvents, &s.snapshotState.serialisedPendingCallEvents)
+		return s.serialiseK(s.serialisePendingContractCallEvents)
 	case lastEthBlock:
-		return s.serialiseK(s.serialiseLastEthBlock, &s.snapshotState.serialisedLastEthBlock)
+		return s.serialiseK(s.serialiseLastEthBlock)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -122,9 +123,11 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEthContractCallEvent:
-		return nil, s.restorePendingCallEvents(ctx, pl.EthContractCallEvent, payload)
+		s.restorePendingCallEvents(ctx, pl.EthContractCallEvent)
+		return nil, nil
 	case *types.PayloadEthOracleLastBlock:
-		return nil, s.restoreLastEthBlock(pl.EthOracleLastBlock, payload)
+		s.restoreLastEthBlock(pl.EthOracleLastBlock)
+		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
@@ -141,25 +144,26 @@ func (s *Verifier) OnStateLoaded(ctx context.Context) error {
 	return nil
 }
 
-func (s *Verifier) restoreLastEthBlock(lastBlock *types.EthBlock, p *types.Payload) error {
+func (s *Verifier) restoreLastEthBlock(lastBlock *types.EthBlock) {
 	s.log.Info("restoring last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", lastBlock)))
 	s.lastBlock = lastBlock
-
-	var err error
-	if s.snapshotState.serialisedLastEthBlock, err = proto.Marshal(p.IntoProto()); err != nil {
-		return fmt.Errorf("failed to unmarshal payload: %w", err)
-	}
-
-	return nil
 }
 
 func (s *Verifier) restorePendingCallEvents(_ context.Context,
-	results []*ethcall.ContractCallEvent, p *types.Payload,
-) error {
+	results []*ethcall.ContractCallEvent,
+) {
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
 	s.pendingCallEvents = make([]*pendingCallEvent, 0, len(results))
 
+	// clear up all the metrics
+	seenSpecId := map[string]struct{}{}
+
 	for _, callEvent := range results {
+		if _, ok := seenSpecId[callEvent.SpecId]; !ok {
+			metrics.DataSourceEthVerifierCallGaugeReset(callEvent.SpecId)
+			seenSpecId[callEvent.SpecId] = struct{}{}
+		}
+
 		// this populates the id/hash structs
 		if !s.ensureNotDuplicate(callEvent.Hash()) {
 			s.log.Panic("pendingCallEvents's unexpectedly pre-populated when restoring from snapshot")
@@ -175,12 +179,7 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 		if err := s.witness.RestoreResource(pending, s.onCallEventVerified); err != nil {
 			s.log.Panic("unable to restore pending call event resource", logging.String("ID", pending.GetID()), logging.Error(err))
 		}
-	}
 
-	var err error
-	if s.snapshotState.serialisedPendingCallEvents, err = proto.Marshal(p.IntoProto()); err != nil {
-		return fmt.Errorf("failed to unmarshal payload: %w", err)
+		metrics.DataSourceEthVerifierCallGaugeAdd(1, callEvent.SpecId)
 	}
-
-	return nil
 }

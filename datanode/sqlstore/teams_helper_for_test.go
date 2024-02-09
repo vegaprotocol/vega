@@ -18,12 +18,13 @@ package sqlstore_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -49,9 +50,10 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		block := addTestBlock(t, ctx, bs)
 		referrer := addTestParty(t, ctx, ps, block)
 		team := entities.Team{
-			ID:             entities.TeamID(helpers.GenerateID()),
+			ID:             entities.TeamID(GenerateID()),
 			Referrer:       referrer.ID,
 			Name:           fmt.Sprintf("Test Team %02d", i+1),
+			TotalMembers:   1, // The referrer.
 			CreatedAt:      block.VegaTime,
 			CreatedAtEpoch: 1,
 			VegaTime:       block.VegaTime,
@@ -70,7 +72,7 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	for _, team := range teams {
+	for iTeam, team := range teams {
 		block := addTestBlock(t, ctx, bs)
 		for i := 0; i < 10; i++ {
 			referee := addTestParty(t, ctx, ps, block)
@@ -84,21 +86,26 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 			err := ts.RefereeJoinedTeam(ctx, &teamReferee)
 			require.NoError(t, err)
 			teamsHistory = append(teamsHistory, teamReferee)
+
+			team.TotalMembers += 1
+			teams[iTeam] = team
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 
 	switchingReferee := teamsHistory[len(teams)].PartyID
 
-	for i, team := range teams {
+	for i, toTeam := range teams {
 		if i == 0 {
 			continue
 		}
 
+		fromTeam := teams[i-1]
+
 		block := addTestBlock(t, ctx, bs)
 		switchTeam := entities.RefereeTeamSwitch{
-			FromTeamID:      teams[i-1].ID,
-			ToTeamID:        team.ID,
+			FromTeamID:      fromTeam.ID,
+			ToTeamID:        toTeam.ID,
 			PartyID:         switchingReferee,
 			SwitchedAtEpoch: uint64(3 + i),
 			SwitchedAt:      block.VegaTime,
@@ -108,13 +115,40 @@ func setupTeams(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqls
 		require.NoError(t, ts.RefereeSwitchedTeam(ctx, &switchTeam))
 
 		teamsHistory = append(teamsHistory, entities.TeamMember{
-			TeamID:        team.ID,
+			TeamID:        toTeam.ID,
 			PartyID:       switchingReferee,
 			JoinedAtEpoch: uint64(3 + i),
 			JoinedAt:      block.VegaTime,
 			VegaTime:      block.VegaTime,
 		})
+
+		fromTeam.TotalMembers -= 1
+		teams[i-1] = fromTeam
+
+		toTeam.TotalMembers += 1
+		teams[i] = toTeam
+
 		time.Sleep(10 * time.Millisecond)
+	}
+
+	block := addTestBlock(t, ctx, bs)
+	for i, team := range teams {
+		if i%2 != 0 {
+			continue
+		}
+
+		teamDup := team
+		teamDup.Closed = true
+		teamDup.AllowList = []string{GenerateID(), GenerateID()}
+		teams[i] = teamDup
+
+		require.NoError(t, ts.UpdateTeam(ctx, &entities.TeamUpdated{
+			ID:        teamDup.ID,
+			Name:      teamDup.Name,
+			Closed:    teamDup.Closed,
+			AllowList: teamDup.AllowList,
+			VegaTime:  block.VegaTime,
+		}))
 	}
 
 	return teams, teamsHistory
@@ -132,8 +166,8 @@ func historyForReferee(teamsHistory []entities.TeamMember, party entities.PartyI
 			})
 		}
 	}
-	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) bool {
-		return a.JoinedAtEpoch < b.JoinedAtEpoch
+	slices.SortStableFunc(refereeHistory, func(a, b entities.TeamMemberHistory) int {
+		return compareUint64(a.JoinedAtEpoch, b.JoinedAtEpoch)
 	})
 
 	return refereeHistory
@@ -149,8 +183,8 @@ func currentRefereesForTeam(teamsHistory []entities.TeamMember, teamID entities.
 		}
 	}
 
-	slices.SortStableFunc(currentTeamReferees, func(a, b entities.TeamMember) bool {
-		return a.PartyID < b.PartyID
+	slices.SortStableFunc(currentTeamReferees, func(a, b entities.TeamMember) int {
+		return strings.Compare(string(a.PartyID), string(b.PartyID))
 	})
 
 	return currentTeamReferees

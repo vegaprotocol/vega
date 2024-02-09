@@ -29,31 +29,37 @@ type ProposalTermsNewFreeform struct {
 func (f ProposalTermsNewFreeform) String() string {
 	return fmt.Sprintf(
 		"newFreeForm(%s)",
-		stringer.ReflectPointerToString(f.NewFreeform),
+		stringer.PtrToString(f.NewFreeform),
 	)
 }
 
-func (f ProposalTermsNewFreeform) IntoProto() *vegapb.ProposalTerms_NewFreeform {
+func (f ProposalTermsNewFreeform) IntoProto() *vegapb.NewFreeform {
 	var newFreeform *vegapb.NewFreeform
 	if f.NewFreeform != nil {
 		newFreeform = f.NewFreeform.IntoProto()
 	}
-	return &vegapb.ProposalTerms_NewFreeform{
-		NewFreeform: newFreeform,
-	}
+	return newFreeform
 }
 
 func (f ProposalTermsNewFreeform) isPTerm() {}
 
-func (f ProposalTermsNewFreeform) oneOfProto() interface{} {
-	return f.IntoProto()
+func (a ProposalTermsNewFreeform) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_NewFreeform{
+		NewFreeform: a.IntoProto(),
+	}
+}
+
+func (a ProposalTermsNewFreeform) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_NewFreeform{
+		NewFreeform: a.IntoProto(),
+	}
 }
 
 func (f ProposalTermsNewFreeform) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewFreeform
 }
 
-func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
+func (f ProposalTermsNewFreeform) DeepClone() ProposalTerm {
 	if f.NewFreeform == nil {
 		return &ProposalTermsNewFreeform{}
 	}
@@ -62,7 +68,7 @@ func (f ProposalTermsNewFreeform) DeepClone() proposalTerm {
 	}
 }
 
-func NewNewFreeformFromProto(_ *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
+func NewNewFreeformFromProto(_ *vegapb.NewFreeform) *ProposalTermsNewFreeform {
 	return &ProposalTermsNewFreeform{
 		NewFreeform: &NewFreeform{},
 	}

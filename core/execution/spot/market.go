@@ -15,17 +15,20 @@
 
 package spot
 
-// Copyright (c) 2022 Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.VEGA file and at https://www.mariadb.com/bsl11.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
 //
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 //
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	"context"
@@ -45,7 +48,6 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/metrics"
-	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -99,6 +101,7 @@ type Market struct {
 
 	// deps engines
 	collateral common.Collateral
+	banking    common.Banking
 
 	broker common.Broker
 	closed bool
@@ -159,7 +162,7 @@ func NewMarket(
 	mkt *types.Market,
 	timeService common.TimeService,
 	broker common.Broker,
-	as *monitor.AuctionState,
+	as common.AuctionState,
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
 	baseAssetDetails *assets.Asset,
@@ -167,6 +170,7 @@ func NewMarket(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -265,6 +269,7 @@ func NewMarket(
 		maxStopOrdersPerParties:       num.UintZero(),
 		stopOrders:                    stoporders.New(log),
 		expiringStopOrders:            common.NewExpiringOrders(),
+		banking:                       banking,
 	}
 	liquidity.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
@@ -1065,6 +1070,11 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		}
 	}()
 
+	if m.IsOpeningAuction() {
+		rejectStopOrders(types.StopOrderRejectionNotAllowedDuringOpeningAuction, fallsBelow, risesAbove)
+		return nil, common.ErrStopOrderNotAllowedDuringOpeningAuction
+	}
+
 	if !m.canTrade() {
 		rejectStopOrders(types.StopOrderRejectionTradingNotAllowed, fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
@@ -1171,7 +1181,7 @@ func (m *Market) poolStopOrders(
 func (m *Market) stopOrderWouldTriggerAtSubmission(
 	stopOrder *types.StopOrder,
 ) bool {
-	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercenOffset() {
+	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercentOffset() {
 		return false
 	}
 
@@ -1544,8 +1554,18 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake := m.getTargetStake()
-	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(stake)
+	var fee num.Decimal
+	switch m.mkt.Fees.LiquidityFeeSettings.Method {
+	case types.LiquidityFeeMethodConstant:
+		fee = m.mkt.Fees.LiquidityFeeSettings.FeeConstant
+	case types.LiquidityFeeMethodMarginalCost:
+		fee = m.liquidityEngine.ProvisionsPerParty().FeeForTarget(m.getTargetStake())
+	case types.LiquidityFeeMethodWeightedAverage:
+		fee = m.liquidityEngine.ProvisionsPerParty().FeeForWeightedAverage()
+	default:
+		m.log.Panic("unknown liquidity fee method")
+	}
+
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)
@@ -2878,10 +2898,14 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	} else if epoch.Action == vega.EpochAction_EPOCH_ACTION_END {
 		m.liquidity.OnEpochEnd(ctx, m.timeService.GetTimeNow(), epoch)
 		m.updateLiquidityFee(ctx)
+
+		m.banking.RegisterTradingFees(ctx, m.quoteAsset, m.fee.TotalTradingFeesPerParty())
+
 		quoteAssetQuantum, _ := m.collateral.GetAssetQuantum(m.quoteAsset)
 		feesStats := m.fee.GetFeesStatsOnEpochEnd(quoteAssetQuantum)
 		feesStats.EpochSeq = epoch.Seq
 		feesStats.Market = m.GetID()
+
 		m.broker.Send(events.NewFeesStatsEvent(ctx, feesStats))
 	}
 }

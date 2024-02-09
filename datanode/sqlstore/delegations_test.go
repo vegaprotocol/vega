@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -34,7 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/shopspring/decimal"
@@ -90,8 +78,8 @@ func TestDelegations(t *testing.T) {
 	ns := sqlstore.NewNode(connectionSource)
 	block := addTestBlock(t, ctx, bs)
 
-	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
-	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node1 := addTestNode(t, ctx, ns, block, GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, GenerateID())
 
 	node1ID := node1.ID.String()
 	node2ID := node2.ID.String()
@@ -640,8 +628,8 @@ func setupPaginatedDelegationsTests(t *testing.T, ctx context.Context) (*sqlstor
 	block := addTestBlockForTime(t, ctx, bs, blockTime)
 
 	nodes := []entities.Node{
-		addTestNode(t, ctx, ns, block, helpers.GenerateID()),
-		addTestNode(t, ctx, ns, block, helpers.GenerateID()),
+		addTestNode(t, ctx, ns, block, GenerateID()),
+		addTestNode(t, ctx, ns, block, GenerateID()),
 	}
 
 	parties := []entities.Party{

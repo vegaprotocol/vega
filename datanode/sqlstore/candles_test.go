@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -34,18 +22,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	types "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -69,7 +53,7 @@ func TestGetExistingCandles(t *testing.T) {
 		t.Fatalf("failed to get candles for market:%s", err)
 	}
 
-	defaultCandles := "block,1 minute,5 minutes,15 minutes,1 hour,6 hours,1 day"
+	defaultCandles := "block,1 minute,5 minutes,15 minutes,30 minutes,1 hour,4 hours,6 hours,8 hours,12 hours,1 day,7 days"
 	intervals := strings.Split(defaultCandles, ",")
 	assert.Equal(t, len(intervals), len(candles))
 
@@ -153,7 +137,7 @@ func TestNotional(t *testing.T) {
 	}
 
 	assert.Equal(t, uint64(40), candles[0].Notional)
-	assert.Equal(t, uint64(160), candles[1].Notional)
+	assert.Equal(t, uint64(160), candles[len(candles)-1].Notional)
 }
 
 func TestCandlesGetForEmptyInterval(t *testing.T) {
@@ -186,15 +170,26 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 		t.Fatalf("failed to get candles:%s", err)
 	}
 
-	assert.Equal(t, 2, len(candles))
+	assert.Equal(t, 11, len(candles)) // 11 now because we are filling in the gaps
 
 	firstCandle := createCandle(startTime,
 		startTime.Add(3*time.Microsecond), 1, 2, 2, 1, 20, 30)
 	assert.Equal(t, firstCandle, candles[0])
+	// Fill gaps should carry over the last candle's prices
+	gapPeriodStart := firstCandle.PeriodStart.Add(1 * time.Minute)
+
+	assert.Equal(t, gapPeriodStart, candles[1].PeriodStart)
+	assert.True(t, decimal.Zero.Equal(candles[1].Open))
+	assert.True(t, decimal.Zero.Equal(candles[1].High))
+	assert.True(t, decimal.Zero.Equal(candles[1].Low))
+	assert.True(t, decimal.Zero.Equal(candles[1].Close))
+	assert.Equal(t, uint64(0), candles[1].Volume)
+	assert.Equal(t, uint64(0), candles[1].Notional)
+	assert.True(t, firstCandle.LastUpdateInPeriod.Equal(candles[1].LastUpdateInPeriod))
 
 	secondCandle := createCandle(startTime.Add(10*time.Minute),
 		startTime.Add(10*time.Minute).Add(5*time.Microsecond), 3, 4, 4, 3, 40, 140)
-	assert.Equal(t, secondCandle, candles[1])
+	assert.Equal(t, secondCandle, candles[len(candles)-1])
 }
 
 func TestCandlesGetLatest(t *testing.T) {
@@ -257,7 +252,6 @@ func testInterval(t *testing.T, ctx context.Context, tradeDataStartTime time.Tim
 	intervalDur := time.Duration(intervalSeconds) * time.Second
 
 	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
-	// entities.OffsetPagination{}
 	_, candleID, _ := candleStore.GetCandleIDForIntervalAndMarket(ctx, interval, testMarket)
 	candles, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candleID, fromTime,
 		toTime, pagination)
@@ -371,15 +365,15 @@ func createTestTrade(t *testing.T, price int, size int, block entities.Block, se
 	t.Helper()
 	proto := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        helpers.GenerateID(),
+		Id:        GenerateID(),
 		Price:     strconv.Itoa(price),
 		Size:      uint64(size),
 		MarketId:  testMarket,
-		Buyer:     helpers.GenerateID(),
-		Seller:    helpers.GenerateID(),
+		Buyer:     GenerateID(),
+		Seller:    GenerateID(),
 		Aggressor: types.Side_SIDE_SELL,
-		BuyOrder:  helpers.GenerateID(),
-		SellOrder: helpers.GenerateID(),
+		BuyOrder:  GenerateID(),
+		SellOrder: GenerateID(),
 	}
 
 	trade, err := entities.TradeFromProto(proto, generateTxHash(), block.VegaTime, uint64(seqNum))
@@ -553,4 +547,49 @@ func TestCandlesCursorPagination(t *testing.T) {
 			EndCursor:       allCandles[101].Cursor().Encode(),
 		}, pageInfo)
 	})
+}
+
+func TestCandlesBlockInterval(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+
+	tradeStore := sqlstore.NewTrades(connectionSource)
+
+	startTime := time.Unix(StartTime, 0)
+	insertCandlesTestData(t, ctx, tradeStore, startTime, totalBlocks, tradesPerBlock, startPrice, priceIncrement, size, time.Minute)
+
+	candles, err := candleStore.GetCandlesForMarket(ctx, testMarket)
+	require.NoError(t, err)
+	first := int32(10)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	candleData, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candles["block"], nil,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles with pagination:%s", err)
+	}
+
+	assert.Equal(t, 10, len(candleData))
+}
+
+func TestCandlesFillBeforeFirstCandle(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+
+	candles, err := candleStore.GetCandlesForMarket(ctx, testMarket)
+	require.NoError(t, err)
+	first := int32(10)
+	pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, false)
+	require.NoError(t, err)
+
+	candleData, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candles["block"], nil,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles with pagination:%s", err)
+	}
+
+	assert.Equal(t, 0, len(candleData))
 }

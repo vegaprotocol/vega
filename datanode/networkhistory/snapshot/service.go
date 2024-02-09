@@ -22,11 +22,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/mutex"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type HistoryStore interface {

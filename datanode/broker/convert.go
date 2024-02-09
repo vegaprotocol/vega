@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package broker
 
 import (
@@ -196,6 +184,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.VestingBalancesSummaryEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID:
 		return events.TransferFeesEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED:
+		return events.TransferFeesDiscountUpdatedFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED:
+		return events.PartyMarginModeUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:
+		return events.PartyProfileUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:
+		return events.TeamsStatsUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

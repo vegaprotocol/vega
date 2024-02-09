@@ -22,11 +22,11 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/iavl"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
@@ -93,11 +93,14 @@ const (
 	SettlementSnapshot             SnapshotNamespace = "settlement"
 	HoldingAccountTrackerSnapshot  SnapshotNamespace = "holdingAccountTracker"
 	EthereumOracleVerifierSnapshot SnapshotNamespace = "ethereumoracleverifier"
+	L2EthereumOraclesSnapshot      SnapshotNamespace = "l2EthereumOracles"
 	TeamsSnapshot                  SnapshotNamespace = "teams"
+	PartiesSnapshot                SnapshotNamespace = "parties"
 	VestingSnapshot                SnapshotNamespace = "vesting"
 	ReferralProgramSnapshot        SnapshotNamespace = "referralProgram"
 	ActivityStreakSnapshot         SnapshotNamespace = "activitystreak"
 	VolumeDiscountProgramSnapshot  SnapshotNamespace = "volumeDiscountProgram"
+	LiquidationSnapshot            SnapshotNamespace = "liquidation"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB

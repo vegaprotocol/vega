@@ -31,6 +31,7 @@ import (
 	nodemocks "code.vegaprotocol.io/vega/wallet/api/node/mocks"
 	"code.vegaprotocol.io/vega/wallet/api/node/types"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -644,7 +645,7 @@ func testFailingToGetSpamStatsDoesNotCheckTransaction(t *testing.T) {
 	handler.interactor.EXPECT().RequestTransactionReviewForChecking(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(types.SpamStatistics{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkErrorType, fmt.Errorf("could not get the latest block information from the node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkErrorType, fmt.Errorf("could not get the latest spam statistics for the public key from the node: %w", assert.AnError)).Times(1)
 
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -658,7 +659,7 @@ func testFailingToGetSpamStatsDoesNotCheckTransaction(t *testing.T) {
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
 	assert.Equal(t, "Network error", errorDetails.Message)
-	assert.Equal(t, api.ErrCouldNotGetLastBlockInformation.Error(), errorDetails.Data)
+	assert.Equal(t, api.ErrCouldNotGetSpamStatistics.Error(), errorDetails.Data)
 	assert.Empty(t, result)
 }
 

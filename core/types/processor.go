@@ -162,14 +162,14 @@ func (o OrderSubmission) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) price(%s) size(%v) side(%s) timeInForce(%s) expiresAt(%v) type(%s) reference(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v)",
 		o.MarketID,
-		stringer.UintPointerToString(o.Price),
+		stringer.PtrToString(o.Price),
 		o.Size,
 		o.Side.String(),
 		o.TimeInForce.String(),
 		o.ExpiresAt,
 		o.Type.String(),
 		o.Reference,
-		stringer.ReflectPointerToString(o.PeggedOrder),
+		stringer.PtrToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
 	)
@@ -242,7 +242,7 @@ func (w WithdrawSubmission) String() string {
 	return fmt.Sprintf(
 		"asset(%s) amount(%s) ext(%s)",
 		w.Asset,
-		stringer.UintPointerToString(w.Amount),
-		stringer.ReflectPointerToString(w.Ext),
+		stringer.PtrToString(w.Amount),
+		stringer.PtrToString(w.Ext),
 	)
 }

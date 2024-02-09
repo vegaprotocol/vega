@@ -26,11 +26,10 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	emock "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/markets"
-	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/types"
+	tmocks "code.vegaprotocol.io/vega/core/vegatime/mocks"
+	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/golang/mock/gomock"

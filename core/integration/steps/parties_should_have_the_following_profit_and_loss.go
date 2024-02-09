@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesHaveTheFollowingProfitAndLoss(
@@ -45,12 +45,20 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 	sleepTimeMs := 100
 
 	var pos []*types.Position
-
 	// check position status if needed
 	ps, checkPS := row.positionState()
 	party := row.party()
 	for retries > 0 {
-		pos, err = positionService.GetPositionsByParty(party)
+		if len(row.market()) > 0 {
+			p, err := positionService.GetPositionsByMarketAndParty(row.market(), party)
+			pos = []*types.Position{p}
+			if err != nil {
+				return errCannotGetPositionForParty(party, err)
+			}
+		} else {
+			pos, err = positionService.GetPositionsByParty(party)
+		}
+
 		if err != nil {
 			return errCannotGetPositionForParty(party, err)
 		}
@@ -116,6 +124,7 @@ func parseProfitAndLossTable(table *godog.Table) []RowWrapper {
 		"realised pnl",
 	}, []string{
 		"status",
+		"market id",
 	})
 }
 
@@ -125,6 +134,13 @@ type pnlRow struct {
 
 func (r pnlRow) party() string {
 	return r.row.MustStr("party")
+}
+
+func (r pnlRow) market() string {
+	if r.row.HasColumn("market id") {
+		return r.row.MustStr("market id")
+	}
+	return ""
 }
 
 func (r pnlRow) volume() int64 {

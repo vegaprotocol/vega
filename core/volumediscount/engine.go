@@ -20,14 +20,14 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 const MaximumWindowLength uint64 = 100
@@ -191,6 +191,7 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 
 	for _, party := range parties {
 		notionalVolume := e.avgVolumePerParty[party]
+		qualifiedForTier := false
 		for i := tiersLen - 1; i >= 0; i-- {
 			tier := e.currentProgram.VolumeBenefitTiers[i]
 			if notionalVolume.GreaterThanOrEqual(tier.MinimumRunningNotionalTakerVolume.ToDecimal()) {
@@ -202,8 +203,17 @@ func (e *Engine) computeFactorsByParty(ctx context.Context, epoch uint64) {
 					DiscountFactor: tier.VolumeDiscountFactor.String(),
 					RunningVolume:  notionalVolume.Round(0).String(),
 				})
+				qualifiedForTier = true
 				break
 			}
+		}
+		// if the party hasn't qualified, then still send the stats but with a zero factor
+		if !qualifiedForTier {
+			evt.Stats = append(evt.Stats, &eventspb.PartyVolumeDiscountStats{
+				PartyId:        party.String(),
+				DiscountFactor: "0",
+				RunningVolume:  notionalVolume.Round(0).String(),
+			})
 		}
 	}
 

@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
@@ -194,7 +195,7 @@ func (e *Engine) loadScheduledGovernanceTransfers(ctx context.Context, r []*chec
 		for _, g := range v.Transfers {
 			transfer := types.GovernanceTransferFromProto(g)
 			transfers = append(transfers, transfer)
-			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
 		}
 		e.scheduledGovernanceTransfers[v.DeliverOn] = transfers
 	}
@@ -231,13 +232,13 @@ func (e *Engine) loadRecurringTransfers(
 		e.recurringTransfersMap[transfer.ID] = transfer
 		// reload the dispatch strategy to the hash cache
 		if transfer.DispatchStrategy != nil {
-			e.registerDispatchStrategy(transfer.DispatchStrategy)
 			// reset defaults for new dispatch strategy params:
 			if transfer.DispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_UNSPECIFIED {
 				e.applyMigrationDefaults(transfer.DispatchStrategy)
 			}
+			e.registerDispatchStrategy(transfer.DispatchStrategy)
 		}
-		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
+		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer, e.getGameID(transfer)))
 	}
 	return evts
 }
@@ -258,7 +259,7 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		if transfer.Config.RecurringTransferConfig.DispatchStrategy != nil {
 			e.registerDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
 		}
-		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero(), e.getGovGameID(transfer)))
 	}
 	return evts
 }
@@ -277,7 +278,7 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	}
 
 	for _, v := range e.recurringTransfers {
-		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil))
+		out.RecurringTransfers = append(out.RecurringTransfers, v.IntoEvent(nil, e.getGameID(v)))
 	}
 
 	return out

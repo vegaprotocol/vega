@@ -124,30 +124,30 @@ func verifyValidators(r *reporter, validators map[string]validator) {
 		return
 	}
 
-	for tmkey, v := range validators {
+	for key, v := range validators {
 		switch {
-		case len(tmkey) <= 0:
+		case len(key) <= 0:
 			r.Err("app_state.validators contains an empty key")
-		case !isValidTMKey(tmkey):
-			r.Err("app_state.validators contains an invalid TM public key, `%v`", tmkey)
-		case tmkey != v.TMPubKey:
-			r.Err("app_state.validator[%v] hash mismatched TM pub key, `%v`", tmkey, v.TMPubKey)
+		case !isValidCometBFTKey(key):
+			r.Err("app_state.validators contains an invalid CometBFT public key, `%v`", key)
+		case key != v.TMPubKey:
+			r.Err("app_state.validator[%v] hash mismatched CometBFT public key, `%v`", key, v.TMPubKey)
 		}
 
 		if !isValidParty(v.ID) {
-			r.Err("app_state.validators[%v] has an invalid id, `%v`", tmkey, v.ID)
+			r.Err("app_state.validators[%v] has an invalid id, `%v`", key, v.ID)
 		}
 
 		if !isValidParty(v.VegaPubKey) {
-			r.Err("app_state.validators[%v] has an invalid vega public key, `%v`", tmkey, v.VegaPubKey)
+			r.Err("app_state.validators[%v] has an invalid vega public key, `%v`", key, v.VegaPubKey)
 		}
 
 		if v.VegaPubKeyIndex == 0 {
-			r.Err("app_state.validators[%v] has an invalid vega public key index, `%v`", tmkey, v.VegaPubKeyIndex)
+			r.Err("app_state.validators[%v] has an invalid vega public key index, `%v`", key, v.VegaPubKeyIndex)
 		}
 
 		if !isValidEthereumAddress(v.EthereumAddress) {
-			r.Err("app_state.validators[%v] has an invalid ethereum address, `%v`", tmkey, v.EthereumAddress)
+			r.Err("app_state.validators[%v] has an invalid ethereum address, `%v`", key, v.EthereumAddress)
 		}
 	}
 }

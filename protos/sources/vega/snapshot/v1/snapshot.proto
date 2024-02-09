@@ -140,6 +140,11 @@ message Payload {
     VolumeDiscountProgram volume_discount_program = 77;
     LiquidityV2Parameters liquidity_v2_parameters = 78;
     LiquidityV2PaidFeesStats liquidity_v2_paid_fees_stats = 79;
+    Liquidation liquidation = 80;
+    BankingTransferFeeDiscounts banking_transfer_fee_discounts = 81;
+    GovernanceBatchActive governance_batch_active = 82;
+    Parties parties = 83;
+    L2EthOracles l2_eth_oracles = 84;
   }
 }
 
@@ -220,8 +225,15 @@ message Resource {
   uint32 state = 4;
 }
 
+message EventForwarderBucket {
+  int64 ts = 1;
+  repeated string hashes = 2;
+}
+
 message EventForwarder {
+  // this is deprecated, use the other one now
   repeated string acked_events = 1;
+  repeated EventForwarderBucket buckets = 2;
 }
 
 message CollateralAccounts {
@@ -335,8 +347,18 @@ message GovernanceActive {
   repeated ProposalData proposals = 1;
 }
 
+message BatchProposalData {
+  ProposalData batch_proposal = 1;
+  repeated vega.Proposal proposals = 2;
+}
+
+message GovernanceBatchActive {
+  repeated BatchProposalData batch_proposals = 1;
+}
+
 message GovernanceNode {
   repeated vega.Proposal proposals = 1;
+  repeated ProposalData proposal_data = 2; // includes votes
 }
 
 message StakingAccount {
@@ -510,6 +532,15 @@ message Market {
   repeated vega.Order expiring_stop_orders = 25;
   Product product = 26;
   vega.events.v1.FeesStats fees_stats = 27;
+  repeated PartyMarginFactor party_margin_factor = 28;
+  CompositePriceCalculator mark_price_calculator = 29;
+  optional CompositePriceCalculator internal_composite_price_calculator = 30;
+  int64 next_internal_composite_price_calc = 31;
+}
+
+message PartyMarginFactor {
+  string party = 1;
+  string margin_factor = 2;
 }
 
 // eventually support multiple products
@@ -524,12 +555,27 @@ message DataPoint {
   int64 timestamp = 2;
 }
 
+message AuctionIntervals {
+  repeated int64 t = 1;
+  int64 auction_start = 2;
+  int64 total = 3;
+}
+
+message TWAPData {
+  int64 start = 1;
+  int64 end = 2;
+  string sum_product = 3;
+}
+
 message Perps {
   string id = 1;
   repeated DataPoint external_data_point = 2;
   repeated DataPoint internal_data_point = 3;
   uint64 seq = 4;
   int64 started_at = 5;
+  TWAPData external_twap_data = 6;
+  TWAPData internal_twap_data = 7;
+  AuctionIntervals auction_intervals = 8;
 }
 
 message OrdersAtPrice {
@@ -601,6 +647,7 @@ message Position {
   string buy_sum_product = 6;
   string sell_sum_product = 7;
   bool distressed = 8;
+  bytes average_entry_price = 9;
 }
 
 message MarketPositions {
@@ -770,6 +817,16 @@ message StakeVerifierPending {
   uint64 log_index = 6;
   string tx_id = 7;
   string id = 8;
+}
+
+message L2EthOracles {
+  repeated ChainIdEthOracles chain_id_eth_oracles = 1;
+}
+
+message ChainIdEthOracles {
+  string source_chain_id = 1;
+  EthOracleVerifierLastBlock last_block = 2;
+  EthContractCallResults call_results = 3;
 }
 
 message EthOracleVerifierLastBlock {
@@ -1020,6 +1077,7 @@ message NextTimeTrigger {
 message MarketTracker {
   repeated checkpoint.v1.MarketActivityTracker market_activity = 1;
   repeated checkpoint.v1.TakerNotionalVolume taker_notional_volume = 2;
+  repeated checkpoint.v1.MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
 }
 
 message SignerEventsPerAddress {
@@ -1123,6 +1181,7 @@ message Team {
   string avatar_url = 6;
   int64 created_at = 7;
   bool closed = 8;
+  repeated string allow_list = 9;
 }
 
 message Membership {
@@ -1234,4 +1293,40 @@ message EpochPartyVolumes {
 message PartyVolume {
   string party = 1;
   bytes volume = 2;
+}
+
+message Liquidation {
+  string market_id = 1;
+  int64 network_pos = 2;
+  int64 next_step = 3;
+  vega.LiquidationStrategy config = 4;
+}
+
+message PartyAssetAmount {
+  string party = 1;
+  string asset = 2;
+  string amount = 3;
+}
+
+message BankingTransferFeeDiscounts {
+  repeated PartyAssetAmount party_asset_discount = 1;
+}
+
+message CompositePriceCalculator {
+  string composite_price = 1;
+  vega.CompositePriceConfiguration price_configuration = 2;
+  repeated vega.Trade trades = 3;
+  repeated string price_sources = 4;
+  repeated int64 price_source_last_update = 5;
+  repeated TimePrice book_price_at_time = 6;
+}
+
+message Parties {
+  repeated PartyProfile profiles = 1;
+}
+
+message PartyProfile {
+  string party_id = 1;
+  string alias = 2;
+  repeated vega.Metadata metadata = 3;
 }

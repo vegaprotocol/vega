@@ -173,9 +173,14 @@ const (
 	SpamProtectionMaxApplyReferralCode     = "spam.protection.max.applyReferralCode"
 	SpamProtectionBalanceSnapshotFrequency = "spam.protection.balanceSnapshotFrequency"
 	SpamProtectionApplyReferralMinFunds    = "spam.protection.applyReferral.min.funds"
+	SpamProtectionReferralSetMinFunds      = "spam.protection.referralSet.min.funds"
+
+	SpamProtectionMaxUpdatePartyProfile = "spam.protection.max.updatePartyProfile"
+	SpamProtectionUpdateProfileMinFunds = "spam.protection.updatePartyProfile.min.funds"
 
 	// blockchain specifics?
-	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
+	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
+	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
@@ -200,9 +205,12 @@ const (
 	MultipleOfTendermintValidatorsForEtsatzSet = "network.validators.ersatz.multipleOfTendermintValidators"
 	MinimumEthereumEventsForNewValidator       = "network.validators.minimumEthereumEventsForNewValidator"
 
-	TransferFeeFactor                  = "transfer.fee.factor"
-	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
-	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
+	TransferFeeFactor                       = "transfer.fee.factor"
+	TransferMinTransferQuantumMultiple      = "transfer.minTransferQuantumMultiple"
+	TransferMaxCommandsPerEpoch             = "spam.protection.maxUserTransfersPerEpoch"
+	TransferFeeMaxQuantumAmount             = "transfer.fee.maxQuantumAmount"
+	TransferFeeDiscountDecayFraction        = "transfer.feeDiscountDecayFraction"
+	TransferFeeDiscountMinimumTrackedAmount = "transfer.feeDiscountMinimumTrackedAmount"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -223,6 +231,8 @@ const (
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
 	// MTM interval.
 	MarkPriceUpdateMaximumFrequency = "network.markPriceUpdateMaximumFrequency"
+	// interval for updating internal composite price for funding payment in perps.
+	InternalCompositePriceUpdateFrequency = "network.internalCompositePriceUpdateFrequency"
 
 	// how much to scale the number of proposed blocks used for performance calculation.
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
@@ -259,6 +269,8 @@ var Deprecated = map[string]struct{}{
 }
 
 var AllKeys = map[string]struct{}{
+	SpamProtectionMaxUpdatePartyProfile:                          {},
+	SpamProtectionUpdateProfileMinFunds:                          {},
 	GovernanceProposalVolumeDiscountProgramMinClose:              {},
 	GovernanceProposalVolumeDiscountProgramMaxClose:              {},
 	GovernanceProposalVolumeDiscountProgramMinEnact:              {},
@@ -395,6 +407,9 @@ var AllKeys = map[string]struct{}{
 	MultipleOfTendermintValidatorsForEtsatzSet:                   {},
 	MinimumEthereumEventsForNewValidator:                         {},
 	TransferMinTransferQuantumMultiple:                           {},
+	TransferFeeMaxQuantumAmount:                                  {},
+	TransferFeeDiscountDecayFraction:                             {},
+	TransferFeeDiscountMinimumTrackedAmount:                      {},
 	TransferMaxCommandsPerEpoch:                                  {},
 	SpamPoWNumberOfPastBlocks:                                    {},
 	SpamPoWDifficulty:                                            {},
@@ -413,6 +428,7 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateAssetMinVoterBalance:                 {},
 	SpamProtectionMaxBatchSize:                                   {},
 	MarkPriceUpdateMaximumFrequency:                              {},
+	InternalCompositePriceUpdateFrequency:                        {},
 	ValidatorPerformanceScalingFactor:                            {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:               {},
 	SpamProtectionMinMultisigUpdates:                             {},
@@ -430,4 +446,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxApplyReferralCode:                           {},
 	SpamProtectionBalanceSnapshotFrequency:                       {},
 	SpamProtectionApplyReferralMinFunds:                          {},
+	SpamProtectionReferralSetMinFunds:                            {},
+	BlockchainsEthereumL2Configs:                                 {},
 }

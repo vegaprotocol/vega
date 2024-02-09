@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -32,7 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/jackc/pgtype"
 	"github.com/shopspring/decimal"
 )
@@ -48,6 +38,7 @@ type LedgerEntry struct {
 	Type               LedgerMovementType
 	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
 	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
+	TransferID         TransferID
 }
 
 var LedgerEntryColumns = []string{
@@ -56,6 +47,7 @@ var LedgerEntryColumns = []string{
 	"tx_hash", "vega_time", "transfer_time", "type",
 	"account_from_balance",
 	"account_to_balance",
+	"transfer_id",
 }
 
 func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
@@ -69,6 +61,11 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
 	}
 
+	var transferID *string
+	if le.TransferID != "" {
+		transferID = ptr.From(le.TransferID.String())
+	}
+
 	return &vega.LedgerEntry{
 		FromAccount:        fromAcc.ToAccountDetailsProto(),
 		ToAccount:          toAcc.ToAccountDetailsProto(),
@@ -76,6 +73,7 @@ func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) 
 		Type:               vega.TransferType(le.Type),
 		FromAccountBalance: le.FromAccountBalance.String(),
 		ToAccountBalance:   le.ToAccountBalance.String(),
+		TransferId:         transferID,
 	}, nil
 }
 
@@ -91,6 +89,7 @@ func (le LedgerEntry) ToRow() []any {
 		le.Type,
 		le.FromAccountBalance,
 		le.ToAccountBalance,
+		le.TransferID,
 	}
 }
 
@@ -101,58 +100,38 @@ func CreateLedgerEntryTime(vegaTime time.Time, seqNum int) time.Time {
 type LedgerMovementType vega.TransferType
 
 const (
-	// Default value, always invalid.
-	LedgerMovementTypeUnspecified = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_UNSPECIFIED)
-	// Loss.
-	LedgerMovementTypeLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LOSS)
-	// Win.
-	LedgerMovementTypeWin = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WIN)
-	// Mark to market loss.
-	LedgerMovementTypeMTMLoss = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_LOSS)
-	// Mark to market win.
-	LedgerMovementTypeMTMWin = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_WIN)
-	// Margin too low.
-	LedgerMovementTypeMarginLow = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_LOW)
-	// Margin too high.
-	LedgerMovementTypeMarginHigh = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_HIGH)
-	// Margin was confiscated.
-	LedgerMovementTypeMarginConfiscated = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED)
-	// Pay maker fee.
-	LedgerMovementTypeMakerFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY)
-	// Receive maker fee.
-	LedgerMovementTypeMakerFeeReceive = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE)
-	// Pay infrastructure fee.
-	LedgerMovementTypeInfrastructureFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY)
-	// Receive infrastructure fee.
+	LedgerMovementTypeUnspecified                 = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_UNSPECIFIED)
+	LedgerMovementTypeLoss                        = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LOSS)
+	LedgerMovementTypeWin                         = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WIN)
+	LedgerMovementTypeMTMLoss                     = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_LOSS)
+	LedgerMovementTypeMTMWin                      = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MTM_WIN)
+	LedgerMovementTypeMarginLow                   = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_LOW)
+	LedgerMovementTypeMarginHigh                  = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_HIGH)
+	LedgerMovementTypeMarginConfiscated           = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED)
+	LedgerMovementTypeMakerFeePay                 = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY)
+	LedgerMovementTypeMakerFeeReceive             = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE)
+	LedgerMovementTypeInfrastructureFeePay        = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY)
 	LedgerMovementTypeInfrastructureFeeDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE)
-	// Pay liquidity fee.
-	LedgerMovementTypeLiquidityFeePay = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY)
-	// Receive liquidity fee.
-	LedgerMovementTypeLiquidityFeeDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE)
-	// Bond too low.
-	LedgerMovementTypeBondLow = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_LOW)
-	// Bond too high.
-	LedgerMovementTypeBondHigh = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_HIGH)
-	// Actual withdraw from system.
-	LedgerMovementTypeWithdraw = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW)
-	// Deposit funds.
-	LedgerMovementTypeDeposit = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_DEPOSIT)
-	// Bond slashing.
-	LedgerMovementTypeBondSlashing = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_SLASHING)
-	// Reward payout.
-	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARD_PAYOUT)
-	LedgerMovementTypeTransferFundsSend       = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND)
-	LedgerMovementTypeTransferFundsDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE)
-	LedgerMovementTypeClearAccount            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)
-	LedgerMovementTypePerpFundingWin          = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_WIN)
-	LedgerMovementTypePerpFundingLoss         = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS)
-	LedgerMovementTypeRewardsVested           = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARDS_VESTED)
+	LedgerMovementTypeLiquidityFeePay             = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY)
+	LedgerMovementTypeLiquidityFeeDistribute      = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE)
+	LedgerMovementTypeBondLow                     = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_LOW)
+	LedgerMovementTypeBondHigh                    = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_HIGH)
+	LedgerMovementTypeWithdraw                    = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_WITHDRAW)
+	LedgerMovementTypeDeposit                     = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_DEPOSIT)
+	LedgerMovementTypeBondSlashing                = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_SLASHING)
+	LedgerMovementTypeRewardPayout                = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARD_PAYOUT)
+	LedgerMovementTypeTransferFundsSend           = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND)
+	LedgerMovementTypeTransferFundsDistribute     = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE)
+	LedgerMovementTypeClearAccount                = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)
+	LedgerMovementTypePerpFundingWin              = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_WIN)
+	LedgerMovementTypePerpFundingLoss             = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS)
+	LedgerMovementTypeRewardsVested               = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARDS_VESTED)
 )
 
 func (l LedgerMovementType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
 	ty, ok := vega.TransferType_name[int32(l)]
 	if !ok {
-		return buf, fmt.Errorf("unknown transfer status: %s", ty)
+		return buf, fmt.Errorf("unknown ledger movement type: %s", ty)
 	}
 	return append(buf, []byte(ty)...), nil
 }
@@ -160,7 +139,7 @@ func (l LedgerMovementType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, 
 func (l *LedgerMovementType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	val, ok := vega.TransferType_value[string(src)]
 	if !ok {
-		return fmt.Errorf("unknown transfer status: %s", src)
+		return fmt.Errorf("unknown ledger movement type: %s", src)
 	}
 
 	*l = LedgerMovementType(val)

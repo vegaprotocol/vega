@@ -35,7 +35,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/version"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 )
@@ -549,7 +550,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	snapMetricsRecord := newSnapMetricsState()
 	defer func() {
 		blockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
-		snapMetricsRecord.Report(uint64(blockHeight))
+		snapMetricsRecord.Report(blockHeight)
 	}()
 
 	// Start the gathering of providers state asynchronously.
@@ -660,7 +661,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 		e.snapshotTreeLock.Unlock()
 		return nil, nil, err
 	}
-	e.appState.Height = uint64(height)
+	e.appState.Height = height
 
 	_, block := vegactx.TraceIDFromContext(ctx)
 	e.appState.Block = block
@@ -721,7 +722,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 	}
 
 	e.log.Info("Snapshot taken",
-		logging.Int64("height", height),
+		logging.Uint64("height", height),
 		logging.ByteString("hash", hash),
 		logging.String("protocol-version", e.appState.ProtocolVersion),
 		logging.Bool("protocol-upgrade", e.appState.ProtocolUpdgade),
@@ -814,7 +815,7 @@ func (e *Engine) restoreStateFromSnapshot(ctx context.Context, payloads []*types
 	e.appState = payloadsPerNamespace[types.AppSnapshot][0].GetAppState().AppState
 
 	// These values are needed in the context by providers, to send events.
-	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.appState.Height)), e.appState.Block)
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, e.appState.Height), e.appState.Block)
 	ctx = vegactx.WithChainID(ctx, e.appState.ChainID)
 
 	ctx = vegactx.WithSnapshotInfo(ctx, e.appState.ProtocolVersion, e.appState.ProtocolUpdgade)

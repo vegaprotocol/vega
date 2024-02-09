@@ -22,6 +22,7 @@ import (
 
 	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/julienschmidt/httprouter"
 )
 

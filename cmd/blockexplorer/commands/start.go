@@ -22,12 +22,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jessevdk/go-flags"
-	"go.uber.org/zap"
-
 	"code.vegaprotocol.io/vega/blockexplorer"
 	"code.vegaprotocol.io/vega/blockexplorer/config"
+	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
+	"go.uber.org/zap"
 )
 
 type Start struct {
@@ -52,6 +53,12 @@ func (opts *Start) Execute(_ []string) error {
 
 	// Use to shutdown the block explorer.
 	beCtx, stopBlockExplorer := context.WithCancel(context.Background())
+
+	// make sure the database has been migrated to the latest version
+	err = store.MigrateToLatestSchema(logger, cfg.Store)
+	if err != nil {
+		return fmt.Errorf("creating db schema: %w", err)
+	}
 
 	blockExplorerStopped := make(chan any)
 	go func() {

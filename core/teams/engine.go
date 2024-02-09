@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -28,6 +29,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/slices"
 )
 
@@ -95,6 +97,13 @@ func (e *Engine) CreateTeam(ctx context.Context, referrer types.PartyID, determi
 		Closed:    params.Closed,
 	}
 
+	if len(params.AllowList) > 0 {
+		teamToAdd.AllowList = make([]types.PartyID, 0, len(params.AllowList))
+		for _, key := range params.AllowList {
+			teamToAdd.AllowList = append(teamToAdd.AllowList, types.PartyID(key))
+		}
+	}
+
 	e.teams[deterministicTeamID] = teamToAdd
 
 	e.allTeamMembers[referrer] = deterministicTeamID
@@ -133,12 +142,19 @@ func (e *Engine) UpdateTeam(ctx context.Context, referrer types.PartyID, teamID 
 		teamsToUpdate.Closed = ptr.UnBox(params.Closed)
 	}
 
+	if len(params.AllowList) > 0 {
+		teamsToUpdate.AllowList = make([]types.PartyID, 0, len(params.AllowList))
+		for _, key := range params.AllowList {
+			teamsToUpdate.AllowList = append(teamsToUpdate.AllowList, types.PartyID(key))
+		}
+	}
+
 	e.notifyTeamUpdated(ctx, teamsToUpdate)
 
 	return nil
 }
 
-func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.ApplyReferralCode) error {
+func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *commandspb.JoinTeam) error {
 	for _, team := range e.teams {
 		if team.Referrer.PartyID == referee {
 			return ErrReferrerCannotJoinAnotherTeam
@@ -152,8 +168,8 @@ func (e *Engine) JoinTeam(ctx context.Context, referee types.PartyID, params *co
 		return ErrNoTeamMatchesID(teamID)
 	}
 
-	if teamToJoin.Closed {
-		return ErrTeamIsClosed(teamID)
+	if err := teamToJoin.EnsureCanJoin(referee); err != nil {
+		return err
 	}
 
 	teamJoined, alreadyMember := e.allTeamMembers[referee]
@@ -248,8 +264,8 @@ func (e *Engine) moveMembers(ctx context.Context, startEpochTime time.Time, epoc
 	for partyID := range e.teamSwitches {
 		sortedPartyID = append(sortedPartyID, partyID)
 	}
-	slices.SortStableFunc(sortedPartyID, func(a, b types.PartyID) bool {
-		return a < b
+	slices.SortStableFunc(sortedPartyID, func(a, b types.PartyID) int {
+		return strings.Compare(string(a), string(b))
 	})
 
 	for _, partyID := range sortedPartyID {
@@ -321,7 +337,7 @@ func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {
 			})
 		}
 
-		e.teams[teamID] = &types.Team{
+		t := &types.Team{
 			ID: teamID,
 			Referrer: &types.Membership{
 				PartyID:        referrerID,
@@ -335,6 +351,15 @@ func (e *Engine) loadTeamsFromSnapshot(teamsSnapshot []*snapshotpb.Team) {
 			CreatedAt: time.Unix(0, teamSnapshot.CreatedAt),
 			Closed:    teamSnapshot.Closed,
 		}
+
+		if len(teamSnapshot.AllowList) > 0 {
+			t.AllowList = make([]types.PartyID, 0, len(teamSnapshot.AllowList))
+			for _, partyIDStr := range teamSnapshot.AllowList {
+				t.AllowList = append(t.AllowList, types.PartyID(partyIDStr))
+			}
+		}
+
+		e.teams[teamID] = t
 	}
 }
 
@@ -356,6 +381,8 @@ func NewEngine(broker Broker, timeSvc TimeService) *Engine {
 		teams:          map[types.TeamID]*types.Team{},
 		allTeamMembers: map[types.PartyID]types.TeamID{},
 		teamSwitches:   map[types.PartyID]teamSwitch{},
+
+		minStakedVegaTokens: num.UintZero(),
 	}
 
 	return engine

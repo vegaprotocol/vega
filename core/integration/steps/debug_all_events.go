@@ -16,8 +16,12 @@
 package steps
 
 import (
+	"os"
+
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/golang/protobuf/jsonpb"
 )
 
 func DebugAllEvents(broker *stubs.BrokerStub, log *logging.Logger) {
@@ -34,4 +38,32 @@ func DebugLastNEvents(n int, broker *stubs.BrokerStub, log *logging.Logger) {
 	for i := len(data) - n; i < len(data); i++ {
 		log.Info(data[i].Type().String())
 	}
+}
+
+func DebugAllEventsJSONFile(broker *stubs.BrokerStub, log *logging.Logger, fname string) error {
+	of, err := os.Create(fname)
+	if err != nil {
+		log.Error("Failed to create file", logging.Error(err))
+		return err
+	}
+
+	defer func() { _ = of.Close() }()
+	marshaler := jsonpb.Marshaler{
+		EnumsAsInts: false,
+	}
+	data := broker.GetAllEventsSinceCleared()
+	for _, a := range data {
+		evt := a.StreamMessage()
+		s, err := marshaler.MarshalToString(evt)
+		if err != nil {
+			log.Errorf("FAILED TO MARSHAL %#v", evt)
+			continue
+		}
+		if _, err := of.WriteString(s + "\n"); err != nil {
+			log.Errorf("Failed to write '%s': %v", s, err)
+		}
+	}
+
+	log.Infof("EVENTS WRITTEN TO FILE %s", fname)
+	return nil
 }

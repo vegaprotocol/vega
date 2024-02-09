@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	cmd "code.vegaprotocol.io/vega/cmd/vegawallet/commands"
+
 	"github.com/stretchr/testify/require"
 )
 

@@ -21,15 +21,14 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

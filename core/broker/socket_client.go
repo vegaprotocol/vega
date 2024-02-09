@@ -23,20 +23,19 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"go.nanomsg.org/mangos/v3"
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
-	_ "go.nanomsg.org/mangos/v3/transport/inproc" // Does some nanomsg magic presumably
-	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // Does some nanomsg magic presumably
 	"golang.org/x/sync/errgroup"
 
-	"code.vegaprotocol.io/vega/libs/proto"
-
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/logging"
+	_ "go.nanomsg.org/mangos/v3/transport/inproc" // Does some nanomsg magic presumably
+	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // Does some nanomsg magic presumably
 )
 
 // SocketClient stream events sent to this broker over a socket to a remote broker.
@@ -263,7 +262,7 @@ func (s *socketClient) Receive(ctx context.Context) (<-chan events.Event, <-chan
 
 			evt := toEvent(ctx, &be)
 			if evt == nil {
-				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
+				s.log.Error("Cannot convert proto event to internal event", logging.String("event_type", be.GetType().String()))
 				continue
 			}
 

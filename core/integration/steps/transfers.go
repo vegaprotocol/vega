@@ -26,8 +26,37 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/cucumber/godog"
 )
+
+func PartiesAvailableFeeDiscounts(
+	engine *banking.Engine,
+	table *godog.Table,
+) error {
+	errs := []error{}
+	for _, r := range parseTransferFeeDiscountTable(table) {
+		asset := r.MustStr("asset")
+		party := r.MustStr("party")
+		actual := engine.AvailableFeeDiscount(asset, party)
+		expected := r.MustStr("available discount")
+		if expected != actual.String() {
+			errs = append(errs, errors.New(r.MustStr("party")+" expected "+expected+" but got "+actual.String()))
+		}
+	}
+	if len(errs) > 0 {
+		return ErrStack(errs)
+	}
+	return nil
+}
+
+func parseTransferFeeDiscountTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"asset",
+		"available discount",
+	}, []string{})
+}
 
 func PartiesSubmitTransfers(
 	engine *banking.Engine,

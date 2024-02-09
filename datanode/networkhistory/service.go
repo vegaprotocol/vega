@@ -21,20 +21,19 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/multiformats/go-multiaddr"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/multiformats/go-multiaddr"
 )
 
 type Service struct {
@@ -263,6 +262,9 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, chunk segm
 func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log snapshot.LoadLog, chunk segment.ContiguousHistory[segment.Full],
 	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (snapshot.LoadResult, error) {
+	maxRetries := 3
+	// the deadlock error that should trigger a retry
+	status := "deadlock detected (SQLSTATE 40P01)"
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
@@ -274,16 +276,27 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, log
 
 	start := time.Now()
 
+	var rErr error // return error
 	chunks := chunk.Slice(datanodeBlockSpan.ToHeight+1, chunk.HeightTo)
-	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, chunks, connConfig, withIndexesAndOrderTriggers, verbose)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
+	for retries := 0; retries < maxRetries; retries++ {
+		loadResult, err := d.snapshotService.LoadSnapshotData(ctx, log, chunks, connConfig, withIndexesAndOrderTriggers, verbose)
+		if err == nil {
+			log.Info("loaded all available data into datanode",
+				logging.String("result", fmt.Sprintf("%+v", loadResult)),
+				logging.Duration("time taken", time.Since(start)),
+				logging.Int("retry-count", retries),
+			)
+			return loadResult, nil
+		}
+		// keep track of the last error
+		rErr = err
+		if !strings.Contains(err.Error(), status) {
+			// some error other than 40P01 encountered
+			break
+		}
 	}
-
-	log.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
-		logging.Duration("time taken", time.Since(start)))
-
-	return loadResult, err
+	// retries still ended up failing
+	return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", rErr)
 }
 
 func (d *Service) GetMostRecentHistorySegmentFromBootstrapPeers(ctx context.Context,

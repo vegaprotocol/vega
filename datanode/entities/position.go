@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -32,11 +20,12 @@ import (
 	"fmt"
 	"time"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -107,24 +96,55 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
+func (p *Position) updateWithBadTrade(trade vega.Trade, seller bool, pf num.Decimal) {
+	size := int64(trade.Size)
+	if seller {
+		size *= -1
+	}
+	// update the open volume (not pending) directly, otherwise the settle position event resets the network position.
+	price, _ := num.UintFromString(trade.AssetPrice, 10)
+	mPrice, _ := num.UintFromString(trade.Price, 10)
+
+	openedVolume, closedVolume := CalculateOpenClosedVolume(p.OpenVolume, size)
+	realisedPnlDelta := num.DecimalFromUint(price).Sub(p.AverageEntryPrice).Mul(num.DecimalFromInt64(closedVolume)).Div(pf)
+	p.RealisedPnl = p.RealisedPnl.Add(realisedPnlDelta)
+	p.OpenVolume -= closedVolume
+
+	p.AverageEntryPrice = updateVWAP(p.AverageEntryPrice, p.OpenVolume, openedVolume, price)
+	p.AverageEntryMarketPrice = updateVWAP(p.AverageEntryMarketPrice, p.OpenVolume, openedVolume, mPrice)
+	p.OpenVolume += openedVolume
+	// no MTM - this isn't a settlement event, we're just adding the trade adding distressed volume to network
+	// for the same reason, no syncPending call.
+}
+
 func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
 	}
-	marketPrice, _ := num.DecimalFromString(trade.Price) // this is market price
+	// close out trade doesn't require the MTM calculation to be performed
+	// the distressed trader will be handled through a settle distressed event, the network
+	// open volume should just be updated, the average entry price is unchanged.
+	assetPrice, _ := num.DecimalFromString(trade.AssetPrice)
+	marketPrice, _ := num.DecimalFromString(trade.Price)
+
 	// Scale the trade to the correct size
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
-	realisedPnlDelta := marketPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
+	realisedPnlDelta := assetPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
 	p.PendingOpenVolume -= closed
 
 	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
-	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, marketPriceUint)
+	assetPriceUint, _ := num.UintFromDecimal(assetPrice)
+
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, assetPriceUint)
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(marketPrice, pf)
+	p.pendingMTM(assetPrice, pf)
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		p.updateWithBadTrade(trade, seller, pf)
+	}
 }
 
 func (p *Position) ApplyFundingPayment(amount *num.Int) {

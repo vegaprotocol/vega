@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -291,10 +291,5 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 				break
 			}
 		}
-	}
-
-	// temporarily disable teams scope
-	if dispatchStrategy.EntityScope == vega.EntityScope_ENTITY_SCOPE_TEAMS {
-		errs.AddForProperty(prefix+".team_scope", ErrIsNotSupported)
 	}
 }

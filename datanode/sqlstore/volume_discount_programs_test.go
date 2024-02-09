@@ -19,15 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"code.vegaprotocol.io/vega/protos/vega"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func setupVolumeDiscountProgramTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.VolumeDiscountPrograms) {
@@ -54,7 +53,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 			{
 				Program: &vega.VolumeDiscountProgram{
 					Version: 1,
-					Id:      helpers.GenerateID(),
+					Id:      GenerateID(),
 					BenefitTiers: []*vega.VolumeBenefitTier{
 						{
 							MinimumRunningNotionalTakerVolume: "1000",
@@ -72,7 +71,7 @@ func TestVolumeDiscountPrograms_AddVolumeDiscountProgram(t *testing.T) {
 			{
 				Program: &vega.VolumeDiscountProgram{
 					Version: 1,
-					Id:      helpers.GenerateID(),
+					Id:      GenerateID(),
 					BenefitTiers: []*vega.VolumeBenefitTier{
 						{
 							MinimumRunningNotionalTakerVolume: "2000",
@@ -118,7 +117,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 	started := eventspb.VolumeDiscountProgramStarted{
 		Program: &vega.VolumeDiscountProgram{
 			Version: 1,
-			Id:      helpers.GenerateID(),
+			Id:      GenerateID(),
 			BenefitTiers: []*vega.VolumeBenefitTier{
 				{
 					MinimumRunningNotionalTakerVolume: "1000",
@@ -139,7 +138,7 @@ func getVolumeDiscountEvents(t *testing.T, endTime time.Time) (*eventspb.VolumeD
 	updated := eventspb.VolumeDiscountProgramUpdated{
 		Program: &vega.VolumeDiscountProgram{
 			Version: 2,
-			Id:      helpers.GenerateID(),
+			Id:      GenerateID(),
 			BenefitTiers: []*vega.VolumeBenefitTier{
 				{
 					MinimumRunningNotionalTakerVolume: "2000",

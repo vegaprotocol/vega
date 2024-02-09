@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities_test
 
 // No race condition checks on these tests, the channels are buffered to avoid actual issues
@@ -166,17 +154,19 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 
 	// first update with trades
 	trade := vega.Trade{
-		Id:       "t1",
-		MarketId: market,
-		Price:    "1000",
-		Size:     2,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t1",
+		MarketId:   market,
+		Price:      "1000",
+		Size:       2,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1000",
 	}
 	position.UpdateWithTrade(trade, false, dp)
 	trade.Id = "t2"
 	trade.Size = 3
 	trade.Price = "1200"
+	trade.AssetPrice = "1200"
 	position.UpdateWithTrade(trade, false, dp)
 	pp := position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
@@ -200,12 +190,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 
 	// let's make it look like this party is trading, buyer in this case
 	trade = vega.Trade{
-		Id:       "t3",
-		MarketId: market,
-		Price:    "1150",
-		Size:     1,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t3",
+		MarketId:   market,
+		Price:      "1150",
+		Size:       1,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1150",
 	}
 	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
 	position.UpdateWithTrade(trade, false, dp)
@@ -227,12 +218,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now close a position to see some realised PnL
 	trade = vega.Trade{
-		Id:       "t4",
-		MarketId: market,
-		Price:    "1250",
-		Size:     1,
-		Buyer:    "buyer",
-		Seller:   party,
+		Id:         "t4",
+		MarketId:   market,
+		Price:      "1250",
+		Size:       1,
+		Buyer:      "buyer",
+		Seller:     party,
+		AssetPrice: "1250",
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
@@ -252,12 +244,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.EqualValues(t, 5, pp.OpenVolume)
 	// now close the position
 	trade = vega.Trade{
-		Id:       "t5",
-		MarketId: market,
-		Price:    "1300",
-		Size:     5,
-		Buyer:    "buyer",
-		Seller:   party,
+		Id:         "t5",
+		MarketId:   market,
+		Price:      "1300",
+		Size:       5,
+		Buyer:      "buyer",
+		Seller:     party,
+		AssetPrice: "1300",
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
@@ -307,12 +300,13 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	assert.Equal(t, "-200", pp.UnrealisedPnl)
 	// let's make it look like this party is trading, buyer in this case
 	trade := vega.Trade{
-		Id:       "t1",
-		MarketId: market,
-		Price:    "1150",
-		Size:     1,
-		Buyer:    party,
-		Seller:   "seller",
+		Id:         "t1",
+		MarketId:   market,
+		Price:      "1150",
+		Size:       1,
+		Buyer:      party,
+		Seller:     "seller",
+		AssetPrice: "1150",
 	}
 	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
 	position.UpdateWithTrade(trade, false, dp)
@@ -362,8 +356,9 @@ func TestUpdateWithTradesAndFundingPayment(t *testing.T) {
 }
 
 type tradeStub struct {
-	size  int64
-	price *num.Uint
+	size        int64
+	price       *num.Uint
+	marketPrice *num.Uint
 }
 
 func (t tradeStub) Size() int64 {
@@ -375,6 +370,9 @@ func (t tradeStub) Price() *num.Uint {
 }
 
 func (t tradeStub) MarketPrice() *num.Uint {
+	if t.marketPrice != nil {
+		return t.marketPrice.Clone()
+	}
 	return t.price.Clone()
 }
 
@@ -386,8 +384,9 @@ func (t tradeStub) ToVega(dp num.Decimal) vega.Trade {
 		size = uint64(-t.size)
 	}
 	return vega.Trade{
-		Size:  size,
-		Price: t.price.String(),
+		Size:       size,
+		Price:      t.price.String(),
+		AssetPrice: t.price.String(),
 	}
 }
 
@@ -433,4 +432,53 @@ func TestCalculateOpenClosedVolume(t *testing.T) {
 	open, closed = entities.CalculateOpenClosedVolume(-100, 150)
 	require.Equal(t, int64(50), open)
 	require.Equal(t, int64(-100), closed)
+}
+
+func TestWithDifferingMarketAssetPrecision(t *testing.T) {
+	ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
+		tradeStub{
+			size:        -5,
+			price:       num.NewUint(10000000),
+			marketPrice: num.NewUint(1000),
+		},
+		tradeStub{
+			size:        -5,
+			price:       num.NewUint(10000000),
+			marketPrice: num.NewUint(1000),
+		},
+	}, 1, num.DecimalFromFloat(1))
+	position.UpdateWithPositionSettlement(ps)
+	pp := position.ToProto()
+
+	// average entry price should be 1k in market precision
+	assert.Equal(t, ps.Price().String(), pp.AverageEntryPrice)
+	assert.Equal(t, "1000", position.AverageEntryMarketPrice.String())
+	assert.Equal(t, "10000000", position.AverageEntryPrice.String())
+
+	// now update with a trade
+	trade := vega.Trade{
+		Price:      "2000",
+		AssetPrice: "20000000",
+		Size:       10,
+	}
+	position.UpdateWithTrade(trade, true, num.DecimalOne())
+	assert.Equal(t, "1500", position.PendingAverageEntryMarketPrice.String())
+	assert.Equal(t, "15000000", position.PendingAverageEntryPrice.String())
+	assert.Equal(t, int64(-20), position.PendingOpenVolume)
+
+	trade = vega.Trade{
+		Price:      "1000",
+		AssetPrice: "10000000",
+		Size:       5,
+	}
+	position.UpdateWithTrade(trade, false, num.DecimalOne())
+	assert.Equal(t, "1500", position.PendingAverageEntryMarketPrice.String())
+	assert.Equal(t, "15000000", position.PendingAverageEntryPrice.String())
+	assert.Equal(t, int64(-15), position.PendingOpenVolume)
+	assert.Equal(t, "25000000", position.PendingRealisedPnl.String())
+	assert.Equal(t, "75000000", position.PendingUnrealisedPnl.String())
 }

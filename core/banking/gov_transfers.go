@@ -69,10 +69,10 @@ func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
 			amt, err := e.processGovernanceTransfer(ctx, gTransfer)
 			if err != nil {
 				gTransfer.Status = types.TransferStatusStopped
-				e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amt, err.Error()))
+				e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amt, err.Error(), e.getGovGameID(gTransfer)))
 			} else {
 				gTransfer.Status = types.TransferStatusDone
-				e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amt))
+				e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amt, e.getGovGameID(gTransfer)))
 			}
 		}
 		delete(e.scheduledGovernanceTransfers, t)
@@ -97,19 +97,19 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		if err != nil {
 			e.log.Error("error calculating transfer amount for governance transfer", logging.Error(err))
 			gTransfer.Status = types.TransferStatusStopped
-			transfersDone = append(transfersDone, events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error()))
+			transfersDone = append(transfersDone, events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error(), e.getGovGameID(gTransfer)))
 			doneIDs = append(doneIDs, gTransfer.ID)
 			continue
 		}
 
 		if gTransfer.Config.RecurringTransferConfig.EndEpoch != nil && *gTransfer.Config.RecurringTransferConfig.EndEpoch == e.currentEpoch {
 			gTransfer.Status = types.TransferStatusDone
-			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
+			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
 			doneIDs = append(doneIDs, gTransfer.ID)
 			e.log.Info("recurrent transfer is done", logging.String("transfer ID", gTransfer.ID))
 			continue
 		}
-		e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
+		e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
 	}
 
 	if len(transfersDone) > 0 {
@@ -146,9 +146,9 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 
 	defer func() {
 		if err != nil {
-			e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error()))
+			e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amount, err.Error(), e.getGovGameID(gTransfer)))
 		} else {
-			e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
+			e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount, e.getGovGameID(gTransfer)))
 		}
 	}()
 	now := e.timeService.GetTimeNow()
@@ -221,7 +221,7 @@ func (e *Engine) processGovernanceTransfer(
 				if amt.IsZero() {
 					continue
 				}
-				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt)
+				fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, fms.Market, amt, &gTransfer.ID)
 				transfers := []*types.Transfer{fromTransfer, toTransfer}
 				accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 				references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -242,7 +242,7 @@ func (e *Engine) processGovernanceTransfer(
 			p, _ := proto.Marshal(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 			hash := hex.EncodeToString(crypto.Hash(p))
 
-			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount)
+			fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, hash, transferAmount, &gTransfer.ID)
 			transfers := []*types.Transfer{fromTransfer, toTransfer}
 			accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 			references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -262,7 +262,7 @@ func (e *Engine) processGovernanceTransfer(
 		return num.UintZero(), nil
 	}
 
-	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)
+	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount, &gTransfer.ID)
 	transfers := []*types.Transfer{fromTransfer, toTransfer}
 	accountTypes := []types.AccountType{gTransfer.Config.SourceType, gTransfer.Config.DestinationType}
 	references := []string{gTransfer.Reference, gTransfer.Reference}
@@ -405,4 +405,12 @@ func (e *Engine) VerifyCancelGovernanceTransfer(transferID string) error {
 		return fmt.Errorf("Governance transfer %s not found", transferID)
 	}
 	return nil
+}
+
+func (e *Engine) getGovGameID(transfer *types.GovernanceTransfer) *string {
+	if transfer.Config.RecurringTransferConfig == nil || transfer.Config.RecurringTransferConfig.DispatchStrategy == nil {
+		return nil
+	}
+	gameID := e.hashDispatchStrategy(transfer.Config.RecurringTransferConfig.DispatchStrategy)
+	return &gameID
 }

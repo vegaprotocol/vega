@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

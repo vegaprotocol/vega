@@ -25,20 +25,20 @@ Feature: Simple example of successor markets
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "5" decimal places
     And the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 0.01             | 10s         | 5              |  
-    
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 0.01             | 10s         | 5              |
+
     And the following network parameters are set:
-      | name                                          | value |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | market.auction.minimumDuration                | 1     |
-      | market.fee.factors.infrastructureFee          | 0.001 |
-      | market.fee.factors.makerFee                   | 0.004 |
-      | market.value.windowLength                     | 60s   |
-      | market.liquidity.bondPenaltyParameter       | 0.1   |
-      | validators.epoch.length                       | 5s    |
-      | market.liquidity.stakeToCcyVolume           | 0.2   |
-      | market.liquidity.successorLaunchWindowLength | 8s |
+      | name                                         | value |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.auction.minimumDuration               | 1     |
+      | market.fee.factors.infrastructureFee         | 0.001 |
+      | market.fee.factors.makerFee                  | 0.004 |
+      | market.value.windowLength                    | 60s   |
+      | market.liquidity.bondPenaltyParameter        | 0.1   |
+      | validators.epoch.length                      | 5s    |
+      | market.liquidity.stakeToCcyVolume            | 0.2   |
+      | market.liquidity.successorLaunchWindowLength | 8s    |
     And the average block duration is "1"
 
 
@@ -53,9 +53,8 @@ Feature: Simple example of successor markets
       | trader4 | ETH   | 10000000000000000000000000 |
       | trader5 | ETH   | 10000000000000000000000000 |
 
-
   @SuccessorMarketExpires
-  Scenario: 0081-SUCM-007 Enact a successor market once the parent market is settled, and the succession window has expired
+  Scenario: 0081-SUCM-035 Enact a successor market once the parent market is settled, and the succession window has expired
     Given the markets:
       | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction | sla params      |
       | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   | default-futures |
@@ -90,7 +89,7 @@ Feature: Simple example of successor markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
-      | prices.ETH.value | 975 |
+      | prices.ETH.value   | 975   |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
 
     # enactment timestamp
@@ -116,8 +115,8 @@ Feature: Simple example of successor markets
     And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the last market state should be "STATE_PENDING" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "500" for the asset "ETH"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1000" for the asset "ETH"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
@@ -136,16 +135,15 @@ Feature: Simple example of successor markets
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
-      | 976 | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5 |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
     # Average entry valuation, though the stake is less/different is not carried over
     When the network moves ahead "2" blocks
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party  | equity like share | average entry valuation |
-      | lpprov | 1 | 1905000000000000 |
+      | lpprov | 1                 | 1905000000000000        |
 
     And the last market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     And the last market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1500" for the market "ETH/DEC20"
-    And the global insurance pool balance should be "500" for the asset "ETH"
-
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the global insurance pool balance should be "1000" for the asset "ETH"

@@ -18,6 +18,7 @@ package stoporders
 import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"golang.org/x/exp/slices"
 )
 

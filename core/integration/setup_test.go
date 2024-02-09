@@ -23,28 +23,28 @@ import (
 	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/collateral"
+	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/integration/helpers"
+	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	referralcfg "code.vegaprotocol.io/vega/core/integration/steps/referral"
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/notary"
+	"code.vegaprotocol.io/vega/core/parties"
+	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/teams"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/vesting"
 	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/libs/num"
-
-	"code.vegaprotocol.io/vega/core/datasource/spec"
-	"code.vegaprotocol.io/vega/core/integration/helpers"
-	"code.vegaprotocol.io/vega/core/integration/steps/market"
-	"code.vegaprotocol.io/vega/core/integration/stubs"
-	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/core/plugins"
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	protos "code.vegaprotocol.io/vega/protos/vega"
 
@@ -120,6 +120,7 @@ type executionTestSetup struct {
 	stateVarEngine        *stubs.StateVarStub
 	witness               *validators.Witness
 	teamsEngine           *teams.Engine
+	profilesEngine        *parties.Engine
 	referralProgram       *referral.Engine
 	activityStreak        *activitystreak.Engine
 	vesting               *vesting.Engine
@@ -173,6 +174,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
 	execsetup.teamsEngine = teams.NewEngine(execsetup.broker, execsetup.timeService)
+	execsetup.profilesEngine = parties.NewEngine(execsetup.broker)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount)
@@ -187,6 +189,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.volumeDiscountProgram = volumediscount.New(execsetup.broker, marketActivityTracker)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.volumeDiscountProgram.OnEpoch, execsetup.volumeDiscountProgram.OnEpochRestore)
 
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -200,13 +204,13 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.assetsEngine, // assets
 			execsetup.referralProgram,
 			execsetup.volumeDiscountProgram,
+			execsetup.banking,
 		),
 		execsetup.broker,
 	)
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.executionEngine.OnEpochEvent, execsetup.executionEngine.OnEpochRestore)
 	execsetup.epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
-
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.notary, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), eventForwarder)
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.banking.OnEpoch, execsetup.banking.OnEpochRestore)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 
@@ -415,12 +419,28 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
 		},
 		netparams.WatchParam{
+			Param:   netparams.TransferFeeMaxQuantumAmount,
+			Watcher: execsetup.banking.OnMaxQuantumAmountUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountDecayFraction,
+			Watcher: execsetup.banking.OnTransferFeeDiscountDecayFractionUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeDiscountMinimumTrackedAmount,
+			Watcher: execsetup.banking.OnTransferFeeDiscountMinimumTrackedAmountUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.MaxPeggedOrders,
 			Watcher: execsetup.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		netparams.WatchParam{
+			Param:   netparams.InternalCompositePriceUpdateFrequency,
+			Watcher: execsetup.executionEngine.OnInternalCompositePriceUpdateFrequency,
 		},
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,

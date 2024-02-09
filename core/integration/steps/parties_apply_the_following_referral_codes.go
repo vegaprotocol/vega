@@ -21,9 +21,9 @@ import (
 	"code.vegaprotocol.io/vega/core/referral"
 	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/types"
-	"github.com/cucumber/godog"
-
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teamsEngine *teams.Engine, table *godog.Table) error {
@@ -32,18 +32,23 @@ func PartiesApplyTheFollowingReferralCode(referralEngine *referral.Engine, teams
 	for _, r := range parseApplyReferralCodeTable(table) {
 		row := newApplyReferralCodeRow(r)
 		err := referralEngine.ApplyReferralCode(ctx, row.Party(), row.Code())
-		if err := checkExpectedError(row, err, nil); err != nil {
-			return err
+		if checkErr := checkExpectedError(row, err, nil); checkErr != nil {
+			if !row.IsTeam() {
+				return checkErr
+			}
+			err = checkErr
 		}
 		// If we have team details, submit a new team
 		if row.IsTeam() {
-			team := &commandspb.ApplyReferralCode{
+			team := &commandspb.JoinTeam{
 				Id: row.Team(),
 			}
-			err = teamsEngine.JoinTeam(ctx, row.Party(), team)
-			if err != nil {
-				return err
+			if joinErr := teamsEngine.JoinTeam(ctx, row.Party(), team); joinErr != nil {
+				err = checkExpectedError(row, joinErr, nil)
 			}
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil

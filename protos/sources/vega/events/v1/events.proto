@@ -87,6 +87,8 @@ message PartyVestingStats {
 
 // Fees rewards and discounts paid / received per parties during an epoch
 message FeesStats {
+  reserved 10;
+
   // Market the fees were paid in
   string market = 1;
   // Settlement asset of the market.
@@ -105,6 +107,8 @@ message FeesStats {
   repeated PartyAmount total_maker_fees_received = 8;
   // Maker fees paid by all trade aggressors, and which makers the fees were paid to.
   repeated MakerFeesGenerated maker_fees_generated = 9;
+  // Total trading fees received and paid by the party.
+  repeated PartyAmount total_fees_paid_and_received = 11;
 }
 
 // Rewards generated for referrers by each of their referees
@@ -292,6 +296,9 @@ message Transfer {
   Status status = 9;
   int64 timestamp = 10;
   optional string reason = 11;
+  // ID of the game this transfer was made in relation to. A transfer is made to members of a team
+  // or participants who take part in a game and are rewarded for their participation
+  optional string game_id = 12;
 
   oneof kind {
     OneOffTransfer one_off = 101;
@@ -416,8 +423,10 @@ message RewardPayoutEvent {
   string percent_of_total_reward = 5;
   int64 timestamp = 6;
   string reward_type = 7;
-  string market = 8;
+  reserved 8;
   string locked_until_epoch = 9;
+  string quantum_amount = 10;
+  optional string game_id = 11;
 }
 
 // ValidatorScoreEvent is the score a validator gets for a given epoch
@@ -456,6 +465,19 @@ message TransferFees {
   string amount = 2;
   // Epoch when the transfer was dispatched, and fees were paid.
   uint64 epoch = 3;
+  // Amount that was subtracted from the transfer fee based on available discounts.
+  string discount_applied = 4;
+}
+
+message TransferFeesDiscount {
+  // Party that the transfer fee discount applies to.
+  string party = 1;
+  // Asset that the transfer fee discount is relevant to.
+  string asset = 2;
+  // Amount that the transfer fee was discounted by.
+  string amount = 3;
+  // Epoch in which the discount was first available.
+  uint64 epoch = 4;
 }
 
 message TransactionResult {
@@ -493,6 +515,10 @@ message TransactionResult {
     commands.v1.CreateReferralSet create_referral_set = 124;
     commands.v1.UpdateReferralSet update_referral_set = 125;
     commands.v1.ApplyReferralCode apply_referral_code = 126;
+    commands.v1.UpdateMarginMode update_margin_mode = 127;
+    commands.v1.JoinTeam join_team = 128;
+    commands.v1.BatchProposalSubmission batch_proposal = 129;
+    commands.v1.UpdatePartyProfile update_party_profile = 130;
   }
 
   // extra details about the transaction processing
@@ -865,6 +891,8 @@ message TeamCreated {
   bool closed = 7;
   // Epoch at which the team was created.
   uint64 at_epoch = 8;
+  // List of public keys that are allowed to join the team.
+  repeated string allow_list = 9;
 }
 
 message TeamUpdated {
@@ -878,6 +906,8 @@ message TeamUpdated {
   optional string avatar_url = 4;
   // Tells if a party can join the team or not.
   bool closed = 5;
+  // List of public keys that are allowed to join the team.
+  repeated string allow_list = 6;
 }
 
 message RefereeSwitchedTeam {
@@ -1023,10 +1053,54 @@ message PaidLiquidityFeesStats {
   string asset = 2;
   // Epoch for which these stats where valid.
   uint64 epoch_seq = 3;
-  // Total fees paid accross all parties.
+  // Total fees paid across all parties.
   string total_fees_paid = 4;
   // Fees paid per party.
   repeated PartyAmount fees_paid_per_party = 5;
+}
+
+message PartyMarginModeUpdated {
+  // Unique ID of the market in which the update happened.
+  string market_id = 1;
+  // Unique ID of the party that updated their margin mode.
+  string party_id = 2;
+  // Updated margin mode.
+  vega.MarginMode margin_mode = 3;
+  // Margin factor for the market. Isolated mode only.
+  optional string margin_factor = 4;
+  // Minimum theoretical margin factor for the market. Isolated mode only.
+  optional string min_theoretical_margin_factor = 5;
+  // Maximum theoretical leverage for the market. Isolated mode only.
+  optional string max_theoretical_leverage = 6;
+  // Epoch at which the update happened.
+  uint64 at_epoch = 7;
+}
+
+message PartyProfileUpdated {
+  // Party's profile updated.
+  vega.PartyProfile updated_profile = 1;
+}
+
+// Stats for all teams.
+message TeamsStatsUpdated {
+  // Epoch at which the statistics are updated.
+  uint64 at_epoch = 1;
+  // All teams' stats.
+  repeated TeamStats stats = 2;
+}
+
+message TeamStats {
+  // The unique identifier of the team.
+  string team_id = 1;
+  // Statistics for each team member.
+  repeated TeamMemberStats members_stats = 2;
+}
+
+message TeamMemberStats {
+  // The party ID of the team member.
+  string party_id = 1;
+  // Team members' notional volume for the epoch.
+  string notional_volume = 2;
 }
 
 // Bus event type is used to specify a type of event
@@ -1230,6 +1304,18 @@ enum BusEventType {
   // Event used to link ledger entries to the transfer that triggered the fees being collected.
   BUS_EVENT_TYPE_TRANSFER_FEES_PAID = 83;
 
+  // Event indicating that a party's available transfer fee discount has changed, per asset.
+  BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED = 84;
+
+  // Event indicating that a party updated their margin mode on a market.
+  BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED = 85;
+
+  // Event indicating that a party updated their profile.
+  BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED = 86;
+
+  // Event indicating that teams' statistics have been updated.
+  BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 87;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1405,6 +1491,14 @@ message BusEvent {
     VestingBalancesSummary vesting_balances_summary = 180;
     // Event notifying of fees related to a transfer being paid.
     TransferFees transfer_fees = 181;
+    // Event notifying of a party's available discounts for transfer fees, per asset.
+    TransferFeesDiscount transfer_fees_discount = 182;
+    // Event notifying of a party's margin mode update on a market.
+    PartyMarginModeUpdated party_margin_mode_updated = 183;
+    // Event notifying of a party's profile update.
+    PartyProfileUpdated party_profile_updated = 184;
+    // Event notifying of an update of teams' statistics.
+    TeamsStatsUpdated teams_stats_updated = 185;
 
     // Market tick events
     MarketEvent market = 1001;

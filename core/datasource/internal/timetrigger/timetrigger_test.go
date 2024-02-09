@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/internal/timetrigger"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 

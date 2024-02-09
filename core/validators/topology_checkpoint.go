@@ -22,11 +22,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 )
 
 func (t *Topology) Name() types.CheckpointName {

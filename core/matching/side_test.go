@@ -498,6 +498,7 @@ func TestFakeUncrossSelfTradeNonFOKLimitOrder_DontCheckWashTrades(t *testing.T) 
 	fakeTrades, err := buySide.fakeUncross(&order, checkWashTrades)
 	assert.Len(t, fakeTrades, 1)
 	assert.NoError(t, err)
+	assert.Equal(t, fakeTrades[0].SellOrder, order.ID)
 
 	trades, _, _, err := buySide.uncross(&order, checkWashTrades)
 	assert.Len(t, trades, 1)

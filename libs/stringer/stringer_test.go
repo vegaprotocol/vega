@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -20,10 +20,11 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func TestReflectPointerToString(t *testing.T) {
+func TestToString(t *testing.T) {
 	tcs := []struct {
 		name     string
 		stringer stringer.Stringer
@@ -39,7 +40,7 @@ func TestReflectPointerToString(t *testing.T) {
 			expected: "nil",
 		}, {
 			name:     "with existing struct",
-			stringer: dummyStringer{},
+			stringer: &dummyStringer{},
 			expected: "stringer",
 		},
 	}
@@ -47,7 +48,7 @@ func TestReflectPointerToString(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			str := stringer.ReflectPointerToString(tc.stringer)
+			str := stringer.ObjToString(tc.stringer)
 
 			// then
 			assert.Equal(tt, tc.expected, str)
@@ -55,7 +56,7 @@ func TestReflectPointerToString(t *testing.T) {
 	}
 }
 
-func TestUintPointerToString(t *testing.T) {
+func TestPtrToString(t *testing.T) {
 	tcs := []struct {
 		name     string
 		num      *num.Uint
@@ -75,7 +76,7 @@ func TestUintPointerToString(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			str := stringer.UintPointerToString(tc.num)
+			str := stringer.PtrToString(tc.num)
 
 			// then
 			assert.Equal(tt, tc.expected, str)
@@ -106,7 +107,7 @@ func TestInt64PointerToString(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			str := stringer.Int64PointerToString(tc.num)
+			str := stringer.PtrToString(tc.num)
 
 			// then
 			assert.Equal(tt, tc.expected, str)

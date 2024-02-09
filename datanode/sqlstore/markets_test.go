@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -32,15 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -227,7 +213,6 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 	block := addTestBlock(t, ctx, bs)
 
 	marketProto := getTestFutureMarket(true)
-	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -261,6 +246,26 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 	var block entities.Block
 	var marketProto *vega.Market
+
+	t.Run("should insert a valid market record to the database with liquidation strategy", func(t *testing.T) {
+		block = addTestBlock(t, ctx, bs)
+		marketProto = getTestFutureMarketWithLiquidationStrategy(false)
+
+		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
+		require.NoError(t, err, "Converting market proto to database entity")
+
+		err = md.Upsert(ctx, market)
+		require.NoError(t, err, "Saving market entity to database")
+
+		var got entities.Market
+		err = pgxscan.Get(ctx, conn, &got, `select * from markets where id = $1 and vega_time = $2`, market.ID, market.VegaTime)
+		assert.NoError(t, err)
+		assert.Equal(t, "TEST_INSTRUMENT", market.InstrumentID)
+		assert.NotNil(t, got.LiquidationStrategy)
+
+		assert.Equal(t, marketProto.TradableInstrument, got.TradableInstrument.ToProto())
+		assert.Equal(t, marketProto.LiquidationStrategy, got.LiquidationStrategy.IntoProto())
+	})
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
@@ -312,7 +317,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 		err = conn.QueryRow(ctx, `select count(*) from markets`).Scan(&rowCount)
 		require.NoError(t, err)
-		assert.Equal(t, 2, rowCount)
+		assert.Equal(t, 3, rowCount)
 
 		var gotFirstBlock, gotSecondBlock entities.Market
 
@@ -466,7 +471,7 @@ func getTestPerpetualMarket() *vega.Market {
 
 func getTestMarket() *vega.Market {
 	return &vega.Market{
-		Id: helpers.GenerateID(),
+		Id: GenerateID(),
 		TradableInstrument: &vega.TradableInstrument{
 			Instrument: &vega.Instrument{
 				Id:   "Crypto/BTCUSD/Futures/Dec19",
@@ -504,6 +509,9 @@ func getTestMarket() *vega.Market {
 				InfrastructureFee: "",
 				LiquidityFee:      "",
 			},
+			LiquidityFeeSettings: &vega.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+			},
 		},
 		OpeningAuction: &vega.AuctionDuration{
 			Duration: 0,
@@ -525,8 +533,6 @@ func getTestMarket() *vega.Market {
 				TimeWindow:    0,
 				ScalingFactor: 0,
 			},
-			TriggeringRatio:  "0",
-			AuctionExtension: 0,
 		},
 		TradingMode: vega.Market_TRADING_MODE_CONTINUOUS,
 		State:       vega.Market_STATE_ACTIVE,
@@ -541,6 +547,17 @@ func getTestMarket() *vega.Market {
 		LinearSlippageFactor:    "1.23",
 		QuadraticSlippageFactor: "5.67",
 	}
+}
+
+func getTestFutureMarketWithLiquidationStrategy(termInt bool) *vega.Market {
+	mkt := getTestFutureMarket(termInt)
+	mkt.LiquidationStrategy = &vega.LiquidationStrategy{
+		DisposalTimeStep:    10,
+		DisposalFraction:    "0.1",
+		FullDisposalSize:    20,
+		MaxFractionConsumed: "0.01",
+	}
+	return mkt
 }
 
 func getTestFutureMarket(termInt bool) *vega.Market {
@@ -644,6 +661,9 @@ func getTestFutureMarket(termInt bool) *vega.Market {
 				InfrastructureFee: "",
 				LiquidityFee:      "",
 			},
+			LiquidityFeeSettings: &vega.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+			},
 		},
 		OpeningAuction: &vega.AuctionDuration{
 			Duration: 0,
@@ -665,8 +685,6 @@ func getTestFutureMarket(termInt bool) *vega.Market {
 				TimeWindow:    0,
 				ScalingFactor: 0,
 			},
-			TriggeringRatio:  "0",
-			AuctionExtension: 0,
 		},
 		TradingMode: vega.Market_TRADING_MODE_CONTINUOUS,
 		State:       vega.Market_STATE_ACTIVE,
@@ -1500,6 +1518,13 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	ps := sqlstore.NewProposals(connectionSource)
 	ts := sqlstore.NewParties(connectionSource)
 
+	emptyLS := &vega.LiquidationStrategy{
+		DisposalTimeStep:    0,
+		DisposalFraction:    "0",
+		FullDisposalSize:    0,
+		MaxFractionConsumed: "0",
+	}
+	liquidationStrat := entities.LiquidationStrategyFromProto(emptyLS)
 	parentMarket := entities.Market{
 		ID:           entities.MarketID("deadbeef01"),
 		InstrumentID: "deadbeef01",
@@ -1512,6 +1537,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	successorMarketA := entities.Market{
@@ -1527,6 +1553,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	parentMarket.SuccessorMarketID = successorMarketA.ID
@@ -1544,6 +1571,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	parentMarket2 := entities.Market{
@@ -1558,6 +1586,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			PerformanceHysteresisEpochs: 0,
 			SlaCompetitionFactor:        num.NewDecimalFromFloat(0),
 		},
+		LiquidationStrategy: liquidationStrat,
 	}
 
 	successorMarketA.SuccessorMarketID = successorMarketB.ID
@@ -1586,8 +1615,12 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 			block:     source.getNextBlock(t, ctx),
 			state:     entities.ProposalStateEnacted,
 			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
-			terms:     entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
-			reason:    entities.ProposalErrorUnspecified,
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					LiquidationStrategy: emptyLS,
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
 		},
 		{
 			id:        "deadbeef02",
@@ -1602,6 +1635,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef01",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorUnspecified,
@@ -1619,6 +1653,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef01",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorParticipationThresholdNotReached,
@@ -1636,6 +1671,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef02",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorUnspecified,
@@ -1653,6 +1689,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 						ParentMarketId:        "deadbeef02",
 						InsurancePoolFraction: "1.0",
 					},
+					LiquidationStrategy: emptyLS,
 				},
 			}}}},
 			reason: entities.ProposalErrorParticipationThresholdNotReached,
@@ -1662,7 +1699,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	props := []entities.Proposal{}
 	for _, p := range proposals {
 		p := addTestProposal(t, ctx, ps, p.id, p.party, p.reference, p.block, p.state,
-			p.rationale, p.terms, p.reason)
+			p.rationale, p.terms, p.reason, nil, entities.BatchProposalTerms{})
 
 		props = append(props, p)
 	}

@@ -20,10 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
@@ -52,8 +51,6 @@ func TestMargins(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 100000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	// set auction durations to 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -189,8 +186,6 @@ func TestPartialFillMargins(t *testing.T) {
 	addAccountWithAmount(tm, "lpprov", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	// ensure auction durations are 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -321,7 +316,6 @@ func TestPartialFillMargins(t *testing.T) {
 // 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 // 	// Assure liquidity auction won't be triggered
-// 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 // 	// ensure auction durations are 1 second
 // 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 // 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 500)

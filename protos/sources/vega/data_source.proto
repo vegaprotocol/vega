@@ -18,6 +18,13 @@ message DataSourceDefinition {
   }
 }
 
+// Describes which property of the data source data is to be
+// used for price source.
+message SpecBindingForCompositePrice {
+  // The property name of price.
+  string price_source_property = 1;
+}
+
 // Internal data source used for emitting timestamps.
 message DataSourceSpecConfigurationTime {
   // Conditions that the timestamps should meet in order to be considered.
@@ -96,6 +103,9 @@ message EthCallSpec {
   // in the second result returned from the contract for a structure with a key
   // called 'price' and use that if it exists.
   repeated Normaliser normalisers = 8;
+
+  // The ID of the EVM based chain which is to be used to source the oracle data.
+  uint64 source_chain_id = 9;
 }
 
 message Normaliser {

@@ -2,14 +2,14 @@ Feature: Test liquidity monitoring
 
   Background:
     Given the following network parameters are set:
-      | name                                          | value |
-      | network.floatingPointUpdates.delay            | 10s   |
-      | market.auction.minimumDuration                | 1     |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 4     |
+      | name                                    | value |
+      | network.floatingPointUpdates.delay      | 10s   |
+      | market.auction.minimumDuration          | 1     |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 4     |
     Given the liquidity monitoring parameters:
-      | name               | triggering ratio | time window | scaling factor |
-      | lqm-params         | 1.0              | 1s          | 1.0            |
+      | name       | triggering ratio | time window | scaling factor |
+      | lqm-params | 1.0              | 1s          | 1.0            |
     And the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
@@ -108,7 +108,7 @@ Feature: Test liquidity monitoring
       | AuctionEvent |
 
   Scenario: 002: A market which enters a state requiring liquidity auction through reduced current stake (e.g. through LP bankruptcy) during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-006)
-    
+
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
@@ -167,11 +167,12 @@ Feature: Test liquidity monitoring
       | type         |
       | AuctionEvent |
 
+  # perhaps a bit pointless, liquidity auction was removed, keeping the scenario to make sure everything else works as expected.
   Scenario: 004: When the Max Open Interest field decreases for a created block to a level such that a liquidity auction which is active at the start of a block can now be exited the block stays in auction within the block but leaves at the end. (0035-LIQM-008)
 
     Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.bondPenaltyParameter         | 1     |
+      | name                                  | value |
+      | market.liquidity.bondPenaltyParameter | 1     |
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 1.0              | 5s          | 1              |
@@ -211,11 +212,11 @@ Feature: Test liquidity monitoring
 
     When the network moves ahead "1" blocks
     Then the orders should have the following states:
-      | party          | market id | side | volume | price | status        | reference |
-      | lprov1         | ETH/DEC21 | buy  | 1      | 968   | STATUS_ACTIVE | lp1_buy   |
-      | lprov1         | ETH/DEC21 | sell | 1      | 1032  | STATUS_ACTIVE | lp1_sell  |
-      | lp2Bdistressed | ETH/DEC21 | buy  | 1      | 960   | STATUS_ACTIVE | lp2_buy   |
-      | lp2Bdistressed | ETH/DEC21 | sell | 1      | 1040  | STATUS_ACTIVE | lp2_sell  |
+      | party          | market id | side | volume | remaining | price | status        | reference |
+      | lprov1         | ETH/DEC21 | buy  | 1      | 1         | 968   | STATUS_ACTIVE | lp1_buy   |
+      | lprov1         | ETH/DEC21 | sell | 1      | 1         | 1032  | STATUS_ACTIVE | lp1_sell  |
+      | lp2Bdistressed | ETH/DEC21 | buy  | 1      | 1         | 960   | STATUS_ACTIVE | lp2_buy   |
+      | lp2Bdistressed | ETH/DEC21 | sell | 1      | 1         | 1040  | STATUS_ACTIVE | lp2_sell  |
     And the parties should have the following margin levels:
       | party          | market id | maintenance | initial |
       | lp2Bdistressed | ETH/DEC21 | 100         | 100     |
@@ -228,11 +229,7 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | sell | 50     | 1010  | 1                | TYPE_LIMIT | TIF_FOK |
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger                          | open interest | target stake | supplied stake |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 10            | 6060         | 6000           |
-
-    When the network moves ahead "5" blocks
+    And the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | open interest | target stake | supplied stake |
       | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 5999           |

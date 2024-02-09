@@ -24,6 +24,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -136,8 +137,6 @@ func TestNewMarketProposalMapping(t *testing.T) {
 								TimeWindow:    10,
 								ScalingFactor: 0.1,
 							},
-							TriggeringRatio:  "0.01",
-							AuctionExtension: 1,
 						},
 						RiskParameters: &vegapb.NewMarketConfiguration_Simple{
 							Simple: &vegapb.SimpleModelParams{
@@ -148,9 +147,8 @@ func TestNewMarketProposalMapping(t *testing.T) {
 								ProbabilityOfTrading: 0.96,
 							},
 						},
-						PositionDecimalPlaces:   1,
-						LinearSlippageFactor:    "0.1",
-						QuadraticSlippageFactor: "0.0001",
+						PositionDecimalPlaces: 1,
+						LinearSlippageFactor:  "0.1",
 						Successor: &vegapb.SuccessorConfiguration{
 							ParentMarketId:        parentID,
 							InsurancePoolFraction: insFraction.String(),
@@ -160,6 +158,12 @@ func TestNewMarketProposalMapping(t *testing.T) {
 							CommitmentMinTimeFraction:   "0.5",
 							PerformanceHysteresisEpochs: 4,
 							SlaCompetitionFactor:        "0.5",
+						},
+						LiquidationStrategy: &vegapb.LiquidationStrategy{
+							DisposalTimeStep:    300,
+							DisposalFraction:    "0.1",
+							FullDisposalSize:    20,
+							MaxFractionConsumed: "0.01",
 						},
 					},
 				},

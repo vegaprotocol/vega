@@ -20,17 +20,18 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 func TestVolumeDiscountStats_AddVolumeDiscountStats(t *testing.T) {
@@ -85,8 +86,8 @@ func TestVolumeDiscountStats_GetVolumeDiscountStats(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	vds := sqlstore.NewVolumeDiscountStats(connectionSource)
 
-	parties := make([]entities.Party, 0, 5)
-	for i := 0; i < 5; i++ {
+	parties := make([]entities.Party, 0, 6)
+	for i := 0; i < 6; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
 		parties = append(parties, addTestParty(t, ctx, ps, block))
 	}
@@ -197,12 +198,12 @@ func flattenVolumeDiscountStatsForEpoch(flattenStats []entities.FlattenVolumeDis
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) int {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			return strings.Compare(a.PartyID, b.PartyID)
 		}
 
-		return a.AtEpoch < b.AtEpoch
+		return compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats
@@ -217,12 +218,12 @@ func flattenVolumeDiscountStatsForParty(flattenStats []entities.FlattenVolumeDis
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenVolumeDiscountStats) int {
 		if a.AtEpoch == b.AtEpoch {
-			return a.PartyID < b.PartyID
+			return strings.Compare(a.PartyID, b.PartyID)
 		}
 
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats
@@ -231,8 +232,8 @@ func flattenVolumeDiscountStatsForParty(flattenStats []entities.FlattenVolumeDis
 func setupPartyVolumeDiscountStats(t *testing.T, ctx context.Context, ps *sqlstore.Parties, bs *sqlstore.Blocks) []*eventspb.PartyVolumeDiscountStats {
 	t.Helper()
 
-	parties := make([]entities.Party, 0, 5)
-	for i := 0; i < 5; i++ {
+	parties := make([]entities.Party, 0, 6)
+	for i := 0; i < 6; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
 		parties = append(parties, addTestParty(t, ctx, ps, block))
 	}
@@ -249,8 +250,17 @@ func setupPartyVolumeDiscountStats(t *testing.T, ctx context.Context, ps *sqlsto
 func setupPartyVolumeDiscountStatsMod(t *testing.T, parties []entities.Party, f func(i int, party entities.Party) *eventspb.PartyVolumeDiscountStats) []*eventspb.PartyVolumeDiscountStats {
 	t.Helper()
 
-	partiesStats := make([]*eventspb.PartyVolumeDiscountStats, 0, 5)
+	partiesStats := make([]*eventspb.PartyVolumeDiscountStats, 0, 6)
 	for i, p := range parties {
+		// make the last party an unqualified party
+		if i == len(parties)-1 {
+			partiesStats = append(partiesStats, &eventspb.PartyVolumeDiscountStats{
+				PartyId:        p.ID.String(),
+				DiscountFactor: "0",
+				RunningVolume:  "99",
+			})
+			continue
+		}
 		partiesStats = append(partiesStats, f(i, p))
 	}
 

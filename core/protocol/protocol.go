@@ -19,12 +19,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
-	"code.vegaprotocol.io/vega/core/spam"
-
-	"github.com/blang/semver"
-
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -35,10 +29,14 @@ import (
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
+	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/vegatime"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
+	"github.com/blang/semver"
 )
 
 var Version = semver.MustParse("0.1.0")
@@ -68,6 +66,7 @@ func New(
 	blockchainClient *blockchain.Client,
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
+	l2Clients *ethclient.L2Clients,
 ) (p *Protocol, err error) {
 	log = log.Named(namedLogger)
 
@@ -84,7 +83,7 @@ func New(
 	}()
 
 	svcs, err := newServices(
-		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats,
+		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats, l2Clients,
 	)
 	if err != nil {
 		return nil, err
@@ -112,9 +111,10 @@ func New(
 			svcs.topology,
 			svcs.netParams,
 			&processor.Oracle{
-				Engine:                  svcs.oracle,
-				Adaptors:                svcs.oracleAdaptors,
-				EthereumOraclesVerifier: svcs.ethereumOraclesVerifier,
+				Engine:                    svcs.oracle,
+				Adaptors:                  svcs.oracleAdaptors,
+				EthereumOraclesVerifier:   svcs.ethereumOraclesVerifier,
+				EthereumL2OraclesVerifier: svcs.l2Verifiers,
 			},
 			svcs.delegation,
 			svcs.limits,
@@ -136,6 +136,7 @@ func New(
 			svcs.gastimator,
 			svcs.ethCallEngine,
 			svcs.collateral,
+			svcs.partiesEngine,
 		),
 		log:         log,
 		confWatcher: confWatcher,
@@ -146,6 +147,10 @@ func New(
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMaxBatchSize,
 			Watcher: proto.App.OnSpamProtectionMaxBatchSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.BlockchainsEthereumConfig,
+			Watcher: proto.App.OnBlockchainEthereumConfigUpdate,
 		},
 	)
 

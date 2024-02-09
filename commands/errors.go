@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -78,7 +80,18 @@ var (
 	ErrMustBeGreaterThanEnactmentTimestamp             = errors.New("must be greater than proposal_submission.terms.enactment_timestamp")
 	ErrMustBeLessThen366                               = errors.New("must be less then 366")
 	ErrMustBeAtMost500                                 = errors.New("must be at most 500")
+	ErrMustBeSetTo0IfSizeSet                           = errors.New("must be set to 0 if the property \"order_amendment.size\" is set")
+	ErrMustBeAtMost3600                                = errors.New("must be at most 3600")
 	ErrMustBeWithinRangeGT0LT20                        = errors.New("price range must be strictly greater than 0 and less than or equal to 20")
+	ErrSizeIsTooLarge                                  = errors.New("size is too large")
+	ErrCannotSetAllowListWhenTeamIsOpened              = errors.New("cannot set allow list when team is opened")
+	ErrSettingAllowListRequireSettingClosedState       = errors.New("setting an allow list requires setting the closed state")
+	ErrIsLimitedTo32Characters                         = errors.New("is limited to 32 characters")
+	ErrIsLimitedTo10Entries                            = errors.New("is limited to 10 entries")
+	ErrIsLimitedTo255Characters                        = errors.New("is limited to 255 characters")
+	ErrCannotBeBlank                                   = errors.New("cannot be blank")
+	ErrIsDuplicated                                    = errors.New("is duplicated")
+	ErrMustBeAtMost250                                 = errors.New("must be at most 250")
 )
 
 type Errors map[string][]error
@@ -118,6 +131,20 @@ func (e Errors) AddForProperty(prop string, err error) {
 	}
 
 	e[prop] = append(errs, err)
+}
+
+// AddPrefix adds prefix to each property.
+func (e Errors) AddPrefix(prefix string) Errors {
+	keys := maps.Keys(e)
+	for _, key := range keys {
+		// Skip general error
+		if key == "*" {
+			continue
+		}
+		e[fmt.Sprintf("%s%s", prefix, key)] = e[key]
+		delete(e, key)
+	}
+	return e
 }
 
 // FinalAddForProperty behaves like AddForProperty, but is meant to be called in

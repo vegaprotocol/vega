@@ -20,9 +20,19 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+)
+
+type LiquidityFeeMethod = proto.LiquidityFeeSettings_Method
+
+const (
+	LiquidityFeeMethodUnspecified     LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_UNSPECIFIED
+	LiquidityFeeMethodMarginalCost    LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_MARGINAL_COST
+	LiquidityFeeMethodWeightedAverage LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE
+	LiquidityFeeMethodConstant        LiquidityFeeMethod = proto.LiquidityFeeSettings_METHOD_CONSTANT
 )
 
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
@@ -178,7 +188,7 @@ func (l LiquidityProvisionSubmission) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		l.MarketID,
 		l.Reference,
-		stringer.UintPointerToString(l.CommitmentAmount),
+		stringer.PtrToString(l.CommitmentAmount),
 		l.Fee.String(),
 	)
 }
@@ -216,7 +226,7 @@ func (l LiquidityProvision) String() string {
 		l.Party,
 		l.Status.String(),
 		l.Reference,
-		stringer.UintPointerToString(l.CommitmentAmount),
+		stringer.PtrToString(l.CommitmentAmount),
 		l.Fee.String(),
 		l.Version,
 		l.CreatedAt,
@@ -270,10 +280,6 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvisi
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters
-	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio num.Decimal
-	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
-	AuctionExtension int64
 }
 
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
@@ -283,8 +289,6 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 	}
 	return &proto.LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
-		TriggeringRatio:       l.TriggeringRatio.String(),
-		AuctionExtension:      l.AuctionExtension,
 	}
 }
 
@@ -294,18 +298,14 @@ func (l LiquidityMonitoringParameters) DeepClone() *LiquidityMonitoringParameter
 		params = l.TargetStakeParameters.DeepClone()
 	}
 	return &LiquidityMonitoringParameters{
-		TriggeringRatio:       l.TriggeringRatio,
-		AuctionExtension:      l.AuctionExtension,
 		TargetStakeParameters: params,
 	}
 }
 
 func (l LiquidityMonitoringParameters) String() string {
 	return fmt.Sprintf(
-		"auctionExtension(%v) trigerringRatio(%s) targetStake(%s)",
-		l.AuctionExtension,
-		l.TriggeringRatio.String(),
-		stringer.ReflectPointerToString(l.TargetStakeParameters),
+		"auctionExtension(%v)",
+		stringer.PtrToString(l.TargetStakeParameters),
 	)
 }
 
@@ -318,15 +318,8 @@ func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParamete
 		params = TargetStakeParametersFromProto(p.TargetStakeParameters)
 	}
 
-	tr, err := num.DecimalFromString(p.TriggeringRatio)
-	if err != nil {
-		return nil, fmt.Errorf("error getting trigerring ratio value from proto: %s", err)
-	}
-
 	return &LiquidityMonitoringParameters{
 		TargetStakeParameters: params,
-		AuctionExtension:      p.AuctionExtension,
-		TriggeringRatio:       tr,
 	}, nil
 }
 
@@ -378,7 +371,7 @@ func (a LiquidityProvisionAmendment) String() string {
 		"marketID(%s) reference(%s) commitmentAmount(%s) fee(%s)",
 		a.MarketID,
 		a.Reference,
-		stringer.UintPointerToString(a.CommitmentAmount),
+		stringer.PtrToString(a.CommitmentAmount),
 		a.Fee.String(),
 	)
 }
@@ -412,4 +405,59 @@ func (l LiquidityProvisionCancellation) String() string {
 
 func (l LiquidityProvisionCancellation) GetMarketID() string {
 	return l.MarketID
+}
+
+type LiquidityFeeSettings struct {
+	Method      LiquidityFeeMethod
+	FeeConstant num.Decimal
+}
+
+func (l *LiquidityFeeSettings) IntoProto() *proto.LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+
+	r := &proto.LiquidityFeeSettings{
+		Method: l.Method,
+	}
+
+	if l.Method == LiquidityFeeMethodConstant {
+		r.FeeConstant = ptr.From(l.FeeConstant.String())
+	}
+
+	return r
+}
+
+func LiquidityFeeSettingsFromProto(l *proto.LiquidityFeeSettings) *LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+
+	fc := num.DecimalZero()
+	if l.Method == LiquidityFeeMethodConstant {
+		fc, _ = num.DecimalFromString(*l.FeeConstant)
+	}
+
+	return &LiquidityFeeSettings{
+		Method:      l.Method,
+		FeeConstant: fc,
+	}
+}
+
+func (l *LiquidityFeeSettings) DeepClone() *LiquidityFeeSettings {
+	if l == nil {
+		return nil
+	}
+	return &LiquidityFeeSettings{
+		Method:      l.Method,
+		FeeConstant: l.FeeConstant,
+	}
+}
+
+func (l LiquidityFeeSettings) String() string {
+	return fmt.Sprintf(
+		"method(%s) feeConstant(%s)",
+		l.Method.String(),
+		l.FeeConstant.String(),
+	)
 }

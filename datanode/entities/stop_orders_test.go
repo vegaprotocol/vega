@@ -19,12 +19,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandpb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	pbevents "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

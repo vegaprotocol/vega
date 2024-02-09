@@ -75,7 +75,8 @@ func (f FeeFactors) String() string {
 }
 
 type Fees struct {
-	Factors *FeeFactors
+	Factors              *FeeFactors
+	LiquidityFeeSettings *LiquidityFeeSettings
 }
 
 func FeesFromProto(f *proto.Fees) *Fees {
@@ -83,26 +84,29 @@ func FeesFromProto(f *proto.Fees) *Fees {
 		return nil
 	}
 	return &Fees{
-		Factors: FeeFactorsFromProto(f.Factors),
+		Factors:              FeeFactorsFromProto(f.Factors),
+		LiquidityFeeSettings: LiquidityFeeSettingsFromProto(f.LiquidityFeeSettings),
 	}
 }
 
 func (f Fees) IntoProto() *proto.Fees {
 	return &proto.Fees{
-		Factors: f.Factors.IntoProto(),
+		Factors:              f.Factors.IntoProto(),
+		LiquidityFeeSettings: f.LiquidityFeeSettings.IntoProto(),
 	}
 }
 
 func (f Fees) DeepClone() *Fees {
 	return &Fees{
-		Factors: f.Factors.DeepClone(),
+		Factors:              f.Factors.DeepClone(),
+		LiquidityFeeSettings: f.LiquidityFeeSettings.DeepClone(),
 	}
 }
 
 func (f Fees) String() string {
 	return fmt.Sprintf(
 		"factors(%s)",
-		stringer.ReflectPointerToString(f.Factors),
+		stringer.PtrToString(f.Factors),
 	)
 }
 
@@ -136,6 +140,20 @@ func (f Fee) IntoProto() *proto.Fee {
 	return fee
 }
 
+func FeeFromProto(f *proto.Fee) *Fee {
+	return &Fee{
+		MakerFee:                          num.MustUintFromString(f.MakerFee, 10),
+		InfrastructureFee:                 num.MustUintFromString(f.InfrastructureFee, 10),
+		LiquidityFee:                      num.MustUintFromString(f.LiquidityFee, 10),
+		MakerFeeVolumeDiscount:            num.MustUintFromString(f.MakerFeeVolumeDiscount, 10),
+		InfrastructureFeeVolumeDiscount:   num.MustUintFromString(f.InfrastructureFeeVolumeDiscount, 10),
+		LiquidityFeeVolumeDiscount:        num.MustUintFromString(f.LiquidityFeeVolumeDiscount, 10),
+		MakerFeeReferrerDiscount:          num.MustUintFromString(f.MakerFeeReferrerDiscount, 10),
+		InfrastructureFeeReferrerDiscount: num.MustUintFromString(f.InfrastructureFeeReferrerDiscount, 10),
+		LiquidityFeeReferrerDiscount:      num.MustUintFromString(f.LiquidityFeeReferrerDiscount, 10),
+	}
+}
+
 func (f Fee) Clone() *Fee {
 	fee := &Fee{
 		MakerFee:          f.MakerFee.Clone(),
@@ -166,15 +184,15 @@ func (f Fee) Clone() *Fee {
 func (f *Fee) String() string {
 	return fmt.Sprintf(
 		"makerFee(%s) liquidityFee(%s) infrastructureFee(%s) makerFeeReferrerDiscount(%s) liquidityFeeReferrerDiscount(%s) infrastructureFeeReferrerDiscount(%s) makerFeeVolumeDiscount(%s) liquidityFeeVolumeDiscount(%s) infrastructureFeeVolumeDiscount(%s)",
-		stringer.UintPointerToString(f.MakerFee),
-		stringer.UintPointerToString(f.LiquidityFee),
-		stringer.UintPointerToString(f.InfrastructureFee),
-		stringer.UintPointerToString(f.MakerFeeReferrerDiscount),
-		stringer.UintPointerToString(f.LiquidityFeeReferrerDiscount),
-		stringer.UintPointerToString(f.InfrastructureFeeReferrerDiscount),
-		stringer.UintPointerToString(f.MakerFeeVolumeDiscount),
-		stringer.UintPointerToString(f.LiquidityFeeVolumeDiscount),
-		stringer.UintPointerToString(f.InfrastructureFeeVolumeDiscount),
+		stringer.PtrToString(f.MakerFee),
+		stringer.PtrToString(f.LiquidityFee),
+		stringer.PtrToString(f.InfrastructureFee),
+		stringer.PtrToString(f.MakerFeeReferrerDiscount),
+		stringer.PtrToString(f.LiquidityFeeReferrerDiscount),
+		stringer.PtrToString(f.InfrastructureFeeReferrerDiscount),
+		stringer.PtrToString(f.MakerFeeVolumeDiscount),
+		stringer.PtrToString(f.LiquidityFeeVolumeDiscount),
+		stringer.PtrToString(f.InfrastructureFeeVolumeDiscount),
 	)
 }
 
@@ -204,9 +222,9 @@ func (rf ReferrerReward) Clone() *ReferrerReward {
 func (rf *ReferrerReward) String() string {
 	return fmt.Sprintf(
 		"makerFeeReferrerReward(%s) liquidityFeeReferrerReward(%s) infrastructureFeeReferrerReward(%s)",
-		stringer.UintPointerToString(rf.MakerFeeReferrerReward),
-		stringer.UintPointerToString(rf.LiquidityFeeReferrerReward),
-		stringer.UintPointerToString(rf.InfrastructureFeeReferrerReward),
+		stringer.PtrToString(rf.MakerFeeReferrerReward),
+		stringer.PtrToString(rf.LiquidityFeeReferrerReward),
+		stringer.PtrToString(rf.InfrastructureFeeReferrerReward),
 	)
 }
 

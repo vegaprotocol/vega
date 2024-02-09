@@ -20,10 +20,12 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -94,10 +96,21 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			pos.buySumProduct = p.BuySumProduct
 			pos.sellSumProduct = p.SellSumProduct
 			pos.distressed = p.Distressed
+			pos.averageEntryPrice = p.AverageEntryPrice
 			e.positionsCpy = append(e.positionsCpy, pos)
 			e.positions[p.PartyID] = pos
 			if p.Distressed {
 				e.distressedPos[p.PartyID] = struct{}{}
+			}
+
+			// This is for migration, on the first time we load from snapshot there won't be an average entry price
+			// so take the last price as the current average
+			if p.AverageEntryPrice == nil {
+				if pos.size != 0 && !pos.price.IsZero() {
+					pos.averageEntryPrice = pos.price.Clone()
+				} else {
+					pos.averageEntryPrice = num.UintZero()
+				}
 			}
 
 			// ensure these exists on the first snapshot after the upgrade
@@ -139,14 +152,15 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 		party := evt.Party()
 		_, distressed := e.distressedPos[party]
 		pos := &types.MarketPosition{
-			PartyID:        party,
-			Price:          evt.Price(),
-			Buy:            evt.Buy(),
-			Sell:           evt.Sell(),
-			Size:           evt.Size(),
-			BuySumProduct:  evt.BuySumProduct(),
-			SellSumProduct: evt.SellSumProduct(),
-			Distressed:     distressed,
+			PartyID:           party,
+			Price:             evt.Price(),
+			Buy:               evt.Buy(),
+			Sell:              evt.Sell(),
+			Size:              evt.Size(),
+			BuySumProduct:     evt.BuySumProduct(),
+			SellSumProduct:    evt.SellSumProduct(),
+			Distressed:        distressed,
+			AverageEntryPrice: evt.AverageEntryPrice(),
 		}
 		positions = append(positions, pos)
 	}

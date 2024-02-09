@@ -27,11 +27,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"golang.org/x/exp/maps"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/maps"
 )
 
 // by default all validators needs to sign.

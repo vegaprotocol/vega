@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections/mocks"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

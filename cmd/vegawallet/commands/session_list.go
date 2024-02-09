@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	sessionStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
+
 	"github.com/spf13/cobra"
 )
 

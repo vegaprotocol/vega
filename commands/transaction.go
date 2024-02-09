@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -208,6 +208,8 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkLiquidityProvisionAmendment(cmd.LiquidityProvisionAmendment))
 		case *commandspb.InputData_ProposalSubmission:
 			errs.Merge(checkProposalSubmission(cmd.ProposalSubmission))
+		case *commandspb.InputData_BatchProposalSubmission:
+			errs.Merge(checkBatchProposalSubmission(cmd.BatchProposalSubmission))
 		case *commandspb.InputData_AnnounceNode:
 			errs.Merge(checkAnnounceNode(cmd.AnnounceNode))
 		case *commandspb.InputData_NodeVote:
@@ -250,6 +252,12 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkUpdateReferralSet(cmd.UpdateReferralSet))
 		case *commandspb.InputData_ApplyReferralCode:
 			errs.Merge(checkApplyReferralCode(cmd.ApplyReferralCode))
+		case *commandspb.InputData_UpdateMarginMode:
+			errs.Merge(checkUpdateMarginMode(cmd.UpdateMarginMode))
+		case *commandspb.InputData_JoinTeam:
+			errs.Merge(checkJoinTeam(cmd.JoinTeam))
+		case *commandspb.InputData_UpdatePartyProfile:
+			errs.Merge(checkUpdatePartyProfile(cmd.UpdatePartyProfile))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

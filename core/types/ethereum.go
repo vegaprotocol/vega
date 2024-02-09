@@ -16,12 +16,13 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	vgreflect "code.vegaprotocol.io/vega/libs/reflect"
-
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
@@ -33,6 +34,12 @@ var (
 	ErrUnsupportedCollateralBridgeDeploymentBlockHeight   = errors.New("setting collateral bridge contract deployment block height in Ethereum config is not supported")
 	ErrAtLeastOneOfStakingOrVestingBridgeAddressMustBeSet = errors.New("at least one of the stacking bridge or token vesting contract addresses must be specified")
 	ErrConfirmationsMustBeHigherThan0                     = errors.New("confirmation must be > 0 in Ethereum config")
+	ErrMissingNetworkName                                 = errors.New("missing network name")
+	ErrDuplicateNetworkName                               = errors.New("duplicate network name")
+	ErrDuplicateNetworkID                                 = errors.New("duplicate network ID name")
+	ErrDuplicateChainID                                   = errors.New("duplicate chain ID name")
+	ErrCannotRemoveL2Config                               = errors.New("L2 config cannot be removed")
+	ErrCanOnlyAmendedConfirmations                        = errors.New("can only amended L2 config confirmations")
 )
 
 type EthereumConfig struct {
@@ -162,13 +169,24 @@ func (c EthereumContract) HexAddress() string {
 
 // CheckUntypedEthereumConfig verifies the `v` parameter is a proto.EthereumConfig
 // struct and check if it's valid.
-func CheckUntypedEthereumConfig(v interface{}) error {
+func CheckUntypedEthereumConfig(v interface{}, _ interface{}) error {
 	cfg, err := toEthereumConfigProto(v)
 	if err != nil {
 		return err
 	}
 
 	return CheckEthereumConfig(cfg)
+}
+
+func CheckUntypedEthereumL2Configs(v interface{}, o interface{}) error {
+	cfg, err := toEthereumL2ConfigsProto(v)
+	if err != nil {
+		return err
+	}
+
+	ocfg := &proto.EthereumL2Configs{}
+	json.Unmarshal([]byte(o.(string)), ocfg)
+	return CheckEthereumL2Configs(cfg, ocfg)
 }
 
 // CheckEthereumConfig verifies the proto.EthereumConfig is valid.
@@ -213,4 +231,131 @@ func toEthereumConfigProto(v interface{}) (*proto.EthereumConfig, error) {
 		return nil, fmt.Errorf("type \"%s\" is not a EthereumConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
+}
+
+type EthereumL2Configs struct {
+	Configs []EthereumL2Config
+}
+
+type EthereumL2Config struct {
+	ChainID       string
+	NetworkID     string
+	Confirmations uint64
+	Name          string
+}
+
+func toEthereumL2ConfigsProto(v interface{}) (*proto.EthereumL2Configs, error) {
+	cfg, ok := v.(*proto.EthereumL2Configs)
+	if !ok {
+		return nil, fmt.Errorf("type \"%s\" is not a EthereumL2Configs proto", vgreflect.TypeName(v))
+	}
+	return cfg, nil
+}
+
+func EthereumL2ConfigsFromUntypedProto(v interface{}) (*EthereumL2Configs, error) {
+	cfg, err := toEthereumL2ConfigsProto(v)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't convert untyped proto to EthereumL2Configs proto: %w", err)
+	}
+
+	ethConfig, err := EthereumL2ConfigsFromProto(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't build EthereumL2Configs: %w", err)
+	}
+
+	return ethConfig, nil
+}
+
+func EthereumL2ConfigsFromProto(cfgProto *proto.EthereumL2Configs) (*EthereumL2Configs, error) {
+	if err := CheckEthereumL2Configs(cfgProto, nil); err != nil {
+		return nil, fmt.Errorf("invalid Ethereum configuration: %w", err)
+	}
+
+	cfg := &EthereumL2Configs{}
+	for _, v := range cfgProto.Configs {
+		cfg.Configs = append(cfg.Configs, EthereumL2Config{
+			NetworkID:     v.NetworkId,
+			ChainID:       v.ChainId,
+			Name:          v.Name,
+			Confirmations: uint64(v.Confirmations),
+		})
+	}
+
+	return cfg, nil
+}
+
+// CheckEthereumConfig verifies the proto.EthereumConfig is valid.
+func CheckEthereumL2Configs(cfgProto *proto.EthereumL2Configs, prev *proto.EthereumL2Configs) error {
+	names := map[string]*proto.EthereumL2Config{}
+	cids := map[string]*proto.EthereumL2Config{}
+	nids := map[string]*proto.EthereumL2Config{}
+
+	for _, v := range cfgProto.Configs {
+		// check network id and ensure no duplicates
+		if len(v.NetworkId) == 0 {
+			return ErrMissingNetworkID
+		}
+		if _, ok := nids[v.NetworkId]; ok {
+			return ErrDuplicateNetworkID
+		}
+		nids[v.NetworkId] = v
+
+		// check chain id and ensure no duplicates
+		if len(v.ChainId) == 0 {
+			return ErrMissingChainID
+		}
+		if _, ok := cids[v.ChainId]; ok {
+			return ErrDuplicateChainID
+		}
+		cids[v.ChainId] = v
+
+		// check network name and ensure no duplicates
+		if len(v.Name) == 0 {
+			return ErrMissingNetworkName
+		}
+		if _, ok := names[v.Name]; ok {
+			return ErrDuplicateNetworkName
+		}
+		names[v.Name] = v
+
+		if v.Confirmations == 0 {
+			return ErrConfirmationsMustBeHigherThan0
+		}
+	}
+
+	// it wasn't previously set to anything (from genesis) so nothing to check
+	if prev == nil {
+		return nil
+	}
+
+	// compare against currently set configs - we make sure they only amend confirmations, or are new additions
+	// but for now nothing can bre removed.
+	for _, c := range prev.Configs {
+		v, ok := nids[c.NetworkId]
+		if !ok {
+			return ErrCannotRemoveL2Config
+		}
+
+		if !isUpdate(v, c) {
+			return ErrCanOnlyAmendedConfirmations
+		}
+	}
+
+	return nil
+}
+
+func isUpdate(v, c *proto.EthereumL2Config) bool {
+	if v.ChainId != c.ChainId {
+		return false
+	}
+
+	if v.NetworkId != c.NetworkId {
+		return false
+	}
+
+	if v.Name != c.Name {
+		return false
+	}
+
+	return true
 }

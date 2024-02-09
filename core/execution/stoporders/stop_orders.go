@@ -19,10 +19,12 @@ import (
 	"log"
 	"sort"
 
+	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -106,6 +108,42 @@ func (p *Pool) Settled() []*types.StopOrder {
 	return out
 }
 
+func (p *Pool) CheckDirection(positions *positions.SnapshotEngine) []*types.StopOrder {
+	toCancel := []*types.StopOrder{}
+	for partyID, orders := range p.orders {
+		pos, ok := positions.GetPositionByPartyID(partyID)
+		if !ok {
+			continue
+		}
+		for _, order := range orders {
+			if order.SizeOverrideSetting == types.StopOrderSizeOverrideSettingPosition {
+				if pos.Size() == 0 {
+					continue
+				} else if pos.Size() > 0 {
+					// Order needs to be a sell
+					if order.OrderSubmission.Side != types.SideSell {
+						order.Status = types.StopOrderStatusCancelled
+						toCancel = append(toCancel, order)
+					}
+				} else {
+					// Order needs to be a buy
+					if order.OrderSubmission.Side != types.SideBuy {
+						order.Status = types.StopOrderStatusCancelled
+						toCancel = append(toCancel, order)
+					}
+				}
+			}
+		}
+	}
+
+	// Remove the deleted items from the map
+	for _, stopOrder := range toCancel {
+		delete(p.orders[stopOrder.Party], stopOrder.OrderID)
+		delete(p.orderToParty, stopOrder.OrderID)
+	}
+	return toCancel
+}
+
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
@@ -147,7 +185,7 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.S
 		}
 	}
 
-	// now we get all the OCO oposit to them as they shall
+	// now we get all the OCO opposite to them as they shall
 	// be cancelled as well
 	for _, v := range triggered[:] {
 		if len(v.OCOLinkID) <= 0 {
@@ -187,7 +225,7 @@ func (p *Pool) Insert(order *types.StopOrder) {
 	switch {
 	case order.Trigger.IsPrice():
 		p.priced.Insert(order.ID, order.Trigger.Price().Clone(), order.Trigger.Direction)
-	case order.Trigger.IsTrailingPercenOffset():
+	case order.Trigger.IsTrailingPercentOffset():
 		p.trailing.Insert(order.ID, order.Trigger.TrailingPercentOffset(), order.Trigger.Direction)
 	}
 }
@@ -259,7 +297,7 @@ func (p *Pool) remove(orders []*types.StopOrder) {
 		switch {
 		case order.Trigger.IsPrice():
 			p.priced.Remove(order.ID)
-		case order.Trigger.IsTrailingPercenOffset():
+		case order.Trigger.IsTrailingPercentOffset():
 			p.trailing.Remove(order.ID)
 		}
 	}
@@ -281,7 +319,7 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 				// is the OCO link already mapped
 				if _, ok := ordersM[order.OCOLinkID]; !ok {
 					ordersM[order.OCOLinkID] = p.orders[p.orderToParty[id]][order.OCOLinkID]
-					ordersM[order.OCOLinkID].Status = types.StopOrderStatusExpired
+					ordersM[order.OCOLinkID].Status = types.StopOrderStatusStopped
 				}
 			}
 		}

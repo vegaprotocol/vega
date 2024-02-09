@@ -24,6 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 type ErroneousRow interface {
@@ -51,8 +53,8 @@ func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 }
 
 // checkExpectedError checks if expected error has been returned,
-// if no expecteation has been set a regular error check is carried out,
-// unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encoutered.
+// if no expectation has been set a regular error check is carried out,
+// unexpectedErrDetail is an optional parameter that can be used to return a more detailed error when an unexpected error is encountered.
 func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error) error {
 	if row.ExpectError() && returnedErr == nil {
 		return fmt.Errorf("action on %q should have fail", row.Reference())
@@ -83,17 +85,30 @@ func checkExpectedError(row ErroneousRow, returnedErr, unexpectedErrDetail error
 func formatDiff(msg string, expected, got map[string]string) error {
 	var expectedStr strings.Builder
 	var gotStr strings.Builder
-	formatStr := "\n\t%s\t(%s)"
+	padding := findLongestKeyLen(expected) + 1
+	formatStr := "\n\t\t%-*s(%s)"
 	for name, value := range expected {
-		_, _ = fmt.Fprintf(&expectedStr, formatStr, name, value)
-		_, _ = fmt.Fprintf(&gotStr, formatStr, name, got[name])
+		_, _ = fmt.Fprintf(&expectedStr, formatStr, padding, name, value)
+		_, _ = fmt.Fprintf(&gotStr, formatStr, padding, name, got[name])
 	}
 
-	return fmt.Errorf("\n%s\nexpected:%s\ngot:%s",
+	return fmt.Errorf("%s\n\texpected:%s\n\tgot:%s",
 		msg,
 		expectedStr.String(),
 		gotStr.String(),
 	)
+}
+
+func findLongestKeyLen(expected map[string]string) int {
+	keys := maps.Keys(expected)
+	maxLen := 0
+	for i := range keys {
+		iLen := len(keys[i])
+		if iLen > maxLen {
+			maxLen = iLen
+		}
+	}
+	return maxLen
 }
 
 func u64ToS(n uint64) string {

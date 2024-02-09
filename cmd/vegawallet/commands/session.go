@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
+
 	"github.com/spf13/cobra"
 )
 

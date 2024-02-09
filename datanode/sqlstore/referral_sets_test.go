@@ -21,24 +21,20 @@ import (
 	"math/rand"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-
-	"golang.org/x/exp/slices"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"golang.org/x/exp/slices"
 )
 
 func setupReferralSetsTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties, *sqlstore.ReferralSets) {
@@ -58,7 +54,7 @@ func TestReferralSets_AddReferralSet(t *testing.T) {
 	referrer := addTestParty(t, ctx, ps, block)
 
 	set := entities.ReferralSet{
-		ID:        entities.ReferralSetID(helpers.GenerateID()),
+		ID:        entities.ReferralSetID(GenerateID()),
 		Referrer:  referrer.ID,
 		CreatedAt: block.VegaTime,
 		UpdatedAt: block.VegaTime,
@@ -91,7 +87,7 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 	referee := addTestParty(t, ctx, ps, block)
 
 	set := entities.ReferralSet{
-		ID:        entities.ReferralSetID(helpers.GenerateID()),
+		ID:        entities.ReferralSetID(GenerateID()),
 		Referrer:  referrer.ID,
 		CreatedAt: block.VegaTime,
 		UpdatedAt: block.VegaTime,
@@ -126,27 +122,31 @@ func TestReferralSets_RefereeJoinedReferralSet(t *testing.T) {
 	})
 }
 
-func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets) (
+func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, ps *sqlstore.Parties, rs *sqlstore.ReferralSets, createStats bool) (
 	[]entities.ReferralSet, map[string][]entities.ReferralSetRefereeStats,
 ) {
 	t.Helper()
 
 	sets := make([]entities.ReferralSet, 0)
 	referees := make(map[string][]entities.ReferralSetRefereeStats, 0)
+	es := sqlstore.NewEpochs(connectionSource)
+	fs := sqlstore.NewFeesStats(connectionSource)
 
 	for i := 0; i < 10; i++ {
 		block := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Duration(i-10)*time.Minute))
+		endTime := block.VegaTime.Add(time.Minute)
+		addTestEpoch(t, ctx, es, int64(i), block.VegaTime, endTime, &endTime, block)
 		referrer := addTestParty(t, ctx, ps, block)
 		set := entities.ReferralSet{
-			ID:        entities.ReferralSetID(helpers.GenerateID()),
-			Referrer:  referrer.ID,
-			CreatedAt: block.VegaTime,
-			UpdatedAt: block.VegaTime,
-			VegaTime:  block.VegaTime,
+			ID:           entities.ReferralSetID(GenerateID()),
+			Referrer:     referrer.ID,
+			TotalMembers: 1,
+			CreatedAt:    block.VegaTime,
+			UpdatedAt:    block.VegaTime,
+			VegaTime:     block.VegaTime,
 		}
 		err := rs.AddReferralSet(ctx, &set)
 		require.NoError(t, err)
-		sets = append(sets, set)
 
 		setID := set.ID.String()
 		referees[setID] = make([]entities.ReferralSetRefereeStats, 0)
@@ -162,14 +162,67 @@ func setupReferralSetsAndReferees(t *testing.T, ctx context.Context, bs *sqlstor
 					AtEpoch:       uint64(block.Height),
 					VegaTime:      block.VegaTime,
 				},
-				PeriodVolume:      num.DecimalFromInt64(0),
-				PeriodRewardsPaid: num.DecimalFromInt64(0),
+				PeriodVolume:      num.DecimalFromInt64(10),
+				PeriodRewardsPaid: num.DecimalFromInt64(10),
 			}
 
 			err := rs.RefereeJoinedReferralSet(ctx, &setReferee.ReferralSetReferee)
 			require.NoError(t, err)
+
+			set.TotalMembers += 1
+
 			referees[setID] = append(referees[setID], setReferee)
+			if createStats {
+				// Add some stats for the referral sets
+				stats := entities.ReferralSetStats{
+					SetID:                                 set.ID,
+					AtEpoch:                               uint64(block.Height),
+					WasEligible:                           true,
+					ReferralSetRunningNotionalTakerVolume: "10",
+					ReferrerTakerVolume:                   "10",
+					RefereesStats: []*eventspb.RefereeStats{
+						{
+							PartyId:                  referee.ID.String(),
+							DiscountFactor:           "10",
+							EpochNotionalTakerVolume: "10",
+						},
+					},
+					VegaTime:                block.VegaTime,
+					RewardFactor:            "1",
+					RewardsMultiplier:       "1",
+					RewardsFactorMultiplier: "1",
+				}
+				require.NoError(t, rs.AddReferralSetStats(ctx, &stats))
+				feeStats := entities.FeesStats{
+					MarketID: "deadbeef01",
+					AssetID:  "cafed00d01",
+					EpochSeq: uint64(block.Height),
+					TotalRewardsReceived: []*eventspb.PartyAmount{
+						{
+							Party:         referee.ID.String(),
+							Amount:        "10",
+							QuantumAmount: "10",
+						},
+					},
+					ReferrerRewardsGenerated: []*eventspb.ReferrerRewardsGenerated{
+						{
+							Referrer: "deadd00d01",
+							GeneratedReward: []*eventspb.PartyAmount{
+								{
+									Party:         referee.ID.String(),
+									Amount:        "10",
+									QuantumAmount: "10",
+								},
+							},
+						},
+					},
+					VegaTime: block.VegaTime,
+				}
+				require.NoError(t, fs.AddFeesStats(ctx, &feeStats))
+			}
 		}
+
+		sets = append(sets, set)
 	}
 
 	sort.Slice(sets, func(i, j int) bool {
@@ -192,10 +245,10 @@ func TestReferralSets_ListReferralSets(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, true)
 
 	t.Run("Should return all referral sets", func(t *testing.T) {
-		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, helpers.DefaultNoPagination())
+		got, pageInfo, err := rs.ListReferralSets(ctx, nil, nil, nil, entities.DefaultCursorPagination(true))
 		require.NoError(t, err)
 		want := sets[:]
 		assert.Equal(t, want, got)
@@ -333,7 +386,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, true)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := rand.New(src)
 	set := sets[r.Intn(len(sets))]
@@ -342,7 +395,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, &set.ID, nil, nil, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -355,7 +408,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 
 	t.Run("Should return all referees in a set by referrer if no pagination", func(t *testing.T) {
 		want := refs[:]
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, &set.Referrer, nil, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -369,7 +422,7 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 	t.Run("Should return referee in a set", func(t *testing.T) {
 		want := []entities.ReferralSetRefereeStats{refs[r.Intn(len(refs))]}
 
-		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, helpers.DefaultNoPagination(), 30)
+		got, pageInfo, err := rs.ListReferralSetReferees(ctx, nil, nil, &want[0].Referee, entities.DefaultCursorPagination(true), 30)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 		assert.Equal(t, entities.PageInfo{
@@ -472,9 +525,9 @@ func TestReferralSets_ListReferralSetReferees(t *testing.T) {
 func TestReferralSets_AddReferralSetStats(t *testing.T) {
 	bs, ps, rs := setupReferralSetsTest(t)
 
-	ctx := context.Background()
+	ctx := tempTransaction(t)
 
-	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs)
+	sets, referees := setupReferralSetsAndReferees(t, ctx, bs, ps, rs, false)
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))
 	r := rand.New(src)
 	set := sets[r.Intn(len(sets))]
@@ -502,7 +555,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		require.NoError(t, err)
 
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 	})
@@ -525,7 +578,7 @@ func TestReferralSets_AddReferralSetStats(t *testing.T) {
 		err := rs.AddReferralSetStats(ctx, &stats)
 		require.NoError(t, err)
 		var got entities.ReferralSetStats
-		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 and at_epoch = $2", set.ID, epoch)
+		err = pgxscan.Get(ctx, connectionSource.Connection, &got, "SELECT * FROM referral_set_stats WHERE set_id = $1 AND at_epoch = $2", set.ID, epoch)
 		require.NoError(t, err)
 		assert.Equal(t, stats, got)
 
@@ -676,18 +729,26 @@ func flattenReferralSetStatsForEpoch(flattenStats []entities.FlattenReferralSetS
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) int {
 		if a.AtEpoch == b.AtEpoch {
 			if a.SetID == b.SetID {
-				return a.PartyID < b.PartyID
+				return strings.Compare(a.PartyID, b.PartyID)
 			}
-			return a.SetID < b.SetID
+			return strings.Compare(string(a.SetID), string(b.SetID))
 		}
-
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats
+}
+
+func compareUint64(a, b uint64) int {
+	if a < b {
+		return -1
+	} else if a > b {
+		return 1
+	}
+	return 0
 }
 
 func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetStats, party string) []entities.FlattenReferralSetStats {
@@ -699,15 +760,15 @@ func flattenReferralSetStatsForParty(flattenStats []entities.FlattenReferralSetS
 		}
 	}
 
-	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) bool {
+	slices.SortStableFunc(lastStats, func(a, b entities.FlattenReferralSetStats) int {
 		if a.AtEpoch == b.AtEpoch {
 			if a.SetID == b.SetID {
-				return a.PartyID < b.PartyID
+				return strings.Compare(a.PartyID, b.PartyID)
 			}
-			return a.SetID < b.SetID
+			return strings.Compare(string(a.SetID), string(b.SetID))
 		}
 
-		return a.AtEpoch > b.AtEpoch
+		return -compareUint64(a.AtEpoch, b.AtEpoch)
 	})
 
 	return lastStats

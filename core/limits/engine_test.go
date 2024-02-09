@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/limits"
 	"code.vegaprotocol.io/vega/core/limits/mocks"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

@@ -27,7 +27,7 @@ type SomeEngine struct {
 
     cfg  Config
     log *logging.Logger
-    
+
     // track orders, id -> order
     orders map[string]*types.Order
 
@@ -36,11 +36,11 @@ type SomeEngine struct {
 }
 ```
 
-The important field that needs saving into a snapshot is `orders`. The fields `cfg` and `log` are only configuration fields and so are not relevant. For `cbs` the onus is on the subscriber to re-register their callback when they restore from a snapshot, so *this* engine's snapshot need not worry.
+The important field that needs saving into a snapshot is `orders`. The fields `cfg` and `log` are only configuration fields and so are not relevant. For `cbs` the onus is on the subscriber to re-register their callback when they restore from a snapshot, so _this_ engine's snapshot need not worry.
 
 ### Gotcha 1: Cannot include validator-only state in a snapshot
 
-Given that validator and non-validator nodes take snapshots and the hash of a snapshot is included in the commit-hash, if any state that is only present in *validator* nodes is added to a snapshot, then all non-validator nodes will fall out of consensus.
+Given that validator and non-validator nodes take snapshots and the hash of a snapshot is included in the commit-hash, if any state that is only present in _validator_ nodes is added to a snapshot, then all non-validator nodes will fall out of consensus.
 
 An example of this is the Ethereum-event-forwarder which is only something validator nodes do. The state it contains is the Ethereum block-height that was last checked for events, but we cannot save this into a snapshot. We instead handle it by saving the Ethereum block-height of the last `ChainEvent` sent into core, which is a transaction all node types will see. This will not be the last Ethereum block-height checked, but it is good enough.
 
@@ -58,7 +58,7 @@ For example, a market subscribes to oracles for both termination and settlement.
 
 ### Gotcha 4: Trying to use complex-logic to deduce whether a field needs adding to the snapshot
 
-Its not worth it. Your assessment is probably wrong and will result in a horrible bug that presents itself 5 weeks later at the worst possible moment. Unless it is *plainly obvious* that a field has a lifetime of less than a block, or it can *trivially* be derived from another field, then just add it to the snapshot.
+Its not worth it. Your assessment is probably wrong and will result in a horrible bug that presents itself 5 weeks later at the worst possible moment. Unless it is _plainly obvious_ that a field has a lifetime of less than a block, or it can _trivially_ be derived from another field, then just add it to the snapshot.
 
 ## Snapshot tests
 
@@ -239,7 +239,7 @@ func TestEngineSnapshot(t *testing.T) {
 
 System-tests exist that directly flex snapshots in known troublesome situations, and also check more functional aspects of snapshots (they are produced in line with the network parameter, we only save as many as set in the config file etc etc). These exist in the test file `snapshot_test.py` in the system-test repo.
 
-There are also tests that do not *directly* test snapshot behaviour but where snapshots are used by that feature, for example validators-joining-and-leave and protocol-upgrade tests. These tests exist across almost all of the system-tests marked as `network_infra`.
+There are also tests that do not _directly_ test snapshot behaviour but where snapshots are used by that feature, for example validators-joining-and-leave and protocol-upgrade tests. These tests exist across almost all of the system-tests marked as `network_infra`.
 
 #### How to debug a failure
 
@@ -271,12 +271,12 @@ The pipeline exists to verify that snapshots work in a more realistic environmen
 
 #### How to debug a failure
 
-The snapshot pipeline jobs will store as an artefact the block-data and the snapshot it loaded from. This allows you to replay the partial chain the in same way locally and reproduce any failure. By finding the last *successful* snapshot pipeline job, those artefacts can be used to replay the partial chain from a working snapshot allowing comparison between logs to find where state started to diverge.
-
+The snapshot pipeline jobs will store as an artefact the block-data and the snapshot it loaded from. This allows you to replay the partial chain the in same way locally and reproduce any failure. By finding the last _successful_ snapshot pipeline job, those artefacts can be used to replay the partial chain from a working snapshot allowing comparison between logs to find where state started to diverge.
 
 ### Event-diff soak tests
 
 It checks that the events sent out by core are always sent out in the same order. As the system tests are running `node2` writes out all the events it sends to a data node to a file. At the end of the test run the chain is replayed and another file containing all events is produce. These two files are then diffed. If it fails on Jenkins then you will see output that looks like the following:
+
 ```
 [2023-10-09T15:24:45.689Z] === Starting event-file diff
 [2023-10-09T15:24:45.689Z] Differences found between: /jenkins/workspace/common/system-tests-wrapper/networkdata/testnet/vega/node2/eventlog.evt /jenkins/workspace/common/system-tests-wrapper/networkdata/testnet/vega/node2/eventlog-replay.evt
@@ -285,6 +285,7 @@ It checks that the events sent out by core are always sent out in the same order
 #### How to debug a failure
 
 The two event files that were diffed will be saved as artefacts in Jenkins, and the first step is to download them locally. From there they are be parsed into human-readable JSON by using the following vega tool,a nd then diffed:
+
 ```
 vega tools events --out=original.out --events=eventlog.evt
 
@@ -296,6 +297,7 @@ diff original.out replay.out
 Note that for events created during a full system-test run, both the parsing and diff can take some time.
 
 The diff can then be used to hunt down which block produces different events, and which event type it is. For example if the diff flagged up and event like below:
+
 ```
 {
    "id": "4615-75",

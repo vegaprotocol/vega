@@ -27,13 +27,14 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/pkg/errors"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint
@@ -103,15 +104,23 @@ type ExecutionEngine interface {
 	// End of block
 	BlockEnd(ctx context.Context)
 	BeginBlock(ctx context.Context)
+
+	// Margin mode
+	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
+	// default chain ID, can be removed once we've upgraded to v0.74
+	OnChainIDUpdate(uint64) error
 }
 
 type GovernanceEngine interface {
 	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	SubmitBatchProposal(context.Context, types.BatchProposalSubmission, string, string) ([]*governance.ToSubmit, error)
 	FinaliseEnactment(ctx context.Context, prop *types.Proposal)
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnTick(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
+	RejectBatchProposal(context.Context, string, types.ProposalError, error) error
 	Hash() []byte
+	OnChainIDUpdate(uint64) error
 }
 
 //nolint:interfacebloat
@@ -167,7 +176,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
 	ProcessEthereumKeyRotation(ctx context.Context, nodeID string, kr *commandspb.EthereumKeyRotateSubmission, verify func(message, signature []byte, hexAddress string) error) error
-	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock)
+	BeginBlock(ctx context.Context, blockHeight uint64, proposer string)
 	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
 	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
 	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
@@ -229,12 +238,14 @@ type NetworkParameters interface {
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
 	GetInt(key string) (int64, error)
+	GetJSONStruct(key string, v netparams.Reset) error
 }
 
 type Oracle struct {
-	Engine                  OraclesEngine
-	Adaptors                OracleAdaptors
-	EthereumOraclesVerifier EthereumOracleVerifier
+	Engine                    OraclesEngine
+	Adaptors                  OracleAdaptors
+	EthereumOraclesVerifier   EthereumOracleVerifier
+	EthereumL2OraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {

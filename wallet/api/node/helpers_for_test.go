@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/wallet/api/node"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 )

@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
 	"code.vegaprotocol.io/vega/wallet/network"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

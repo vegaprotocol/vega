@@ -20,8 +20,8 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/spam"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,7 +78,7 @@ func (t *testTx) GetCmd() interface{} {
 func TestEngine(t *testing.T) {
 	t.Run("pre block goes is handled by the appropriate spam policy", testPreBlockAccept)
 	t.Run("post block goes is handled by the appropriate spam policy", testPostBlockAccept)
-	t.Run("end of block is applied to all policies", testEndOfBlock)
+	t.Run("end prepare and end process is applied to all policies", testEndOfBlock)
 	t.Run("reset is applied to all policies", testEngineReset)
 }
 
@@ -91,24 +92,21 @@ func testEngineReset(t *testing.T) {
 
 	// pre accept
 	for i := 0; i < 3; i++ {
-		accept, _ := engine.PreBlockAccept(tx1)
-		require.Equal(t, true, accept)
-
-		accept, _ = engine.PreBlockAccept(tx2)
-		require.Equal(t, true, accept)
+		require.NoError(t, engine.PreBlockAccept(tx1))
+		require.NoError(t, engine.PreBlockAccept(tx2))
 	}
 
 	// post accept
 	for i := 0; i < 3; i++ {
-		accept, _ := engine.PostBlockAccept(tx1)
-		require.Equal(t, true, accept)
-		accept, _ = engine.PostBlockAccept(tx2)
-		require.Equal(t, true, accept)
+		err := engine.CheckBlockTx(tx1)
+		require.NoError(t, err)
+		err = engine.CheckBlockTx(tx2)
+		require.NoError(t, err)
 	}
-
 	// move to next block, we've voted/proposed everything already so shouldn't be allowed to make more
-	tm := time.Now()
-	engine.EndOfBlock(1, tm)
+	engine.EndPrepareProposal()
+	engine.ProcessProposal([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
+	engine.BeginBlock([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
 
 	proposalState, _, err := engine.GetState("proposal")
 	require.Nil(t, err)
@@ -142,13 +140,8 @@ func testEngineReset(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(voteState, voteState2))
 
-	accept, err := snapEngine.engine.PreBlockAccept(tx1)
-	require.Equal(t, false, accept)
-	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
-
-	accept, err = snapEngine.engine.PreBlockAccept(tx2)
-	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrTooManyVotes, err)
+	require.Error(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), snapEngine.engine.PreBlockAccept(tx1))
+	require.Equal(t, spam.ErrTooManyVotes, snapEngine.engine.PreBlockAccept(tx2))
 
 	// Notify an epoch event for the *same* epoch and a reset should not happen
 	snapEngine.engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
@@ -161,11 +154,8 @@ func testEngineReset(t *testing.T) {
 
 	// expect to be able to submit 3 more votes/proposals successfully
 	for i := 0; i < 3; i++ {
-		accept, _ := snapEngine.engine.PreBlockAccept(tx1)
-		require.Equal(t, true, accept)
-
-		accept, _ = snapEngine.engine.PreBlockAccept(tx2)
-		require.Equal(t, true, accept)
+		require.NoError(t, snapEngine.engine.PreBlockAccept(tx1))
+		require.NoError(t, snapEngine.engine.PreBlockAccept(tx2))
 	}
 
 	proposalState3, _, err := snapEngine.engine.GetState("proposal")
@@ -183,20 +173,16 @@ func testPreBlockAccept(t *testing.T) {
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
-	accept, _ := engine.PreBlockAccept(tx1)
-	require.Equal(t, true, accept)
+	require.NoError(t, engine.PreBlockAccept(tx1))
 
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
-	accept, _ = engine.PreBlockAccept(tx2)
-	require.Equal(t, true, accept)
+	require.NoError(t, engine.PreBlockAccept(tx2))
 
 	tx1 = &testTx{party: "party2", proposal: "proposal1", command: txn.ProposeCommand}
-	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, errors.New("party has insufficient associated governance tokens in their staking account to submit proposal request"), err)
+	require.Equal(t, errors.New("party has insufficient associated governance tokens in their staking account to submit proposal request"), engine.PreBlockAccept(tx1))
 
 	tx2 = &testTx{party: "party2", proposal: "proposal1", command: txn.VoteCommand}
-	_, err = engine.PreBlockAccept(tx2)
-	require.Equal(t, spam.ErrInsufficientTokensForVoting, err)
+	require.Equal(t, spam.ErrInsufficientTokensForVoting, engine.PreBlockAccept(tx2))
 }
 
 func testPostBlockAccept(t *testing.T) {
@@ -205,23 +191,24 @@ func testPostBlockAccept(t *testing.T) {
 
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
-	for i := 0; i < 3; i++ {
-		tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
-		accept, _ := engine.PostBlockAccept(tx1)
-		require.Equal(t, true, accept)
-
-		tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
-		accept, _ = engine.PostBlockAccept(tx2)
-		require.Equal(t, true, accept)
-	}
-
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
-	_, err := engine.PostBlockAccept(tx1)
-	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
-
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
-	_, err = engine.PostBlockAccept(tx2)
-	require.Equal(t, spam.ErrTooManyVotes, err)
+	for i := 0; i < 3; i++ {
+		err := engine.CheckBlockTx(tx1)
+		require.NoError(t, err)
+
+		err = engine.CheckBlockTx(tx2)
+		require.NoError(t, err)
+	}
+	engine.EndPrepareProposal()
+	engine.ProcessProposal([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
+	engine.BeginBlock([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
+
+	tx1 = &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
+	require.Error(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), engine.CheckBlockTx(tx1))
+
+	tx2 = &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
+	require.Error(t, spam.ErrTooManyVotes, engine.CheckBlockTx(tx2))
 }
 
 func testEndOfBlock(t *testing.T) {
@@ -230,23 +217,29 @@ func testEndOfBlock(t *testing.T) {
 
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
+	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
+	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
+
+	for i := 0; i < 3; i++ {
+		require.NoError(t, engine.CheckBlockTx(tx1))
+		require.NoError(t, engine.CheckBlockTx(tx2))
+	}
+	engine.EndPrepareProposal()
+	engine.ProcessProposal([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
+	engine.BeginBlock([]abci.Tx{tx1, tx1, tx1, tx2, tx2, tx2})
+
 	for i := 0; i < 3; i++ {
 		tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
-		accept, _ := engine.PostBlockAccept(tx1)
-		require.Equal(t, true, accept)
+		require.Error(t, engine.CheckBlockTx(tx1))
 
 		tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
-		accept, _ = engine.PostBlockAccept(tx2)
-		require.Equal(t, true, accept)
+		require.Error(t, engine.CheckBlockTx(tx2))
 	}
-	engine.EndOfBlock(1, time.Now())
-	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
-	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), err)
+	// proposal is rejected
+	engine.EndPrepareProposal()
 
-	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
-	_, err = engine.PreBlockAccept(tx2)
-	require.Equal(t, spam.ErrTooManyVotes, err)
+	require.Error(t, errors.New("party has already submitted the maximum number of proposal requests per epoch"), engine.PreBlockAccept(tx1))
+	require.Equal(t, spam.ErrTooManyVotes, engine.PreBlockAccept(tx2))
 }
 
 type testEngine struct {

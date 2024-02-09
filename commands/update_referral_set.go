@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -54,8 +54,13 @@ func checkUpdateReferralSet(cmd *commandspb.UpdateReferralSet) Errors {
 			errs.AddForProperty("update_referral_set.team.team_url", ErrMustBeLessThan200Chars)
 		}
 
-		// temporarily disable team support
-		errs.AddForProperty("update_referral_set.team", ErrIsNotSupported)
+		if cmd.Team.Closed == nil && len(cmd.Team.AllowList) > 0 {
+			errs.AddForProperty("update_referral_set.team.allow_list", ErrSettingAllowListRequireSettingClosedState)
+		}
+
+		if cmd.Team.Closed != nil && !*cmd.Team.Closed && len(cmd.Team.AllowList) > 0 {
+			errs.AddForProperty("update_referral_set.team.allow_list", ErrCannotSetAllowListWhenTeamIsOpened)
+		}
 	}
 
 	return errs

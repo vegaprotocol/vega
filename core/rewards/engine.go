@@ -20,10 +20,9 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -34,13 +33,14 @@ var (
 	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerReceivedFeeReward, types.AccountTypeMakerPaidFeeReward, types.AccountTypeLPFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeAveragePositionReward, types.AccountTypeRelativeReturnReward, types.AccountTypeReturnVolatilityReward, types.AccountTypeValidatorRankingReward}
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker,Delegation,TimeService,Topology,Transfers,Teams,Vesting,ActivityStreak
+
 // Broker for sending events.
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards MarketActivityTracker
 type MarketActivityTracker interface {
 	GetAllMarketIDs() []string
 	GetProposer(market string) string
@@ -48,14 +48,12 @@ type MarketActivityTracker interface {
 	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 }
 
-// TimeService notifies the reward engine at the end of an epoch.
+// EpochEngine notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch), r func(context.Context, types.Epoch))
 }
 
-// Delegation engine for getting validation data
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Delegation
+// Delegation engine for getting validation data.
 type Delegation interface {
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 	GetValidatorData() []*types.ValidatorData
@@ -64,41 +62,35 @@ type Delegation interface {
 // Collateral engine provides access to account data and transferring rewards.
 type Collateral interface {
 	GetAccountByID(id string) (*types.Account, error)
-	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer, rewardType types.AccountType) ([]*types.LedgerMovement, error)
 	GetRewardAccountsByType(rewardAcccountType types.AccountType) []*types.Account
+	GetAssetQuantum(asset string) (num.Decimal, error)
 }
 
-// TimeService notifies the reward engine on time updates
-//
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards TimeService
+// TimeService notifies the reward engine on time updates.
 type TimeService interface {
 	GetTimeNow() time.Time
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Topology
 type Topology interface {
 	GetRewardsScores(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) (*types.ScoreData, *types.ScoreData)
 	RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) []*types.PartyContributionScore
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfers_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Transfers
 type Transfers interface {
 	GetDispatchStrategy(string) *proto.DispatchStrategy
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/teams_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Teams
 type Teams interface {
 	GetTeamMembers([]string) map[string][]string
 	GetAllPartiesInTeams() []string
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vesting_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards Vesting
 type Vesting interface {
 	AddReward(party, asset string, amount *num.Uint, lockedForEpochs uint64)
 	GetRewardBonusMultiplier(party string) (*num.Uint, num.Decimal)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/activity_streak_mock.go -package mocks code.vegaprotocol.io/vega/core/rewards ActivityStreak
 type ActivityStreak interface {
 	GetRewardsDistributionMultiplier(party string) num.Decimal
 }
@@ -141,7 +133,7 @@ type payout struct {
 	totalReward      *num.Uint
 	epochSeq         string
 	timestamp        int64
-	market           string
+	gameID           *string
 	lockedForEpochs  uint64
 	lockedUntilEpoch string
 }
@@ -327,7 +319,9 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
 					po.rewardType = rewardType
-					po.market = account.MarketID
+					if account.MarketID != "!" {
+						po.gameID = &account.MarketID
+					}
 					po.timestamp = now.UnixNano()
 					payouts = append(payouts, po)
 					e.distributePayout(ctx, po)
@@ -400,15 +394,15 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 	return nil
 }
 
-// emitEventsForPayout fires events corresponding to the reward payout.
 func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, po *payout) {
 	payoutEvents := map[string]*events.RewardPayout{}
 	parties := []string{}
 	totalReward := po.totalReward.ToDecimal()
+	assetQuantum, _ := e.collateral.GetAssetQuantum(po.asset)
 	for party, amount := range po.partyToAmount {
 		proportion := amount.ToDecimal().Div(totalReward)
 		pct := proportion.Mul(num.DecimalFromInt64(100))
-		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct, po.rewardType, po.market, po.lockedUntilEpoch)
+		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, assetQuantum, pct, po.rewardType, po.gameID, po.lockedUntilEpoch)
 		parties = append(parties, party)
 	}
 	sort.Strings(parties)
@@ -441,15 +435,18 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		})
 	}
 
-	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
+	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers, po.rewardType)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
 
-	for _, party := range partyIDs {
-		amt := po.partyToAmount[party]
-		e.vesting.AddReward(party, po.asset, amt, po.lockedForEpochs)
+	// if the reward type is not infra fee, report it to the vesting engine
+	if po.rewardType != types.AccountTypeFeesInfrastructure {
+		for _, party := range partyIDs {
+			amt := po.partyToAmount[party]
+			e.vesting.AddReward(party, po.asset, amt, po.lockedForEpochs)
+		}
 	}
 	e.broker.Send(events.NewLedgerMovements(ctx, responses))
 }

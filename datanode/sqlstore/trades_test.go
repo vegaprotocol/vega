@@ -13,32 +13,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/num"
+	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -233,6 +223,10 @@ func TestTrades_CursorPagination(t *testing.T) {
 	t.Run("Should return all trades between dates for a given market when no cursor is given - newest first", testTradesCursorPaginationBetweenDatesByMarketNoCursorNewestFirst)
 	t.Run("Should return the last page of trades between dates for a given market when a last cursor is set", testTradesCursorPaginationBetweenDatesByMarketWithCursorLast)
 	t.Run("Should return the page of trades between dates for a given market when a first and after cursor is set", testTradesCursorPaginationBetweenDatesByMarketWithCursorForward)
+}
+
+func TestTransferFeeDiscount(t *testing.T) {
+	t.Run("get current transfer fee discount", tesGetCurrentTransferFeeDiscount)
 }
 
 func setupTradesTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Trades) {
@@ -1212,4 +1206,50 @@ func testTradesCursorPaginationBetweenDatesByMarketWithCursorForward(t *testing.
 	assert.Equal(t, uint64(3), got[1].Size)
 	assert.False(t, pageInfo.HasNextPage)
 	assert.True(t, pageInfo.HasPreviousPage)
+}
+
+func tesGetCurrentTransferFeeDiscount(t *testing.T) {
+	ctx := tempTransaction(t)
+
+	transfers := sqlstore.NewTransfers(connectionSource)
+
+	vegaTime := time.Now().Truncate(time.Microsecond)
+
+	partyID := entities.PartyID(hex.EncodeToString([]byte("party-1")))
+	assetID := entities.AssetID(hex.EncodeToString([]byte("asset-1")))
+	secondAssetID := entities.AssetID(hex.EncodeToString([]byte("asset-2")))
+
+	tfd := &entities.TransferFeesDiscount{
+		PartyID:  partyID,
+		AssetID:  assetID,
+		Amount:   num.DecimalFromInt64(500),
+		EpochSeq: 1,
+		VegaTime: vegaTime,
+	}
+	assert.NoError(t, transfers.UpsertFeesDiscount(ctx, tfd))
+	discount, err := transfers.GetCurrentTransferFeeDiscount(ctx, partyID, assetID)
+	assert.NoError(t, err)
+	assert.Equal(t, tfd, discount)
+
+	secondTfd := &entities.TransferFeesDiscount{
+		PartyID:  partyID,
+		AssetID:  secondAssetID,
+		Amount:   num.DecimalFromInt64(150),
+		EpochSeq: 1,
+		VegaTime: vegaTime,
+	}
+	assert.NoError(t, transfers.UpsertFeesDiscount(ctx, secondTfd))
+	discount, err = transfers.GetCurrentTransferFeeDiscount(ctx, partyID, secondAssetID)
+	assert.NoError(t, err)
+	assert.Equal(t, secondTfd, discount)
+
+	// update the amount for the same party and asset
+	vegaTime = vegaTime.Add(time.Second)
+	tfd.VegaTime = vegaTime
+	tfd.Amount = num.DecimalFromInt64(400)
+	assert.NoError(t, transfers.UpsertFeesDiscount(ctx, tfd))
+
+	discount, err = transfers.GetCurrentTransferFeeDiscount(ctx, partyID, assetID)
+	assert.NoError(t, err)
+	assert.Equal(t, tfd, discount)
 }

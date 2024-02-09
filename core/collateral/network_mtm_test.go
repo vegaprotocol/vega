@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -116,7 +117,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(raw))
 	assert.NotEmpty(t, evts)
@@ -218,7 +219,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
-	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC")
+	evts, raw, err := eng.MarkToMarket(context.Background(), testMarketID, transfers, "BTC", func(string) bool { return true })
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(raw))
 	assert.NotEmpty(t, evts)

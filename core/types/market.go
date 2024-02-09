@@ -21,11 +21,15 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/stringer"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -344,9 +348,9 @@ func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 func (t TradableInstrument) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) marginCalculator(%s) riskModel(%s)",
-		stringer.ReflectPointerToString(t.Instrument),
-		stringer.ReflectPointerToString(t.MarginCalculator),
-		stringer.ReflectPointerToString(t.RiskModel),
+		stringer.PtrToString(t.Instrument),
+		stringer.PtrToString(t.MarginCalculator),
+		stringer.ObjToString(t.RiskModel),
 	)
 }
 
@@ -373,7 +377,7 @@ func (InstrumentSpot) Type() ProductType {
 func (i InstrumentSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		stringer.ReflectPointerToString(i.Spot),
+		stringer.PtrToString(i.Spot),
 	)
 }
 
@@ -418,7 +422,7 @@ func (InstrumentFuture) Type() ProductType {
 func (i InstrumentFuture) String() string {
 	return fmt.Sprintf(
 		"future(%s)",
-		stringer.ReflectPointerToString(i.Future),
+		stringer.PtrToString(i.Future),
 	)
 }
 
@@ -455,9 +459,9 @@ func (f Future) String() string {
 		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
-		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
+		stringer.PtrToString(f.DataSourceSpecForSettlementData),
+		stringer.PtrToString(f.DataSourceSpecForTradingTermination),
+		stringer.PtrToString(f.DataSourceSpecBinding),
 	)
 }
 
@@ -472,7 +476,7 @@ func (InstrumentPerps) Type() ProductType {
 func (i InstrumentPerps) String() string {
 	return fmt.Sprintf(
 		"perps(%s)",
-		stringer.ReflectPointerToString(i.Perps),
+		stringer.PtrToString(i.Perps),
 	)
 }
 
@@ -485,12 +489,39 @@ type Perps struct {
 	ClampLowerBound     num.Decimal
 	ClampUpperBound     num.Decimal
 
+	// funding payment modifiers
+	FundingRateScalingFactor *num.Decimal
+	FundingRateLowerBound    *num.Decimal
+	FundingRateUpperBound    *num.Decimal
+
 	DataSourceSpecForSettlementData     *datasource.Spec
 	DataSourceSpecForSettlementSchedule *datasource.Spec
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+
+	InternalCompositePriceConfig *CompositePriceConfiguration
 }
 
 func PerpsFromProto(p *vegapb.Perpetual) *Perps {
+	var scalingFactor *num.Decimal
+	if p.FundingRateScalingFactor != nil {
+		scalingFactor = ptr.From(num.MustDecimalFromString(*p.FundingRateScalingFactor))
+	}
+
+	var upperBound *num.Decimal
+	if p.FundingRateUpperBound != nil {
+		upperBound = ptr.From(num.MustDecimalFromString(*p.FundingRateUpperBound))
+	}
+
+	var lowerBound *num.Decimal
+	if p.FundingRateLowerBound != nil {
+		lowerBound = ptr.From(num.MustDecimalFromString(*p.FundingRateLowerBound))
+	}
+
+	var internalCompositePriceConfig *CompositePriceConfiguration
+	if p.InternalCompositePriceConfig != nil {
+		internalCompositePriceConfig = CompositePriceConfigurationFromProto(p.InternalCompositePriceConfig)
+	}
+
 	return &Perps{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -498,13 +529,37 @@ func PerpsFromProto(p *vegapb.Perpetual) *Perps {
 		InterestRate:                        num.MustDecimalFromString(p.InterestRate),
 		ClampLowerBound:                     num.MustDecimalFromString(p.ClampLowerBound),
 		ClampUpperBound:                     num.MustDecimalFromString(p.ClampUpperBound),
+		FundingRateScalingFactor:            scalingFactor,
+		FundingRateUpperBound:               upperBound,
+		FundingRateLowerBound:               lowerBound,
 		DataSourceSpecForSettlementData:     datasource.SpecFromProto(p.DataSourceSpecForSettlementData),
 		DataSourceSpecForSettlementSchedule: datasource.SpecFromProto(p.DataSourceSpecForSettlementSchedule),
 		DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(p.DataSourceSpecBinding),
+		InternalCompositePriceConfig:        internalCompositePriceConfig,
 	}
 }
 
 func (p Perps) IntoProto() *vegapb.Perpetual {
+	var scalingFactor *string
+	if p.FundingRateScalingFactor != nil {
+		scalingFactor = ptr.From(p.FundingRateScalingFactor.String())
+	}
+
+	var upperBound *string
+	if p.FundingRateUpperBound != nil {
+		upperBound = ptr.From(p.FundingRateUpperBound.String())
+	}
+
+	var lowerBound *string
+	if p.FundingRateLowerBound != nil {
+		lowerBound = ptr.From(p.FundingRateLowerBound.String())
+	}
+
+	var internalCompositePriceConfig *vega.CompositePriceConfiguration
+	if p.InternalCompositePriceConfig != nil {
+		internalCompositePriceConfig = p.InternalCompositePriceConfig.IntoProto()
+	}
+
 	return &vegapb.Perpetual{
 		SettlementAsset:                     p.SettlementAsset,
 		QuoteName:                           p.QuoteName,
@@ -512,24 +567,29 @@ func (p Perps) IntoProto() *vegapb.Perpetual {
 		InterestRate:                        p.InterestRate.String(),
 		ClampLowerBound:                     p.ClampLowerBound.String(),
 		ClampUpperBound:                     p.ClampUpperBound.String(),
+		FundingRateScalingFactor:            scalingFactor,
+		FundingRateUpperBound:               upperBound,
+		FundingRateLowerBound:               lowerBound,
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+		InternalCompositePriceConfig:        internalCompositePriceConfig,
 	}
 }
 
 func (p Perps) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) marginFundingFactore(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
+		"quoteName(%s) settlementAsset(%s) marginFundingFactore(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) tradingTermination(%s) binding(%s), internalCompositePriceConfig(%s)",
 		p.QuoteName,
 		p.SettlementAsset,
 		p.MarginFundingFactor.String(),
 		p.InterestRate.String(),
 		p.ClampLowerBound.String(),
 		p.ClampUpperBound.String(),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
-		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
-		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
+		stringer.PtrToString(p.DataSourceSpecForSettlementData),
+		stringer.PtrToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.PtrToString(p.DataSourceSpecBinding),
+		stringer.PtrToString(p.InternalCompositePriceConfig),
 	)
 }
 
@@ -760,8 +820,8 @@ func (i Instrument) String() string {
 		i.ID,
 		i.Name,
 		i.Code,
-		stringer.ReflectPointerToString(i.Product),
-		stringer.ReflectPointerToString(i.Metadata),
+		stringer.ObjToString(i.Product),
+		stringer.PtrToString(i.Metadata),
 	)
 }
 
@@ -774,20 +834,38 @@ type ProductData struct {
 }
 
 type PerpetualData struct {
-	FundingRate    string
-	FundingPayment string
-	InternalTWAP   string
-	ExternalTWAP   string
+	FundingRate                    string
+	FundingPayment                 string
+	InternalTWAP                   string
+	ExternalTWAP                   string
+	SeqNum                         uint64
+	StartTime                      int64
+	InternalCompositePrice         *num.Uint
+	NextInternalCompositePriceCalc int64
+	InternalCompositePriceType     CompositePriceType
+	UnderlyingIndexPrice           *num.Uint
+	InternalCompositePriceState    *CompositePriceState
 }
 
 func (p PerpetualData) IntoProto() *vegapb.ProductData {
+	var internalCompositePriceState *vegapb.CompositePriceState
+	if p.InternalCompositePriceState != nil {
+		internalCompositePriceState = p.InternalCompositePriceState.IntoProto()
+	}
 	return &vegapb.ProductData{
 		Data: &vegapb.ProductData_PerpetualData{
 			PerpetualData: &vegapb.PerpetualData{
-				FundingRate:    p.FundingRate,
-				FundingPayment: p.FundingPayment,
-				InternalTwap:   p.InternalTWAP,
-				ExternalTwap:   p.ExternalTWAP,
+				FundingRate:                    p.FundingRate,
+				FundingPayment:                 p.FundingPayment,
+				InternalTwap:                   p.InternalTWAP,
+				ExternalTwap:                   p.ExternalTWAP,
+				SeqNum:                         p.SeqNum,
+				StartTime:                      p.StartTime,
+				InternalCompositePrice:         num.UintToString(p.InternalCompositePrice),
+				NextInternalCompositePriceCalc: p.NextInternalCompositePriceCalc,
+				InternalCompositePriceType:     p.InternalCompositePriceType,
+				InternalCompositePriceState:    internalCompositePriceState,
+				UnderlyingIndexPrice:           num.UintToString(p.UnderlyingIndexPrice),
 			},
 		},
 	}
@@ -824,9 +902,12 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 	LiquidityProviderSLA      []*LiquidityProviderSLA
 
-	NextMTM      int64
-	MarketGrowth num.Decimal
-	ProductData  *ProductData
+	NextMTM        int64
+	MarketGrowth   num.Decimal
+	ProductData    *ProductData
+	NextNetClose   int64
+	MarkPriceType  CompositePriceType
+	MarkPriceState *CompositePriceState
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -857,11 +938,16 @@ func (m MarketData) DeepClone() *MarketData {
 		lpsla = append(lpsla, proto.Clone(sla).(*LiquidityProviderSLA))
 	}
 	cpy.LiquidityProviderSLA = lpsla
-
+	cpy.MarkPriceState = m.MarkPriceState.DeepClone()
 	return &cpy
 }
 
 func (m MarketData) IntoProto() *vegapb.MarketData {
+	var markPriceState *vegapb.CompositePriceState
+	if m.MarkPriceState != nil {
+		markPriceState = m.MarkPriceState.IntoProto()
+	}
+
 	r := &vegapb.MarketData{
 		MarkPrice:                 num.UintToString(m.MarkPrice),
 		LastTradedPrice:           num.UintToString(m.LastTradedPrice),
@@ -894,6 +980,9 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 		LiquidityProviderSla:      make([]*vegapb.LiquidityProviderSLA, 0, len(m.LiquidityProviderSLA)),
 		NextMarkToMarket:          m.NextMTM,
 		MarketGrowth:              m.MarketGrowth.String(),
+		NextNetworkCloseout:       m.NextNetClose,
+		MarkPriceType:             m.MarkPriceType,
+		MarkPriceState:            markPriceState,
 	}
 
 	for _, pmb := range m.PriceMonitoringBounds {
@@ -915,25 +1004,25 @@ func (m MarketData) IntoProto() *vegapb.MarketData {
 
 func (m MarketData) String() string {
 	return fmt.Sprintf(
-		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v)",
-		stringer.UintPointerToString(m.MarkPrice),
-		stringer.UintPointerToString(m.LastTradedPrice),
+		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) liquidityProviderSLA(%v) nextMTM(%v) marketGrowth(%v) NextNetworkCloseout(%v)",
+		stringer.PtrToString(m.MarkPrice),
+		stringer.PtrToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
 		m.BestBidVolume,
-		stringer.UintPointerToString(m.BestOfferPrice),
+		stringer.PtrToString(m.BestOfferPrice),
 		m.BestOfferVolume,
-		stringer.UintPointerToString(m.BestStaticBidPrice),
+		stringer.PtrToString(m.BestStaticBidPrice),
 		m.BestStaticBidVolume,
-		stringer.UintPointerToString(m.BestStaticOfferPrice),
+		stringer.PtrToString(m.BestStaticOfferPrice),
 		m.BestStaticOfferVolume,
-		stringer.UintPointerToString(m.MidPrice),
-		stringer.UintPointerToString(m.StaticMidPrice),
+		stringer.PtrToString(m.MidPrice),
+		stringer.PtrToString(m.StaticMidPrice),
 		m.Market,
 		m.Timestamp,
 		m.OpenInterest,
 		m.AuctionEnd,
 		m.AuctionStart,
-		stringer.UintPointerToString(m.IndicativePrice),
+		stringer.PtrToString(m.IndicativePrice),
 		m.IndicativeVolume,
 		m.MarketTradingMode.String(),
 		m.MarketState.String(),
@@ -947,6 +1036,7 @@ func (m MarketData) String() string {
 		LiquidityProviderSLAs(m.LiquidityProviderSLA).String(),
 		m.NextMTM,
 		m.MarketGrowth,
+		m.NextNetClose,
 	)
 }
 
@@ -975,11 +1065,13 @@ type Market struct {
 	// since they are only applied at the end of the epoch
 	LiquiditySLAParams *LiquiditySLAParams
 
-	TradingMode           MarketTradingMode
-	State                 MarketState
-	MarketTimestamps      *MarketTimestamps
-	ParentMarketID        string
-	InsurancePoolFraction num.Decimal
+	TradingMode            MarketTradingMode
+	State                  MarketState
+	MarketTimestamps       *MarketTimestamps
+	ParentMarketID         string
+	InsurancePoolFraction  num.Decimal
+	LiquidationStrategy    *LiquidationStrategy
+	MarkPriceConfiguration *CompositePriceConfiguration
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
@@ -997,6 +1089,27 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 	parent := ""
 	if mkt.ParentMarketId != nil {
 		parent = *mkt.ParentMarketId
+	}
+	var ls *LiquidationStrategy
+	if mkt.LiquidationStrategy != nil {
+		if ls, err = LiquidationStrategyFromProto(mkt.LiquidationStrategy); err != nil {
+			return nil, err
+		}
+	}
+
+	var markPriceConfiguration *CompositePriceConfiguration
+	if mkt.MarkPriceConfiguration != nil {
+		markPriceConfiguration = CompositePriceConfigurationFromProto(mkt.MarkPriceConfiguration)
+	} else {
+		// for existing markets set the mark price method to last trade so that there is no change from current methodology
+		markPriceConfiguration = &CompositePriceConfiguration{
+			DecayWeight:              num.DecimalZero(),
+			DecayPower:               num.DecimalZero(),
+			CashAmount:               num.UintZero(),
+			CompositePriceType:       CompositePriceTypeByLastTrade,
+			SourceWeights:            []num.Decimal{},
+			SourceStalenessTolerance: []time.Duration{},
+		}
 	}
 
 	m := &Market{
@@ -1016,6 +1129,8 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
 		ParentMarketID:                parent,
 		InsurancePoolFraction:         insFraction,
+		LiquidationStrategy:           ls,
+		MarkPriceConfiguration:        markPriceConfiguration,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1063,6 +1178,10 @@ func (m Market) IntoProto() *vegapb.Market {
 	if m.LiquiditySLAParams != nil {
 		lpSLA = m.LiquiditySLAParams.IntoProto()
 	}
+	var lstrat *vegapb.LiquidationStrategy
+	if m.LiquidationStrategy != nil {
+		lstrat = m.LiquidationStrategy.IntoProto()
+	}
 
 	r := &vegapb.Market{
 		Id:                            m.ID,
@@ -1081,6 +1200,8 @@ func (m Market) IntoProto() *vegapb.Market {
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
 		InsurancePoolFraction:         insPoolFrac,
 		ParentMarketId:                parent,
+		LiquidationStrategy:           lstrat,
+		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
 	}
 	return r
 }
@@ -1093,16 +1214,16 @@ func (m Market) String() string {
 	return fmt.Sprintf(
 		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s)",
 		m.ID,
-		stringer.ReflectPointerToString(m.TradableInstrument),
+		stringer.PtrToString(m.TradableInstrument),
 		m.DecimalPlaces,
 		m.PositionDecimalPlaces,
-		stringer.ReflectPointerToString(m.Fees),
-		stringer.ReflectPointerToString(m.OpeningAuction),
-		stringer.ReflectPointerToString(m.PriceMonitoringSettings),
-		stringer.ReflectPointerToString(m.LiquidityMonitoringParameters),
+		stringer.PtrToString(m.Fees),
+		stringer.PtrToString(m.OpeningAuction),
+		stringer.PtrToString(m.PriceMonitoringSettings),
+		stringer.PtrToString(m.LiquidityMonitoringParameters),
 		m.TradingMode.String(),
 		m.State.String(),
-		stringer.ReflectPointerToString(m.MarketTimestamps),
+		stringer.PtrToString(m.MarketTimestamps),
 	)
 }
 
@@ -1164,6 +1285,12 @@ func (m Market) DeepClone() *Market {
 	if m.MarketTimestamps != nil {
 		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
 	}
+	if m.LiquidationStrategy != nil {
+		cpy.LiquidationStrategy = m.LiquidationStrategy.DeepClone()
+	}
+	if m.MarkPriceConfiguration != nil {
+		cpy.MarkPriceConfiguration = m.MarkPriceConfiguration.DeepClone()
+	}
 	return cpy
 }
 
@@ -1181,3 +1308,16 @@ type MarketCounters struct {
 	PositionCount       uint64
 	OrderbookLevelCount uint64
 }
+
+type CompositePriceType = vegapb.CompositePriceType
+
+const (
+	// Default value, this is invalid.
+	CompositePriceTypeUnspecified CompositePriceType = vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED
+	// Mark price calculated as the weighted average of underlying mark prices.
+	CompositePriceTypeByWeight CompositePriceType = vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED
+	// Mark price calculated as the median of underlying mark prices.
+	CompositePriceTypeByMedian CompositePriceType = vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN
+	// Mark price calculated as the last trade price.
+	CompositePriceTypeByLastTrade CompositePriceType = vegapb.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE
+)

@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,7 @@ package tm
 import (
 	"encoding/base64"
 
-	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	tmcrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 )
 
 func PubKeyToString(pubKey tmcrypto.PublicKey) string {

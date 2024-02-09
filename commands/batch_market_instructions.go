@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -36,7 +36,8 @@ func checkBatchMarketInstructions(cmd *commandspb.BatchMarketInstructions) Error
 		len(cmd.Amendments)+
 		len(cmd.Submissions)+
 		len(cmd.StopOrdersSubmission)+
-		len(cmd.StopOrdersCancellation) == 0 {
+		len(cmd.StopOrdersCancellation)+
+		len(cmd.UpdateMarginMode) == 0 {
 		return errs.FinalAddForProperty("batch_market_instructions", ErrEmptyBatchMarketInstructions)
 	}
 

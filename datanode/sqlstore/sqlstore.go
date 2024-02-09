@@ -13,19 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
@@ -37,21 +24,18 @@ import (
 	"io/fs"
 	"time"
 
-	"go.uber.org/zap"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
-
-	"github.com/jackc/pgx/v4/pgxpool"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pkg/errors"
 	"github.com/pressly/goose/v3"
 	"github.com/shopspring/decimal"
-
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
+	"go.uber.org/zap"
 )
 
 var ErrBadID = errors.New("bad id (must be hex string)")
@@ -77,9 +61,14 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
 		{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
 		{HypertableOrCaggName: "trades_candle_15_minutes", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "trades_candle_30_minutes", DataRetentionPeriod: "2 months"},
 		{HypertableOrCaggName: "trades_candle_1_hour", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_4_hours", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "trades_candle_6_hours", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_8_hours", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_12_hours", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "trades_candle_1_day", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "trades_candle_7_days", DataRetentionPeriod: "10 years"},
 		{HypertableOrCaggName: "market_data", DataRetentionPeriod: "7 days"},
 		{HypertableOrCaggName: "margin_levels", DataRetentionPeriod: "7 days"},
 		{HypertableOrCaggName: "conflated_margin_levels", DataRetentionPeriod: "1 year"},
@@ -107,6 +96,9 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "party_locked_balances", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "party_vesting_balances", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "party_vesting_stats", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "fees_stats_by_party", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "paid_liquidity_fees", DataRetentionPeriod: "1 year"},
+		{HypertableOrCaggName: "transfer_fees_discount", DataRetentionPeriod: "1 year"},
 	},
 	RetentionPeriodArchive: {
 		{HypertableOrCaggName: "*", DataRetentionPeriod: string(RetentionPeriodArchive)},
@@ -391,10 +383,10 @@ const oneDayAsSeconds = 60 * 60 * 24
 func getRetentionEntities(db *sql.DB) ([]string, error) {
 	rows, err := db.Query(`
 select view_name as table_name
-from timescaledb_information.continuous_aggregates
+from timescaledb_information.continuous_aggregates WHERE hypertable_schema='public'
 union all
 select hypertable_name
-from timescaledb_information.hypertables
+from timescaledb_information.hypertables WHERE hypertable_schema='public';
 `)
 	if err != nil {
 		return nil, err

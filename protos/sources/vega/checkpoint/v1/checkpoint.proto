@@ -208,6 +208,7 @@ message MultisigControl {
 message MarketTracker {
   repeated MarketActivityTracker market_activity = 1;
   repeated TakerNotionalVolume taker_notional_volume = 2;
+  repeated MarketToPartyTakerNotionalVolume market_to_party_taker_notional_volume = 3;
 }
 
 message MarketActivityTracker {
@@ -259,6 +260,11 @@ message EpochPartyFees {
 message TakerNotionalVolume {
   string party = 1;
   bytes volume = 2;
+}
+
+message MarketToPartyTakerNotionalVolume {
+  string market = 1;
+  repeated TakerNotionalVolume taker_notional_volume = 2;
 }
 
 message EpochReturnsData {

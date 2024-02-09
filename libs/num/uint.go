@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -16,8 +16,11 @@
 package num
 
 import (
+	"database/sql/driver"
+	"errors"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"github.com/holiman/uint256"
 )
@@ -140,6 +143,52 @@ func UintFromUint64(ui uint64) *Uint {
 	}
 	u.u.SetUint64(ui)
 	return u
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (u *Uint) UnmarshalJSON(numericBytes []byte) error {
+	if string(numericBytes) == "null" {
+		return nil
+	}
+
+	str, err := unquoteIfQuoted(numericBytes)
+	if err != nil {
+		return fmt.Errorf("error decoding string '%s': %s", numericBytes, err)
+	}
+
+	numeric, overflown := UintFromString(str, 10)
+	if overflown {
+		return errors.New("overflowing value")
+	}
+	*u = *numeric
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (u Uint) MarshalJSON() ([]byte, error) {
+	return []byte(u.String()), nil
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface. As a string representation
+// is already used when encoding to text, this method stores that string as []byte.
+func (u *Uint) UnmarshalBinary(data []byte) error {
+	u.u.SetBytes(data)
+	return nil
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (u Uint) MarshalBinary() (data []byte, err error) {
+	return u.u.Bytes(), nil
+}
+
+// Scan implements the sql.Scanner interface for database deserialization.
+func (u *Uint) Scan(value interface{}) error {
+	return u.u.Scan(value)
+}
+
+// Value implements the driver.Valuer interface for database serialization.
+func (u Uint) Value() (driver.Value, error) {
+	return u.String(), nil
 }
 
 // ToDecimal returns the value of the Uint as a Decimal.
@@ -483,4 +532,50 @@ func UintToString(u *Uint) string {
 		return u.String()
 	}
 	return "0"
+}
+
+// Median calculates the median of the slice of uints.
+// it is assumed that no nils are allowed, no zeros are allowed.
+func Median(nums []*Uint) *Uint {
+	if nums == nil {
+		return nil
+	}
+	numsCopy := make([]*Uint, 0, len(nums))
+	for _, u := range nums {
+		if u != nil && !u.IsZero() {
+			numsCopy = append(numsCopy, u.Clone())
+		}
+	}
+	sort.Slice(numsCopy, func(i, j int) bool {
+		return numsCopy[i].LT(numsCopy[j])
+	})
+	if len(numsCopy) == 0 {
+		return nil
+	}
+
+	mid := len(numsCopy) / 2
+	if len(numsCopy)%2 == 1 {
+		return numsCopy[mid]
+	}
+	return UintZero().Div(Sum(numsCopy[mid], numsCopy[mid-1]), NewUint(2))
+}
+
+func unquoteIfQuoted(value interface{}) (string, error) {
+	var bytes []byte
+
+	switch v := value.(type) {
+	case string:
+		bytes = []byte(v)
+	case []byte:
+		bytes = v
+	default:
+		return "", fmt.Errorf("could not convert value '%+v' to byte array of type '%T'",
+			value, value)
+	}
+
+	// If the amount is quoted, strip the quotes
+	if len(bytes) > 2 && bytes[0] == '"' && bytes[len(bytes)-1] == '"' {
+		bytes = bytes[1 : len(bytes)-1]
+	}
+	return string(bytes), nil
 }

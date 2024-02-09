@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -84,6 +85,7 @@ func testCreatingTeamSucceeds(t *testing.T) {
 					TeamUrl:   ptr.From(vgrand.RandomStr(5)),
 					AvatarUrl: ptr.From(vgrand.RandomStr(5)),
 					Closed:    true,
+					AllowList: []string{vgrand.RandomStr(5), vgrand.RandomStr(5)},
 				},
 			},
 		},
@@ -91,11 +93,7 @@ func testCreatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			if !tc.cmd.IsTeam {
-				require.Empty(tt, checkCreateReferralSet(tt, tc.cmd), tc.name)
-			} else {
-				require.Contains(tt, checkCreateReferralSet(tt, tc.cmd).Get("create_referral_set.team"), commands.ErrIsNotSupported, tc.name)
-			}
+			require.Empty(tt, checkCreateReferralSet(tt, tc.cmd), tc.name)
 		})
 	}
 }
@@ -141,6 +139,16 @@ func testCreateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("create_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkCreateReferralSet(t, &commandspb.CreateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.CreateReferralSet_Team{
+			Closed:    false,
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("create_referral_set.team.allow_list"), commands.ErrCannotSetAllowListWhenTeamIsOpened)
 }
 
 func checkCreateReferralSet(t *testing.T, cmd *commandspb.CreateReferralSet) commands.Errors {

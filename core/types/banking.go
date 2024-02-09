@@ -142,7 +142,7 @@ func GovernanceTransferFromProto(g *checkpointpb.GovernanceTransfer) *Governance
 	}
 }
 
-func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason *string) *eventspb.Transfer {
+func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason, gameID *string) *eventspb.Transfer {
 	// Not sure if this symbology gonna work for datanode
 	from := "0000000000000000000000000000000000000000000000000000000000000000"
 	if len(g.Config.Source) > 0 {
@@ -165,6 +165,7 @@ func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason *string) *events
 		Status:          g.Status,
 		Timestamp:       g.Timestamp.UnixNano(),
 		Reason:          reason,
+		GameId:          gameID,
 	}
 
 	if g.Config.OneOffTransferConfig != nil {
@@ -291,7 +292,7 @@ func (r *RecurringTransfer) IsValid() error {
 	return nil
 }
 
-func (r *RecurringTransfer) IntoEvent(reason *string) *eventspb.Transfer {
+func (r *RecurringTransfer) IntoEvent(reason *string, gameID *string) *eventspb.Transfer {
 	var endEpoch *uint64
 	if r.EndEpoch != nil {
 		endEpoch = toPtr(*r.EndEpoch)
@@ -309,6 +310,7 @@ func (r *RecurringTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 		Status:          r.Status,
 		Timestamp:       r.Timestamp.UnixNano(),
 		Reason:          reason,
+		GameId:          gameID,
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
 				StartEpoch:       r.StartEpoch,
@@ -343,12 +345,12 @@ func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFu
 	}
 }
 
-func (t *TransferFunds) IntoEvent(reason *string) *eventspb.Transfer {
+func (t *TransferFunds) IntoEvent(reason, gameID *string) *eventspb.Transfer {
 	switch t.Kind {
 	case TransferCommandKindOneOff:
 		return t.OneOff.IntoEvent(reason)
 	case TransferCommandKindRecurring:
-		return t.Recurring.IntoEvent(reason)
+		return t.Recurring.IntoEvent(reason, gameID)
 	default:
 		panic("invalid transfer kind")
 	}

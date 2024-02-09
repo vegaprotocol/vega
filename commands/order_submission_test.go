@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -17,12 +17,14 @@ package commands_test
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/test"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +39,7 @@ func TestCheckOrderSubmission(t *testing.T) {
 	t.Run("Submitting an order with NETWORK type fails", testOrderSubmissionWithNetworkTypeFails)
 	t.Run("Submitting an order with undefined time in force fails", testOrderSubmissionWithUndefinedTimeInForceFails)
 	t.Run("Submitting an order with unspecified time in force fails", testOrderSubmissionWithUnspecifiedTimeInForceFails)
-	t.Run("Submitting an order with non-positive size fails", testOrderSubmissionWithNonPositiveSizeFails)
+	t.Run("Submitting an order with non-positive size fails", testOrderSubmissionWithInvalidSizeFails)
 	t.Run("Submitting an order with GTT and non-positive expiration date fails", testOrderSubmissionWithGTTAndNonPositiveExpirationDateFails)
 	t.Run("Submitting an order without GTT and expiration date fails", testOrderSubmissionWithoutGTTAndExpirationDateFails)
 	t.Run("Submitting an order with MARKET type and price fails", testOrderSubmissionWithMarketTypeAndPriceFails)
@@ -319,7 +321,7 @@ func testOrderSubmissionWithUndefinedTimeInForceFails(t *testing.T) {
 	assert.Contains(t, err.Get("order_submission.time_in_force"), commands.ErrIsNotValid)
 }
 
-func testOrderSubmissionWithNonPositiveSizeFails(t *testing.T) {
+func testOrderSubmissionWithInvalidSizeFails(t *testing.T) {
 	// FIXME(big int) doesn't test negative numbers since it's an unsigned int
 	// 	but that will definitely be needed when moving to big int.
 	err := checkOrderSubmission(&commandspb.OrderSubmission{
@@ -327,6 +329,11 @@ func testOrderSubmissionWithNonPositiveSizeFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("order_submission.size"), commands.ErrMustBePositive)
+
+	err = checkOrderSubmission(&commandspb.OrderSubmission{
+		Size: math.MaxInt64,
+	})
+	assert.Contains(t, err.Get("order_submission.size"), commands.ErrSizeIsTooLarge)
 }
 
 func testOrderSubmissionWithGTTAndNonPositiveExpirationDateFails(t *testing.T) {

@@ -56,7 +56,6 @@ disable = [
     "varnamelen",
     "wrapcheck",
     "wsl",
-
     ## New linters, disabled until we evaluate if we want them
     "wastedassign",
     "nakedret",
@@ -68,9 +67,15 @@ disable = [
     "depguard",
     "revive",
 
+    ## new with 1.55.2, need to evaluate
+    "testifylint",
+    "inamedparam",
+    "perfsprint",
+    "typecheck",
+    "protogetter",
+
     ## Disabled on-pupose.
     "exhaustruct", # We often make incomplete structs.
-    "gci", # Doesn't match our code style.
     "lll", # We don't have a line length.
     "nlreturn", # Doesn't match our code style.
     "nonamedreturns", # We don't mind named returns.
@@ -89,6 +94,33 @@ disable = [
 [linters-settings.govet]
 enable = [
     # "fieldalignment", to enable one day
+]
+
+[linters-settings.goheader]
+template = """
+Copyright (C) 2023 Gobalsky Labs Limited
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>."""
+
+[linters-settings.gci]
+custom-order = true
+sections = [
+    "standard", # Standard section: captures all standard packages.
+    "prefix(code.vegaprotocol.io/vega)", # Custom section: groups all imports with the specified Prefix.
+    "default", # Default section: contains all imports that could not be matched to another section type.
+    "blank", # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+    "dot",
 ]
 
 [[issues.exclude-rules]]

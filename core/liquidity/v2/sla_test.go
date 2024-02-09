@@ -22,17 +22,17 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
+	mmocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-
-	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
-	mmocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
 )
 
 const partyID = "lp-party-1"

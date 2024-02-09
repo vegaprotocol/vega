@@ -21,10 +21,9 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/libs/broker"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/broker"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -234,6 +233,21 @@ func (b *BrokerStub) GetLossSocializationEvents() []events.LossSocialization {
 	return typed
 }
 
+func (b *BrokerStub) GetLossSoc() []*events.LossSoc {
+	evts := b.GetImmBatch(events.LossSocializationEvent)
+	typed := make([]*events.LossSoc, 0, len(evts))
+	for _, e := range evts {
+		switch le := e.(type) {
+		case events.LossSoc:
+			cpy := le
+			typed = append(typed, &cpy)
+		case *events.LossSoc:
+			typed = append(typed, le)
+		}
+	}
+	return typed
+}
+
 func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
 	b.data = map[events.Type][]events.Event{}
@@ -244,6 +258,13 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 	b.mu.Lock()
 	cs := make([]events.Event, 0, len(b.data[events.LedgerMovementsEvent]))
 	b.data[events.LedgerMovementsEvent] = cs
+	b.mu.Unlock()
+}
+
+func (b *BrokerStub) ClearTradeEvents() {
+	b.mu.Lock()
+	te := make([]events.Event, 0, len(b.data[events.TradeEvent]))
+	b.data[events.TradeEvent] = te
 	b.mu.Unlock()
 }
 
@@ -413,6 +434,29 @@ func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *vegapb.Market {
 		}
 	}
 	return r
+}
+
+func (b *BrokerStub) GetMarkPriceSettings(marketID string) *vegapb.CompositePriceConfiguration {
+	batch := b.GetBatch(events.MarketUpdatedEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	var r *vegapb.Market
+	for _, evt := range batch {
+		switch me := evt.(type) {
+		case *events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		case events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		}
+	}
+	return r.MarkPriceConfiguration
 }
 
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []vegapb.Order {
@@ -817,6 +861,17 @@ func (b *BrokerStub) GetMarketInfrastructureFeePoolAccount(asset string) (vegapb
 	return vegapb.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetPartyOrderMarginAccount(party, market string) (vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_ORDER_MARGIN && v.MarketId == market {
+			return v, nil
+		}
+	}
+	return vegapb.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetPartyMarginAccount(party, market string) (vegapb.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
@@ -840,16 +895,21 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (vegapb.Account, 
 }
 
 // GetPartyGeneralAccount returns the latest event WRT the party's general account.
-func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (vegapb.Account, error) {
+func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
+	foundOne := false
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == party && v.Type == vegapb.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return v, nil
+			ga = v
+			foundOne = true
 		}
 	}
-
-	return vegapb.Account{}, errors.New("account does not exist")
+	if !foundOne {
+		ga = vegapb.Account{}
+		err = errors.New("account does not exist")
+	}
+	return
 }
 
 // GetPartyVestingAccount returns the latest event WRT the party's general account.

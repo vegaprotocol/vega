@@ -21,10 +21,18 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -205,6 +213,13 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
 	require.Nil(t, err)
 
+	// vote on it even though its in waiting-for-node-vote-state
+	voter1 := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voter1, 1)
+	eng.expectVoteEvent(t, voter1, proposal.ID)
+	err = eng.addYesVote(t, voter1, proposal.ID)
+	require.NoError(t, err)
+
 	// get snapshot state for node proposals and hope its changed
 	s1, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
@@ -214,7 +229,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	state, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 
-	snap := &snapshot.Payload{}
+	snap := &snapshotpb.Payload{}
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
@@ -235,6 +250,13 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	s2, _, err := snapEng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s1, s2))
+
+	// check the vote still exists
+	err = proto.Unmarshal(s2, snap)
+	require.Nil(t, err)
+	pp := types.PayloadFromProto(snap)
+	dd := pp.Data.(*types.PayloadGovernanceNode)
+	assert.Equal(t, 1, len(dd.GovernanceNode.ProposalData[0].Yes))
 }
 
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
@@ -276,7 +298,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	state, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
-	snap := &snapshot.Payload{}
+	snap := &snapshotpb.Payload{}
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
@@ -328,7 +350,7 @@ func TestGovernanceWithInternalTimeTerminationSnapshotRoundTrip(t *testing.T) {
 	state, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
-	snap := &snapshot.Payload{}
+	snap := &snapshotpb.Payload{}
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
@@ -357,4 +379,117 @@ func TestGovernanceSnapshotEmpty(t *testing.T) {
 	s, _, err = eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 	require.NotNil(t, s)
+}
+
+func TestGovernanceSnapshotBatchProposals(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+
+	log := logging.NewTestLogger()
+
+	vegaPath := paths.New(t.TempDir())
+
+	now := time.Now()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+
+	statsData := stats.New(log, stats.NewDefaultConfig())
+
+	// Create the engines
+	govEngine1 := getTestEngine(t, now)
+
+	snapshotEngine1, err := snapshot.NewEngine(vegaPath, snapshot.DefaultConfig(), log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+
+	closeSnapshotEngine1 := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer closeSnapshotEngine1()
+
+	snapshotEngine1.AddProviders(govEngine1)
+
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	batchProposalID1 := "batch-1"
+	party := govEngine1.newValidParty("a-valid-party", 123456789)
+	govEngine1.ensureAllAssetEnabled(t)
+
+	govEngine1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	govEngine1.expectOpenProposalEvent(t, party.Id, batchProposalID1)
+
+	proposalNow := govEngine1.tsvc.GetTimeNow().Add(2 * time.Hour)
+
+	sub1 := govEngine1.newBatchSubmission(
+		proposalNow.Add(48*time.Hour).Unix(),
+		govEngine1.newProposalForNewMarket(party.Id, proposalNow, nil, nil, true),
+		govEngine1.newProposalForNetParam(party.Id, netparams.MarketAuctionMaximumDuration, "10h", now),
+	)
+	_, err = govEngine1.SubmitBatchProposal(ctx, sub1, batchProposalID1, party.Id)
+	require.NoError(t, err)
+
+	batchProposalID2 := "batch-2"
+	govEngine1.expectOpenProposalEvent(t, party.Id, batchProposalID2)
+
+	sub2 := govEngine1.newBatchSubmission(
+		proposalNow.Add(49*time.Hour).Unix(),
+		govEngine1.newProposalForNewMarket(party.Id, now, nil, nil, true),
+		govEngine1.newProposalForNetParam(party.Id, netparams.MarketAuctionMaximumDuration, "10h", now),
+	)
+	_, err = govEngine1.SubmitBatchProposal(ctx, sub2, batchProposalID2, party.Id)
+	require.NoError(t, err)
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
+	require.NoError(t, err)
+
+	batchProposalID3 := "batch-3"
+	govEngine1.expectOpenProposalEvent(t, party.Id, batchProposalID3)
+
+	sub3 := govEngine1.newBatchSubmission(
+		proposalNow.Add(50*time.Hour).Unix(),
+		govEngine1.newProposalForNewMarket(party.Id, now, nil, nil, true),
+		govEngine1.newProposalForNetParam(party.Id, netparams.MarketAuctionMaximumDuration, "10h", now),
+	)
+	_, err = govEngine1.SubmitBatchProposal(ctx, sub3, batchProposalID3, party.Id)
+	require.NoError(t, err)
+
+	state1 := map[string][]byte{}
+	for _, key := range govEngine1.Keys() {
+		state, additionalProvider, err := govEngine1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	closeSnapshotEngine1()
+
+	// Create the engines
+	govEngine2 := getTestEngine(t, now)
+	snapshotEngine2, err := snapshot.NewEngine(vegaPath, snapshot.DefaultConfig(), log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	defer snapshotEngine2.Close()
+
+	snapshotEngine2.AddProviders(govEngine2.Engine)
+
+	govEngine2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	party2 := govEngine2.newValidParty("a-valid-party", 123456789)
+	govEngine2.ensureAllAssetEnabled(t)
+
+	govEngine2.expectOpenProposalEvent(t, party2.Id, batchProposalID3)
+	_, err = govEngine2.SubmitBatchProposal(ctx, sub3, batchProposalID3, party2.Id)
+	require.NoError(t, err)
+
+	state2 := map[string][]byte{}
+	for _, key := range govEngine2.Keys() {
+		state, additionalProvider, err := govEngine2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }

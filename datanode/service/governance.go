@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package service
 
 import (
@@ -38,6 +26,7 @@ import (
 type ProposalStore interface {
 	Add(ctx context.Context, p entities.Proposal) error
 	GetByID(ctx context.Context, id string) (entities.Proposal, error)
+	GetByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error)
 	GetByReference(ctx context.Context, ref string) (entities.Proposal, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error)
 	Get(ctx context.Context, inState *entities.ProposalState, partyIDStr *string, proposalType *entities.ProposalType,
@@ -86,6 +75,10 @@ func (g *Governance) AddProposal(ctx context.Context, p entities.Proposal) error
 
 func (g *Governance) GetProposalByID(ctx context.Context, id string) (entities.Proposal, error) {
 	return g.pStore.GetByID(ctx, id)
+}
+
+func (g *Governance) GetProposalByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error) {
+	return g.pStore.GetByIDWithoutBatch(ctx, id)
 }
 
 func (g *Governance) GetProposalsByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error) {

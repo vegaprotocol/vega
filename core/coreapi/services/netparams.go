@@ -35,6 +35,7 @@ type NetParams struct {
 
 	mu        sync.RWMutex
 	netParams map[string]vegapb.NetworkParameter
+	isClosed  bool
 	ch        chan vegapb.NetworkParameter
 }
 
@@ -49,13 +50,28 @@ func NewNetParams(ctx context.Context) (netParams *NetParams) {
 }
 
 func (a *NetParams) consume() {
-	defer func() { close(a.ch) }()
+	defer func() {
+		// clear the channel before we close it
+		// can't use a WaitGroup as suggested because if we get to this point
+		// if the Push is still in progress and the queue is full, we'll
+		// end up in a situation where we're waiting for the queue to empty, but
+		// no consumer.
+		for range a.ch {
+			// do nothing just let the sender finish what it's doing and empty the channel
+		}
+
+		close(a.ch)
+	}()
+
 	for {
 		select {
 		case <-a.Closed():
+			a.mu.Lock()
+			a.isClosed = true
+			a.mu.Unlock()
 			return
 		case netParams, ok := <-a.ch:
-			if !ok {
+			if !ok || a.isClosed {
 				// cleanup base
 				a.Halt()
 				// channel is closed
@@ -71,6 +87,12 @@ func (a *NetParams) consume() {
 func (a *NetParams) Push(evts ...events.Event) {
 	for _, e := range evts {
 		if ae, ok := e.(netParamsE); ok {
+			a.mu.Lock()
+			if a.isClosed {
+				a.mu.Unlock()
+				return
+			}
+			a.mu.Unlock()
 			a.ch <- ae.NetworkParameter()
 		}
 	}

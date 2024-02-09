@@ -55,10 +55,8 @@ type AuctionState interface {
 	InAuction() bool
 	// What type of auction are we dealing with
 	IsOpeningAuction() bool
-	IsLiquidityAuction() bool
 	IsPriceAuction() bool
 	IsPriceExtension() bool
-	IsLiquidityExtension() bool
 	IsFBA() bool
 	// is it the start/end of the auction
 	CanLeave() bool
@@ -509,7 +507,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 }
 
 func (e *Engine) monitoringAuction() bool {
-	return e.auctionState.IsLiquidityAuction() || e.auctionState.IsPriceAuction()
+	return e.auctionState.IsPriceAuction()
 }
 
 // clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.

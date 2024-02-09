@@ -18,9 +18,9 @@ package defaults
 import (
 	"io"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/golang/protobuf/jsonpb"
 )
 
 type Unmarshaler struct {
@@ -100,6 +100,14 @@ func (u *Unmarshaler) UnmarshalFeesConfig(r io.Reader) (*vegapb.Fees, error) {
 	proto := &vegapb.Fees{}
 	err := u.unmarshaler.Unmarshal(r, proto)
 	if err != nil {
+		return nil, err
+	}
+	return proto, nil
+}
+
+func (u *Unmarshaler) UnmarshalLiquidationConfig(r io.Reader) (*vegapb.LiquidationStrategy, error) {
+	proto := &vegapb.LiquidationStrategy{}
+	if err := u.unmarshaler.Unmarshal(r, proto); err != nil {
 		return nil, err
 	}
 	return proto, nil

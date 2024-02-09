@@ -19,10 +19,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 type VolumeDiscountPrograms struct {

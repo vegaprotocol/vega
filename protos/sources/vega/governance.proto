@@ -53,6 +53,14 @@ message PerpetualProduct {
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 8;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToPerpetualBinding data_source_spec_binding = 9;
+  // Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments.
+  optional string funding_rate_scaling_factor = 10;
+  // Lower bound for the funding-rate such that the funding-rate will never be lower than this value.
+  optional string funding_rate_lower_bound = 11;
+  // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
+  optional string funding_rate_upper_bound = 12;
+  // Composite price configuration to drive the calculation of the internal composite price used for funding payments. If undefined the default mark price of the market is used.
+  optional CompositePriceConfiguration internal_composite_price_configuration = 13;
 }
 
 // Instrument configuration
@@ -95,6 +103,8 @@ message NewSpotMarketConfiguration {
   int64 position_decimal_places = 6;
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 7;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 8;
 }
 
 // Configuration for a new futures market on Vega
@@ -125,11 +135,17 @@ message NewMarketConfiguration {
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 9;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
-  string quadratic_slippage_factor = 10;
+  string quadratic_slippage_factor = 10 [deprecated = true];
   // Successor configuration. If this proposal is meant to succeed a given market, then this should be set.
   optional SuccessorConfiguration successor = 11;
   // Liquidity SLA parameters
   LiquiditySLAParameters liquidity_sla_parameters = 12;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 13;
+  // Liquidation strategy for this market.
+  LiquidationStrategy liquidation_strategy = 14;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 15;
 }
 
 // New spot market on Vega
@@ -192,9 +208,15 @@ message UpdateMarketConfiguration {
   // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
-  string quadratic_slippage_factor = 7;
+  string quadratic_slippage_factor = 7 [deprecated = true];
   // Liquidity SLA parameters
   LiquiditySLAParameters liquidity_sla_parameters = 8;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 9;
+  // Liquidation strategy parameters
+  LiquidationStrategy liquidation_strategy = 10;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 11;
 }
 
 // Configuration to update a spot market on Vega
@@ -214,12 +236,16 @@ message UpdateSpotMarketConfiguration {
   }
   // Specifies the liquidity provision SLA parameters.
   LiquiditySLAParameters sla_params = 4;
+  // Specifies how the liquidity fee for the market will be calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 5;
 }
 
 // Instrument configuration
 message UpdateInstrumentConfiguration {
   // Instrument code, human-readable shortcode used to describe the instrument.
   string code = 1;
+  // Instrument name
+  string name = 2;
   // Product specification.
   oneof product {
     // Future.
@@ -259,6 +285,14 @@ message UpdatePerpetualProduct {
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 7;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToPerpetualBinding data_source_spec_binding = 8;
+  // Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments.
+  optional string funding_rate_scaling_factor = 9;
+  // Lower bound for the funding-rate such that the funding-rate will never be lower than this value.
+  optional string funding_rate_lower_bound = 10;
+  // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
+  optional string funding_rate_upper_bound = 11;
+  // Configuration for the internal composite price used in funding payment calculation.
+  optional CompositePriceConfiguration internal_composite_price_configuration = 13;
 }
 
 // Update network configuration on Vega
@@ -328,6 +362,76 @@ message ProposalTerms {
   }
 }
 
+// Terms change for a batch governance proposal
+message BatchProposalTermsChange {
+  // Timestamp as Unix time in seconds when proposal terms gets enacted if proposal passed the vote,
+  // constrained by `minEnact` and `maxEnact` network parameters.
+  int64 enactment_timestamp = 1;
+  // Changes being proposed.
+  oneof change {
+    // Proposal change for modifying an existing futures market.
+    UpdateMarket update_market = 101;
+    // Proposal change for creating new futures market.
+    NewMarket new_market = 102;
+    // Proposal change for updating Vega network parameters.
+    UpdateNetworkParameter update_network_parameter = 103;
+    // Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system,
+    // and can be used to gauge community sentiment.
+    NewFreeform new_freeform = 104;
+    // Proposal change for updating an asset.
+    UpdateAsset update_asset = 105;
+    // Proposal change for creating new spot market.
+    NewSpotMarket new_spot_market = 106;
+    // Proposal change for modifying an existing spot market.
+    UpdateSpotMarket update_spot_market = 107;
+    // Proposal change for a governance initiated transfer.
+    NewTransfer new_transfer = 108;
+    // Proposal change to cancel a governance initiated transfe.
+    CancelTransfer cancel_transfer = 109;
+    // Proposal change for updating the state of a market.
+    UpdateMarketState update_market_state = 110;
+    // Proposal change for updating the referral program.
+    UpdateReferralProgram update_referral_program = 111;
+    // Proposal change for updating the volume discount program.
+    UpdateVolumeDiscountProgram update_volume_discount_program = 112;
+  }
+}
+
+message ProposalParameters {
+  // Represents the minimum time before a proposal can be closed for voting.
+  int64 min_close = 1;
+  // Represents the maximum time that a proposal can be open for voting.
+  int64 max_close = 2;
+  // Represents the minimum time before an enacted proposal takes effect.
+  int64 min_enact = 3;
+  // Represents the maximum time before an enacted proposal must take effect.
+  int64 max_enact = 4;
+  // Specifies the required percentage of eligible participants that must partake in the proposal for it to be valid.
+  string required_participation = 5;
+  // Specifies the required percentage of votes a proposal needs to be approved.
+  string required_majority = 6;
+  // Specifies the minimum governance token balance a proposer must hold to initiate a proposal.
+  string min_proposer_balance = 7;
+  // Specifies the minimum governance token balance a voter must hold to participate in voting.
+  string min_voter_balance = 8;
+  // Specifies the required percentage of participation from liquidity providers for the proposal to be valid.
+  string required_participation_lp = 9;
+  // Specifies the required majority percentage from liquidity providers for a proposal to be approved.
+  string required_majority_lp = 10;
+  // Specifies the minimum share that is akin to equity, which a participant must hold for their vote to be eligible.
+  string min_equity_like_share = 11;
+}
+
+// Terms for a batch governance proposal on Vega
+message BatchProposalTerms {
+  // Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
+  int64 closing_timestamp = 1;
+  // Specific parameters defining the proposal's characteristics used for validation.
+  ProposalParameters proposal_params = 2;
+  // List of individual changes included in the batch proposal.
+  repeated BatchProposalTermsChange changes = 3;
+}
+
 // Rationale behind a proposal.
 message ProposalRationale {
   reserved 2, 3;
@@ -343,6 +447,14 @@ message ProposalRationale {
 
 // Governance data
 message GovernanceData {
+  // Proposal type
+  enum Type {
+    // Single proposal only. In case it has not been specified, for example in older proposals, then this is the default.
+    TYPE_SINGLE_OR_UNSPECIFIED = 0;
+    // Proposal contains a batch of proposals or a proposal that should be treated as part of a batch.
+    TYPE_BATCH = 1;
+  }
+
   // Governance proposal that is being voted on.
   Proposal proposal = 1;
   // All YES votes in favour of the proposal above.
@@ -357,6 +469,10 @@ message GovernanceData {
   // where key (string) is the party ID i.e. public key and
   // value (Vote) is the vote cast by the given party.
   map<string, Vote> no_party = 5;
+  // Type of proposal this data is for.
+  Type proposal_type = 6;
+  // If proposal type is batch, proposals will contain all the proposals that are make up the batch.
+  repeated Proposal proposals = 7;
 }
 
 // Governance proposal
@@ -381,7 +497,7 @@ message Proposal {
     STATE_REJECTED = 4;
     // Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
     STATE_DECLINED = 5;
-    // Proposal enacted
+    // Proposal enacted.
     STATE_ENACTED = 6;
     // Waiting for node validation of the proposal
     STATE_WAITING_FOR_NODE_VOTE = 7;
@@ -402,7 +518,8 @@ message Proposal {
   // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
-  ProposalTerms terms = 6;
+  // Single proposal term.
+  optional ProposalTerms terms = 6;
   // Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   optional ProposalError reason = 7;
   // Detailed error associated to the reason.
@@ -417,6 +534,10 @@ message Proposal {
   optional string required_liquidity_provider_participation = 12;
   // Required majority from liquidity providers, optional but is required for market update proposal.
   optional string required_liquidity_provider_majority = 13;
+  // Batch proposal terms.
+  optional BatchProposalTerms batch_terms = 14;
+  // ID of a batch proposal that this proposal is part of.
+  optional string batch_id = 15;
 }
 
 // List of possible errors that can cause a proposal to be in state rejected or failed
@@ -526,6 +647,10 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM = 56;
   // Volume discount program proposal is invalid
   PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM = 57;
+  // One or more proposals in a batch has been rejected
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED = 58;
+  // One or more proposals in a batch has been declined
+  PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED = 59;
 }
 
 // Governance vote
@@ -556,8 +681,10 @@ message Vote {
   string total_governance_token_balance = 5;
   // The weight of this vote based on the total number of governance tokens.
   string total_governance_token_weight = 6;
-  // The weight of the vote compared to the total amount of equity-like share on the market.
+  // The weight of the vote compared to the total amount of equity-like share on the market. It is only populated if the vote is for a single type proposal.
   string total_equity_like_share_weight = 7;
+  // The per market weight of the vote compared to the total amount of equity-like share on the market.. It is only populated if the vote is for a batch type proposal.
+  map<string, string> per_market_equity_like_share_weight = 8;
 }
 
 message UpdateVolumeDiscountProgram {

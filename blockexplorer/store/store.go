@@ -19,14 +19,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Store struct {
-	log  *logging.Logger
-	pool *pgxpool.Pool
+	log      *logging.Logger
+	pool     *pgxpool.Pool
+	migrator *Migrator
 }
 
 func (s *Store) Close() {
@@ -51,9 +52,12 @@ func NewStore(config Config, log *logging.Logger) (*Store, error) {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
+	migrator := NewMigrator(pool, config)
+
 	store := &Store{
-		log:  log,
-		pool: pool,
+		log:      log,
+		pool:     pool,
+		migrator: migrator,
 	}
 	return store, nil
 }
@@ -64,4 +68,14 @@ func MustNewStore(config Config, log *logging.Logger) *Store {
 		log.Fatal("creating store", logging.Error(err))
 	}
 	return store
+}
+
+func (s *Store) Migrate(ctx context.Context) error {
+	err := s.migrator.Migrate(ctx)
+	if err != nil {
+		s.log.Errorf("error migrating database: %v", err)
+		return err
+	}
+
+	return nil
 }

@@ -128,6 +128,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party1 | USD   | 100000  |
       | party2 | USD   | 100000  |
       | party3 | USD   | 100000  |
+      | ptbuy  | USD   | 1000000 |
+      | ptsell | USD   | 1000000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
@@ -230,6 +232,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/MAR22 | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | buy  | 1      | 960   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/MAR22 | sell | 1      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
     And the liquidity fee factor should be "0.008" for the market "ETH/MAR22"
     #liquidity fee collected: 5*1000*0.008=40
 
@@ -248,14 +252,27 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party | asset | market id | margin | general | bond  |
       | lp1   | USD   | ETH/MAR22 | 640243 | 309757  | 50000 |
       | lp2   | USD   | ETH/MAR22 | 320122 | 669878  | 10000 |
-    Then the network moves ahead "10" blocks
-    And the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 0      | 994878  | 1001 |
-      | lp2   | USD   | ETH/MAR22 | 0      | 998699  | 502  |
+    # trigger price auction
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptsell | ETH/MAR22 | sell | 1      | 940   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptbuy  | ETH/MAR22 | buy  | 1      | 940   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" blocks
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond  |
+      | lp1   | USD   | ETH/MAR22 | 0      | 950000  | 50000 |
+      | lp2   | USD   | ETH/MAR22 | 0      | 990000  | 10000 |
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 21341        | 1503           | 6             |
+      | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest | auction end |
+      | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 20274        | 60000          | 6             | 3           |
+    When the network moves ahead "10" blocks
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general | bond |
+      | lp1   | USD   | ETH/MAR22 | 608232 | 386874  | 1002 |
+      | lp2   | USD   | ETH/MAR22 | 304116 | 694629  | 501  |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | horizon | min bound | max bound |
+      | 950        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 20274        | 1503           | 6             | 3600    | 925       | 976       |
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account                     | market id | amount | asset |

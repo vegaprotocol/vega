@@ -10,6 +10,7 @@ Feature: Test mark to market settlement with insurance pool
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: If settlement amount > party’s margin account balance + party’s general account balance for the asset, the full balance of the party’s margin account is transferred to the market’s temporary settlement account, the full balance of the party’s general account for the assets are transferred to the market’s temporary settlement account, the minimum insurance pool account balance for the market & asset, and the remainder, i.e. the difference between the total amount transferred from the trader’s margin + general accounts and the settlement amount, is transferred from the insurance pool account for the market to the temporary settlement account for the market (0003-MTMK-003)
     Given the initial insurance pool balance is "10000" for all the markets
     Given the parties deposit on asset's general account the following amount:
@@ -67,24 +68,25 @@ Feature: Test mark to market settlement with insurance pool
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | sell | 1      | 6000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+    And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party2 | ETH   | ETH/DEC19 | 13598  | 1302    |
+      | party2 | ETH   | ETH/DEC19 | 14900  | 0       |
       | party3 | ETH   | ETH/DEC19 | 7920   | 1480    |
 
     #party1 is closed out and traded with sell order ref-2, so there is no best ask to peg
     And the orders should have the following status:
       | party  | reference | status        |
       | aux    | ref-2     | STATUS_FILLED |
-      | lpprov | lp-buy    | STATUS_ACTIVE |
+      | lpprov | lp-buy    | STATUS_PARKED |
       | lpprov | lp-sell   | STATUS_PARKED |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "9999" for the market "ETH/DEC19"
+    And the insurance pool balance should be "14521" for the market "ETH/DEC19"
 
 
 

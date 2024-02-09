@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -33,7 +21,6 @@ import (
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/shopspring/decimal"
@@ -65,13 +52,31 @@ func (c *Candle) ToV1CandleProto(interval vega.Interval) (*vega.Candle, error) {
 }
 
 func (c *Candle) ToV2CandleProto() *v2.Candle {
+	var openPx, highPx, lowPx, closePx string
+
+	if c.Open.GreaterThan(decimal.Zero) {
+		openPx = c.Open.String()
+	}
+
+	if c.High.GreaterThan(decimal.Zero) {
+		highPx = c.High.String()
+	}
+
+	if c.Low.GreaterThan(decimal.Zero) {
+		lowPx = c.Low.String()
+	}
+
+	if c.Close.GreaterThan(decimal.Zero) {
+		closePx = c.Close.String()
+	}
+
 	return &v2.Candle{
 		Start:      c.PeriodStart.UnixNano(),
 		LastUpdate: c.LastUpdateInPeriod.UnixNano(),
-		High:       c.High.String(),
-		Low:        c.Low.String(),
-		Open:       c.Open.String(),
-		Close:      c.Close.String(),
+		High:       highPx,
+		Low:        lowPx,
+		Open:       openPx,
+		Close:      closePx,
 		Volume:     c.Volume,
 		Notional:   c.Notional,
 	}

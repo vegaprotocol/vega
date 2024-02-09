@@ -23,10 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgconn"
-
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -35,6 +31,8 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -42,6 +40,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -121,7 +120,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlPositionService := service.NewPosition(sqlstore.NewPositions(sqlConn), logger)
 	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn))
 	sqlAccountService := service.NewAccount(sqlstore.NewAccounts(sqlConn), sqlstore.NewBalances(sqlConn), logger)
-	sqlRewardsService := service.NewReward(sqlstore.NewRewards(sqlConn), logger)
+	sqlRewardsService := service.NewReward(sqlstore.NewRewards(ctx, sqlConn), logger)
 	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn))
 	sqlDelegationService := service.NewDelegation(sqlstore.NewDelegations(sqlConn), logger)
 	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn))
@@ -162,6 +161,9 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	paidLiquidityFeesStatsService := service.NewPaidLiquidityFeesStats(sqlstore.NewPaidLiquidityFeesStats(sqlConn))
 	partyLockedBalances := service.NewPartyLockedBalances(sqlstore.NewPartyLockedBalances(sqlConn))
 	partyVestingBalances := service.NewPartyVestingBalances(sqlstore.NewPartyVestingBalances(sqlConn))
+	transactionResults := service.NewTransactionResults(sqlsubscribers.NewTransactionResults(logger))
+	gameService := service.NewGames(sqlstore.NewGames(sqlConn))
+	marginModesService := service.NewMarginModes(sqlstore.NewMarginModes(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -218,6 +220,9 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		paidLiquidityFeesStatsService,
 		partyLockedBalances,
 		partyVestingBalances,
+		transactionResults,
+		gameService,
+		marginModesService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

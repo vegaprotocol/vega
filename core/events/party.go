@@ -17,10 +17,13 @@ package events
 
 import (
 	"context"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
-	proto "code.vegaprotocol.io/vega/protos/vega"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"golang.org/x/exp/slices"
 )
 
 type Party struct {
@@ -43,7 +46,7 @@ func (p *Party) Party() types.Party {
 	return p.p
 }
 
-func (p Party) Proto() *proto.Party {
+func (p Party) Proto() *vegapb.Party {
 	return p.p.IntoProto()
 }
 
@@ -60,5 +63,56 @@ func PartyEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Party {
 	return &Party{
 		Base: newBaseFromBusEvent(ctx, PartyEvent, be),
 		p:    types.Party{Id: be.GetParty().Id},
+	}
+}
+
+type PartyProfileUpdated struct {
+	*Base
+	e eventspb.PartyProfileUpdated
+}
+
+func (t PartyProfileUpdated) StreamMessage() *eventspb.BusEvent {
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_PartyProfileUpdated{
+		PartyProfileUpdated: &t.e,
+	}
+
+	return busEvent
+}
+
+func (t PartyProfileUpdated) PartyProfileUpdated() *eventspb.PartyProfileUpdated {
+	return &t.e
+}
+
+func NewPartyProfileUpdatedEvent(ctx context.Context, p *types.PartyProfile) *PartyProfileUpdated {
+	metadata := make([]*vegapb.Metadata, 0, len(p.Metadata))
+	for k, v := range p.Metadata {
+		metadata = append(metadata, &vegapb.Metadata{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	// Ensure deterministic order in event.
+	slices.SortStableFunc(metadata, func(a, b *vegapb.Metadata) int {
+		return strings.Compare(a.Key, b.Key)
+	})
+
+	return &PartyProfileUpdated{
+		Base: newBase(ctx, PartyProfileUpdatedEvent),
+		e: eventspb.PartyProfileUpdated{
+			UpdatedProfile: &vegapb.PartyProfile{
+				PartyId:  p.PartyID.String(),
+				Alias:    p.Alias,
+				Metadata: metadata,
+			},
+		},
+	}
+}
+
+func PartyProfileUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PartyProfileUpdated {
+	return &PartyProfileUpdated{
+		Base: newBaseFromBusEvent(ctx, PartyProfileUpdatedEvent, be),
+		e:    *be.GetPartyProfileUpdated(),
 	}
 }

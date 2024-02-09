@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUint256Constructors(t *testing.T) {
@@ -42,6 +44,47 @@ func TestUint256Constructors(t *testing.T) {
 		n, overflow := num.UintFromBig(big.NewInt(int64(expected)))
 		assert.False(t, overflow)
 		assert.Equal(t, expected, n.Uint64())
+	})
+}
+
+func TestUint256Serialization(t *testing.T) {
+	t.Run("JSON", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.MarshalJSON()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.UnmarshalJSON(serialized))
+		assert.Equal(t, origin, n.String())
+	})
+
+	t.Run("Binary", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.MarshalBinary()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.UnmarshalBinary(serialized))
+		assert.Equal(t, origin, n.String())
+	})
+
+	t.Run("Database", func(t *testing.T) {
+		origin := "123456789123456789123456789"
+		n, _ := num.UintFromString(origin, 10)
+
+		// Serialize.
+		serialized, err := n.Value()
+		require.NoError(t, err)
+
+		// Deserialize.
+		require.NoError(t, n.Scan(serialized))
+		assert.Equal(t, origin, n.String())
 	})
 }
 
@@ -193,4 +236,11 @@ func TestDeltaI(t *testing.T) {
 
 	r2 := num.UintZero().DeltaI(n2.Clone(), n1.Clone())
 	assert.Equal(t, "15", r2.String())
+}
+
+func TestMedian(t *testing.T) {
+	require.Nil(t, num.Median(nil))
+	require.Equal(t, "10", num.Median([]*num.Uint{num.NewUint(10)}).String())
+	require.Equal(t, "10", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(17)}).String())
+	require.Equal(t, "11", num.Median([]*num.Uint{num.NewUint(10), num.NewUint(5), num.NewUint(12), num.NewUint(17)}).String())
 }

@@ -21,10 +21,9 @@ import (
 	"path"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -71,8 +71,10 @@ func getTestEngine(t *testing.T) *testEngine {
 	ethSource := mocks.NewMockEthereumEventSource(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker, bridgeView, ethSource)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, marketActivityTracker, bridgeView, ethSource)
+
+	eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne())
 
 	return &testEngine{
 		Engine:                eng,

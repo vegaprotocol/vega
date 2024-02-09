@@ -86,13 +86,13 @@ func (e *Engine) oneOffTransfer(
 		return err
 	}
 
-	if err := e.ensureMinimalTransferAmount(a, transfer.Amount); err != nil {
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount, transfer.FromAccountType, transfer.From); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
 
 	tresps, err := e.processTransfer(
-		ctx, transfer.From, transfer.To, transfer.Asset, "", transfer.FromAccountType,
+		ctx, a, transfer.From, transfer.To, "", transfer.FromAccountType,
 		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer.ID, e.currentEpoch, transfer,
 	)
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+
 	"github.com/ethereum/go-ethereum/common/math"
 )
 
@@ -31,27 +32,29 @@ func NewNoop() *NoopEngine {
 	return &NoopEngine{}
 }
 
-func (e *NoopEngine) BeginBlock(blockHeight uint64, blockHash string) {
+func (e *NoopEngine) BeginBlock(blockHeight uint64, blockHash string, txs []abci.Tx) {
 	e.blockHeight = blockHeight
 	e.blockHash = blockHash
 }
 
+func (e *NoopEngine) OnFinalize() {}
 func (e *NoopEngine) EndOfBlock() {}
 func (e *NoopEngine) Commit()     {}
 func (e *NoopEngine) CheckTx(tx abci.Tx) error {
 	return nil
 }
 
-func (e *NoopEngine) DeliverTx(tx abci.Tx) error {
-	return nil
+func (e *NoopEngine) ProcessProposal([]abci.Tx) bool { return false }
+func (e *NoopEngine) CheckBlockTx(tx abci.Tx) (ValidationResult, *uint) {
+	return ValidationResultSuccess, nil
 }
-
-func (e *NoopEngine) IsReady() bool                     { return true }
-func (e *NoopEngine) SpamPoWNumberOfPastBlocks() uint32 { return uint32(0) }
-func (e *NoopEngine) SpamPoWDifficulty() uint32         { return uint32(0) }
-func (e *NoopEngine) SpamPoWHashFunction() string       { return "" }
-func (e *NoopEngine) SpamPoWNumberOfTxPerBlock() uint32 { return uint32(0) }
-func (e *NoopEngine) SpamPoWIncreasingDifficulty() bool { return false }
+func (e *NoopEngine) EndPrepareProposal([]ValidationEntry) {}
+func (e *NoopEngine) IsReady() bool                        { return true }
+func (e *NoopEngine) SpamPoWNumberOfPastBlocks() uint32    { return uint32(0) }
+func (e *NoopEngine) SpamPoWDifficulty() uint32            { return uint32(0) }
+func (e *NoopEngine) SpamPoWHashFunction() string          { return "" }
+func (e *NoopEngine) SpamPoWNumberOfTxPerBlock() uint32    { return uint32(0) }
+func (e *NoopEngine) SpamPoWIncreasingDifficulty() bool    { return false }
 
 func (e *NoopEngine) BlockData() (uint64, string) {
 	return e.blockHeight, e.blockHash

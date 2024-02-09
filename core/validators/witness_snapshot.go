@@ -21,9 +21,8 @@ import (
 	"sort"
 	"sync"
 
-	"code.vegaprotocol.io/vega/libs/proto"
-
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -166,7 +165,8 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	ctx, cfunc := context.WithDeadline(context.Background(), res.checkUntil)
 	res.cfunc = cfunc
 	if w.top.IsValidator() && res.state.Load() != voteSent {
-		go w.start(ctx, res)
+		// no initial delay
+		go w.start(ctx, res, nil)
 	}
 	return nil
 }

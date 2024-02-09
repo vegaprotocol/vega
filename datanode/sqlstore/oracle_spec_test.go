@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -36,11 +24,10 @@ import (
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
 	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -440,7 +427,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 	block := addTestBlockForTime(t, ctx, bs, time.Now().Truncate(time.Second))
 
 	for i := 0; i < 10; i++ {
-		pubKey := dstypes.CreateSignerFromString(helpers.GenerateID(), dstypes.SignerTypePubKey)
+		pubKey := dstypes.CreateSignerFromString(GenerateID(), dstypes.SignerTypePubKey)
 
 		spec := entities.OracleSpec{
 			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{

@@ -21,10 +21,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func (*Service) Name() types.CheckpointName {

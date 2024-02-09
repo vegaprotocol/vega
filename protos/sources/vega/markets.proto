@@ -66,6 +66,14 @@ message Perpetual {
   vega.DataSourceSpec data_source_spec_for_settlement_data = 8;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToPerpetualBinding data_source_spec_binding = 9;
+  // Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments.
+  optional string funding_rate_scaling_factor = 10;
+  // Lower bound for the funding-rate such that the funding-rate will never be lower than this value.
+  optional string funding_rate_lower_bound = 11;
+  // Upper bound for the funding-rate such that the funding-rate will never be higher than this value.
+  optional string funding_rate_upper_bound = 12;
+  // Optional configuration for the internal composite price used in funding payment calculation.
+  optional CompositePriceConfiguration internal_composite_price_config = 13;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -79,16 +87,14 @@ message DataSourceSpecToFutureBinding {
   string trading_termination_property = 2;
 }
 
-// Describes which property of the data source data is to be
-// used as settlement data and which to use as the trading terminated trigger
+// Describes which properties of the data source data is to be
+// used for settlement.
 message DataSourceSpecToPerpetualBinding {
-  // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
-  // this property as settlement data.
+  // Name of the property in the source data that should be used for settlement data.
+  // If it is set to "prices.BTC.value" for example, then the perpetual market will use the value of
+  // this property to get settlement data.
   string settlement_data_property = 1;
-  // Name of the property in the source data that should be used as settlement data.
-  // If it is set to "prices.BTC.value", then the perpetual market will use the value of
-  // this property as settlement data.
+  // Name of the property in the source data that should be used to determine the perpetual's settlement schedule.
   string settlement_schedule_property = 2;
 }
 
@@ -209,6 +215,8 @@ message FeeFactors {
 message Fees {
   // Fee factors.
   FeeFactors factors = 1;
+  // Liquidity fee settings for the market describing how the fee was calculated.
+  LiquidityFeeSettings liquidity_fee_settings = 2;
 }
 
 // PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
@@ -255,6 +263,23 @@ message LiquiditySLAParameters {
   // Specifies the maximum fraction of their accrued fees an LP that meets the SLA implied by market.liquidity.commitmentMinTimeFraction will lose to liquidity providers
   // that achieved a higher SLA performance than them.
   string sla_competition_factor = 5;
+}
+
+// Market settings that describe how the liquidity fee is calculated.
+message LiquidityFeeSettings {
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    // Fee is the smallest value of all bids, such that liquidity providers with nominated fees less than or equal to this value still have sufficient commitment to fulfil the market's target stake.
+    METHOD_MARGINAL_COST = 1;
+    // Fee is the weighted average of all liquidity providers' nominated fees, weighted by their committment.
+    METHOD_WEIGHTED_AVERAGE = 2;
+    // Fee is set by the market to a constant value irrespective of any liquidity provider's nominated fee.
+    METHOD_CONSTANT = 3;
+  }
+  // Method used to calculate the market's liquidity fee.
+  Method method = 1;
+  // Constant liquidity fee used when using the constant fee method.
+  optional string fee_constant = 2;
 }
 
 // TargetStakeParameters contains parameters used in target stake calculation
@@ -357,6 +382,10 @@ message Market {
   optional string successor_market_id = 17;
   // Liquidity SLA parameters for the market.
   optional LiquiditySLAParameters liquidity_sla_params = 18;
+  // Liquidation strategy used by this market.
+  LiquidationStrategy liquidation_strategy = 19;
+  // Mark price calculation configuration.
+  CompositePriceConfiguration mark_price_configuration = 20;
 }
 
 // Time stamps for important times about creating, enacting etc the market
@@ -369,4 +398,48 @@ message MarketTimestamps {
   int64 open = 3;
   // Time when the market closed.
   int64 close = 4;
+}
+
+// Liquidation strategy used when the network holds a position resulting from position resolution.
+message LiquidationStrategy {
+  // Interval, in seconds, at which the network will attempt to close its position.
+  int64 disposal_time_step = 1;
+  // Fraction of the open position the market will try to close in a single attempt; range 0 through 1.
+  string disposal_fraction = 2;
+  // Size of the position that the network will try to close in a single attempt.
+  uint64 full_disposal_size = 3;
+  // Max fraction of the total volume of the orderbook, within liquidity bounds, that the network can use to close its position; range 0 through 1.
+  string max_fraction_consumed = 4;
+}
+
+enum CompositePriceType {
+  COMPOSITE_PRICE_TYPE_UNSPECIFIED = 0;
+  // Composite price is calculated as a weighted average of the underlying mark prices.
+  COMPOSITE_PRICE_TYPE_WEIGHTED = 1;
+  // Composite price is calculated as a median of the underlying mark prices.
+  COMPOSITE_PRICE_TYPE_MEDIAN = 2;
+  // Composite price is calculated as the last trade price.
+  COMPOSITE_PRICE_TYPE_LAST_TRADE = 3;
+}
+
+// Mark price configuration parameters.
+message CompositePriceConfiguration {
+  // Decay weight used for calculation of mark price.
+  string decay_weight = 1;
+  // Decay power used for the calculation of mark price.
+  uint64 decay_power = 2;
+  // Cash amount, in asset decimals, used for the calculation of the mark price from the order book.
+  string cash_amount = 3;
+  // Weights for each composite price data source.
+  repeated string source_weights = 4;
+  // For how long a price source is considered valid. One entry for each data source
+  // such that the first is for the trade based mark price, the second is for the book based price
+  // the third is for the first oracle, followed by more oracle data source staleness tolerance.
+  repeated string source_staleness_tolerance = 5;
+  // Which method is used for the calculation of the composite price for the market.
+  CompositePriceType composite_price_type = 6;
+  // Additional price sources to be used for internal composite price calculation.
+  repeated vega.DataSourceDefinition data_sources_spec = 7;
+  // List of each price source and its corresponding binding
+  repeated vega.SpecBindingForCompositePrice data_sources_spec_binding = 8;
 }

@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +40,6 @@ import (
 	config2 "code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
@@ -187,7 +188,7 @@ func TestMain(t *testing.M) {
 
 			snapshots = append(snapshots, ss)
 
-			md5Hash, err := fsutil.Md5Hash(ss.ZipFilePath())
+			md5Hash, err := Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 			if err != nil {
 				panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 			}
@@ -212,7 +213,7 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
+					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
@@ -269,7 +270,7 @@ func TestMain(t *testing.M) {
 
 					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
+					md5Hash, err := Md5Hash(lastSnapshot.UnpublishedSnapshotDataDirectory())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
@@ -378,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmQGrPqM72evPWmpaCduiEzcndEwzsVM8PrWe7w9gqPtv4", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmQKVcMmo9D9Bx8MFHg7q2hkmDksi5zmYhanvzXmpNk7kx", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmVAP6NsCAC3qTN2VnVxyBY6A8s4tVLqppUhWL8ArkVePg", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmUXg7sLvDd53NmykEptcKUyzkb6RUvNXGR9StjjyUiE2K", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmUCbCaewhdYsEPHpC7f2uynSJjcnMXY5GEw4UKUWuJLCu", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmcGBEV4XiM98idDU9evmAArP7pZwmFe9DSP2aYsnfTg9w", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmbfvmyGnj6UyauBVxgiCQP7avRSBDL2bbYFgqBgMaAXrx", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmUKgaoCGvCXBZPv43UPbrTi3jeFrisoqCiz3rAxGCsZbD", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "Qmf8maNUucahTUNCzJtzKqAf4RPsEpm6ZicAkJUkFckyho", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmdRRfXG5c7mdFZ7H918DuNQM5aC7YMJuRXmG5Be1hEudZ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmZGXV842qutTCsuikBtxTP9D2uPvz7PaS6FnYfxRqbHB2", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmdkwfTk2KSumcTZ3XPU5WbpqQTE3tH4br1WeADjg5EsvA", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -454,7 +455,7 @@ func TestLoadingDataFetchedAsynchronously(t *testing.T) {
 
 				waitForSnapshotToComplete(ss)
 
-				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
 
 				fromEventHashes = append(fromEventHashes, md5Hash)
@@ -584,7 +585,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 
 				waitForSnapshotToComplete(ss)
 
-				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				md5Hash, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 				require.NoError(t, err)
 
 				fromEventHashes = append(fromEventHashes, md5Hash)
@@ -890,7 +891,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 				waitForSnapshotToComplete(ss)
 
 				if lastCommittedBlockHeight == 4000 {
-					newSnapshotFileHashAt4000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					newSnapshotFileHashAt4000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 				}
 
@@ -994,7 +995,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 					require.NoError(t, err)
 					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -1097,7 +1098,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 					require.NoError(t, err)
 					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = Md5Hash(ss.UnpublishedSnapshotDataDirectory())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -1464,6 +1465,11 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 		"trades_candle_1_minute":   "market_id, period_start",
 		"trades_candle_5_minutes":  "market_id, period_start",
 		"trades_candle_6_hours":    "market_id, period_start",
+		"trades_candle_30_minutes": "market_id, period_start",
+		"trades_candle_4_hours":    "market_id, period_start",
+		"trades_candle_8_hours":    "market_id, period_start",
+		"trades_candle_12_hours":   "market_id, period_start",
+		"trades_candle_7_days":     "market_id, period_start",
 	}
 
 	caggSummaries := map[string]tableDataSummary{}
@@ -1548,7 +1554,7 @@ func waitForSnapshotToComplete(sf segment.Unpublished) {
 	for {
 		time.Sleep(10 * time.Millisecond)
 		// wait for snapshot current  file
-		_, err := os.Stat(sf.ZipFilePath())
+		_, err := os.Stat(sf.UnpublishedSnapshotDataDirectory())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -1729,4 +1735,32 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 		panic(err)
 	}
 	return evtSource
+}
+
+func Md5Hash(dir string) (string, error) {
+	hash := md5.New()
+	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(hash, file)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

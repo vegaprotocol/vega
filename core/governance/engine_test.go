@@ -24,10 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
@@ -45,6 +41,10 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var errNoBalanceForParty = errors.New("no balance for party")
@@ -69,7 +69,6 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with internal time termination with closing time too soon fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails)
 	t.Run("Submitting a proposal with closing time too late fails", testSubmittingProposalWithClosingTimeTooLateFails)
 	t.Run("Submitting a proposal with internal time termination with closing time too late fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails)
-	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
 	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
 	t.Run("Submitting a proposal with enactment time too late fails", testSubmittingProposalWithEnactmentTimeTooLateFails)
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
@@ -269,6 +268,37 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.EqualError(tt, err, errNoBalanceForParty.Error())
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+			eng.ensureNoAccountForParty(tt, party)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.EqualError(tt, err, errNoBalanceForParty.Error())
+		})
 	}
 }
 
@@ -387,6 +417,37 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+			eng.ensureNoAccountForParty(tt, party)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.EqualError(tt, err, errNoBalanceForParty.Error())
+		})
 	}
 }
 
@@ -418,6 +479,38 @@ func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.
 		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
 		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
 		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.Error(tt, err)
+		assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+	})
+
+	t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+		// setup
+		eng.ensureTokenBalanceForParty(tt, party, 10)
+		eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+		eng.ensureAllAssetEnabled(tt)
+
+		// when
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
+		batchID := eng.newProposalID()
+
+		eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+		eng.expectProposalEvents(t, []expectedProposal{
+			{
+				partyID:    party,
+				proposalID: tc.proposal.ID,
+				state:      types.ProposalStateRejected,
+				reason:     types.ProposalErrorInsufficientTokens,
+			},
+		})
+
+		sub := eng.newBatchSubmission(
+			now.Add(48*time.Hour).Unix(),
+			tc.proposal,
+		)
+		_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 		// then
 		require.Error(tt, err)
@@ -467,6 +560,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 			require.Error(tt, err)
 			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.name), func(tt *testing.T) {
+			// setup
+			eng.ensureTokenBalanceForParty(tt, party, 10)
+			eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+			eng.ensureAllAssetEnabled(tt)
+
+			// when
+			batchID := eng.newProposalID()
+
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorInsufficientTokens,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+		})
 	}
 }
 
@@ -505,6 +628,36 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -553,6 +706,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFail
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
+		})
 	}
 }
 
@@ -596,6 +779,36 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(3*365*24*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
+		})
 	}
 }
 
@@ -634,6 +847,36 @@ func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFail
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorCloseTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(3*365*24*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -716,6 +959,39 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 			require.Error(tt, err)
 			assert.Contains(tt, err.Error(), "proposal enactment time too soon, expected >")
 		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.EnactmentTimestamp = now.Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorEnactTimeTooSoon,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal enactment time too soon, expected >")
+		})
 	}
 }
 
@@ -754,6 +1030,39 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 
 			// when
 			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal enactment time too late, expected <")
+		})
+
+		t.Run(fmt.Sprintf("%s batch version", tc.msg), func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.EnactmentTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			batchID := eng.newProposalID()
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, batchID, types.ProposalErrorProposalInBatchRejected)
+			eng.expectProposalEvents(t, []expectedProposal{
+				{
+					partyID:    party,
+					proposalID: tc.proposal.ID,
+					state:      types.ProposalStateRejected,
+					reason:     types.ProposalErrorEnactTimeTooLate,
+				},
+			})
+
+			sub := eng.newBatchSubmission(
+				now.Add(48*time.Hour).Unix(),
+				tc.proposal,
+			)
+
+			// when
+			_, err := eng.submitBatchProposal(tt, sub, batchID, party)
 
 			// then
 			require.Error(tt, err)
@@ -1144,6 +1453,9 @@ func getTestEngine(t *testing.T, now time.Time) *tstEngine {
 		els:      map[string]map[string]float64{},
 	}
 	// ensure the balance is always returned as expected
+
+	broker.EXPECT().Send(gomock.Any()).Times(1)
+	tEng.netp.Update(context.Background(), netparams.BlockchainsEthereumConfig, "{\"network_id\":\"1\",\"chain_id\":\"1\",\"collateral_bridge_contract\":{\"address\":\"0x23872549cE10B40e31D6577e0A920088B0E0666a\"},\"confirmations\":64,\"staking_bridge_contract\":{\"address\":\"0x195064D33f09e0c42cF98E665D9506e0dC17de68\",\"deployment_block_height\":13146644},\"token_vesting_contract\":{\"address\":\"0x23d1bFE8fA50a167816fBD79D7932577c06011f4\",\"deployment_block_height\":12834524},\"multisig_control_contract\":{\"address\":\"0xDD2df0E7583ff2acfed5e49Df4a424129cA9B58F\",\"deployment_block_height\":15263593}}")
 	tEng.accounts.EXPECT().GetAvailableBalance(gomock.Any()).AnyTimes().DoAndReturn(func(p string) (*num.Uint, error) {
 		b, ok := tEng.tokenBal[p]
 		if !ok {
@@ -1311,6 +1623,12 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 				Successor:               successor,
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}
@@ -1394,6 +1712,12 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}
@@ -1497,6 +1821,7 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 			Changes: &types.UpdateMarketConfiguration{
 				Instrument: &types.UpdateInstrumentConfiguration{
 					Code: "CRYPTO:GBPVUSD/JUN20",
+					Name: "UPDATED_MARKET_NAME",
 					Product: &types.UpdateInstrumentConfigurationFuture{
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
@@ -1541,6 +1866,12 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 				},
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				LiquidationStrategy: &types.LiquidationStrategy{
+					DisposalTimeStep:    10 * time.Second,
+					DisposalFraction:    num.DecimalFromFloat(0.1),
+					FullDisposalSize:    20,
+					MaxFractionConsumed: num.DecimalFromFloat(0.01),
+				},
 			},
 		},
 	}
@@ -1553,6 +1884,20 @@ func (e *tstEngine) submitProposal(t *testing.T, proposal types.Proposal) (*gove
 		*types.ProposalSubmissionFromProposal(&proposal),
 		proposal.ID,
 		proposal.Party,
+	)
+}
+
+func (e *tstEngine) submitBatchProposal(
+	t *testing.T,
+	submission types.BatchProposalSubmission,
+	proposalID, party string,
+) ([]*governance.ToSubmit, error) {
+	t.Helper()
+	return e.SubmitBatchProposal(
+		context.Background(),
+		submission,
+		proposalID,
+		party,
 	)
 }
 
@@ -1585,6 +1930,33 @@ func (e *tstEngine) newValidParty(partyID string, balance uint64) *types.Party {
 func (e *tstEngine) newProposalID() string {
 	e.proposalCounter++
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
+}
+
+func (e *tstEngine) newBatchSubmission(
+	closingTimestamp int64,
+	proposals ...types.Proposal,
+) types.BatchProposalSubmission {
+	id := e.newProposalID()
+
+	sub := types.BatchProposalSubmission{
+		Reference: id,
+		Terms: &types.BatchProposalTerms{
+			ClosingTimestamp: closingTimestamp,
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+
+	for _, proposal := range proposals {
+		sub.Terms.Changes = append(sub.Terms.Changes, types.BatchProposalChange{
+			ID:            proposal.ID,
+			Change:        proposal.Terms.Change,
+			EnactmentTime: proposal.Terms.EnactmentTimestamp,
+		})
+	}
+
+	return sub
 }
 
 //nolint:unparam
@@ -1888,6 +2260,33 @@ func (e *tstEngine) expectRejectedProposalEvent(t *testing.T, partyID, proposalI
 		assert.Equal(t, partyID, p.PartyId)
 		assert.Equal(t, types.ProposalStateRejected.String(), p.State.String())
 		assert.Equal(t, reason.String(), p.Reason.String())
+	})
+}
+
+type expectedProposal struct {
+	partyID    string
+	proposalID string
+	state      types.ProposalState
+	reason     types.ProposalError
+}
+
+func (e *tstEngine) expectProposalEvents(t *testing.T, expected []expectedProposal) {
+	t.Helper()
+	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		assert.GreaterOrEqual(t, len(evts), len(expected))
+		for i, expect := range expected {
+			e := evts[i]
+			pe, ok := e.(*events.Proposal)
+			require.True(t, ok)
+			p := pe.Proposal()
+
+			assert.Equal(t, expect.proposalID, p.Id)
+			assert.Equal(t, expect.partyID, p.PartyId)
+			assert.Equal(t, expect.state.String(), p.State.String())
+			if p.Reason != nil {
+				assert.Equal(t, expect.reason.String(), p.Reason.String())
+			}
+		}
 	})
 }
 

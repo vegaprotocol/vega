@@ -31,27 +31,29 @@ type ProposalTermsUpdateVolumeDiscountProgram struct {
 func (a ProposalTermsUpdateVolumeDiscountProgram) String() string {
 	return fmt.Sprintf(
 		"updateVolumeDiscountProgram(%s)",
-		stringer.ReflectPointerToString(a.UpdateVolumeDiscountProgram),
+		stringer.PtrToString(a.UpdateVolumeDiscountProgram),
 	)
 }
 
-func (a ProposalTermsUpdateVolumeDiscountProgram) IntoProto() *vegapb.ProposalTerms_UpdateVolumeDiscountProgram {
+func (a ProposalTermsUpdateVolumeDiscountProgram) isPTerm() {}
+
+func (a ProposalTermsUpdateVolumeDiscountProgram) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_UpdateVolumeDiscountProgram{
 		UpdateVolumeDiscountProgram: a.UpdateVolumeDiscountProgram.IntoProto(),
 	}
 }
 
-func (a ProposalTermsUpdateVolumeDiscountProgram) isPTerm() {}
-
-func (a ProposalTermsUpdateVolumeDiscountProgram) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateVolumeDiscountProgram) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateVolumeDiscountProgram{
+		UpdateVolumeDiscountProgram: a.UpdateVolumeDiscountProgram.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateVolumeDiscountProgram) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateVolumeDiscountProgram
 }
 
-func (a ProposalTermsUpdateVolumeDiscountProgram) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateVolumeDiscountProgram) DeepClone() ProposalTerm {
 	if a.UpdateVolumeDiscountProgram == nil {
 		return &ProposalTermsUpdateVolumeDiscountProgram{}
 	}
@@ -60,9 +62,11 @@ func (a ProposalTermsUpdateVolumeDiscountProgram) DeepClone() proposalTerm {
 	}
 }
 
-func NewUpdateVolumeDiscountProgramProposalFromProto(p *vegapb.ProposalTerms_UpdateVolumeDiscountProgram) (*ProposalTermsUpdateVolumeDiscountProgram, error) {
+func NewUpdateVolumeDiscountProgramProposalFromProto(
+	updateVolumeDiscountProgramProto *vegapb.UpdateVolumeDiscountProgram,
+) (*ProposalTermsUpdateVolumeDiscountProgram, error) {
 	return &ProposalTermsUpdateVolumeDiscountProgram{
-		UpdateVolumeDiscountProgram: NewUpdateVolumeDiscountProgramFromProto(p.UpdateVolumeDiscountProgram),
+		UpdateVolumeDiscountProgram: NewUpdateVolumeDiscountProgramFromProto(updateVolumeDiscountProgramProto),
 	}, nil
 }
 
@@ -79,7 +83,7 @@ func (p UpdateVolumeDiscountProgram) IntoProto() *vegapb.UpdateVolumeDiscountPro
 func (p UpdateVolumeDiscountProgram) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(p.Changes),
+		stringer.PtrToString(p.Changes),
 	)
 }
 

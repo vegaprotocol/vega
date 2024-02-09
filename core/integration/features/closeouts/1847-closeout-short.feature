@@ -11,6 +11,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @NoPerp
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -53,6 +54,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | tt_16 | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |            |
       | tt_15 | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-2   |            |
       | tt_16 | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-2   |            |
+    And the network moves ahead "1" blocks
 
 
     And the mark price should be "20" for the market "ETH/DEC19"

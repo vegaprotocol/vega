@@ -35,10 +35,10 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"golang.org/x/exp/maps"
 
+	abcitypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/ethereum/go-ethereum/common"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -449,7 +449,7 @@ func (t *Topology) NumberOfTendermintValidators() uint {
 	return count
 }
 
-func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock) {
+func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64, proposer string) {
 	// we're not adding or removing nodes only potentially changing their state so should be safe
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -460,8 +460,8 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 	t.rng = rand.New(rand.NewSource(currentTime.Unix()))
 
 	t.checkHeartbeat(ctx)
-	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))
-	t.currentBlockHeight = uint64(req.Header.Height)
+	t.validatorPerformance.BeginBlock(ctx, proposer)
+	t.currentBlockHeight = blockHeight
 
 	t.signatures.SetNonce(currentTime)
 	t.signatures.ClearStaleSignatures()

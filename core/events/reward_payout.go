@@ -29,15 +29,16 @@ type RewardPayout struct {
 	Party                   string
 	EpochSeq                string
 	Asset                   string
-	Market                  string
+	GameID                  *string
 	PercentageOfTotalReward string
 	Amount                  *num.Uint
+	QuantumAmount           num.Decimal
 	Timestamp               int64
 	RewardType              types.AccountType
 	LockedUntilEpoch        string
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal, rewardType types.AccountType, market string, lockedUntilEpoch string) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asset string, amount *num.Uint, assetQuantum, percentageOfTotalReward num.Decimal, rewardType types.AccountType, gameID *string, lockedUntilEpoch string) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
@@ -45,9 +46,10 @@ func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq, asse
 		Asset:                   asset,
 		PercentageOfTotalReward: percentageOfTotalReward.String(),
 		Amount:                  amount,
+		QuantumAmount:           amount.ToDecimal().Div(assetQuantum).Truncate(6),
 		Timestamp:               timestamp,
 		RewardType:              rewardType,
-		Market:                  market,
+		GameID:                  gameID,
 		LockedUntilEpoch:        lockedUntilEpoch,
 	}
 }
@@ -62,10 +64,11 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 		EpochSeq:             rp.EpochSeq,
 		Asset:                rp.Asset,
 		Amount:               rp.Amount.String(),
+		QuantumAmount:        rp.QuantumAmount.String(),
 		PercentOfTotalReward: rp.PercentageOfTotalReward,
 		Timestamp:            rp.Timestamp,
 		RewardType:           vegapb.AccountType_name[int32(rp.RewardType)],
-		Market:               rp.Market,
+		GameId:               rp.GameID,
 		LockedUntilEpoch:     rp.LockedUntilEpoch,
 	}
 }
@@ -87,6 +90,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 	}
 
 	amount, _ := num.UintFromString(rp.Amount, 10)
+	quantumAmount, _ := num.DecimalFromString(rp.QuantumAmount)
 	return &RewardPayout{
 		Base:                    newBaseFromBusEvent(ctx, RewardPayoutEvent, be),
 		Party:                   rp.Party,
@@ -94,8 +98,9 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Asset:                   rp.Asset,
 		PercentageOfTotalReward: rp.PercentOfTotalReward,
 		Amount:                  amount,
+		QuantumAmount:           quantumAmount,
 		Timestamp:               rp.Timestamp,
-		Market:                  rp.Market,
+		GameID:                  rp.GameId,
 		LockedUntilEpoch:        rp.LockedUntilEpoch,
 		RewardType:              types.AccountType(vegapb.AccountType_value[rp.RewardType]),
 	}

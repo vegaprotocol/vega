@@ -36,6 +36,10 @@ message SubmitTransactionRequest {
     commands.v1.CreateReferralSet create_referral_set = 1018;
     commands.v1.UpdateReferralSet update_referral_set = 1019;
     commands.v1.ApplyReferralCode apply_referral_code = 1020;
+    commands.v1.UpdateMarginMode update_margin_mode = 1021;
+    commands.v1.JoinTeam join_team = 1022;
+    commands.v1.BatchProposalSubmission batch_proposal_submission = 1023;
+    commands.v1.UpdatePartyProfile update_party_profile = 1024;
 
     // Validator commands
     commands.v1.NodeVote node_vote = 2002;

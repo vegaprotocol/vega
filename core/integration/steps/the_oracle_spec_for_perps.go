@@ -16,12 +16,17 @@
 package steps
 
 import (
+	"strings"
+	"time"
+
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/cucumber/godog"
 )
 
@@ -59,13 +64,36 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 				Conditions: []*datav1.Condition{},
 			},
 		}
+
+		internalCompositePriceConfig := &protoTypes.CompositePriceConfiguration{}
+		internalCompositePriceConfig.CompositePriceType = row.row.MarkPriceType()
+
+		if row.row.HasColumn("decay power") {
+			internalCompositePriceConfig.DecayPower = row.DecayPower()
+		}
+		if row.row.HasColumn("decay weight") {
+			internalCompositePriceConfig.DecayWeight = row.DecayWeight()
+		}
+		if row.row.HasColumn("cash amount") {
+			internalCompositePriceConfig.CashAmount = row.CashAmount()
+		}
+		if row.row.HasColumn("source weights") {
+			internalCompositePriceConfig.SourceWeights = row.PriceSourceWeights()
+		}
+		if row.row.HasColumn("source staleness tolerance") {
+			internalCompositePriceConfig.SourceStalenessTolerance = row.PriceSourceStalnessTolerance()
+		}
+
 		perp := &protoTypes.Perpetual{
-			SettlementAsset:     row.Asset(),
-			QuoteName:           row.QuoteName(),
-			MarginFundingFactor: row.MarginFundingFactor().String(),
-			InterestRate:        row.InterestRate().String(),
-			ClampLowerBound:     row.LowerClamp().String(),
-			ClampUpperBound:     row.UpperClamp().String(),
+			SettlementAsset:          row.Asset(),
+			QuoteName:                row.QuoteName(),
+			MarginFundingFactor:      row.MarginFundingFactor().String(),
+			InterestRate:             row.InterestRate().String(),
+			ClampLowerBound:          row.LowerClamp().String(),
+			ClampUpperBound:          row.UpperClamp().String(),
+			FundingRateScalingFactor: row.FundingRateScalingFactor(),
+			FundingRateLowerBound:    row.FundingRateLowerBound(),
+			FundingRateUpperBound:    row.FundingRateUpperBound(),
 			DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
 				Id: vgrand.RandomStr(10),
 				Data: protoTypes.NewDataSourceDefinition(
@@ -92,7 +120,8 @@ func ThePerpsOracleSpec(config *market.Config, keys string, table *godog.Table) 
 					},
 				),
 			},
-			DataSourceSpecBinding: binding,
+			DataSourceSpecBinding:        binding,
+			InternalCompositePriceConfig: internalCompositePriceConfig,
 		}
 		if err := config.OracleConfigs.AddPerp(name, perp); err != nil {
 			return err
@@ -116,6 +145,15 @@ func parseOraclePerpsTable(table *godog.Table) []RowWrapper {
 		"clamp lower bound",
 		"clamp upper bound",
 		"quote name",
+		"funding rate scaling factor",
+		"funding rate lower bound",
+		"funding rate upper bound",
+		"price type",
+		"decay weight",
+		"decay power",
+		"cash amount",
+		"source weights",
+		"source staleness tolerance",
 	})
 }
 
@@ -154,6 +192,27 @@ func (p perpOracleRow) QuoteName() string {
 	return p.row.MustStr("quote name")
 }
 
+func (p perpOracleRow) FundingRateScalingFactor() *string {
+	if !p.row.HasColumn("funding rate scaling factor") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate scaling factor").String())
+}
+
+func (p perpOracleRow) FundingRateUpperBound() *string {
+	if !p.row.HasColumn("funding rate upper bound") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate upper bound").String())
+}
+
+func (p perpOracleRow) FundingRateLowerBound() *string {
+	if !p.row.HasColumn("funding rate lower bound") {
+		return nil
+	}
+	return ptr.From(p.row.MustDecimal("funding rate lower bound").String())
+}
+
 func (p perpOracleRow) MarginFundingFactor() num.Decimal {
 	if !p.row.HasColumn("margin funding factor") {
 		return num.DecimalZero()
@@ -188,4 +247,49 @@ func (p perpOracleRow) SettlementDecimals() *uint64 {
 	}
 	v := p.row.MustU64("settlement decimals")
 	return &v
+}
+
+func (r perpOracleRow) CashAmount() string {
+	if !r.row.HasColumn("cash amount") {
+		return ""
+	}
+	return r.row.MustDecimal("cash amount").String()
+}
+
+func (r perpOracleRow) DecayPower() uint64 {
+	if !r.row.HasColumn("decay power") {
+		return 0
+	}
+	return r.row.MustU64("decay power")
+}
+
+func (r perpOracleRow) DecayWeight() string {
+	if !r.row.HasColumn("decay weight") {
+		return "0"
+	}
+	return r.row.MustDecimal("decay weight").String()
+}
+
+func (r perpOracleRow) PriceSourceWeights() []string {
+	if !r.row.HasColumn("source weights") {
+		return []string{"0", "0", "0", "0"}
+	}
+	weights := strings.Split(r.row.mustColumn("source weights"), ",")
+	for _, v := range weights {
+		num.MustDecimalFromString(v)
+	}
+	return weights
+}
+
+func (r perpOracleRow) PriceSourceStalnessTolerance() []string {
+	if !r.row.HasColumn("source staleness tolerance") {
+		return []string{"1000s", "1000s", "1000s", "1000s"}
+	}
+	durations := strings.Split(r.row.mustColumn("source staleness tolerance"), ",")
+	for _, v := range durations {
+		if _, err := time.ParseDuration(v); err != nil {
+			panic(err)
+		}
+	}
+	return durations
 }

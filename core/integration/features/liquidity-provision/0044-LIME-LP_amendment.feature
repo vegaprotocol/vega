@@ -35,20 +35,20 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | market.liquidity.providersFeeCalculationTimeStep | 5s    |
 
     And the following network parameters are set:
-      | name                                                  | value |
-      | market.value.windowLength                             | 60s   |
-      | network.markPriceUpdateMaximumFrequency               | 0s    |
-      | limits.markets.maxPeggedOrders                        | 6     |
-      | market.auction.minimumDuration                        | 1     |
-      | market.fee.factors.infrastructureFee                  | 0.001 |
-      | market.fee.factors.makerFee                           | 0.004 |
+      | name                                                | value |
+      | market.value.windowLength                           | 60s   |
+      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | limits.markets.maxPeggedOrders                      | 6     |
+      | market.auction.minimumDuration                      | 1     |
+      | market.fee.factors.infrastructureFee                | 0.001 |
+      | market.fee.factors.makerFee                         | 0.004 |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
-      | validators.epoch.length                               | 5s    |
+      | validators.epoch.length                             | 5s    |
       | market.liquidity.stakeToCcyVolume                   | 1     |
-      | market.liquidity.successorLaunchWindowLength          | 1h    |
+      | market.liquidity.successorLaunchWindowLength        | 1h    |
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 1     |
-      | validators.epoch.length                               | 10s   |
+      | validators.epoch.length                             | 10s   |
     Given the average block duration is "2"
   @Now
   Scenario: 001: lp1 and lp2 under supplies liquidity
@@ -59,6 +59,8 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | party1 | USD   | 100000 |
       | party2 | USD   | 100000 |
       | party3 | USD   | 100000 |
+      | ptbuy  | USD   | 100000 |
+      | ptsell | USD   | 100000 |
 
     And the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee  | lp type    |
@@ -100,7 +102,12 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lp1   | USD   | ETH/MAR22 | 64024  | 0       | 35976 |
       | lp2   | USD   | ETH/MAR22 | 32013  | 57987   | 10000 |
     #     #margin_intial lp1: 12*1000*3.5569036*1.5=64024
-    Then the network moves ahead "6" blocks
+    When the network moves ahead "6" blocks
+    # Trigger auction
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | ptbuy  | ETH/MAR22 | buy  | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
+      | ptsell | ETH/MAR22 | sell | 2      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties should have the following account balances:
       | party | asset | market id | margin | general | bond  |
       | lp1   | USD   | ETH/MAR22 | 0      | 64024   | 17988 |

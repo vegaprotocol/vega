@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities_test
 
 import (
@@ -33,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,15 +29,18 @@ import (
 func TestRewardFromProto(t *testing.T) {
 	now := time.Now()
 	timestamp := now.Add(-1 * time.Second)
-
+	gameID := "Test"
 	pbReward := eventspb.RewardPayoutEvent{
 		Party:                "a0b1",
-		Asset:                "c2d3",
 		EpochSeq:             "42",
+		Asset:                "c2d3",
 		Amount:               "123456789",
 		PercentOfTotalReward: "3.14",
 		Timestamp:            timestamp.UnixNano(),
+		RewardType:           "Some Type",
+		GameId:               &gameID,
 		LockedUntilEpoch:     "44",
+		QuantumAmount:        "292929",
 	}
 
 	vegaTime := entities.NanosToPostgresTimestamp(now.UnixNano())

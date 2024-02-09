@@ -91,6 +91,13 @@ type TradingDataServiceClient interface {
 	//   - receiving account (market ID, asset ID, account type)
 	//   - sending AND receiving account
 	//   - transfer type either in addition to the above filters or as a standalone option
+	//
+	// Note: The date range is restricted to any 5 days.
+	//
+	//	If no start or end date is provided, only ledger entries from the last 5 days will be returned.
+	//	If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
+	//	If a start date is provided but no end date, the end date will be set to 5 days after the start date.
+	//	If no start date is provided, but the end date is, the start date will be set to 5 days before the end date.
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -239,6 +246,10 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of parties
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
+	// List parties' profiles
+	//
+	// Get a list of profiles for multiple parties
+	ListPartiesProfiles(ctx context.Context, in *ListPartiesProfilesRequest, opts ...grpc.CallOption) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
 	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
@@ -355,14 +366,15 @@ type TradingDataServiceClient interface {
 	// Estimate the fee that would be incurred for submitting an order
 	// with the specified price and size on the market.
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
+	// Deprecated: Do not use.
 	// Estimate margin
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
 	// Estimate position
 	//
-	// Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
-	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	// Estimate the margin that would be required for maintaining the specified position, collateral increase needed to open the specified position and the liquidation price estimate.
+	// Margin estimates are scaled to asset decimal places.
 	// Liquidation price estimates are scaled to asset decimal places by default, unless an argument to scale to market decimal places is specified in the request.
 	EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error)
 	// List network parameters
@@ -480,6 +492,16 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
 	ListTeams(ctx context.Context, in *ListTeamsRequest, opts ...grpc.CallOption) (*ListTeamsResponse, error)
+	// List teams statistics
+	//
+	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamsStatistics(ctx context.Context, in *ListTeamsStatisticsRequest, opts ...grpc.CallOption) (*ListTeamsStatisticsResponse, error)
+	// List team members' statistics
+	//
+	// Get the statistics for all members of a given team, or for a specific member by using party ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamMembersStatistics(ctx context.Context, in *ListTeamMembersStatisticsRequest, opts ...grpc.CallOption) (*ListTeamMembersStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -513,6 +535,26 @@ type TradingDataServiceClient interface {
 	//
 	// Get information about a party's vesting rewards
 	GetPartyVestingStats(ctx context.Context, in *GetPartyVestingStatsRequest, opts ...grpc.CallOption) (*GetPartyVestingStatsResponse, error)
+	// Observe transaction results
+	//
+	// Subscribe to a stream of transaction results, optionally filtered by party/hash/status
+	ObserveTransactionResults(ctx context.Context, in *ObserveTransactionResultsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransactionResultsClient, error)
+	// Estimate transfer fee costs
+	//
+	// Estimate transfer fee costs with potential discount applied
+	EstimateTransferFee(ctx context.Context, in *EstimateTransferFeeRequest, opts ...grpc.CallOption) (*EstimateTransferFeeResponse, error)
+	// Available transfer fee discount
+	//
+	// Returns available per party per asset transfer discount
+	GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error)
+	// List margin modes per party per market
+	//
+	// Get a list of all margin modes, or for a specific market ID, or party ID.
+	ListPartyMarginModes(ctx context.Context, in *ListPartyMarginModesRequest, opts ...grpc.CallOption) (*ListPartyMarginModesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -1234,6 +1276,15 @@ func (c *tradingDataServiceClient) ListParties(ctx context.Context, in *ListPart
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListPartiesProfiles(ctx context.Context, in *ListPartiesProfilesRequest, opts ...grpc.CallOption) (*ListPartiesProfilesResponse, error) {
+	out := new(ListPartiesProfilesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPartiesProfiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListMarginLevels(ctx context.Context, in *ListMarginLevelsRequest, opts ...grpc.CallOption) (*ListMarginLevelsResponse, error) {
 	out := new(ListMarginLevelsResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListMarginLevels", in, out, opts...)
@@ -1538,6 +1589,7 @@ func (c *tradingDataServiceClient) EstimateFee(ctx context.Context, in *Estimate
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *tradingDataServiceClient) EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error) {
 	out := new(EstimateMarginResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimateMargin", in, out, opts...)
@@ -1853,6 +1905,24 @@ func (c *tradingDataServiceClient) ListTeams(ctx context.Context, in *ListTeamsR
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListTeamsStatistics(ctx context.Context, in *ListTeamsStatisticsRequest, opts ...grpc.CallOption) (*ListTeamsStatisticsResponse, error) {
+	out := new(ListTeamsStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamsStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListTeamMembersStatistics(ctx context.Context, in *ListTeamMembersStatisticsRequest, opts ...grpc.CallOption) (*ListTeamMembersStatisticsResponse, error) {
+	out := new(ListTeamMembersStatisticsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamMembersStatistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListTeamReferees(ctx context.Context, in *ListTeamRefereesRequest, opts ...grpc.CallOption) (*ListTeamRefereesResponse, error) {
 	out := new(ListTeamRefereesResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTeamReferees", in, out, opts...)
@@ -1925,8 +1995,76 @@ func (c *tradingDataServiceClient) GetPartyVestingStats(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ObserveTransactionResults(ctx context.Context, in *ObserveTransactionResultsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTransactionResultsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveTransactionResults", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataServiceObserveTransactionResultsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ObserveTransactionResultsClient interface {
+	Recv() (*ObserveTransactionResultsResponse, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceObserveTransactionResultsClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceObserveTransactionResultsClient) Recv() (*ObserveTransactionResultsResponse, error) {
+	m := new(ObserveTransactionResultsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *tradingDataServiceClient) EstimateTransferFee(ctx context.Context, in *EstimateTransferFeeRequest, opts ...grpc.CallOption) (*EstimateTransferFeeResponse, error) {
+	out := new(EstimateTransferFeeResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimateTransferFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) GetTotalTransferFeeDiscount(ctx context.Context, in *GetTotalTransferFeeDiscountRequest, opts ...grpc.CallOption) (*GetTotalTransferFeeDiscountResponse, error) {
+	out := new(GetTotalTransferFeeDiscountResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTotalTransferFeeDiscount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListGames(ctx context.Context, in *ListGamesRequest, opts ...grpc.CallOption) (*ListGamesResponse, error) {
+	out := new(ListGamesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListGames", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListPartyMarginModes(ctx context.Context, in *ListPartyMarginModesRequest, opts ...grpc.CallOption) (*ListPartyMarginModesResponse, error) {
+	out := new(ListPartyMarginModesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListPartyMarginModes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2038,6 +2176,13 @@ type TradingDataServiceServer interface {
 	//   - receiving account (market ID, asset ID, account type)
 	//   - sending AND receiving account
 	//   - transfer type either in addition to the above filters or as a standalone option
+	//
+	// Note: The date range is restricted to any 5 days.
+	//
+	//	If no start or end date is provided, only ledger entries from the last 5 days will be returned.
+	//	If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
+	//	If a start date is provided but no end date, the end date will be set to 5 days after the start date.
+	//	If no start date is provided, but the end date is, the start date will be set to 5 days before the end date.
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -2186,6 +2331,10 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of parties
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
+	// List parties' profiles
+	//
+	// Get a list of profiles for multiple parties
+	ListPartiesProfiles(context.Context, *ListPartiesProfilesRequest) (*ListPartiesProfilesResponse, error)
 	// List margin levels
 	//
 	// Get a list margin levels that match the provided criteria. If no filter is provided, all margin levels will be returned.
@@ -2302,14 +2451,15 @@ type TradingDataServiceServer interface {
 	// Estimate the fee that would be incurred for submitting an order
 	// with the specified price and size on the market.
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
+	// Deprecated: Do not use.
 	// Estimate margin
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
 	// Estimate position
 	//
-	// Estimate the margin that would be required for maintaining the specified position. Margin estimates are scaled to asset decimal places.
-	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	// Estimate the margin that would be required for maintaining the specified position, collateral increase needed to open the specified position and the liquidation price estimate.
+	// Margin estimates are scaled to asset decimal places.
 	// Liquidation price estimates are scaled to asset decimal places by default, unless an argument to scale to market decimal places is specified in the request.
 	EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error)
 	// List network parameters
@@ -2427,6 +2577,16 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of all teams, or for a specific team by using team ID, or party ID of a referrer or referee
 	ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error)
+	// List teams statistics
+	//
+	// Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error)
+	// List team members' statistics
+	//
+	// Get the statistics for all members of a given team, or for a specific member by using party ID, over a number of epochs.
+	// If a team does not have at least the number of epochs' worth of data, it is ignored.
+	ListTeamMembersStatistics(context.Context, *ListTeamMembersStatisticsRequest) (*ListTeamMembersStatisticsResponse, error)
 	// List team referees
 	//
 	// Get a list of all referees for a given team ID
@@ -2460,6 +2620,26 @@ type TradingDataServiceServer interface {
 	//
 	// Get information about a party's vesting rewards
 	GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error)
+	// Observe transaction results
+	//
+	// Subscribe to a stream of transaction results, optionally filtered by party/hash/status
+	ObserveTransactionResults(*ObserveTransactionResultsRequest, TradingDataService_ObserveTransactionResultsServer) error
+	// Estimate transfer fee costs
+	//
+	// Estimate transfer fee costs with potential discount applied
+	EstimateTransferFee(context.Context, *EstimateTransferFeeRequest) (*EstimateTransferFeeResponse, error)
+	// Available transfer fee discount
+	//
+	// Returns available per party per asset transfer discount
+	GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error)
+	// List games
+	//
+	// Get a list of games and corresponding game data, given the provided filters
+	ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error)
+	// List margin modes per party per market
+	//
+	// Get a list of all margin modes, or for a specific market ID, or party ID.
+	ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2671,6 +2851,9 @@ func (UnimplementedTradingDataServiceServer) GetParty(context.Context, *GetParty
 func (UnimplementedTradingDataServiceServer) ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListParties not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListPartiesProfiles(context.Context, *ListPartiesProfilesRequest) (*ListPartiesProfilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPartiesProfiles not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListMarginLevels(context.Context, *ListMarginLevelsRequest) (*ListMarginLevelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMarginLevels not implemented")
 }
@@ -2839,6 +3022,12 @@ func (UnimplementedTradingDataServiceServer) GetReferralSetStats(context.Context
 func (UnimplementedTradingDataServiceServer) ListTeams(context.Context, *ListTeamsRequest) (*ListTeamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeams not implemented")
 }
+func (UnimplementedTradingDataServiceServer) ListTeamsStatistics(context.Context, *ListTeamsStatisticsRequest) (*ListTeamsStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamsStatistics not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTeamMembersStatistics(context.Context, *ListTeamMembersStatisticsRequest) (*ListTeamMembersStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTeamMembersStatistics not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListTeamReferees(context.Context, *ListTeamRefereesRequest) (*ListTeamRefereesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTeamReferees not implemented")
 }
@@ -2862,6 +3051,21 @@ func (UnimplementedTradingDataServiceServer) GetVestingBalancesSummary(context.C
 }
 func (UnimplementedTradingDataServiceServer) GetPartyVestingStats(context.Context, *GetPartyVestingStatsRequest) (*GetPartyVestingStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPartyVestingStats not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ObserveTransactionResults(*ObserveTransactionResultsRequest, TradingDataService_ObserveTransactionResultsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ObserveTransactionResults not implemented")
+}
+func (UnimplementedTradingDataServiceServer) EstimateTransferFee(context.Context, *EstimateTransferFeeRequest) (*EstimateTransferFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimateTransferFee not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetTotalTransferFeeDiscount(context.Context, *GetTotalTransferFeeDiscountRequest) (*GetTotalTransferFeeDiscountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTotalTransferFeeDiscount not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListGames(context.Context, *ListGamesRequest) (*ListGamesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGames not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPartyMarginModes not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -3736,6 +3940,24 @@ func _TradingDataService_ListParties_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListParties(ctx, req.(*ListPartiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListPartiesProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPartiesProfilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListPartiesProfiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListPartiesProfiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListPartiesProfiles(ctx, req.(*ListPartiesProfilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4768,6 +4990,42 @@ func _TradingDataService_ListTeams_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListTeamsStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamsStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamsStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamsStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamsStatistics(ctx, req.(*ListTeamsStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListTeamMembersStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTeamMembersStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTeamMembersStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTeamMembersStatistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTeamMembersStatistics(ctx, req.(*ListTeamMembersStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListTeamReferees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTeamRefereesRequest)
 	if err := dec(in); err != nil {
@@ -4908,6 +5166,99 @@ func _TradingDataService_GetPartyVestingStats_Handler(srv interface{}, ctx conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).GetPartyVestingStats(ctx, req.(*GetPartyVestingStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ObserveTransactionResults_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ObserveTransactionResultsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServiceServer).ObserveTransactionResults(m, &tradingDataServiceObserveTransactionResultsServer{stream})
+}
+
+type TradingDataService_ObserveTransactionResultsServer interface {
+	Send(*ObserveTransactionResultsResponse) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceObserveTransactionResultsServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceObserveTransactionResultsServer) Send(m *ObserveTransactionResultsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingDataService_EstimateTransferFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateTransferFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).EstimateTransferFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/EstimateTransferFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).EstimateTransferFee(ctx, req.(*EstimateTransferFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_GetTotalTransferFeeDiscount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTotalTransferFeeDiscountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetTotalTransferFeeDiscount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetTotalTransferFeeDiscount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetTotalTransferFeeDiscount(ctx, req.(*GetTotalTransferFeeDiscountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListGames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGamesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListGames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListGames",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListGames(ctx, req.(*ListGamesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListPartyMarginModes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPartyMarginModesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListPartyMarginModes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListPartyMarginModes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListPartyMarginModes(ctx, req.(*ListPartyMarginModesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5101,6 +5452,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListParties",
 			Handler:    _TradingDataService_ListParties_Handler,
+		},
+		{
+			MethodName: "ListPartiesProfiles",
+			Handler:    _TradingDataService_ListPartiesProfiles_Handler,
 		},
 		{
 			MethodName: "ListMarginLevels",
@@ -5307,6 +5662,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListTeams_Handler,
 		},
 		{
+			MethodName: "ListTeamsStatistics",
+			Handler:    _TradingDataService_ListTeamsStatistics_Handler,
+		},
+		{
+			MethodName: "ListTeamMembersStatistics",
+			Handler:    _TradingDataService_ListTeamMembersStatistics_Handler,
+		},
+		{
 			MethodName: "ListTeamReferees",
 			Handler:    _TradingDataService_ListTeamReferees_Handler,
 		},
@@ -5337,6 +5700,22 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPartyVestingStats",
 			Handler:    _TradingDataService_GetPartyVestingStats_Handler,
+		},
+		{
+			MethodName: "EstimateTransferFee",
+			Handler:    _TradingDataService_EstimateTransferFee_Handler,
+		},
+		{
+			MethodName: "GetTotalTransferFeeDiscount",
+			Handler:    _TradingDataService_GetTotalTransferFeeDiscount_Handler,
+		},
+		{
+			MethodName: "ListGames",
+			Handler:    _TradingDataService_ListGames_Handler,
+		},
+		{
+			MethodName: "ListPartyMarginModes",
+			Handler:    _TradingDataService_ListPartyMarginModes_Handler,
 		},
 		{
 			MethodName: "Ping",
@@ -5418,6 +5797,11 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObserveLedgerMovements",
 			Handler:       _TradingDataService_ObserveLedgerMovements_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ObserveTransactionResults",
+			Handler:       _TradingDataService_ObserveTransactionResults_Handler,
 			ServerStreams: true,
 		},
 		{

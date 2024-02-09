@@ -125,8 +125,8 @@ Feature: Test LP SLA Bond penalty;
 
     And the network moves ahead "1" epochs
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_MONITORING_AUCTION | 3600    | 973       | 1027      | 3556         | 1820           | 1             |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 3600    | 973       | 1027      | 3556         | 1820           | 1             |
 
     Then the following transfers should happen:
       | from | to     | from account      | to account             | market id | amount | asset |

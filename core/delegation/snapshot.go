@@ -21,9 +21,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
-
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var hashKeys = []string{

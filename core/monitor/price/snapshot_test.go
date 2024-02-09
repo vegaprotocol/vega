@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -180,7 +181,6 @@ func TestRestorePriceBoundRepresentation(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().IsLiquidityAuction().Return(false).AnyTimes()
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 

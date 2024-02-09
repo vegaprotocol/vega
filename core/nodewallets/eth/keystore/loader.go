@@ -23,6 +23,7 @@ import (
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 

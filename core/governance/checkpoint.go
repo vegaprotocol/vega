@@ -24,12 +24,11 @@ import (
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-
-	"code.vegaprotocol.io/vega/libs/proto"
-	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 type enactmentTime struct {
@@ -108,8 +107,12 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
 
+			// handle markets that were proposed in older versions so will not have these new fields when we resubmit
 			if prop.NewMarket().Changes.LiquiditySLAParameters == nil {
 				prop.NewMarket().Changes.LiquiditySLAParameters = ptr.From(liquidity.DefaultSLAParameters)
+			}
+			if prop.NewMarket().Changes.LiquidityFeeSettings == nil {
+				prop.NewMarket().Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{Method: types.LiquidityFeeMethodMarginalCost}
 			}
 
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct, true)

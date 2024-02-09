@@ -56,6 +56,7 @@ type OrderAmendment struct {
 	MarketID        string
 	Price           *num.Uint
 	SizeDelta       int64
+	Size            *uint64
 	ExpiresAt       *int64 // timestamp
 	TimeInForce     OrderTimeInForce
 	PeggedOffset    *num.Uint
@@ -90,6 +91,7 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 		MarketID:        p.MarketId,
 		Price:           price,
 		SizeDelta:       p.SizeDelta,
+		Size:            p.Size,
 		ExpiresAt:       exp,
 		TimeInForce:     p.TimeInForce,
 		PeggedOffset:    peggedOffset,
@@ -102,6 +104,7 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 		OrderId:         o.OrderID,
 		MarketId:        o.MarketID,
 		SizeDelta:       o.SizeDelta,
+		Size:            o.Size,
 		TimeInForce:     o.TimeInForce,
 		PeggedReference: o.PeggedReference,
 	}
@@ -140,15 +143,16 @@ func (o OrderAmendment) Validate() error {
 
 func (o OrderAmendment) String() string {
 	return fmt.Sprintf(
-		"orderID(%s) marketID(%s) sizeDelta(%v) timeInForce(%s) peggedReference(%s) price(%s) expiresAt(%v) peggedOffset(%s)",
+		"orderID(%s) marketID(%s) sizeDelta(%v) size(%v) timeInForce(%s) peggedReference(%s) price(%s) expiresAt(%v) peggedOffset(%s)",
 		o.OrderID,
 		o.MarketID,
 		o.SizeDelta,
+		stringer.PtrToString(o.Size),
 		o.TimeInForce.String(),
 		o.PeggedReference.String(),
-		stringer.UintPointerToString(o.Price),
-		stringer.Int64PointerToString(o.ExpiresAt),
-		stringer.UintPointerToString(o.PeggedOffset),
+		stringer.PtrToString(o.Price),
+		stringer.PtrToString(o.ExpiresAt),
+		stringer.PtrToString(o.PeggedOffset),
 	)
 }
 

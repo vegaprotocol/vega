@@ -30,27 +30,29 @@ type ProposalTermsNewSpotMarket struct {
 func (a ProposalTermsNewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"newSpotMarket(%s)",
-		stringer.ReflectPointerToString(a.NewSpotMarket),
+		stringer.PtrToString(a.NewSpotMarket),
 	)
 }
 
-func (a ProposalTermsNewSpotMarket) IntoProto() *vegapb.ProposalTerms_NewSpotMarket {
+func (a ProposalTermsNewSpotMarket) isPTerm() {}
+
+func (a ProposalTermsNewSpotMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_NewSpotMarket{
 		NewSpotMarket: a.NewSpotMarket.IntoProto(),
 	}
 }
 
-func (a ProposalTermsNewSpotMarket) isPTerm() {}
-
-func (a ProposalTermsNewSpotMarket) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsNewSpotMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_NewSpotMarket{
+		NewSpotMarket: a.NewSpotMarket.IntoProto(),
+	}
 }
 
 func (a ProposalTermsNewSpotMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewSpotMarket
 }
 
-func (a ProposalTermsNewSpotMarket) DeepClone() proposalTerm {
+func (a ProposalTermsNewSpotMarket) DeepClone() ProposalTerm {
 	if a.NewSpotMarket == nil {
 		return &ProposalTermsNewSpotMarket{}
 	}
@@ -59,14 +61,14 @@ func (a ProposalTermsNewSpotMarket) DeepClone() proposalTerm {
 	}
 }
 
-func NewNewSpotMarketFromProto(p *vegapb.ProposalTerms_NewSpotMarket) (*ProposalTermsNewSpotMarket, error) {
+func NewNewSpotMarketFromProto(newSpotMarketProto *vegapb.NewSpotMarket) (*ProposalTermsNewSpotMarket, error) {
 	var newSpotMarket *NewSpotMarket
-	if p.NewSpotMarket != nil {
+	if newSpotMarketProto != nil {
 		newSpotMarket = &NewSpotMarket{}
 
-		if p.NewSpotMarket.Changes != nil {
+		if newSpotMarketProto.Changes != nil {
 			var err error
-			newSpotMarket.Changes, err = NewSpotMarketConfigurationFromProto(p.NewSpotMarket.Changes)
+			newSpotMarket.Changes, err = NewSpotMarketConfigurationFromProto(newSpotMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +105,7 @@ func (n NewSpotMarket) DeepClone() *NewSpotMarket {
 func (n NewSpotMarket) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -116,6 +118,7 @@ type NewSpotMarketConfiguration struct {
 	TargetStakeParameters     *TargetStakeParameters
 	RiskParameters            newRiskParams
 	SLAParams                 *LiquiditySLAParams
+	LiquidityFeeSettings      *LiquidityFeeSettings
 
 	// New market risk model parameters
 	//
@@ -157,6 +160,7 @@ func (n NewSpotMarketConfiguration) IntoProto() *vegapb.NewSpotMarketConfigurati
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParameters,
 		SlaParams:                 n.SLAParams.IntoProto(),
+		LiquidityFeeSettings:      n.LiquidityFeeSettings.IntoProto(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewSpotMarketConfiguration_Simple:
@@ -187,6 +191,9 @@ func (n NewSpotMarketConfiguration) DeepClone() *NewSpotMarketConfiguration {
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
 	}
+	if n.LiquidityFeeSettings != nil {
+		cpy.LiquidityFeeSettings = n.LiquidityFeeSettings.DeepClone()
+	}
 	return cpy
 }
 
@@ -196,11 +203,11 @@ func (n NewSpotMarketConfiguration) String() string {
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
-		stringer.ReflectPointerToString(n.Instrument),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.TargetStakeParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
-		stringer.ReflectPointerToString(n.SLAParams),
+		stringer.PtrToString(n.Instrument),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.TargetStakeParameters),
+		stringer.ObjToString(n.RiskParameters),
+		stringer.PtrToString(n.SLAParams),
 	)
 }
 
@@ -228,6 +235,11 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		slaParams = LiquiditySLAParamsFromProto(p.SlaParams)
 	}
 
+	var liquidityFeeSettings *LiquidityFeeSettings
+	if p.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = LiquidityFeeSettingsFromProto(p.LiquidityFeeSettings)
+	}
+
 	r := &NewSpotMarketConfiguration{
 		Instrument:                instrument,
 		DecimalPlaces:             p.DecimalPlaces,
@@ -236,6 +248,7 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 		PriceMonitoringParameters: priceMonitoring,
 		TargetStakeParameters:     targetStakeParams,
 		SLAParams:                 slaParams,
+		LiquidityFeeSettings:      liquidityFeeSettings,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -255,7 +268,7 @@ type NewSpotMarketConfigurationSimple struct {
 func (n NewSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -310,7 +323,7 @@ func (n NewSpotMarketConfigurationLogNormal) newRiskParamsIntoProto() interface{
 func (n NewSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 
@@ -331,7 +344,7 @@ type InstrumentConfigurationSpot struct {
 func (i InstrumentConfigurationSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
-		stringer.ReflectPointerToString(i.Spot),
+		stringer.PtrToString(i.Spot),
 	)
 }
 

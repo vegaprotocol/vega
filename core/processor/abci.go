@@ -25,16 +25,11 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
-
-	"go.uber.org/zap"
-
-	"code.vegaprotocol.io/vega/core/referral"
-	"code.vegaprotocol.io/vega/core/snapshot"
-	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
@@ -44,7 +39,10 @@ import (
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/pow"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
+	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/teams"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
@@ -52,20 +50,33 @@ import (
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
+	verrors "code.vegaprotocol.io/vega/libs/errors"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	tmtypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes1 "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmtypesint "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/abci/types"
+	tmtypes1 "github.com/cometbft/cometbft/proto/tendermint/types"
+	types1 "github.com/cometbft/cometbft/proto/tendermint/types"
+	tmtypesint "github.com/cometbft/cometbft/types"
+	"go.uber.org/zap"
 )
 
 const AppVersion = 1
+
+type TxWrapper struct {
+	tx        abci.Tx
+	timeIndex int // this is an indicator of insertion order
+	raw       []byte
+	priority  uint64
+	gasWanted uint64
+}
 
 var (
 	ErrUnexpectedTxPubKey          = errors.New("no one listens to the public keys that signed this oracle data")
@@ -87,19 +98,22 @@ type Checkpoint interface {
 }
 
 type SpamEngine interface {
-	EndOfBlock(blockHeight uint64, now time.Time)
-	PreBlockAccept(tx abci.Tx) (bool, error)
-	PostBlockAccept(tx abci.Tx) (bool, error)
+	BeginBlock(txs []abci.Tx)
+	EndPrepareProposal()
+	PreBlockAccept(tx abci.Tx) error
+	ProcessProposal(txs []abci.Tx) bool
+	CheckBlockTx(tx abci.Tx) error
 }
 
 type PoWEngine interface {
 	api.ProofOfWorkParams
-	BeginBlock(blockHeight uint64, blockHash string)
-	EndOfBlock()
+	BeginBlock(blockHeight uint64, blockHash string, txs []abci.Tx)
+	CheckBlockTx(tx abci.Tx) (pow.ValidationResult, *uint)
+	ProcessProposal(txs []abci.Tx) bool
+	EndPrepareProposal([]pow.ValidationEntry)
 	CheckTx(tx abci.Tx) error
-	DeliverTx(tx abci.Tx) error
-	Commit()
 	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
+	OnCommit()
 }
 
 //nolint:interfacebloat
@@ -128,7 +142,12 @@ type TeamsEngine interface {
 	TeamExists(team types.TeamID) bool
 	CreateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.CreateReferralSet_Team) error
 	UpdateTeam(context.Context, types.PartyID, types.TeamID, *commandspb.UpdateReferralSet_Team) error
-	JoinTeam(context.Context, types.PartyID, *commandspb.ApplyReferralCode) error
+	JoinTeam(context.Context, types.PartyID, *commandspb.JoinTeam) error
+}
+
+type PartiesEngine interface {
+	UpdateProfile(context.Context, types.PartyID, *commandspb.UpdatePartyProfile) error
+	CheckSufficientBalanceToUpdateProfile(party types.PartyID, balance *num.Uint) error
 }
 
 type ReferralProgram interface {
@@ -137,6 +156,7 @@ type ReferralProgram interface {
 	CreateReferralSet(context.Context, types.PartyID, types.ReferralSetID) error
 	ApplyReferralCode(context.Context, types.PartyID, types.ReferralSetID) error
 	CheckSufficientBalanceForApplyReferralCode(types.PartyID, *num.Uint) error
+	CheckSufficientBalanceForCreateOrUpdateReferralSet(types.PartyID, *num.Uint) error
 }
 
 type VolumeDiscountProgram interface {
@@ -145,6 +165,7 @@ type VolumeDiscountProgram interface {
 
 type BlockchainClient interface {
 	Validators(height *int64) ([]*tmtypesint.Validator, error)
+	MaxMempoolSize() int64
 }
 
 type ProtocolUpgradeService interface {
@@ -214,6 +235,7 @@ type App struct {
 	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
 	teamsEngine            TeamsEngine
+	partiesEngine          PartiesEngine
 	referralProgram        ReferralProgram
 	volumeDiscountProgram  VolumeDiscountProgram
 	protocolUpgradeService ProtocolUpgradeService
@@ -225,7 +247,8 @@ type App struct {
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize atomic.Uint64
+	maxBatchSize   atomic.Uint64
+	defaultChainID uint64
 }
 
 func NewApp(
@@ -269,6 +292,7 @@ func NewApp(
 	gastimator *Gastimator,
 	ethCallEngine EthCallEngine,
 	balanceChecker BalanceChecker,
+	partiesEngine PartiesEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -319,18 +343,20 @@ func NewApp(
 		gastimator:             gastimator,
 		ethCallEngine:          ethCallEngine,
 		balanceChecker:         balanceChecker,
+		partiesEngine:          partiesEngine,
 	}
 
 	// setup handlers
+	app.abci.OnPrepareProposal = app.prepareProposal
+	app.abci.OnProcessProposal = app.processProposal
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
 	app.abci.OnEndBlock = app.OnEndBlock
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnCheckTxSpam = app.OnCheckTxSpam
-	app.abci.OnDeliverTx = app.OnDeliverTx
-	app.abci.OnDeliverTxSpam = app.OnDeliverTXSpam
 	app.abci.OnInfo = app.Info
+	app.abci.OnFinalize = app.Finalize
 	// snapshot specific handlers.
 	app.abci.OnListSnapshots = app.ListSnapshots
 	app.abci.OnOfferSnapshot = app.OfferSnapshot
@@ -349,8 +375,11 @@ func NewApp(
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
 		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
+		HandleCheckTx(txn.BatchProposeCommand, addDeterministicID(app.CheckBatchPropose)).
 		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand).
-		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode)
+		HandleCheckTx(txn.ApplyReferralCodeCommand, app.CheckApplyReferralCode).
+		HandleCheckTx(txn.CreateReferralSetCommand, app.CheckCreateOrUpdateReferralSet).
+		HandleCheckTx(txn.UpdateReferralSetCommand, app.CheckCreateOrUpdateReferralSet)
 
 	app.abci.
 		// node commands
@@ -426,6 +455,13 @@ func NewApp(
 				),
 			),
 		).
+		HandleDeliverTx(txn.BatchProposeCommand,
+			app.SendTransactionResult(
+				app.CheckBatchProposeW(
+					addDeterministicID(app.DeliverBatchPropose),
+				),
+			),
+		).
 		HandleDeliverTx(txn.VoteCommand,
 			app.SendTransactionResult(app.DeliverVote),
 		).
@@ -466,6 +502,15 @@ func NewApp(
 		).
 		HandleDeliverTx(txn.ApplyReferralCodeCommand,
 			app.SendTransactionResult(app.ApplyReferralCode),
+		).
+		HandleDeliverTx(txn.UpdateMarginModeCommand,
+			app.SendTransactionResult(app.UpdateMarginMode),
+		).
+		HandleDeliverTx(txn.JoinTeamCommand,
+			app.SendTransactionResult(app.JoinTeam),
+		).
+		HandleDeliverTx(txn.UpdatePartyProfileCommand,
+			app.SendTransactionResult(app.UpdatePartyProfile),
 		)
 
 	app.time.NotifyOnTick(app.onTick)
@@ -481,15 +526,20 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uin
 	return nil
 }
 
-// addDeterministicID will build the command ID
+// generateDeterministicID will build the command ID
 // the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded.
+func generateDeterministicID(tx abci.Tx) string {
+	return hex.EncodeToString(vgcrypto.Hash(tx.Signature()))
+}
+
+// addDeterministicID decorates give function with deterministic ID.
 func addDeterministicID(
 	f func(context.Context, abci.Tx, string) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
-		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
+		return f(ctx, tx, generateDeterministicID(tx))
 	}
 }
 
@@ -498,6 +548,17 @@ func (app *App) CheckProposeW(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := app.CheckPropose(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
+}
+
+func (app *App) CheckBatchProposeW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := addDeterministicID(app.CheckBatchPropose)(ctx, tx); err != nil {
 			return err
 		}
 		return f(ctx, tx)
@@ -566,6 +627,17 @@ func (app *App) ensureConfig() {
 	if app.cfg.KeepCheckpointsMax < 1 {
 		app.cfg.KeepCheckpointsMax = 1
 	}
+	v := &proto.EthereumConfig{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, v); err != nil {
+		return
+	}
+	cID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	if err != nil {
+		return
+	}
+	app.defaultChainID = cID
+	app.gov.OnChainIDUpdate(cID)
+	app.exec.OnChainIDUpdate(cID)
 }
 
 // ReloadConf updates the internal configuration.
@@ -593,20 +665,20 @@ func (app *App) cancel() {
 	}
 }
 
-func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
+func (app *App) Info(_ context.Context, _ *tmtypes.RequestInfo) (*tmtypes.ResponseInfo, error) {
 	if len(app.lastBlockAppHash) != 0 {
 		// we must've lost connection to tendermint for a bit, tell it where we got up to
 		height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
 		app.log.Info("ABCI service INFO requested after reconnect",
-			logging.Int64("height", height),
+			logging.Uint64("height", height),
 			logging.String("hash", hex.EncodeToString(app.lastBlockAppHash)),
 		)
-		return tmtypes.ResponseInfo{
+		return &tmtypes.ResponseInfo{
 			AppVersion:       AppVersion,
 			Version:          app.version,
-			LastBlockHeight:  height,
+			LastBlockHeight:  int64(height),
 			LastBlockAppHash: app.lastBlockAppHash,
-		}
+		}, nil
 	}
 
 	// returns whether or not we have loaded from a snapshot (and may even do the loading)
@@ -640,39 +712,36 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 		logging.Int64("height", resp.LastBlockHeight),
 		logging.String("hash", hex.EncodeToString(resp.LastBlockAppHash)),
 	)
-	return resp
+	return &resp, nil
 }
 
-func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+func (app *App) ListSnapshots(_ context.Context, _ *tmtypes.RequestListSnapshots) (*tmtypes.ResponseListSnapshots, error) {
 	app.log.Debug("ABCI service ListSnapshots requested")
-
 	latestSnapshots, err := app.snapshotEngine.ListLatestSnapshots()
 	if err != nil {
 		app.log.Error("Could not list latest snapshots", logging.Error(err))
-		return tmtypes.ResponseListSnapshots{}
+		return &tmtypes.ResponseListSnapshots{}, err
 	}
-
-	return tmtypes.ResponseListSnapshots{
+	return &tmtypes.ResponseListSnapshots{
 		Snapshots: latestSnapshots,
-	}
+	}, nil
 }
 
-func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
+func (app *App) OfferSnapshot(_ context.Context, req *tmtypes.RequestOfferSnapshot) (*tmtypes.ResponseOfferSnapshot, error) {
 	app.log.Debug("ABCI service OfferSnapshot start")
-
 	if app.snapshotEngine.HasRestoredStateAlready() {
 		app.log.Warn("The snapshot engine aborted the snapshot offer from state-sync since the state has already been restored")
-		return tmtypes.ResponseOfferSnapshot{
+		return &tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_ABORT,
-		}
+		}, nil
 	}
 
 	deserializedSnapshot, err := types.SnapshotFromTM(req.Snapshot)
 	if err != nil {
 		app.log.Error("Could not deserialize snapshot", logging.Error(err))
-		return tmtypes.ResponseOfferSnapshot{
+		return &tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
-		}
+		}, err
 	}
 
 	// check that our unpacked snapshot's hash matches that which tendermint thinks it sent
@@ -680,57 +749,55 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 		app.log.Error("The hashes from the request and the deserialized snapshot mismatch",
 			logging.String("deserialized-hash", hex.EncodeToString(deserializedSnapshot.Hash)),
 			logging.String("request-hash", hex.EncodeToString(req.AppHash)))
-		return tmtypes.ResponseOfferSnapshot{
+		return &tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
-		}
+		}, fmt.Errorf("hash mismatch")
 	}
 
-	return app.snapshotEngine.ReceiveSnapshot(deserializedSnapshot)
+	res := app.snapshotEngine.ReceiveSnapshot(deserializedSnapshot)
+	return &res, nil
 }
 
-func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+func (app *App) ApplySnapshotChunk(ctx context.Context, req *tmtypes.RequestApplySnapshotChunk) (*tmtypes.ResponseApplySnapshotChunk, error) {
 	app.log.Debug("ABCI service ApplySnapshotChunk start")
 
 	if app.snapshotEngine.HasRestoredStateAlready() {
 		app.log.Warn("The snapshot engine aborted the snapshot chunk from state-sync since the state has already been restored")
-		return tmtypes.ResponseApplySnapshotChunk{
+		return &tmtypes.ResponseApplySnapshotChunk{
 			Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
-		}
+		}, nil // ???
 	}
-
 	chunk := &types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
 	}
 
-	return app.snapshotEngine.ReceiveSnapshotChunk(ctx, chunk, req.Sender)
+	res := app.snapshotEngine.ReceiveSnapshotChunk(ctx, chunk, req.Sender)
+	return &res, nil
 }
 
-func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+func (app *App) LoadSnapshotChunk(_ context.Context, req *tmtypes.RequestLoadSnapshotChunk) (*tmtypes.ResponseLoadSnapshotChunk, error) {
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
-
-	rawChunk, err := app.snapshotEngine.RetrieveSnapshotChunk(req.Height, req.Format, req.Chunk)
+	raw, err := app.snapshotEngine.RetrieveSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
-		app.log.Error("Could not load a snapshot chunk from snapshot engine",
-			logging.Uint64("height", req.Height),
-			logging.Error(err),
-		)
-		return tmtypes.ResponseLoadSnapshotChunk{}
+		app.log.Error("failed to load snapshot chunk", logging.Error(err), logging.Uint64("height", req.Height))
+		return &tmtypes.ResponseLoadSnapshotChunk{}, err
 	}
-
-	return tmtypes.ResponseLoadSnapshotChunk{
-		Chunk: rawChunk.Data,
-	}
+	return &tmtypes.ResponseLoadSnapshotChunk{
+		Chunk: raw.Data,
+	}, nil
 }
 
-func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+func (app *App) OnInitChain(req *tmtypes.RequestInitChain) (*tmtypes.ResponseInitChain, error) {
 	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash([]byte(req.ChainId)))
 	app.abci.SetChainID(req.ChainId)
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
-	ctx := vgcontext.WithBlockHeight(app.chainCtx, req.InitialHeight)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, uint64(req.InitialHeight))
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
+
+	app.log.Debug("OnInitChain-NewBeginBlock", logging.Uint64("height", uint64(req.InitialHeight)), logging.Time("blockTime", req.Time), logging.String("blockHash", hash))
 
 	app.broker.Send(
 		events.NewBeginBlock(ctx, eventspb.BeginBlock{
@@ -753,12 +820,131 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 
 	app.ethCallEngine.Start()
 
-	return tmtypes.ResponseInitChain{
+	return &tmtypes.ResponseInitChain{
 		Validators: app.top.GetValidatorPowerUpdates(),
-	}
+	}, nil
 }
 
-func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
+// prepareProposal takes an ordered slice of transactions and decides which of them go into the next block.
+// The logic for selection is as follows:
+// 1. mempool transactions are sorted by priority then insertion order (aka time)
+// 2. we add *valid* transaction to the block so long as gas and maxBytes limits are not violated
+// 3. we never add transactions failing pow checks
+// 4. we never add transactions failing spam checks
+// therefore a block generated with this method will never contain any transactions that would violate spam/pow constraints that would have previously
+// caused the party to get blocked.
+func (app *App) prepareProposal(txs []abci.Tx, rawTxs [][]byte) [][]byte {
+	var totalBytes int64
+
+	// internally we use this as max bytes, externally to consensus params we return max ints. This is done so that cometbft always returns to us the full mempool
+	// and we can first sort it by priority and then reap by size.
+	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
+	app.log.Debug("prepareProposal called with", logging.Int("txs", len(rawTxs)), logging.Int64("max-bytes", maxBytes))
+
+	// wrap the transaction with information about gas wanted and priority
+	wrappedTxs := make([]*TxWrapper, 0, len(txs))
+	for i, v := range txs {
+		wtx, error := app.wrapTx(v, rawTxs[i], i)
+		if error != nil {
+			continue
+		}
+		wrappedTxs = append(wrappedTxs, wtx)
+	}
+
+	// sort by priority descending. If priority is equal use the order in the mempol ascending
+	sort.Slice(wrappedTxs, func(i, j int) bool {
+		if wrappedTxs[i].priority == wrappedTxs[j].priority {
+			return wrappedTxs[i].timeIndex < wrappedTxs[j].timeIndex
+		}
+		return wrappedTxs[i].priority > wrappedTxs[j].priority
+	})
+
+	// add transactions to the block as long as we can without breaking size and gas limits in order of priority
+	validationResults := []pow.ValidationEntry{}
+	maxGas := app.getMaxGas()
+	totalGasWanted := uint64(0)
+	blockTxs := [][]byte{}
+
+	for _, tx := range wrappedTxs {
+		totalBytes += int64(len(tx.raw))
+		if totalBytes > maxBytes {
+			break
+		}
+		totalGasWanted += tx.gasWanted
+		if totalGasWanted > maxGas {
+			break
+		}
+
+		if !app.nilPow {
+			vr, d := app.pow.CheckBlockTx(tx.tx)
+			validationResults = append(validationResults, pow.ValidationEntry{Tx: tx.tx, Difficulty: d, ValResult: vr})
+			if vr != pow.ValidationResultSuccess && vr != pow.ValidationResultValidatorCommand {
+				app.log.Debug("pow failure", logging.Int64("validation-result", int64(vr)))
+				continue
+			}
+		}
+
+		if !app.nilSpam {
+			err := app.spam.CheckBlockTx(tx.tx)
+			if err != nil {
+				app.log.Debug("spam error", logging.Error(err))
+				continue
+			}
+		}
+
+		if err := app.canSubmitTx(tx.tx); err != nil {
+			continue
+		}
+		app.log.Debug("adding tx to blockProposal", logging.String("tx-hash", hex.EncodeToString(tx.tx.Hash())), logging.String("tid", tx.tx.GetPoWTID()))
+		blockTxs = append(blockTxs, tx.raw)
+	}
+	app.log.Debug("prepareProposal returned with", logging.Int("blockTxs", len(blockTxs)))
+	if !app.nilPow {
+		app.pow.EndPrepareProposal(validationResults)
+	}
+	if !app.nilSpam {
+		app.spam.EndPrepareProposal()
+	}
+	return blockTxs
+}
+
+// processProposal takes a block proposal and verifies that it has no malformed or offending transactions which should never be if the validator is using the prepareProposal
+// to generate a block.
+// The verifications include:
+// 1. no violations of pow and spam
+// 2. max gas limit is not exceeded
+// 3. (soft) max bytes is not exceeded.
+func (app *App) processProposal(txs []abci.Tx) bool {
+	totalGasWanted := 0
+	maxGas := app.gastimator.GetMaxGas()
+	maxBytes := tmtypesint.DefaultBlockParams().MaxBytes * 4
+	size := int64(0)
+	for _, tx := range txs {
+		size += int64(tx.GetLength())
+		if size > maxBytes {
+			return false
+		}
+		gw, err := app.getGasWanted(tx)
+		if err != nil {
+			return false
+		}
+		totalGasWanted += int(gw)
+		if totalGasWanted > int(maxGas) {
+			return false
+		}
+	}
+
+	if !app.nilPow && !app.pow.ProcessProposal(txs) {
+		return false
+	}
+
+	if !app.nilSpam && !app.spam.ProcessProposal(txs) {
+		return false
+	}
+	return true
+}
+
+func (app *App) OnEndBlock(blockHeight uint64) (tmtypes.ValidatorUpdates, types1.ConsensusParams) {
 	app.log.Debug("entering end block", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving end block", logging.Time("at", time.Now())) }()
 
@@ -770,91 +956,79 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(app.blockCtx)
-	if !app.nilPow {
-		app.pow.EndOfBlock()
-	}
-
-	if !app.nilSpam {
-		app.spam.EndOfBlock(uint64(req.Height), app.time.GetTimeNow())
-	}
-
 	app.stateVar.OnBlockEnd(app.blockCtx)
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
-	resp = tmtypes.ResponseEndBlock{}
-	if len(powerUpdates) > 0 {
-		resp.ValidatorUpdates = powerUpdates
+	if len(powerUpdates) == 0 {
+		powerUpdates = tmtypes.ValidatorUpdates{}
 	}
 
 	// update max gas based on the network parameter
-	resp.ConsensusParamUpdates = &tmtypes.ConsensusParams{
-		Block: &tmtypes.BlockParams{
+	consensusParamUpdates := types1.ConsensusParams{
+		Block: &types1.BlockParams{
 			MaxGas:   int64(app.gastimator.OnBlockEnd()),
-			MaxBytes: tmtypesint.DefaultBlockParams().MaxBytes,
+			MaxBytes: -1, // we tell comet that we always want to get the full mempool
 		},
 		Version: &tmtypes1.VersionParams{
-			AppVersion: AppVersion,
+			App: AppVersion,
 		},
 	}
 	app.exec.BlockEnd(app.blockCtx)
 
-	return ctx, resp
+	return powerUpdates, consensusParamUpdates
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
-func (app *App) OnBeginBlock(
-	req tmtypes.RequestBeginBlock,
-) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
-	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", uint64(req.Header.Height)))
+func (app *App) OnBeginBlock(blockHeight uint64, blockHash string, blockTime time.Time, proposer string, txs []abci.Tx) context.Context {
+	app.log.Debug("entering begin block", logging.Time("at", time.Now()), logging.Uint64("height", blockHeight), logging.Time("time", blockTime), logging.String("blockHash", blockHash))
 	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
 
-	hash := hex.EncodeToString(req.Hash)
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
-
+	ctx := vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, blockHash), blockHeight)
 	if app.protocolUpgradeService.CoreReadyForUpgrade() {
 		app.startProtocolUpgrade(ctx)
 	}
 
-	app.broker.Send(
-		events.NewBeginBlock(ctx, eventspb.BeginBlock{
-			Height:    uint64(req.Header.Height),
-			Timestamp: req.Header.Time.UnixNano(),
-			Hash:      hash,
-		}),
-	)
+	app.broker.Send(events.NewBeginBlock(ctx, eventspb.BeginBlock{
+		Height:    blockHeight,
+		Timestamp: blockTime.UnixNano(),
+		Hash:      blockHash,
+	}))
+	app.cBlock = blockHash
 
-	app.cBlock = hash
+	for _, tx := range txs {
+		app.setTxStats(tx.GetLength())
+	}
 
 	// update pow engine on a new block
 	if !app.nilPow {
-		app.pow.BeginBlock(uint64(req.Header.Height), hash)
+		app.pow.BeginBlock(blockHeight, blockHash, txs)
 	}
 
-	app.stats.SetHash(hash)
-	app.stats.SetHeight(uint64(req.Header.Height))
+	if !app.nilSpam {
+		app.spam.BeginBlock(txs)
+	}
+
+	app.stats.SetHash(blockHash)
+	app.stats.SetHeight(blockHeight)
 	app.blockCtx = ctx
-
-	now := req.Header.Time
-
+	now := blockTime
 	app.time.SetTimeNow(ctx, now)
 	app.rates.NextBlock()
 	app.currentTimestamp = app.time.GetTimeNow()
 	app.previousTimestamp = app.time.GetTimeLastBatch()
-
 	app.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
-		logging.Int64("height", req.Header.GetHeight()),
+		logging.Uint64("height", blockHeight),
 	)
 
-	app.protocolUpgradeService.BeginBlock(ctx, uint64(req.Header.Height))
-	app.top.BeginBlock(ctx, req)
+	app.protocolUpgradeService.BeginBlock(ctx, blockHeight)
+	app.top.BeginBlock(ctx, blockHeight, proposer)
 	app.balanceChecker.BeginBlock(ctx)
 	app.exec.BeginBlock(ctx)
-
-	return ctx, resp
+	return ctx
 }
 
 func (app *App) startProtocolUpgrade(ctx context.Context) {
@@ -910,14 +1084,8 @@ func (app *App) startProtocolUpgrade(ctx context.Context) {
 	}
 }
 
-func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
-	app.log.Debug("entering commit", logging.Time("at", time.Now()))
-	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
-
-	if !app.nilPow {
-		app.pow.Commit()
-	}
-
+// Finalize calculates the app hash for the block ending.
+func (app *App) Finalize() []byte {
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 
@@ -945,21 +1113,21 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	if len(snapHash) > 0 {
 		app.log.Info("State has been snapshotted", logging.Float64("duration", t1.Sub(t0).Seconds()))
 	}
-	resp.Data = snapHash
+	appHash := snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = vgcrypto.Hash([]byte(app.version))
-		resp.Data = append(resp.Data, app.exec.Hash()...)
-		resp.Data = append(resp.Data, app.delegation.Hash()...)
-		resp.Data = append(resp.Data, app.gov.Hash()...)
-		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+		appHash = vgcrypto.Hash([]byte(app.version))
+		appHash = append(appHash, app.exec.Hash()...)
+		appHash = append(appHash, app.delegation.Hash()...)
+		appHash = append(appHash, app.gov.Hash()...)
+		appHash = append(appHash, app.stakingAccounts.Hash()...)
 	}
 
 	if cpt != nil {
 		if len(snapHash) == 0 {
 			// only append to commit hash if we aren't using the snapshot hash
 			// otherwise restoring a checkpoint would restore an incomplete/wrong hash
-			resp.Data = append(resp.Data, cpt.Hash...)
+			appHash = append(appHash, cpt.Hash...)
 			app.log.Debug("checkpoint hash", logging.String("response-data", hex.EncodeToString(cpt.Hash)))
 		}
 		_ = app.handleCheckpoint(cpt)
@@ -971,25 +1139,32 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	// so we just re-hash to have an output which is actually an
 	// hash and is consistent over all calls to Commit
 	if len(snapHash) <= 0 {
-		resp.Data = vgcrypto.Hash(resp.Data)
+		appHash = vgcrypto.Hash(appHash)
 	} else {
 		app.broker.Send(events.NewSnapshotEventEvent(app.blockCtx, app.stats.Height(), app.cBlock, app.protocolUpgradeService.TimeForUpgrade()))
 	}
 
 	// Update response and save the apphash incase we lose connection with tendermint and need to verify our
 	// current state
-	app.lastBlockAppHash = resp.Data
-	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
+	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(appHash)))
+	return appHash
+}
+
+func (app *App) OnCommit() (*tmtypes.ResponseCommit, error) {
+	app.log.Debug("entering commit", logging.Time("at", time.Now()), logging.Uint64("height", app.stats.Height()))
+	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 	app.updateStats()
 	app.setBatchStats()
-
+	if !app.nilPow {
+		app.pow.OnCommit()
+	}
 	app.broker.Send(
 		events.NewEndBlock(app.blockCtx, eventspb.EndBlock{
 			Height: app.stats.Height(),
 		}),
 	)
 
-	return resp
+	return &tmtypes.ResponseCommit{}, nil
 }
 
 func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
@@ -1087,7 +1262,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 	}
 	// additional spam checks
 	if !app.nilSpam {
-		if _, err := app.spam.PreBlockAccept(tx); err != nil {
+		if err := app.spam.PreBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = blockchain.AbciSpamError
 			resp.Data = []byte(err.Error())
@@ -1098,7 +1273,7 @@ func (app *App) OnCheckTxSpam(tx abci.Tx) tmtypes.ResponseCheckTx {
 }
 
 // OnCheckTx performs soft validations.
-func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+func (app *App) OnCheckTx(ctx context.Context, _ *tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, *tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
 	if app.log.IsDebug() {
@@ -1108,7 +1283,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
-		return ctx, resp
+		return ctx, &resp
 	}
 
 	// Check ratelimits
@@ -1120,20 +1295,19 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 		app.log.Error("error getting gas estimate", logging.Error(err))
 		resp.Code = blockchain.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
-		return ctx, resp
+		return ctx, &resp
 	}
 
 	resp.GasWanted = int64(gasWanted)
-	resp.Priority = int64(app.gastimator.GetPriority(tx))
 	if app.log.IsDebug() {
-		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()), logging.Int64("priority", resp.Priority), logging.Int64("gas-wanted", resp.GasWanted), logging.Int64("max-gas", int64(app.gastimator.GetMaxGas())))
+		app.log.Debug("transaction passed checkTx", logging.String("tid", tx.GetPoWTID()), logging.String("command", tx.Command().String()))
 	}
 
 	if isval {
-		return ctx, resp
+		return ctx, &resp
 	}
 
-	return ctx, resp
+	return ctx, &resp
 }
 
 // limitPubkey returns whether a request should be rate limited or not.
@@ -1185,9 +1359,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if p.Terms.GetNewMarket().Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
 				return ErrPerpsMarketProposalDisabled
 			}
-			return validateUseOfEthOracles(p.Terms, app.netp)
+			return validateUseOfEthOracles(p.Terms.Change, app.netp)
 		case types.ProposalTermsTypeUpdateMarket:
-			return validateUseOfEthOracles(p.Terms, app.netp)
+			return validateUseOfEthOracles(p.Terms.Change, app.netp)
 
 		case types.ProposalTermsTypeNewAsset:
 			if !app.limits.CanProposeAsset() {
@@ -1198,19 +1372,57 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 				return ErrSpotMarketProposalDisabled
 			}
 		}
+	case txn.BatchProposeCommand:
+		ps := &commandspb.BatchProposalSubmission{}
+		if err := tx.Unmarshal(ps); err != nil {
+			return fmt.Errorf("could not unmarshal batch proposal submission: %w", err)
+		}
+
+		idgen := idgeneration.New(generateDeterministicID(tx))
+		ids := make([]string, 0, len(ps.Terms.Changes))
+
+		for i := 0; i < len(ps.Terms.Changes); i++ {
+			ids = append(ids, idgen.NextID())
+		}
+
+		p, err := types.NewBatchProposalSubmissionFromProto(ps, ids)
+		if err != nil {
+			return fmt.Errorf("invalid batch proposal submission: %w", err)
+		}
+		if p.Terms == nil || len(p.Terms.Changes) == 0 {
+			return errors.New("invalid batch proposal submission")
+		}
+
+		for _, batchChange := range p.Terms.Changes {
+			switch c := batchChange.Change.(type) {
+			case *types.ProposalTermsNewMarket:
+				if !app.limits.CanProposeMarket() {
+					return ErrMarketProposalDisabled
+				}
+
+				if c.NewMarket.Changes.ProductType() == types.ProductTypePerps && !app.limits.CanProposePerpsMarket() {
+					return ErrPerpsMarketProposalDisabled
+				}
+				return validateUseOfEthOracles(c, app.netp)
+			case *types.ProposalTermsUpdateMarket:
+				return validateUseOfEthOracles(c, app.netp)
+
+			case *types.ProposalTermsNewSpotMarket:
+				if !app.limits.CanProposeSpotMarket() {
+					return ErrSpotMarketProposalDisabled
+				}
+			}
+		}
 	}
 	return nil
 }
 
-func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters) error {
+func validateUseOfEthOracles(change types.ProposalTerm, netp NetworkParameters) error {
 	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
 
-	switch terms.Change.GetTermType() {
-	case types.ProposalTermsTypeNewMarket:
-		m := terms.GetNewMarket()
-		if m == nil {
-			return nil
-		}
+	switch c := change.(type) {
+	case *types.ProposalTermsNewMarket:
+		m := c.NewMarket
 
 		if m.Changes == nil {
 			return nil
@@ -1237,11 +1449,8 @@ func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters)
 			}
 		}
 
-	case types.ProposalTermsTypeUpdateMarket:
-		m := terms.GetUpdateMarket()
-		if m == nil {
-			return nil
-		}
+	case *types.ProposalTermsUpdateMarket:
+		m := c.UpdateMarket
 
 		if m.Changes == nil {
 			return nil
@@ -1272,48 +1481,6 @@ func validateUseOfEthOracles(terms *types.ProposalTerms, netp NetworkParameters)
 	return nil
 }
 
-// OnDeliverTXSpam checks spam and replay.
-func (app *App) OnDeliverTXSpam(ctx context.Context, tx abci.Tx) tmtypes.ResponseDeliverTx {
-	var resp tmtypes.ResponseDeliverTx
-	ctxWithHash := vgcontext.WithTxHash(ctx, hex.EncodeToString(tx.Hash()))
-
-	// verify proof of work
-	if !app.nilPow {
-		if err := app.pow.DeliverTx(tx); err != nil {
-			app.log.Error(err.Error())
-			resp.Code = blockchain.AbciSpamError
-			resp.Data = []byte(err.Error())
-			app.broker.Send(events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String()))
-			return resp
-		}
-	}
-	if !app.nilSpam {
-		if _, err := app.spam.PostBlockAccept(tx); err != nil {
-			app.log.Error(err.Error())
-			resp.Code = blockchain.AbciSpamError
-			resp.Data = []byte(err.Error())
-			evt := events.NewTxErrEvent(ctxWithHash, err, tx.Party(), tx.GetCmd(), tx.Command().String())
-			app.broker.Send(evt)
-			return resp
-		}
-	}
-	return resp
-}
-
-// OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
-func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
-	app.setTxStats(len(req.Tx))
-	var resp tmtypes.ResponseDeliverTx
-	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = blockchain.AbciTxnValidationFailure
-		resp.Data = []byte(err.Error())
-	}
-
-	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
-
-	return ctx, resp
-}
-
 func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) error {
 	if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
 		return err
@@ -1339,7 +1506,7 @@ func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) erro
 	}
 
 	maxBatchSize := app.maxBatchSize.Load()
-	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
+	size := uint64(len(bmi.UpdateMarginMode) + len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
 	if size > maxBatchSize {
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}
@@ -1404,6 +1571,13 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 
 func (app *App) CheckApplyReferralCode(_ context.Context, tx abci.Tx) error {
 	if err := app.referralProgram.CheckSufficientBalanceForApplyReferralCode(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *App) CheckCreateOrUpdateReferralSet(_ context.Context, tx abci.Tx) error {
+	if err := app.referralProgram.CheckSufficientBalanceForCreateOrUpdateReferralSet(types.PartyID(tx.Party()), app.balanceChecker.GetPartyBalance(tx.Party())); err != nil {
 		return err
 	}
 	return nil
@@ -1648,6 +1822,41 @@ func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	}
 }
 
+func (app *App) CheckBatchPropose(_ context.Context, tx abci.Tx, deterministicBatchID string) error {
+	p := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(p); err != nil {
+		return err
+	}
+
+	idgen := idgeneration.New(deterministicBatchID)
+	ids := make([]string, 0, len(p.Terms.Changes))
+
+	for i := 0; i < len(p.Terms.Changes); i++ {
+		ids = append(ids, idgen.NextID())
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(p, ids)
+	if err != nil {
+		return err
+	}
+
+	errs := verrors.NewCumulatedErrors()
+	for _, change := range propSubmission.Terms.Changes {
+		switch term := change.Change.(type) {
+		case *types.ProposalTermsUpdateNetworkParameter:
+			if err := app.netp.IsUpdateAllowed(term.UpdateNetworkParameter.Changes.Key); err != nil {
+				errs.Add(errs)
+			}
+		}
+	}
+
+	if errs.HasAny() {
+		return errs
+	}
+
+	return nil
+}
+
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
@@ -1712,6 +1921,102 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 					logging.Error(err))
 			}
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (app *App) DeliverBatchPropose(ctx context.Context, tx abci.Tx, deterministicBatchID string) (err error) {
+	prop := &commandspb.BatchProposalSubmission{}
+	if err := tx.Unmarshal(prop); err != nil {
+		return err
+	}
+
+	party := tx.Party()
+
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("submitting batch proposal",
+			logging.ProposalID(deterministicBatchID),
+			logging.String("proposal-reference", prop.Reference),
+			logging.String("proposal-party", party),
+			logging.String("proposal-terms", prop.Terms.String()))
+	}
+
+	idgen := idgeneration.New(deterministicBatchID)
+
+	// Burn one so the first proposal doesn't have the same ID as the batch ID
+	idgen.NextID()
+	ids := make([]string, 0, len(prop.Terms.Changes))
+
+	for i := 0; i < len(prop.Terms.Changes); i++ {
+		ids = append(ids, idgen.NextID())
+	}
+
+	propSubmission, err := types.NewBatchProposalSubmissionFromProto(prop, ids)
+	if err != nil {
+		return err
+	}
+	toSubmits, err := app.gov.SubmitBatchProposal(ctx, *propSubmission, deterministicBatchID, party)
+	if err != nil {
+		app.log.Debug("could not submit batch proposal",
+			logging.ProposalID(deterministicBatchID),
+			logging.Error(err))
+		return err
+	}
+
+	var submittedMarketIDs []string
+	defer func() {
+		if err == nil {
+			return
+		}
+
+		// an error happened when submitting the market
+		// we should cancel this proposal now
+		if err := app.gov.RejectBatchProposal(ctx, deterministicBatchID,
+			types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+			// this should never happen
+			app.log.Panic("tried to reject a nonexistent batch proposal",
+				logging.String("proposal-id", deterministicBatchID),
+				logging.Error(err))
+		}
+
+		for _, marketID := range submittedMarketIDs {
+			if err := app.exec.RejectMarket(ctx, marketID); err != nil {
+				// this should never happen
+				app.log.Panic("unable to submit reject submitted market",
+					logging.ProposalID(marketID),
+					logging.Error(err))
+			}
+		}
+	}()
+
+	for _, toSubmit := range toSubmits {
+		if toSubmit.IsNewMarket() {
+			// opening auction start
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewMarket()
+
+			// @TODO pass in parent and insurance pool share if required
+			if err = app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new market with liquidity submission",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
+		} else if toSubmit.IsNewSpotMarket() {
+			oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+			nm := toSubmit.NewSpotMarket()
+			if err = app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+				app.log.Debug("unable to submit new spot market",
+					logging.ProposalID(nm.Market().ID),
+					logging.Error(err))
+				return err
+			}
+
+			submittedMarketIDs = append(submittedMarketIDs, nm.Market().ID)
 		}
 	}
 
@@ -1845,7 +2150,6 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
-
 	return app.processChainEvent(ctx, ce, tx.PubKeyHex(), id)
 }
 
@@ -2177,7 +2481,7 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 	return app.top.AddKeyRotate(
 		ctx,
 		tx.PubKeyHex(),
-		uint64(currentBlockHeight),
+		currentBlockHeight,
 		kr,
 	)
 }
@@ -2236,6 +2540,34 @@ func (app *App) DeliverEthereumKeyRotateSubmission(ctx context.Context, tx abci.
 	)
 }
 
+func (app *App) wrapTx(tx abci.Tx, rawTx []byte, insertionOrder int) (*TxWrapper, error) {
+	priority := app.getPriority(tx)
+	gasWanted, err := app.getGasWanted(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TxWrapper{
+		tx:        tx,
+		timeIndex: insertionOrder,
+		raw:       rawTx,
+		priority:  priority,
+		gasWanted: gasWanted,
+	}, nil
+}
+
+func (app *App) getPriority(tx abci.Tx) uint64 {
+	return app.gastimator.GetPriority(tx)
+}
+
+func (app *App) getGasWanted(tx abci.Tx) (uint64, error) {
+	return app.gastimator.CalcGasWantedForTx(tx)
+}
+
+func (app *App) getMaxGas() uint64 {
+	return app.gastimator.maxGas
+}
+
 func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	params := &commandspb.CreateReferralSet{}
 	if err := tx.Unmarshal(params); err != nil {
@@ -2251,6 +2583,22 @@ func (app *App) CreateReferralSet(ctx context.Context, tx abci.Tx, deterministic
 	}
 
 	return nil
+}
+
+func (app *App) UpdateMarginMode(ctx context.Context, tx abci.Tx) error {
+	var err error
+	params := &commandspb.UpdateMarginMode{}
+	if err = tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdateMarginMode command: %w", err)
+	}
+	marginFactor := num.DecimalZero()
+	if params.MarginFactor != nil && len(*params.MarginFactor) > 0 {
+		marginFactor, err = num.DecimalFromString(*params.MarginFactor)
+		if err != nil {
+			return err
+		}
+	}
+	return app.exec.UpdateMarginMode(ctx, tx.Party(), params.MarketId, types.MarginMode(params.Mode), marginFactor)
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create
@@ -2290,19 +2638,71 @@ func (app *App) ApplyReferralCode(ctx context.Context, tx abci.Tx) error {
 
 	partyID := types.PartyID(tx.Party())
 	err := app.referralProgram.ApplyReferralCode(ctx, partyID, types.ReferralSetID(params.Id))
-
-	// It's OK to switch team if the party was already a referee.
-	if err != nil && err.Error() != referral.ErrIsAlreadyAReferee(partyID).Error() {
+	if err != nil {
 		return fmt.Errorf("could not apply the referral code: %w", err)
 	}
 
-	// temporarily disable team support
-	// teamID := types.TeamID(params.Id)
-	// err = app.teamsEngine.JoinTeam(ctx, partyID, params)
-	// // This is ok as well, as not all referral sets are teams as well.
-	// if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
-	// 	return fmt.Errorf("couldn't join team: %w", err)
-	// }
+	teamID := types.TeamID(params.Id)
+	joinTeam := &commandspb.JoinTeam{
+		Id: params.Id,
+	}
+	err = app.teamsEngine.JoinTeam(ctx, partyID, joinTeam)
+	// This is ok as well, as not all referral sets are teams as well.
+	if err != nil && err.Error() != teams.ErrNoTeamMatchesID(teamID).Error() {
+		return fmt.Errorf("couldn't join team: %w", err)
+	}
 
 	return nil
+}
+
+func (app *App) JoinTeam(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.JoinTeam{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize JoinTeam command: %w", err)
+	}
+
+	partyID := types.PartyID(tx.Party())
+	err := app.teamsEngine.JoinTeam(ctx, partyID, params)
+	if err != nil {
+		return fmt.Errorf("couldn't join team: %w", err)
+	}
+
+	return nil
+}
+
+func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
+	params := &commandspb.UpdatePartyProfile{}
+	if err := tx.Unmarshal(params); err != nil {
+		return fmt.Errorf("could not deserialize UpdatePartyProfile command: %w", err)
+	}
+
+	err := app.partiesEngine.CheckSufficientBalanceToUpdateProfile(
+		types.PartyID(tx.Party()),
+		app.balanceChecker.GetPartyBalance(tx.Party()),
+	)
+	if err != nil {
+		return err
+	}
+
+	partyID := types.PartyID(tx.Party())
+	err = app.partiesEngine.UpdateProfile(ctx, partyID, params)
+	if err != nil {
+		return fmt.Errorf("couldn't update profile: %w", err)
+	}
+
+	return nil
+}
+
+func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) error {
+	cfg, err := types.EthereumConfigFromUntypedProto(conf)
+	if err != nil {
+		return err
+	}
+	cID, err := strconv.ParseUint(cfg.ChainID(), 10, 64)
+	if err != nil {
+		return err
+	}
+	app.defaultChainID = cID
+	app.exec.OnChainIDUpdate(cID)
+	return app.gov.OnChainIDUpdate(cID)
 }

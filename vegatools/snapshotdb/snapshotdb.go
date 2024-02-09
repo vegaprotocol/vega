@@ -23,15 +23,18 @@ import (
 	"os"
 	"sort"
 
+	metadatadb "code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
+	snapshotdb "code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/paths"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	pb "github.com/gogo/protobuf/proto"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"google.golang.org/protobuf/proto"
-
-	"code.vegaprotocol.io/vega/core/types"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 // Data is a representation of the information we scrape from the avl tree.
@@ -153,10 +156,11 @@ func SavePayloadsToFile(dbPath string, outputPath string, heightToOutput uint64)
 		payloads, _, _ := getAllPayloads(tree)
 		return writePayloads(payloads, outputPath)
 	}
+
 	return errors.New("failed to find snapshot for block-height")
 }
 
-func writePayloads(payloads []*snapshot.Payload, outputPath string) error {
+func writePayloads(payloads []*snapshotpb.Payload, outputPath string) error {
 	f, err := os.Create(outputPath)
 	if err != nil {
 		return err
@@ -167,7 +171,7 @@ func writePayloads(payloads []*snapshot.Payload, outputPath string) error {
 	m := jsonpb.Marshaler{Indent: "    "}
 
 	payloadData := struct {
-		Data []*snapshot.Payload `json:"data,omitempty" protobuf:"bytes,1,rep,name=data"`
+		Data []*snapshotpb.Payload `json:"data,omitempty" protobuf:"bytes,1,rep,name=data"`
 		pb.Message
 	}{
 		Data: payloads,
@@ -189,9 +193,9 @@ func writePayloads(payloads []*snapshot.Payload, outputPath string) error {
 	return nil
 }
 
-func getAllPayloads(tree *iavl.MutableTree) (payloads []*snapshot.Payload, blockHeight uint64, err error) {
+func getAllPayloads(tree *iavl.MutableTree) (payloads []*snapshotpb.Payload, blockHeight uint64, err error) {
 	_, err = tree.Iterate(func(key []byte, val []byte) bool {
-		p := new(snapshot.Payload)
+		p := new(snapshotpb.Payload)
 		if err = proto.Unmarshal(val, p); err != nil {
 			return true
 		}
@@ -208,4 +212,90 @@ func getAllPayloads(tree *iavl.MutableTree) (payloads []*snapshot.Payload, block
 	}
 
 	return payloads, blockHeight, err
+}
+
+// SetProtocolUpgrade will take the latest snapshot in the tree and rewrites it with the protocolUpgrade flag set to
+// true so that we can pretend that the snapshot was taken for a upgrade to help with testing.
+func SetProtocolUpgrade(vegaPaths paths.Paths) error {
+	snap, _ := snapshotdb.NewLevelDBDatabase(vegaPaths)
+	meta, _ := metadatadb.NewLevelDBDatabase(vegaPaths)
+	defer snap.Close()
+	defer meta.Close()
+
+	tree, err := iavl.NewMutableTree(snap, 0, false)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tree.Load(); err != nil {
+		return err
+	}
+
+	tree.LazyLoadVersion(-1)
+	oldVersion := tree.Version()
+
+	var perr error
+	var k, v []byte
+
+	_, err = tree.Iterate(func(key []byte, val []byte) bool {
+		p := &snapshotpb.Payload{}
+		if perr = proto.Unmarshal(val, p); perr != nil {
+			return true
+		}
+
+		appState := p.GetAppState()
+		if appState == nil {
+			return false
+		}
+
+		// change the value
+		appState.ProtocolUpgrade = true
+
+		// marshal it up again
+		pp := &snapshotpb.Payload{
+			Data: &snapshotpb.Payload_AppState{
+				AppState: appState,
+			},
+		}
+		k = key
+		v, perr = proto.Marshal(pp)
+		return true
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to traverse snapshot payloads: %w", err)
+	}
+
+	if perr != nil {
+		return fmt.Errorf("failed to unpack appstate payload: %w", perr)
+	}
+
+	if _, err = tree.Set(k, v); err != nil {
+		return fmt.Errorf("failed to save new appstate to snapshot: %w", err)
+	}
+
+	_, newVersion, err := tree.SaveVersion()
+	if err != nil {
+		return err
+	}
+
+	// delete the old version so that we do not have two with the same block-height
+	tree.DeleteVersion(oldVersion)
+
+	// update the version <-> block-height map in the meta-data
+	metaSnap, err := meta.Load(oldVersion)
+	if err != nil {
+		return err
+	}
+
+	// delete the meta-data pegged against the old version
+	if err := meta.Delete(oldVersion); err != nil {
+		return err
+	}
+
+	// new it against the new version
+	if err := meta.Save(newVersion, metaSnap); err != nil {
+		return err
+	}
+	return nil
 }

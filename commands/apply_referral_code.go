@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -25,11 +25,11 @@ func checkApplyReferralCode(cmd *commandspb.ApplyReferralCode) Errors {
 	errs := NewErrors()
 
 	if cmd == nil {
-		return errs.FinalAddForProperty("join_team", ErrIsRequired)
+		return errs.FinalAddForProperty("apply_referral_code", ErrIsRequired)
 	}
 
 	if !IsVegaID(cmd.Id) {
-		errs.AddForProperty("join_team.team_id", ErrShouldBeAValidVegaID)
+		errs.AddForProperty("apply_referral_code.id", ErrShouldBeAValidVegaID)
 	}
 
 	return errs

@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -18,21 +18,22 @@ package pprof
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/pprof"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/config/encoding"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/felixge/fgprof"
 
 	// import pprof globally because it's used to init the package
 	// and this comment is mostly here as well in order to make
 	// golint very many much happy.
 	_ "net/http/pprof"
-	"os"
-	"path/filepath"
-	"runtime"
-	"runtime/pprof"
-
-	"code.vegaprotocol.io/vega/libs/config/encoding"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/felixge/fgprof"
 )
 
 const (

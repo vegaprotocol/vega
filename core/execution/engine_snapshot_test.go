@@ -23,27 +23,26 @@ import (
 	"testing"
 	"time"
 
-	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/datasource"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
-	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
-
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
+	fmock "code.vegaprotocol.io/vega/core/fee/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,9 +94,10 @@ func getMockedEngine(t *testing.T) *engineFake {
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return &engineFake{
 		Engine:     exec,
@@ -159,7 +159,9 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().GetReferrer(gomock.Any()).Return(types.PartyID(""), errors.New("not a referrer")).AnyTimes()
 	mat := common.NewMarketActivityTracker(log, teams, balanceChecker)
-	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount)
+	banking := mocks.NewMockBanking(ctrl)
+
+	e := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, mat, asset, referralDiscountReward, volumeDiscount, banking)
 	epochEngine.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 	return e, ctrl
 }
@@ -200,8 +202,6 @@ func getSpotMarketConfig() *types.Market {
 				TimeWindow:    101,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
-			TriggeringRatio:  num.DecimalZero(),
-			AuctionExtension: 0,
 		},
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
@@ -248,6 +248,14 @@ func getSpotMarketConfig() *types.Market {
 			},
 		},
 		State: types.MarketStateActive,
+		MarkPriceConfiguration: &types.CompositePriceConfiguration{
+			DecayWeight:              num.DecimalZero(),
+			DecayPower:               num.DecimalZero(),
+			CashAmount:               num.UintZero(),
+			SourceWeights:            []num.Decimal{num.DecimalFromFloat(0.1), num.DecimalFromFloat(0.2), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0.4)},
+			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
+			CompositePriceType:       types.CompositePriceTypeByLastTrade,
+		},
 	}
 }
 
@@ -275,14 +283,15 @@ func getMarketConfig() *types.Market {
 				TimeWindow:    101,
 				ScalingFactor: num.DecimalFromFloat(1.0),
 			},
-			TriggeringRatio:  num.DecimalFromFloat(0.9),
-			AuctionExtension: 10000,
 		},
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				MakerFee:          num.DecimalFromFloat(0.1),
 				InfrastructureFee: num.DecimalFromFloat(0.1),
 				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -370,6 +379,14 @@ func getMarketConfig() *types.Market {
 			PerformanceHysteresisEpochs: 1,
 		},
 		State: types.MarketStateActive,
+		MarkPriceConfiguration: &types.CompositePriceConfiguration{
+			DecayWeight:              num.DecimalZero(),
+			DecayPower:               num.DecimalZero(),
+			CashAmount:               num.UintZero(),
+			SourceWeights:            []num.Decimal{num.DecimalFromFloat(0.1), num.DecimalFromFloat(0.2), num.DecimalFromFloat(0.3), num.DecimalFromFloat(0.4)},
+			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
+			CompositePriceType:       types.CompositePriceTypeByLastTrade,
+		},
 	}
 }
 
@@ -413,7 +430,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
-	assert.Len(t, providers, 6)
+	assert.Len(t, providers, 7)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
@@ -433,7 +450,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
 
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 12)
+	assert.Len(t, loadStateProviders, 14)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}
@@ -571,7 +588,7 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	engine.collateral.EXPECT().GetLiquidityFeesBonusDistributionAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
-	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes().Return(nil, nil)
 	engine.collateral.EXPECT().TransferFees(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
@@ -699,7 +716,7 @@ func TestSuccessorMapSnapshot(t *testing.T) {
 	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
-	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
 	engine.broker.EXPECT().Send(gomock.Any()).AnyTimes()

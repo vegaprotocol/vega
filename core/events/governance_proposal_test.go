@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/stretchr/testify/assert"
 )
 

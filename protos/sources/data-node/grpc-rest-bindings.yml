@@ -83,6 +83,8 @@ http:
       get: "/api/v2/party/{party_id}"
     - selector: datanode.api.v2.TradingDataService.ListParties
       get: "/api/v2/parties"
+    - selector: datanode.api.v2.TradingDataService.ListPartiesProfiles
+      get: "/api/v2/parties/profiles"
     - selector: datanode.api.v2.TradingDataService.ListMarginLevels
       get: "/api/v2/margin/levels"
     - selector: datanode.api.v2.TradingDataService.ListRewards
@@ -181,6 +183,10 @@ http:
       get: "/api/v2/referral-sets/stats"
     - selector: datanode.api.v2.TradingDataService.ListTeams
       get: "/api/v2/teams"
+    - selector: datanode.api.v2.TradingDataService.ListTeamsStatistics
+      get: "/api/v2/teams/stats"
+    - selector: datanode.api.v2.TradingDataService.ListTeamMembersStatistics
+      get: "/api/v2/teams/{team_id}/stats"
     - selector: datanode.api.v2.TradingDataService.ListTeamReferees
       get: "/api/v2/teams/referees/{team_id}"
     - selector: datanode.api.v2.TradingDataService.ListTeamRefereeHistory
@@ -193,6 +199,14 @@ http:
       get: "/api/v2/volume-discount-programs/current"
     - selector: datanode.api.v2.TradingDataService.GetVolumeDiscountStats
       get: "/api/v2/volume-discount-programs/stats"
+    - selector: datanode.api.v2.TradingDataService.GetTotalTransferFeeDiscount
+      get: "/api/v2/transfers/total-fee-discount"
+    - selector: datanode.api.v2.TradingDataService.EstimateTransferFee
+      get: "/api/v2/transfers/estimate-fee"
+    - selector: datanode.api.v2.TradingDataService.ListGames
+      get: "/api/v2/games"
+    - selector: datanode.api.v2.TradingDataService.ListPartyMarginModes
+      get: "/api/v2/margin-modes"
 
     # websockets
 
@@ -224,3 +238,5 @@ http:
       get: "/api/v2/stream/ledger/movements"
     - selector: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions
       get: "/api/v2/stream/liquidity-provisions"
+    - selector: datanode.api.v2.TradingDataService.ObserveTransactionResults
+      get: "/api/v2/stream/transaction-results"

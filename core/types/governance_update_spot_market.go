@@ -24,13 +24,15 @@ import (
 )
 
 type ProposalTermsUpdateSpotMarket struct {
-	UpdateSpotMarket *UpdateSpotMarket
+	BatchProposalID    string
+	EnactmentTimestamp int64
+	UpdateSpotMarket   *UpdateSpotMarket
 }
 
 func (a ProposalTermsUpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"updateSpotMarket(%s)",
-		stringer.ReflectPointerToString(a.UpdateSpotMarket),
+		stringer.PtrToString(a.UpdateSpotMarket),
 	)
 }
 
@@ -42,15 +44,23 @@ func (a ProposalTermsUpdateSpotMarket) IntoProto() *vegapb.ProposalTerms_UpdateS
 
 func (a ProposalTermsUpdateSpotMarket) isPTerm() {}
 
-func (a ProposalTermsUpdateSpotMarket) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsUpdateSpotMarket) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_UpdateSpotMarket{
+		UpdateSpotMarket: a.UpdateSpotMarket.IntoProto(),
+	}
+}
+
+func (a ProposalTermsUpdateSpotMarket) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_UpdateSpotMarket{
+		UpdateSpotMarket: a.UpdateSpotMarket.IntoProto(),
+	}
 }
 
 func (a ProposalTermsUpdateSpotMarket) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeUpdateSpotMarket
 }
 
-func (a ProposalTermsUpdateSpotMarket) DeepClone() proposalTerm {
+func (a ProposalTermsUpdateSpotMarket) DeepClone() ProposalTerm {
 	if a.UpdateSpotMarket == nil {
 		return &ProposalTermsUpdateSpotMarket{}
 	}
@@ -59,14 +69,14 @@ func (a ProposalTermsUpdateSpotMarket) DeepClone() proposalTerm {
 	}
 }
 
-func UpdateSpotMarketFromProto(p *vegapb.ProposalTerms_UpdateSpotMarket) (*ProposalTermsUpdateSpotMarket, error) {
+func UpdateSpotMarketFromProto(updateSpotMarketProto *vegapb.UpdateSpotMarket) (*ProposalTermsUpdateSpotMarket, error) {
 	var updateSpotMarket *UpdateSpotMarket
-	if p.UpdateSpotMarket != nil {
+	if updateSpotMarketProto != nil {
 		updateSpotMarket = &UpdateSpotMarket{}
-		updateSpotMarket.MarketID = p.UpdateSpotMarket.MarketId
-		if p.UpdateSpotMarket.Changes != nil {
+		updateSpotMarket.MarketID = updateSpotMarketProto.MarketId
+		if updateSpotMarketProto.Changes != nil {
 			var err error
-			updateSpotMarket.Changes, err = UpdateSpotMarketConfigurationFromProto(p.UpdateSpotMarket.Changes)
+			updateSpotMarket.Changes, err = UpdateSpotMarketConfigurationFromProto(updateSpotMarketProto.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -86,7 +96,7 @@ func (n UpdateSpotMarket) String() string {
 	return fmt.Sprintf(
 		"marketID(%s) changes(%s)",
 		n.MarketID,
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 
@@ -123,12 +133,12 @@ type UpdateSpotMarketConfiguration struct {
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
 		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
-		stringer.ReflectPointerToString(n.Instrument),
+		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
-		stringer.ReflectPointerToString(n.PriceMonitoringParameters),
-		stringer.ReflectPointerToString(n.TargetStakeParameters),
-		stringer.ReflectPointerToString(n.RiskParameters),
-		stringer.ReflectPointerToString(n.SLAParams),
+		stringer.PtrToString(n.PriceMonitoringParameters),
+		stringer.PtrToString(n.TargetStakeParameters),
+		stringer.ObjToString(n.RiskParameters),
+		stringer.PtrToString(n.SLAParams),
 	)
 }
 
@@ -217,7 +227,7 @@ type UpdateSpotMarketConfigurationSimple struct {
 func (n UpdateSpotMarketConfigurationSimple) String() string {
 	return fmt.Sprintf(
 		"simple(%s)",
-		stringer.ReflectPointerToString(n.Simple),
+		stringer.PtrToString(n.Simple),
 	)
 }
 
@@ -253,7 +263,7 @@ type UpdateSpotMarketConfigurationLogNormal struct {
 func (n UpdateSpotMarketConfigurationLogNormal) String() string {
 	return fmt.Sprintf(
 		"logNormal(%s)",
-		stringer.ReflectPointerToString(n.LogNormal),
+		stringer.PtrToString(n.LogNormal),
 	)
 }
 

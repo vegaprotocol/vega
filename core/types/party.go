@@ -32,3 +32,9 @@ func (p Party) IntoProto() *vegapb.Party {
 		Id: p.Id,
 	}
 }
+
+type PartyProfile struct {
+	PartyID  PartyID
+	Alias    string
+	Metadata map[string]string
+}

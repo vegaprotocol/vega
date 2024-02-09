@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -33,10 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testBlockSource struct {
@@ -62,22 +51,20 @@ func addTestBlockForTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks,
 
 func addTestBlockForHeightAndTime(t *testing.T, ctx context.Context, bs *sqlstore.Blocks, height int64, vegaTime time.Time) entities.Block {
 	t.Helper()
-	// Make a block
+
 	hash, err := hex.DecodeString("deadbeef")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Postgres only stores timestamps in microsecond resolution
-	block1 := entities.Block{
+	block := entities.Block{
 		VegaTime: vegaTime.Truncate(time.Microsecond),
 		Height:   height,
 		Hash:     hash,
 	}
 
-	// Add it to the database
-	err = bs.Add(ctx, block1)
-	assert.NoError(t, err)
+	require.NoError(t, bs.Add(ctx, block))
 
-	return block1
+	return block
 }
 
 func TestBlock(t *testing.T) {

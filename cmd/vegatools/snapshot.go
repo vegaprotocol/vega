@@ -24,10 +24,9 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/vegatools/snapshotdb"
 
+	tmconfig "github.com/cometbft/cometbft/config"
+	"github.com/cometbft/cometbft/store"
 	"github.com/spf13/viper"
-	tmconfig "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/node"
-	"github.com/tendermint/tendermint/store"
 )
 
 type snapshotCmd struct {
@@ -35,6 +34,7 @@ type snapshotCmd struct {
 	DBPath               string `description:"path to snapshot state data"                                                  long:"db-path"           short:"d"`
 	SnapshotContentsPath string `description:"path to file where to write the content of a snapshot"                        long:"snapshot-contents" short:"c"`
 	BlockHeight          uint64 `description:"block-height of requested snapshot"                                           long:"block-height"      short:"b"`
+	SetProtocolUpgrade   bool   `description:"set protocol-upgrade flag to true in the latest snapshot"                     long:"set-pup"           short:"p"`
 	TendermintHome       string `description:"tendermint home directory, if set will print the last processed block height" long:"tendermint-home"`
 }
 
@@ -46,7 +46,7 @@ func getLastProcessedBlock(homeDir string) (int64, error) {
 	conf.SetRoot(homeDir)
 
 	// lets get the last processed block from tendermint
-	blockStoreDB, err := node.DefaultDBProvider(&node.DBContext{ID: "blockstore", Config: conf})
+	blockStoreDB, err := tmconfig.DefaultDBProvider(&tmconfig.DBContext{ID: "blockstore", Config: conf})
 	if err != nil {
 		return 0, err
 	}
@@ -63,6 +63,11 @@ func (opts *snapshotCmd) Execute(_ []string) error {
 	if opts.DBPath == "" {
 		vegaPaths := paths.New(rootCmd.VegaHome)
 		db = vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	}
+
+	if opts.SetProtocolUpgrade {
+		err := snapshotdb.SetProtocolUpgrade(paths.New(rootCmd.VegaHome))
+		return err
 	}
 
 	if opts.SnapshotContentsPath != "" {

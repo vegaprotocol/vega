@@ -16,6 +16,7 @@
 package matching
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -256,6 +257,19 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	b.indicativePriceAndVolume = nil
 
 	return uncrossedOrders, ordersToCancel, nil
+}
+
+// RollbackConfirmation is only used to restore the book if the margin check fails after a cancel and replace
+// amendment of an order. We need to uncross the book to determine the exit price and calculate the margin correctly.
+// if the margin check then fails, we should restore the passive orders to their original state on the book.
+func (b *OrderBook) RollbackConfirmation(conf *types.OrderConfirmation, orders []*types.Order) error {
+	for _, o := range orders {
+		// we don't have to go through the SubmitOrder flow here, because the order was already validated
+		// and we know this order will not uncross. Replace or add this order wherever needed
+		b.add(o)                          // simply adds order to the map, reassigns if the order exists already
+		b.getSide(o.Side).replaceOrder(o) // replace will replace, or append if the order was removed somehow
+	}
+	return nil
 }
 
 func (b OrderBook) InAuction() bool {
@@ -1113,6 +1127,15 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	return pegged
 }
 
+func (b *OrderBook) GetVolumeAtPrice(price *num.Uint, side types.Side) uint64 {
+	lvls := b.getSide(side).getLevelsForPrice(price)
+	vol := uint64(0)
+	for _, lvl := range lvls {
+		vol += lvl.volume
+	}
+	return vol
+}
+
 // icebergRefresh will restore the peaks of an iceberg order if they have drifted below the minimum value
 // if not the order remains unchanged.
 func (b *OrderBook) icebergRefresh(o *types.Order) {
@@ -1172,4 +1195,43 @@ func (b *OrderBook) cleanup() {
 	b.peggedOrders.Clear()
 	b.peggedCountNotify(-int64(b.peggedOrdersCount))
 	b.peggedOrdersCount = 0
+}
+
+// VWAP returns an error if the total volume for the side of the book is less than the given volume or if there are no levels.
+// Otherwise it returns the volume weighted average price for achieving the given volume.
+func (b *OrderBook) VWAP(volume uint64, side types.Side) (*num.Uint, error) {
+	sidePriceLevels := b.buy
+	if side == types.SideSell {
+		sidePriceLevels = b.sell
+	}
+	dVol := num.DecimalFromInt64(int64(volume))
+	remaining := volume
+	price := num.UintZero()
+	i := len(sidePriceLevels.levels) - 1
+	if i < 0 {
+		return nil, fmt.Errorf("no orders in book for side")
+	}
+
+	if volume == 0 && i >= 0 {
+		return sidePriceLevels.levels[i].price.Clone(), nil
+	}
+
+	for {
+		if i < 0 || remaining == 0 {
+			break
+		}
+		size := remaining
+		if sidePriceLevels.levels[i].volume < remaining {
+			size = sidePriceLevels.levels[i].volume
+		}
+		price.AddSum(num.UintZero().Mul(sidePriceLevels.levels[i].price, num.NewUint(size)))
+		remaining -= size
+		i -= 1
+	}
+
+	if remaining == 0 {
+		res, _ := num.UintFromDecimal(price.ToDecimal().Div(dVol))
+		return res, nil
+	}
+	return nil, fmt.Errorf("insufficient volume in order book")
 }

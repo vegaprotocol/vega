@@ -34,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -50,7 +51,7 @@ var (
 	// ErrSuccessorMarketDoesNotExists is returned when SucceedMarket call is made with an invalid successor market ID.
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
 
-	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
+	// ErrParentMarketNotEnactedYet is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
 
 	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
@@ -58,6 +59,9 @@ var (
 
 	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
 	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
+
+	// ErrStopOrdersNotAcceptedDuringOpeningAuction is returned if a stop order is submitted when the market is in the opening auction.
+	ErrStopOrdersNotAcceptedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
 )
 
 // Engine is the execution engine.
@@ -78,6 +82,7 @@ type Engine struct {
 	assets                        common.Assets
 	referralDiscountRewardService fee.ReferralDiscountRewardService
 	volumeDiscountService         fee.VolumeDiscountService
+	banking                       common.Banking
 
 	broker                common.Broker
 	timeService           common.TimeService
@@ -108,22 +113,23 @@ type Engine struct {
 }
 
 type netParamsValues struct {
-	feeDistributionTimeStep              time.Duration
-	marketValueWindowLength              time.Duration
-	suppliedStakeToObligationFactor      num.Decimal
-	infrastructureFee                    num.Decimal
-	makerFee                             num.Decimal
-	scalingFactors                       *types.ScalingFactors
-	maxLiquidityFee                      num.Decimal
-	bondPenaltyFactor                    num.Decimal
-	auctionMinDuration                   time.Duration
-	auctionMaxDuration                   time.Duration
-	probabilityOfTradingTauScaling       num.Decimal
-	minProbabilityOfTradingLPOrders      num.Decimal
-	minLpStakeQuantumMultiple            num.Decimal
-	marketCreationQuantumMultiple        num.Decimal
-	markPriceUpdateMaximumFrequency      time.Duration
-	marketPartiesMaximumStopOrdersUpdate *num.Uint
+	feeDistributionTimeStep               time.Duration
+	marketValueWindowLength               time.Duration
+	suppliedStakeToObligationFactor       num.Decimal
+	infrastructureFee                     num.Decimal
+	makerFee                              num.Decimal
+	scalingFactors                        *types.ScalingFactors
+	maxLiquidityFee                       num.Decimal
+	bondPenaltyFactor                     num.Decimal
+	auctionMinDuration                    time.Duration
+	auctionMaxDuration                    time.Duration
+	probabilityOfTradingTauScaling        num.Decimal
+	minProbabilityOfTradingLPOrders       num.Decimal
+	minLpStakeQuantumMultiple             num.Decimal
+	marketCreationQuantumMultiple         num.Decimal
+	markPriceUpdateMaximumFrequency       time.Duration
+	internalCompositePriceUpdateFrequency time.Duration
+	marketPartiesMaximumStopOrdersUpdate  *num.Uint
 
 	// Liquidity version 2.
 	liquidityV2BondPenaltyFactor                 num.Decimal
@@ -133,6 +139,9 @@ type netParamsValues struct {
 	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
 	liquidityV2StakeToCCYVolume                  num.Decimal
 	liquidityV2ProvidersFeeCalculationTimeStep   time.Duration
+
+	// only used for protocol upgrade to v0.74
+	chainID uint64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -146,13 +155,14 @@ func defaultNetParamsValues() netParamsValues {
 		maxLiquidityFee:                 num.DecimalFromInt64(-1),
 		bondPenaltyFactor:               num.DecimalFromInt64(-1),
 
-		auctionMinDuration:                   -1,
-		probabilityOfTradingTauScaling:       num.DecimalFromInt64(-1),
-		minProbabilityOfTradingLPOrders:      num.DecimalFromInt64(-1),
-		minLpStakeQuantumMultiple:            num.DecimalFromInt64(-1),
-		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
-		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
-		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
+		auctionMinDuration:                    -1,
+		probabilityOfTradingTauScaling:        num.DecimalFromInt64(-1),
+		minProbabilityOfTradingLPOrders:       num.DecimalFromInt64(-1),
+		minLpStakeQuantumMultiple:             num.DecimalFromInt64(-1),
+		marketCreationQuantumMultiple:         num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency:       5 * time.Second, // default is 5 seconds, should come from net params though
+		internalCompositePriceUpdateFrequency: 5 * time.Second,
+		marketPartiesMaximumStopOrdersUpdate:  num.UintZero(),
 
 		// Liquidity version 2.
 		liquidityV2BondPenaltyFactor:                 num.DecimalFromInt64(-1),
@@ -179,6 +189,7 @@ func NewEngine(
 	assets common.Assets,
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -204,6 +215,7 @@ func NewEngine(
 		skipRestoreSuccessors:         map[string]struct{}{},
 		referralDiscountRewardService: referralDiscountRewardService,
 		volumeDiscountService:         volumeDiscountService,
+		banking:                       banking,
 	}
 
 	// set the eligibility for proposer bonus checker
@@ -681,6 +693,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.banking,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -760,6 +773,7 @@ func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Marke
 		e.peggedOrderCountUpdated,
 		e.referralDiscountRewardService,
 		e.volumeDiscountService,
+		e.banking,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -871,6 +885,9 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	}
 	if e.npv.markPriceUpdateMaximumFrequency > 0 {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
+	}
+	if e.npv.internalCompositePriceUpdateFrequency > 0 {
+		mkt.OnInternalCompositePriceUpdateFrequency(ctx, e.npv.internalCompositePriceUpdateFrequency)
 	}
 
 	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
@@ -1529,6 +1546,14 @@ func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	return nil
 }
 
+func (e *Engine) OnInternalCompositePriceUpdateFrequency(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.futureMarkets {
+		mkt.OnInternalCompositePriceUpdateFrequency(ctx, d)
+	}
+	e.npv.internalCompositePriceUpdateFrequency = d
+	return nil
+}
+
 // OnMarketLiquidityV2BondPenaltyUpdate stores net param on execution engine and applies to markets at the start of new epoch.
 func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
@@ -1878,4 +1903,25 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 	}
 	e.successorWindow = window
 	return nil
+}
+
+func (e *Engine) OnChainIDUpdate(cID uint64) error {
+	e.npv.chainID = cID
+	return nil
+}
+
+func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error {
+	if _, ok := e.futureMarkets[marketID]; !ok {
+		return types.ErrInvalidMarketID
+	}
+	market := e.futureMarkets[marketID]
+	if marginMode == types.MarginModeIsolatedMargin {
+		riskFactors := market.GetRiskFactors()
+		rf := num.MaxD(riskFactors.Long, riskFactors.Short)
+		if marginFactor.LessThanOrEqual(rf) {
+			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
+		}
+	}
+
+	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
 }

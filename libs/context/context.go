@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -77,12 +77,12 @@ func TraceIDFromContext(ctx context.Context) (context.Context, string) {
 	return ctx, stID
 }
 
-func BlockHeightFromContext(ctx context.Context) (int64, error) {
+func BlockHeightFromContext(ctx context.Context) (uint64, error) {
 	hv := ctx.Value(blockHeightKey)
 	if hv == nil {
 		return 0, ErrBlockHeightMissing
 	}
-	h, ok := hv.(int64)
+	h, ok := hv.(uint64)
 	if !ok {
 		return 0, ErrBlockHeightMissing
 	}
@@ -123,7 +123,7 @@ func WithTraceID(ctx context.Context, tID string) context.Context {
 	return context.WithValue(ctx, traceIDKey, tID)
 }
 
-func WithBlockHeight(ctx context.Context, h int64) context.Context {
+func WithBlockHeight(ctx context.Context, h uint64) context.Context {
 	return context.WithValue(ctx, blockHeightKey, h)
 }
 
@@ -143,6 +143,17 @@ type snapshotInfo struct {
 
 func WithSnapshotInfo(ctx context.Context, version string, upgrade bool) context.Context {
 	return context.WithValue(ctx, snapshotKey, snapshotInfo{version: version, upgrade: upgrade})
+}
+
+// InProgressSnapshotRestore returns whether the data in the contexts tells us that a
+// snapshot restore is in progress.
+func InProgressSnapshotRestore(ctx context.Context) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	_, ok := v.(snapshotInfo)
+	return ok
 }
 
 // InProgressUpgradeFrom returns whether the data in the contexts tells us that the

@@ -21,9 +21,8 @@ import (
 	"os"
 	"sort"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	coreConfig "code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
@@ -31,7 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
-	"code.vegaprotocol.io/vega/datanode/config"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type showCmd struct {

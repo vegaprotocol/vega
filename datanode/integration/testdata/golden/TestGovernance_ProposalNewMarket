@@ -1,6 +1,6 @@
 {
 	"TestName": "TestGovernance_ProposalNewMarket",
-	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces } } } } } } }",
+	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } } positionDecimalPlaces } } } } } } }",
 	"Result": {
 		"proposalsConnection": {
 			"edges": [
@@ -22,12 +22,10 @@
 									"name": "Futures System-Tests Market"
 								},
 								"liquidityMonitoringParameters": {
-									"auctionExtensionSecs": 1,
 									"targetStakeParameters": {
 										"scalingFactor": 5,
 										"timeWindow": 10
-									},
-									"triggeringRatio": "0"
+									}
 								},
 								"metadata": [
 									"asset_class:fx/crypto",
@@ -76,12 +74,10 @@
 									"name": "Futures System-Tests Market"
 								},
 								"liquidityMonitoringParameters": {
-									"auctionExtensionSecs": 1,
 									"targetStakeParameters": {
 										"scalingFactor": 5,
 										"timeWindow": 10
-									},
-									"triggeringRatio": "0"
+									}
 								},
 								"metadata": [
 									"asset_class:fx/crypto",
@@ -106,12 +102,10 @@
 									"name": "Futures System-Tests Market"
 								},
 								"liquidityMonitoringParameters": {
-									"auctionExtensionSecs": 1,
 									"targetStakeParameters": {
 										"scalingFactor": 5,
 										"timeWindow": 10
-									},
-									"triggeringRatio": "0"
+									}
 								},
 								"metadata": [
 									"asset_class:fx/crypto",
@@ -161,5 +155,5 @@
 			]
 		}
 	},
-	"Duration": 6022109
+	"Duration": 3396689
 }

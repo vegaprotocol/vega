@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package gql_test
 
 import (
@@ -33,11 +21,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/datanode/gateway"
@@ -48,6 +31,11 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
@@ -317,9 +305,7 @@ func getTestMarket() *protoTypes.Market {
 				},
 			},
 		},
-		LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-			TriggeringRatio: "0.3",
-		},
+		LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 	}
 }
 
@@ -683,7 +669,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewMarket
 			asset     *protoTypes.Asset
@@ -691,7 +676,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be for a new market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -743,7 +729,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewSpotMarket
 			asset     *protoTypes.Asset
@@ -751,7 +736,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal should be for a new spot market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -822,7 +808,6 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_NewMarket
 			asset     *protoTypes.Asset
@@ -830,7 +815,8 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be for a new market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -882,14 +868,14 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateMarket
 			product   *protoTypes.UpdateInstrumentConfiguration_Future
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be to update market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -966,13 +952,13 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateSpotMarket
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal should be to update a spot market", func(t *testing.T) {
 			terms, err = root.Proposal().Terms(ctx, p)
@@ -1031,14 +1017,14 @@ func TestNewResolverRoot_Proposals(t *testing.T) {
 		)
 
 		var (
-			p         *protoTypes.GovernanceData
 			terms     *protoTypes.ProposalTerms
 			newMarket *protoTypes.ProposalTerms_UpdateMarket
 			product   *protoTypes.UpdateInstrumentConfiguration_Perpetual
 			err       error
 		)
 
-		p, err = root.Query().Proposal(ctx, &id, nil)
+		pn, err := root.Query().Proposal(ctx, &id, nil)
+		p := pn.(*protoTypes.GovernanceData)
 
 		t.Run("Proposal terms should be to update market", func(t *testing.T) {
 			// Test the proposal resolver to make sure the terms and underlying changes are correct
@@ -1192,11 +1178,6 @@ func TestNewResolverRoot_PerpetualResolver(t *testing.T) {
 	assert.Equal(t, want.DataSourceSpecForSettlementData.UpdatedAt, *gotData.UpdatedAt)
 	assert.Equal(t, want.DataSourceSpecForSettlementData.Data, gotData.Data)
 	assert.Equal(t, want.DataSourceSpecForSettlementData.Status.String(), gotData.Status.String())
-
-	wantBinding, err := root.Perpetual().DataSourceSpecBinding(ctx, perps)
-	require.NoError(t, err)
-	assert.Equal(t, want.DataSourceSpecBinding.SettlementScheduleProperty, wantBinding.SettlementScheduleProperty)
-	assert.Equal(t, want.DataSourceSpecBinding.SettlementDataProperty, wantBinding.SettlementDataProperty)
 }
 
 func TestNewResolverRoot_Resolver(t *testing.T) {

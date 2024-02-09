@@ -19,11 +19,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
+	"github.com/georgysavva/scany/pgxscan"
 )
 
 type ReferralPrograms struct {

@@ -37,6 +37,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -48,6 +50,7 @@ type testMarket struct {
 	collateralEngine *collateral.Engine
 	broker           *bmocks.MockBroker
 	timeService      *mocks.MockTimeService
+	banking          *mocks.MockBanking
 	now              time.Time
 	baseAsset        string
 	quoteAsset       string
@@ -119,6 +122,9 @@ func getMarketWithDP(base, quote string, pMonitorSettings *types.PriceMonitoring
 				InfrastructureFee: num.DecimalFromFloat(0.001),
 				MakerFee:          num.DecimalFromFloat(0.004),
 			},
+			LiquidityFeeSettings: &types.LiquidityFeeSettings{
+				Method: vega.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+			},
 		},
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
@@ -158,7 +164,6 @@ func getMarketWithDP(base, quote string, pMonitorSettings *types.PriceMonitoring
 				TimeWindow:    3600, // seconds = 1h
 				ScalingFactor: num.DecimalFromFloat(10),
 			},
-			TriggeringRatio: num.DecimalZero(),
 		},
 		LiquiditySLAParams: &types.LiquiditySLAParams{
 			PriceRange:                  num.DecimalFromFloat(0.05),
@@ -215,8 +220,9 @@ func newTestMarket(
 	referralDiscountReward.EXPECT().ReferralDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	referralDiscountReward.EXPECT().RewardsFactorMultiplierAppliedForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
 	volumeDiscount.EXPECT().VolumeDiscountFactorForParty(gomock.Any()).Return(num.DecimalZero()).AnyTimes()
+	banking := mocks.NewMockBanking(ctrl)
 
-	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount)
+	market, _ := spot.NewMarket(log, matching.NewDefaultConfig(), fee.NewDefaultConfig(), liquidity.NewDefaultConfig(), collateral, &mkt, ts, broker, as, statevarEngine, mat, baseAsset, quoteAsset, peggedOrderCounterForTest, referralDiscountReward, volumeDiscount, banking)
 
 	tm := &testMarket{
 		market:           market,
@@ -224,6 +230,7 @@ func newTestMarket(
 		ctrl:             ctrl,
 		broker:           broker,
 		timeService:      ts,
+		banking:          banking,
 		baseAsset:        base,
 		quoteAsset:       quote,
 		mas:              as,

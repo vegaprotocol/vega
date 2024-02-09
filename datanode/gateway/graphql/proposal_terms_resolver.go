@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package gql
 
 import (
@@ -34,9 +22,61 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	types "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 var ErrUnsupportedProposalTermsChanges = errors.New("unsupported proposal terms changes")
+
+type batchProposalTermsResolver VegaResolverRoot
+
+func (r *batchProposalTermsResolver) ClosingDatetime(ctx context.Context, obj *vega.BatchProposalTerms) (int64, error) {
+	// this is a unix timestamp (specified by users)
+	// needs to convert to time then UnixNano for the Timestamp resolver to work
+	return time.Unix(obj.ClosingTimestamp, 0).UnixNano(), nil
+}
+
+type batchProposalTermsChangeResolver VegaResolverRoot
+
+func (r *batchProposalTermsChangeResolver) EnactmentDatetime(ctx context.Context, obj *vega.BatchProposalTermsChange) (*int64, error) {
+	var dt *int64
+	if obj.EnactmentTimestamp != 0 {
+		// this is a unix timestamp (specified by users)
+		// needs to convert to time then UnixNano for the Timestamp resolver to work
+		dt = ptr.From(time.Unix(obj.EnactmentTimestamp, 0).UnixNano())
+	}
+	return dt, nil
+}
+
+func (r *batchProposalTermsChangeResolver) Change(ctx context.Context, obj *vega.BatchProposalTermsChange) (ProposalChange, error) {
+	switch obj.Change.(type) {
+	case *types.BatchProposalTermsChange_UpdateMarket:
+		return obj.GetUpdateMarket(), nil
+	case *types.BatchProposalTermsChange_UpdateNetworkParameter:
+		return obj.GetUpdateNetworkParameter(), nil
+	case *types.BatchProposalTermsChange_NewMarket:
+		return obj.GetNewMarket(), nil
+	case *types.BatchProposalTermsChange_NewFreeform:
+		return obj.GetNewFreeform(), nil
+	case *types.BatchProposalTermsChange_UpdateAsset:
+		return obj.GetUpdateAsset(), nil
+	case *types.BatchProposalTermsChange_CancelTransfer:
+		return obj.GetCancelTransfer(), nil
+	case *types.BatchProposalTermsChange_NewTransfer:
+		return obj.GetNewTransfer(), nil
+	case *types.BatchProposalTermsChange_NewSpotMarket:
+		return obj.GetNewSpotMarket(), nil
+	case *types.BatchProposalTermsChange_UpdateSpotMarket:
+		return obj.GetUpdateSpotMarket(), nil
+	case *types.BatchProposalTermsChange_UpdateMarketState:
+		return obj.GetUpdateMarketState(), nil
+	case *types.BatchProposalTermsChange_UpdateReferralProgram:
+		return obj.GetUpdateReferralProgram(), nil
+	case *types.BatchProposalTermsChange_UpdateVolumeDiscountProgram:
+		return obj.GetUpdateVolumeDiscountProgram(), nil
+	default:
+		return nil, ErrUnsupportedProposalTermsChanges
+	}
+}
 
 type proposalTermsResolver VegaResolverRoot
 

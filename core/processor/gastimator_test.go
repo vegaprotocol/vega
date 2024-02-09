@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -218,6 +219,7 @@ func TestGetPriority(t *testing.T) {
 		txn.AmendOrderCommand,
 		txn.WithdrawCommand,
 		txn.ProposeCommand,
+		txn.BatchProposeCommand,
 		txn.VoteCommand,
 		txn.AnnounceNodeCommand,
 		txn.NodeVoteCommand,
@@ -246,7 +248,7 @@ func TestGetPriority(t *testing.T) {
 		expected := uint64(1)
 		if c.IsValidatorCommand() {
 			expected = uint64(10000)
-		} else if c == txn.ProposeCommand || c == txn.VoteCommand {
+		} else if c == txn.ProposeCommand || c == txn.VoteCommand || c == txn.BatchProposeCommand {
 			expected = uint64(100)
 		}
 		require.Equal(t, expected, gastimator.GetPriority(&testTx{command: c}), c)
@@ -298,6 +300,7 @@ type testTx struct {
 	unmarshaller func(interface{}) error
 }
 
+func (tx *testTx) GetLength() int                { return 0 }
 func (tx *testTx) Unmarshal(i interface{}) error { return tx.unmarshaller(i) }
 func (tx *testTx) GetPoWTID() string             { return "" }
 func (tx *testTx) GetVersion() uint32            { return 2 }

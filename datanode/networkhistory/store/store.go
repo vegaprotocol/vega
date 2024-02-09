@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -39,12 +38,13 @@ import (
 	"github.com/dustin/go-humanize"
 	icore "github.com/ipfs/boxo/coreiface"
 	"github.com/ipfs/go-cid"
-	files "github.com/ipfs/go-ipfs-files"
+	files "github.com/ipfs/go-libipfs/files"
 	ipfslogging "github.com/ipfs/go-log"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/ipfs/kubo/config"
 	serialize "github.com/ipfs/kubo/config/serialize"
 	"github.com/ipfs/kubo/core"
+	"github.com/ipfs/kubo/core/bootstrap"
 	"github.com/ipfs/kubo/core/coreapi"
 	"github.com/ipfs/kubo/core/corehttp"
 	"github.com/ipfs/kubo/core/corerepo"
@@ -168,8 +168,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	}
 
 	p.log.Debugf("ipfs swarm port:%d", cfg.SwarmPort)
-	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.BootstrapPeers,
-		cfg.SwarmPort)
+	ipfsCfg, err := createIpfsNodeConfiguration(p.log, p.identity, cfg.SwarmPort)
 
 	p.log.Debugf("ipfs bootstrap peers:%v", ipfsCfg.Bootstrap)
 
@@ -189,13 +188,21 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 	}
 
 	p.ipfsAPI, err = coreapi.NewCoreAPI(p.ipfsNode)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs api:%w", err)
 	}
 
+	peers, err := config.ParseBootstrapPeers(cfg.BootstrapPeers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse bootstrap peers: %w", err)
+	}
+
+	if err = p.ipfsNode.Bootstrap(bootstrap.BootstrapConfigWithPeers(peers)); err != nil {
+		return nil, fmt.Errorf("failed to bootstrap peers: %w", err)
+	}
+
 	if err = setupMetrics(p.ipfsNode); err != nil {
-		return nil, fmt.Errorf("failed to setup metrics:%w", err)
+		return nil, fmt.Errorf("failed to setup metrics: %w", err)
 	}
 
 	return p, nil
@@ -326,7 +333,7 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 	p.log.Infof("adding history %s", historyID)
 
 	defer func() {
-		_ = os.RemoveAll(s.ZipFilePath())
+		_ = os.RemoveAll(s.UnpublishedSnapshotDataDirectory())
 	}()
 
 	previousHistorySegmentID, err := p.GetPreviousHistorySegmentID(s.HeightFrom)
@@ -341,7 +348,7 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 		PreviousHistorySegmentID: previousHistorySegmentID,
 	}
 
-	contentID, err := p.addHistorySegment(ctx, s.ZipFilePath(), metaData)
+	contentID, err := p.addHistorySegment(ctx, s.UnpublishedSnapshotDataDirectory(), metaData)
 	if err != nil {
 		return fmt.Errorf("failed to add file:%w", err)
 	}
@@ -430,7 +437,7 @@ func (p *Store) GetPreviousHistorySegmentID(fromHeight int64) (string, error) {
 }
 
 func (p *Store) addHistorySegment(ctx context.Context, zipFilePath string, metadata segment.MetaData) (cid.Cid, error) {
-	newZipFile, err := p.rewriteZipWithMetadata(zipFilePath, metadata)
+	newZipFile, err := p.zipSegmentDataWithMetadata(zipFilePath, metadata)
 	defer os.Remove(newZipFile)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("rewriting zip to include metadata:%w", err)
@@ -450,9 +457,9 @@ func (p *Store) addHistorySegment(ctx context.Context, zipFilePath string, metad
 	return contentID, nil
 }
 
-func (p *Store) rewriteZipWithMetadata(oldZip string, metadata segment.MetaData) (string, error) {
+func (p *Store) zipSegmentDataWithMetadata(segmentDataDir string, metadata segment.MetaData) (string, error) {
 	// Create a temporary zip file for including the metadata JSON file
-	tmpfile, err := ioutil.TempFile("", metadata.ZipFileName())
+	tmpfile, err := os.CreateTemp("", metadata.ZipFileName())
 	if err != nil {
 		return "", fmt.Errorf("failed add history segment; unable to create temp file:%w", err)
 	}
@@ -477,33 +484,57 @@ func (p *Store) rewriteZipWithMetadata(oldZip string, metadata segment.MetaData)
 		return "", fmt.Errorf("failed to write metadata.json:%w", err)
 	}
 
-	zipReader, err := zip.OpenReader(oldZip)
-	if err != nil {
-		return "", fmt.Errorf("failed to open zip file:%w", err)
-	}
-
-	// Copy the contents of the existing zip file to the new zip file
-	for _, f := range zipReader.File {
-		fr, err := f.Open()
-		if err != nil {
-			return "", fmt.Errorf("error reading reading file from zip archive: %w", err)
-		}
-		defer fr.Close()
-
-		// Create a new file header based on the existing file header and write it to the new zip file
-		fw, err := zipWriter.CreateHeader(&f.FileHeader)
-		if err != nil {
-			return "", fmt.Errorf("error creating file header: %w", err)
-		}
-
-		// Copy the contents of the existing file to the new file
-		_, err = io.Copy(fw, fr)
-		if err != nil {
-			return "", fmt.Errorf("error copying data from zip file: %w", err)
-		}
-	}
+	zipSegmentData(segmentDataDir, zipWriter)
 
 	return tmpfile.Name(), nil
+}
+
+func zipSegmentData(segmentDataDir string, zipWriter *zip.Writer) error {
+	// See comment below about why we use this time
+	modifiedTime, err := time.Parse(time.DateTime, "1979-11-30 00:00:00")
+	if err != nil {
+		return err
+	}
+
+	return filepath.Walk(segmentDataDir, func(path string, info os.FileInfo, _ error) error {
+		if info.IsDir() {
+			return nil
+		}
+
+		zipBasePath, err := filepath.Rel(segmentDataDir, path)
+		if err != nil {
+			return err
+		}
+
+		// The previous method of rewriting the zip file to include the metadata.json resulted in the Modified and
+		// ModifiedDate header fields being set to the values below due to code in the archive/zip/Reader.go and
+		// archive/zip/Writer.go which relates to legacy ms dos fields.	To ensure that segments have the same IPFS
+		// content ID as they would have had when the zip was rewritten it is necessary to set these fields on the
+		// zip headers created directly from the uncompressed files.
+		header := zip.FileHeader{
+			Name:         zipBasePath,
+			Method:       zip.Deflate,
+			Modified:     modifiedTime,
+			ModifiedDate: 65406,
+		}
+		fw, err := zipWriter.CreateHeader(&header)
+		if err != nil {
+			return fmt.Errorf("error creating file header: %w", err)
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open segment data file: %w", err)
+		}
+		defer file.Close()
+
+		_, err = io.Copy(fw, file)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (p *Store) GetSegmentForHeight(toHeight int64) (segment.Full, error) {
@@ -721,7 +752,7 @@ func (p *Store) StagedContiguousHistory(ctx context.Context, chunk segment.Conti
 	return staged, nil
 }
 
-func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int) (*config.Config, error) {
+func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, swarmPort int) (*config.Config, error) {
 	cfg, err := config.InitWithIdentity(identity)
 
 	// Don't try and do local node discovery with mDNS; we're probably on the internet if running
@@ -729,7 +760,7 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	cfg.Discovery.MDNS.Enabled = false
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiliase ipfs config:%w", err)
+		return nil, fmt.Errorf("failed to initialise ipfs config:%w", err)
 	}
 
 	const ipfsConfigDefaultSwarmPort = "4001"
@@ -742,8 +773,7 @@ func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, 
 	}
 
 	cfg.Addresses.Swarm = updatedSwarmAddrs
-	cfg.Bootstrap = bootstrapPeers
-
+	cfg.Bootstrap = []string{} // we'll provide these later, but we empty them here so we don't get the default set
 	prettyCfgJSON, _ := json.MarshalIndent(cfg, "", "  ")
 	log.Debugf("IPFS Node Config:\n%s", prettyCfgJSON)
 

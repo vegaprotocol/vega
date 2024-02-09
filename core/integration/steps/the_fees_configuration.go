@@ -16,28 +16,54 @@
 package steps
 
 import (
-	"github.com/cucumber/godog"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheFeesConfiguration(config *market.Config, name string, table *godog.Table) error {
 	row := feesConfigRow{row: parseFeesConfigTable(table)}
+
+	liquidityFeeSettings := &types.LiquidityFeeSettings{
+		Method: types.LiquidityFeeSettings_METHOD_MARGINAL_COST,
+	}
+
+	method, err := row.liquidityFeeMethod()
+	if err != nil {
+		return err
+	}
+
+	if method != types.LiquidityFeeSettings_METHOD_UNSPECIFIED {
+		liquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method:      method,
+			FeeConstant: row.liquidityFeeConstant(),
+		}
+	}
 
 	return config.FeesConfig.Add(name, &types.Fees{
 		Factors: &types.FeeFactors{
 			InfrastructureFee: row.infrastructureFee(),
 			MakerFee:          row.makerFee(),
 		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	})
 }
 
 func parseFeesConfigTable(table *godog.Table) RowWrapper {
-	return StrictParseFirstRow(table, []string{
-		"maker fee",
-		"infrastructure fee",
-	}, []string{})
+	return StrictParseFirstRow(table,
+		[]string{
+			"maker fee",
+			"infrastructure fee",
+		},
+		[]string{
+			"liquidity fee method",
+			"liquidity fee constant",
+		},
+	)
 }
 
 type feesConfigRow struct {
@@ -50,4 +76,26 @@ func (r feesConfigRow) makerFee() string {
 
 func (r feesConfigRow) infrastructureFee() string {
 	return r.row.MustStr("infrastructure fee")
+}
+
+func (r feesConfigRow) liquidityFeeMethod() (types.LiquidityFeeSettings_Method, error) {
+	if !r.row.HasColumn("liquidity fee method") {
+		return types.LiquidityFeeSettings_METHOD_UNSPECIFIED, nil
+	}
+	return LiquidityFeeMethodType(r.row.Str("liquidity fee method"))
+}
+
+func (r feesConfigRow) liquidityFeeConstant() *string {
+	if !r.row.HasColumn("liquidity fee constant") {
+		return nil
+	}
+	return ptr.From(r.row.Str("liquidity fee constant"))
+}
+
+func LiquidityFeeMethodType(rawValue string) (types.LiquidityFeeSettings_Method, error) {
+	ty, ok := types.LiquidityFeeSettings_Method_value[rawValue]
+	if !ok {
+		return types.LiquidityFeeSettings_Method(ty), fmt.Errorf("invalid liquidity fee method: %v", rawValue)
+	}
+	return types.LiquidityFeeSettings_Method(ty), nil
 }

@@ -29,12 +29,12 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/emirpasic/gods/sets/treeset"
 
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
+	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -71,8 +71,8 @@ type Forwarder struct {
 	cmd  Commander
 	self string
 
+	ackedEvts *ackedEvents
 	evtsmu    sync.Mutex
-	ackedEvts *treeset.Set // we only care about the key
 	evts      map[string]tsEvt
 
 	mu               sync.RWMutex
@@ -96,19 +96,20 @@ func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService
 	var allowlist atomic.Value
 	allowlist.Store(buildAllowlist(cfg))
 	forwarder := &Forwarder{
-		cfg:              cfg,
-		log:              log,
-		cmd:              cmd,
-		timeService:      timeService,
-		nodes:            []string{},
-		self:             top.SelfNodeID(),
-		ackedEvts:        treeset.NewWithStringComparator(),
+		cfg:         cfg,
+		log:         log,
+		cmd:         cmd,
+		timeService: timeService,
+		nodes:       []string{},
+		self:        top.SelfNodeID(),
+		ackedEvts: &ackedEvents{
+			timeService: timeService,
+			events:      treeset.NewWith(ackedEvtBucketComparator),
+		},
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
-		efss: &efSnapshotState{
-			serialised: []byte{},
-		},
+		efss:             &efSnapshotState{},
 	}
 	forwarder.updateValidatorsList()
 	return forwarder
@@ -338,6 +339,11 @@ func (f *Forwarder) OnTick(ctx context.Context, t time.Time) {
 			}
 		}
 	}
+
+	// now delete old events
+	// get the oldest to remove
+	removeBefore := t.Add(-f.cfg.KeepHashesDurationForTestOnlyDoNotChange.Duration)
+	f.ackedEvts.RemoveBefore(removeBefore.Unix())
 }
 
 func (f *Forwarder) getEvtKey(evt *commandspb.ChainEvent) (string, error) {

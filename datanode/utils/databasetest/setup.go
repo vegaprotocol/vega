@@ -28,11 +28,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
-	"github.com/jackc/pgx/v4"
-
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/cenkalti/backoff/v4"
+	"github.com/jackc/pgx/v4"
 )
 
 var (

@@ -24,11 +24,10 @@ import (
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func TestTopologyEthereumKeyRotate(t *testing.T) {
@@ -245,7 +244,7 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
+	top.BeginBlock(ctx, 11, "")
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	require.NotNil(t, data1)
@@ -261,7 +260,7 @@ func testEthereumKeyRotationBeginBlock(t *testing.T) {
 	assert.Equal(t, "eth-address-4", data4.EthereumAddress)
 
 	// when
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 13}})
+	top.BeginBlock(ctx, 13, "")
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	require.NotNil(t, data3)
@@ -308,7 +307,7 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	now := time.Unix(666, 666)
 	top.signatures.EXPECT().SetNonce(now).Times(1)
 	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 11}})
+	top.BeginBlock(ctx, 11, "")
 
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
@@ -326,7 +325,7 @@ func TestEthereumKeyRotationBeginBlockWithSubmitter(t *testing.T) {
 	now = now.Add(time.Second)
 	top.signatures.EXPECT().SetNonce(now).Times(1)
 	top.timeService.EXPECT().GetTimeNow().Times(5).Return(now)
-	top.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: 140}})
+	top.BeginBlock(ctx, 140, "")
 
 	// try to submit again
 	err = top.ProcessEthereumKeyRotation(ctx, "vega-key-1", newEthereumKeyRotationSubmission("new-eth-address-1", "new-eth-address-2", 150, submitter), MockVerify)
@@ -390,7 +389,7 @@ func getTestTopWithMockedSignatures(t *testing.T) *testTopWithSignatures {
 	signatures.EXPECT().ClearStaleSignatures().Times(1)
 	signatures.EXPECT().SetNonce(gomock.Any()).Times(1)
 	signatures.EXPECT().OfferSignatures().AnyTimes()
-	top.BeginBlock(context.Background(), abcitypes.RequestBeginBlock{Header: types1.Header{Height: 10}})
+	top.BeginBlock(context.Background(), 10, "")
 
 	return &testTopWithSignatures{
 		testTop:    top,

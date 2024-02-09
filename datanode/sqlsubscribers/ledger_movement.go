@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlsubscribers
 
 import (
@@ -47,7 +35,7 @@ type Ledger interface {
 	Flush(ctx context.Context) error
 }
 
-type TransferResponseEvent interface {
+type LedgerMovementEvents interface {
 	events.Event
 	LedgerMovements() []*vega.LedgerMovement
 }
@@ -75,10 +63,10 @@ func (t *TransferResponse) Flush(ctx context.Context) error {
 }
 
 func (t *TransferResponse) Push(ctx context.Context, evt events.Event) error {
-	return t.consume(ctx, evt.(TransferResponseEvent))
+	return t.consume(ctx, evt.(LedgerMovementEvents))
 }
 
-func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent) error {
+func (t *TransferResponse) consume(ctx context.Context, e LedgerMovementEvents) error {
 	var errs strings.Builder
 	for _, tr := range e.LedgerMovements() {
 		t.ledger.AddTransferResponse(tr)
@@ -122,6 +110,11 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		return errors.Wrap(err, "parsing ToAccountBalance string")
 	}
 
+	var transferID entities.TransferID
+	if vle.TransferId != nil {
+		transferID = entities.TransferID(*vle.TransferId)
+	}
+
 	le := entities.LedgerEntry{
 		FromAccountID:      fromAcc.ID,
 		ToAccountID:        toAcc.ID,
@@ -132,6 +125,7 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		Type:               entities.LedgerMovementType(vle.Type),
 		FromAccountBalance: fromAccountBalance,
 		ToAccountBalance:   toAccountBalance,
+		TransferID:         transferID,
 	}
 
 	err = t.ledger.AddLedgerEntry(le)

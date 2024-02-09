@@ -26,12 +26,14 @@ import (
 	dsdefinition "code.vegaprotocol.io/vega/core/datasource/definition"
 	dserrors "code.vegaprotocol.io/vega/core/datasource/errors"
 	"code.vegaprotocol.io/vega/core/datasource/external/signedoracle"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,6 +65,77 @@ func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Voting without reaching minimum of tokens and a majority of 'yes' from equity-like shares makes the market update proposal passed", testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesMarketUpdateProposalPassed)
 	t.Run("Voting without reaching minimum of tokens and a majority of 'no' from equity-like shares makes the market update proposal declined", testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesMarketUpdateProposalDeclined)
 	t.Run("Submitting a proposal with inconsistent products fails", TestSubmitProposalWithInconsistentProductFails)
+}
+
+func TestSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
+	eng := getTestEngine(t, time.Now())
+
+	ctx := context.Background()
+
+	// custom settings here:
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, "governance.proposal.updateMarket.requiredParticipationLP", "0")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, "governance.proposal.updateMarket.requiredParticipationLP", "0"))
+
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, "governance.proposal.updateMarket.requiredParticipation", "0.07")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, "governance.proposal.updateMarket.requiredParticipation", "0.07"))
+
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, "governance.proposal.updateMarket.requiredMajority", "0.66")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, "governance.proposal.updateMarket.requiredMajority", "0.66"))
+
+	eng.broker.EXPECT().Send(events.NewNetworkParameterEvent(ctx, "governance.proposal.updateMarket.requiredMajorityLP", "0.66")).Times(1)
+	require.NoError(t, eng.netp.Update(ctx, "governance.proposal.updateMarket.requiredMajorityLP", "0.66"))
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+	marketID := proposal.MarketUpdate().MarketID
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.29)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+
+	// setup
+	voterWithELS := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voterWithELS, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS, 0.1)
+
+	// expect
+	eng.expectVoteEvent(t, voterWithELS, proposal.ID)
+
+	// when
+	err = eng.addYesVote(t, voterWithELS, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// Closing the proposal.
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.ensureStakingAssetTotalSupply(t, 1000000)
+	eng.ensureTokenBalanceForParty(t, voterWithELS, 0)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithELS, 0.29)
+
+	// // expect
+	eng.expectPassedProposalEvent(t, proposal.ID)
+	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, proposal.ID)
+
+	// // when
+	eng.OnTick(context.Background(), afterClosing)
 }
 
 func testSubmittingProposalForMarketUpdateSucceeds(t *testing.T) {
@@ -152,6 +225,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName: "VUSD",
@@ -190,6 +264,12 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails(t *testi
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -284,6 +364,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -303,6 +384,12 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -356,6 +443,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -375,6 +463,12 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessTha
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -476,6 +570,7 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -495,6 +590,12 @@ func testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails(t *testin
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -573,6 +674,7 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -592,6 +694,12 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -733,7 +841,8 @@ func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
+
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
@@ -848,6 +957,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFail
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -861,6 +971,12 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerTerminationFail
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -943,6 +1059,7 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails
 					Changes: &types.UpdateMarketConfiguration{
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Code: "CRYPTO:GBPVUSD/JUN20",
+							Name: "CRYPTO:GBPVUSD/JUN20",
 							Product: &types.UpdateInstrumentConfigurationFuture{
 								Future: &types.UpdateFutureProduct{
 									QuoteName:                           "VUSD",
@@ -956,6 +1073,12 @@ func testSubmittingProposalForMarketUpdateWithInternalTimeTriggerSettlementFails
 						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -1183,7 +1306,7 @@ func testPreEnactmentOfMarketUpdateSucceeds(t *testing.T) {
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
@@ -1299,7 +1422,7 @@ func testPreEnactmentOfMarketUpdateWithInternalTimeTerminationSucceeds(t *testin
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)

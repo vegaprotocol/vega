@@ -5,6 +5,14 @@ schema {
   subscription: Subscription
 }
 
+"Generic structure holding a key/value pair."
+type Metadata {
+  "Key of the metadata."
+  key: String!
+  "Value of the metadata."
+  value: String!
+}
+
 "The result from processing a transaction"
 type TransactionResult {
   "The party which submitted this transaction"
@@ -127,9 +135,9 @@ type Subscription {
     "ID of the party from which you want trades updates"
     partyId: ID
   ): [TradeUpdate!]
-  @deprecated(
-    reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
-  )
+    @deprecated(
+      reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once"
+    )
 
   "Subscribe to the trades updates"
   tradesStream(
@@ -160,6 +168,8 @@ type MarginLevels {
   searchLevel: String!
   "This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer"
   initialLevel: String!
+  "When in isolated margin, the required order margin level, otherwise, 0"
+  orderMarginLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
@@ -167,6 +177,46 @@ type MarginLevels {
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: Timestamp!
+
+  "Margin mode of the party, cross margin or isolated margin"
+  marginMode: MarginMode!
+
+  "Margin factor, only relevant for isolated margin mode, else 0"
+  marginFactor: String!
+}
+
+"Margins for a hypothetical position not related to any existing party"
+type AbstractMarginLevels {
+  "Market in which the margin is required for this party"
+  market: Market!
+  "Asset for the current margins"
+  asset: Asset!
+  "Minimal margin for the position to be maintained in the network (unsigned integer)"
+  maintenanceLevel: String!
+  "If the margin is between maintenance and search, the network will initiate a collateral search, expressed as unsigned integer"
+  searchLevel: String!
+  "This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer"
+  initialLevel: String!
+  "When in isolated margin, the required order margin level, otherwise, 0"
+  orderMarginLevel: String!
+  """
+  If the margin of the party is greater than this level, then collateral will be released from the margin account into
+  the general account of the party for the given asset.
+  """
+  collateralReleaseLevel: String!
+  "Margin mode of the party, cross margin or isolated margin"
+  marginMode: MarginMode!
+  "Margin factor, only relevant for isolated margin mode, else 0"
+  marginFactor: String!
+}
+
+enum MarginMode {
+  "Margin mode is not specified."
+  MARGIN_MODE_UNSPECIFIED
+  "Party is in cross margin mode"
+  MARGIN_MODE_CROSS_MARGIN
+  "Party is in isolated margin mode"
+  MARGIN_MODE_ISOLATED_MARGIN
 }
 
 "Margins for a given a party"
@@ -183,6 +233,8 @@ type MarginLevelsUpdate {
   searchLevel: String!
   "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
   initialLevel: String!
+  "When in isolated margin, the required order margin level, otherwise, 0"
+  orderMarginLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
   the general account of the party for the given asset.
@@ -190,6 +242,12 @@ type MarginLevelsUpdate {
   collateralReleaseLevel: String!
   "RFC3339Nano time from at which this margin level was relevant"
   timestamp: Timestamp!
+
+  "Margin mode of the party, cross margin or isolated margin"
+  marginMode: MarginMode!
+
+  "Margin factor, only relevant for isolated margin mode, else 0"
+  marginFactor: String!
 }
 
 "Details of a  perpetual product."
@@ -202,9 +260,46 @@ type PerpetualData {
   externalTwap: String
   "Time-weighted average price calculated from data points for this period from the internal data source."
   internalTwap: String
+  "Funding period sequence number"
+  seqNum: Int!
+  "Time at which the funding period started"
+  startTime: Timestamp!
+  "Internal composite price used as input to the internal VWAP"
+  internalCompositePrice: String!
+  "The methodology used to calculated internal composite price for perpetual markets"
+  internalCompositePriceType: CompositePriceType!
+  "RFC3339Nano time indicating the next time internal composite price will be calculated for perpetual markets, where applicable"
+  nextInternalCompositePriceCalc: String!
+  "The last value from the external oracle"
+  underlyingIndexPrice: String!
+  "The internal state of the underlying internal composite price"
+  internalCompositePriceState: CompositePriceState
+}
+
+type CompositePriceSource {
+  "The current value of the composite source price"
+  price: String!
+  "The last time the price source was updated in RFC3339Nano"
+  lastUpdated: Timestamp!
+  "The source of the price"
+  PriceSource: String!
+}
+
+type CompositePriceState {
+  "Underlying state of the composite price"
+  priceSources: [CompositePriceSource!]
 }
 
 union ProductData = PerpetualData
+
+enum CompositePriceType {
+  "Composite price is calculated as a weighted average of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_WEIGHTED
+  "Composite price is calculated as a median of the underlying price sources"
+  COMPOSITE_PRICE_TYPE_MEDIAN
+  "Composite price is set to the last trade (legacy)"
+  COMPOSITE_PRICE_TYPE_LAST_TRADE
+}
 
 "Live data of a Market"
 type MarketData {
@@ -212,6 +307,8 @@ type MarketData {
   market: Market!
   "The mark price (an unsigned integer)"
   markPrice: String!
+  "The methodology used for the calculation of the mark price"
+  markPriceType: CompositePriceType!
   "The highest price level on an order book for buy orders."
   bestBidPrice: String!
   "The aggregated volume being bid at the best bid price."
@@ -274,6 +371,10 @@ type MarketData {
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
   productData: ProductData
+  "RFC3339Nano time indicating the next time the network will attempt to close part of its position"
+  nextNetworkCloseout: String!
+  "State of the underlying internal composite price"
+  markPriceState: CompositePriceState
 }
 
 "Live data of a Market"
@@ -342,6 +443,10 @@ type ObservableMarketData {
   lastTradedPrice: String!
   "The current funding rate. This applies only to a perpetual market"
   productData: ProductData
+  "The methodology used to calculated mark price"
+  markPriceType: CompositePriceType!
+  "State of the underlying internal composite price"
+  markPriceState: CompositePriceState
 }
 
 "Timestamps for when the market changes state"
@@ -464,6 +569,8 @@ input LedgerEntryFilter {
   ToAccountFilter: AccountFilter
   "List of transfer types that is used for filtering sender and receiver accounts."
   TransferTypes: [TransferType]
+  "Optional transfer ID to filter by. If provided, all other filters are ignored."
+  TransferId: ID
 }
 
 "Filter for historical reward summary queries"
@@ -582,7 +689,7 @@ type Query {
     "Type of the order"
     type: OrderType!
   ): OrderEstimate!
-  @deprecated(reason: "Use estimateFees and estimatePosition instead")
+    @deprecated(reason: "Use estimateFees and estimatePosition instead")
 
   "Return an estimation of the potential cost for a new order"
   estimateFees(
@@ -610,16 +717,78 @@ type Query {
     marketId: ID!
     "Open volume - negative for short position (int64)"
     openVolume: String!
+    "Average entry price corresponding to the open volume. The price is an unsigned integer. For example `123456` is a correctly formatted price of `1.23456` assuming market configured to 5 decimal places"
+    averageEntryPrice: String!
     "Open and/or hypothetical orders"
     orders: [OrderInfo!]
-    "Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate"
-    collateralAvailable: String
+    "Margin account balance. Needs to be provided scaled to asset decimal places"
+    marginAccountBalance: String!
+    "General account balance. Needs to be provided scaled to asset decimal places"
+    generalAccountBalance: String!
+    "Order margin account balance. Needs to be provided scaled to asset decimal places"
+    orderMarginAccountBalance: String!
+    "Margin mode for the party, cross margin or isolated margin"
+    marginMode: MarginMode!
+    "Margin factor to be used along with isolated margin mode"
+    marginFactor: String
+    "Optional argument specifying if the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode."
+    includeRequiredPositionMarginInAvailableCollateral: Boolean
     "Optional argument specifying if liquidation price estimates should be scaled to market decimal places, returned in asset decimal places by default"
     scaleLiquidationPriceToMarketDecimals: Boolean
   ): PositionEstimate
 
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
+
+  "Estimate transfer fee"
+  estimateTransferFee(
+    "Sender's public key."
+    fromAccount: ID!
+    "Type of account sent from."
+    fromAccountType: AccountType!
+    "Receiver's public key."
+    toAccount: ID!
+    "Amount to be transferred."
+    amount: String!
+    "Asset ID for the asset used in the transaction."
+    assetId: String!
+  ): EstimatedTransferFee
+
+  "Get fees statistics"
+  feesStats(
+    "Optional market ID to filter for. If omitted, asset ID must be provided."
+    marketId: ID
+    "Optional asset ID to filter for. If omitted, market ID must be provided."
+    assetId: ID
+    "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
+    epoch: Int
+    "Optional party ID to filter for"
+    partyId: ID
+  ): FeesStats
+
+  "Get fees statistics for a given party"
+  feesStatsForParty(
+    "Party ID to filter for"
+    partyId: ID!
+    "Optional asset ID to filter for. If omitted, statistics for each asset are returned."
+    assetId: ID
+    "Optional epoch to filter from (included). If omitted, `toEpoch` must not be set. If both omitted, the most recent epoch's data is returned."
+    fromEpoch: Int
+    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to the most recent epoch."
+    toEpoch: Int
+  ): [FeesStatsForParty]
+
+  """
+  Funding payment for perpetual markets.
+  """
+  fundingPayments(
+    "ID of the party"
+    partyId: ID!
+    "ID of the perpetual market to get funding periods for"
+    marketId: ID
+    "Pagination control"
+    pagination: Pagination
+  ): FundingPaymentConnection!
 
   "Funding periods for perpetual markets"
   fundingPeriods(
@@ -654,17 +823,19 @@ type Query {
     pagination: Pagination
   ): FundingPeriodDataPointConnection!
 
-  """
-  Funding payment for perpetual markets.
-  """
-  fundingPayments(
-    "ID of the party"
-    partyId: ID!
-    "ID of the perpetual market to get funding periods for"
-    marketId: ID
+  "Get a list of games and their metrics."
+  games(
+    "Optional game ID to filter for"
+    gameId: ID
+    "Start epoch to return the results from (inclusive), if not provided the most recent epoch will be used."
+    epochFrom: Int
+    "End epoch to return the results to (inclusive), if not provided the most recent epoch will be used."
+    epochTo: Int
+    "Entity scope to filter for, i.e. individual or team. If not provided games for both individuals and teams will be returned."
+    entityScope: EntityScope
     "Pagination control"
     pagination: Pagination
-  ): FundingPaymentConnection!
+  ): GamesConnection!
 
   "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
@@ -685,8 +856,23 @@ type Query {
     pagination: Pagination
   ): MarketDataConnection
 
+  "Query for historic key rotations"
+  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
+
   """
-  Get ledger entries by asset, market, party, account type, transfer type within the given date range.
+  Get a list of ledger entries within the given date range. The date range is restricted to a maximum of 5 days.
+  This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
+  It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
+  the summed ledger entries of the set of specified accounts changes.
+  Each account filter must contain no more than one party ID.
+  At least one party ID must be specified in the from or to account filter.
+
+  Entries can be filtered by:
+  - the sending account (market ID, asset ID, account type)
+  - receiving account (market ID, asset ID, account type)
+  - sending AND receiving account
+  - transfer type either in addition to the above filters or as a standalone option
+
   Note: The date range is restricted to any 5 days.
   If no start or end date is provided, only ledger entries from the last 5 days will be returned.
   If a start and end date are provided, but the end date is more than 5 days after the start date, only data up to 5 days after the start date will be returned.
@@ -713,9 +899,6 @@ type Query {
     "Optional Pagination"
     pagination: Pagination
   ): LiquidityProviderConnection
-
-  "Query for historic key rotations"
-  keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
 
   "The last block process by the blockchain"
   lastBlockHeight: String!
@@ -808,6 +991,18 @@ type Query {
     pagination: Pagination
   ): OrderConnection
 
+  "List statistics about paid liquidity fees"
+  paidLiquidityFees(
+    "Optional market ID to filter for."
+    marketId: ID
+    "Optional asset ID to filter for."
+    assetId: ID
+    "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
+    epoch: Int
+    "Optional party IDs to filter for"
+    partyIDs: [String!]
+  ): PaidLiquidityFeesConnection
+
   "One or more entities that are trading on the Vega network"
   partiesConnection(
     "Optional ID of a party to retrieve"
@@ -815,6 +1010,14 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): PartyConnection
+
+  "List parties' profiles by their IDs. If no ID is set, all profiles are returned."
+  partiesProfilesConnection(
+    "Restrict the returned parties' profiles to only the given party IDs. If not set, all profiles will be returned."
+    ids: [ID!]
+    "Optional pagination information"
+    pagination: Pagination
+  ): PartiesProfilesConnection
 
   "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
@@ -828,7 +1031,7 @@ type Query {
     id: ID
     "Optionally, locate proposal by its reference. If ID is set, this parameter is ignored."
     reference: String
-  ): Proposal
+  ): ProposalNode
 
   "All governance proposals in the Vega network"
   proposalsConnection(
@@ -861,30 +1064,6 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): ReferralSetConnection!
-
-  "Get fees statistics"
-  feesStats(
-    "Optional market ID to filter for. If omitted, asset ID must be provided."
-    marketId: ID
-    "Optional asset ID to filter for. If omitted, market ID must be provided."
-    assetId: ID
-    "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
-    epoch: Int
-    "Optional party ID to filter for"
-    partyId: ID
-  ): FeesStats
-
-  "Get fees statistics for a given party"
-  feesStatsForParty(
-    "Party ID to filter for"
-    partyId: ID!
-    "Optional asset ID to filter for. If omitted, statistics for each asset are returned."
-    assetId: ID
-    "Optional epoch to filter from (included). If omitted, `toEpoch` must not be set. If both omitted, the most recent epoch's data is returned."
-    fromEpoch: Int
-    "Optional epoch to filter to (included). If omitted, the range goes from `fromEpoch` to the most recent epoch."
-    toEpoch: Int
-  ): [FeesStatsForParty]
 
   referralSetReferees(
     "Optional referral set ID to fetch referees for"
@@ -955,6 +1134,36 @@ type Query {
     pagination: Pagination
   ): TeamConnection
 
+  """
+  List teams statistics
+  Get the statistics of all teams, or for a specific team by using team ID, over a number of epochs.
+  If a team does not have at least the number of epochs worth of data, it is ignored.
+  """
+  teamsStatistics(
+    "Optional team ID to filter for"
+    teamId: ID
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 10 epochs."
+    aggregationEpochs: Int
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamsStatisticsConnection
+
+  """
+  List team members' statistics for a given team
+  Get the statistics of all team members for a given team ID, or for a specific member by using party ID, over a number of epochs.
+  If a team does not have at least the number of epochs worth of data, it is ignored.
+  """
+  teamMembersStatistics(
+    "Team ID to filter for"
+    teamId: ID!
+    "Optional party ID to filter for"
+    partyId: ID
+    "Optional number of epochs to aggregate referee volume and reward statistics for. If omitted, the default is 10 epochs."
+    aggregationEpochs: Int
+    "Optional pagination information"
+    pagination: Pagination
+  ): TeamMembersStatisticsConnection
+
   "List all referees for a team"
   teamReferees(
     "ID of the team to list referees for"
@@ -970,6 +1179,14 @@ type Query {
     "Optional pagination information"
     pagination: Pagination
   ): TeamRefereeHistoryConnection
+
+  "Get total transfer fee discount available"
+  totalTransferFeeDiscount(
+    "ID of party eligible for the discount."
+    partyId: String!
+    "ID of the asset that the discount relates to."
+    assetId: String!
+  ): TotalTransferFeeDiscount
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
@@ -990,10 +1207,18 @@ type Query {
     pagination: Pagination
     "Filter for reward transfers only. Direction must be 'From' if a public key is used"
     isReward: Boolean
+    "Optional epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`."
+    fromEpoch: Int
+    "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
+    toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "Find a transfer using its ID"
-  transfer("ID of the transfer" id: ID!): Transfer
+  transfer("ID of the transfer" id: ID!): TransferNode
 
   "Get volume discount statistics"
   volumeDiscountStats(
@@ -1016,17 +1241,27 @@ type Query {
     pagination: Pagination
   ): WithdrawalsConnection
 
-  "List paid liquidity fees statistics"
-  paidLiquidityFees(
-    "Optional market ID to filter for."
+  """
+  List margin modes per party per market
+
+  Get a list of all margin modes, or for a specific market ID, or party ID.
+  """
+  partyMarginModes(
+    "Optional team ID to filter for"
     marketId: ID
-    "Optional asset ID to filter for."
-    assetId: ID
-    "Optional epoch to filter for. If omitted, the most recent epoch's data is returned."
-    epoch: Int
-    "Optional party IDs to filter for"
-    partyIDs: [String!]
-  ): PaidLiquidityFeesConnection
+    "Optional referrer, or team referee to filter for"
+    partyId: ID
+    "Optional pagination information"
+    pagination: Pagination
+  ): PartyMarginModesConnection
+}
+
+"Defines the types of a dispatch strategy's scope the API can filter on."
+enum TransferScope {
+  "Matches transfers that have dispatch strategy scope of individual set."
+  SCOPE_INDIVIDUAL
+  "Matches transfers that have dispatch strategy scope of team set."
+  SCOPE_TEAM
 }
 
 "All the states a transfer can transition between"
@@ -1083,10 +1318,13 @@ type Transfer {
 
   "An optional reason explaining the status of the transfer"
   reason: String
+
+  "An optional game ID to filter for transfers that are made for rewarding participation in games"
+  gameId: ID
 }
 
 union TransferKind =
-  OneOffTransfer
+    OneOffTransfer
   | RecurringTransfer
   | OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
@@ -1833,6 +2071,14 @@ type Perpetual {
   dataSourceSpecForSettlementData: DataSourceSpec!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments"
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
+  "Optional configuration driving the internal composite price calculation for perpetual product"
+  internalCompositePriceConfig: CompositePriceConfiguration
 }
 
 """
@@ -1851,6 +2097,14 @@ type DataSourceSpecPerpetualBinding {
   For example, if it is set to "prices.BTC.timestamp", then the perpetual market will use the value of this property
   """
   settlementScheduleProperty: String!
+}
+
+"""
+Describes which property of the data source data should be
+used as composite price source.
+"""
+type SpecBindingForCompositePrice {
+  priceSourceProperty: String!
 }
 
 """
@@ -2095,10 +2349,30 @@ type FeeFactors {
   liquidityFee: String!
 }
 
+enum LiquidityFeeMethod {
+  METHOD_UNSPECIFIED
+  "Fee is smallest value of all bids, such that liquidity providers with nominated fees less than or equal to this value still have sufficient commitment to fulfil the market's target stake."
+  METHOD_MARGINAL_COST
+  "Fee is the weighted average of all liquidity providers' nominated fees, weighted by their commitment"
+  METHOD_WEIGHTED_AVERAGE
+  "Fee is set by the market to a constant value irrespective of any liquidity provider's nominated fee"
+  METHOD_CONSTANT
+}
+
+"Market settings that describe how the liquidity fee is calculated"
+type LiquidityFeeSettings {
+  "Method used to calculate the market's liquidity fee"
+  method: LiquidityFeeMethod!
+  "Constant liquidity fee used when using the constant fee method"
+  feeConstant: String
+}
+
 "The fees applicable to a market"
 type Fees {
   "The factors used to calculate the different fees"
   factors: FeeFactors!
+  "Liquidity fee settings for the market describing how the fee was calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 """
@@ -2172,10 +2446,6 @@ type TargetStakeParameters {
 type LiquidityMonitoringParameters {
   "Specifies parameters related to target stake calculation"
   targetStakeParameters: TargetStakeParameters!
-  "Specifies the triggering ratio for entering liquidity auction"
-  triggeringRatio: String!
-  "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
-  auctionExtensionSecs: Int!
 }
 
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
@@ -2234,7 +2504,10 @@ type Market {
   state: MarketState!
 
   "The proposal that initiated this market"
-  proposal: Proposal
+  proposal: Proposal @deprecated(reason: "Use marketProposal")
+
+  "The proposal that initiated this market"
+  marketProposal: ProposalNode
 
   "Orders on a market"
   ordersConnection(
@@ -2258,9 +2531,9 @@ type Market {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Current depth on the order book for this market"
   depth(
@@ -2301,7 +2574,8 @@ type Market {
     live: Boolean
     "Pagination information"
     pagination: Pagination
-  ): LiquidityProvisionsConnection @deprecated(reason: "Use liquidityProvisions instead")
+  ): LiquidityProvisionsConnection
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   "Timestamps for state changes in the market"
   marketTimestamps: MarketTimestamps!
@@ -2314,6 +2588,7 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
 
   """
   Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
@@ -2331,6 +2606,12 @@ type Market {
 
   "Optional: Liquidity SLA parameters for the market"
   liquiditySLAParameters: LiquiditySLAParameters
+
+  "Optional: Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
+
+  "Configuration driving the mark price for the market"
+  markPriceConfiguration: CompositePriceConfiguration!
 }
 
 """
@@ -2488,9 +2769,9 @@ type Party {
     "Pagination information"
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2506,7 +2787,7 @@ type Party {
 
   "Trading positions relating to a party"
   positionsConnection(market: ID, pagination: Pagination): PositionConnection
-  @deprecated(reason: "Use root positions query instead of sub-query")
+    @deprecated(reason: "Use root positions query instead of sub-query")
 
   "Margin levels for a market"
   marginsConnection(
@@ -2570,7 +2851,8 @@ type Party {
     live: Boolean
     "Optional Pagination information"
     pagination: Pagination
-  ): LiquidityProvisionsConnection @deprecated(reason: "Use liquidityProvisions instead")
+  ): LiquidityProvisionsConnection
+    @deprecated(reason: "Use liquidityProvisions instead")
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegationsConnection(
@@ -2593,6 +2875,10 @@ type Party {
     fromEpoch: Int
     "Optionally only return rewards <= this epoch"
     toEpoch: Int
+    "Optionally filter for rewards earned by the party for team participation."
+    teamId: ID
+    "Optionally filter for rewards earned for the given game ID"
+    gameId: ID
   ): RewardsConnection
 
   "Return net reward information"
@@ -2606,6 +2892,14 @@ type Party {
     pagination: Pagination
     "Filter for reward transfers only. Direction must be 'From'"
     isReward: Boolean
+    "Optional epoch to filter from (included). If omitted, the range goes from the oldest epoch to the `to epoch`."
+    fromEpoch: Int
+    "Optional epoch to filter to (included). If omitted, the range goes from `from epoch` to the most recent epoch."
+    toEpoch: Int
+    "Optional status to filter on."
+    status: TransferStatus
+    "Optional dispatch strategy's scope to filter for."
+    scope: TransferScope
   ): TransferConnection
 
   "The activity streak"
@@ -2658,7 +2952,7 @@ type PartyVestingBalance {
 """
 Summary of a party's reward vesting balances.
 """
-type PartyVestingBalancesSummary{
+type PartyVestingBalancesSummary {
   "The epoch for which this summary is valid"
   epoch: Int
   "The party vesting balances"
@@ -2897,9 +3191,9 @@ type Order {
     dateRange: DateRange
     pagination: Pagination
   ): TradeConnection
-  @deprecated(
-    reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
-  )
+    @deprecated(
+      reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead"
+    )
 
   "The order type"
   type: OrderType
@@ -2955,6 +3249,20 @@ enum StopOrderRejectionReason {
   REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION
   "This stop order does not close the position"
   REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION
+  "Stop orders are not allowed during the opening auction"
+  REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION
+  "Stop order cannot have matching OCO expiry times"
+  REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES
+}
+
+"Stop order size override settings"
+enum StopOrderSizeOverrideSetting {
+  "The size override has not been specified, this should never happen!"
+  SIZE_OVERRIDE_SETTING_UNSPECIFIED
+  "No size override, the size within the contained normal order submission will be used"
+  SIZE_OVERRIDE_SETTING_NONE
+  "Use the total position of the trader"
+  SIZE_OVERRIDE_SETTING_POSITION
 }
 
 "A stop order in Vega"
@@ -2987,6 +3295,10 @@ type StopOrder {
   order: Order
   "Optional rejection reason for an order"
   rejectionReason: StopOrderRejectionReason
+  "Size override setting"
+  sizeOverrideSetting: StopOrderSizeOverrideSetting!
+  "Size override value"
+  sizeOverrideValue: String
 }
 
 "Details of the order that will be submitted when the stop order is triggered."
@@ -3081,6 +3393,8 @@ type OrderUpdate {
 type PositionEstimate {
   "Margin level range estimate for the specified position"
   margin: MarginEstimate!
+  "Estimated margin account balance increase"
+  collateralIncreaseEstimate: CollateralIncreaseEstimate!
   "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
   liquidation: LiquidationEstimate
 }
@@ -3088,9 +3402,17 @@ type PositionEstimate {
 "Margin level estimate for both worst and best case possible"
 type MarginEstimate {
   "Margin level estimate assuming slippage cap is applied"
-  worstCase: MarginLevels!
+  worstCase: AbstractMarginLevels!
   "Margin level estimate assuming no slippage"
-  bestCase: MarginLevels!
+  bestCase: AbstractMarginLevels!
+}
+
+"Collateral increase estimate for the additional funds needed to support the specified position"
+type CollateralIncreaseEstimate {
+  "Estimate assuming slippage cap is applied"
+  worstCase: String!
+  "Estimate assuming no slippage"
+  bestCase: String!
 }
 
 "Liquidation estimate for both worst and best case possible"
@@ -3850,6 +4172,12 @@ enum OrderRejectionReason {
 
   "A post-only order would produce an aggressive trade and thus it has been rejected"
   ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
+
+  "Party has insufficient funds to cover for the order margin for the new or amended order"
+  ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
+
+  "Pegged orders are not allowed for a party in isolated margin mode"
+  ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
 }
 
 "Types of orders"
@@ -3933,24 +4261,28 @@ enum Side {
 enum Interval {
   "The block interval is not a fixed amount of time, rather it used to indicate grouping of events that occur in a single block. It is usually about a second."
   INTERVAL_BLOCK
-
   "1 minute interval"
   INTERVAL_I1M
-
   "5 minute interval"
   INTERVAL_I5M
-
   "15 minute interval (default)"
   INTERVAL_I15M
-
+  "30 minute interval"
+  INTERVAL_I30M
   "1 hour interval"
   INTERVAL_I1H
-
+  "4 hour interval"
+  INTERVAL_I4H
   "6 hour interval"
   INTERVAL_I6H
-
+  "8 hour interval"
+  INTERVAL_I8H
+  "12 hour interval"
+  INTERVAL_I12H
   "1 day interval"
   INTERVAL_I1D
+  "7 day interval"
+  INTERVAL_I7D
 }
 
 "The various account types in Vega (used by collateral)"
@@ -4014,6 +4346,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING
   "Holds pending rewards to be paid to the referrer of a party out of fees paid by the taker"
   ACCOUNT_TYPE_PENDING_FEE_REFERRAL_REWARD
+  "Per asset market account for party in isolated margin mode"
+  ACCOUNT_TYPE_ORDER_MARGIN
 }
 
 "Types that describe why a transfer has been made"
@@ -4092,6 +4426,12 @@ enum TransferType {
   TRANSFER_TYPE_PERPETUALS_FUNDING_WIN
   "Funds moved from the vesting account to the vested account once the vesting period is reached."
   TRANSFER_TYPE_REWARDS_VESTED
+  "Funds moved from general account to order margin account."
+  TRANSFER_TYPE_ORDER_MARGIN_LOW
+  "Funds released from order margin account to general."
+  TRANSFER_TYPE_ORDER_MARGIN_HIGH
+  "Funds moved from order margin account to margin account."
+  TRANSFER_TYPE_ISOLATED_MARGIN_LOW
 }
 
 union ProductConfiguration = FutureProduct | SpotProduct | PerpetualProduct
@@ -4144,6 +4484,12 @@ type PerpetualProduct {
   dataSourceSpecForSettlementData: DataSourceDefinition!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
 }
 
 """
@@ -4230,6 +4576,8 @@ type EthCallSpec {
   normalisers: [Normaliser!]
   "Filters the data returned from the contract method."
   filters: [Filter!]
+  "The ID of the EVM based chain which is to be used to source the oracle data."
+  sourceChainId: Int!
 }
 
 type InstrumentConfiguration {
@@ -4262,10 +4610,36 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
   "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
   "Liquidity SLA Parameters"
   liquiditySLAParameters: LiquiditySLAParameters
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration!
+}
+
+type CompositePriceConfiguration {
+  "Decay weight used in calculating time weight for a given trade"
+  decayWeight: String!
+  "Decay power used in calculating time weight for a given trade"
+  decayPower: Int!
+  "Cash amount used in calculating mark price from the order book"
+  cashAmount: String!
+  "Weights for each given price source, first entry is price from trade, then price from book, then first oracle, next oracle, etc. And last entry is for median price"
+  SourceWeights: [String!]
+  "Staleness tolerance duration for each given price sources in the order mentioned above"
+  SourceStalenessTolerance: [String!]!
+  "Composite price calculation methodology"
+  CompositePriceType: CompositePriceType!
+  "Oracle configuration for external composite price sources"
+  dataSourcesSpec: [DataSourceDefinition]
+  "Spec bindings for external composite price sources"
+  dataSourcesSpecBinding: [SpecBindingForCompositePrice]
 }
 
 type SuccessorConfiguration {
@@ -4299,12 +4673,20 @@ type UpdateMarketConfiguration {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume."
   quadraticSlippageFactor: String!
+    @deprecated(reason: "This field will be removed in a future release")
   "Liquidity SLA Parameters."
   liquiditySLAParameters: LiquiditySLAParameters
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
+  "Liquidation strategy for the market"
+  liquidationStrategy: LiquidationStrategy
+  "Configuration for mark price calculation for the market"
+  markPriceConfiguration: CompositePriceConfiguration
 }
 
 type UpdateInstrumentConfiguration {
   code: String!
+  name: String!
   product: UpdateProductConfiguration!
 }
 
@@ -4334,10 +4716,16 @@ type UpdatePerpetualProduct {
   dataSourceSpecForSettlementData: DataSourceDefinition!
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
+  "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
+  fundingRateScalingFactor: String!
+  "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
+  fundingRateLowerBound: String!
+  "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
+  fundingRateUpperBound: String!
 }
 
 union UpdateMarketRiskParameters =
-  UpdateMarketSimpleRiskModel
+    UpdateMarketSimpleRiskModel
   | UpdateMarketLogNormalRiskModel
 
 type UpdateMarketSimpleRiskModel {
@@ -4418,7 +4806,7 @@ type NewTransfer {
 }
 
 union GovernanceTransferKind =
-  OneOffGovernanceTransfer
+    OneOffGovernanceTransfer
   | RecurringGovernanceTransfer
 
 "Allows for cancellation of an existing governance transfer"
@@ -4519,6 +4907,8 @@ type NewSpotMarket {
   positionDecimalPlaces: Int!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 "Update an existing spot market on Vega"
@@ -4540,6 +4930,8 @@ type UpdateSpotMarketConfiguration {
   riskParameters: RiskModel!
   "Specifies the liquidity provision SLA parameters"
   liquiditySLAParams: LiquiditySLAParameters!
+  "Specifies how the liquidity fee for the market will be calculated"
+  liquidityFeeSettings: LiquidityFeeSettings
 }
 
 type LiquiditySLAParameters {
@@ -4555,6 +4947,17 @@ type LiquiditySLAParameters {
   slaCompetitionFactor: String!
 }
 
+type LiquidationStrategy {
+  "Specifies the interval, in seconds, at which point the network will try to unload its position."
+  disposalTimeStep: Int!
+  "Specifies the fraction of its position the network will try to reduce its position by in a single disposal attempt."
+  disposalFraction: String!
+  "Specifies the size of the position held by the network that it will try to dispose of in one attempt."
+  fullDisposalSize: Int!
+  "Specifies the maximum size by which the network can reduce its position as a fraction of the volume on the book."
+  maxFractionConsumed: String!
+}
+
 "Representation of a network parameter"
 type NetworkParameter {
   "The name of the network parameter"
@@ -4564,7 +4967,7 @@ type NetworkParameter {
 }
 
 union ProposalChange =
-  NewMarket
+    NewMarket
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
@@ -4614,6 +5017,30 @@ type ProposalTerms {
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
+}
+
+"Terms for a batch governance proposal"
+type BatchProposalTermsChange {
+  """
+  RFC3339Nano time and date when this proposal will be executed, if it passes.
+  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
+  """
+  enactmentDatetime: Timestamp
+
+  "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
+  change: ProposalChange!
+}
+
+"The terms for the batch proposal"
+type BatchProposalTerms {
+  """
+  RFC3339Nano time and date when voting closes for this proposal.
+  Constrained by "minClose" and "maxClose" network parameters.
+  """
+  closingDatetime: Timestamp!
+
+  "Actual changes being introduced by the batch proposal - actions the proposal triggers if passed and enacted."
+  changes: [BatchProposalTermsChange]!
 }
 
 """
@@ -4703,9 +5130,44 @@ type Proposal {
   requiredLpParticipation: String
 }
 
+type BatchProposal {
+  "Proposal ID that is provided by Vega once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on Vega"
+  reference: String!
+  "Party that prepared the proposal"
+  party: Party!
+  "State of the proposal"
+  state: ProposalState!
+  "RFC3339Nano time and date when the proposal reached the network"
+  datetime: Timestamp!
+  "Terms of all the proposals in the batch"
+  batchTerms: BatchProposalTerms
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
+  "Votes cast for this proposal"
+  votes: ProposalVotes!
+  "Reason the proposal was rejected"
+  rejectionReason: ProposalRejectionReason
+  "Details of the rejection reason"
+  errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted"
+  requiredLpMajority: String
+  "The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
+  requiredLpParticipation: String
+  "Proposals that are part of the batch"
+  subProposals: [ProposalDetail]
+}
+
 type ProposalDetail {
   "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
+  "Batch proposal ID that is provided by Vega once proposal reaches the network"
+  batchId: ID
   "A UUID reference to aid tracking proposals on Vega"
   reference: String!
   "Party that prepared the proposal"
@@ -4715,7 +5177,9 @@ type ProposalDetail {
   "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
   "Terms of the proposal"
-  terms: ProposalTerms!
+  terms: ProposalTerms
+  "Terms of all the proposals in the batch"
+  batchTerms: BatchProposalTerms
   "Rationale behind the proposal"
   rationale: ProposalRationale!
   "Why the proposal was rejected by the core"
@@ -5069,7 +5533,7 @@ type Reward {
   "The asset this reward is paid in"
   asset: Asset!
   "The market ID for which this reward is paid if any"
-  marketId: ID!
+  marketId: ID! @deprecated(reason: "Use gameId")
   "The type of reward"
   rewardType: AccountType!
   "Party receiving the reward"
@@ -5078,12 +5542,18 @@ type Reward {
   epoch: Epoch!
   "Amount received for this reward"
   amount: String!
+  "Amount paid as a reward, expressed in asset's quantum unit"
+  quantumAmount: String!
   "Percentage out of the total distributed reward"
   percentageOfTotal: String!
   "RFC3339Nano time when the rewards were received"
   receivedAt: Timestamp!
   "The epoch when the reward is released"
   lockedUntilEpoch: Epoch!
+  "Optional game ID for rewards that are paid for participation in a game"
+  gameId: ID
+  "Optional team ID for rewards that are paid if the party is a member of a team, and for participation in a game."
+  teamId: ID
 }
 
 type RewardSummary {
@@ -5267,6 +5737,30 @@ type PartyEdge {
 type PartyConnection {
   "The parties in this connection"
   edges: [PartyEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+"Holds metadata associated to a party."
+type PartyProfile {
+  partyId: ID!
+  "Alias given to the party."
+  alias: String!
+  "Metadata to associate to a party, in a key/value format where the key describes the type of metadata in the value field."
+  metadata: [Metadata!]!
+}
+"Edge type containing the party and cursor information returned by a PartiesProfilesConnection"
+type PartyProfileEdge {
+  "The party's profile"
+  node: PartyProfile!
+  "The cursor for this party's profile"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated profile information for multiple parties"
+type PartiesProfilesConnection {
+  "The profiles in this connection"
+  edges: [PartyProfileEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
 }
@@ -5663,10 +6157,14 @@ enum TransferDirection {
   ToOrFrom
 }
 
+union ProposalNode = Proposal | BatchProposal
+
 "Edge type containing the proposals and cursor information returned by a ProposalsConnection"
 type ProposalEdge {
   "The proposal data"
-  node: Proposal!
+  node: Proposal! @deprecated(reason: "Use proposalNode")
+  "The data of either single or batch proposal"
+  proposalNode: ProposalNode
   "Cursor identifying the proposal"
   cursor: String!
 }
@@ -5940,7 +6438,7 @@ type DataSourceSpecConfigurationTimeTrigger {
 }
 
 union InternalDataSourceKind =
-  DataSourceSpecConfigurationTime
+    DataSourceSpecConfigurationTime
   | DataSourceSpecConfigurationTimeTrigger
 
 """
@@ -5962,7 +6460,7 @@ type DataSourceDefinitionExternal {
 }
 
 union DataSourceKind =
-  DataSourceDefinitionInternal
+    DataSourceDefinitionInternal
   | DataSourceDefinitionExternal
 
 """
@@ -6190,6 +6688,8 @@ type ReferralSet {
   id: ID!
   "Party that created the set."
   referrer: ID!
+  "Current number of members in the referral set."
+  totalMembers: Int!
   "Timestamp as RFC3339Nano when the referral set was created."
   createdAt: Timestamp!
   "Timestamp as RFC3339Nano when the referral set was updated."
@@ -6292,15 +6792,19 @@ type Team {
   "Name of the team."
   name: String!
   "Link to the team's homepage."
-  teamURL: String!
+  teamUrl: String!
   "Link to an image of the team's avatar."
-  avatarURL: String!
+  avatarUrl: String!
+  "Current number of members in the team."
+  totalMembers: Int!
   "Time in RFC3339Nano format when the team was created."
   createdAt: Timestamp!
   "Epoch at which the team was created."
   createdAtEpoch: Int!
-  "Tells if a party can join the team or not."
+  "Whether or not the team is closed to new party members. When closed, only parties specified in the allow list can join the team."
   closed: Boolean!
+  "List of public keys that are allowed to join the team. Only applicable to closed teams."
+  allowList: [String!]!
 }
 
 "Edge type containing a team cursor and its associated team data"
@@ -6315,6 +6819,88 @@ type TeamEdge {
 type TeamConnection {
   "Teams in this connection"
   edges: [TeamEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Team's statistics record containing the team information."
+type TeamStatistics {
+  "Team ID the statistics are related to."
+  teamId: String!
+  "Total of volume accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumVolume: String!
+  "List of trading volume totals per epoch, over the requested epoch period, expressed in quantum value"
+  quantumVolumes: [QuantumVolumesPerEpoch!]!
+  "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumRewards: String!
+  "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
+  quantumRewards: [QuantumRewardsPerEpoch!]!
+  "Total of games played."
+  totalGamesPlayed: Int!
+  "List of games played over the requested epoch period."
+  gamesPlayed: [String!]!
+}
+
+type QuantumRewardsPerEpoch {
+  "Epoch for which this information is valid."
+  epoch: Int!
+  "Total of rewards accumulated over the epoch period expressed in quantum value."
+  totalQuantumRewards: String!
+}
+
+type QuantumVolumesPerEpoch {
+  "Epoch for which this information is valid."
+  epoch: Int!
+  "Total volume across all markets, accumulated over the epoch period, expressed in quantum value."
+  totalQuantumVolumes: String!
+}
+
+"Edge type containing a team statistics cursor and its associated team's statistics data"
+type TeamStatisticsEdge {
+  "Team's statistics data"
+  node: TeamStatistics!
+  "Cursor identifying the team data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team statistics data"
+type TeamsStatisticsConnection {
+  "Teams' statistics in this connection"
+  edges: [TeamStatisticsEdge!]!
+  "Pagination information"
+  pageInfo: PageInfo!
+}
+
+"Team member's statistics record containing the member's information."
+type TeamMemberStatistics {
+  "Party ID the statistics are related to."
+  partyId: String!
+  "Total of volume accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumVolume: String!
+  "List of trading volume totals per epoch, for the requested epoch period, expressed in quantum value"
+  quantumVolumes: [QuantumVolumesPerEpoch!]!
+  "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
+  totalQuantumRewards: String!
+  "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
+  quantumRewards: [QuantumRewardsPerEpoch!]!
+  "Total number of games played."
+  totalGamesPlayed: Int!
+  "List of games played over the requested epoch period."
+  gamesPlayed: [String!]!
+}
+
+"Edge type containing a team member statistics cursor and its associated statistics data"
+type TeamMemberStatisticsEdge {
+  "Team member's statistics data"
+  node: TeamMemberStatistics!
+  "Cursor identifying the team data"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated team member statistics data"
+type TeamMembersStatisticsConnection {
+  "Team members' statistics in this connection"
+  edges: [TeamMemberStatisticsEdge!]!
   "Pagination information"
   pageInfo: PageInfo!
 }
@@ -6504,4 +7090,130 @@ type PaidLiquidityFeesEdge {
   node: PaidLiquidityFees!
   "The cursor for this volume discount statistics"
   cursor: String!
+}
+
+"Returns total transfer fee discount available"
+type TotalTransferFeeDiscount {
+  "Total per party per asset discount available."
+  totalDiscount: String!
+}
+
+"EstimatedTransferFee Results of estimation of transfer fee and the fee discount"
+type EstimatedTransferFee {
+  "Estimated fee for the transfer."
+  fee: String!
+  "Discount applied to the fee."
+  discount: String!
+}
+
+"Individual party participating in a game and their metrics"
+type IndividualGameEntity {
+  "Party ID of the participant"
+  individual: ID!
+  "The rank of the individual within the game. If the individual is in a team, then the rank of the individual in the team"
+  rank: Int!
+  "The volume traded by the individual"
+  volume: String!
+  "The reward metric applied to the game"
+  rewardMetric: DispatchMetric!
+  "The rewards earned by the individual during the epoch"
+  rewardEarned: String!
+  "Total rewards earned by the individual during the game"
+  totalRewardsEarned: String!
+  "The rewards earned by the individual during the epoch in quantum value"
+  rewardEarnedQuantum: String!
+  "Total rewards earned by the individual during the game in quantum value"
+  totalRewardsEarnedQuantum: String!
+}
+
+"Team participation information, i.e. the team ID and the metrics for each participating team member."
+type TeamParticipation {
+  "Team ID"
+  teamId: ID!
+  "List of participating team members and their metrics."
+  membersParticipating: [IndividualGameEntity!]!
+}
+
+"Team participating in a game and their metrics."
+type TeamGameEntity {
+  "Breakdown of the team members and their contributions to the total team metrics."
+  team: TeamParticipation!
+  "Rank of the team within the game."
+  rank: Int!
+  "Total volume traded by the team"
+  volume: String!
+  "Reward metric applied to the game."
+  rewardMetric: DispatchMetric!
+  "Total rewards earned by the team during the epoch"
+  rewardEarned: String!
+  "Total rewards earned by the team for the game"
+  totalRewardsEarned: String!
+  "Total rewards earned by the team during the epoch in quantum value"
+  rewardEarnedQuantum: String!
+  "Total rewards earned by the team for the game in quantum value"
+  totalRewardsEarnedQuantum: String!
+}
+
+union GameEntity = TeamGameEntity | IndividualGameEntity
+
+"Game metrics for a given epoch"
+type Game {
+  "ID of the game."
+  id: ID!
+  "Epoch during which the metrics were calculated."
+  epoch: Int!
+  "Number of participants that took part in the game during the epoch."
+  numberOfParticipants: Int!
+  "Entities that were rewarded during the epoch."
+  entities: [GameEntity!]!
+  "ID of asset in which the rewards were paid."
+  rewardAssetId: ID!
+}
+
+"Edge type containing the game metrics and cursor information returned by a GameConnection"
+type GameEdge {
+  "Game information and metrics."
+  node: Game!
+  "Cursor identifying the game"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated game information"
+type GamesConnection {
+  "Page of game edges for the connection"
+  edges: [GameEdge]
+  "Current page information"
+  pageInfo: PageInfo
+}
+
+"Connection type for retrieving cursor-based paginated party margin modes information"
+type PartyMarginModesConnection {
+  "The party margin modes"
+  edges: [PartyMarginModeEdge]
+  "The pagination information"
+  pageInfo: PageInfo
+}
+
+"Edge type containing the deposit and cursor information returned by a PartyMarginModeConnection"
+type PartyMarginModeEdge {
+  node: PartyMarginMode!
+  cursor: String!
+}
+
+"Margin mode selected for the given party and market."
+type PartyMarginMode {
+  "Unique ID of the market."
+  marketId: ID!
+  "Unique ID of the party."
+  partyId: ID!
+  "Selected margin mode."
+  marginMode: MarginMode!
+  "Margin factor for the market. Isolated mode only."
+  marginFactor: String
+  "Minimum theoretical margin factor for the market. Isolated mode only."
+  minTheoreticalMarginFactor: String
+  "Maximum theoretical leverage for the market. Isolated mode only."
+  maxTheoreticalLeverage: String
+  "Epoch at which the update happened."
+  atEpoch: Int!
 }

@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jessevdk/go-flags"
-
 	"code.vegaprotocol.io/vega/cmd/vega/commands/faucet"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/nodewallet"
 	"code.vegaprotocol.io/vega/cmd/vega/commands/paths"
 	tools "code.vegaprotocol.io/vega/cmd/vegatools"
 	"code.vegaprotocol.io/vega/core/config"
+
+	"github.com/jessevdk/go-flags"
 )
 
 // Subcommand is the signature of a sub command that can be registered.
@@ -47,8 +47,8 @@ func Main(ctx context.Context) error {
 	// special case for the tendermint subcommand, so we bypass the command line
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "tendermint", "tm":
-			return (&tmCmd{}).Execute(nil)
+		case "tendermint", "tm", "cometbft":
+			return (&cometbftCmd{}).Execute(nil)
 		case "wallet":
 			return (&walletCmd{}).Execute(nil)
 		case "datanode":
@@ -73,6 +73,7 @@ func Main(ctx context.Context) error {
 		Watch,
 		Tm,
 		Tendermint,
+		CometBFT,
 		Query,
 		Bridge,
 		paths.Paths,

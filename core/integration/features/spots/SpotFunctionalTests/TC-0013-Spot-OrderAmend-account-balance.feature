@@ -1,4 +1,5 @@
 Feature:  Amend the price up above the account balance
+
   Scenario: Amend the price up above the account balance
 
   Background:
@@ -28,9 +29,9 @@ Feature:  Amend the price up above the account balance
     Then "party1" should have holding account balance of "300" for asset "ETH"
 
     Then the orders should have the following states:
-      | party  | market id | side | volume | price | status        |
-      | party1 | BTC/ETH   | buy  | 1      | 300   | STATUS_ACTIVE |
-      | party2 | BTC/ETH   | sell | 1      | 1100  | STATUS_ACTIVE |
+      | party  | market id | side | volume | remaining | price | status        |
+      | party1 | BTC/ETH   | buy  | 1      | 1         | 300   | STATUS_ACTIVE |
+      | party2 | BTC/ETH   | sell | 1      | 1         | 1100  | STATUS_ACTIVE |
 
     Given the parties amend the following orders:
       | party  | reference | price | size delta | tif     | error                                                              |

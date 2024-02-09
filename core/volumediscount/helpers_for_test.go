@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/volumediscount"
 	"code.vegaprotocol.io/vega/core/volumediscount/mocks"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -64,6 +65,25 @@ func expectStatsUpdated(t *testing.T, broker *mocks.MockBroker) {
 	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
 		_, ok := evt.(*events.VolumeDiscountStatsUpdated)
 		require.Truef(t, ok, "expecting event of type *events.VolumeDiscountStatsUpdated but got %T", evt)
+	}).Times(1)
+}
+
+func expectStatsUpdatedWithUnqualifiedParties(t *testing.T, broker *mocks.MockBroker) {
+	t.Helper()
+
+	broker.EXPECT().Send(gomock.Any()).Do(func(evt events.Event) {
+		update, ok := evt.(*events.VolumeDiscountStatsUpdated)
+		require.Truef(t, ok, "expecting event of type *events.VolumeDiscountStatsUpdated but got %T", evt)
+		stats := update.VolumeDiscountStatsUpdated()
+		foundUnqualifiedParty := false
+		for _, s := range stats.Stats {
+			if s.PartyId == "p1" {
+				foundUnqualifiedParty = true
+				require.Equal(t, "0", s.DiscountFactor)
+				require.Equal(t, "900", s.RunningVolume)
+			}
+		}
+		require.True(t, foundUnqualifiedParty)
 	}).Times(1)
 }
 

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/pkg/errors"
 )
 
@@ -74,7 +75,7 @@ func (f *Future) SubmitDataPoint(_ context.Context, _ *num.Uint, _ int64) error 
 	return nil
 }
 
-func (f *Future) OnLeaveOpeningAuction(_ context.Context, _ int64) {
+func (f *Future) UpdateAuctionState(_ context.Context, _ bool) {
 }
 
 func (f *Future) GetMarginIncrease(_ int64) num.Decimal {

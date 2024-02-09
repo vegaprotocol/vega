@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package gql
 
 import (
@@ -256,11 +244,10 @@ func (r *myMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj 
 			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
 			ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
 		},
-		TriggeringRatio: obj.LiquidityMonitoringParameters.TriggeringRatio,
 	}, nil
 }
 
-func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*types.GovernanceData, error) {
+func (r *myMarketResolver) MarketProposal(ctx context.Context, obj *types.Market) (ProposalNode, error) {
 	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
 		ProposalId: &obj.Id,
 	})
@@ -270,6 +257,26 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	if err != nil {
 		return nil, nil //nolint:nilerr
 	}
+
+	resolver := (*proposalEdgeResolver)(r)
+	if resp.GetData().ProposalType == vega.GovernanceData_TYPE_BATCH {
+		return resolver.BatchProposal(ctx, resp.GetData())
+	}
+
+	return resp.Data, nil
+}
+
+func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*vega.GovernanceData, error) {
+	resp, err := r.tradingDataClientV2.GetGovernanceData(ctx, &v2.GetGovernanceDataRequest{
+		ProposalId: &obj.Id,
+	})
+	// it's possible to not find a proposal as of now.
+	// some market are loaded at startup, without
+	// going through the proposal phase
+	if err != nil {
+		return nil, nil //nolint:nilerr
+	}
+
 	return resp.Data, nil
 }
 

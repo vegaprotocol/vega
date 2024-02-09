@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
@@ -34,7 +33,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -93,13 +92,11 @@ type IDGenerator interface {
 //nolint:interfacebloat
 type AuctionState interface {
 	price.AuctionState
-	lmon.AuctionState
 	// are we in auction, and what auction are we in?
 	ExtendAuctionSuspension(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool
-	IsLiquidityAuction() bool
 	IsFBA() bool
 	IsMonitorAuction() bool
 	ExceededMaxOpening(time.Time) bool
@@ -124,6 +121,8 @@ type AuctionState interface {
 	GetState() *types.AuctionState
 	Changed() bool
 	UpdateMaxDuration(ctx context.Context, d time.Duration)
+	StartGovernanceSuspensionAuction(t time.Time)
+	EndGovernanceSuspensionAuction()
 }
 
 type EpochEngine interface {
@@ -141,6 +140,7 @@ type Collateral interface {
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
+	GetOrCreatePartyOrderMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
 	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	BondSpotUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	RemoveBondAccount(partyID, marketID, asset string) error
@@ -150,10 +150,11 @@ type Collateral interface {
 	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
-	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint) ([]*types.LedgerMovement, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer, factor *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]*types.LedgerMovement, error)
 	ClearMarket(ctx context.Context, mktID, asset string, parties []string, keepInsurance bool) ([]*types.LedgerMovement, error)
 	HasGeneralAccount(party, asset string) bool
 	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
+	ClearPartyOrderMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
 	CanCoverBond(market, party, asset string, amount *num.Uint) bool
 	Hash() []byte
 	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
@@ -161,9 +162,10 @@ type Collateral interface {
 	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
-	PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint) ([]events.Margin, []*types.LedgerMovement, error)
-	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error)
-	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
+	IsolatedMarginUpdate(updates []events.Risk) []events.Margin
+	PerpsFundingSettlement(ctx context.Context, marketID string, transfers []events.Transfer, asset string, round *num.Uint, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string, useGeneralAccountForMarginSearch func(string) bool) ([]events.Margin, []*types.LedgerMovement, error)
+	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string, useGeneralAccount func(string) bool) (*types.LedgerMovement, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 	GetAssetQuantum(asset string) (num.Decimal, error)
 	GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool)
@@ -207,6 +209,10 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 			changes&PriceMoveBestBid > 0) ||
 		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
 			changes&PriceMoveBestAsk > 0)
+}
+
+type Banking interface {
+	RegisterTradingFees(ctx context.Context, asset string, feesPerParty map[string]*num.Uint)
 }
 
 type LiquidityEngine interface {

@@ -25,6 +25,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 )
@@ -198,7 +199,8 @@ type VisorConfigFile struct {
 func parseAndValidateVisorConfigFile(path string) (*VisorConfigFile, error) {
 	conf := VisorConfigFile{}
 	if err := paths.ReadStructuredFile(path, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse VisorConfig: %w", err)
+		// Do not wrap error as underlying errors are meaningful enough.
+		return nil, err
 	}
 
 	return &conf, nil
@@ -242,7 +244,7 @@ func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) 
 
 	dataFile, err := parseAndValidateVisorConfigFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+		return nil, fmt.Errorf("could not retrieve configuration at %q: %w", configPath, err)
 	}
 
 	return &VisorConfig{
@@ -257,7 +259,7 @@ func (pc *VisorConfig) reload() error {
 	pc.log.Info("Reloading config")
 	dataFile, err := parseAndValidateVisorConfigFile(pc.configPath)
 	if err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
+		return fmt.Errorf("could not retrieve configuration: %w", err)
 	}
 
 	pc.mut.Lock()

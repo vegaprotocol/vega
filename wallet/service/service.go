@@ -24,6 +24,7 @@ import (
 
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	v2 "code.vegaprotocol.io/vega/wallet/service/v2"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"go.uber.org/zap"

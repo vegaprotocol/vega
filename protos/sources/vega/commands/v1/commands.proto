@@ -26,6 +26,8 @@ message BatchMarketInstructions {
   repeated StopOrdersCancellation stop_orders_cancellation = 4;
   // List of stop order submissions to be processed sequentially.
   repeated StopOrdersSubmission stop_orders_submission = 5;
+  // Update margin mode instruction
+  repeated UpdateMarginMode update_margin_mode = 6;
 }
 
 // A command that allows a party to submit a stop order for a given market.
@@ -46,6 +48,10 @@ message StopOrderSetup {
   optional int64 expires_at = 2;
   // Strategy to adopt if the expiry time is reached.
   optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
+  // Indicates if this order is linked to an order or position to derive the order size
+  optional vega.StopOrder.SizeOverrideSetting size_override_setting = 4;
+  // If this order is linked to a position, provide an optional scaling factor
+  optional vega.StopOrder.SizeOverrideValue size_override_value = 5;
 
   // Trigger that will need to be breached for the order to be submitted to the book.
   oneof trigger {
@@ -106,6 +112,23 @@ message IcebergOpts {
   uint64 minimum_visible_size = 2;
 }
 
+message UpdateMarginMode {
+  enum Mode {
+    // Never valid.
+    MODE_UNSPECIFIED = 0;
+    // Cross margin mode - margin is dynamically acquired and released as a position is marked to market
+    MODE_CROSS_MARGIN = 1;
+    // Isolated margin mode - margin for any newly opened position volume is transferred to the margin account when the trade is executed
+    MODE_ISOLATED_MARGIN = 2;
+  }
+  // Market to change margin mode for.
+  string market_id = 1;
+  // Margin mode to use.
+  Mode mode = 2;
+  // Margin factor to use for margin in isolated mode. It is a multiplier that defines how much margin needs to be set aside
+  optional string margin_factor = 3;
+}
+
 // A command that instructs the network to cancel orders, active or partially filled, that were previously submitted by the sender of this transaction.
 // It is not possible to cancel another party's order with this command.
 message OrderCancellation {
@@ -130,6 +153,7 @@ message OrderAmendment {
   // - To increase the size from the current value, set a positive integer value
   // - To leave the size unchanged set a value of zero
   // This field needs to be scaled using the market's position decimal places.
+  // If specified, size must not be set.
   int64 size_delta = 4;
   // Timestamp, in Unix nanoseconds, for the new expiry time for the order.
   optional int64 expires_at = 5;
@@ -140,6 +164,14 @@ message OrderAmendment {
   string pegged_offset = 7;
   // New pegged reference for the order.
   vega.PeggedReference pegged_reference = 8;
+  // New size for the order.
+  // Amending the size causes the size and remaining part of the order to be changed by the difference between the original and amended size.
+  // - Specifying a size smaller than the current size leaves the order at its current order book position.
+  // - Specifying a size larger than the current size removes and reinserts the order at the back of the price level.
+  // - Specifying a size that results in the remaining part of the order being reduced to zero cancels the order.
+  // This field is an unsigned integer scaled to the market's decimal places.
+  // If specified, size_delta must be set to 0.
+  optional uint64 size = 9;
 }
 
 // A command that indicates to the network the party's intention to supply liquidity to the given market and become a liquidity provider.
@@ -196,6 +228,25 @@ message ProposalSubmission {
   string reference = 1;
   // Proposal terms containing the type and details of the proposal, as well as time spans for voting and enactment.
   vega.ProposalTerms terms = 2;
+  // Rationale behind a proposal.
+  vega.ProposalRationale rationale = 3;
+}
+
+// Terms for a batch governance proposal submission
+message BatchProposalSubmissionTerms {
+  // Closing timestamp in Unix time; adheres to `minClose` and `maxClose` limits.
+  int64 closing_timestamp = 1;
+  // List of individual changes included in the batch proposal.
+  repeated vega.BatchProposalTermsChange changes = 2;
+}
+
+// Command that allows a token holder to submit a batch governance proposal that can be voted on by any other token holders, and eventually enacted on the Vega network.
+// For example this command can be used to propose a new market and a network parameter change with it.
+message BatchProposalSubmission {
+  // Arbitrary human-readable reference identifying the proposal.
+  string reference = 1;
+  // Proposal terms containing the type and details of the proposal, as well as time spans for voting and enactment.
+  BatchProposalSubmissionTerms terms = 2;
   // Rationale behind a proposal.
   vega.ProposalRationale rationale = 3;
 }
@@ -317,6 +368,10 @@ message CreateReferralSet {
     optional string avatar_url = 12;
     // Whether or not the team is closed to new party members.
     bool closed = 13;
+    // List of public keys that are allowed to join the team.
+    // Only applicable to closed teams. Removing a party from the allow list does not remove
+    // the party from the team.
+    repeated string allow_list = 14;
   }
 }
 
@@ -337,8 +392,13 @@ message UpdateReferralSet {
     optional string team_url = 11;
     // New link to an avatar for the team.
     optional string avatar_url = 12;
-    // Whether or not the team is closed to new party members.
+    // Whether or not the team is closed to new party members. When closed, only parties specified in the allow list can
+    // join the team.
     optional bool closed = 13;
+    // List of public keys that are allowed to join the team.
+    // Only applicable to closed teams. Removing a party from the allow list does not remove
+    // the party from the team.
+    repeated string allow_list = 14;
   }
 }
 
@@ -348,4 +408,21 @@ message UpdateReferralSet {
 message ApplyReferralCode {
   // Referral code, normally the referral set ID, for the party to join.
   string id = 1;
+}
+
+// Command that allows the submitter to join a team or change teams if they are already a member of a team.
+message JoinTeam {
+  // ID of the team to join, this is the same as the referral code used to generate the team.
+  string id = 1;
+}
+
+// Command to associate metadata to a public key, known as a party ID.
+// Partial update is not supported, meaning previous values must be included in
+// the update, otherwise they are removed.
+message UpdatePartyProfile {
+  // Alias given to the party. It must be unique network-wide.
+  string alias = 1;
+  // Freeform data to associate to the party.
+  // Support a maximum of 10 entries.
+  repeated vega.Metadata metadata = 2;
 }

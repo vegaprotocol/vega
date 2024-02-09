@@ -103,6 +103,10 @@ func (e *Engine) GetState(assetQuantum num.Decimal) *eventspb.FeesStats {
 	return e.feesStats.ToProto(e.asset, assetQuantum)
 }
 
+func (e *Engine) TotalTradingFeesPerParty() map[string]*num.Uint {
+	return e.feesStats.TotalTradingFeesPerParty()
+}
+
 func (e *Engine) GetFeesStatsOnEpochEnd(assetQuantum num.Decimal) (FeesStats *eventspb.FeesStats) {
 	FeesStats, e.feesStats = e.feesStats.ToProto(e.asset, assetQuantum), NewFeesStats()
 	return
@@ -179,6 +183,8 @@ func (e *Engine) CalculateForContinuousMode(
 
 		e.feesStats.RegisterMakerFee(maker, taker, fee.MakerFee)
 
+		totalTradingFees := num.UintZero().AddSum(fee.MakerFee, fee.InfrastructureFee, fee.LiquidityFee)
+
 		switch trade.Aggressor {
 		case types.SideBuy:
 			trade.BuyerFee = fee
@@ -190,7 +196,10 @@ func (e *Engine) CalculateForContinuousMode(
 			maker = trade.Buyer
 		}
 
-		totalFeeAmount.AddSum(fee.InfrastructureFee, fee.LiquidityFee, fee.MakerFee)
+		e.feesStats.RegisterTradingFees(taker, totalTradingFees)
+		e.feesStats.RegisterTradingFees(maker, fee.MakerFee)
+
+		totalFeeAmount.AddSum(totalTradingFees)
 		totalInfrastructureFeeAmount.AddSum(fee.InfrastructureFee)
 		totalLiquidityFeeAmount.AddSum(fee.LiquidityFee)
 		// create a transfer for the aggressor
@@ -387,93 +396,35 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	}, nil
 }
 
-func (e *Engine) CalculateFeeForPositionResolution(
-	// the trade from the good parties which 0 out the network order
-	trades []*types.Trade,
-	// the positions of the parties being closed out.
-	closedMPs []events.MarketPosition,
-) (events.FeesTransfer, map[string]*types.Fee) {
+func (e *Engine) GetFeeForPositionResolution(trades []*types.Trade) (events.FeesTransfer, *types.Fee) {
+	if len(trades) == 0 {
+		return nil, nil
+	}
 	var (
-		totalFeesAmounts = map[string]*num.Uint{}
-		partiesFees      = map[string]*types.Fee{}
-		// this is the share of each party to be paid
-		partiesShare     = map[string]*feeShare{}
-		totalAbsolutePos uint64
-		transfers        = []*types.Transfer{}
+		netFee *types.Fee
+		gt     *types.Transfer
 	)
-
-	// first calculate the share of all distressedParties
-	for _, v := range closedMPs {
-		size := v.Size()
-		if size < 0 {
-			size = -size
-		}
-		totalAbsolutePos += uint64(size)
-		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
-
-		// while we are at it, we initial the map of all fees per party
-		partiesFees[v.Party()] = types.NewFee()
-	}
-
-	// no we accumulated all the absolute position, we
-	// will get the share of each party
-	for _, v := range partiesShare {
-		v.share = num.DecimalFromInt64(int64(v.pos)).Div(num.DecimalFromInt64(int64(totalAbsolutePos)))
-	}
-
-	// now we have the share of each distressed parties
-	// we can iterate over the trades, and make the transfers
+	transfers := make([]*types.Transfer, 0, len(trades))
 	for _, t := range trades {
-		// continuous trading fees apply here
-		// the we'll split them in between all parties
 		fees := e.calculateContinuousModeFees(t)
-
-		// lets fine which side is the good party
 		goodParty := t.Buyer
 		t.SellerFee = fees
-		if goodParty == "network" {
+		if t.Buyer == types.NetworkParty {
 			goodParty = t.Seller
 			t.SellerFee = types.NewFee()
-			t.BuyerFee = fees.Clone()
+			t.BuyerFee = fees
 		}
-
-		// now we iterate over all parties,
-		// and create a pay for each distressed parties
-		for _, v := range closedMPs {
-			partyTransfers, fees, feesAmount := e.getPositionResolutionFeesTransfers(
-				v.Party(), partiesShare[v.Party()].share, fees)
-
-			if prevTotalFee, ok := totalFeesAmounts[v.Party()]; !ok {
-				totalFeesAmounts[v.Party()] = feesAmount.Clone()
-			} else {
-				prevTotalFee.AddSum(feesAmount)
-			}
-			transfers = append(transfers, partyTransfers...)
-
-			// increase the party full fees
-			pf := partiesFees[v.Party()]
-			pf.MakerFee.AddSum(fees.MakerFee)
-			pf.InfrastructureFee.AddSum(fees.InfrastructureFee)
-			pf.LiquidityFee.AddSum(fees.LiquidityFee)
-			partiesFees[v.Party()] = pf
-		}
-
-		// then 1 receive transfer for the good party
-		transfers = append(transfers, &types.Transfer{
-			Owner: goodParty,
-			Amount: &types.FinancialAmount{
-				Asset:  e.asset,
-				Amount: fees.MakerFee,
-			},
-			Type: types.TransferTypeMakerFeeReceive,
-		})
+		netFee, gt = e.getNetworkFeeWithMakerTransfer(fees, netFee, goodParty)
+		transfers = append(transfers, gt)
 	}
-
+	netTf, total := e.getNetworkFeeTransfers(netFee)
 	// calculate the
 	return &feesTransfer{
-		totalFeesAmountsPerParty: totalFeesAmounts,
-		transfers:                transfers,
-	}, partiesFees
+		totalFeesAmountsPerParty: map[string]*num.Uint{
+			types.NetworkParty: total,
+		},
+		transfers: append(netTf, transfers...),
+	}, netFee
 }
 
 // BuildLiquidityFeeDistributionTransfer returns the set of transfers that will
@@ -543,53 +494,55 @@ func (e *Engine) buildLiquidityFeesTransfer(
 	return ft
 }
 
-// this will calculate the transfer the distressed party needs
-// to do.
-func (e *Engine) getPositionResolutionFeesTransfers(
-	party string, share num.Decimal, fees *types.Fee,
-) ([]*types.Transfer, *types.Fee, *num.Uint) {
-	makerFee, _ := num.UintFromDecimal(fees.MakerFee.ToDecimal().Mul(share).Ceil())
-	infraFee, _ := num.UintFromDecimal(fees.InfrastructureFee.ToDecimal().Mul(share).Ceil())
-	liquiFee, _ := num.UintFromDecimal(fees.LiquidityFee.ToDecimal().Mul(share).Ceil())
-
-	return []*types.Transfer{
-			{
-				Owner: party,
-				Amount: &types.FinancialAmount{
-					Asset:  e.asset,
-					Amount: makerFee.Clone(),
-				},
-				Type: types.TransferTypeMakerFeePay,
-			},
-			{
-				Owner: party,
-				Amount: &types.FinancialAmount{
-					Asset:  e.asset,
-					Amount: infraFee.Clone(),
-				},
-				Type: types.TransferTypeInfrastructureFeePay,
-			},
-			{
-				Owner: party,
-				Amount: &types.FinancialAmount{
-					Asset:  e.asset,
-					Amount: liquiFee.Clone(),
-				},
-				Type: types.TransferTypeLiquidityFeePay,
-			},
+func (e *Engine) getNetworkFeeWithMakerTransfer(fees *types.Fee, current *types.Fee, goodParty string) (*types.Fee, *types.Transfer) {
+	transfer := &types.Transfer{
+		Owner: goodParty,
+		Amount: &types.FinancialAmount{
+			Asset:  e.asset,
+			Amount: fees.MakerFee,
 		},
-		&types.Fee{
-			MakerFee:          makerFee,
-			InfrastructureFee: infraFee,
-			LiquidityFee:      liquiFee,
-		}, num.Sum(makerFee, infraFee, liquiFee)
+		MinAmount: num.UintZero(),
+		Type:      types.TransferTypeMakerFeeReceive,
+	}
+	if current == nil {
+		return fees.Clone(), transfer
+	}
+	current.MakerFee.AddSum(fees.MakerFee)
+	current.LiquidityFee.AddSum(fees.LiquidityFee)
+	current.InfrastructureFee.AddSum(fees.InfrastructureFee)
+	return current, transfer
 }
 
-type feeShare struct {
-	// the absolute position of the party which had to be recovered
-	pos uint64
-	// the share out of the total volume
-	share num.Decimal
+func (e *Engine) getNetworkFeeTransfers(fees *types.Fee) ([]*types.Transfer, *num.Uint) {
+	return []*types.Transfer{
+		{
+			Owner: types.NetworkParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: fees.MakerFee.Clone(),
+			},
+			MinAmount: num.UintZero(),
+			Type:      types.TransferTypeMakerFeePay,
+		},
+		{
+			Owner: types.NetworkParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: fees.InfrastructureFee.Clone(),
+			},
+			MinAmount: num.UintZero(),
+			Type:      types.TransferTypeInfrastructureFeePay,
+		},
+		{
+			Owner: types.NetworkParty,
+			Amount: &types.FinancialAmount{
+				Asset:  e.asset,
+				Amount: fees.LiquidityFee.Clone(),
+			},
+			MinAmount: num.UintZero(),
+			Type:      types.TransferTypeLiquidityFeePay,
+		},
+	}, num.Sum(fees.MakerFee, fees.InfrastructureFee, fees.LiquidityFee)
 }
 
 func (e *Engine) applyDiscountsAndRewards(taker string, fees *types.Fee, referral ReferralDiscountRewardService, volumeDiscount VolumeDiscountService) (*types.Fee, *types.ReferrerReward) {

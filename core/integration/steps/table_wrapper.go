@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
@@ -223,6 +224,14 @@ func (r RowWrapper) MustU64(name string) uint64 {
 	return value
 }
 
+func (r RowWrapper) MustInt(name string) *num.Int {
+	val, ok := num.IntFromString(r.MustStr(name), 10)
+	if ok {
+		panicW(name, fmt.Errorf("failed to parse int"))
+	}
+	return val
+}
+
 func (r RowWrapper) MustUint(name string) *num.Uint {
 	value, err := Uint(r.mustColumn(name))
 	panicW(name, err)
@@ -238,6 +247,13 @@ func (r RowWrapper) MaybeUint(name string) *num.Uint {
 		return nil
 	}
 	return u
+}
+
+func (r RowWrapper) MaybeU64(name string) *uint64 {
+	if !r.HasColumn(name) {
+		return nil
+	}
+	return ptr.From(r.MustU64(name))
 }
 
 func (r RowWrapper) Uint(name string) *num.Uint {
@@ -601,6 +617,20 @@ func peggedReference(rawValue string) types.PeggedReference {
 	return types.PeggedReferenceUnspecified
 }
 
+func (r RowWrapper) MustSizeOverrideSetting(name string) types.StopOrderSizeOverrideSetting {
+	return sizeOverrideSetting(r.MustStr(name))
+}
+
+func sizeOverrideSetting(rawValue string) types.StopOrderSizeOverrideSetting {
+	switch rawValue {
+	case "NONE":
+		return types.StopOrderSizeOverrideSettingNone
+	case "POSITION":
+		return types.StopOrderSizeOverrideSettingPosition
+	}
+	return types.StopOrderSizeOverrideSettingUnspecified
+}
+
 func (r RowWrapper) MustOracleSpecPropertyType(name string) datav1.PropertyKey_Type {
 	ty, err := OracleSpecPropertyType(r.MustStr(name))
 	panicW(name, err)
@@ -663,6 +693,21 @@ func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	ty, err := TradingMode(r.MustStr(name))
 	panicW(name, err)
 	return ty
+}
+
+func (r RowWrapper) MarkPriceType() types.CompositePriceType {
+	if !r.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
 }
 
 func TradingMode(name string) (types.MarketTradingMode, error) {

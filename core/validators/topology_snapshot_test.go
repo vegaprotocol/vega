@@ -18,20 +18,17 @@ package validators_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/validators"
-
-	"github.com/golang/mock/gomock"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
-
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/core/validators"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -166,10 +163,8 @@ func TestTopologySnapshot(t *testing.T) {
 
 func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.Topology) {
 	t.Helper()
-	req1 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address1, Height: int64(1)}}
-	top.BeginBlock(context.Background(), req1)
+	top.BeginBlock(context.Background(), 1, hex.EncodeToString(address1))
 
 	// expecting address1 to propose but got address3
-	req2 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address3, Height: int64(1)}}
-	top.BeginBlock(context.Background(), req2)
+	top.BeginBlock(context.Background(), 1, hex.EncodeToString(address3))
 }

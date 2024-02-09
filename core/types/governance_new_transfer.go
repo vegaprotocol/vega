@@ -32,27 +32,29 @@ type ProposalTermsNewTransfer struct {
 func (a ProposalTermsNewTransfer) String() string {
 	return fmt.Sprintf(
 		"newTransfer(%s)",
-		stringer.ReflectPointerToString(a.NewTransfer),
+		stringer.PtrToString(a.NewTransfer),
 	)
 }
 
-func (a ProposalTermsNewTransfer) IntoProto() *vegapb.ProposalTerms_NewTransfer {
+func (a ProposalTermsNewTransfer) isPTerm() {}
+
+func (a ProposalTermsNewTransfer) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
 	return &vegapb.ProposalTerms_NewTransfer{
 		NewTransfer: a.NewTransfer.IntoProto(),
 	}
 }
 
-func (a ProposalTermsNewTransfer) isPTerm() {}
-
-func (a ProposalTermsNewTransfer) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsNewTransfer) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return &vegapb.BatchProposalTermsChange_NewTransfer{
+		NewTransfer: a.NewTransfer.IntoProto(),
+	}
 }
 
 func (a ProposalTermsNewTransfer) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewTransfer
 }
 
-func (a ProposalTermsNewTransfer) DeepClone() proposalTerm {
+func (a ProposalTermsNewTransfer) DeepClone() ProposalTerm {
 	if a.NewTransfer == nil {
 		return &ProposalTermsNewTransfer{}
 	}
@@ -61,14 +63,14 @@ func (a ProposalTermsNewTransfer) DeepClone() proposalTerm {
 	}
 }
 
-func NewNewTransferFromProto(p *vegapb.ProposalTerms_NewTransfer) (*ProposalTermsNewTransfer, error) {
+func NewNewTransferFromProto(newTransferProto *vegapb.NewTransfer) (*ProposalTermsNewTransfer, error) {
 	var newTransfer *NewTransfer
-	if p.NewTransfer != nil {
+	if newTransferProto != nil {
 		newTransfer = &NewTransfer{}
 
-		if p.NewTransfer.Changes != nil {
+		if newTransferProto.Changes != nil {
 			var err error
-			newTransfer.Changes, err = NewTransferConfigurationFromProto(p.NewTransfer.Changes)
+			newTransfer.Changes, err = NewTransferConfigurationFromProto(newTransferProto.Changes)
 			if err != nil {
 				return nil, err
 			}
@@ -105,7 +107,7 @@ func (n NewTransfer) DeepClone() *NewTransfer {
 func (n NewTransfer) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 

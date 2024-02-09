@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,7 +59,7 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 	}
 
 	for i := 0; i < len(expected); i++ {
-		t.Run(fmt.Sprintf("team %d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("team #%d", i), func(tt *testing.T) {
 			expectedTeam := expected[i]
 			actualTeam := actual[i]
 			assert.Equal(tt, expectedTeam.ID, actualTeam.ID)
@@ -66,10 +67,17 @@ func assertEqualTeams(t *testing.T, expected, actual []types.Team) {
 			assert.Equal(tt, expectedTeam.TeamURL, actualTeam.TeamURL)
 			assert.Equal(tt, expectedTeam.AvatarURL, actualTeam.AvatarURL)
 			assert.Equal(tt, expectedTeam.CreatedAt.UnixNano(), actualTeam.CreatedAt.UnixNano())
+			assert.Equal(tt, expectedTeam.Closed, actualTeam.Closed)
+			assert.Equal(tt, expectedTeam.AllowList, actualTeam.AllowList)
 			assertEqualMembership(tt, expectedTeam.Referrer, actualTeam.Referrer)
 
+			if len(expectedTeam.Referees) != len(actualTeam.Referees) {
+				assert.Fail(tt, fmt.Sprintf("number of referees in expected and actual results mismatch, expecting %d but got %d", len(expectedTeam.Referees), len(actualTeam.Referees)))
+				return
+			}
+
 			for j := 0; j < len(expectedTeam.Referees); j++ {
-				tt.Run(fmt.Sprintf("referee %d", j), func(ttt *testing.T) {
+				tt.Run(fmt.Sprintf("referee #%d", j), func(ttt *testing.T) {
 					assertEqualMembership(ttt, expectedTeam.Referees[j], actualTeam.Referees[j])
 				})
 			}
@@ -207,6 +215,22 @@ func newTeam(t *testing.T, ctx context.Context, te *testEngine) (types.TeamID, t
 	return teamID, referrer, teamName
 }
 
+func newTeamWithCmd(t *testing.T, ctx context.Context, te *testEngine, cmd *commandspb.CreateReferralSet_Team) (types.TeamID, types.PartyID) {
+	t.Helper()
+
+	teamID := newTeamID(t)
+	referrer := newPartyID(t)
+
+	expectTeamCreatedEvent(t, te)
+
+	err := te.engine.CreateTeam(ctx, referrer, teamID, cmd)
+	require.NoError(t, err)
+	require.NotEmpty(t, teamID)
+	require.True(t, te.engine.IsTeamMember(referrer))
+
+	return teamID, referrer
+}
+
 func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.CreateReferralSet_Team {
 	t.Helper()
 
@@ -217,7 +241,7 @@ func createTeamCmd(t *testing.T, name, teamURL, avatarURL string) *commandspb.Cr
 	}
 }
 
-func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *commandspb.UpdateReferralSet_Team {
+func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool, allowList []string) *commandspb.UpdateReferralSet_Team {
 	t.Helper()
 
 	return &commandspb.UpdateReferralSet_Team{
@@ -225,13 +249,14 @@ func updateTeamCmd(t *testing.T, name, teamURL, avatarURL string, closed bool) *
 		TeamUrl:   ptr.From(teamURL),
 		AvatarUrl: ptr.From(avatarURL),
 		Closed:    ptr.From(closed),
+		AllowList: allowList,
 	}
 }
 
-func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.ApplyReferralCode {
+func joinTeamCmd(t *testing.T, teamID types.TeamID) *commandspb.JoinTeam {
 	t.Helper()
 
-	return &commandspb.ApplyReferralCode{
+	return &commandspb.JoinTeam{
 		Id: string(teamID),
 	}
 }

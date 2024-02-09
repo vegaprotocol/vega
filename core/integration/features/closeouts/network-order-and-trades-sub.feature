@@ -10,6 +10,7 @@ Feature: Ensure network party are generated
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @NoPerp
   Scenario: Implement trade and order network
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -36,29 +37,25 @@ Feature: Ensure network party are generated
     When the parties place the following orders "1" blocks apart:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLoser  | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    # insurance pool generation - modify order book
-    Then the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 400    | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
-    And the parties cancel the following orders:
-      | party | reference |
-      | aux2  | aux-b-2   |
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders "1" blocks apart:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    # check the network trade happened
+    And debug trades
+    # check the network trades happened
     Then the following network trades should be executed:
-      | party            | aggressor side | volume |
-      | designatedLoser  | buy            | 290    |
-      | buySideProvider  | sell           | 290    |
+      | party           | aggressor side | volume |
+      | designatedLoser | buy            | 290    |
+      | buySideProvider | sell           | 1      |
+      | aux2            | sell           | 100    |
+      | buySideProvider | sell           | 189    |

@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -267,7 +268,7 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 	require.True(t, enacted[0].IsUpdateMarket())
 	updatedMarket := enacted[0].UpdateMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
 	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)

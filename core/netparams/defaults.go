@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/netparams/checks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-
-	"code.vegaprotocol.io/vega/core/netparams/checks"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -84,7 +83,7 @@ func defaultNetParams() map[string]value {
 		MarketAuctionMinimumDuration:              NewDuration(gte1s, lte1d).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:              NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate(week),
 		MarketLiquidityTargetStakeTriggeringRatio: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		MarketProbabilityOfTradingTauScaling:      NewDecimal(gteD1, lteD1000).Mutable(true).MustUpdate("1"),
+		MarketProbabilityOfTradingTauScaling:      NewDecimal(DecimalGTE(num.MustDecimalFromString("0.0001")), lteD1000).Mutable(true).MustUpdate("1"),
 		MarketMinProbabilityOfTradingForLPOrders:  NewDecimal(DecimalGTE(num.MustDecimalFromString("1e-12")), DecimalLTE(num.MustDecimalFromString("0.1"))).Mutable(true).MustUpdate("1e-8"),
 		MarketTargetStakeTimeWindow:               NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:            NewDecimal(gtD0, lteD100).Mutable(true).MustUpdate("10"),
@@ -100,9 +99,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquiditySLANonPerformanceBondPenaltyMax:   NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.05"),
 		MarketLiquiditySLANonPerformanceBondPenaltySlope: NewDecimal(gteD0, lteD1000).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYVolume:                  NewDecimal(gteD0, lteD100).Mutable(true).MustUpdate("1"),
-
-		// @TODO karel add validation
-		MarketLiquidityProvidersFeeCalculationTimeStep: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
+		MarketLiquidityProvidersFeeCalculationTimeStep:   NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("1m"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
@@ -228,6 +225,9 @@ func defaultNetParams() map[string]value {
 		SpamProtectionMaxApplyReferralCode:             NewInt(gteI0).Mutable(true).MustUpdate("5"),
 		SpamProtectionBalanceSnapshotFrequency:         NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		SpamProtectionApplyReferralMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
+		SpamProtectionReferralSetMinFunds:              NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
+		SpamProtectionMaxUpdatePartyProfile:            NewInt(gteI0).Mutable(true).MustUpdate("10"),
+		SpamProtectionUpdateProfileMinFunds:            NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("10"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
@@ -237,6 +237,10 @@ func defaultNetParams() map[string]value {
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, types.CheckUntypedEthereumConfig).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"collateral_bridge_contract\": { \"address\": \"0xXXX\" }, \"confirmations\": 3, \"staking_bridge_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0}, \"token_vesting_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }, \"multisig_control_contract\": { \"address\": \"0xXXX\", \"deployment_block_height\": 0 }}"),
+		BlockchainsEthereumL2Configs: NewJSON(&proto.EthereumL2Configs{}, types.CheckUntypedEthereumL2Configs).Mutable(true).
+			MustUpdate(
+				`{"configs":[{"network_id":"100","chain_id":"100","confirmations":3,"name":"Gnosis Chain"}, {"network_id":"42161","chain_id":"42161","confirmations":3,"name":"Arbitrum One"}]}`,
+			),
 
 		ValidatorsEpochLength: NewDuration(gte1s, lte255h).Mutable(true).MustUpdate("24h0m0s"),
 
@@ -259,9 +263,12 @@ func defaultNetParams() map[string]value {
 		MinimumEthereumEventsForNewValidator:       NewUint(gteU0).Mutable(true).MustUpdate("3"),
 
 		// transfers
-		TransferFeeFactor:                  NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
-		TransferMinTransferQuantumMultiple: NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
-		TransferMaxCommandsPerEpoch:        NewInt(gteI0).Mutable(true).MustUpdate("20"),
+		TransferFeeFactor:                       NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.001"),
+		TransferMinTransferQuantumMultiple:      NewDecimal(gteD0).Mutable(true).MustUpdate("0.1"),
+		TransferMaxCommandsPerEpoch:             NewInt(gteI0).Mutable(true).MustUpdate("20"),
+		TransferFeeMaxQuantumAmount:             NewDecimal(gteD0).Mutable(true).MustUpdate("1"),
+		TransferFeeDiscountDecayFraction:        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.8"),
+		TransferFeeDiscountMinimumTrackedAmount: NewDecimal(gteD0).Mutable(true).MustUpdate("0.01"),
 
 		// pow
 		SpamPoWNumberOfPastBlocks:   NewUint(gteU5, UintLTE(num.NewUint(500))).Mutable(true).MustUpdate("100"),
@@ -279,10 +286,11 @@ func defaultNetParams() map[string]value {
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
-		MarkPriceUpdateMaximumFrequency:      NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
-		ValidatorPerformanceScalingFactor:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
-		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
+		MarkPriceUpdateMaximumFrequency:       NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
+		InternalCompositePriceUpdateFrequency: NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
+		ValidatorPerformanceScalingFactor:     NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketSuccessorLaunchWindow:           NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
+		SpamProtectionMaxStopOrdersPerMarket:  NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
 
 		RewardsVestingBaseRate:        NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("0.25"),
 		RewardsVestingMinimumTransfer: NewDecimal(gtD0).Mutable(true).MustUpdate("10"),
@@ -315,10 +323,14 @@ func defaultNetParams() map[string]value {
 	// ensure that MinBlockCapacity <= 2*
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
 	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))
-	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)))
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGT(time.Duration(0)))
 	// could just do 24 * 3600 * time.Second, but this is easier to read
 	maxFreq, _ := time.ParseDuration("24h")
-	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGTE(time.Duration(0)), DurationLTE(maxFreq))
+	m[MarkPriceUpdateMaximumFrequency].AddRules(DurationGT(time.Duration(0)), DurationLTE(maxFreq))
+
+	m[InternalCompositePriceUpdateFrequency].AddRules(DurationGT(time.Duration(0)))
+	// could just do 24 * 3600 * time.Second, but this is easier to read
+	m[InternalCompositePriceUpdateFrequency].AddRules(DurationGT(time.Duration(0)), DurationLTE(maxFreq))
 
 	m[MarketLiquidityProvidersFeeCalculationTimeStep].AddRules(
 		DurationDependentLTE(ValidatorsEpochLength, m[ValidatorsEpochLength].(*Duration)),
@@ -337,7 +349,7 @@ func checkOptionalRFC3339Date(d string) error {
 	return err
 }
 
-func PriceMonitoringParametersValidation(i interface{}) error {
+func PriceMonitoringParametersValidation(i interface{}, _ interface{}) error {
 	pmp, ok := i.(*proto.PriceMonitoringParameters)
 	if !ok {
 		return errors.New("not a price monitoring parameters type")

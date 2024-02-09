@@ -19,9 +19,10 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
+
+	tmtypes "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 func TestInMemoryDatabase(t *testing.T) {

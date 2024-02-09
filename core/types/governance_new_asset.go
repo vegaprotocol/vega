@@ -29,31 +29,35 @@ type ProposalTermsNewAsset struct {
 func (a ProposalTermsNewAsset) String() string {
 	return fmt.Sprintf(
 		"newAsset(%v)",
-		stringer.ReflectPointerToString(a.NewAsset),
+		stringer.PtrToString(a.NewAsset),
 	)
 }
 
-func (a ProposalTermsNewAsset) IntoProto() *vegapb.ProposalTerms_NewAsset {
+func (a ProposalTermsNewAsset) IntoProto() *vegapb.NewAsset {
 	var newAsset *vegapb.NewAsset
 	if a.NewAsset != nil {
 		newAsset = a.NewAsset.IntoProto()
 	}
-	return &vegapb.ProposalTerms_NewAsset{
-		NewAsset: newAsset,
-	}
+	return newAsset
 }
 
 func (a ProposalTermsNewAsset) isPTerm() {}
 
-func (a ProposalTermsNewAsset) oneOfProto() interface{} {
-	return a.IntoProto()
+func (a ProposalTermsNewAsset) oneOfSingleProto() vegapb.ProposalOneOffTermChangeType {
+	return &vegapb.ProposalTerms_NewAsset{
+		NewAsset: a.IntoProto(),
+	}
+}
+
+func (a ProposalTermsNewAsset) oneOfBatchProto() vegapb.ProposalOneOffTermBatchChangeType {
+	return nil
 }
 
 func (a ProposalTermsNewAsset) GetTermType() ProposalTermsType {
 	return ProposalTermsTypeNewAsset
 }
 
-func (a ProposalTermsNewAsset) DeepClone() proposalTerm {
+func (a ProposalTermsNewAsset) DeepClone() ProposalTerm {
 	if a.NewAsset == nil {
 		return &ProposalTermsNewAsset{}
 	}
@@ -118,7 +122,7 @@ func (n NewAsset) IntoProto() *vegapb.NewAsset {
 func (n NewAsset) String() string {
 	return fmt.Sprintf(
 		"changes(%s)",
-		stringer.ReflectPointerToString(n.Changes),
+		stringer.PtrToString(n.Changes),
 	)
 }
 

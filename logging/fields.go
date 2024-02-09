@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -22,8 +22,8 @@ import (
 
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 )
 
@@ -294,6 +294,10 @@ func Party(p fmt.Stringer) zap.Field {
 
 func PartyID(id string) zap.Field {
 	return zap.String("party", id)
+}
+
+func ProposalBatchID(id string) zap.Field {
+	return zap.String("proposal-batch-id", id)
 }
 
 func ProposalID(id string) zap.Field {

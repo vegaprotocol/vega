@@ -24,13 +24,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/libs/subscribers"
-
 	"code.vegaprotocol.io/vega/datanode/admin"
-
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -40,8 +34,12 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/pprof"
+	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"golang.org/x/sync/errgroup"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -238,6 +236,9 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.paidLiquidityFeesStatsService,
 		l.partyLockedBalancesService,
 		l.partyVestingBalancesService,
+		l.transactionResultsService,
+		l.gamesService,
+		l.marginModesService,
 	)
 	return grpcServer
 }

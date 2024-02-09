@@ -19,10 +19,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/cucumber/godog"
 )
 
 var unwatched = map[string]struct{}{}
@@ -52,7 +52,7 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 				return err
 			}
 		case netparams.MarketAuctionMaximumDuration:
-			d := row.MustDurationSec("value")
+			d := row.MustDurationStr("value")
 			if err := netParams.Update(ctx, netparams.MarketAuctionMaximumDuration, d.String()); err != nil {
 				return err
 			}
@@ -60,6 +60,12 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godo
 			f := row.MustDurationStr("value")
 			str := f.String()
 			if err := netParams.Update(ctx, netparams.MarkPriceUpdateMaximumFrequency, str); err != nil {
+				return err
+			}
+		case netparams.InternalCompositePriceUpdateFrequency:
+			f := row.MustDurationStr("value")
+			str := f.String()
+			if err := netParams.Update(ctx, netparams.InternalCompositePriceUpdateFrequency, str); err != nil {
 				return err
 			}
 		default:

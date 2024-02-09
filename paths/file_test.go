@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -21,9 +21,9 @@ import (
 
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFileHelpers(t *testing.T) {

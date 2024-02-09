@@ -23,6 +23,7 @@ cleanup
 Cleanup
 clef
 codegen
+cometbft
 config
 cyclomatic
 dApp
@@ -85,6 +86,8 @@ mutexes
 nodewallet
 notarising
 OpenRPC
+perp
+perps
 phish
 Prometheus
 proto

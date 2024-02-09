@@ -3,5 +3,8 @@
     "infrastructureFee": "0.0",
     "makerFee": "0.0",
     "liquidityFee": "0.0"
+  },
+  "liquidityFeeSettings": {
+    "method": "METHOD_MARGINAL_COST"
   }
 }

@@ -18,10 +18,10 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/libs/num"
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/cucumber/godog"
 )
 
 func PartiesShouldHaveTheFollowingDelegationBalances(

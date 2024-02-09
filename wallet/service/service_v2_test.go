@@ -31,6 +31,7 @@ import (
 	v2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
 	"code.vegaprotocol.io/vega/wallet/wallet"
+
 	"github.com/golang/mock/gomock"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"

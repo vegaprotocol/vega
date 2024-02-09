@@ -13,31 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
-
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
 )
 
 type Proposals struct {
@@ -61,10 +50,12 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 	_, err := ps.Connection.Exec(ctx,
 		`INSERT INTO proposals(
 			id,
+			batch_id,
 			reference,
 			party_id,
 			state,
 			terms,
+			batch_terms,
 			rationale,
 			reason,
 			error_details,
@@ -75,7 +66,7 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			required_lp_majority,
 			required_lp_participation,
 			tx_hash)
-		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		 VALUES ($1,  $2,  $3,  $4,  $5,  $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 		 ON CONFLICT (id, vega_time) DO UPDATE SET
 			reference = EXCLUDED.reference,
 			party_id = EXCLUDED.party_id,
@@ -88,8 +79,52 @@ func (ps *Proposals) Add(ctx context.Context, p entities.Proposal) error {
 			tx_hash = EXCLUDED.tx_hash
 			;
 		 `,
-		p.ID, p.Reference, p.PartyID, p.State, p.Terms, p.Rationale, p.Reason, p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation, p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
+		p.ID, p.BatchID, p.Reference, p.PartyID, p.State, p.Terms, p.BatchTerms, p.Rationale, p.Reason,
+		p.ErrorDetails, p.ProposalTime, p.VegaTime, p.RequiredMajority, p.RequiredParticipation,
+		p.RequiredLPMajority, p.RequiredLPParticipation, p.TxHash)
 	return err
+}
+
+func (ps *Proposals) getProposalsInBatch(ctx context.Context, batchID string) ([]entities.Proposal, error) {
+	var proposals []entities.Proposal
+	query := `SELECT * FROM proposals_current WHERE batch_id=$1`
+
+	rows, err := ps.Connection.Query(ctx, query, entities.ProposalID(batchID))
+	if err != nil {
+		return proposals, fmt.Errorf("querying proposals: %w", err)
+	}
+	defer rows.Close()
+
+	if err = pgxscan.ScanAll(&proposals, rows); err != nil {
+		return proposals, fmt.Errorf("parsing proposals: %w", err)
+	}
+
+	sort.Slice(proposals, func(i, j int) bool {
+		return proposals[i].Terms.EnactmentTimestamp < proposals[j].Terms.EnactmentTimestamp
+	})
+
+	return proposals, nil
+}
+
+// extendOrGetBatchProposal fetching sub proposals in case of batch proposal
+// or fetches the whole batch if sub proposal is requested.
+// If none of the above applies then proposal is returned without change.
+func (ps *Proposals) extendOrGetBatchProposal(ctx context.Context, p entities.Proposal) (entities.Proposal, error) {
+	// if proposal is part of batch fetch to whole batch
+	if p.BelongsToBatch() {
+		return ps.GetByID(ctx, p.BatchID.String())
+	}
+
+	// if it's batch fetch the sub proposals
+	if p.IsBatch() {
+		pps, err := ps.getProposalsInBatch(ctx, p.ID.String())
+		if err != nil {
+			return p, ps.wrapE(err)
+		}
+		p.Proposals = pps
+	}
+
+	return p, nil
 }
 
 func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal, error) {
@@ -97,14 +132,46 @@ func (ps *Proposals) GetByID(ctx context.Context, id string) (entities.Proposal,
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE id=$1`
 
-	return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	if err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)); err != nil {
+		return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	}
+
+	p, err := ps.extendOrGetBatchProposal(ctx, p)
+	if err != nil {
+		return p, err
+	}
+
+	return p, nil
+}
+
+// GetByIDWithoutBatch returns a proposal without extending single proposal by fetching batch proposal.
+func (ps *Proposals) GetByIDWithoutBatch(ctx context.Context, id string) (entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByIDWithoutBatch")()
+	var p entities.Proposal
+	query := `SELECT * FROM proposals_current WHERE id=$1`
+
+	if err := pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)); err != nil {
+		return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, entities.ProposalID(id)))
+	}
+
+	return p, nil
 }
 
 func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.Proposal, error) {
 	defer metrics.StartSQLQuery("Proposals", "GetByReference")()
 	var p entities.Proposal
 	query := `SELECT * FROM proposals_current WHERE reference=$1 LIMIT 1`
-	return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, ref))
+
+	if err := pgxscan.Get(ctx, ps.Connection, &p, query, ref); err != nil {
+		return p, ps.wrapE(err)
+	}
+
+	p, err := ps.extendOrGetBatchProposal(ctx, p)
+	if err != nil {
+		return p, err
+	}
+
+	return p, nil
 }
 
 func (ps *Proposals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error) {
@@ -115,6 +182,15 @@ func (ps *Proposals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([
 	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, txHash)
 	if err != nil {
 		return nil, ps.wrapE(err)
+	}
+
+	for i, p := range proposals {
+		p, err := ps.extendOrGetBatchProposal(ctx, p)
+		if err != nil {
+			return proposals, err
+		}
+
+		proposals[i] = p
 	}
 
 	return proposals, nil
@@ -319,10 +395,14 @@ func (ps *Proposals) Get(ctx context.Context,
 	}
 
 	defer metrics.StartSQLQuery("Proposals", "Get")()
-	results := ps.Connection.SendBatch(ctx, batch)
+	// copy the store connection because we may need to make recursive calls when processing the from the batch
+	// causing the underlying connection to be busy and unusable
+	batchConn := ps.Connection
+	results := batchConn.SendBatch(ctx, batch)
 	defer results.Close()
 
 	proposals := make([]entities.Proposal, 0)
+	fetchedBatches := map[entities.ProposalID]struct{}{}
 
 	for {
 		rows, err := results.Query()
@@ -330,10 +410,32 @@ func (ps *Proposals) Get(ctx context.Context,
 			break
 		}
 
-		var props []entities.Proposal
-
-		if err := pgxscan.ScanAll(&props, rows); err != nil {
+		var matchedProps []entities.Proposal
+		if err := pgxscan.ScanAll(&matchedProps, rows); err != nil {
 			return nil, pageInfo, fmt.Errorf("querying proposals: %w", err)
+		}
+
+		rows.Close()
+
+		var props []entities.Proposal
+		for _, p := range matchedProps {
+			var batchID entities.ProposalID
+			if p.BelongsToBatch() {
+				batchID = p.BatchID
+			} else if p.IsBatch() {
+				batchID = p.ID
+			}
+
+			if _, ok := fetchedBatches[batchID]; ok {
+				continue
+			}
+
+			p, err := ps.extendOrGetBatchProposal(ctx, p)
+			if err != nil {
+				return nil, pageInfo, err
+			}
+			props = append(props, p)
+			fetchedBatches[p.ID] = struct{}{}
 		}
 
 		if pageForward {

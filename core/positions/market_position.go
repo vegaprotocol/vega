@@ -16,7 +16,9 @@
 package positions
 
 import (
+	"errors"
 	"fmt"
+	"math"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -40,14 +42,17 @@ type MarketPosition struct {
 	// yes, it's technically state, but the main reason for this field is to cut down on the number
 	// of events we send out.
 	distressed bool
+
+	averageEntryPrice *num.Uint
 }
 
 func NewMarketPosition(party string) *MarketPosition {
 	return &MarketPosition{
-		partyID:        party,
-		price:          num.UintZero(),
-		buySumProduct:  num.UintZero(),
-		sellSumProduct: num.UintZero(),
+		partyID:           party,
+		price:             num.UintZero(),
+		buySumProduct:     num.UintZero(),
+		sellSumProduct:    num.UintZero(),
+		averageEntryPrice: num.UintZero(),
 	}
 }
 
@@ -56,6 +61,7 @@ func (p MarketPosition) Clone() *MarketPosition {
 	cpy.price = p.price.Clone()
 	cpy.buySumProduct = p.buySumProduct.Clone()
 	cpy.sellSumProduct = p.sellSumProduct.Clone()
+	cpy.averageEntryPrice = p.averageEntryPrice.Clone()
 	return &cpy
 }
 
@@ -63,6 +69,23 @@ func (p *MarketPosition) Closed() bool {
 	// p.size can be negative
 	// p.buy and p.sell can be only positive
 	return p.size == 0 && p.buy+p.sell == 0
+}
+
+// UpdateInPlaceOnTrades takes a clone of the receiver position, and updates it with the position from the given trades.
+func (p *MarketPosition) UpdateInPlaceOnTrades(log *logging.Logger, traderSide types.Side, trades []*types.Trade, order *types.Order) *MarketPosition {
+	pos := p.Clone()
+	for _, t := range trades {
+		pos.averageEntryPrice = CalcVWAP(pos.averageEntryPrice, pos.size, int64(t.Size), t.Price)
+		if traderSide == types.SideBuy {
+			pos.size += int64(t.Size)
+		} else {
+			pos.size -= int64(t.Size)
+		}
+		// if we bought then we want to decrease the order size for this side so add=false
+		// and vice versa for sell
+		pos.UpdateOnOrderChange(log, traderSide, order.Price, t.Size, false)
+	}
+	return pos
 }
 
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
@@ -86,6 +109,13 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 				logging.Int64("potential-buy", p.buy),
 				logging.Uint64("size-change", sizeChange))
 		}
+
+		if add && p.buy > math.MaxInt64-iSizeChange {
+			log.Panic("order too large to register, will overflow",
+				logging.Int64("potential-buy", p.buy),
+				logging.Uint64("size-change", sizeChange))
+		}
+
 		// recalculate sumproduct
 		if add {
 			p.buySumProduct.Add(p.buySumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
@@ -107,6 +137,13 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 			logging.Int64("potential-sell", p.sell),
 			logging.Uint64("size-change", sizeChange))
 	}
+
+	if add && p.sell > math.MaxInt64-iSizeChange {
+		log.Panic("order too large to register, will overflow",
+			logging.Int64("potential-sell", p.sell),
+			logging.Uint64("size-change", sizeChange))
+	}
+
 	// recalculate sumproduct
 	if add {
 		p.sellSumProduct.Add(p.sellSumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
@@ -148,6 +185,11 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 func (p MarketPosition) String() string {
 	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
 		p.size, p.buy, p.sell, p.price, p.partyID)
+}
+
+// AverageEntryPrice returns the volume weighted average price.
+func (p MarketPosition) AverageEntryPrice() *num.Uint {
+	return p.averageEntryPrice
 }
 
 // Buy will returns the potential buys for a given position.
@@ -210,6 +252,31 @@ func (p MarketPosition) VWSell() *num.Uint {
 		return vol.Div(p.sellSumProduct, vol)
 	}
 	return num.UintZero()
+}
+
+// ValidateOrder returns an error is the order is so large that the position engine does not have the precision
+// to register it.
+func (p MarketPosition) ValidateOrderRegistration(s uint64, side types.Side) error {
+	size := int64(s)
+	if size == 0 {
+		return nil
+	}
+
+	// check that the cast to int64 hasn't pushed it backwards
+	if size < 0 {
+		return errors.New("cannot register position without causing overflow")
+	}
+
+	amt := p.buy
+	if side == types.SideSell {
+		amt = p.sell
+	}
+
+	if size > math.MaxInt64-amt {
+		return errors.New("cannot register position without causing overflow")
+	}
+
+	return nil
 }
 
 func (p MarketPosition) OrderReducesExposure(ord *types.Order) bool {

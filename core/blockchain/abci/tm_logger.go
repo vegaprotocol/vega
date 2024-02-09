@@ -16,7 +16,7 @@
 package abci
 
 import (
-	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmlog "github.com/cometbft/cometbft/libs/log"
 	"go.uber.org/zap"
 )
 

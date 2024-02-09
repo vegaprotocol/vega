@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -467,6 +468,12 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -541,6 +548,12 @@ func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) 
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -624,6 +637,12 @@ func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -732,6 +751,12 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -795,6 +820,12 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 						},
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -923,6 +954,12 @@ func testSubmittingProposalWithInternalTimeTriggerTerminationFails(t *testing.T)
 						DecimalPlaces:           0,
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},
@@ -1017,6 +1054,12 @@ func testSubmittingProposalWithInternalTimeTriggerSettlementFails(t *testing.T) 
 						DecimalPlaces:           0,
 						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+						LiquidationStrategy: &types.LiquidationStrategy{
+							DisposalTimeStep:    10 * time.Second,
+							DisposalFraction:    num.DecimalFromFloat(0.1),
+							FullDisposalSize:    20,
+							MaxFractionConsumed: num.DecimalFromFloat(0.01),
+						},
 					},
 				},
 			},

@@ -88,7 +88,6 @@ type PayloadProofOfWork struct {
 	HeightToTx       map[uint64][]string
 	HeightToTid      map[uint64][]string
 	HeightToNonceRef map[uint64][]*snapshot.NonceRef
-	BannedParties    map[string]int64
 	ActiveParams     []*snapshot.ProofOfWorkParams
 	ActiveStates     []*snapshot.ProofOfWorkState
 	LastPruningBlock uint64
@@ -142,6 +141,10 @@ type PayloadBankingScheduledGovernanceTransfers struct {
 	BankingScheduledGovernanceTransfers []*checkpointpb.ScheduledGovernanceTransferAtTime
 }
 
+type PayloadBankingTransferFeeDiscounts struct {
+	BankingTransferFeeDiscounts *snapshot.BankingTransferFeeDiscounts
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -176,6 +179,10 @@ type PayloadDelegationAuto struct {
 
 type PayloadDelegationLastReconTime struct {
 	LastReconcilicationTime time.Time
+}
+
+type PayloadGovernanceBatchActive struct {
+	GovernanceBatchActive *GovernanceBatchActive
 }
 
 type PayloadGovernanceActive struct {
@@ -265,6 +272,10 @@ type PayloadEthContractCallEvent struct {
 	EthContractCallEvent []*ethcall.ContractCallEvent
 }
 
+type PayloadL2EthOracles struct {
+	L2EthOracles *snapshot.L2EthOracles
+}
+
 type PayloadEpoch struct {
 	EpochState *EpochState
 }
@@ -319,7 +330,10 @@ type Resource struct {
 }
 
 type PayloadEventForwarder struct {
+	// keys are deprecated, to be removed after 74
 	Keys []string
+	// Buckets are used with the new upgrade
+	Buckets []*snapshot.EventForwarderBucket
 }
 
 type PayloadERC20MultiSigTopologyVerified struct {
@@ -416,33 +430,37 @@ type ExecutionMarkets struct {
 }
 
 type ExecMarket struct {
-	Market                     *Market
-	PriceMonitor               *PriceMonitor
-	AuctionState               *AuctionState
-	PeggedOrders               *PeggedOrdersState
-	ExpiringOrders             []*Order
-	LastBestBid                *num.Uint
-	LastBestAsk                *num.Uint
-	LastMidBid                 *num.Uint
-	LastMidAsk                 *num.Uint
-	LastMarketValueProxy       num.Decimal
-	LastEquityShareDistributed int64
-	EquityShare                *EquityShare
-	CurrentMarkPrice           *num.Uint
-	LastTradedPrice            *num.Uint
-	ShortRiskFactor            num.Decimal
-	LongRiskFactor             num.Decimal
-	RiskFactorConsensusReached bool
-	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Numeric
-	NextMTM                    int64
-	Parties                    []string
-	Closed                     bool
-	IsSucceeded                bool
-	StopOrders                 *snapshot.StopOrders
-	ExpiringStopOrders         []*Order
-	Product                    *snapshot.Product
-	FeesStats                  *eventspb.FeesStats
+	Market                           *Market
+	PriceMonitor                     *PriceMonitor
+	AuctionState                     *AuctionState
+	PeggedOrders                     *PeggedOrdersState
+	ExpiringOrders                   []*Order
+	LastBestBid                      *num.Uint
+	LastBestAsk                      *num.Uint
+	LastMidBid                       *num.Uint
+	LastMidAsk                       *num.Uint
+	LastMarketValueProxy             num.Decimal
+	LastEquityShareDistributed       int64
+	EquityShare                      *EquityShare
+	CurrentMarkPrice                 *num.Uint
+	LastTradedPrice                  *num.Uint
+	ShortRiskFactor                  num.Decimal
+	LongRiskFactor                   num.Decimal
+	RiskFactorConsensusReached       bool
+	FeeSplitter                      *FeeSplitter
+	SettlementData                   *num.Numeric
+	NextMTM                          int64
+	NextInternalCompositePriceCalc   int64
+	Parties                          []string
+	Closed                           bool
+	IsSucceeded                      bool
+	StopOrders                       *snapshot.StopOrders
+	ExpiringStopOrders               []*Order
+	Product                          *snapshot.Product
+	FeesStats                        *eventspb.FeesStats
+	PartyMarginFactors               []*snapshot.PartyMarginFactor
+	MarkPriceCalculator              *snapshot.CompositePriceCalculator
+	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
 }
 
 type ExecSpotMarket struct {
@@ -677,6 +695,10 @@ type DelegationAuto struct {
 	Parties []string
 }
 
+type GovernanceBatchActive struct {
+	BatchProposals []*snapshot.BatchProposalData
+}
+
 type GovernanceActive struct {
 	Proposals []*ProposalData
 }
@@ -686,7 +708,8 @@ type GovernanceEnacted struct {
 }
 
 type GovernanceNode struct {
-	Proposals []*Proposal
+	Proposals    []*Proposal
+	ProposalData []*ProposalData
 }
 
 type ProposalData struct {
@@ -708,6 +731,7 @@ type MarketPosition struct {
 	Price                         *num.Uint
 	BuySumProduct, SellSumProduct *num.Uint
 	Distressed                    bool
+	AverageEntryPrice             *num.Uint
 }
 
 type StakingAccounts struct {
@@ -928,6 +952,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingRecurringGovernanceTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
 		ret.Data = PayloadBankingScheduledGovernanceTransfersFromProto(dt)
+	case *snapshot.Payload_BankingTransferFeeDiscounts:
+		ret.Data = PayloadBankingTransferFeeDiscountsFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -958,6 +984,14 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityV2ParamsFromProto(dt)
 	case *snapshot.Payload_LiquidityV2PaidFeesStats:
 		ret.Data = PayloadLiquidityV2PaidFeesStatsFromProto(dt)
+	case *snapshot.Payload_Liquidation:
+		ret.Data = PayloadLiquidationNodeFromProto(dt)
+	case *snapshot.Payload_GovernanceBatchActive:
+		ret.Data = PayloadGovernanceBatchActiveFromProto(dt)
+	case *snapshot.Payload_Parties:
+		ret.Data = PayloadPartiesFromProto(dt)
+	case *snapshot.Payload_L2EthOracles:
+		ret.Data = PayloadL2EthOraclesFromProto(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1101,6 +1135,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
 		ret.Data = dt
+	case *snapshot.Payload_BankingTransferFeeDiscounts:
+		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -1134,6 +1170,14 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityV2Parameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityV2PaidFeesStats:
+		ret.Data = dt
+	case *snapshot.Payload_Liquidation:
+		ret.Data = dt
+	case *snapshot.Payload_GovernanceBatchActive:
+		ret.Data = dt
+	case *snapshot.Payload_Parties:
+		ret.Data = dt
+	case *snapshot.Payload_L2EthOracles:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -1763,6 +1807,34 @@ func (*PayloadBankingScheduledGovernanceTransfers) Namespace() SnapshotNamespace
 	return BankingSnapshot
 }
 
+func PayloadBankingTransferFeeDiscountsFromProto(pbd *snapshot.Payload_BankingTransferFeeDiscounts) *PayloadBankingTransferFeeDiscounts {
+	return &PayloadBankingTransferFeeDiscounts{
+		BankingTransferFeeDiscounts: pbd.BankingTransferFeeDiscounts,
+	}
+}
+
+func (p PayloadBankingTransferFeeDiscounts) IntoProto() *snapshot.Payload_BankingTransferFeeDiscounts {
+	return &snapshot.Payload_BankingTransferFeeDiscounts{
+		BankingTransferFeeDiscounts: &snapshot.BankingTransferFeeDiscounts{
+			PartyAssetDiscount: p.BankingTransferFeeDiscounts.PartyAssetDiscount,
+		},
+	}
+}
+
+func (*PayloadBankingTransferFeeDiscounts) isPayload() {}
+
+func (p *PayloadBankingTransferFeeDiscounts) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingTransferFeeDiscounts) Key() string {
+	return "transferFeeDiscounts"
+}
+
+func (*PayloadBankingTransferFeeDiscounts) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
 func PayloadBankingSeenFromProto(pbs *snapshot.Payload_BankingSeen) *PayloadBankingSeen {
 	return &PayloadBankingSeen{
 		BankingSeen: BankingSeenFromProto(pbs.BankingSeen),
@@ -2049,6 +2121,34 @@ func (*PayloadDelegationPending) Key() string {
 
 func (*PayloadDelegationPending) Namespace() SnapshotNamespace {
 	return DelegationSnapshot
+}
+
+func PayloadGovernanceBatchActiveFromProto(ga *snapshot.Payload_GovernanceBatchActive) *PayloadGovernanceBatchActive {
+	return &PayloadGovernanceBatchActive{
+		GovernanceBatchActive: GovernanceBatchActiveFromProto(ga.GovernanceBatchActive),
+	}
+}
+
+func (p PayloadGovernanceBatchActive) IntoProto() *snapshot.Payload_GovernanceBatchActive {
+	return &snapshot.Payload_GovernanceBatchActive{
+		GovernanceBatchActive: &snapshot.GovernanceBatchActive{
+			BatchProposals: p.GovernanceBatchActive.BatchProposals,
+		},
+	}
+}
+
+func (*PayloadGovernanceBatchActive) Key() string {
+	return "batch_active"
+}
+
+func (*PayloadGovernanceBatchActive) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
+func (*PayloadGovernanceBatchActive) isPayload() {}
+
+func (p *PayloadGovernanceBatchActive) plToProto() interface{} {
+	return p.IntoProto()
 }
 
 func PayloadGovernanceActiveFromProto(ga *snapshot.Payload_GovernanceActive) *PayloadGovernanceActive {
@@ -2881,21 +2981,32 @@ func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 
 func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
 	ret := GovernanceNode{
-		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
+		Proposals:    make([]*Proposal, 0, len(ge.Proposals)),
+		ProposalData: make([]*ProposalData, 0, len(ge.ProposalData)),
 	}
 	for _, p := range ge.Proposals {
 		gn, _ := ProposalFromProto(p)
 		ret.Proposals = append(ret.Proposals, gn)
 	}
+
+	for _, p := range ge.ProposalData {
+		gn := ProposalDataFromProto(p)
+		ret.ProposalData = append(ret.ProposalData, gn)
+	}
+
 	return &ret
 }
 
 func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
 	ret := snapshot.GovernanceNode{
-		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
+		Proposals:    make([]*vega.Proposal, 0, len(g.Proposals)),
+		ProposalData: make([]*snapshot.ProposalData, 0, len(g.ProposalData)),
 	}
 	for _, p := range g.Proposals {
 		ret.Proposals = append(ret.Proposals, p.IntoProto())
+	}
+	for _, p := range g.ProposalData {
+		ret.ProposalData = append(ret.ProposalData, p.IntoProto())
 	}
 	return &ret
 }
@@ -2944,6 +3055,12 @@ func (p ProposalData) IntoProto() *snapshot.ProposalData {
 	return &ret
 }
 
+func GovernanceBatchActiveFromProto(ga *snapshot.GovernanceBatchActive) *GovernanceBatchActive {
+	return &GovernanceBatchActive{
+		BatchProposals: ga.BatchProposals,
+	}
+}
+
 func GovernanceActiveFromProto(ga *snapshot.GovernanceActive) *GovernanceActive {
 	ret := GovernanceActive{
 		Proposals: make([]*ProposalData, 0, len(ga.Proposals)),
@@ -2968,28 +3085,39 @@ func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
 	buySumProduct, _ := num.UintFromString(p.BuySumProduct, 10)
 	sellSumProduct, _ := num.UintFromString(p.SellSumProduct, 10)
+	var averageEntryPrice *num.Uint
+	if p.AverageEntryPrice != nil {
+		averageEntryPrice = num.UintFromBytes(p.AverageEntryPrice)
+	}
 	return &MarketPosition{
-		PartyID:        p.PartyId,
-		Size:           p.Size,
-		Buy:            p.Buy,
-		Sell:           p.Sell,
-		Price:          price,
-		BuySumProduct:  buySumProduct,
-		SellSumProduct: sellSumProduct,
-		Distressed:     p.Distressed,
+		PartyID:           p.PartyId,
+		Size:              p.Size,
+		Buy:               p.Buy,
+		Sell:              p.Sell,
+		Price:             price,
+		BuySumProduct:     buySumProduct,
+		SellSumProduct:    sellSumProduct,
+		Distressed:        p.Distressed,
+		AverageEntryPrice: averageEntryPrice,
 	}
 }
 
 func (p MarketPosition) IntoProto() *snapshot.Position {
+	var aep []byte
+	if p.AverageEntryPrice != nil {
+		b := p.AverageEntryPrice.Bytes()
+		aep = b[:]
+	}
 	return &snapshot.Position{
-		PartyId:        p.PartyID,
-		Size:           p.Size,
-		Buy:            p.Buy,
-		Sell:           p.Sell,
-		Price:          p.Price.String(),
-		BuySumProduct:  p.BuySumProduct.String(),
-		SellSumProduct: p.SellSumProduct.String(),
-		Distressed:     p.Distressed,
+		PartyId:           p.PartyID,
+		Size:              p.Size,
+		Buy:               p.Buy,
+		Sell:              p.Sell,
+		Price:             p.Price.String(),
+		BuySumProduct:     p.BuySumProduct.String(),
+		SellSumProduct:    p.SellSumProduct.String(),
+		Distressed:        p.Distressed,
+		AverageEntryPrice: aep,
 	}
 }
 
@@ -3559,32 +3687,36 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 
 	m, _ := MarketFromProto(em.Market)
 	ret := ExecMarket{
-		Market:                     m,
-		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
-		AuctionState:               AuctionStateFromProto(em.AuctionState),
-		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
-		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
-		LastEquityShareDistributed: em.LastEquityShareDistributed,
-		EquityShare:                EquityShareFromProto(em.EquityShare),
-		LastBestAsk:                lastBA,
-		LastBestBid:                lastBB,
-		LastMidAsk:                 lastMA,
-		LastMidBid:                 lastMB,
-		LastMarketValueProxy:       lastMVP,
-		CurrentMarkPrice:           markPrice,
-		ShortRiskFactor:            shortRF,
-		LongRiskFactor:             longRF,
-		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
-		FeeSplitter:                FeeSplitterFromProto(em.FeeSplitter),
-		SettlementData:             sp,
-		NextMTM:                    em.NextMarkToMarket,
-		LastTradedPrice:            lastTradedPrice,
-		Parties:                    em.Parties,
-		Closed:                     em.Closed,
-		IsSucceeded:                em.Succeeded,
-		StopOrders:                 em.StopOrders,
-		Product:                    em.Product,
-		FeesStats:                  em.FeesStats,
+		Market:                           m,
+		PriceMonitor:                     PriceMonitorFromProto(em.PriceMonitor),
+		AuctionState:                     AuctionStateFromProto(em.AuctionState),
+		PeggedOrders:                     PeggedOrdersStateFromProto(em.PeggedOrders),
+		ExpiringOrders:                   make([]*Order, 0, len(em.ExpiringOrders)),
+		LastEquityShareDistributed:       em.LastEquityShareDistributed,
+		EquityShare:                      EquityShareFromProto(em.EquityShare),
+		LastBestAsk:                      lastBA,
+		LastBestBid:                      lastBB,
+		LastMidAsk:                       lastMA,
+		LastMidBid:                       lastMB,
+		LastMarketValueProxy:             lastMVP,
+		CurrentMarkPrice:                 markPrice,
+		ShortRiskFactor:                  shortRF,
+		LongRiskFactor:                   longRF,
+		RiskFactorConsensusReached:       em.RiskFactorConsensusReached,
+		FeeSplitter:                      FeeSplitterFromProto(em.FeeSplitter),
+		SettlementData:                   sp,
+		NextMTM:                          em.NextMarkToMarket,
+		NextInternalCompositePriceCalc:   em.NextInternalCompositePriceCalc,
+		LastTradedPrice:                  lastTradedPrice,
+		Parties:                          em.Parties,
+		Closed:                           em.Closed,
+		IsSucceeded:                      em.Succeeded,
+		StopOrders:                       em.StopOrders,
+		Product:                          em.Product,
+		FeesStats:                        em.FeesStats,
+		PartyMarginFactors:               em.PartyMarginFactor,
+		MarkPriceCalculator:              em.MarkPriceCalculator,
+		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3600,30 +3732,34 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
 	ret := snapshot.Market{
-		Market:                     e.Market.IntoProto(),
-		PriceMonitor:               e.PriceMonitor.IntoProto(),
-		AuctionState:               e.AuctionState.IntoProto(),
-		PeggedOrders:               e.PeggedOrders.IntoProto(),
-		ExpiringOrders:             make([]*vega.Order, 0, len(e.ExpiringOrders)),
-		LastEquityShareDistributed: e.LastEquityShareDistributed,
-		EquityShare:                e.EquityShare.IntoProto(),
-		LastBestAsk:                e.LastBestAsk.String(),
-		LastBestBid:                e.LastBestBid.String(),
-		LastMidAsk:                 e.LastMidAsk.String(),
-		LastMidBid:                 e.LastMidBid.String(),
-		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
-		RiskFactorShort:            e.ShortRiskFactor.String(),
-		RiskFactorLong:             e.LongRiskFactor.String(),
-		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
-		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementData:             num.NumericToString(e.SettlementData),
-		NextMarkToMarket:           e.NextMTM,
-		Parties:                    e.Parties,
-		Closed:                     e.Closed,
-		Succeeded:                  e.IsSucceeded,
-		StopOrders:                 e.StopOrders,
-		Product:                    e.Product,
-		FeesStats:                  e.FeesStats,
+		Market:                           e.Market.IntoProto(),
+		PriceMonitor:                     e.PriceMonitor.IntoProto(),
+		AuctionState:                     e.AuctionState.IntoProto(),
+		PeggedOrders:                     e.PeggedOrders.IntoProto(),
+		ExpiringOrders:                   make([]*vega.Order, 0, len(e.ExpiringOrders)),
+		LastEquityShareDistributed:       e.LastEquityShareDistributed,
+		EquityShare:                      e.EquityShare.IntoProto(),
+		LastBestAsk:                      e.LastBestAsk.String(),
+		LastBestBid:                      e.LastBestBid.String(),
+		LastMidAsk:                       e.LastMidAsk.String(),
+		LastMidBid:                       e.LastMidBid.String(),
+		LastMarketValueProxy:             e.LastMarketValueProxy.String(),
+		RiskFactorShort:                  e.ShortRiskFactor.String(),
+		RiskFactorLong:                   e.LongRiskFactor.String(),
+		RiskFactorConsensusReached:       e.RiskFactorConsensusReached,
+		FeeSplitter:                      e.FeeSplitter.IntoProto(),
+		SettlementData:                   num.NumericToString(e.SettlementData),
+		NextMarkToMarket:                 e.NextMTM,
+		NextInternalCompositePriceCalc:   e.NextInternalCompositePriceCalc,
+		Parties:                          e.Parties,
+		Closed:                           e.Closed,
+		Succeeded:                        e.IsSucceeded,
+		StopOrders:                       e.StopOrders,
+		Product:                          e.Product,
+		FeesStats:                        e.FeesStats,
+		PartyMarginFactor:                e.PartyMarginFactors,
+		MarkPriceCalculator:              e.MarkPriceCalculator,
+		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
 	}
 
 	if e.CurrentMarkPrice != nil {
@@ -3790,11 +3926,6 @@ type PartyCount struct {
 	Count uint64
 }
 
-type BannedParty struct {
-	Party string
-	Until int64
-}
-
 type BlockRejectStats struct {
 	Total    uint64
 	Rejected uint64
@@ -3811,18 +3942,15 @@ type PayloadSimpleSpamPolicy struct {
 type SimpleSpamPolicy struct {
 	PolicyName      string
 	PartyToCount    []*PartyCount
-	BannedParty     []*BannedParty
 	CurrentEpochSeq uint64
 }
 
 type VoteSpamPolicy struct {
 	PartyProposalVoteCount  []*PartyProposalVoteCount
-	BannedParty             []*BannedParty
 	RecentBlocksRejectStats []*BlockRejectStats
 	CurrentBlockIndex       uint64
 	LastIncreaseBlock       uint64
 	CurrentEpochSeq         uint64
-	MinVotingTokensFactor   *num.Uint
 }
 
 func PayloadSimpleSpamPolicyFromProto(ssp *snapshot.Payload_SimpleSpamPolicy) *PayloadSimpleSpamPolicy {
@@ -3843,15 +3971,9 @@ func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy
 		partyCount = append(partyCount, PartyCountFromProto(ptv))
 	}
 
-	bannedParties := make([]*BannedParty, 0, len(ssp.BannedParties))
-	for _, ban := range ssp.BannedParties {
-		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
-	}
-
 	return &SimpleSpamPolicy{
 		PolicyName:      ssp.PolicyName,
 		PartyToCount:    partyCount,
-		BannedParty:     bannedParties,
 		CurrentEpochSeq: ssp.CurrentEpochSeq,
 	}
 }
@@ -3862,26 +3984,17 @@ func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
 		partyProposalVoteCount = append(partyProposalVoteCount, PartyProposalVoteCountFromProto(ptv))
 	}
 
-	bannedParties := make([]*BannedParty, 0, len(vsp.BannedParties))
-	for _, ban := range vsp.BannedParties {
-		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
-	}
-
 	recentBlocksRejectStats := make([]*BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
 	for _, rejects := range vsp.RecentBlocksRejectStats {
 		recentBlocksRejectStats = append(recentBlocksRejectStats, BlockRejectStatsFromProto(rejects))
 	}
 
-	minTokensFactor, _ := num.UintFromString(vsp.MinVotingTokensFactor, 10)
-
 	return &VoteSpamPolicy{
 		PartyProposalVoteCount:  partyProposalVoteCount,
-		BannedParty:             bannedParties,
 		RecentBlocksRejectStats: recentBlocksRejectStats,
 		LastIncreaseBlock:       vsp.LastIncreaseBlock,
 		CurrentBlockIndex:       vsp.CurrentBlockIndex,
 		CurrentEpochSeq:         vsp.CurrentEpochSeq,
-		MinVotingTokensFactor:   minTokensFactor,
 	}
 }
 
@@ -3904,13 +4017,6 @@ func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyToken
 	return &PartyTokenBalance{
 		Party:   balance.Party,
 		Balance: b,
-	}
-}
-
-func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
-	return &BannedParty{
-		Party: ban.Party,
-		Until: ban.Until,
 	}
 }
 
@@ -3937,13 +4043,6 @@ func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
 	}
 }
 
-func (b *BannedParty) IntoProto() *snapshot.BannedParty {
-	return &snapshot.BannedParty{
-		Party: b.Party,
-		Until: b.Until,
-	}
-}
-
 func (ptc *PartyTokenBalance) IntoProto() *snapshot.PartyTokenBalance {
 	return &snapshot.PartyTokenBalance{
 		Party:   ptc.Party,
@@ -3957,15 +4056,9 @@ func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
 		partyToCount = append(partyToCount, &snapshot.SpamPartyTransactionCount{Party: pc.Party, Count: pc.Count})
 	}
 
-	bannedParties := make([]*snapshot.BannedParty, 0, len(ssp.BannedParty))
-	for _, ban := range ssp.BannedParty {
-		bannedParties = append(bannedParties, ban.IntoProto())
-	}
-
 	return &snapshot.SimpleSpamPolicy{
 		PolicyName:      ssp.PolicyName,
 		PartyToCount:    partyToCount,
-		BannedParties:   bannedParties,
 		CurrentEpochSeq: ssp.CurrentEpochSeq,
 	}
 }
@@ -3976,23 +4069,16 @@ func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
 		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
 	}
 
-	bannedParties := make([]*snapshot.BannedParty, 0, len(vsp.BannedParty))
-	for _, ban := range vsp.BannedParty {
-		bannedParties = append(bannedParties, ban.IntoProto())
-	}
-
 	recentBlocksRejectStats := make([]*snapshot.BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
 	for _, rejects := range vsp.RecentBlocksRejectStats {
 		recentBlocksRejectStats = append(recentBlocksRejectStats, rejects.IntoProto())
 	}
 	return &snapshot.VoteSpamPolicy{
 		PartyToVote:             partyProposalVoteCount,
-		BannedParties:           bannedParties,
 		RecentBlocksRejectStats: recentBlocksRejectStats,
 		LastIncreaseBlock:       vsp.LastIncreaseBlock,
 		CurrentBlockIndex:       vsp.CurrentBlockIndex,
 		CurrentEpochSeq:         vsp.CurrentEpochSeq,
-		MinVotingTokensFactor:   vsp.MinVotingTokensFactor.String(),
 	}
 }
 
@@ -4294,6 +4380,32 @@ func (*PayloadEthContractCallEvent) Namespace() SnapshotNamespace {
 	return EthereumOracleVerifierSnapshot
 }
 
+func PayloadL2EthOraclesFromProto(sp *snapshot.Payload_L2EthOracles) *PayloadL2EthOracles {
+	return &PayloadL2EthOracles{
+		L2EthOracles: sp.L2EthOracles,
+	}
+}
+
+func (p *PayloadL2EthOracles) IntoProto() *snapshot.Payload_L2EthOracles {
+	return &snapshot.Payload_L2EthOracles{
+		L2EthOracles: p.L2EthOracles,
+	}
+}
+
+func (*PayloadL2EthOracles) isPayload() {}
+
+func (p *PayloadL2EthOracles) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadL2EthOracles) Key() string {
+	return "l2EthOracles"
+}
+
+func (*PayloadL2EthOracles) Namespace() SnapshotNamespace {
+	return L2EthereumOraclesSnapshot
+}
+
 func PayloadEthOracleVerifierLastBlockFromProto(svd *snapshot.Payload_EthOracleVerifierLastBlock) *PayloadEthOracleLastBlock {
 	return &PayloadEthOracleLastBlock{
 		EthOracleLastBlock: &EthBlock{
@@ -4460,13 +4572,17 @@ func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
 	return &PayloadEventForwarder{
-		Keys: ef.EventForwarder.AckedEvents,
+		Keys:    ef.EventForwarder.AckedEvents,
+		Buckets: ef.EventForwarder.Buckets,
 	}
 }
 
 func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
 	return &snapshot.Payload_EventForwarder{
-		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Keys},
+		EventForwarder: &snapshot.EventForwarder{
+			AckedEvents: p.Keys,
+			Buckets:     p.Buckets,
+		},
 	}
 }
 
@@ -4694,7 +4810,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 	pow := &PayloadProofOfWork{
 		BlockHeight:      s.ProofOfWork.BlockHeight,
 		BlockHash:        s.ProofOfWork.BlockHash,
-		BannedParties:    make(map[string]int64, len(s.ProofOfWork.Banned)),
 		HeightToTx:       make(map[uint64][]string, len(s.ProofOfWork.TxAtHeight)),
 		HeightToTid:      make(map[uint64][]string, len(s.ProofOfWork.TidAtHeight)),
 		HeightToNonceRef: make(map[uint64][]*snapshot.NonceRef, len(s.ProofOfWork.NonceRefsAtHeight)),
@@ -4703,9 +4818,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 		LastPruningBlock: s.ProofOfWork.LastPruningBlock,
 	}
 
-	for _, bp := range s.ProofOfWork.Banned {
-		pow.BannedParties[bp.Party] = bp.Until
-	}
 	for _, tah := range s.ProofOfWork.TxAtHeight {
 		pow.HeightToTx[tah.Height] = tah.Transactions
 	}
@@ -4719,12 +4831,6 @@ func PayloadProofOfWorkFromProto(s *snapshot.Payload_ProofOfWork) *PayloadProofO
 }
 
 func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
-	banned := make([]*snapshot.BannedParty, 0, len(p.BannedParties))
-	for k, v := range p.BannedParties {
-		banned = append(banned, &snapshot.BannedParty{Party: k, Until: v})
-	}
-	sort.Slice(banned, func(i, j int) bool { return banned[i].Party < banned[j].Party })
-
 	txAtHeight := make([]*snapshot.TransactionsAtHeight, 0, len(p.HeightToTx))
 	for k, v := range p.HeightToTx {
 		txAtHeight = append(txAtHeight, &snapshot.TransactionsAtHeight{Height: k, Transactions: v})
@@ -4746,7 +4852,6 @@ func (p *PayloadProofOfWork) IntoProto() *snapshot.Payload_ProofOfWork {
 		ProofOfWork: &snapshot.ProofOfWork{
 			BlockHeight:       p.BlockHeight,
 			BlockHash:         p.BlockHash,
-			Banned:            banned,
 			TxAtHeight:        txAtHeight,
 			TidAtHeight:       tidAtHeight,
 			PowParams:         p.ActiveParams,

@@ -1,6 +1,6 @@
 {
 	"TestName": "TestMarkets_LiquidityMonitor",
-	"Query": "{ marketsConnection{ edges { node { id, liquidityMonitoringParameters{ targetStakeParameters{ timeWindow, scalingFactor } triggeringRatio} } } } }",
+	"Query": "{ marketsConnection{ edges { node { id, liquidityMonitoringParameters{ targetStakeParameters{ timeWindow, scalingFactor } } } } } }",
 	"Result": {
 		"marketsConnection": {
 			"edges": [
@@ -11,8 +11,7 @@
 							"targetStakeParameters": {
 								"scalingFactor": 5,
 								"timeWindow": 10
-							},
-							"triggeringRatio": "0"
+							}
 						}
 					}
 				},
@@ -23,8 +22,7 @@
 							"targetStakeParameters": {
 								"scalingFactor": 5,
 								"timeWindow": 10
-							},
-							"triggeringRatio": "0"
+							}
 						}
 					}
 				},
@@ -35,13 +33,12 @@
 							"targetStakeParameters": {
 								"scalingFactor": 5,
 								"timeWindow": 10
-							},
-							"triggeringRatio": "0"
+							}
 						}
 					}
 				}
 			]
 		}
 	},
-	"Duration": 866179
+	"Duration": 481350
 }

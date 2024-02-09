@@ -18,6 +18,7 @@ package matching_test
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -80,6 +81,232 @@ func TestOrderBook_CancelBulk(t *testing.T) {
 	t.Run("Cancel all order for a party", cancelAllOrderForAParty)
 	t.Run("Get all order for a party", getAllOrderForAParty)
 	t.Run("Party with no order cancel nothing", partyWithNoOrderCancelNothing)
+}
+
+func TestOrderBook_Rollback(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+	buyPrices := []uint64{
+		90,
+		85,
+		80,
+		75,
+		70,
+		65,
+		50,
+	}
+	sellPrices := []uint64{
+		100,
+		105,
+		110,
+		120,
+		125,
+		130,
+		150,
+	}
+	// populate a book with buy orders ranging between 50 and 90
+	// sell orders starting at 100, up to 150. All orders have a size of 2
+	orders := getTestOrders(t, market, 2, buyPrices, sellPrices)
+	clonedOrders := make([]*types.Order, 0, len(orders))
+	for i, o := range orders {
+		o.ID = fmt.Sprintf("%s-%02d", o.Side, i)
+		o.Party = "fixture"
+		_, err := book.ob.SubmitOrder(o)
+		clonedOrders = append(clonedOrders, o.Clone())
+		assert.NoError(t, err)
+	}
+	book.ob.LeaveAuction(time.Now())
+	// get the order that we'll have uncross, and then have it roll back the trade
+	cross := getTestOrders(t, market, 3, []uint64{105}, []uint64{85})
+	// first get the trades that we'd expect to see:
+	for i, c := range cross {
+		c.ID = fmt.Sprintf("CROSS-%02d", i)
+		c.Party = "trader"
+		c2 := c.Clone()
+		conf, err := book.ob.SubmitOrder(c)
+		// trades, err := book.ob.GetTrades(c)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(conf.Trades))
+		// get the original orders
+		checkSell := c.Side == types.SideBuy
+		restore := make([]*types.Order, 0, len(conf.Trades))
+		for _, tr := range conf.Trades {
+			id := tr.BuyOrder
+			if checkSell {
+				id = tr.SellOrder
+			}
+			for _, co := range clonedOrders {
+				if co.ID == id {
+					restore = append(restore, co)
+					break
+				}
+			}
+		}
+		book.ob.RollbackConfirmation(conf, restore)
+		book.ob.RemoveOrder(conf.Order.ID)
+		// now submitting the order a second time should yield the same confirmation object:
+		conf2, err := book.ob.SubmitOrder(c2)
+		require.NoError(t, err)
+		require.EqualValues(t, conf, conf2)
+	}
+}
+
+func TestGetVolumeAtPrice(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	buyPrices := []uint64{
+		90,
+		85,
+		80,
+		75,
+		70,
+		65,
+		50,
+	}
+	sellPrices := []uint64{
+		100,
+		105,
+		110,
+		120,
+		125,
+		130,
+		150,
+	}
+	// populate a book with buy orders ranging between 50 and 90
+	// sell orders starting at 100, up to 150. All orders have a size of 2
+	orders := getTestOrders(t, market, 2, buyPrices, sellPrices)
+	for _, o := range orders {
+		_, err := book.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+	t.Run("Getting volume at price with a single price level returns the volume for that price level", func(t *testing.T) {
+		// check the buy side
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]), types.SideBuy)
+		require.Equal(t, uint64(2), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]), types.SideSell)
+		require.Equal(t, uint64(2), v)
+	})
+	t.Run("Getting volume at price containing all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]), types.SideBuy)
+		exp := uint64(len(buyPrices) * 2)
+		require.Equal(t, exp, v)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]), types.SideSell)
+		exp = uint64(len(sellPrices) * 2)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is out of range returns zero volume", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]+1), types.SideBuy)
+		require.Equal(t, uint64(0), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]-1), types.SideSell)
+		require.Equal(t, uint64(0), v)
+	})
+	t.Run("Getting volume at price allowing for more than all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		// lowest buy order -1
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]-1), types.SideBuy)
+		exp := uint64(len(buyPrices) * 2)
+		require.Equal(t, exp, v)
+		// highest sell order on the book +1
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]+1), types.SideSell)
+		exp = uint64(len(sellPrices) * 2)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is somewhere in the middle returns the correct volume", func(t *testing.T) {
+		idx := len(buyPrices) / 2
+		// remember: includes 0 idx
+		exp := uint64(idx*2 + 2)
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[idx]), types.SideBuy)
+		require.Equal(t, exp, v)
+		idx = len(sellPrices) / 2
+		exp = uint64(idx*2 + 2)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[idx]), types.SideSell)
+		require.Equal(t, exp, v)
+	})
+}
+
+func TestGetVolumeAtPriceIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	buyPrices := []uint64{
+		90,
+		85,
+		80,
+		75,
+		70,
+		65,
+		50,
+	}
+	sellPrices := []uint64{
+		100,
+		105,
+		110,
+		120,
+		125,
+		130,
+		150,
+	}
+	// populate a book with buy orders ranging between 50 and 90
+	// sell orders starting at 100, up to 150. All orders are iceberg orders with a visible size of 2, hidden size of 2.
+	orders := getTestOrders(t, market, 4, buyPrices, sellPrices)
+	for _, o := range orders {
+		// make this an iceberg order
+		o.IcebergOrder = &types.IcebergOrder{
+			PeakSize:           2,
+			MinimumVisibleSize: 2,
+		}
+		_, err := book.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+	t.Run("Getting volume at price with a single price level returns the volume for that price level", func(t *testing.T) {
+		// check the buy side
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]), types.SideBuy)
+		require.Equal(t, uint64(4), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]), types.SideSell)
+		require.Equal(t, uint64(4), v)
+	})
+	t.Run("Getting volume at price containing all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]), types.SideBuy)
+		exp := uint64(len(buyPrices) * 4)
+		require.Equal(t, exp, v)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]), types.SideSell)
+		exp = uint64(len(sellPrices) * 4)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is out of range returns zero volume", func(t *testing.T) {
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[0]+1), types.SideBuy)
+		require.Equal(t, uint64(0), v)
+		// check the sell side
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[0]-1), types.SideSell)
+		require.Equal(t, uint64(0), v)
+	})
+	t.Run("Getting volume at price allowing for more than all price levels returns the total volume on that side of the book", func(t *testing.T) {
+		// lowest buy order -1
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[len(buyPrices)-1]-1), types.SideBuy)
+		exp := uint64(len(buyPrices) * 4)
+		require.Equal(t, exp, v)
+		// highest sell order on the book +1
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[len(sellPrices)-1]+1), types.SideSell)
+		exp = uint64(len(sellPrices) * 4)
+		require.Equal(t, exp, v)
+	})
+	t.Run("Getting volume at a price that is somewhere in the middle returns the correct volume", func(t *testing.T) {
+		idx := len(buyPrices) / 2
+		// remember: includes 0 idx
+		exp := uint64(idx*4 + 4)
+		v := book.ob.GetVolumeAtPrice(num.NewUint(buyPrices[idx]), types.SideBuy)
+		require.Equal(t, exp, v)
+		idx = len(sellPrices) / 2
+		exp = uint64(idx*4 + 4)
+		v = book.ob.GetVolumeAtPrice(num.NewUint(sellPrices[idx]), types.SideSell)
+		require.Equal(t, exp, v)
+	})
 }
 
 func TestHash(t *testing.T) {
@@ -3593,4 +3820,198 @@ func TestOrderBook_AuctionUncrossWashTrades2(t *testing.T) {
 		require.Equal(t, c.Trades[0].Size, indicativeTrades[i].Size)
 		require.Equal(t, c.Trades[0].Price, indicativeTrades[i].Price)
 	}
+}
+
+// just generates random orders with the given prices. Uses parties provided by accessing
+// parties[i%len(parties)], where i is the current index in the buy/sell prices slice.
+// if parties is empty, []string{"A", "B"} is used.
+func getTestOrders(t *testing.T, market string, fixedSize uint64, buyPrices, sellPrices []uint64) []*types.Order {
+	t.Helper()
+	parties := []string{"A", "B"}
+	orders := make([]*types.Order, 0, len(buyPrices)+len(sellPrices))
+	for i, p := range buyPrices {
+		size := fixedSize
+		if size == 0 {
+			size = uint64(rand.Int63n(10-1) + 1)
+		}
+		orders = append(orders, &types.Order{
+			ID:            vgcrypto.RandomHash(),
+			Status:        types.OrderStatusActive,
+			Type:          types.OrderTypeLimit,
+			MarketID:      market,
+			Party:         parties[i%len(parties)],
+			Side:          types.SideBuy,
+			Price:         num.NewUint(p),
+			OriginalPrice: num.NewUint(p),
+			Size:          size,
+			Remaining:     size,
+			TimeInForce:   types.OrderTimeInForceGTC,
+		})
+	}
+	for i, p := range sellPrices {
+		size := fixedSize
+		if size == 0 {
+			size = uint64(rand.Int63n(10-1) + 1)
+		}
+		orders = append(orders, &types.Order{
+			ID:            vgcrypto.RandomHash(),
+			Status:        types.OrderStatusActive,
+			Type:          types.OrderTypeLimit,
+			MarketID:      market,
+			Party:         parties[i%len(parties)],
+			Side:          types.SideSell,
+			Price:         num.NewUint(p),
+			OriginalPrice: num.NewUint(p),
+			Size:          size,
+			Remaining:     size,
+			TimeInForce:   types.OrderTimeInForceGTC,
+		})
+	}
+	return orders
+}
+
+func TestVwapEmptySide(t *testing.T) {
+	ob := getTestOrderBook(t, "market1")
+	_, err := ob.ob.VWAP(0, types.SideBuy)
+	require.Error(t, err)
+	_, err = ob.ob.VWAP(0, types.SideSell)
+	require.Error(t, err)
+
+	_, err = ob.ob.VWAP(10, types.SideBuy)
+	require.Error(t, err)
+	_, err = ob.ob.VWAP(10, types.SideSell)
+	require.Error(t, err)
+}
+
+func TestVwapZeroVolume(t *testing.T) {
+	ob := getTestOrderBook(t, "market1")
+
+	buyPrices := []uint64{
+		90,
+	}
+	sellPrices := []uint64{
+		100,
+	}
+
+	orders := getTestOrders(t, "market1", 10, buyPrices, sellPrices)
+	for _, o := range orders {
+		_, err := ob.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+
+	// when the volume passed is 0
+	vwap, err := ob.ob.VWAP(0, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "90", vwap.String())
+	vwap, err = ob.ob.VWAP(0, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "100", vwap.String())
+}
+
+func TestVwapNotEnoughVolume(t *testing.T) {
+	ob := getTestOrderBook(t, "market1")
+
+	buyPrices := []uint64{
+		90,
+		95,
+		100,
+	}
+	sellPrices := []uint64{
+		200,
+		210,
+		220,
+	}
+
+	orders := getTestOrders(t, "market1", 10, buyPrices, sellPrices)
+	for _, o := range orders {
+		_, err := ob.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+
+	// there's 30 in the order book
+	_, err := ob.ob.VWAP(40, types.SideBuy)
+	require.Error(t, err)
+	_, err = ob.ob.VWAP(40, types.SideSell)
+	require.Error(t, err)
+}
+
+func TestVWAP(t *testing.T) {
+	ob := getTestOrderBook(t, "market1")
+
+	buyPrices := []uint64{
+		60,
+		70,
+		100,
+	}
+	sellPrices := []uint64{
+		200,
+		210,
+		220,
+	}
+
+	orders := getTestOrders(t, "market1", 10, buyPrices, sellPrices)
+	for _, o := range orders {
+		_, err := ob.ob.SubmitOrder(o)
+		assert.NoError(t, err)
+	}
+
+	// Bid side
+	// =========
+	vwap, err := ob.ob.VWAP(5, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "100", vwap.String())
+
+	vwap, err = ob.ob.VWAP(10, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "100", vwap.String())
+
+	// (100 * 10 + 70 * 5)/15
+	vwap, err = ob.ob.VWAP(15, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "90", vwap.String())
+
+	// (100 + 70)/2
+	vwap, err = ob.ob.VWAP(20, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "85", vwap.String())
+
+	// (100 * 10 + 70 * 10 + 60 * 5)/25
+	vwap, err = ob.ob.VWAP(25, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "80", vwap.String())
+
+	// (100 + 70 + 60)/3
+	vwap, err = ob.ob.VWAP(30, types.SideBuy)
+	require.NoError(t, err)
+	require.Equal(t, "76", vwap.String())
+
+	// Ask side
+	// =========
+	vwap, err = ob.ob.VWAP(5, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "200", vwap.String())
+
+	vwap, err = ob.ob.VWAP(10, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "200", vwap.String())
+
+	// (200 * 10 + 210 * 5)/15
+	vwap, err = ob.ob.VWAP(15, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "203", vwap.String())
+
+	// (200 + 210)/2
+	vwap, err = ob.ob.VWAP(20, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "205", vwap.String())
+
+	// (200 * 10 + 210 * 10 + 220 * 5)/25
+	vwap, err = ob.ob.VWAP(25, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "208", vwap.String())
+
+	// (200 + 210 + 220)/3
+	vwap, err = ob.ob.VWAP(30, types.SideSell)
+	require.NoError(t, err)
+	require.Equal(t, "210", vwap.String())
 }

@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -34,8 +22,41 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/jackc/pgtype"
 )
+
+type DispatchMetric vega.DispatchMetric
+
+const (
+	DispatchMetricUnspecified       DispatchMetric = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_UNSPECIFIED)
+	DispatchMetricMakerFeePaid                     = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_PAID)
+	DispatchMetricMakerFeesReceived                = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MAKER_FEES_RECEIVED)
+	DispatchMetricLPFeesReceived                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED)
+	DispatchMetricMarketValue                      = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)
+	DispatchMetricAveragePosition                  = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION)
+	DispatchMetricRelativeReturn                   = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN)
+	DispatchMetricReturnVolatility                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY)
+	DispatchMetricValidatorRanking                 = DispatchMetric(vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING)
+)
+
+func (m DispatchMetric) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	mode, ok := vega.DispatchMetric_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown dispatch metric: %s", mode)
+	}
+	return append(buf, []byte(mode)...), nil
+}
+
+func (m *DispatchMetric) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.DispatchMetric_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown dispatch metric: %s", src)
+	}
+
+	*m = DispatchMetric(val)
+	return nil
+}
 
 type Side = vega.Side
 
@@ -290,6 +311,14 @@ func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 	*m = val
 	return nil
 }
+
+type TransferScope int32
+
+const (
+	TransferScopeUnspecified TransferScope = 1
+	TransferScopeIndividual  TransferScope = 1
+	TransferScopeTeam        TransferScope = 2
+)
 
 type TransferStatus eventspb.Transfer_Status
 
@@ -934,6 +963,8 @@ const (
 	StopOrderRejectionReasonMaxStopOrdersPerPartyReached = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_MAX_STOP_ORDERS_PER_PARTY_REACHED)
 	StopOrderRejectionReasonNotAllowedWithoutAPosition   = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_WITHOUT_A_POSITION)
 	StopOrderRejectionReasonNotClosingThePosition        = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_CLOSING_THE_POSITION)
+	StopOrderRejectionReasonNotAllowedDuringAuction      = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_NOT_ALLOWED_DURING_OPENING_AUCTION)
+	StopOrderRejectionReasonOCONotAllowedSameExpiryTime  = StopOrderRejectionReason(vega.StopOrder_REJECTION_REASON_STOP_ORDER_CANNOT_MATCH_OCO_EXPIRY_TIMES)
 )
 
 func (s StopOrderRejectionReason) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -975,5 +1006,56 @@ func (s *FundingPeriodDataPointSource) DecodeText(_ *pgtype.ConnInfo, src []byte
 		return fmt.Errorf("unknown funding period data point source: %s", src)
 	}
 	*s = FundingPeriodDataPointSource(val)
+	return nil
+}
+
+type LiquidityFeeSettingsMethod vega.LiquidityFeeSettings_Method
+
+const (
+	LiquidityFeeMethodUnspecified     = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_UNSPECIFIED)
+	LiquidityFeeMethodMarginalCost    = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_MARGINAL_COST)
+	LiquidityFeeMethodWeightedAverage = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_WEIGHTED_AVERAGE)
+	LiquidityFeeMethodConstant        = LiquidityFeeSettingsMethod(vega.LiquidityFeeSettings_METHOD_CONSTANT)
+)
+
+func (s LiquidityFeeSettingsMethod) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	status, ok := vega.LiquidityFeeSettings_Method_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown liquidity provision status: %v", s)
+	}
+	return append(buf, []byte(status)...), nil
+}
+
+func (s *LiquidityFeeSettingsMethod) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.LiquidityFeeSettings_Method_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown liquidity provision status: %s", src)
+	}
+	*s = LiquidityFeeSettingsMethod(val)
+	return nil
+}
+
+type MarginMode vega.MarginMode
+
+const (
+	MarginModeUnspecified    = MarginMode(vega.MarginMode_MARGIN_MODE_UNSPECIFIED)
+	MarginModeCrossMargin    = MarginMode(vega.MarginMode_MARGIN_MODE_CROSS_MARGIN)
+	MarginModeIsolatedMargin = MarginMode(vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN)
+)
+
+func (m MarginMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.MarginMode_name[int32(m)]
+	if !ok {
+		return buf, fmt.Errorf("unknown margin mode: %v", m)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (m *MarginMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.MarginMode_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown margin mode: %s", src)
+	}
+	*m = MarginMode(val)
 	return nil
 }

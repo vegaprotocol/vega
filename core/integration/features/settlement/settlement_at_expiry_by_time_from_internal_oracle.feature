@@ -300,8 +300,7 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the network moves ahead "3" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "15000" for the market "ETH/DEC19"
-
+    And the insurance pool balance should be "10000" for the market "ETH/DEC19"
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
     When the parties place the following orders with ticks:
@@ -421,8 +420,9 @@ Feature: Test settlement at expiry time from internal oracle
     When the network moves ahead "2" blocks
     Then the cumulated balance for all accounts should be worth "100213000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
-    And the insurance pool balance should be "1042" for the market "ETH/DEC21"
+    # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is moved to the global insurance pool
+    And the insurance pool balance should be "1000" for the market "ETH/DEC21"
+    And the global insurance pool balance should be "84" for the asset "ETH"
 
   @SLABug
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't cover all losses
@@ -598,7 +598,8 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the cumulated balance for all accounts should be worth "102012000"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "750" for the market "ETH/DEC19"
+    And the insurance pool balance should be "500" for the market "ETH/DEC19"
+    And the global insurance pool balance should be "500" for the asset "ETH"
 
   @Oracle
   Scenario: Orders can still be placed if the order expiry was sent with the wrong pub key

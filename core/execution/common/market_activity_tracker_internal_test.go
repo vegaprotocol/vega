@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -200,7 +201,6 @@ func TestPositions(t *testing.T) {
 	tracker.recordPosition("p1", 30, num.DecimalOne(), time.Unix(45, 0), time.Unix(0, 0))
 	// 155555544 * ( 10000000 - 2500000 ) + ( 300000000 * 2500000 ) / 10000000 = 191666658
 	tracker.processPositionEndOfEpoch(time.Unix(0, 0), time.Unix(60, 0))
-	println(tracker.getPositionMetricTotal("p1", 1))
 	require.Equal(t, uint64(191666658), tracker.getPositionMetricTotal("p1", 1))
 
 	// epoch 2

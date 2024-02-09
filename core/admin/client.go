@@ -23,30 +23,20 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/rpc/json"
-
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/gorilla/rpc/json"
 )
 
 // Client implement a socket client allowing to run simple RPC commands.
 type Client struct {
-	log  *logging.Logger
 	cfg  Config
 	http *http.Client
 }
 
 // NewClient returns a new instance of the RPC socket client.
-func NewClient(
-	log *logging.Logger,
-	config Config,
-) *Client {
-	// setup logger
-	log = log.Named(clientNamedLogger)
-	log.SetLevel(config.Level.Get())
-
+func NewClient(config Config) *Client {
 	return &Client{
-		log: log,
 		cfg: config,
 		http: &http.Client{
 			Transport: &http.Transport{
@@ -79,7 +69,7 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 
 	resp, err := s.http.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("failed to post data %q: %w", string(req), err)
+		return fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -114,7 +104,7 @@ func (s *Client) UpgradeStatus(ctx context.Context) (*types.UpgradeStatus, error
 	var reply types.UpgradeStatus
 
 	if err := s.call(ctx, "protocolupgrade.UpgradeStatus", nil, &reply); err != nil {
-		return nil, fmt.Errorf("failed to call protocolupgrade.UpgradeStatus method: %w", err)
+		return nil, fmt.Errorf("failed to get protocol update status: %w", err)
 	}
 
 	return &reply, nil

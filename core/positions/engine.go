@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -207,6 +208,28 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
+// ValidateOrder checks that the given order can be registered.
+func (e *Engine) ValidateOrder(order *types.Order) error {
+	pos, found := e.positions[order.Party]
+	if !found {
+		pos = NewMarketPosition(order.Party)
+	}
+	return pos.ValidateOrderRegistration(order.TrueRemaining(), order.Side)
+}
+
+// ValidateAmendOrder checks that replace the given order with a new order will no cause issues with position tracking.
+func (e *Engine) ValidateAmendOrder(order *types.Order, newOrder *types.Order) error {
+	pos, found := e.positions[order.Party]
+	if !found {
+		pos = NewMarketPosition(order.Party)
+	}
+
+	if order.TrueRemaining() >= newOrder.TrueRemaining() {
+		return nil
+	}
+	return pos.ValidateOrderRegistration(newOrder.TrueRemaining()-order.TrueRemaining(), order.Side)
+}
+
 // RegisterOrder updates the potential positions for a submitted order, as though
 // the order were already accepted.
 // It returns the updated position.
@@ -256,58 +279,6 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	return pos
 }
 
-// UpdateNetwork - functionally the same as the Update func, except for ignoring the network
-// party in the trade (whether it be buyer or seller). This could be incorporated into the Update
-// function, but we know when we're adding network trades, and having this check every time is
-// wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
-	// there's only 1 position
-	var (
-		ok  bool
-		pos *MarketPosition
-	)
-	size := int64(trade.Size)
-	if trade.Buyer != "network" {
-		pos, ok = e.positions[trade.Buyer]
-		if !ok {
-			e.log.Panic("could not find buyer position",
-				logging.Trade(*trade))
-		}
-
-		if pos.buy < int64(trade.Size) {
-			e.log.Panic("network trade with a potential buy position < to the trade size",
-				logging.PartyID(trade.Buyer),
-				logging.Int64("potential-buy", pos.buy),
-				logging.Trade(*trade))
-		}
-		pos.size += size
-	} else {
-		pos, ok = e.positions[trade.Seller]
-		if !ok {
-			e.log.Panic("could not find seller position",
-				logging.Trade(*trade))
-		}
-
-		if pos.sell < int64(trade.Size) {
-			e.log.Panic("network trade with a potential sell position < to the trade size",
-				logging.PartyID(trade.Seller),
-				logging.Int64("potential-sell", pos.sell),
-				logging.Trade(*trade))
-		}
-		// size is negative in case of a sale
-		pos.size -= size
-	}
-
-	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
-	e.partiesHighestVolume[pos.partyID].RecordLatest(pos.size)
-	e.updatePartiesTradedSize(pos.partyID, trade.Size)
-
-	e.positionUpdated(ctx, pos)
-
-	cpy := pos.Clone()
-	return []events.MarketPosition{*cpy}
-}
-
 func (e *Engine) updatePartiesTradedSize(party string, size uint64) {
 	e.partiesTradedSize[party] = e.partiesTradedSize[party] + size
 }
@@ -344,7 +315,10 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
+
+	buyer.averageEntryPrice = CalcVWAP(buyer.averageEntryPrice, buyer.size, int64(trade.Size), trade.Price)
 	buyer.size += int64(trade.Size)
+	seller.averageEntryPrice = CalcVWAP(seller.averageEntryPrice, -seller.size, int64(trade.Size), trade.Price)
 	seller.size -= int64(trade.Size)
 
 	aggressive := buyer
@@ -357,6 +331,12 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, a
 	// Update potential positions & vwaps. Potential positions decrease for both buyer and seller.
 	aggressive.UpdateOnOrderChange(e.log, aggressiveOrder.Side, aggressiveOrder.Price, trade.Size, false)
 	passive.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
+	// if the network opens a position here, the price will not be set, which breaks the snapshot
+	// we know the network will trade at the current mark price, and therefore it will hold the position at this price.
+	// so we should just make sure the price is set correctly here.
+	if aggressive.partyID == types.NetworkParty && (aggressive.price == nil || aggressive.price.IsZero()) {
+		aggressive.price = trade.Price.Clone()
+	}
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
@@ -610,4 +590,47 @@ func (e *Engine) remove(p *MarketPosition) {
 			break
 		}
 	}
+}
+
+// CalcVWAP calculates the volume weighted average entry price.
+func CalcVWAP(vwap *num.Uint, pos int64, addVolume int64, addPrice *num.Uint) *num.Uint {
+	if pos+addVolume == 0 || addPrice == nil {
+		return num.UintZero()
+	}
+
+	newPos := pos + addVolume
+	if newPos*pos < 0 { // switching from short/long or long/short
+		if newPos < 0 {
+			newPos = -newPos
+		}
+		newAcquiredPositionUint := num.NewUint(uint64(newPos))
+		if pos < 0 {
+			pos = -pos
+		}
+		posUint := num.NewUint(uint64(pos))
+		// cost of closing the old position
+		closePositionCost := num.UintZero().Mul(posUint, vwap)
+		// cost of opening the new position
+		openNewPositionCost := num.UintZero().Mul(newAcquiredPositionUint, addPrice)
+		return num.UintZero().Div(num.Sum(closePositionCost, openNewPositionCost), num.Sum(posUint, newAcquiredPositionUint))
+	}
+	// only decreasing position
+	if (pos > 0 && addVolume < 0) || (pos < 0 && addVolume > 0) {
+		return vwap
+	}
+	// increasing position
+	if pos < 0 {
+		pos = -pos
+	}
+	posUint := num.NewUint(uint64(pos))
+	if addVolume < 0 {
+		addVolume = -addVolume
+	}
+	addVolumeUint := num.NewUint(uint64(addVolume))
+	if newPos < 0 {
+		newPos = -newPos
+	}
+	newPosUint := num.NewUint(uint64(newPos))
+	numerator := num.UintZero().Mul(vwap, posUint).AddSum(num.UintZero().Mul(addPrice, addVolumeUint))
+	return num.UintZero().Div(numerator, newPosUint)
 }

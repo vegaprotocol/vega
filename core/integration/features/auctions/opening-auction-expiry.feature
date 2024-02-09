@@ -10,11 +10,12 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 5     |
-      | market.auction.maximumDuration          | 10    |
+      | market.auction.maximumDuration          | 10s   |
       | network.floatingPointUpdates.delay      | 10s   |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @DebugAuctionMax @Expires
   Scenario: Simple test verifying the market is cancelled if it failes to leave opening auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -29,7 +30,7 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | lpprov | BTC   | 100000000 |
 
     # Start market with some dead time
-    When the network moves ahead "2" blocks
+    And the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
@@ -43,11 +44,13 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | TRADING_MODE_OPENING_AUCTION |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party5 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GFA | t5-s-1    |
+      | party5 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GFA | t5-s-1    |
     # place orders to set the actual price point at which we'll uncross to be 10000
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC19" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |
     When the network moves ahead "10" blocks
+
+    # Now the market should be cancelled
     Then the last market state should be "STATE_CANCELLED" for the market "ETH/DEC19"

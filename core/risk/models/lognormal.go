@@ -19,11 +19,12 @@ import (
 	"errors"
 	"math"
 
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
+
 	"code.vegaprotocol.io/quant/interfaces"
 	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
-	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
@@ -89,6 +90,10 @@ func (f *LogNormal) ProbabilityOfTrading(currentP, orderP num.Decimal, minP, max
 	min := math.Max(minP.InexactFloat64(), 0)
 	// still, quant uses floats
 	prob := pd.ProbabilityOfTrading(dist, orderP.InexactFloat64(), isBid, applyMinMax, min, maxP.InexactFloat64())
+	if math.IsNaN(prob) {
+		return num.DecimalZero()
+	}
+
 	return num.DecimalFromFloat(prob)
 }
 

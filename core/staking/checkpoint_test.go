@@ -17,7 +17,6 @@ package staking_test
 
 import (
 	"context"
-	_ "embed"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/staking"
@@ -31,6 +30,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	_ "embed"
 )
 
 //go:embed testcp/20220627071230-316971-11a4d958cb7e0448f0cea0b7c617a1e4535e90c0d0f18fd86e961c97147757d7.cp

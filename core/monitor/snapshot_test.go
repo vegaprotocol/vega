@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -86,7 +87,6 @@ func getMarket(openingAuctionDuration *types.AuctionDuration) types.Market {
 				TimeWindow:    3600, // seconds = 1h
 				ScalingFactor: num.DecimalFromFloat(10),
 			},
-			TriggeringRatio: num.DecimalZero(),
 		},
 	}
 	return mkt

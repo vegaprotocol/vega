@@ -24,13 +24,12 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-	"github.com/golang/mock/gomock"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 func TestEngineSnapshotV2(t *testing.T) {
@@ -100,6 +99,9 @@ func TestEngineSnapshotV2(t *testing.T) {
 		"party-3": num.UintFromUint64(2),
 		"party-4": num.UintFromUint64(3),
 	})
+
+	preStats := originalEngine.engine.LiquidityProviderSLAStats(time.Now())
+	require.Len(t, preStats, 2)
 
 	// Verifying we can salvage the state for each key, and they are a valid
 	// Payload.
@@ -186,6 +188,14 @@ func TestEngineSnapshotV2(t *testing.T) {
 		s2, ok := feesStats2.FeesPaidPerParty[k]
 		assert.True(t, ok)
 		assert.Equal(t, s1.String(), s2.String())
+	}
+
+	postStats := otherEngine.engine.LiquidityProviderSLAStats(time.Now())
+	require.Len(t, postStats, 2)
+	for i := range preStats {
+		assert.Equal(t, preStats[i].NotionalVolumeBuys, postStats[i].NotionalVolumeBuys)
+		assert.Equal(t, preStats[i].NotionalVolumeSells, postStats[i].NotionalVolumeSells)
+		assert.Equal(t, preStats[i].RequiredLiquidity, postStats[i].RequiredLiquidity)
 	}
 }
 

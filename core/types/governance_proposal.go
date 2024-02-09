@@ -17,10 +17,10 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
-	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -125,6 +125,10 @@ const (
 	ProposalErrorInvalidReferralProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_REFERRAL_PROGRAM
 	// ProposalErrorInvalidVolumeDiscountProgram is returned when the volume discount program proposal is not valid.
 	ProposalErrorInvalidVolumeDiscountProgram ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_VOLUME_DISCOUNT_PROGRAM
+	// ProposalErrorProposalInBatchRejected is returned when one or more proposals in the batch are rejected.
+	ProposalErrorProposalInBatchRejected ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_REJECTED
+	// ProposalErrorProposalInBatchDeclined is returned when one or more proposals in the batch are rejected.
+	ProposalErrorProposalInBatchDeclined ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_PROPOSAL_IN_BATCH_DECLINED
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -217,8 +221,188 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 	}, nil
 }
 
+// ProposalParameters stores proposal specific parameters.
+type ProposalParameters struct {
+	MinClose                time.Duration
+	MaxClose                time.Duration
+	MinEnact                time.Duration
+	MaxEnact                time.Duration
+	RequiredParticipation   num.Decimal
+	RequiredMajority        num.Decimal
+	MinProposerBalance      *num.Uint
+	MinVoterBalance         *num.Uint
+	RequiredParticipationLP num.Decimal
+	RequiredMajorityLP      num.Decimal
+	MinEquityLikeShare      num.Decimal
+}
+
+func ProposalParametersFromProto(pp *vegapb.ProposalParameters) *ProposalParameters {
+	return &ProposalParameters{
+		MinClose:                time.Duration(pp.MinClose),
+		MaxClose:                time.Duration(pp.MaxClose),
+		MinEnact:                time.Duration(pp.MinEnact),
+		MaxEnact:                time.Duration(pp.MaxEnact),
+		RequiredParticipation:   num.MustDecimalFromString(pp.RequiredParticipation),
+		RequiredMajority:        num.MustDecimalFromString(pp.RequiredMajority),
+		MinProposerBalance:      num.MustUintFromString(pp.MinProposerBalance, 10),
+		MinVoterBalance:         num.MustUintFromString(pp.MinVoterBalance, 10),
+		RequiredParticipationLP: num.MustDecimalFromString(pp.RequiredParticipationLp),
+		RequiredMajorityLP:      num.MustDecimalFromString(pp.RequiredMajorityLp),
+		MinEquityLikeShare:      num.MustDecimalFromString(pp.MinEquityLikeShare),
+	}
+}
+
+func (pp *ProposalParameters) Clone() ProposalParameters {
+	copy := *pp
+
+	copy.MinProposerBalance = pp.MinProposerBalance.Clone()
+	copy.MinVoterBalance = pp.MinVoterBalance.Clone()
+	return copy
+}
+
+func (pp *ProposalParameters) ToProto() *vegapb.ProposalParameters {
+	return &vegapb.ProposalParameters{
+		MinClose:                int64(pp.MinClose),
+		MaxClose:                int64(pp.MaxClose),
+		MinEnact:                int64(pp.MinEnact),
+		MaxEnact:                int64(pp.MaxEnact),
+		RequiredParticipation:   pp.RequiredParticipation.String(),
+		RequiredMajority:        pp.RequiredMajority.String(),
+		MinProposerBalance:      pp.MinProposerBalance.String(),
+		MinVoterBalance:         pp.MinVoterBalance.String(),
+		RequiredParticipationLp: pp.RequiredParticipationLP.String(),
+		RequiredMajorityLp:      pp.RequiredMajorityLP.String(),
+		MinEquityLikeShare:      pp.MinEquityLikeShare.String(),
+	}
+}
+
+type BatchProposal struct {
+	ID                 string
+	Reference          string
+	Party              string
+	State              ProposalState
+	Timestamp          int64
+	ClosingTimestamp   int64
+	Proposals          []*Proposal
+	Rationale          *ProposalRationale
+	Reason             ProposalError
+	ErrorDetails       string
+	ProposalParameters *ProposalParameters
+}
+
+func BatchProposalFromSnapshotProto(bp *vegapb.Proposal, pps []*vegapb.Proposal) *BatchProposal {
+	proposals := make([]*Proposal, 0, len(pps))
+
+	for _, pp := range pps {
+		proposal, _ := ProposalFromProto(pp)
+		proposals = append(proposals, proposal)
+	}
+
+	return &BatchProposal{
+		ID:                 bp.Id,
+		Reference:          bp.Reference,
+		Party:              bp.PartyId,
+		State:              bp.State,
+		Timestamp:          bp.Timestamp,
+		ClosingTimestamp:   bp.BatchTerms.ClosingTimestamp,
+		Rationale:          ProposalRationaleFromProto(bp.Rationale),
+		Reason:             *bp.Reason,
+		ProposalParameters: ProposalParametersFromProto(bp.BatchTerms.ProposalParams),
+		Proposals:          proposals,
+	}
+}
+
+func (bp BatchProposal) ToProto() *vegapb.Proposal {
+	batchTerms := &vegapb.BatchProposalTerms{
+		ClosingTimestamp: bp.ClosingTimestamp,
+		ProposalParams:   bp.ProposalParameters.ToProto(),
+	}
+
+	for _, proposal := range bp.Proposals {
+		batchTerms.Changes = append(batchTerms.Changes, &vegapb.BatchProposalTermsChange{
+			Change:             proposal.Terms.Change.oneOfBatchProto(),
+			EnactmentTimestamp: proposal.Terms.EnactmentTimestamp,
+		})
+	}
+
+	return &vegapb.Proposal{
+		Id:           bp.ID,
+		Reference:    bp.Reference,
+		PartyId:      bp.Party,
+		State:        bp.State,
+		Timestamp:    bp.Timestamp,
+		Reason:       &bp.Reason,
+		ErrorDetails: &bp.ErrorDetails,
+		Rationale:    bp.Rationale.ToProto(),
+		BatchTerms:   batchTerms,
+	}
+}
+
+// SetProposalParams set specific per proposal parameters and chooses the most aggressive ones.
+func (bp *BatchProposal) SetProposalParams(params ProposalParameters) {
+	if bp.ProposalParameters == nil {
+		bp.ProposalParameters = &params
+		bp.ProposalParameters.MaxEnact = 0
+		bp.ProposalParameters.MinEnact = 0
+		return
+	}
+
+	if bp.ProposalParameters.MaxClose > params.MaxClose {
+		bp.ProposalParameters.MaxClose = params.MaxClose
+	}
+
+	if bp.ProposalParameters.MinClose < params.MinClose {
+		bp.ProposalParameters.MinClose = params.MinClose
+	}
+
+	if bp.ProposalParameters.MinEquityLikeShare.LessThan(params.MinEquityLikeShare) {
+		bp.ProposalParameters.MinEquityLikeShare = params.MinEquityLikeShare
+	}
+
+	if bp.ProposalParameters.MinProposerBalance.LT(params.MinProposerBalance) {
+		bp.ProposalParameters.MinProposerBalance = params.MinProposerBalance.Clone()
+	}
+
+	if bp.ProposalParameters.MinVoterBalance.LT(params.MinVoterBalance) {
+		bp.ProposalParameters.MinVoterBalance = params.MinVoterBalance.Clone()
+	}
+
+	if bp.ProposalParameters.RequiredMajority.LessThan(params.RequiredMajority) {
+		bp.ProposalParameters.RequiredMajority = params.RequiredMajority
+	}
+
+	if bp.ProposalParameters.RequiredMajorityLP.LessThan(params.RequiredMajorityLP) {
+		bp.ProposalParameters.RequiredMajorityLP = params.RequiredMajorityLP
+	}
+
+	if bp.ProposalParameters.RequiredParticipation.LessThan(params.RequiredParticipation) {
+		bp.ProposalParameters.RequiredParticipation = params.RequiredParticipation
+	}
+
+	if bp.ProposalParameters.RequiredParticipationLP.LessThan(params.RequiredParticipationLP) {
+		bp.ProposalParameters.RequiredParticipationLP = params.RequiredParticipationLP
+	}
+}
+
+func (bp *BatchProposal) RejectWithErr(reason ProposalError, details error) {
+	bp.ErrorDetails = details.Error()
+	bp.State = ProposalStateRejected
+	bp.Reason = reason
+
+	for _, proposal := range bp.Proposals {
+		proposal.ErrorDetails = bp.ErrorDetails
+		proposal.State = bp.State
+		proposal.Reason = bp.Reason
+	}
+}
+
+func (bp *BatchProposal) IsRejected() bool {
+	return bp.State == ProposalStateRejected
+}
+
 type Proposal struct {
 	ID                      string
+	BatchID                 *string
 	Reference               string
 	Party                   string
 	State                   ProposalState
@@ -233,99 +417,75 @@ type Proposal struct {
 	RequiredLPParticipation num.Decimal
 }
 
-func (p *Proposal) IsMarketStateUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return true
-	default:
-		return false
-	}
+func (p Proposal) IsOpen() bool {
+	return p.State == ProposalStateOpen
 }
 
-func (p *Proposal) IsMarketUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return true
-	default:
-		return false
-	}
+func (p Proposal) IsPassed() bool {
+	return p.State == ProposalStatePassed
 }
 
-func (p *Proposal) IsSpotMarketUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return true
-	default:
-		return false
-	}
+func (p Proposal) IsDeclined() bool {
+	return p.State == ProposalStateDeclined
 }
 
-func (p *Proposal) IsReferralProgramUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateReferralProgram:
-		return true
-	default:
-		return false
-	}
+func (p Proposal) IsRejected() bool {
+	return p.State == ProposalStateRejected
 }
 
-func (p *Proposal) IsVolumeDiscountProgramUpdate() bool {
-	switch p.Terms.Change.(type) {
-	case *ProposalTermsUpdateVolumeDiscountProgram:
-		return true
-	default:
-		return false
-	}
+func (p Proposal) IsFailed() bool {
+	return p.State == ProposalStateFailed
 }
 
-func (p *Proposal) MarketUpdate() *UpdateMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return terms.UpdateMarket
-	default:
-		return nil
-	}
+func (p Proposal) IsEnacted() bool {
+	return p.State == ProposalStateEnacted
 }
 
-func (p *Proposal) UpdateMarketState() *UpdateMarketState {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return terms.UpdateMarketState
-	default:
-		return nil
-	}
+func (p Proposal) IsMarketUpdate() bool {
+	return p.Terms.IsMarketUpdate()
 }
 
-func (p *Proposal) SpotMarketUpdate() *UpdateSpotMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return terms.UpdateSpotMarket
-	default:
-		return nil
-	}
+func (p Proposal) IsMarketStateUpdate() bool {
+	return p.Terms.IsMarketStateUpdate()
 }
 
-func (p *Proposal) IsNewMarket() bool {
-	return p.Terms.Change.GetTermType() == ProposalTermsTypeNewMarket
+func (p Proposal) IsSpotMarketUpdate() bool {
+	return p.Terms.IsSpotMarketUpdate()
 }
 
-func (p *Proposal) NewMarket() *NewMarket {
-	switch terms := p.Terms.Change.(type) {
-	case *ProposalTermsNewMarket:
-		return terms.NewMarket
-	default:
-		return nil
-	}
+func (p Proposal) IsReferralProgramUpdate() bool {
+	return p.Terms.IsReferralProgramUpdate()
+}
+
+func (p Proposal) IsVolumeDiscountProgramUpdate() bool {
+	return p.Terms.IsVolumeDiscountProgramUpdate()
+}
+
+func (p Proposal) MarketUpdate() *UpdateMarket {
+	return p.Terms.MarketUpdate()
+}
+
+func (p Proposal) UpdateMarketState() *UpdateMarketState {
+	return p.Terms.UpdateMarketState()
+}
+
+func (p Proposal) SpotMarketUpdate() *UpdateSpotMarket {
+	return p.Terms.SpotMarketUpdate()
+}
+
+func (p Proposal) IsNewMarket() bool {
+	return p.Terms.IsNewMarket()
+}
+
+func (p Proposal) NewMarket() *NewMarket {
+	return p.Terms.NewMarket()
 }
 
 func (p *Proposal) IsSuccessorMarket() bool {
-	if p.Terms == nil || p.Terms.Change == nil {
+	if p.Terms == nil {
 		return false
 	}
-	if nm := p.NewMarket(); nm != nil {
-		return nm.Changes.Successor != nil
-	}
-	return false
+	return p.Terms.IsSuccessorMarket()
 }
 
 func (p *Proposal) WaitForNodeVote() {
@@ -334,6 +494,11 @@ func (p *Proposal) WaitForNodeVote() {
 
 func (p *Proposal) Reject(reason ProposalError) {
 	p.State = ProposalStateRejected
+	p.Reason = reason
+}
+
+func (p *Proposal) Decline(reason ProposalError) {
+	p.State = ProposalStateDeclined
 	p.Reason = reason
 }
 
@@ -366,14 +531,19 @@ func (p Proposal) DeepClone() *Proposal {
 }
 
 func (p Proposal) String() string {
+	var batchID string
+	if p.BatchID != nil {
+		batchID = *p.BatchID
+	}
 	return fmt.Sprintf(
-		"id(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s) requireMajority(%s) requiredParticiption(%s) requireLPMajority(%s) requiredLPParticiption(%s)",
+		"id(%s) batchId(%s) reference(%s) party(%s) state(%s) timestamp(%v) terms(%s) reason(%s) errorDetails(%s) requireMajority(%s) requiredParticiption(%s) requireLPMajority(%s) requiredLPParticiption(%s)",
 		p.ID,
+		batchID,
 		p.Reference,
 		p.Party,
 		p.State.String(),
 		p.Timestamp,
-		stringer.ReflectPointerToString(p.Terms),
+		p.Terms,
 		p.Reason.String(),
 		p.ErrorDetails,
 		p.RequiredMajority.String(),
@@ -400,6 +570,7 @@ func (p Proposal) IntoProto() *vegapb.Proposal {
 
 	proposal := &vegapb.Proposal{
 		Id:                                     p.ID,
+		BatchId:                                p.BatchID,
 		Reference:                              p.Reference,
 		PartyId:                                p.Party,
 		State:                                  p.State,
@@ -473,6 +644,7 @@ func ProposalFromProto(pp *vegapb.Proposal) (*Proposal, error) {
 
 	return &Proposal{
 		ID:                      pp.Id,
+		BatchID:                 pp.BatchId,
 		Reference:               pp.Reference,
 		Party:                   pp.PartyId,
 		State:                   pp.State,
@@ -493,6 +665,13 @@ type ProposalRationale struct {
 	Title       string
 }
 
+func (pr ProposalRationale) ToProto() *vegapb.ProposalRationale {
+	return &vegapb.ProposalRationale{
+		Description: pr.Description,
+		Title:       pr.Title,
+	}
+}
+
 func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {
 	if p == nil {
 		return nil
@@ -501,238 +680,4 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 		Description: p.Description,
 		Title:       p.Title,
 	}
-}
-
-type ProposalTerms struct {
-	ClosingTimestamp    int64
-	EnactmentTimestamp  int64
-	ValidationTimestamp int64
-	Change              proposalTerm
-}
-
-func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
-	change := p.Change.oneOfProto()
-	r := &vegapb.ProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		EnactmentTimestamp:  p.EnactmentTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-	}
-
-	switch ch := change.(type) {
-	case *vegapb.ProposalTerms_NewMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateNetworkParameter:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewAsset:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateAsset:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewFreeform:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewTransfer:
-		r.Change = ch
-	case *vegapb.ProposalTerms_CancelTransfer:
-		r.Change = ch
-	case *vegapb.ProposalTerms_NewSpotMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateSpotMarket:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateMarketState:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateReferralProgram:
-		r.Change = ch
-	case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
-		r.Change = ch
-	}
-	return r
-}
-
-func (p ProposalTerms) DeepClone() *ProposalTerms {
-	cpy := p
-	cpy.Change = p.Change.DeepClone()
-	return &cpy
-}
-
-func (p ProposalTerms) String() string {
-	return fmt.Sprintf(
-		"validationTs(%v) closingTs(%v) enactmentTs(%v) change(%s)",
-		p.ValidationTimestamp,
-		p.ClosingTimestamp,
-		p.EnactmentTimestamp,
-		stringer.ReflectPointerToString(p.Change),
-	)
-}
-
-func (p *ProposalTerms) GetNewTransfer() *NewTransfer {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewTransfer:
-		return c.NewTransfer
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetCancelTransfer() *CancelTransfer {
-	switch c := p.Change.(type) {
-	case *ProposalTermsCancelTransfer:
-		return c.CancelTransfer
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetMarketStateUpdate() *UpdateMarketState {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateMarketState:
-		return c.UpdateMarketState
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewAsset() *NewAsset {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewAsset:
-		return c.NewAsset
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateAsset() *UpdateAsset {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateAsset:
-		return c.UpdateAsset
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewMarket() *NewMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewMarket:
-		return c.NewMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateMarket() *UpdateMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateMarket:
-		return c.UpdateMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewSpotMarket() *NewSpotMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewSpotMarket:
-		return c.NewSpotMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateSpotMarket() *UpdateSpotMarket {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateSpotMarket:
-		return c.UpdateSpotMarket
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateVolumeDiscountProgram() *UpdateVolumeDiscountProgram {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateVolumeDiscountProgram:
-		return c.UpdateVolumeDiscountProgram
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateReferralProgram() *UpdateReferralProgram {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateReferralProgram:
-		return c.UpdateReferralProgram
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
-	switch c := p.Change.(type) {
-	case *ProposalTermsUpdateNetworkParameter:
-		return c.UpdateNetworkParameter
-	default:
-		return nil
-	}
-}
-
-func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
-	switch c := p.Change.(type) {
-	case *ProposalTermsNewFreeform:
-		return c.NewFreeform
-	default:
-		return nil
-	}
-}
-
-func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
-	var (
-		change proposalTerm
-		err    error
-	)
-	if p.Change != nil {
-		switch ch := p.Change.(type) {
-		case *vegapb.ProposalTerms_NewMarket:
-			change, err = NewNewMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateMarket:
-			change, err = UpdateMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateNetworkParameter:
-			change = NewUpdateNetworkParameterFromProto(ch)
-		case *vegapb.ProposalTerms_NewAsset:
-			change, err = NewNewAssetFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateAsset:
-			change, err = NewUpdateAssetFromProto(ch)
-		case *vegapb.ProposalTerms_NewFreeform:
-			change = NewNewFreeformFromProto(ch)
-		case *vegapb.ProposalTerms_NewSpotMarket:
-			change, err = NewNewSpotMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateSpotMarket:
-			change, err = UpdateSpotMarketFromProto(ch)
-		case *vegapb.ProposalTerms_NewTransfer:
-			change, err = NewNewTransferFromProto(ch)
-		case *vegapb.ProposalTerms_CancelTransfer:
-			change, err = NewCancelGovernanceTransferFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateMarketState:
-			change, err = NewTerminateMarketFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateReferralProgram:
-			change, err = NewUpdateReferralProgramProposalFromProto(ch)
-		case *vegapb.ProposalTerms_UpdateVolumeDiscountProgram:
-			change, err = NewUpdateVolumeDiscountProgramProposalFromProto(ch)
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &ProposalTerms{
-		ClosingTimestamp:    p.ClosingTimestamp,
-		EnactmentTimestamp:  p.EnactmentTimestamp,
-		ValidationTimestamp: p.ValidationTimestamp,
-		Change:              change,
-	}, nil
-}
-
-type proposalTerm interface {
-	isPTerm()
-	oneOfProto() interface{} // calls IntoProto
-	DeepClone() proposalTerm
-	GetTermType() ProposalTermsType
-	String() string
 }

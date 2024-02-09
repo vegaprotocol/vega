@@ -30,6 +30,10 @@ type ExternalDataSourceKind interface {
 	IsExternalDataSourceKind()
 }
 
+type GameEntity interface {
+	IsGameEntity()
+}
+
 type GovernanceTransferKind interface {
 	IsGovernanceTransferKind()
 }
@@ -56,6 +60,10 @@ type ProductData interface {
 
 type ProposalChange interface {
 	IsProposalChange()
+}
+
+type ProposalNode interface {
+	IsProposalNode()
 }
 
 type RiskModel interface {
@@ -95,6 +103,29 @@ type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
 
+// Margins for a hypothetical position not related to any existing party
+type AbstractMarginLevels struct {
+	// Market in which the margin is required for this party
+	Market *vega.Market `json:"market"`
+	// Asset for the current margins
+	Asset *vega.Asset `json:"asset"`
+	// Minimal margin for the position to be maintained in the network (unsigned integer)
+	MaintenanceLevel string `json:"maintenanceLevel"`
+	// If the margin is between maintenance and search, the network will initiate a collateral search, expressed as unsigned integer
+	SearchLevel string `json:"searchLevel"`
+	// This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer
+	InitialLevel string `json:"initialLevel"`
+	// When in isolated margin, the required order margin level, otherwise, 0
+	OrderMarginLevel string `json:"orderMarginLevel"`
+	// If the margin of the party is greater than this level, then collateral will be released from the margin account into
+	// the general account of the party for the given asset.
+	CollateralReleaseLevel string `json:"collateralReleaseLevel"`
+	// Margin mode of the party, cross margin or isolated margin
+	MarginMode vega.MarginMode `json:"marginMode"`
+	// Margin factor, only relevant for isolated margin mode, else 0
+	MarginFactor string `json:"marginFactor"`
+}
+
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 // The auction will last for at least N seconds.
@@ -108,6 +139,41 @@ type AuctionDuration struct {
 	// Target uncrossing trading volume
 	Volume int `json:"volume"`
 }
+
+type BatchProposal struct {
+	// Proposal ID that is provided by Vega once proposal reaches the network
+	ID *string `json:"id"`
+	// A UUID reference to aid tracking proposals on Vega
+	Reference string `json:"reference"`
+	// Party that prepared the proposal
+	Party *vega.Party `json:"party"`
+	// State of the proposal
+	State vega.Proposal_State `json:"state"`
+	// RFC3339Nano time and date when the proposal reached the network
+	Datetime int64 `json:"datetime"`
+	// Terms of all the proposals in the batch
+	BatchTerms *vega.BatchProposalTerms `json:"batchTerms"`
+	// Rationale behind the proposal
+	Rationale *vega.ProposalRationale `json:"rationale"`
+	// Votes cast for this proposal
+	Votes *ProposalVotes `json:"votes"`
+	// Reason the proposal was rejected
+	RejectionReason *vega.ProposalError `json:"rejectionReason"`
+	// Details of the rejection reason
+	ErrorDetails *string `json:"errorDetails"`
+	// Required majority for this proposal to succeed
+	RequiredMajority string `json:"requiredMajority"`
+	// Required participation for this proposal to succeed
+	RequiredParticipation string `json:"requiredParticipation"`
+	// Equity-like share required for a market amendment proposal to be enacted, represented as a fraction that can be converted to a percentage. If not met, the proposal will not be enacted
+	RequiredLpMajority *string `json:"requiredLpMajority"`
+	// The market share of LPs' equity-like share that must take part in a market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the full batch of proposals receives all YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass
+	RequiredLpParticipation *string `json:"requiredLpParticipation"`
+	// Proposals that are part of the batch
+	SubProposals []*vega.Proposal `json:"subProposals"`
+}
+
+func (BatchProposal) IsProposalNode() {}
 
 // A Vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
@@ -170,18 +236,6 @@ type DataSourceSpec struct {
 	Data      *vega.DataSourceDefinition `json:"data"`
 	// Status describes the status of the data source spec
 	Status DataSourceSpecStatus `json:"status"`
-}
-
-// Bindings to describe which property of the data source data is to be used as settlement data
-// and which is to be used as the trading termination trigger.
-type DataSourceSpecPerpetualBinding struct {
-	// Name of the property in the source data that should be used as settlement data.
-	// For example, if it is set to "prices.BTC.value", then the perpetual market will use the value of this property
-	// as settlement data.
-	SettlementDataProperty string `json:"settlementDataProperty"`
-	// Name of the property in the source data that should be used as settlement schedule.
-	// For example, if it is set to "prices.BTC.timestamp", then the perpetual market will use the value of this property
-	SettlementScheduleProperty string `json:"settlementScheduleProperty"`
 }
 
 // Frequent batch auctions trading mode
@@ -361,14 +415,32 @@ type Filter struct {
 	Conditions []*Condition `json:"conditions"`
 }
 
+// Individual party participating in a game and their metrics
+type IndividualGameEntity struct {
+	// Party ID of the participant
+	Individual string `json:"individual"`
+	// The rank of the individual within the game. If the individual is in a team, then the rank of the individual in the team
+	Rank int `json:"rank"`
+	// The volume traded by the individual
+	Volume string `json:"volume"`
+	// The reward metric applied to the game
+	RewardMetric vega.DispatchMetric `json:"rewardMetric"`
+	// The rewards earned by the individual during the epoch
+	RewardEarned string `json:"rewardEarned"`
+	// Total rewards earned by the individual during the game
+	TotalRewardsEarned string `json:"totalRewardsEarned"`
+	// The rewards earned by the individual during the epoch in quantum value
+	RewardEarnedQuantum string `json:"rewardEarnedQuantum"`
+	// Total rewards earned by the individual during the game in quantum value
+	TotalRewardsEarnedQuantum string `json:"totalRewardsEarnedQuantum"`
+}
+
+func (IndividualGameEntity) IsGameEntity() {}
+
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
-	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio string `json:"triggeringRatio"`
-	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -528,22 +600,12 @@ type OrderEstimate struct {
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
 }
 
-// Basic description of an order
-type OrderInfo struct {
-	// Whether the order is to buy or sell
-	Side vega.Side `json:"side"`
-	// Price for the order
-	Price string `json:"price"`
-	// Number of units remaining of the total that have not yet been bought or sold (uint64)
-	Remaining string `json:"remaining"`
-	// Boolean indicating a market order
-	IsMarketOrder bool `json:"isMarketOrder"`
-}
-
 // Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position
 type PositionEstimate struct {
 	// Margin level range estimate for the specified position
 	Margin *v2.MarginEstimate `json:"margin"`
+	// Estimated margin account balance increase
+	CollateralIncreaseEstimate *v2.CollateralIncreaseEstimate `json:"collateralIncreaseEstimate"`
 	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
 	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
 }
@@ -703,6 +765,12 @@ type Signer struct {
 	Signer SignerKind `json:"signer"`
 }
 
+// Describes which property of the data source data should be
+// used as composite price source.
+type SpecBindingForCompositePrice struct {
+	PriceSourceProperty string `json:"priceSourceProperty"`
+}
+
 // All staking information related to a Party.
 // Contains the current recognised balance by the network and
 // all the StakeLink/Unlink seen by the network
@@ -733,6 +801,36 @@ type TargetStakeParameters struct {
 	TimeWindow int `json:"timeWindow"`
 	// Specifies scaling factors used in target stake calculation
 	ScalingFactor float64 `json:"scalingFactor"`
+}
+
+// Team participating in a game and their metrics.
+type TeamGameEntity struct {
+	// Breakdown of the team members and their contributions to the total team metrics.
+	Team *TeamParticipation `json:"team"`
+	// Rank of the team within the game.
+	Rank int `json:"rank"`
+	// Total volume traded by the team
+	Volume string `json:"volume"`
+	// Reward metric applied to the game.
+	RewardMetric vega.DispatchMetric `json:"rewardMetric"`
+	// Total rewards earned by the team during the epoch
+	RewardEarned string `json:"rewardEarned"`
+	// Total rewards earned by the team for the game
+	TotalRewardsEarned string `json:"totalRewardsEarned"`
+	// Total rewards earned by the team during the epoch in quantum value
+	RewardEarnedQuantum string `json:"rewardEarnedQuantum"`
+	// Total rewards earned by the team for the game in quantum value
+	TotalRewardsEarnedQuantum string `json:"totalRewardsEarnedQuantum"`
+}
+
+func (TeamGameEntity) IsGameEntity() {}
+
+// Team participation information, i.e. the team ID and the metrics for each participating team member.
+type TeamParticipation struct {
+	// Team ID
+	TeamID string `json:"teamId"`
+	// List of participating team members and their metrics.
+	MembersParticipating []*IndividualGameEntity `json:"membersParticipating"`
 }
 
 type TimeUpdate struct {
@@ -832,29 +930,9 @@ func (UpdateErc20) IsUpdateAssetSource() {}
 
 type UpdateInstrumentConfiguration struct {
 	Code    string                     `json:"code"`
+	Name    string                     `json:"name"`
 	Product UpdateProductConfiguration `json:"product"`
 }
-
-type UpdatePerpetualProduct struct {
-	// Quote name of the instrument
-	QuoteName string `json:"quoteName"`
-	// Controls how much the upcoming funding payment liability contributes to party's margin, in the range [0, 1]
-	MarginFundingFactor string `json:"marginFundingFactor"`
-	// Continuously compounded interest rate used in funding rate calculation, in the range [-1, 1]
-	InterestRate string `json:"interestRate"`
-	// Lower bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
-	ClampLowerBound string `json:"clampLowerBound"`
-	// Upper bound for the clamp function used as part of the funding rate calculation, in the range [-1, 1]
-	ClampUpperBound string `json:"clampUpperBound"`
-	// Data source specification describing the data source for settlement schedule
-	DataSourceSpecForSettlementSchedule *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementSchedule"`
-	// Data source specification describing the data source for settlement
-	DataSourceSpecForSettlementData *vega.DataSourceDefinition `json:"dataSourceSpecForSettlementData"`
-	// Binding between the data source spec and the settlement data
-	DataSourceSpecBinding *DataSourceSpecPerpetualBinding `json:"dataSourceSpecBinding"`
-}
-
-func (UpdatePerpetualProduct) IsUpdateProductConfiguration() {}
 
 // Event types
 type BusEventType string
@@ -903,6 +981,52 @@ func (e *BusEventType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e BusEventType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type CompositePriceType string
+
+const (
+	// Composite price is calculated as a weighted average of the underlying price sources
+	CompositePriceTypeCompositePriceTypeWeighted CompositePriceType = "COMPOSITE_PRICE_TYPE_WEIGHTED"
+	// Composite price is calculated as a median of the underlying price sources
+	CompositePriceTypeCompositePriceTypeMedian CompositePriceType = "COMPOSITE_PRICE_TYPE_MEDIAN"
+	// Composite price is set to the last trade (legacy)
+	CompositePriceTypeCompositePriceTypeLastTrade CompositePriceType = "COMPOSITE_PRICE_TYPE_LAST_TRADE"
+)
+
+var AllCompositePriceType = []CompositePriceType{
+	CompositePriceTypeCompositePriceTypeWeighted,
+	CompositePriceTypeCompositePriceTypeMedian,
+	CompositePriceTypeCompositePriceTypeLastTrade,
+}
+
+func (e CompositePriceType) IsValid() bool {
+	switch e {
+	case CompositePriceTypeCompositePriceTypeWeighted, CompositePriceTypeCompositePriceTypeMedian, CompositePriceTypeCompositePriceTypeLastTrade:
+		return true
+	}
+	return false
+}
+
+func (e CompositePriceType) String() string {
+	return string(e)
+}
+
+func (e *CompositePriceType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CompositePriceType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CompositePriceType", str)
+	}
+	return nil
+}
+
+func (e CompositePriceType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

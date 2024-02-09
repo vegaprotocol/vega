@@ -21,6 +21,7 @@ import (
 	"time"
 
 	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
+
 	"go.uber.org/zap"
 )
 

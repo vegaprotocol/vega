@@ -11,7 +11,7 @@ Feature: Test funding margin for Perps market
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 0                         | -3                      | perp        | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -19,7 +19,7 @@ Feature: Test funding margin for Perps market
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: (0019-MCAL-019) check funding margin for Perps market when clumps are 0.1 and 0.9
+  Scenario: (0019-MCAL-026) check funding margin for Perps market when clumps are 0.1 and 0.9
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 5s    |
@@ -145,7 +145,7 @@ Feature: Test funding margin for Perps market
       | name             | value      | time offset |
       | perp.funding.cue | 1613061324 | 0s          |
 
-#funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(0.1*1600)=560
+    #funding payment = f_twap - s_twap + clamp_lower_bound*s_twap =2000-1600+(0.1*1600)=560
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset |
       | aux2   | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1120000 | USD   |
@@ -186,5 +186,3 @@ Feature: Test funding margin for Perps market
 
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-
-# Then debug transfers

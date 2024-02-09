@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	paths2 "code.vegaprotocol.io/vega/paths"
+
 	"github.com/stretchr/testify/require"
 )
 

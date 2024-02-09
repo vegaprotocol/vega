@@ -29,12 +29,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"golang.org/x/sync/errgroup"
-
+	"code.vegaprotocol.io/vega/core/banking"
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -44,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
+	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -56,7 +54,10 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -78,13 +79,13 @@ type TradingDataServiceV2 struct {
 	eventService                  EventService
 	orderService                  *service.Order
 	networkLimitsService          *service.NetworkLimits
-	marketDataService             *service.MarketData
+	MarketDataService             MarketDataService
 	tradeService                  *service.Trade
 	multiSigService               *service.MultiSig
 	notaryService                 *service.Notary
-	assetService                  *service.Asset
+	AssetService                  AssetService
 	candleService                 *candlesv2.Svc
-	marketsService                *service.Markets
+	MarketsService                MarketsService
 	partyService                  *service.Party
 	riskService                   *service.Risk
 	positionService               *service.Position
@@ -98,11 +99,10 @@ type TradingDataServiceV2 struct {
 	governanceService             *service.Governance
 	transfersService              *service.Transfer
 	delegationService             *service.Delegation
-	marketService                 *service.Markets
 	marketDepthService            *service.MarketDepth
 	nodeService                   *service.Node
 	epochService                  *service.Epoch
-	riskFactorService             *service.RiskFactor
+	RiskFactorService             RiskFactorService
 	networkParameterService       *service.NetworkParameter
 	checkpointService             *service.Checkpoint
 	stakeLinkingService           *service.StakeLinking
@@ -127,6 +127,9 @@ type TradingDataServiceV2 struct {
 	partyLockedBalances           *service.PartyLockedBalances
 	partyVestingBalances          *service.PartyVestingBalances
 	vestingStats                  *service.VestingStats
+	transactionResults            *service.TransactionResults
+	gamesService                  *service.Games
+	marginModesService            *service.MarginModes
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -185,14 +188,19 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 		outVesting = make([]*eventspb.PartyVestingBalance, 0, len(vestingBalances))
 		outLocked  = make([]*eventspb.PartyLockedBalance, 0, len(lockedBalances))
 		epoch      *uint64
+		setEpoch   = func(e uint64) {
+			if epoch == nil {
+				epoch = ptr.From(e)
+				return
+			}
+			if *epoch < e {
+				epoch = ptr.From(e)
+			}
+		}
 	)
-	if len(vestingBalances) > 0 {
-		epoch = ptr.From(vestingBalances[0].AtEpoch)
-	} else if len(lockedBalances) > 0 {
-		epoch = ptr.From(lockedBalances[0].AtEpoch)
-	}
 
 	for _, v := range vestingBalances {
+		setEpoch(v.AtEpoch)
 		outVesting = append(
 			outVesting, &eventspb.PartyVestingBalance{
 				Asset:   v.AssetID.String(),
@@ -202,6 +210,7 @@ func (t *TradingDataServiceV2) GetVestingBalancesSummary(
 	}
 
 	for _, v := range lockedBalances {
+		setEpoch(v.AtEpoch)
 		outLocked = append(
 			outLocked, &eventspb.PartyLockedBalance{
 				Asset:      v.AssetID.String(),
@@ -429,6 +438,9 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 
 	entries, pageInfo, err := t.ledgerService.Query(ctx, leFilter, dateRange, pagination)
 	if err != nil {
+		if errors.Is(err, sqlstore.ErrLedgerEntryFilterForParty) {
+			return nil, formatE(ErrInvalidFilter, err)
+		}
 		return nil, formatE(ErrLedgerServiceGet, err)
 	}
 
@@ -598,7 +610,7 @@ func (t *TradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 		}
 	}
 
-	ch, ref := t.marketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketIds)
+	ch, ref := t.MarketDataService.ObserveMarketData(ctx, t.config.StreamRetries, req.MarketIds)
 
 	return observeBatch(ctx, t.log, "MarketsData", ch, ref, func(marketData []*entities.MarketData) error {
 		out := make([]*vega.MarketData, 0, len(marketData))
@@ -613,7 +625,7 @@ func (t *TradingDataServiceV2) ObserveMarketsData(req *v2.ObserveMarketsDataRequ
 func (t *TradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.GetLatestMarketDataRequest) (*v2.GetLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketData")()
 
-	md, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
+	md, err := t.MarketDataService.GetMarketDataByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetMarketData, err)
 	}
@@ -627,7 +639,7 @@ func (t *TradingDataServiceV2) GetLatestMarketData(ctx context.Context, req *v2.
 func (t *TradingDataServiceV2) ListLatestMarketData(ctx context.Context, _ *v2.ListLatestMarketDataRequest) (*v2.ListLatestMarketDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListLatestMarketData")()
 
-	mds, err := t.marketDataService.GetMarketsData(ctx)
+	mds, err := t.MarketDataService.GetMarketsData(ctx)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetMarketData, err)
 	}
@@ -692,7 +704,7 @@ func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 		endTime = ptr.From(time.Unix(0, *req.EndTimestamp))
 	}
 
-	history, pageInfo, err := t.marketDataService.GetHistoricMarketData(ctx, req.MarketId, startTime, endTime, pagination)
+	history, pageInfo, err := t.MarketDataService.GetHistoricMarketData(ctx, req.MarketId, startTime, endTime, pagination)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not retrieve historic market data")
 	}
@@ -972,9 +984,13 @@ func (t *TradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, formatE(ErrInvalidProposalID)
 	}
 
-	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
+	proposal, err := t.governanceService.GetProposalByIDWithoutBatch(ctx, req.ProposalId)
 	if err != nil {
 		return nil, formatE(ErrGovernanceServiceGet, err)
+	}
+
+	if proposal.IsBatch() {
+		return nil, formatE(errors.New("can not get bundle for batch proposal"))
 	}
 
 	if proposal.Terms.GetUpdateAsset() == nil {
@@ -990,7 +1006,7 @@ func (t *TradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, formatE(ErrNotaryServiceGetByResourceID, errors.Wrapf(err, "proposalID: %s", req.ProposalId))
 	}
 
-	asset, err := t.assetService.GetByID(ctx, proposal.Terms.GetUpdateAsset().AssetId)
+	asset, err := t.AssetService.GetByID(ctx, proposal.Terms.GetUpdateAsset().AssetId)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
@@ -1025,7 +1041,7 @@ func (t *TradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, formatE(ErrInvalidAssetID)
 	}
 
-	asset, err := t.assetService.GetByID(ctx, req.AssetId)
+	asset, err := t.AssetService.GetByID(ctx, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
@@ -1074,7 +1090,7 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		return nil, formatE(ErrNotaryServiceGetByResourceID, errors.Wrapf(err, "withdrawalID: %s", req.WithdrawalId))
 	}
 
-	assets, err := t.assetService.GetAll(ctx)
+	assets, err := t.AssetService.GetAll(ctx)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetAll, err)
 	}
@@ -1227,7 +1243,7 @@ func (t *TradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 		return nil, formatE(ErrInvalidMarketID)
 	}
 
-	market, err := t.marketService.GetByID(ctx, req.MarketId)
+	market, err := t.MarketsService.GetByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetByID, err)
 	}
@@ -1251,7 +1267,7 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 		includeSettled = *req.IncludeSettled
 	}
 
-	markets, pageInfo, err := t.marketsService.GetAllPaged(ctx, "", pagination, includeSettled)
+	markets, pageInfo, err := t.MarketsService.GetAllPaged(ctx, "", pagination, includeSettled)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
@@ -1288,7 +1304,7 @@ func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	markets, pageInfo, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory, pagination)
+	markets, pageInfo, err := t.MarketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory, pagination)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
@@ -1554,6 +1570,34 @@ func (t *TradingDataServiceV2) ListParties(ctx context.Context, req *v2.ListPart
 	}, nil
 }
 
+func (t *TradingDataServiceV2) ListPartiesProfiles(ctx context.Context, req *v2.ListPartiesProfilesRequest) (*v2.ListPartiesProfilesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPartiesProfiles")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	parties, pageInfo, err := t.partyService.ListProfiles(ctx, req.Parties, pagination)
+	if err != nil {
+		return nil, formatE(ErrPartyServiceListProfiles, err)
+	}
+
+	edges, err := makeEdges[*v2.PartyProfileEdge](parties)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	connection := &v2.PartiesProfilesConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListPartiesProfilesResponse{
+		Profiles: connection,
+	}, nil
+}
+
 // ListMarginLevels lists MarginLevels.
 func (t *TradingDataServiceV2) ListMarginLevels(ctx context.Context, req *v2.ListMarginLevelsRequest) (*v2.ListMarginLevelsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarginLevelsV2")()
@@ -1616,7 +1660,7 @@ func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewa
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination)
+	rewards, pageInfo, err := t.rewardService.GetByCursor(ctx, &req.PartyId, req.AssetId, req.FromEpoch, req.ToEpoch, pagination, req.TeamId, req.GameId)
 	if err != nil {
 		return nil, formatE(ErrGetRewards, err)
 	}
@@ -1827,7 +1871,7 @@ func (t *TradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetReq
 		return nil, formatE(ErrInvalidAssetID)
 	}
 
-	asset, err := t.assetService.GetByID(ctx, req.AssetId)
+	asset, err := t.AssetService.GetByID(ctx, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
 	}
@@ -1857,7 +1901,7 @@ func (t *TradingDataServiceV2) ListAssets(ctx context.Context, req *v2.ListAsset
 }
 
 func (t *TradingDataServiceV2) getSingleAsset(ctx context.Context, assetID string) (*v2.ListAssetsResponse, error) {
-	asset, err := t.assetService.GetByID(ctx, assetID)
+	asset, err := t.AssetService.GetByID(ctx, assetID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get asset by ID: %s", assetID)
 	}
@@ -1888,7 +1932,7 @@ func (t *TradingDataServiceV2) getAllAssets(ctx context.Context, p *v2.Paginatio
 		return nil, errors.Wrap(ErrInvalidPagination, err.Error())
 	}
 
-	assets, pageInfo, err := t.assetService.GetAllWithCursorPagination(ctx, pagination)
+	assets, pageInfo, err := t.AssetService.GetAllWithCursorPagination(ctx, pagination)
 	if err != nil {
 		return nil, errors.Wrap(ErrAssetServiceGetAll, err.Error())
 	}
@@ -2297,6 +2341,10 @@ func (t *TradingDataServiceV2) ListGovernanceData(ctx context.Context, req *v2.L
 		if err != nil {
 			return nil, formatE(ErrGovernanceServiceGetVotes, errors.Wrapf(err, "proposalID: %s", proposalID))
 		}
+
+		if len(edges[i].Node.Proposals) > 0 {
+			edges[i].Node.ProposalType = vega.GovernanceData_TYPE_BATCH
+		}
 	}
 
 	proposalsConnection := &v2.GovernanceDataConnection{
@@ -2378,8 +2426,10 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 		fees = append(fees, f.ToProto())
 	}
 	return &v2.GetTransferResponse{
-		Transfer: tp,
-		Fees:     fees,
+		TransferNode: &v2.TransferNode{
+			Transfer: tp,
+			Fees:     fees,
+		},
 	}, nil
 }
 
@@ -2400,11 +2450,23 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	if req.IsReward != nil {
 		isReward = *req.IsReward
 	}
+
+	filters := sqlstore.ListTransfersFilters{
+		FromEpoch: req.FromEpoch,
+		ToEpoch:   req.ToEpoch,
+	}
+	if req.Status != nil {
+		filters.Status = ptr.From(entities.TransferStatus(*req.Status))
+	}
+	if req.Scope != nil {
+		filters.Scope = ptr.From(entities.TransferScope(*req.Scope))
+	}
+
 	if req.Pubkey == nil {
 		if !isReward {
-			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination)
+			transfers, pageInfo, err = t.transfersService.GetAll(ctx, pagination, filters)
 		} else {
-			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination)
+			transfers, pageInfo, err = t.transfersService.GetAllRewards(ctx, pagination, filters)
 		}
 	} else {
 		if isReward && req.Direction != v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM {
@@ -2414,14 +2476,14 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 		switch req.Direction {
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_FROM:
 			if isReward {
-				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+				transfers, pageInfo, err = t.transfersService.GetRewardTransfersFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 			} else {
-				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+				transfers, pageInfo, err = t.transfersService.GetTransfersFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 			}
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 		case v2.TransferDirection_TRANSFER_DIRECTION_TRANSFER_TO_OR_FROM:
-			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, entities.PartyID(*req.Pubkey), pagination)
+			transfers, pageInfo, err = t.transfersService.GetTransfersToOrFromParty(ctx, pagination, filters, entities.PartyID(*req.Pubkey))
 		default:
 			err = errors.Errorf("unknown transfer direction: %v", req.Direction)
 		}
@@ -2692,7 +2754,7 @@ func (t *TradingDataServiceV2) ListDelegations(ctx context.Context, req *v2.List
 }
 
 func (t *TradingDataServiceV2) marketExistsForID(ctx context.Context, marketID string) bool {
-	_, err := t.marketsService.GetByID(ctx, marketID)
+	_, err := t.MarketsService.GetByID(ctx, marketID)
 	return err == nil
 }
 
@@ -2946,7 +3008,7 @@ func (t *TradingDataServiceV2) getMarketPriceFactor(
 		return nil, errors.Wrap(err, "getting asset from market")
 	}
 
-	asset, err := t.assetService.GetByID(ctx, assetID)
+	asset, err := t.AssetService.GetByID(ctx, assetID)
 	if err != nil {
 		return nil, errors.Wrapf(ErrAssetServiceGetByID, "assetID: %s", assetID)
 	}
@@ -2965,7 +3027,7 @@ func (t *TradingDataServiceV2) estimateFee(
 	market, priceS string,
 	size uint64,
 ) (*vega.Fee, error) {
-	mkt, err := t.marketService.GetByID(ctx, market)
+	mkt, err := t.MarketsService.GetByID(ctx, market)
 	if err != nil {
 		return nil, err
 	}
@@ -3042,17 +3104,17 @@ func (t *TradingDataServiceV2) estimateMargin(
 	}
 
 	// first get the risk factors and market data (marketdata->markprice)
-	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, rMarket)
+	rf, err := t.RiskFactorService.GetMarketRiskFactors(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
 
-	mkt, err := t.marketService.GetByID(ctx, rMarket)
+	mkt, err := t.MarketsService.GetByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
 
-	mktData, err := t.marketDataService.GetMarketDataByID(ctx, rMarket)
+	mktData, err := t.MarketDataService.GetMarketDataByID(ctx, rMarket)
 	if err != nil {
 		return nil, err
 	}
@@ -3110,11 +3172,11 @@ func (t *TradingDataServiceV2) estimateMargin(
 	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
 		Mul(f).Mul(priceD).Div(mdpd)
 
-	return implyMarginLevels(maintenanceMargin, mkt.TradableInstrument.MarginCalculator.ScalingFactors, rParty, rMarket, asset), nil
+	return implyMarginLevels(maintenanceMargin, num.DecimalZero(), num.DecimalZero(), mkt.TradableInstrument.MarginCalculator.ScalingFactors, rParty, rMarket, asset, false), nil
 }
 
-func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.ScalingFactors, partyId, marketId, asset string) *vega.MarginLevels {
-	return &vega.MarginLevels{
+func implyMarginLevels(maintenanceMargin, orderMargin, marginFactor num.Decimal, scalingFactors *vega.ScalingFactors, partyId, marketId, asset string, isolatedMarginMode bool) *vega.MarginLevels {
+	marginLevels := &vega.MarginLevels{
 		PartyId:                partyId,
 		MarketId:               marketId,
 		Asset:                  asset,
@@ -3123,7 +3185,16 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.SearchLevel)).Round(0).String(),
 		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.InitialMargin)).Round(0).String(),
 		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.CollateralRelease)).Round(0).String(),
+		MarginMode:             types.MarginModeCrossMargin,
 	}
+	if isolatedMarginMode {
+		marginLevels.OrderMargin = orderMargin.Round(0).String()
+		marginLevels.SearchLevel = "0"
+		marginLevels.CollateralReleaseLevel = "0"
+		marginLevels.MarginMode = types.MarginModeIsolatedMargin
+		marginLevels.MarginFactor = marginFactor.String()
+	}
+	return marginLevels
 }
 
 func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
@@ -3133,18 +3204,38 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, ErrEmptyMissingMarketID
 	}
 
-	var collateralAvailable num.Decimal
-	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
-		var err error
-		collateralAvailable, err = num.DecimalFromString(*req.CollateralAvailable)
-		if err != nil {
-			return nil, formatE(ErrPositionsInvalidCollateralAmount, err)
-		}
+	marginAccountBalance, err := num.DecimalFromString(req.MarginAccountBalance)
+	if err != nil {
+		return nil, formatE(ErrPositionsInvalidAccountBalance, err)
 	}
-
-	mkt, err := t.marketService.GetByID(ctx, req.MarketId)
+	orderAccountBalance, err := num.DecimalFromString(req.OrderMarginAccountBalance)
+	if err != nil {
+		return nil, formatE(ErrPositionsInvalidAccountBalance, err)
+	}
+	mkt, err := t.MarketsService.GetByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetByID, err)
+	}
+	collateralAvailable := marginAccountBalance
+	crossMarginMode := req.MarginMode == types.MarginModeCrossMargin
+	if crossMarginMode {
+		generalAccountBalance, err := num.DecimalFromString(req.GeneralAccountBalance)
+		if err != nil {
+			return nil, formatE(ErrPositionsInvalidAccountBalance, err)
+		}
+		collateralAvailable = collateralAvailable.Add(generalAccountBalance).Add(orderAccountBalance)
+	}
+
+	dMarginFactor := num.DecimalZero()
+	isolatedMarginMode := req.MarginMode == types.MarginModeIsolatedMargin
+	if isolatedMarginMode {
+		if req.MarginFactor == nil {
+			return nil, formatE(ErrMissingMarginFactor, errors.New("margin factor are required with isolated margin"))
+		}
+		dMarginFactor, err = num.DecimalFromString(*req.MarginFactor)
+		if err != nil {
+			return nil, formatE(ErrMissingMarginFactor, err)
+		}
 	}
 
 	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
@@ -3175,20 +3266,20 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 		switch o.Side {
 		case types.SideBuy:
-			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+			buyOrders = append(buyOrders, &risk.OrderInfo{TrueRemaining: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
 		case types.SideSell:
-			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+			sellOrders = append(sellOrders, &risk.OrderInfo{TrueRemaining: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
 		default:
 			return nil, ErrInvalidOrderSide
 		}
 	}
 
-	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	rf, err := t.RiskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrRiskFactorServiceGet, err)
 	}
 
-	mktData, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
+	mktData, err := t.MarketDataService.GetMarketDataByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetMarketData, err)
 	}
@@ -3200,14 +3291,13 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(err)
 	}
 
-	marketObservable := mktData.MarkPrice
+	marketObservable := t.scaleDecimalFromMarketToAssetPrice(mktData.MarkPrice, dPriceFactor)
+	auctionPrice := t.scaleDecimalFromMarketToAssetPrice(mktData.IndicativePrice, dPriceFactor)
 
 	auction := mktData.AuctionEnd > 0
 	if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
-		marketObservable = mktData.IndicativePrice
+		marketObservable = auctionPrice
 	}
-
-	marketObservable = t.scaleDecimalFromMarketToAssetPrice(marketObservable, dPriceFactor)
 
 	positionFactor := num.DecimalFromFloat(10).
 		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
@@ -3220,6 +3310,13 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	if err != nil {
 		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
 	}
+
+	avgEntryPrice, err := num.DecimalFromString(req.AverageEntryPrice)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("can't parse average entry price: %s", req.AverageEntryPrice), err)
+	}
+
+	avgEntryPrice = t.scaleDecimalFromMarketToAssetPrice(avgEntryPrice, dPriceFactor)
 
 	marginFactorScaledFundingPaymentPerUnitPosition := num.DecimalZero()
 
@@ -3234,17 +3331,18 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 				if err != nil {
 					return nil, formatE(fmt.Errorf("can't parse funding payment from perpetual product data: %s", perpData.FundingPayment), err)
 				}
-				if !fundingPayment.IsZero() {
+				fundingRate, err := num.DecimalFromString(perpData.FundingRate)
+				if err != nil {
+					return nil, formatE(fmt.Errorf("can't parse funding rate from perpetual product data: %s", perpData.FundingRate), err)
+				}
+				if !fundingPayment.IsZero() && !fundingRate.IsZero() {
 					marginFactorScaledFundingPaymentPerUnitPosition = factor.Mul(fundingPayment)
 				}
 			}
 		}
 	}
 
-	marginFactorScaledFundingPaymentPerUnitPosition = t.scaleDecimalFromMarketToAssetPrice(marginFactorScaledFundingPaymentPerUnitPosition, dPriceFactor)
-
-	marginEstimate := t.computeMarginRange(
-		req.MarketId,
+	wMaintenance, bMaintenance, orderMargin := t.computeMarginRange(
 		req.OpenVolume,
 		buyOrders,
 		sellOrders,
@@ -3255,69 +3353,122 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		rf,
 		marginFactorScaledFundingPaymentPerUnitPosition,
 		auction,
-		asset,
-		mkt.TradableInstrument.MarginCalculator.ScalingFactors,
+		req.MarginMode,
+		dMarginFactor,
+		auctionPrice,
 	)
 
-	var liquidationEstimate *v2.LiquidationEstimate
-	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
-		bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
+	marginEstimate := &v2.MarginEstimate{
+		WorstCase: implyMarginLevels(wMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
+		BestCase:  implyMarginLevels(bMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
+	}
+
+	var wMarginDelta, bMarginDelta, posMarginDelta num.Decimal
+	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
+	if isolatedMarginMode {
+		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
+		posMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Sub(marginAccountBalance))
+		wMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin))
+		bMarginDelta = wMarginDelta
+	} else {
+		worstInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
+		bestInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
+		wMarginDelta = num.MaxD(num.DecimalZero(), worstInitial.Sub(combinedMargin))
+		bMarginDelta = num.MaxD(num.DecimalZero(), bestInitial.Sub(combinedMargin))
+	}
+
+	if isolatedMarginMode && ptr.UnBox(req.IncludeRequiredPositionMarginInAvailableCollateral) {
+		collateralAvailable = collateralAvailable.Add(posMarginDelta)
+	}
+
+	bPositionOnly, bWithBuy, bWithSell := marketObservable, marketObservable, marketObservable
+	wPositionOnly, wWithBuy, wWithSell := marketObservable, marketObservable, marketObservable
+
+	// only calculate liquidation price if collateral available is above maintenance margin, otherwise return current market observable to signify that the theoretical position would be liquidated instantenously
+	if collateralAvailable.GreaterThanOrEqual(bMaintenance) {
+		bPositionOnly, bWithBuy, bWithSell, err = risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition, isolatedMarginMode, dMarginFactor)
 		if err != nil {
 			return nil, err
 		}
-
-		wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
+	}
+	if collateralAvailable.GreaterThanOrEqual(wMaintenance) {
+		wPositionOnly, wWithBuy, wWithSell, err = risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition, isolatedMarginMode, dMarginFactor)
 		if err != nil {
 			return nil, err
-		}
-
-		if req.ScaleLiquidationPriceToMarketDecimals != nil && *req.ScaleLiquidationPriceToMarketDecimals {
-			bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
-			bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
-			bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)
-			wPositionOnly = t.scaleDecimalFromAssetToMarketPrice(wPositionOnly, dPriceFactor)
-			wWithBuy = t.scaleDecimalFromAssetToMarketPrice(wWithBuy, dPriceFactor)
-			wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
-		}
-
-		liquidationEstimate = &v2.LiquidationEstimate{
-			WorstCase: &v2.LiquidationPrice{
-				OpenVolumeOnly:      wPositionOnly.Round(0).String(),
-				IncludingBuyOrders:  wWithBuy.Round(0).String(),
-				IncludingSellOrders: wWithSell.Round(0).String(),
-			},
-			BestCase: &v2.LiquidationPrice{
-				OpenVolumeOnly:      bPositionOnly.Round(0).String(),
-				IncludingBuyOrders:  bWithBuy.Round(0).String(),
-				IncludingSellOrders: bWithSell.Round(0).String(),
-			},
 		}
 	}
 
+	if ptr.UnBox(req.ScaleLiquidationPriceToMarketDecimals) {
+		bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
+		bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
+		bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)
+		wPositionOnly = t.scaleDecimalFromAssetToMarketPrice(wPositionOnly, dPriceFactor)
+		wWithBuy = t.scaleDecimalFromAssetToMarketPrice(wWithBuy, dPriceFactor)
+		wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
+	}
+
+	liquidationEstimate := &v2.LiquidationEstimate{
+		WorstCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
+			IncludingBuyOrders:  wWithBuy.Round(0).String(),
+			IncludingSellOrders: wWithSell.Round(0).String(),
+		},
+		BestCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      bPositionOnly.Round(0).String(),
+			IncludingBuyOrders:  bWithBuy.Round(0).String(),
+			IncludingSellOrders: bWithSell.Round(0).String(),
+		},
+	}
+
 	return &v2.EstimatePositionResponse{
-		Margin:      marginEstimate,
+		Margin: marginEstimate,
+		CollateralIncreaseEstimate: &v2.CollateralIncreaseEstimate{
+			WorstCase: wMarginDelta.Round(0).String(),
+			BestCase:  bMarginDelta.Round(0).String(),
+		},
 		Liquidation: liquidationEstimate,
 	}, nil
 }
 
 func (t *TradingDataServiceV2) computeMarginRange(
-	market string,
 	openVolume int64,
 	buyOrders, sellOrders []*risk.OrderInfo,
 	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
 	riskFactors entities.RiskFactor,
 	fundingPaymentPerUnitPosition num.Decimal,
 	auction bool,
-	asset string,
-	scalingFactors *vega.ScalingFactors,
-) *v2.MarginEstimate {
-	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
-	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
-
-	return &v2.MarginEstimate{
-		WorstCase: implyMarginLevels(worst, scalingFactors, "", market, asset),
-		BestCase:  implyMarginLevels(best, scalingFactors, "", market, asset),
+	marginMode vega.MarginMode,
+	marginFactor, auctionPrice num.Decimal,
+) (num.Decimal, num.Decimal, num.Decimal) {
+	bOrders, sOrders := buyOrders, sellOrders
+	orderMargin := num.DecimalZero()
+	isolatedMarginMode := marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
+	if isolatedMarginMode {
+		bOrders = []*risk.OrderInfo{}
+		bNonMarketOrders := []*risk.OrderInfo{}
+		for _, o := range buyOrders {
+			if o.IsMarketOrder {
+				bOrders = append(bOrders, o)
+			} else {
+				bNonMarketOrders = append(bNonMarketOrders, o)
+			}
+		}
+		sOrders = []*risk.OrderInfo{}
+		sNonMarketOrders := []*risk.OrderInfo{}
+		for _, o := range sellOrders {
+			if o.IsMarketOrder {
+				sOrders = append(sOrders, o)
+			} else {
+				sNonMarketOrders = append(sNonMarketOrders, o)
+			}
+		}
+		orderMargin = risk.CalcOrderMarginIsolatedMode(openVolume, bNonMarketOrders, sNonMarketOrders, positionFactor, marginFactor, auctionPrice)
 	}
+
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
+
+	return worst, best, orderMargin
 }
 
 // ListNetworkParameters returns a list of network parameters.
@@ -3446,7 +3597,7 @@ func (t *TradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 		return nil, formatE(ErrInvalidMarketID)
 	}
 
-	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	rfs, err := t.RiskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrRiskFactorServiceGet, errors.Wrapf(err, "marketID: %s", req.MarketId))
 	}
@@ -3488,10 +3639,24 @@ func (t *TradingDataServiceV2) proposalToGovernanceData(ctx context.Context, pro
 		return nil, errors.Wrap(err, "getting no votes for proposal")
 	}
 
+	var subProposals []*vega.Proposal
+	if proposal.IsBatch() {
+		for _, p := range proposal.Proposals {
+			subProposals = append(subProposals, p.ToProto())
+		}
+	}
+
+	proposalType := vega.GovernanceData_TYPE_SINGLE_OR_UNSPECIFIED
+	if proposal.IsBatch() {
+		proposalType = vega.GovernanceData_TYPE_BATCH
+	}
+
 	return &vega.GovernanceData{
-		Proposal: proposal.ToProto(),
-		Yes:      voteListToProto(yesVotes),
-		No:       voteListToProto(noVotes),
+		Proposal:     proposal.ToProto(),
+		Yes:          voteListToProto(yesVotes),
+		No:           voteListToProto(noVotes),
+		ProposalType: proposalType,
+		Proposals:    subProposals,
 	}, nil
 }
 
@@ -4029,7 +4194,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.oracleDataService.GetByTxHash, ErrOracleDataGetByTxHash)
 
 	markets := queryProtoEntities[*vega.Market](ctx, eg, txHash,
-		t.marketService.GetByTxHash, ErrMarketServiceGetByTxHash)
+		t.MarketsService.GetByTxHash, ErrMarketServiceGetByTxHash)
 
 	parties := queryProtoEntities[*vega.Party](ctx, eg, txHash,
 		t.partyService.GetByTxHash, ErrPartyServiceGetByTxHash)
@@ -4044,7 +4209,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.withdrawalService.GetByTxHash, ErrWithdrawalsGetByTxHash)
 
 	assets := queryProtoEntities[*vega.Asset](ctx, eg, txHash,
-		t.assetService.GetByTxHash, ErrAssetsGetByTxHash)
+		t.AssetService.GetByTxHash, ErrAssetsGetByTxHash)
 
 	lps := queryProtoEntities[*vega.LiquidityProvision](ctx, eg, txHash,
 		t.liquidityProvisionService.GetByTxHash, ErrLiquidityProvisionGetByTxHash)
@@ -4541,18 +4706,16 @@ func listTeam(ctx context.Context, teamsService *service.Teams, teamID entities.
 		return nil, formatE(err)
 	}
 
-	connection := &v2.TeamConnection{
-		Edges: edges,
-		PageInfo: &v2.PageInfo{
-			HasNextPage:     false,
-			HasPreviousPage: false,
-			StartCursor:     team.Cursor().Encode(),
-			EndCursor:       team.Cursor().Encode(),
-		},
-	}
-
 	return &v2.ListTeamsResponse{
-		Teams: connection,
+		Teams: &v2.TeamConnection{
+			Edges: edges,
+			PageInfo: &v2.PageInfo{
+				HasNextPage:     false,
+				HasPreviousPage: false,
+				StartCursor:     team.Cursor().Encode(),
+				EndCursor:       team.Cursor().Encode(),
+			},
+		},
 	}, nil
 }
 
@@ -4572,6 +4735,81 @@ func listTeams(ctx context.Context, teamsService *service.Teams, pagination enti
 
 	return &v2.ListTeamsResponse{
 		Teams: connection,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamsStatistics(ctx context.Context, req *v2.ListTeamsStatisticsRequest) (*v2.ListTeamsStatisticsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamsStatistics")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListTeamsStatisticsFilters{
+		AggregationEpochs: 10,
+	}
+	if req.TeamId != nil {
+		filters.TeamID = ptr.From(entities.TeamID(*req.TeamId))
+	}
+	if req.AggregationEpochs != nil {
+		filters.AggregationEpochs = *req.AggregationEpochs
+	}
+
+	stats, pageInfo, err := t.teamsService.ListTeamsStatistics(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListTeamStatistics, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamStatisticsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListTeamsStatisticsResponse{
+		Statistics: &v2.TeamsStatisticsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListTeamMembersStatistics(ctx context.Context, req *v2.ListTeamMembersStatisticsRequest) (*v2.ListTeamMembersStatisticsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTeamMembersStatistics")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListTeamMembersStatisticsFilters{
+		TeamID:            entities.TeamID(req.TeamId),
+		AggregationEpochs: 10,
+	}
+
+	if req.PartyId != nil {
+		filters.PartyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+
+	if req.AggregationEpochs != nil && *req.AggregationEpochs > 0 {
+		filters.AggregationEpochs = *req.AggregationEpochs
+	}
+
+	stats, pageInfo, err := t.teamsService.ListTeamMembersStatistics(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListTeamReferees, err)
+	}
+
+	edges, err := makeEdges[*v2.TeamMemberStatisticsEdge](stats)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListTeamMembersStatisticsResponse{
+		Statistics: &v2.TeamMembersStatisticsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
 	}, nil
 }
 
@@ -4662,10 +4900,6 @@ func (t *TradingDataServiceV2) GetFeesStats(ctx context.Context, req *v2.GetFees
 }
 
 func (t *TradingDataServiceV2) GetFeesStatsForParty(ctx context.Context, req *v2.GetFeesStatsForPartyRequest) (*v2.GetFeesStatsForPartyResponse, error) {
-	if req.ToEpoch != nil && req.FromEpoch == nil {
-		return nil, formatE(ErrFeesStatsForPartyRequest)
-	}
-
 	var assetID *entities.AssetID
 	if req.AssetId != nil {
 		assetID = ptr.From(entities.AssetID(*req.AssetId))
@@ -4727,6 +4961,176 @@ func (t *TradingDataServiceV2) GetVolumeDiscountStats(ctx context.Context, req *
 
 	return &v2.GetVolumeDiscountStatsResponse{
 		Stats: &v2.VolumeDiscountStatsConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+// ObserveTransactionResults opens a subscription to the transaction results.
+func (t *TradingDataServiceV2) ObserveTransactionResults(req *v2.ObserveTransactionResultsRequest, srv v2.TradingDataService_ObserveTransactionResultsServer) error {
+	// Wrap context from the request into cancellable. We can close internal chan on error.
+	ctx, cancel := context.WithCancel(srv.Context())
+	defer cancel()
+
+	tradesChan, ref := t.transactionResults.Observe(ctx, t.config.StreamRetries, req.PartyIds, req.Hashes, req.Status)
+
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("Transaction results subscriber - new rpc stream", logging.Uint64("ref", ref))
+	}
+
+	return observeBatch(ctx, t.log, "TransactionResults", tradesChan, ref, func(results []events.TransactionResult) error {
+		protos := make([]*eventspb.TransactionResult, 0, len(results))
+		for _, v := range results {
+			p := v.Proto()
+			protos = append(protos, &p)
+		}
+
+		batches := batch(protos, snapshotPageSize)
+
+		for _, batch := range batches {
+			response := &v2.ObserveTransactionResultsResponse{TransactionResults: batch}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending transaction results")
+			}
+		}
+		return nil
+	})
+}
+
+func (t *TradingDataServiceV2) EstimateTransferFee(ctx context.Context, req *v2.EstimateTransferFeeRequest) (
+	*v2.EstimateTransferFeeResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateTransferFee")()
+
+	amount, overflow := num.UintFromString(req.Amount, 10)
+	if overflow || amount.IsNegative() {
+		return nil, formatE(ErrInvalidTransferAmount)
+	}
+
+	transferFeeMaxQuantumAmountParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeMaxQuantumAmount)
+	if err != nil {
+		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeMaxQuantumAmount))
+	}
+
+	transferFeeMaxQuantumAmount, _ := num.DecimalFromString(transferFeeMaxQuantumAmountParam.Value)
+
+	transferFeeFactorParam, err := t.networkParameterService.GetByKey(ctx, netparams.TransferFeeFactor)
+	if err != nil {
+		return nil, formatE(ErrGetNetworkParameters, errors.Wrapf(err, "key: %s", netparams.TransferFeeFactor))
+	}
+
+	transferFeeFactor, _ := num.DecimalFromString(transferFeeFactorParam.Value)
+
+	asset, err := t.AssetService.GetByID(ctx, req.AssetId)
+	if err != nil {
+		return nil, formatE(ErrAssetServiceGetByID, err)
+	}
+
+	// if we can't get a transfer fee discount, the discount should just be 0, i.e. no discount available
+	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
+		ctx,
+		entities.PartyID(req.FromAccount),
+		entities.AssetID(req.AssetId),
+	)
+	if err != nil {
+		transferFeesDiscount = &entities.TransferFeesDiscount{
+			Amount: decimal.Zero,
+		}
+	}
+
+	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
+
+	fee, discount := banking.EstimateFee(
+		asset.Quantum,
+		transferFeeMaxQuantumAmount,
+		transferFeeFactor,
+		amount,
+		accumulatedDiscount,
+		req.FromAccount,
+		req.FromAccountType,
+		req.ToAccount,
+	)
+
+	return &v2.EstimateTransferFeeResponse{
+		Fee:      fee.String(),
+		Discount: discount.String(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetTotalTransferFeeDiscount(ctx context.Context, req *v2.GetTotalTransferFeeDiscountRequest) (
+	*v2.GetTotalTransferFeeDiscountResponse, error,
+) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTotalTransferFeeDiscount")()
+
+	transferFeesDiscount, err := t.transfersService.GetCurrentTransferFeeDiscount(
+		ctx,
+		entities.PartyID(req.PartyId),
+		entities.AssetID(req.AssetId),
+	)
+	if err != nil {
+		return nil, formatE(ErrTransferServiceGetFeeDiscount, err)
+	}
+
+	accumulatedDiscount, _ := num.UintFromDecimal(transferFeesDiscount.Amount)
+	return &v2.GetTotalTransferFeeDiscountResponse{
+		TotalDiscount: accumulatedDiscount.String(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesRequest) (*v2.ListGamesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListGames")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, pagination)
+	if err != nil {
+		return nil, formatE(ErrListGames, err)
+	}
+
+	edges, err := makeEdges[*v2.GameEdge](games)
+	if err != nil {
+		return nil, formatE(err)
+	}
+	return &v2.ListGamesResponse{
+		Games: &v2.GamesConnection{
+			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListPartyMarginModes(ctx context.Context, req *v2.ListPartyMarginModesRequest) (*v2.ListPartyMarginModesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListPartyMarginModes")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	filters := sqlstore.ListPartyMarginModesFilters{}
+	if req.MarketId != nil {
+		filters.MarketID = ptr.From(entities.MarketID(*req.MarketId))
+	}
+	if req.PartyId != nil {
+		filters.PartyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+
+	modes, pageInfo, err := t.marginModesService.ListPartyMarginModes(ctx, pagination, filters)
+	if err != nil {
+		return nil, formatE(ErrListPartyMarginModes, err)
+	}
+
+	edges, err := makeEdges[*v2.PartyMarginModeEdge](modes)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	return &v2.ListPartyMarginModesResponse{
+		PartyMarginModes: &v2.PartyMarginModesConnection{
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},

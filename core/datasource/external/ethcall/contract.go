@@ -25,11 +25,12 @@ import (
 )
 
 type ContractCallEvent struct {
-	BlockHeight uint64
-	BlockTime   uint64
-	SpecId      string
-	Result      []byte
-	Error       *string
+	BlockHeight   uint64
+	BlockTime     uint64
+	SpecId        string
+	Result        []byte
+	Error         *string
+	SourceChainID *uint64
 }
 
 func EthereumContractCallResultFromProto(
@@ -41,21 +42,23 @@ func EthereumContractCallResultFromProto(
 	}
 
 	return ContractCallEvent{
-		SpecId:      qr.SpecId,
-		BlockHeight: qr.BlockHeight,
-		BlockTime:   qr.BlockTime,
-		Result:      qr.Result,
-		Error:       qr.Error,
+		SpecId:        qr.SpecId,
+		BlockHeight:   qr.BlockHeight,
+		BlockTime:     qr.BlockTime,
+		Result:        qr.Result,
+		Error:         qr.Error,
+		SourceChainID: qr.SourceChainId,
 	}, nil
 }
 
 func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 	return &vegapb.EthContractCallEvent{
-		SpecId:      q.SpecId,
-		BlockHeight: q.BlockHeight,
-		BlockTime:   q.BlockTime,
-		Result:      q.Result,
-		Error:       q.Error,
+		SpecId:        q.SpecId,
+		BlockHeight:   q.BlockHeight,
+		BlockTime:     q.BlockTime,
+		Result:        q.Result,
+		Error:         q.Error,
+		SourceChainId: q.SourceChainID,
 	}
 }
 

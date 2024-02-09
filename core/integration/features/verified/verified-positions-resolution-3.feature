@@ -9,6 +9,7 @@ Feature: Position resolution case 3
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Liquidation @NoPerp
   Scenario: close out when there is enough orders on the orderbook to cover the position (0008-TRAD-002,0008-TRAD-003, 0008-TRAD-006)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -38,20 +39,16 @@ Feature: Position resolution case 3
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 23269       | 74460  | 93076   | 116345  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0     |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 23269       | 74460  | 93076   | 116345  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
-    # insurance pool generation - modify order book
-    Then the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 300    | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -59,13 +56,13 @@ Feature: Position resolution case 3
     # check the party accounts
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     # check positions
     Then the parties should have the following profit and loss:
@@ -77,7 +74,8 @@ Feature: Position resolution case 3
       | party            | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
-    # then we make sure the insurance pool collected the funds
+    #And debug transfers
+    # Insurance pool collected 12000 which was then paid out in MTM settlements
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
 

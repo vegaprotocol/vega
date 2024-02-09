@@ -25,10 +25,13 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const assetNameETH = "ETH"
 
 func TestCheckpoint(t *testing.T) {
 	t.Run("test simple scheduled transfer", testSimpledScheduledTransfer)
@@ -97,7 +100,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "0000000000000000000000000000000000000000000000000000000000000000",
 				ToAccountType:   types.AccountTypeGlobalReward,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -110,7 +113,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -128,7 +131,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 				assert.Len(t, transfers, 1)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 2 account types too
 				assert.Len(t, accountTypes, 1)
@@ -139,7 +142,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, assetNameETH)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -183,7 +186,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 				// transfer is done fully instantly, we should have 2 transfer
 				assert.Equal(t, transfers[0].Owner, "0000000000000000000000000000000000000000000000000000000000000000")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(10))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, assetNameETH)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 1)
@@ -202,7 +205,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 
 func TestGovernancedScheduledTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)
@@ -218,7 +221,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 	transfer := &types.NewTransferConfiguration{
 		SourceType:              types.AccountTypeGlobalReward,
 		DestinationType:         types.AccountTypeGeneral,
-		Asset:                   "eth",
+		Asset:                   assetNameETH,
 		Source:                  "",
 		Destination:             "zohar",
 		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -238,7 +241,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
-	e2.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e2.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 
 	// load the checkpoint
 	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -270,7 +273,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 
 func TestGovernanceRecurringTransfer(t *testing.T) {
 	e := getTestEngine(t)
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(10)}), nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 
 	ctx := context.Background()
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
@@ -286,7 +289,7 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	transfer := &types.NewTransferConfiguration{
 		SourceType:              types.AccountTypeGlobalReward,
 		DestinationType:         types.AccountTypeGeneral,
-		Asset:                   "eth",
+		Asset:                   assetNameETH,
 		Source:                  "",
 		Destination:             "zohar",
 		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
@@ -306,10 +309,10 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	// now second step, we start a new engine, and load the checkpoint
 	e2 := getTestEngine(t)
 	defer e2.ctrl.Finish()
-	e2.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(10)}), nil).AnyTimes()
+	e2.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil).AnyTimes()
 
 	// load the checkpoint
-	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	require.NoError(t, e2.Load(ctx, checkp))
 
 	chp2, err := e2.Checkpoint()
@@ -323,13 +326,12 @@ func TestGovernanceRecurringTransfer(t *testing.T) {
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 0, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
-	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
+	e2.broker.EXPECT().Send(gomock.Any()).Times(3)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(20, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// now end epoch 2 and expect the second transfer to be delivered and the transfer to be terminated
 	e2.col.EXPECT().GovernanceTransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
-	e2.broker.EXPECT().Send(gomock.Any()).Times(1)
 	e2.OnEpoch(ctx, types.Epoch{Seq: 2, StartTime: time.Unix(30, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
 	e2.OnEpoch(ctx, types.Epoch{Seq: 2, StartTime: time.Unix(30, 0), Action: vega.EpochAction_EPOCH_ACTION_END})
 

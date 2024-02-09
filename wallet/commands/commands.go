@@ -51,6 +51,8 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckLiquidityProvisionSubmission(cmd.LiquidityProvisionSubmission)
 	case *walletpb.SubmitTransactionRequest_ProposalSubmission:
 		cmdErr = commands.CheckProposalSubmission(cmd.ProposalSubmission)
+	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
+		cmdErr = commands.CheckBatchProposalSubmission(cmd.BatchProposalSubmission)
 	case *walletpb.SubmitTransactionRequest_AnnounceNode:
 		cmdErr = commands.CheckAnnounceNode(cmd.AnnounceNode)
 	case *walletpb.SubmitTransactionRequest_NodeVote:
@@ -93,6 +95,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckUpdateReferralSet(cmd.UpdateReferralSet)
 	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
 		cmdErr = commands.CheckApplyReferralCode(cmd.ApplyReferralCode)
+	case *walletpb.SubmitTransactionRequest_UpdateMarginMode:
+		cmdErr = commands.CheckUpdateMarginMode(cmd.UpdateMarginMode)
+	case *walletpb.SubmitTransactionRequest_JoinTeam:
+		cmdErr = commands.CheckJoinTeam(cmd.JoinTeam)
+	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
+		cmdErr = commands.CheckUpdatePartyProfile(cmd.UpdatePartyProfile)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -227,6 +235,22 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_ApplyReferralCode:
 		data.Command = &commandspb.InputData_ApplyReferralCode{
 			ApplyReferralCode: req.GetApplyReferralCode(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdateMarginMode:
+		data.Command = &commandspb.InputData_UpdateMarginMode{
+			UpdateMarginMode: req.GetUpdateMarginMode(),
+		}
+	case *walletpb.SubmitTransactionRequest_JoinTeam:
+		data.Command = &commandspb.InputData_JoinTeam{
+			JoinTeam: req.GetJoinTeam(),
+		}
+	case *walletpb.SubmitTransactionRequest_BatchProposalSubmission:
+		data.Command = &commandspb.InputData_BatchProposalSubmission{
+			BatchProposalSubmission: req.GetBatchProposalSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_UpdatePartyProfile:
+		data.Command = &commandspb.InputData_UpdatePartyProfile{
+			UpdatePartyProfile: req.GetUpdatePartyProfile(),
 		}
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))

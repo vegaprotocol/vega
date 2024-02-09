@@ -25,6 +25,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | network.markPriceUpdateMaximumFrequency | 5s    |
       | limits.markets.maxPeggedOrders          | 2     |
 
+  @Liquidation @NoPerp
   Scenario: 001, using lognormal risk model, set "designatedLoser" closeout while the position of "designatedLoser" is not fully covered by orders on the order book (0007-POSN-013)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -130,19 +131,11 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC19 | 58154       | 69784  | 87231   | 116308  |
+      | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
-    # insurance pool generation - modify order book
-    And the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 290    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
-
-    Then the parties cancel the following orders:
-      | party  | reference |
-      | lpprov | peg-3     |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -158,46 +151,55 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
-      | buySideProvider | 20    | 290  | network          |
-      | network         | 20    | 290  | designatedLoser  |
+      | network         | 150   | 290  | designatedLoser  |
+      | buySideProvider | 140   | 1    | network          |
+      | lpprov          | 40    | 225  | network          |
+      | aux             | 1     | 10   | network          |
+      | buySideProvider | 20    | 54   | network          |
 
-    Then the following network trades should be executed:
+    And the following network trades should be executed:
       | party           | aggressor side | volume |
-      | buySideProvider | sell           | 290    |
       | designatedLoser | buy            | 290    |
+      | buySideProvider | sell           | 1      |
+      | lpprov          | sell           | 225    |
+      | aux             | sell           | 10     |
+      | buySideProvider | sell           | 54     |
+      | buySideProvider | buy            | 1      |
 
     # check positions and verify loss socialisation is reflected in realised P&L (0007-POSN-013)
-    Then the parties should have the following profit and loss:
+    And the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 291    | 34800          | -20649       |
+      | buySideProvider | 56     | 6480           | -3242        |
 
     # check margin levels
-    Then the parties should have the following margin levels:
+    And the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
       | designatedLoser | ETH/DEC19 | 0           | 0      | 0       | 0       |
     # checking margins
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC19 | 0      | 0       |
 
+    Then debug transfers
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
+
     Then the following transfers should happen:
       | from            | to              | from account            | to account                       | market id | amount | asset |
       | designatedLoser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 14     | USD   |
       | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14151  | USD   |
-      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 14151  | USD   |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 14151  | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 17631  | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 16608  | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 3238   | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 21981  | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 45052  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 22205  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 46     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
+  @Liquidation @NoPerp
   Scenario: 002, closeout trade with price outside price mornitoring bounds will not trigger auction 0032-PRIM-019
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -302,19 +304,11 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC20 | 58154       | 69784  | 87231   | 116308  |
+      | designatedLoser | ETH/DEC20 | 0           | 0      | 0       | 0       |
 
-    # insurance pool generation - modify order book
-    And the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC20 | buy  | 290    | 20    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
-
-    Then the parties cancel the following orders:
-      | party  | reference |
-      | lpprov | peg-3     |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -326,28 +320,34 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buySideProvider  | ETH/DEC20 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the network moves ahead "6" blocks
 
-    And the market data for the market "ETH/DEC20" should be:
+    Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | best static bid price | static mid price | best static offer price |
-      | 140        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 397516       | 9000           | 292           | 1                     | 1000             | 2000                    |
+      | 140        | TRADING_MODE_CONTINUOUS | 3600    | 140       | 161       | 199441       | 9000           | 292           | 20                    | 1010             | 2000                    |
 
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer           | price | size | seller           |
       | buySideProvider | 140   | 1    | sellSideProvider |
-      | buySideProvider | 20    | 290  | network          |
-      | network         | 20    | 290  | designatedLoser  |
+      | network         | 150   | 290  | designatedLoser  |
+      | buySideProvider | 140   | 1    | network          |
+      | lpprov          | 40    | 225  | network          |
+      | aux             | 1     | 10   | network          |
+      | buySideProvider | 20    | 54   | network          |
     # closeout trade price is 20 which is outside price mornitoring bounds, and does not trigger auction
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     Then the following network trades should be executed:
       | party           | aggressor side | volume |
-      | buySideProvider | sell           | 290    |
       | designatedLoser | buy            | 290    |
+      | buySideProvider | buy            | 1      |
+      | buySideProvider | sell           | 1      |
+      | buySideProvider | sell           | 54     |
+      | lpprov          | sell           | 225    |
+      | aux             | sell           | 10     |
 
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
       | designatedLoser | 0      | 0              | -17631       |
-      | buySideProvider | 291    | 34800          | -20649       |
-
+      | buySideProvider | 56     | 6480           | -3242        |
     # check margin levels
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |

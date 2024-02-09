@@ -165,6 +165,10 @@ const (
 	PaidLiquidityFeesStatsEvent
 	VestingBalancesSummaryEvent
 	TransferFeesEvent
+	TransferFeesDiscountUpdatedEvent
+	PartyMarginModeUpdatedEvent
+	PartyProfileUpdatedEvent
+	TeamsStatsUpdatedEvent
 )
 
 var (
@@ -260,7 +264,11 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED: PaidLiquidityFeesStatsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY:                   VestingBalancesSummaryEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID:                TransferFeesEvent,
-		// If adding a type here, please also add it to data-node/broker/convert.go
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED:    TransferFeesDiscountUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED:         PartyMarginModeUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:             PartyProfileUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:               TeamsStatsUpdatedEvent,
+		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -346,7 +354,11 @@ var (
 		PaidLiquidityFeesStatsEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PAID_LIQUIDITY_FEES_STATS_UPDATED,
 		VestingBalancesSummaryEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_VESTING_SUMMARY,
 		TransferFeesEvent:                 eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_PAID,
-		// If adding a type here, please also add it to data-node/broker/convert.go
+		TransferFeesDiscountUpdatedEvent:  eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_FEES_DISCOUNT_UPDATED,
+		PartyMarginModeUpdatedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_MARGIN_MODE_UPDATED,
+		PartyProfileUpdatedEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED,
+		TeamsStatsUpdatedEvent:            eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED,
+		// If adding a type here, please also add it to datanode/broker/convert.go
 	}
 
 	eventStrings = map[Type]string{
@@ -432,6 +444,9 @@ var (
 		FundingPaymentsEvent:              "FundingPaymentsEvent",
 		PaidLiquidityFeesStatsEvent:       "LiquidityFeesStatsEvent",
 		VestingBalancesSummaryEvent:       "VestingBalancesSummaryEvent",
+		PartyMarginModeUpdatedEvent:       "PartyMarginModeUpdatedEvent",
+		PartyProfileUpdatedEvent:          "PartyProfileUpdatedEvent",
+		TeamsStatsUpdatedEvent:            "TeamsStatsUpdatedEvent",
 	}
 )
 
@@ -446,7 +461,7 @@ func newBase(ctx context.Context, t Type) *Base {
 		traceID: tID,
 		chainID: cID,
 		txHash:  txHash,
-		blockNr: h,
+		blockNr: int64(h),
 		et:      t,
 	}
 }

@@ -33,12 +33,12 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/cenkalti/backoff"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (

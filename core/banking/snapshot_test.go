@@ -23,21 +23,22 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/snapshot"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/protos/vega"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -294,7 +295,7 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// reload the state
-	var assetActions snapshot.Payload
+	var assetActions snapshotpb.Payload
 	snap := getTestEngine(t)
 	snap.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
@@ -338,7 +339,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state2, stateNoChange))
 
 	// reload the state
-	var seen snapshot.Payload
+	var seen snapshotpb.Payload
 	snap := getTestEngine(t)
 	proto.Unmarshal(state2, &seen)
 
@@ -381,7 +382,7 @@ func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
 		require.True(t, bytes.Equal(state, stateNoChange))
 
 		// reload the state
-		var withdrawals snapshot.Payload
+		var withdrawals snapshotpb.Payload
 		snap := getTestEngine(t)
 		proto.Unmarshal(state, &withdrawals)
 
@@ -417,7 +418,7 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 		require.True(t, bytes.Equal(state, stateNoChange))
 
 		// reload the state
-		var deposits snapshot.Payload
+		var deposits snapshotpb.Payload
 		snap := getTestEngine(t)
 		proto.Unmarshal(state, &deposits)
 		payload := types.PayloadFromProto(&deposits)
@@ -437,7 +438,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -458,7 +459,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 				FromAccountType: types.AccountTypeGeneral,
 				To:              "2e05fd230f3c9f4eaf0bdc5bfb7ca0c9d00278afc44637aab60da76653d7ccf0",
 				ToAccountType:   types.AccountTypeGeneral,
-				Asset:           "eth",
+				Asset:           assetNameETH,
 				Amount:          num.NewUint(10),
 				Reference:       "someref",
 			},
@@ -474,7 +475,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(state, state2))
 
 	// reload the state
-	var transfers snapshot.Payload
+	var transfers snapshotpb.Payload
 	snap := getTestEngine(t)
 	proto.Unmarshal(state2, &transfers)
 	payload := types.PayloadFromProto(&transfers)
@@ -493,7 +494,7 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 		Balance: num.NewUint(1000),
 	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -542,7 +543,7 @@ func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(state, state2))
 
 	// reload the state
-	var transfers snapshot.Payload
+	var transfers snapshotpb.Payload
 	snap := getTestEngine(t)
 	proto.Unmarshal(state2, &transfers)
 	payload := types.PayloadFromProto(&transfers)
@@ -608,7 +609,7 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	// reload the state
-	var transfers snapshot.Payload
+	var transfers snapshotpb.Payload
 	snap := getTestEngine(t)
 	proto.Unmarshal(state, &transfers)
 	payload := types.PayloadFromProto(&transfers)
@@ -658,7 +659,7 @@ func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	// reload the state
-	var transfers snapshot.Payload
+	var transfers snapshotpb.Payload
 	snap := getTestEngine(t)
 	proto.Unmarshal(state, &transfers)
 	payload := types.PayloadFromProto(&transfers)
@@ -673,22 +674,119 @@ func TestAssetListRoundTrip(t *testing.T) {
 	key := (&types.PayloadBankingAssetActions{}).Key()
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	require.NoError(t, eng.EnableERC20(ctx, &types.ERC20AssetList{}, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", 1000, 1000, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"))
 
 	state, _, err := eng.GetState(key)
 	require.Nil(t, err)
 
-	var pp snapshot.Payload
+	var pp snapshotpb.Payload
 	proto.Unmarshal(state, &pp)
 	payload := types.PayloadFromProto(&pp)
 
 	snap := getTestEngine(t)
-	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
+	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
 	_, err = snap.LoadState(ctx, payload)
 	require.Nil(t, err)
 
 	state2, _, err := snap.GetState(key)
 	require.NoError(t, err)
 	require.True(t, bytes.Equal(state, state2))
+}
+
+func getTestEngineForSnapshot(t *testing.T) *testEngine {
+	t.Helper()
+	e := getTestEngine(t)
+
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).AnyTimes()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	return e
+}
+
+func TestTransferFeeDiscountsSnapshotRoundTrip(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+
+	log := logging.NewTestLogger()
+
+	vegaPath := paths.New(t.TempDir())
+
+	now := time.Now()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	bankingEngine1 := getTestEngineForSnapshot(t)
+
+	snapshotEngine1, err := snapshot.NewEngine(vegaPath, snapshot.DefaultConfig(), log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+
+	closeSnapshotEngine1 := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer closeSnapshotEngine1()
+
+	snapshotEngine1.AddProviders(bankingEngine1)
+
+	// No snapshot yet, does nothing.
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	// let's do a massive fee, easy to test.
+	bankingEngine1.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	bankingEngine1.OnTick(context.Background(), time.Unix(10, 0))
+
+	assetName := "asset-1"
+	assetName2 := "asset-2"
+	feeDiscounts := map[string]*num.Uint{"party-1": num.NewUint(5), "party-2": num.NewUint(10), "party-6": num.NewUint(33)}
+	feeDiscounts2 := map[string]*num.Uint{"party-1": num.NewUint(7), "party-2": num.NewUint(16), "party-4": num.NewUint(16)}
+	feeDiscounts3 := map[string]*num.Uint{"party-6": num.NewUint(2), "party-9": num.NewUint(5), "party-2": num.NewUint(33)}
+	feeDiscounts4 := map[string]*num.Uint{"party-1": num.NewUint(4), "party-2": num.NewUint(5), "party-6": num.NewUint(6)}
+	bankingEngine1.RegisterTradingFees(ctx, assetName, feeDiscounts)
+	bankingEngine1.RegisterTradingFees(ctx, assetName2, feeDiscounts2)
+	bankingEngine1.RegisterTradingFees(ctx, assetName2, feeDiscounts3)
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
+	require.NoError(t, err)
+
+	assetName3 := "asset-3"
+	bankingEngine1.RegisterTradingFees(ctx, assetName3, feeDiscounts4)
+
+	state1 := map[string][]byte{}
+	for _, key := range bankingEngine1.Keys() {
+		state, additionalProvider, err := bankingEngine1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	closeSnapshotEngine1()
+
+	snapshotEngine2, err := snapshot.NewEngine(vegaPath, snapshot.DefaultConfig(), log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	defer snapshotEngine2.Close()
+
+	bankingEngine2 := getTestEngineForSnapshot(t)
+
+	snapshotEngine2.AddProviders(bankingEngine2.Engine)
+
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	bankingEngine2.RegisterTradingFees(ctx, assetName3, feeDiscounts4)
+
+	state2 := map[string][]byte{}
+	for _, key := range bankingEngine2.Keys() {
+		state, additionalProvider, err := bankingEngine2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }

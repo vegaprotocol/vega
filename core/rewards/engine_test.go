@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/num"
-
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/rewards/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -68,7 +68,7 @@ func TestRewardFactors(t *testing.T) {
 func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(10000))
+	require.NoError(t, engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(10000)))
 	require.Equal(t, num.NewUint(10000), engine.global.maxPayoutPerParticipant)
 }
 
@@ -76,20 +76,19 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
 	now := time.Now()
-	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return now
-		}).AnyTimes()
+	testEngine.timeService.EXPECT().GetTimeNow().DoAndReturn(func() time.Time {
+		return now
+	}).AnyTimes()
 
 	engine := testEngine.engine
-	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
-	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
-	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
-	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
-	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+	require.NoError(t, engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA"))
+	require.NoError(t, engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3)))
+	require.NoError(t, engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0)))
+	require.NoError(t, engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1)))
+	require.NoError(t, engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5))
+	require.NoError(t, engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5)))
+	require.NoError(t, engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero()))
+	require.NoError(t, engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5)))
 
 	epoch := types.Epoch{EndTime: now}
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
@@ -114,8 +113,7 @@ func testCalculateRewards(t *testing.T) {
 			}
 	})
 
-	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
-	require.Nil(t, err)
+	require.NoError(t, testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000)))
 
 	payouts := engine.calculateRewardPayouts(context.Background(), epoch)
 	primary := payouts[0]
@@ -166,14 +164,14 @@ func testCalculateRewardsWithMaxPerParticipant(t *testing.T) {
 		}).AnyTimes()
 
 	engine := testEngine.engine
-	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
-	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
-	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
-	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalFromFloat(100000))
-	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+	require.NoError(t, engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA"))
+	require.NoError(t, engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3)))
+	require.NoError(t, engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0)))
+	require.NoError(t, engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1)))
+	require.NoError(t, engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5))
+	require.NoError(t, engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5)))
+	require.NoError(t, engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalFromFloat(100000)))
+	require.NoError(t, engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5)))
 
 	epoch := types.Epoch{EndTime: now}
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
@@ -236,11 +234,11 @@ func testDistributePayout(t *testing.T) {
 		}).AnyTimes()
 
 	engine := testEngine.engine
-	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
-	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
-	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+	require.NoError(t, engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA"))
+	require.NoError(t, engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0)))
+	require.NoError(t, engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5))
+	require.NoError(t, engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5)))
+	require.NoError(t, engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5)))
 
 	// setup balance of reward account
 	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
@@ -278,14 +276,14 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 		}).AnyTimes()
 
 	engine := testEngine.engine
-	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
-	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
-	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
-	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
-	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+	require.NoError(t, engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA"))
+	require.NoError(t, engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3)))
+	require.NoError(t, engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0)))
+	require.NoError(t, engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1)))
+	require.NoError(t, engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5))
+	require.NoError(t, engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5)))
+	require.NoError(t, engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero()))
+	require.NoError(t, engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5)))
 
 	testEngine.delegation.EXPECT().GetValidatorData().AnyTimes()
 	testEngine.topology.EXPECT().RecalcValidatorSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -343,14 +341,14 @@ func TestErsatzTendermintRewardSplit(t *testing.T) {
 		}).AnyTimes()
 
 	engine := testEngine.engine
-	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
-	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
-	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
-	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
-	engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5))
+	require.NoError(t, engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA"))
+	require.NoError(t, engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3)))
+	require.NoError(t, engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0)))
+	require.NoError(t, engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1)))
+	require.NoError(t, engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5))
+	require.NoError(t, engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5)))
+	require.NoError(t, engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero()))
+	require.NoError(t, engine.UpdateErsatzRewardFactor(context.Background(), num.DecimalFromFloat(0.5)))
 
 	testEngine.delegation.EXPECT().GetValidatorData().AnyTimes()
 	testEngine.topology.EXPECT().RecalcValidatorSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -396,13 +394,12 @@ func TestErsatzTendermintRewardSplit(t *testing.T) {
 	// node 4 gets 25000
 
 	// get party account balances
-	ctx := context.Background()
-	party1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party1", "VEGA")
-	party2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "party2", "VEGA")
-	node1Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node1", "VEGA")
-	node2Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node2", "VEGA")
-	node3Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node3", "VEGA")
-	node4Acc := testEngine.collateral.GetOrCreatePartyVestingRewardAccount(ctx, "node4", "VEGA")
+	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
+	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "VEGA")
+	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "VEGA")
+	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "VEGA")
+	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "VEGA")
+	node4Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node4", "VEGA")
 
 	require.Equal(t, num.NewUint(172500), party1Acc.Balance)
 	require.Equal(t, num.NewUint(15000), party2Acc.Balance)
@@ -440,22 +437,23 @@ func getEngine(t *testing.T) *testEngine {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
-	collateral := collateral.New(logger, collateral.NewDefaultConfig(), ts, broker)
+	collateralEng := collateral.New(logger, collateral.NewDefaultConfig(), ts, broker)
 	asset := types.Asset{
 		ID: "VEGA",
 		Details: &types.AssetDetails{
-			Symbol: "VEGA",
+			Symbol:  "VEGA",
+			Quantum: num.DecimalFromFloat(1),
 		},
 	}
 
-	collateral.EnableAsset(context.Background(), asset)
+	require.NoError(t, collateralEng.EnableAsset(context.Background(), asset))
 	topology := mocks.NewMockTopology(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	vesting := mocks.NewMockVesting(ctrl)
 	vesting.EXPECT().AddReward(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	transfers := mocks.NewMockTransfers(ctrl)
 	activityStreak := mocks.NewMockActivityStreak(ctrl)
-	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, marketActivityTracker, topology, vesting, transfers, activityStreak)
+	engine := New(logger, conf, broker, delegation, epochEngine, collateralEng, ts, marketActivityTracker, topology, vesting, transfers, activityStreak)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -504,7 +502,7 @@ func getEngine(t *testing.T) *testEngine {
 		broker:        broker,
 		epochEngine:   epochEngine,
 		delegation:    delegation,
-		collateral:    collateral,
+		collateral:    collateralEng,
 		validatorData: validatorData,
 		topology:      topology,
 	}

@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -33,9 +21,11 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -70,13 +60,43 @@ type Transfer struct {
 	Factor           *decimal.Decimal
 	DispatchStrategy *vega.DispatchStrategy
 	Reason           *string
+	GameID           GameID
 }
 
 type TransferFees struct {
-	TransferID TransferID
-	EpochSeq   uint64
-	Amount     decimal.Decimal
-	VegaTime   time.Time
+	TransferID      TransferID
+	EpochSeq        uint64
+	Amount          decimal.Decimal
+	DiscountApplied decimal.Decimal
+	VegaTime        time.Time
+}
+
+type TransferFeesDiscount struct {
+	PartyID  PartyID
+	AssetID  AssetID
+	Amount   decimal.Decimal
+	EpochSeq uint64
+	VegaTime time.Time
+}
+
+func (f *TransferFeesDiscount) ToProto() *eventspb.TransferFeesDiscount {
+	return &eventspb.TransferFeesDiscount{
+		Party:  f.PartyID.String(),
+		Asset:  f.AssetID.String(),
+		Amount: f.Amount.String(),
+		Epoch:  f.EpochSeq,
+	}
+}
+
+func TransferFeesDiscountFromProto(f *eventspb.TransferFeesDiscount, vegaTime time.Time) *TransferFeesDiscount {
+	amt, _ := decimal.NewFromString(f.Amount)
+	return &TransferFeesDiscount{
+		PartyID:  PartyID(f.Party),
+		AssetID:  AssetID(f.Asset),
+		EpochSeq: f.Epoch,
+		Amount:   amt,
+		VegaTime: vegaTime,
+	}
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {
@@ -88,6 +108,11 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	toAcc, err := accountSource.GetByID(ctx, t.ToAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
+	}
+
+	var gameID *string
+	if len(t.GameID) > 0 {
+		gameID = ptr.From(t.GameID.String())
 	}
 
 	proto := eventspb.Transfer{
@@ -103,6 +128,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 		Timestamp:       t.VegaTime.UnixNano(),
 		Kind:            nil,
 		Reason:          t.Reason,
+		GameId:          gameID,
 	}
 
 	switch t.TransferType {
@@ -141,19 +167,22 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 
 func (f *TransferFees) ToProto() *eventspb.TransferFees {
 	return &eventspb.TransferFees{
-		TransferId: f.TransferID.String(),
-		Amount:     f.Amount.String(),
-		Epoch:      f.EpochSeq,
+		TransferId:      f.TransferID.String(),
+		Amount:          f.Amount.String(),
+		Epoch:           f.EpochSeq,
+		DiscountApplied: f.DiscountApplied.String(),
 	}
 }
 
 func TransferFeesFromProto(f *eventspb.TransferFees, vegaTime time.Time) *TransferFees {
 	amt, _ := decimal.NewFromString(f.Amount)
+	discount, _ := decimal.NewFromString(f.DiscountApplied)
 	return &TransferFees{
-		TransferID: TransferID(f.TransferId),
-		EpochSeq:   f.Epoch,
-		Amount:     amt,
-		VegaTime:   vegaTime,
+		TransferID:      TransferID(f.TransferId),
+		EpochSeq:        f.Epoch,
+		Amount:          amt,
+		DiscountApplied: discount,
+		VegaTime:        vegaTime,
 	}
 }
 
@@ -168,12 +197,11 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	if t.From == "0000000000000000000000000000000000000000000000000000000000000000" {
-		fromAcc.PartyID = PartyID("network")
+		fromAcc.PartyID = "network"
 	}
 
-	err := accountSource.Obtain(ctx, &fromAcc)
-	if err != nil {
-		return nil, fmt.Errorf("obtaining from account id for transfer:%w", err)
+	if err := accountSource.Obtain(ctx, &fromAcc); err != nil {
+		return nil, fmt.Errorf("could not obtain source account for transfer: %w", err)
 	}
 
 	toAcc := Account{
@@ -186,18 +214,21 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	}
 
 	if t.To == "0000000000000000000000000000000000000000000000000000000000000000" {
-		toAcc.PartyID = PartyID("network")
+		toAcc.PartyID = "network"
 	}
 
-	err = accountSource.Obtain(ctx, &toAcc)
-
-	if err != nil {
-		return nil, fmt.Errorf("obtaining to account id for transfer:%w", err)
+	if err := accountSource.Obtain(ctx, &toAcc); err != nil {
+		return nil, fmt.Errorf("could not obtain destination account for transfer: %w", err)
 	}
 
 	amount, err := decimal.NewFromString(t.Amount)
 	if err != nil {
-		return nil, fmt.Errorf("getting amount for transfer:%w", err)
+		return nil, fmt.Errorf("invalid transfer amount: %w", err)
+	}
+
+	var gameID GameID
+	if t.GameId != nil {
+		gameID = GameID(*t.GameId)
 	}
 
 	transfer := Transfer{
@@ -216,6 +247,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		EndEpoch:      nil,
 		Factor:        nil,
 		Reason:        t.Reason,
+		GameID:        gameID,
 	}
 
 	switch v := t.Kind.(type) {
@@ -234,26 +266,18 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	case *eventspb.Transfer_RecurringGovernance:
 		transfer.TransferType = GovernanceRecurring
 		transfer.StartEpoch = &v.RecurringGovernance.StartEpoch
-		if v.RecurringGovernance.EndEpoch != nil {
-			endEpoch := *v.RecurringGovernance.EndEpoch
-			transfer.EndEpoch = &endEpoch
-		}
+		transfer.DispatchStrategy = v.RecurringGovernance.DispatchStrategy
+		transfer.EndEpoch = v.RecurringGovernance.EndEpoch
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring
 		transfer.StartEpoch = &v.Recurring.StartEpoch
-		if v.Recurring.DispatchStrategy != nil {
-			transfer.DispatchStrategy = v.Recurring.DispatchStrategy
-		}
+		transfer.DispatchStrategy = v.Recurring.DispatchStrategy
+		transfer.EndEpoch = v.Recurring.EndEpoch
 
-		if v.Recurring.EndEpoch != nil {
-			endEpoch := *v.Recurring.EndEpoch
-			transfer.EndEpoch = &endEpoch
-		}
 		factor, err := decimal.NewFromString(v.Recurring.Factor)
 		if err != nil {
-			return nil, fmt.Errorf("getting factor for transfer:%w", err)
+			return nil, fmt.Errorf("invalid factor for recurring transfer:%w", err)
 		}
-
 		transfer.Factor = &factor
 	default:
 		transfer.TransferType = Unknown

@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

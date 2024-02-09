@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlsubscribers
 
 import (
@@ -32,13 +20,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"github.com/pkg/errors"
 )
 
 type fundingPaymentsEvent interface {
@@ -234,6 +223,12 @@ func (p *Position) handleTradeEvent(ctx context.Context, event tradeEvent) error
 	if !ok {
 		return fmt.Errorf("failed to get market scaling factor for market %s", trade.MarketId)
 	}
+	if trade.Type == types.TradeTypeNetworkCloseOutBad {
+		pos := p.getNetworkPosition(ctx, trade.MarketId)
+		seller := trade.Seller == types.NetworkParty
+		pos.UpdateWithTrade(trade, seller, sf)
+		return p.updatePosition(ctx, pos)
+	}
 	buyer, seller := p.getPositionsByTrade(ctx, trade)
 	buyer.UpdateWithTrade(trade, false, sf)
 	// this can't really result in an error...
@@ -307,6 +302,19 @@ func (p *Position) getPositionsByTrade(ctx context.Context, trade vega.Trade) (b
 	return buyer, seller
 }
 
+func (p *Position) getNetworkPosition(ctx context.Context, market string) entities.Position {
+	mID := entities.MarketID(market)
+	pID := entities.PartyID(types.NetworkParty)
+	pos, err := p.store.GetByMarketAndParty(ctx, mID.String(), pID.String())
+	if errors.Is(err, entities.ErrNotFound) {
+		return entities.NewEmptyPosition(mID, pID)
+	}
+	if err != nil {
+		panic("unable to query existing positions")
+	}
+	return pos
+}
+
 func (p *Position) getPosition(ctx context.Context, e positionEventBase) entities.Position {
 	mID := entities.MarketID(e.MarketID())
 	pID := entities.PartyID(e.PartyID())
@@ -326,6 +334,12 @@ func (p *Position) getPosition(ctx context.Context, e positionEventBase) entitie
 }
 
 func (p *Position) updatePosition(ctx context.Context, pos entities.Position) error {
+	if pos.PartyID == entities.PartyID(types.NetworkParty) {
+		pos.PendingRealisedPnl = num.DecimalZero()
+		pos.RealisedPnl = num.DecimalZero()
+		pos.PendingUnrealisedPnl = num.DecimalZero()
+		pos.UnrealisedPnl = num.DecimalZero()
+	}
 	pos.VegaTime = p.vegaTime
 
 	err := p.store.Add(ctx, pos)

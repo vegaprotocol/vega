@@ -26,10 +26,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func addTwoNodes(top *testTop) {
@@ -182,7 +181,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	var newNetworkBlockHeight uint64 = 100
 
 	// set current block height to newNetworkBlockHeight
-	newTop.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: int64(newNetworkBlockHeight)}})
+	newTop.BeginBlock(ctx, newNetworkBlockHeight, "")
 
 	newTop.Load(ctx, ckp)
 

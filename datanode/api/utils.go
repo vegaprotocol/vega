@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
+
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"

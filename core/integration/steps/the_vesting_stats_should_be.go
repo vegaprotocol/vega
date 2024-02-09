@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/cucumber/godog"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"

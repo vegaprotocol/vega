@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/cucumber/godog"
 )
 
@@ -96,13 +97,15 @@ func TheFollowingTeamsWithRefereesAreCreated(
 		}
 		// 3. Create a team
 		teamPB := &commandspb.CreateReferralSet_Team{
-			Name: team,
+			Name:      team,
+			Closed:    row.Closed(),
+			AllowList: row.AllowList(),
 		}
 		if err := teamsEngine.CreateTeam(ctx, referrer, types.TeamID(team), teamPB); err != nil {
 			return err
 		}
 		// 4. All parties apply the referral code, skip the first in parties slice, they are the referrer
-		refCode := &commandspb.ApplyReferralCode{
+		joinTeam := &commandspb.JoinTeam{
 			Id: team,
 		}
 		// 5. Join team
@@ -110,7 +113,7 @@ func TheFollowingTeamsWithRefereesAreCreated(
 			if err := referralEngine.ApplyReferralCode(ctx, types.PartyID(pid), code); err != nil {
 				return err
 			}
-			if err := teamsEngine.JoinTeam(ctx, types.PartyID(pid), refCode); err != nil {
+			if err := teamsEngine.JoinTeam(ctx, types.PartyID(pid), joinTeam); err != nil {
 				return err
 			}
 		}
@@ -133,7 +136,10 @@ func parseCreateTeamTable(table *godog.Table) []RowWrapper {
 		"referees",
 		"balance",
 		"asset",
-	}, []string{})
+	}, []string{
+		"closed",
+		"allow list",
+	})
 }
 
 type membersRow struct {
@@ -183,6 +189,13 @@ func (t teamRow) Balance() *num.Uint {
 	return t.r.MustUint("balance")
 }
 
+func (t teamRow) Closed() bool {
+	if !t.r.HasColumn("closed") {
+		return false
+	}
+	return t.r.MustBool("closed")
+}
+
 func (t teamRow) Members() []string {
 	cnt := t.MemberCount()
 	ids := make([]string, 0, cnt)
@@ -192,4 +205,16 @@ func (t teamRow) Members() []string {
 		ids = append(ids, fmt.Sprintf(pidFmt, i+1))
 	}
 	return ids
+}
+
+func (t teamRow) AllowList() []string {
+	if !t.Closed() {
+		return nil
+	}
+	generated := t.Members()
+	if !t.r.HasColumn("allow list") {
+		return generated
+	}
+	explicit := t.r.MustStrSlice("allow list", ",")
+	return append(explicit, generated...)
 }

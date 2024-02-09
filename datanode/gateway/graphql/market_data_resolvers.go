@@ -27,6 +27,7 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/grpc"
 )
 
@@ -60,6 +61,16 @@ func (r *VegaResolverRoot) ObservableMarketData() ObservableMarketDataResolver {
 // BEGIN: MarketData resolver
 
 type myMarketDataResolver VegaResolverRoot
+
+func (r *myMarketDataResolver) MarkPriceType(_ context.Context, m *types.MarketData) (CompositePriceType, error) {
+	if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
+		return CompositePriceTypeCompositePriceTypeWeighted, nil
+	} else if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
+		return CompositePriceTypeCompositePriceTypeMedian, nil
+	} else {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
+}
 
 func (r *myMarketDataResolver) AuctionStart(_ context.Context, m *types.MarketData) (*string, error) {
 	if m.AuctionStart <= 0 {
@@ -227,6 +238,13 @@ func (r *myMarketDataResolver) NextMarkToMarket(_ context.Context, m *types.Mark
 	return vegatime.Format(vegatime.UnixNano(m.NextMarkToMarket)), nil
 }
 
+func (r *myMarketDataResolver) NextNetworkCloseout(_ context.Context, m *types.MarketData) (string, error) {
+	if m.NextNetworkCloseout == 0 {
+		return "", nil
+	}
+	return vegatime.Format(vegatime.UnixNano(m.NextNetworkCloseout)), nil
+}
+
 func (r *myMarketDataResolver) MarketGrowth(_ context.Context, m *types.MarketData) (string, error) {
 	return m.MarketGrowth, nil
 }
@@ -313,6 +331,16 @@ func (r *myObservableMarketDataResolver) MarkPrice(ctx context.Context, m *types
 	return (*myMarketDataResolver)(r).MarkPrice(ctx, m)
 }
 
+func (r *myObservableMarketDataResolver) MarkPriceType(_ context.Context, m *types.MarketData) (CompositePriceType, error) {
+	if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_WEIGHTED {
+		return CompositePriceTypeCompositePriceTypeWeighted, nil
+	} else if m.MarkPriceType == types.CompositePriceType_COMPOSITE_PRICE_TYPE_MEDIAN {
+		return CompositePriceTypeCompositePriceTypeMedian, nil
+	} else {
+		return CompositePriceTypeCompositePriceTypeLastTrade, nil
+	}
+}
+
 func (r *myObservableMarketDataResolver) Timestamp(ctx context.Context, m *types.MarketData) (string, error) {
 	return (*myMarketDataResolver)(r).Timestamp(ctx, m)
 }
@@ -372,6 +400,10 @@ func (r *myObservableMarketDataResolver) LiquidityProviderSLA(ctx context.Contex
 
 func (r *myObservableMarketDataResolver) NextMarkToMarket(ctx context.Context, m *types.MarketData) (string, error) {
 	return (*myMarketDataResolver)(r).NextMarkToMarket(ctx, m)
+}
+
+func (r *myObservableMarketDataResolver) NextNetworkCloseout(ctx context.Context, m *types.MarketData) (string, error) {
+	return (*myMarketDataResolver)(r).NextNetworkCloseout(ctx, m)
 }
 
 func (r *myObservableMarketDataResolver) MarketGrowth(ctx context.Context, m *types.MarketData) (string, error) {

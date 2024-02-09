@@ -2,7 +2,7 @@ Feature: Position resolution case 1
 
   Background:
 
-    And the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+    Given the oracle spec for settlement data filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding         |
       | prices.BTC.value | TYPE_INTEGER | settlement data |
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
@@ -16,6 +16,7 @@ Feature: Position resolution case 1
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
+  @Liquidation @LiquidationCurrent
   Scenario: close out when there is not enough orders on the orderbook to cover the position (0007-POSN-009, 0008-TRAD-001, 0008-TRAD-002, 0008-TRAD-005)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -47,29 +48,26 @@ Feature: Position resolution case 1
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And the network moves ahead "1" blocks
 
     # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (150-(1*10+140*1)/11) = 290*137 = 39700
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 11600  | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 39781       | 127299 | 159124  | 198905  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | 0              | 0            |
+      | designatedLooser | 0      | 0              | -11600       |
       | sellSideProvider | -290   | 0              | 0            |
-      | buySideProvider  | 0      | 0              | 0            |
-      | aux              | 1      | 0              | 0            |
+      | buySideProvider  | 1      | 10             | 0            |
+      | aux              | 11     | 1490           | 0            |
       | aux2             | -1     | 0              | 0            |
 
-    # insurance pool generation - modify order book
-    Then the parties cancel the following orders:
-      | party           | reference      |
-      | buySideProvider | buy-provider-1 |
     When the parties place the following orders with ticks:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
@@ -82,33 +80,33 @@ Feature: Position resolution case 1
 
     # MTM (designatedLooser): 11600-(290*(150-120))=11600-8700=2900
     Then the parties should have the following account balances:
-      | party            | asset | market id | margin  | general      |
-      | designatedLooser | BTC   | ETH/DEC19 | 2900    | 0            |
-      | sellSideProvider | BTC   | ETH/DEC19 | 127740  | 999999880960 |
-      | buySideProvider  | BTC   | ETH/DEC19 | 320     | 999999999680 |
-      | aux              | BTC   | ETH/DEC19 | 320     | 999999999650 |
-      | aux2             | BTC   | ETH/DEC19 | 440     | 999999999590 |
+      | party            | asset | market id | margin | general      |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0            |
+      | sellSideProvider | BTC   | ETH/DEC19 | 127740 | 999999880960 |
+      | buySideProvider  | BTC   | ETH/DEC19 | 1320   | 999999998740 |
+      | aux              | BTC   | ETH/DEC19 | 5706   | 999999995454 |
+      | aux2             | BTC   | ETH/DEC19 | 440    | 999999999590 |
 
     # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (120-(1*10+40*1)/11) = 290*116 = 33640
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 31825       | 101840 | 127300  | 159125  |
+      | designatedLooser | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     # check positions
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | -8700          | 0            |
+      | designatedLooser | 0      | 0              | -11600       |
       | sellSideProvider | -291   | 8700           | 0            |
-      | buySideProvider  | 1      | 0              | 0            |
-      | aux              | 1      | -30            | 0            |
+      | buySideProvider  | 3      | 60             | 0            |
+      | aux              | 11     | 1160           | 0            |
       | aux2             | -1     | 30             | 0            |
 
     # checking margins
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 2900   | 0       |
+      | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1650" for the market "ETH/DEC19"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -123,10 +121,12 @@ Feature: Position resolution case 1
 
     And then the network moves ahead "10" blocks
 
+    #Then debug all events as JSON file "all_evts.json"
     Then the parties should have the following profit and loss:
       | party            | volume | realised pnl | unrealised pnl |
-      | designatedLooser | 290    | -8700        | 0              |
+      | designatedLooser | 0      | -11600       | 0              |
       | sellSideProvider | -291   | 8700         | 0              |
-      | buySideProvider  | 1      | 0            | 0              |
-      | aux              | 1      | -30          | 0              |
+      | buySideProvider  | 3      | 60           | 0              |
+      | aux              | 11     | 1160         | 0              |
       | aux2             | -1     | 30           | 0              |
+      | network          | 278    | -9950        | 0              |

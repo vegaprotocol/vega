@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -24,6 +24,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -103,11 +104,7 @@ func testUpdatingTeamSucceeds(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
-			if !tc.cmd.IsTeam {
-				require.Empty(tt, checkUpdateReferralSet(tt, tc.cmd))
-			} else {
-				require.Contains(tt, checkUpdateReferralSet(tt, tc.cmd).Get("update_referral_set.team"), commands.ErrIsNotSupported, tc.name)
-			}
+			require.Empty(tt, checkUpdateReferralSet(tt, tc.cmd))
 		})
 	}
 }
@@ -165,6 +162,25 @@ func testUpdateReferralSetFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("update_referral_set.team.team_url"), commands.ErrMustBeLessThan200Chars)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.allow_list"), commands.ErrSettingAllowListRequireSettingClosedState)
+
+	err = checkUpdateReferralSet(t, &commandspb.UpdateReferralSet{
+		IsTeam: true,
+		Team: &commandspb.UpdateReferralSet_Team{
+			Closed:    ptr.From(false),
+			AllowList: []string{vgrand.RandomStr(5)},
+		},
+	})
+
+	assert.Contains(t, err.Get("update_referral_set.team.allow_list"), commands.ErrCannotSetAllowListWhenTeamIsOpened)
 }
 
 func checkUpdateReferralSet(t *testing.T, cmd *commandspb.UpdateReferralSet) commands.Errors {

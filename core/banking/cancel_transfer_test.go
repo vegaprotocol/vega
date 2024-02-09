@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,8 +64,10 @@ func TestCancelTransfer(t *testing.T) {
 		},
 	}
 
+	asset := "ETH"
+
 	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
-		assets.NewAsset(&mockAsset{num.DecimalFromFloat(1)}), nil)
+		assets.NewAsset(&mockAsset{quantum: num.DecimalFromFloat(100), name: asset}), nil)
 	e.tsvc.EXPECT().GetTimeNow().Times(2)
 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
@@ -88,6 +91,7 @@ func TestCancelTransfer(t *testing.T) {
 	// then end of the transfer
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
+		Asset:   asset,
 	}
 
 	// asset exists
@@ -108,7 +112,7 @@ func TestCancelTransfer(t *testing.T) {
 				assert.Len(t, transfers, 2)
 				assert.Equal(t, transfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(100))
-				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+				assert.Equal(t, transfers[0].Amount.Asset, asset)
 
 				// 1 account types too
 				assert.Len(t, accountTypes, 2)
@@ -119,7 +123,7 @@ func TestCancelTransfer(t *testing.T) {
 				assert.Len(t, feeTransfers, 1)
 				assert.Equal(t, feeTransfers[0].Owner, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301")
 				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(50))
-				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+				assert.Equal(t, feeTransfers[0].Amount.Asset, asset)
 
 				// then the fees account types
 				assert.Len(t, feeTransfersAccountTypes, 1)
@@ -160,11 +164,15 @@ func TestCancelTransfer(t *testing.T) {
 
 type mockAsset struct {
 	quantum num.Decimal
+	name    string
 }
 
 func (m *mockAsset) Type() *types.Asset {
 	return &types.Asset{
+		ID: m.name,
 		Details: &types.AssetDetails{
+			Name:    m.name,
+			Symbol:  m.name,
 			Quantum: m.quantum,
 		},
 	}

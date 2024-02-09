@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+
+	"github.com/cucumber/godog"
 )
 
 func TheSpotMarketsUpdated(

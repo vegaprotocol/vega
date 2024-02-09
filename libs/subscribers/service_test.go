@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -19,12 +19,12 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/libs/subscribers/mocks"
-
 	"code.vegaprotocol.io/vega/core/events"
 	dtypes "code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/subscribers/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

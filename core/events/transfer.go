@@ -23,7 +23,6 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
-// Transfer ...
 type TransferFunds struct {
 	*Base
 	transfer *eventspb.Transfer
@@ -33,10 +32,11 @@ func NewGovTransferFundsEvent(
 	ctx context.Context,
 	t *types.GovernanceTransfer,
 	amount *num.Uint,
+	gameID *string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(amount, nil),
+		transfer: t.IntoEvent(amount, nil, gameID),
 	}
 }
 
@@ -45,10 +45,11 @@ func NewGovTransferFundsEventWithReason(
 	t *types.GovernanceTransfer,
 	amount *num.Uint,
 	reason string,
+	gameID *string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(amount, &reason),
+		transfer: t.IntoEvent(amount, &reason, gameID),
 	}
 }
 
@@ -76,10 +77,11 @@ func NewOneOffTransferFundsEventWithReason(
 func NewRecurringTransferFundsEvent(
 	ctx context.Context,
 	t *types.RecurringTransfer,
+	gameID *string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(nil),
+		transfer: t.IntoEvent(nil, gameID),
 	}
 }
 
@@ -87,10 +89,11 @@ func NewRecurringTransferFundsEventWithReason(
 	ctx context.Context,
 	t *types.RecurringTransfer,
 	reason string,
+	gameID *string,
 ) *TransferFunds {
 	return &TransferFunds{
 		Base:     newBase(ctx, TransferEvent),
-		transfer: t.IntoEvent(&reason),
+		transfer: t.IntoEvent(&reason, gameID),
 	}
 }
 

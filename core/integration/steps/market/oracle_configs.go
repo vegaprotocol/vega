@@ -21,10 +21,10 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/steps/helpers"
-	"github.com/jinzhu/copier"
-
 	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/jinzhu/copier"
 )
 
 var (
@@ -62,11 +62,12 @@ type BindType interface {
 }
 
 type oracleConfigs struct {
-	futures     *oConfig[*vegapb.DataSourceSpecToFutureBinding]
-	perps       *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
-	fullPerps   map[string]*vegapb.Perpetual
-	fullFutures map[string]*vegapb.Future
-	perpSwap    bool
+	futures               *oConfig[*vegapb.DataSourceSpecToFutureBinding]
+	perps                 *oConfig[*vegapb.DataSourceSpecToPerpetualBinding]
+	fullPerps             map[string]*vegapb.Perpetual
+	fullFutures           map[string]*vegapb.Future
+	perpSwap              bool
+	compositePriceOracles map[string]CompositePriceOracleConfig
 }
 
 type oConfig[T BindType] struct {
@@ -81,12 +82,18 @@ type OracleConfig[T BindType] struct {
 	Binding T
 }
 
+type CompositePriceOracleConfig struct {
+	Spec    *vegapb.OracleSpec
+	Binding *vegapb.SpecBindingForCompositePrice
+}
+
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	configs := &oracleConfigs{
-		futures:     newOConfig[*vegapb.DataSourceSpecToFutureBinding](),
-		perps:       newOConfig[*vegapb.DataSourceSpecToPerpetualBinding](),
-		fullPerps:   map[string]*vegapb.Perpetual{},
-		fullFutures: map[string]*vegapb.Future{},
+		futures:               newOConfig[*vegapb.DataSourceSpecToFutureBinding](),
+		perps:                 newOConfig[*vegapb.DataSourceSpecToPerpetualBinding](),
+		fullPerps:             map[string]*vegapb.Perpetual{},
+		fullFutures:           map[string]*vegapb.Future{},
+		compositePriceOracles: map[string]CompositePriceOracleConfig{},
 	}
 	configs.futureOracleSpecs(unmarshaler)
 	configs.perpetualOracleSpecs(unmarshaler)
@@ -179,6 +186,17 @@ func (c *oracleConfigs) AddFuture(name string, future *vegapb.Future) error {
 	return nil
 }
 
+func (c *oracleConfigs) AddCompositePriceOracle(name string, spec *vegapb.DataSourceSpec, binding *vegapb.SpecBindingForCompositePrice) {
+	c.compositePriceOracles[name] = CompositePriceOracleConfig{
+		Spec: &vegapb.OracleSpec{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: spec,
+			},
+		},
+		Binding: binding,
+	}
+}
+
 func (c *oracleConfigs) AddPerp(name string, perp *vegapb.Perpetual) error {
 	if err := c.perps.Add(name, "settlement data", perp.DataSourceSpecForSettlementData, perp.DataSourceSpecBinding); err != nil {
 		return err
@@ -263,6 +281,14 @@ func (c *oracleConfigs) GetFullInstrument(name string) (*vegapb.Instrument, erro
 		return &instrument, nil
 	}
 	return nil, fmt.Errorf("no products with name %s found", name)
+}
+
+func (c *oracleConfigs) GetOracleDefinitionForCompositePrice(name string) (*vegapb.OracleSpec, *vegapb.SpecBindingForCompositePrice, error) {
+	if oc, found := c.compositePriceOracles[name]; !found {
+		return nil, nil, fmt.Errorf("oracle config for composite price not found")
+	} else {
+		return oc.Spec, oc.Binding, nil
+	}
 }
 
 func (c *oracleConfigs) GetFuture(name, specType string) (*OracleConfig[*vegapb.DataSourceSpecToFutureBinding], error) {

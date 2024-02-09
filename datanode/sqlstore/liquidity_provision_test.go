@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore_test
 
 import (
@@ -33,14 +21,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
-	"code.vegaprotocol.io/vega/libs/ptr"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1083,6 +1069,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			TxHash:                     generateTxHash(),
 			SeqNum:                     0,
 			Market:                     entities.MarketID("cafed00d"),
+			MarkPriceType:              "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 		},
 		{
 			MarketTradingMode:          "TRADING_MODE_CONTINUOUS",
@@ -1093,6 +1080,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			TxHash:                     generateTxHash(),
 			SeqNum:                     0,
 			Market:                     entities.MarketID("cafedaad"),
+			MarkPriceType:              "COMPOSITE_PRICE_TYPE_LAST_TRADE",
 		},
 	}
 
@@ -1102,7 +1090,7 @@ func addLiquidityProvisionsMultiProvider(ctx context.Context, t *testing.T, bs *
 			addTestBlockForTime(t, ctx, bs, vegaTime)
 
 			lp := &vega.LiquidityProvision{
-				Id:               helpers.GenerateID(),
+				Id:               GenerateID(),
 				PartyId:          provider.PartyID,
 				CreatedAt:        vegaTime.UnixNano(),
 				UpdatedAt:        vegaTime.UnixNano(),

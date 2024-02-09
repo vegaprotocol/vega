@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	vgos "code.vegaprotocol.io/vega/libs/os"
+
 	"golang.org/x/crypto/ssh/terminal"
 )
 

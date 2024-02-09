@@ -20,13 +20,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/libs/num"
-
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckpointBackwardCompatibility(t *testing.T) {

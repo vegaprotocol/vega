@@ -16,24 +16,20 @@
 package sqlstore_test
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-
-	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testStopOrderInputs struct {
@@ -112,7 +108,7 @@ func TestStopOrders_Add(t *testing.T) {
 		for _, p := range parties {
 			for _, m := range markets {
 				inputs = append(inputs, testStopOrderInputs{
-					orderID:        helpers.GenerateID(),
+					orderID:        GenerateID(),
 					vegaTime:       b.VegaTime,
 					createdAt:      b.VegaTime,
 					triggerPrice:   "100",
@@ -166,7 +162,7 @@ func TestStopOrders_Get(t *testing.T) {
 
 	markets := helpers.GenerateMarkets(t, ctx, 1, block, ms)
 
-	orderID := helpers.GenerateID()
+	orderID := GenerateID()
 	stopOrders := generateTestStopOrders(t, []testStopOrderInputs{
 		{
 			orderID:        orderID,
@@ -217,10 +213,7 @@ func TestStopOrders_ListStopOrders(t *testing.T) {
 	ps := sqlstore.NewParties(connectionSource)
 	ms := sqlstore.NewMarkets(connectionSource)
 
-	// ctx := tempTransaction(t)
-	//
-
-	ctx := context.Background()
+	ctx := tempTransaction(t)
 
 	blocks := []entities.Block{
 		addTestBlock(t, ctx, bs),

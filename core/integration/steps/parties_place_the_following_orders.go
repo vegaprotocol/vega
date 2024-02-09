@@ -22,13 +22,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
+
+	"github.com/cucumber/godog"
 )
 
 type Only string
@@ -44,6 +44,8 @@ var onlyTypes = map[string]Only{
 	"post":   Post,
 	"reduce": Reduce,
 }
+
+var refToOrderId = map[string]string{}
 
 func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
 	// ensure time is set + idgen is not nil
@@ -244,6 +246,12 @@ func PartiesPlaceTheFollowingOrders(
 		if resp == nil {
 			continue
 		}
+
+		// If we have a reference, add a reference -> orderID lookup
+		if len(resp.Order.Reference) > 0 {
+			refToOrderId[resp.Order.Reference] = resp.Order.ID
+		}
+
 		actualTradeCount := int64(len(resp.Trades))
 		if actualTradeCount != row.ResultingTrades() {
 			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
@@ -304,8 +312,8 @@ func buildStopOrder(
 	now time.Time,
 ) (*types.StopOrdersSubmission, error) {
 	var (
-		fbPriced, raPriced     = row.FallsBellowPriceTrigger(), row.RisesAbovePriceTrigger()
-		fbTrailing, raTrailing = row.FallsBellowTrailing(), row.RisesAboveTrailing()
+		fbPriced, raPriced     = row.FallsBelowPriceTrigger(), row.RisesAbovePriceTrigger()
+		fbTrailing, raTrailing = row.FallsBelowTrailing(), row.RisesAboveTrailing()
 	)
 
 	if fbPriced == nil && fbTrailing.IsZero() && raPriced == nil && raTrailing.IsZero() {
@@ -322,11 +330,29 @@ func buildStopOrder(
 
 	sub := &types.StopOrdersSubmission{}
 
+	var (
+		fbStrategy        *types.StopOrderExpiryStrategy
+		fbStopOrderExpiry *time.Time
+		raStrategy        *types.StopOrderExpiryStrategy
+		raStopOrderExpiry *time.Time
+	)
+	if stopOrderExp := row.StopOrderFBExpirationDate(now); stopOrderExp != 0 {
+		fbStrategy = ptr.From(row.ExpiryStrategyFB())
+		fbStopOrderExpiry = ptr.From(time.Unix(0, stopOrderExp))
+	}
+	if stopOrderExp := row.StopOrderRAExpirationDate(now); stopOrderExp != 0 {
+		raStrategy = ptr.From(row.ExpiryStrategyRA())
+		raStopOrderExpiry = ptr.From(time.Unix(0, stopOrderExp))
+	}
+
 	switch {
 	case fbPriced != nil:
 		sub.FallsBelow = &types.StopOrderSetup{
 			OrderSubmission: submission,
-			Expiry:          &types.StopOrderExpiry{},
+			Expiry: &types.StopOrderExpiry{
+				ExpiresAt:      fbStopOrderExpiry,
+				ExpiryStrategy: fbStrategy,
+			},
 			Trigger: types.NewPriceStopOrderTrigger(
 				types.StopOrderTriggerDirectionFallsBelow,
 				fbPriced.Clone(),
@@ -335,7 +361,10 @@ func buildStopOrder(
 	case !fbTrailing.IsZero():
 		sub.FallsBelow = &types.StopOrderSetup{
 			OrderSubmission: submission,
-			Expiry:          &types.StopOrderExpiry{},
+			Expiry: &types.StopOrderExpiry{
+				ExpiresAt:      fbStopOrderExpiry,
+				ExpiryStrategy: fbStrategy,
+			},
 			Trigger: types.NewTrailingStopOrderTrigger(
 				types.StopOrderTriggerDirectionFallsBelow,
 				fbTrailing,
@@ -343,22 +372,13 @@ func buildStopOrder(
 		}
 	}
 
-	var (
-		strategy        *types.StopOrderExpiryStrategy
-		stopOrderExpiry *time.Time
-	)
-	if stopOrderExp := row.StopOrderExpirationDate(now); stopOrderExp != 0 {
-		strategy = ptr.From(row.ExpiryStrategy())
-		stopOrderExpiry = ptr.From(time.Unix(0, stopOrderExp))
-	}
-
 	switch {
 	case raPriced != nil:
 		sub.RisesAbove = &types.StopOrderSetup{
 			OrderSubmission: ptr.From(*submission),
 			Expiry: &types.StopOrderExpiry{
-				ExpiryStrategy: strategy,
-				ExpiresAt:      stopOrderExpiry,
+				ExpiryStrategy: raStrategy,
+				ExpiresAt:      raStopOrderExpiry,
 			},
 			Trigger: types.NewPriceStopOrderTrigger(
 				types.StopOrderTriggerDirectionRisesAbove,
@@ -369,8 +389,8 @@ func buildStopOrder(
 		sub.RisesAbove = &types.StopOrderSetup{
 			OrderSubmission: ptr.From(*submission),
 			Expiry: &types.StopOrderExpiry{
-				ExpiryStrategy: strategy,
-				ExpiresAt:      stopOrderExpiry,
+				ExpiryStrategy: raStrategy,
+				ExpiresAt:      raStopOrderExpiry,
 			},
 			Trigger: types.NewTrailingStopOrderTrigger(
 				types.StopOrderTriggerDirectionRisesAbove,
@@ -383,6 +403,28 @@ func buildStopOrder(
 	if sub.RisesAbove != nil && sub.FallsBelow != nil {
 		sub.FallsBelow.OrderSubmission.Reference += "-1"
 		sub.RisesAbove.OrderSubmission.Reference += "-2"
+	}
+
+	if row.row.HasColumn("ra size override setting") {
+		value := row.RisesAboveSizeOverrideSetting()
+		sub.RisesAbove.SizeOverrideSetting = value
+
+		if row.row.HasColumn("ra size override percentage") {
+			percentage := row.RisesAboveSizeOverridePercentage()
+			percentageValue := num.MustDecimalFromString(percentage)
+			sub.RisesAbove.SizeOverrideValue = &types.StopOrderSizeOverrideValue{PercentageSize: percentageValue}
+		}
+	}
+
+	if row.row.HasColumn("fb size override setting") {
+		value := row.FallsBelowSizeOverrideSetting()
+		sub.FallsBelow.SizeOverrideSetting = value
+
+		if row.row.HasColumn("fb size override percentage") {
+			percentage := row.FallsBelowSizeOverridePercentage()
+			percentageValue := num.MustDecimalFromString(percentage)
+			sub.FallsBelow.SizeOverrideValue = &types.StopOrderSizeOverrideValue{PercentageSize: percentageValue}
+		}
 	}
 
 	return sub, nil
@@ -407,10 +449,16 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"fb trailing",
 		"ra price trigger",
 		"ra trailing",
-		"so expires in",
-		"so expiry strategy",
+		"ra expires in",
+		"ra expiry strategy",
+		"fb expires in",
+		"fb expiry strategy",
 		"pegged reference",
 		"pegged offset",
+		"ra size override setting",
+		"ra size override percentage",
+		"fb size override setting",
+		"fb size override percentage",
 	})
 }
 
@@ -518,7 +566,7 @@ func (r submitOrderRow) Only() Only {
 	return t
 }
 
-func (r submitOrderRow) FallsBellowPriceTrigger() *num.Uint {
+func (r submitOrderRow) FallsBelowPriceTrigger() *num.Uint {
 	if !r.row.HasColumn("fb price trigger") {
 		return nil
 	}
@@ -532,7 +580,7 @@ func (r submitOrderRow) RisesAbovePriceTrigger() *num.Uint {
 	return r.row.MustUint("ra price trigger")
 }
 
-func (r submitOrderRow) FallsBellowTrailing() num.Decimal {
+func (r submitOrderRow) FallsBelowTrailing() num.Decimal {
 	if !r.row.HasColumn("fb trailing") {
 		return num.DecimalZero()
 	}
@@ -546,18 +594,32 @@ func (r submitOrderRow) RisesAboveTrailing() num.Decimal {
 	return r.row.MustDecimal("ra trailing")
 }
 
-func (r submitOrderRow) StopOrderExpirationDate(now time.Time) int64 {
-	if !r.row.HasColumn("so expires in") {
+func (r submitOrderRow) StopOrderRAExpirationDate(now time.Time) int64 {
+	if !r.row.HasColumn("ra expires in") {
 		return 0
 	}
-	return now.Add(r.row.MustDurationSec2("so expires in")).Local().UnixNano()
+	return now.Add(r.row.MustDurationSec2("ra expires in")).Local().UnixNano()
 }
 
-func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {
-	if !r.row.HasColumn("so expiry strategy") {
+func (r submitOrderRow) StopOrderFBExpirationDate(now time.Time) int64 {
+	if !r.row.HasColumn("fb expires in") {
+		return 0
+	}
+	return now.Add(r.row.MustDurationSec2("fb expires in")).Local().UnixNano()
+}
+
+func (r submitOrderRow) ExpiryStrategyRA() types.StopOrderExpiryStrategy {
+	if !r.row.HasColumn("ra expiry strategy") {
 		return types.StopOrderExpiryStrategyCancels
 	}
-	return r.row.MustExpiryStrategy("so expiry strategy")
+	return r.row.MustExpiryStrategy("ra expiry strategy")
+}
+
+func (r submitOrderRow) ExpiryStrategyFB() types.StopOrderExpiryStrategy {
+	if !r.row.HasColumn("fb expiry strategy") {
+		return types.StopOrderExpiryStrategyCancels
+	}
+	return r.row.MustExpiryStrategy("fb expiry strategy")
 }
 
 func (r submitOrderRow) PeggedReference() types.PeggedReference {
@@ -572,4 +634,26 @@ func (r submitOrderRow) PeggedOffset() *num.Uint {
 		return nil
 	}
 	return r.row.MustUint("pegged offset")
+}
+
+func (r submitOrderRow) RisesAboveSizeOverrideSetting() types.StopOrderSizeOverrideSetting {
+	if !r.row.HasColumn("ra size override setting") {
+		return types.StopOrderSizeOverrideSettingUnspecified
+	}
+	return r.row.MustSizeOverrideSetting("ra size override setting")
+}
+
+func (r submitOrderRow) RisesAboveSizeOverridePercentage() string {
+	return r.row.MustStr("ra size override percentage")
+}
+
+func (r submitOrderRow) FallsBelowSizeOverrideSetting() types.StopOrderSizeOverrideSetting {
+	if !r.row.HasColumn("fb size override setting") {
+		return types.StopOrderSizeOverrideSettingUnspecified
+	}
+	return r.row.MustSizeOverrideSetting("fb size override setting")
+}
+
+func (r submitOrderRow) FallsBelowSizeOverridePercentage() string {
+	return r.row.MustStr("fb size override percentage")
 }

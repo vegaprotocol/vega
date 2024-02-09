@@ -19,11 +19,12 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+
 	"github.com/cucumber/godog"
 )
 
 func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {
-	data := broker.GetOrderEvents()
+	orderEvents := broker.GetOrderEvents()
 
 	for _, row := range parseOrdersStatesTable(table) {
 		party := row.MustStr("party")
@@ -31,23 +32,36 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 		side := row.MustSide("side")
 		size := row.MustU64("volume")
 		price := row.MustU64("price")
+		remaining := row.MustU64("remaining")
 		status := row.MustOrderStatus("status")
 		ref, hasRef := row.StrB("reference")
 
 		match := false
-		for _, e := range data {
+		for i := len(orderEvents) - 1; i >= 0; i-- {
+			e := orderEvents[i]
 			o := e.Order()
 			if hasRef {
 				if ref != o.Reference {
 					continue
 				}
 				if o.PartyId == party && o.Status == status && o.MarketId == marketID && o.Side == side {
-					if o.Size != size || stringToU64(o.Price) != price {
-						return fmt.Errorf("side: %s, expected price: %v actual: %v, expected volume: %v, actual %v", side.String(), price, o.Price, size, o.Size)
+					if o.Size != size || stringToU64(o.Price) != price || o.Remaining != remaining {
+						return formatDiff(fmt.Sprintf("the order didn't match the expectation for reference %q", ref),
+							map[string]string{
+								"size":      u64ToS(size),
+								"price":     u64ToS(price),
+								"remaining": u64ToS(remaining),
+							},
+							map[string]string{
+								"size":      u64ToS(o.Size),
+								"price":     o.Price,
+								"remaining": u64ToS(o.Remaining),
+							},
+						)
 					}
 				}
 			}
-			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price {
+			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price || o.Remaining != remaining {
 				continue
 			}
 			match = true
@@ -67,6 +81,9 @@ func parseOrdersStatesTable(table *godog.Table) []RowWrapper {
 		"side",
 		"volume",
 		"price",
+		"remaining",
 		"status",
-	}, []string{"reference"})
+	}, []string{
+		"reference",
+	})
 }

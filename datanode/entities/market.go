@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package entities
 
 import (
@@ -34,12 +22,13 @@ import (
 	"math"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/ptr"
-
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/shopspring/decimal"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type _Market struct{}
@@ -69,7 +58,9 @@ type Market struct {
 	LiquiditySLAParameters        LiquiditySLAParameters
 	// Not saved in the market table, but used when retrieving data from the database.
 	// This will be populated when a market has a successor
-	SuccessorMarketID MarketID
+	SuccessorMarketID      MarketID
+	LiquidationStrategy    LiquidationStrategy
+	MarkPriceConfiguration *CompositePriceConfiguration
 }
 
 type MarketCursor struct {
@@ -94,12 +85,15 @@ func (mc *MarketCursor) Parse(cursorString string) error {
 }
 
 func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) (*Market, error) {
-	var err error
-	var liquidityMonitoringParameters LiquidityMonitoringParameters
-	var marketTimestamps MarketTimestamps
-	var priceMonitoringSettings PriceMonitoringSettings
-	var openingAuction AuctionDuration
-	var fees Fees
+	var (
+		err                           error
+		liquidityMonitoringParameters LiquidityMonitoringParameters
+		marketTimestamps              MarketTimestamps
+		priceMonitoringSettings       PriceMonitoringSettings
+		openingAuction                AuctionDuration
+		fees                          Fees
+		liqStrat                      LiquidationStrategy
+	)
 
 	if fees, err = feesFromProto(market.Fees); err != nil {
 		return nil, err
@@ -173,6 +167,11 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 			return nil, err
 		}
 	}
+	if market.LiquidationStrategy != nil {
+		liqStrat = LiquidationStrategyFromProto(market.LiquidationStrategy)
+	}
+
+	mpc := &CompositePriceConfiguration{market.MarkPriceConfiguration}
 
 	return &Market{
 		ID:                            MarketID(market.Id),
@@ -195,6 +194,8 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		ParentMarketID:                parentMarketID,
 		InsurancePoolFraction:         insurancePoolFraction,
 		LiquiditySLAParameters:        sla,
+		LiquidationStrategy:           liqStrat,
+		MarkPriceConfiguration:        mpc,
 	}, nil
 }
 
@@ -223,6 +224,18 @@ func (m Market) ToProto() *vega.Market {
 	if m.SuccessorMarketID != "" {
 		successorMarketID = ptr.From(m.SuccessorMarketID.String())
 	}
+	if m.MarkPriceConfiguration == nil {
+		m.MarkPriceConfiguration = &CompositePriceConfiguration{
+			CompositePriceConfiguration: &vega.CompositePriceConfiguration{
+				CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+			},
+		}
+	} else if m.MarkPriceConfiguration.CompositePriceConfiguration == nil {
+		// got to love wrapped types like this
+		m.MarkPriceConfiguration.CompositePriceConfiguration = &vega.CompositePriceConfiguration{
+			CompositePriceType: vega.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE,
+		}
+	}
 
 	return &vega.Market{
 		Id:                 m.ID.String(),
@@ -246,6 +259,8 @@ func (m Market) ToProto() *vega.Market {
 		InsurancePoolFraction:         insurancePoolFraction,
 		SuccessorMarketId:             successorMarketID,
 		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
+		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
+		MarkPriceConfiguration:        m.MarkPriceConfiguration.CompositePriceConfiguration,
 	}
 }
 
@@ -307,8 +322,6 @@ func (tsp TargetStakeParameters) ToProto() *vega.TargetStakeParameters {
 
 type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
-	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
-	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
 }
 
 type LiquiditySLAParameters struct {
@@ -316,6 +329,53 @@ type LiquiditySLAParameters struct {
 	CommitmentMinTimeFraction   num.Decimal `json:"commitmentMinTimeFraction,omitempty"`
 	PerformanceHysteresisEpochs uint64      `json:"performanceHysteresisEpochs,omitempty"`
 	SlaCompetitionFactor        num.Decimal `json:"slaCompetitionFactor,omitempty"`
+}
+
+type CompositePriceConfiguration struct {
+	*vega.CompositePriceConfiguration
+}
+
+func (cpc CompositePriceConfiguration) MarshalJSON() ([]byte, error) {
+	return protojson.Marshal(cpc)
+}
+
+func (cpc *CompositePriceConfiguration) UnmarshalJSON(data []byte) error {
+	cpc.CompositePriceConfiguration = &vega.CompositePriceConfiguration{}
+	return protojson.Unmarshal(data, cpc)
+}
+
+func (cpc CompositePriceConfiguration) ToProto() *vega.CompositePriceConfiguration {
+	return cpc.CompositePriceConfiguration
+}
+
+type LiquidationStrategy struct {
+	DisposalTimeStep    time.Duration `json:"disposalTimeStep"`
+	DisposalFraction    num.Decimal   `json:"disposalFraction"`
+	FullDisposalSize    uint64        `json:"fullDisposalSize"`
+	MaxFractionConsumed num.Decimal   `json:"maxFractionConsumed"`
+}
+
+func LiquidationStrategyFromProto(ls *vega.LiquidationStrategy) LiquidationStrategy {
+	if ls == nil {
+		return LiquidationStrategy{}
+	}
+	df, _ := num.DecimalFromString(ls.DisposalFraction)
+	mfc, _ := num.DecimalFromString(ls.MaxFractionConsumed)
+	return LiquidationStrategy{
+		DisposalTimeStep:    time.Duration(ls.DisposalTimeStep) * time.Second,
+		FullDisposalSize:    ls.FullDisposalSize,
+		DisposalFraction:    df,
+		MaxFractionConsumed: mfc,
+	}
+}
+
+func (l LiquidationStrategy) IntoProto() *vega.LiquidationStrategy {
+	return &vega.LiquidationStrategy{
+		DisposalTimeStep:    int64(l.DisposalTimeStep / time.Second),
+		DisposalFraction:    l.DisposalFraction.String(),
+		FullDisposalSize:    l.FullDisposalSize,
+		MaxFractionConsumed: l.MaxFractionConsumed.String(),
+	}
 }
 
 func (lsp LiquiditySLAParameters) IntoProto() *vega.LiquiditySLAParameters {
@@ -358,8 +418,6 @@ func (lmp LiquidityMonitoringParameters) ToProto() *vega.LiquidityMonitoringPara
 	}
 	return &vega.LiquidityMonitoringParameters{
 		TargetStakeParameters: lmp.TargetStakeParameters.ToProto(),
-		TriggeringRatio:       lmp.TriggeringRatio,
-		AuctionExtension:      lmp.AuctionExtension,
 	}
 }
 
@@ -379,8 +437,6 @@ func liquidityMonitoringParametersFromProto(lmp *vega.LiquidityMonitoringParamet
 
 	return LiquidityMonitoringParameters{
 		TargetStakeParameters: tsp,
-		TriggeringRatio:       lmp.TriggeringRatio,
-		AuctionExtension:      lmp.AuctionExtension,
 	}, nil
 }
 
@@ -454,13 +510,27 @@ type FeeFactors struct {
 	LiquidityFee      string `json:"liquidityFee,omitempty"`
 }
 
+type LiquidityFeeSettings struct {
+	Method      LiquidityFeeSettingsMethod `json:"makerFee,omitempty"`
+	FeeConstant *string                    `json:"feeConstant,omitempty"`
+}
+
 type Fees struct {
-	Factors *FeeFactors `json:"factors,omitempty"`
+	Factors              *FeeFactors           `json:"factors,omitempty"`
+	LiquidityFeeSettings *LiquidityFeeSettings `json:"liquidityFeeSettings,omitempty"`
 }
 
 func (f Fees) ToProto() *vega.Fees {
 	if f.Factors == nil {
 		return nil
+	}
+
+	var liquidityFeeSettings *vega.LiquidityFeeSettings
+	if f.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = &vega.LiquidityFeeSettings{
+			Method:      vega.LiquidityFeeSettings_Method(f.LiquidityFeeSettings.Method),
+			FeeConstant: f.LiquidityFeeSettings.FeeConstant,
+		}
 	}
 
 	return &vega.Fees{
@@ -469,6 +539,7 @@ func (f Fees) ToProto() *vega.Fees {
 			InfrastructureFee: f.Factors.InfrastructureFee,
 			LiquidityFee:      f.Factors.LiquidityFee,
 		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	}
 }
 
@@ -477,11 +548,20 @@ func feesFromProto(fees *vega.Fees) (Fees, error) {
 		return Fees{}, errors.New("fees cannot be Nil")
 	}
 
+	var liquidityFeeSettings *LiquidityFeeSettings
+	if fees.LiquidityFeeSettings != nil {
+		liquidityFeeSettings = &LiquidityFeeSettings{
+			Method:      LiquidityFeeSettingsMethod(fees.LiquidityFeeSettings.Method),
+			FeeConstant: fees.LiquidityFeeSettings.FeeConstant,
+		}
+	}
+
 	return Fees{
 		Factors: &FeeFactors{
 			MakerFee:          fees.Factors.MakerFee,
 			InfrastructureFee: fees.Factors.InfrastructureFee,
 			LiquidityFee:      fees.Factors.LiquidityFee,
 		},
+		LiquidityFeeSettings: liquidityFeeSettings,
 	}, nil
 }

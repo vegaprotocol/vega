@@ -23,8 +23,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "vegavisor",
-	Short: "A process manager for Vega binaries.",
+	Use:          "vegavisor",
+	Short:        "A process manager for Vega binaries.",
+	SilenceUsage: true,
 }
 
 func main() {

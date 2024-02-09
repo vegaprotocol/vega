@@ -28,8 +28,8 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/cenkalti/backoff"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/golang/protobuf/proto"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 const (
@@ -163,7 +163,7 @@ func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {
 
 func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, payload proto.Message) {
 	switch cmd {
-	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
+	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.BatchProposeCommand, txn.SubmitOracleDataCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
 		panic("command is not supported to be sent by a node.")
 	case txn.ProtocolUpgradeCommand:
 		if underlyingCmd, ok := payload.(*commandspb.ProtocolUpgradeProposal); ok {

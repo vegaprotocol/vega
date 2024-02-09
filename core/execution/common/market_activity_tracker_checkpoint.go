@@ -19,12 +19,10 @@ import (
 	"context"
 	"sort"
 
-	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-
 	"code.vegaprotocol.io/vega/core/types"
-
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 )
 
 func (mat *MarketActivityTracker) Name() types.CheckpointName {
@@ -53,8 +51,9 @@ func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
 	}
 
 	msg := &checkpoint.MarketTracker{
-		MarketActivity:      marketTracker,
-		TakerNotionalVolume: takerNotionalToProto(mat.partyTakerNotionalVolume),
+		MarketActivity:                   marketTracker,
+		TakerNotionalVolume:              takerNotionalToProto(mat.partyTakerNotionalVolume),
+		MarketToPartyTakerNotionalVolume: marketToPartyTakerNotionalToProto(mat.marketToPartyTakerNotionalVolume),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -63,7 +62,7 @@ func (mat *MarketActivityTracker) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
-func (mat *MarketActivityTracker) Load(ctx context.Context, data []byte) error {
+func (mat *MarketActivityTracker) Load(_ context.Context, data []byte) error {
 	b := checkpoint.MarketTracker{}
 	if err := proto.Unmarshal(data, &b); err != nil {
 		return err
@@ -78,6 +77,14 @@ func (mat *MarketActivityTracker) Load(ctx context.Context, data []byte) error {
 	for _, tnv := range b.TakerNotionalVolume {
 		if len(tnv.Volume) > 0 {
 			mat.partyTakerNotionalVolume[tnv.Party] = num.UintFromBytes(tnv.Volume)
+		}
+	}
+	for _, marketToPartyStats := range b.MarketToPartyTakerNotionalVolume {
+		mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market] = map[string]*num.Uint{}
+		for _, partyStats := range marketToPartyStats.TakerNotionalVolume {
+			if len(partyStats.Volume) > 0 {
+				mat.marketToPartyTakerNotionalVolume[marketToPartyStats.Market][partyStats.Party] = num.UintFromBytes(partyStats.Volume)
+			}
 		}
 	}
 	return nil

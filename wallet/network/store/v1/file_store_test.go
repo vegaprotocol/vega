@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/network"
 	v1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

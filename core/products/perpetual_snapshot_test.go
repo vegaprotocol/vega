@@ -43,43 +43,52 @@ import (
 
 func TestPerpetualSnapshot(t *testing.T) {
 	perps := testPerpetual(t)
-
+	defer perps.ctrl.Finish()
+	expectedTWAP := 1234
 	// set of the data points such that difference in averages is 0
 	points := getTestDataPoints(t)
-	ctx := context.Background()
+	require.GreaterOrEqual(t, 4, len(points))
 
 	// tell the perpetual that we are ready to accept settlement stuff
-	perps.broker.EXPECT().Send(gomock.Any()).Times(1)
-	perps.perpetual.OnLeaveOpeningAuction(ctx, 1000)
+	whenLeaveOpeningAuction(t, perps, points[0].t)
 
-	// send in some data points
-	perps.broker.EXPECT().Send(gomock.Any()).Times(len(points) * 2)
-	for _, p := range points {
-		// send in an external and a matching internal
-		require.NoError(t, perps.perpetual.SubmitDataPoint(ctx, p.price, p.t))
-		perps.perpetual.AddTestExternalPoint(ctx, p.price, p.t)
-	}
+	// submit the first point then enter an auction
+	submitPointWithDifference(t, perps, points[0], expectedTWAP)
+	whenAuctionStateChanges(t, perps, points[0].t+int64(time.Second), true)
+
+	// submit a crazy point difference, then a normal point
+	submitPointWithDifference(t, perps, points[1], -9999999)
+	submitPointWithDifference(t, perps, points[2], expectedTWAP)
+
+	// now we leave auction and the crazy point difference will not affect the TWAP because it was in an auction period
+	whenAuctionStateChanges(t, perps, points[2].t+int64(time.Second), false)
+
+	fundingPayment := getFundingPayment(t, perps, points[3].t)
+	assert.Equal(t, "1234", fundingPayment)
+	fundingPayment = getFundingPayment(t, perps, points[3].t)
+	assert.Equal(t, "1234", fundingPayment)
 
 	// now get the serialised state, and try to load it
 	state1 := perps.perpetual.Serialize()
-
 	serialized1, err := proto.Marshal(state1)
 	assert.NoError(t, err)
 
-	state2 := &snapshotpb.Product{}
-	err = proto.Unmarshal(serialized1, state2)
+	payload := &snapshotpb.Product{}
+	err = proto.Unmarshal(serialized1, payload)
 	assert.NoError(t, err)
 
-	restoreTime := time.Unix(1000000, 100)
-	perps2, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, state2, restoreTime)
+	restoreTime := time.Unix(0, points[3].t) // time.Unix(1000000, 100)
+	perps2, scheduleSrc := testPerpetualSnapshot(t, perps.ctrl, payload, restoreTime)
 
 	// now we serialize again, and check the payload are same
-
-	state3 := perps2.perpetual.Serialize()
-	serialized2, err := proto.Marshal(state3)
+	state2 := perps2.perpetual.Serialize()
+	serialized2, err := proto.Marshal(state2)
 	assert.NoError(t, err)
-
 	assert.Equal(t, serialized1, serialized2)
+
+	// check funding payment comes out the same
+	fundingPayment = getFundingPayment(t, perps2, points[3].t)
+	assert.Equal(t, "1234", fundingPayment)
 
 	// check the the time-trigger has been set properly
 	cfg := scheduleSrc.Data.GetInternalTimeTriggerSpecConfiguration()

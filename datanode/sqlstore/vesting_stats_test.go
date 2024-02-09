@@ -1,13 +1,28 @@
+// Copyright (C) 2023 Gobalsky Labs Limited
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package sqlstore_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/libs/num"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,10 +43,12 @@ func TestVestingStats(t *testing.T) {
 		party2 = "a696300fec90755c90e2489af68fe2dfede5744184711ea3acde0ca55ae19585"
 	)
 
+	ctx := tempTransaction(t)
+
 	t.Run("return error if do not exists", func(t *testing.T) {
-		_, err := vs.GetByPartyID(context.Background(), party1)
+		_, err := vs.GetByPartyID(ctx, party1)
 		require.EqualError(t, err, "no resource corresponding to this id")
-		_, err = vs.GetByPartyID(context.Background(), party2)
+		_, err = vs.GetByPartyID(ctx, party2)
 		require.EqualError(t, err, "no resource corresponding to this id")
 	})
 
@@ -59,12 +76,12 @@ func TestVestingStats(t *testing.T) {
 			},
 		}
 
-		assert.NoError(t, vs.Add(context.Background(), &w))
+		assert.NoError(t, vs.Add(ctx, &w))
 
-		pvs1, err := vs.GetByPartyID(context.Background(), party1)
+		pvs1, err := vs.GetByPartyID(ctx, party1)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[0], pvs1)
-		pvs2, err := vs.GetByPartyID(context.Background(), party2)
+		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
 	})
@@ -93,12 +110,12 @@ func TestVestingStats(t *testing.T) {
 			},
 		}
 
-		assert.NoError(t, vs.Add(context.Background(), &w))
+		assert.NoError(t, vs.Add(ctx, &w))
 
-		pvs1, err := vs.GetByPartyID(context.Background(), party1)
+		pvs1, err := vs.GetByPartyID(ctx, party1)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[0], pvs1)
-		pvs2, err := vs.GetByPartyID(context.Background(), party2)
+		pvs2, err := vs.GetByPartyID(ctx, party2)
 		require.NoError(t, err)
 		require.Equal(t, *w.PartyVestingStats[1], pvs2)
 	})

@@ -18,9 +18,8 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
-
-	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/datasource"
@@ -30,6 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+
+	"github.com/cucumber/godog"
 )
 
 func TheMarketsUpdated(
@@ -55,7 +56,13 @@ func TheMarketsUpdated(
 		if !ok {
 			return nil, fmt.Errorf("unknown market id %s", upd.id())
 		}
-		updates = append(updates, marketUpdate(config, current, upd))
+
+		mUpdate, err := marketUpdate(config, current, upd)
+		if err != nil {
+			return existing, err
+		}
+
+		updates = append(updates, mUpdate)
 		updated = append(updated, current)
 	}
 	if err := updateMarkets(updated, updates, executionEngine); err != nil {
@@ -182,11 +189,24 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 }
 
 // marketUpdate return the UpdateMarket type just for clear error reporting and sanity checks ATM.
-func marketUpdate(config *market.Config, existing *types.Market, row marketUpdateRow) types.UpdateMarket {
+func marketUpdate(config *market.Config, existing *types.Market, row marketUpdateRow) (types.UpdateMarket, error) {
 	update := types.UpdateMarket{
 		MarketID: existing.ID,
 		Changes:  &types.UpdateMarketConfiguration{},
 	}
+	liqStrat := existing.LiquidationStrategy
+	if ls, ok := row.liquidationStrat(); ok {
+		lqs, err := config.LiquidationStrat.Get(ls)
+		if err != nil {
+			panic(err)
+		}
+		if liqStrat, err = types.LiquidationStrategyFromProto(lqs); err != nil {
+			panic(err)
+		}
+	}
+	update.Changes.LiquidationStrategy = liqStrat
+	existing.LiquidationStrategy = liqStrat
+
 	// product update
 	if oracle, ok := row.oracleConfig(); ok {
 		// update product -> use type switch even though currently only futures exist
@@ -257,6 +277,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 						MarginFundingFactor:                 pfp.MarginFundingFactor,
 						ClampLowerBound:                     pfp.ClampLowerBound,
 						ClampUpperBound:                     pfp.ClampUpperBound,
+						FundingRateScalingFactor:            pfp.FundingRateScalingFactor,
+						FundingRateLowerBound:               pfp.FundingRateLowerBound,
+						FundingRateUpperBound:               pfp.FundingRateUpperBound,
 						DataSourceSpecForSettlementData:     *pfp.DataSourceSpecForSettlementData.Data,
 						DataSourceSpecForSettlementSchedule: *pfp.DataSourceSpecForSettlementSchedule.Data,
 						DataSourceSpecBinding:               pfp.DataSourceSpecBinding,
@@ -266,6 +289,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			// apply update
 			ti.Perps.ClampLowerBound = pfp.ClampLowerBound
 			ti.Perps.ClampUpperBound = pfp.ClampUpperBound
+			ti.Perps.FundingRateScalingFactor = pfp.FundingRateScalingFactor
+			ti.Perps.FundingRateUpperBound = pfp.FundingRateUpperBound
+			ti.Perps.FundingRateLowerBound = pfp.FundingRateLowerBound
 			ti.Perps.MarginFundingFactor = pfp.MarginFundingFactor
 			ti.Perps.DataSourceSpecBinding = pfp.DataSourceSpecBinding
 			ti.Perps.DataSourceSpecForSettlementData = pfp.DataSourceSpecForSettlementData
@@ -336,7 +362,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
 		sla, err := config.LiquiditySLAParams.Get(liquiditySla)
 		if err != nil {
-			panic(err)
+			return update, err
 		}
 		slaParams := types.LiquiditySLAParamsFromProto(sla)
 		// update existing
@@ -344,7 +370,42 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LiquiditySLAParameters = slaParams
 	}
 
-	return update
+	update.Changes.LiquidityFeeSettings = existing.Fees.LiquidityFeeSettings
+	if liquidityFeeSettings, ok := row.tryLiquidityFeeSettings(); ok {
+		settings, err := config.FeesConfig.Get(liquidityFeeSettings)
+		if err != nil {
+			return update, err
+		}
+		s := types.LiquidityFeeSettingsFromProto(settings.LiquidityFeeSettings)
+		existing.Fees.LiquidityFeeSettings = s
+		update.Changes.LiquidityFeeSettings = s
+	}
+
+	markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
+	markPriceConfig.CompositePriceType = row.markPriceType()
+
+	if row.row.HasColumn("decay power") {
+		markPriceConfig.DecayPower = row.decayPower()
+	}
+	if row.row.HasColumn("decay weight") {
+		markPriceConfig.DecayWeight = row.decayWeight()
+	}
+	if row.row.HasColumn("cash amount") {
+		markPriceConfig.CashAmount = row.cashAmount()
+	}
+	if row.row.HasColumn("source weights") {
+		markPriceConfig.SourceWeights = row.priceSourceWeights()
+	}
+	if row.row.HasColumn("source staleness tolerance") {
+		markPriceConfig.SourceStalenessTolerance = row.priceSourceStalnessTolerance()
+	}
+	if row.row.HasColumn("oracle1") {
+		markPriceConfig.DataSources, markPriceConfig.SpecBindingForCompositePrice = row.oracles(config)
+	}
+
+	update.Changes.MarkPriceConfiguration = markPriceConfig
+	existing.MarkPriceConfiguration = markPriceConfig
+	return update, nil
 }
 
 func newPerpMarket(config *market.Config, row marketRow) types.Market {
@@ -381,6 +442,14 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 	if err != nil {
 		panic(err)
 	}
+	lqs, err := config.LiquidationStrat.Get(row.liquidationStrat())
+	if err != nil {
+		panic(err)
+	}
+	liqStrat, err := types.LiquidationStrategyFromProto(lqs)
+	if err != nil {
+		panic(err)
+	}
 
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
@@ -390,6 +459,18 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	specs, binding := row.oracles(config)
+	markPriceConfig := &types.CompositePriceConfiguration{
+		CompositePriceType:           row.markPriceType(),
+		DecayWeight:                  row.decayWeight(),
+		DecayPower:                   row.decayPower(),
+		CashAmount:                   row.cashAmount(),
+		SourceWeights:                row.priceSourceWeights(),
+		SourceStalenessTolerance:     row.priceSourceStalnessTolerance(),
+		DataSources:                  specs,
+		SpecBindingForCompositePrice: binding,
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -397,6 +478,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		DecimalPlaces:         row.decimalPlaces(),
 		PositionDecimalPlaces: row.positionDecimalPlaces(),
 		Fees:                  types.FeesFromProto(fees),
+		LiquidationStrategy:   liqStrat,
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Perpetual", row.id()),
@@ -420,6 +502,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		MarkPriceConfiguration:        markPriceConfig,
 	}
 
 	if row.isSuccessor() {
@@ -476,6 +559,15 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
+	lqs, err := config.LiquidationStrat.Get(row.liquidationStrat())
+	if err != nil {
+		panic(err)
+	}
+	liqStrat, err := types.LiquidationStrategyFromProto(lqs)
+	if err != nil {
+		panic(err)
+	}
+
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
@@ -483,6 +575,19 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	if err != nil {
 		panic(err)
 	}
+
+	sources, bindings := row.oracles(config)
+	markPriceConfig := &types.CompositePriceConfiguration{
+		CompositePriceType:           row.markPriceType(),
+		DecayWeight:                  row.decayWeight(),
+		DecayPower:                   row.decayPower(),
+		CashAmount:                   row.cashAmount(),
+		SourceWeights:                row.priceSourceWeights(),
+		SourceStalenessTolerance:     row.priceSourceStalnessTolerance(),
+		DataSources:                  sources,
+		SpecBindingForCompositePrice: bindings,
+	}
+
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
 		State:                 types.MarketStateActive,
@@ -490,6 +595,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		DecimalPlaces:         row.decimalPlaces(),
 		PositionDecimalPlaces: row.positionDecimalPlaces(),
 		Fees:                  types.FeesFromProto(fees),
+		LiquidationStrategy:   liqStrat,
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				ID:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
@@ -519,6 +625,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		MarkPriceConfiguration:        markPriceConfig,
 	}
 
 	if row.isSuccessor() {
@@ -572,6 +679,18 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"successor auction",
 		"is passed",
 		"market type",
+		"liquidation strategy",
+		"price type",
+		"decay weight",
+		"decay power",
+		"cash amount",
+		"source weights",
+		"source staleness tolerance",
+		"oracle1",
+		"oracle2",
+		"oracle3",
+		"oracle4",
+		"oracle5",
 	})
 }
 
@@ -586,6 +705,19 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
 		"sla params",
+		"liquidity fee settings",
+		"liquidation strategy",
+		"price type",
+		"decay weight",
+		"decay power",
+		"cash amount",
+		"source weights",
+		"source staleness tolerance",
+		"oracle1",
+		"oracle2",
+		"oracle3",
+		"oracle4",
+		"oracle5",
 	})
 }
 
@@ -633,8 +765,127 @@ func (r marketUpdateRow) liquidityMonitoring() (string, bool) {
 	return "", false
 }
 
+func (r marketUpdateRow) liquidationStrat() (string, bool) {
+	if r.row.HasColumn("liquidation strategy") {
+		ls := r.row.MustStr("liquidation strategy")
+		return ls, true
+	}
+	return "", false
+}
+
+func (r marketUpdateRow) priceSourceWeights() []num.Decimal {
+	if !r.row.HasColumn("source weights") {
+		return []num.Decimal{num.DecimalZero(), num.DecimalZero(), num.DecimalZero(), num.DecimalZero()}
+	}
+	weights := strings.Split(r.row.mustColumn("source weights"), ",")
+	d := make([]num.Decimal, 0, len(weights))
+	for _, v := range weights {
+		d = append(d, num.MustDecimalFromString(v))
+	}
+	return d
+}
+
+func (r marketUpdateRow) compositePriceOracleFromName(config *market.Config, name string) (*datasource.Spec, *datasource.SpecBindingForCompositePrice) {
+	if !r.row.HasColumn(name) {
+		return nil, nil
+	}
+
+	rawSpec, binding, err := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.Str(name))
+	if err != nil {
+		return nil, nil
+	}
+	spec := datasource.FromOracleSpecProto(rawSpec)
+	filters := spec.Data.GetFilters()
+	ds := datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: spec.Data.GetSigners(),
+			Filters: filters,
+		},
+	)
+	return datasource.SpecFromDefinition(*ds), &datasource.SpecBindingForCompositePrice{PriceSourceProperty: binding.PriceSourceProperty}
+}
+
+func (r marketUpdateRow) oracles(config *market.Config) ([]*datasource.Spec, []*datasource.SpecBindingForCompositePrice) {
+	specs := []*datasource.Spec{}
+	bindings := []*datasource.SpecBindingForCompositePrice{}
+	names := []string{"oracle1", "oracle2", "oracle3", "oracle4", "oracle5"}
+	for _, v := range names {
+		spec, binding := r.compositePriceOracleFromName(config, v)
+		if spec == nil {
+			continue
+		}
+		specs = append(specs, spec)
+		bindings = append(bindings, binding)
+	}
+	if len(specs) > 0 {
+		return specs, bindings
+	}
+
+	return nil, nil
+}
+
+func (r marketUpdateRow) priceSourceStalnessTolerance() []time.Duration {
+	if !r.row.HasColumn("source staleness tolerance") {
+		return []time.Duration{1000, 1000, 1000, 1000}
+	}
+	durations := strings.Split(r.row.mustColumn("source staleness tolerance"), ",")
+	d := make([]time.Duration, 0, len(durations))
+	for _, v := range durations {
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			panic(err)
+		}
+		d = append(d, dur)
+	}
+	return d
+}
+
+func (r marketUpdateRow) cashAmount() *num.Uint {
+	if !r.row.HasColumn("cash amount") {
+		return num.UintZero()
+	}
+	return num.MustUintFromString(r.row.mustColumn("cash amount"), 10)
+}
+
+func (r marketUpdateRow) decayPower() num.Decimal {
+	if !r.row.HasColumn("decay power") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay power"))
+}
+
+func (r marketUpdateRow) decayWeight() num.Decimal {
+	if !r.row.HasColumn("decay weight") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay weight"))
+}
+
+func (r marketUpdateRow) markPriceType() types.CompositePriceType {
+	if !r.row.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.row.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.row.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.row.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
+}
+
 func (r marketRow) id() string {
 	return r.row.MustStr("id")
+}
+
+func (r marketRow) liquidationStrat() string {
+	if r.row.HasColumn("liquidation strategy") {
+		ls := r.row.MustStr("liquidation strategy")
+		return ls
+	}
+	return ""
 }
 
 func (r marketRow) decimalPlaces() uint64 {
@@ -702,12 +953,122 @@ func (r marketUpdateRow) tryLiquiditySLA() (string, bool) {
 	return "", false
 }
 
+func (r marketUpdateRow) tryLiquidityFeeSettings() (string, bool) {
+	if r.row.HasColumn("liquidity fee settings") {
+		s := r.row.MustStr("liquidity fee settings")
+		return s, true
+	}
+	return "", false
+}
+
 func (r marketRow) linearSlippageFactor() float64 {
 	if !r.row.HasColumn("linear slippage factor") {
 		// set to 0.1 by default
 		return 0.001
 	}
 	return r.row.MustF64("linear slippage factor")
+}
+
+func (r marketRow) priceSourceWeights() []num.Decimal {
+	if !r.row.HasColumn("source weights") {
+		return []num.Decimal{num.DecimalZero(), num.DecimalZero(), num.DecimalZero(), num.DecimalZero()}
+	}
+	weights := strings.Split(r.row.mustColumn("source weights"), ",")
+	d := make([]num.Decimal, 0, len(weights))
+	for _, v := range weights {
+		d = append(d, num.MustDecimalFromString(v))
+	}
+	return d
+}
+
+func (r marketRow) priceSourceStalnessTolerance() []time.Duration {
+	if !r.row.HasColumn("source staleness tolerance") {
+		return []time.Duration{1000, 1000, 1000, 1000}
+	}
+	durations := strings.Split(r.row.mustColumn("source staleness tolerance"), ",")
+	d := make([]time.Duration, 0, len(durations))
+	for _, v := range durations {
+		dur, err := time.ParseDuration(v)
+		if err != nil {
+			panic(err)
+		}
+		d = append(d, dur)
+	}
+	return d
+}
+
+func (r marketRow) cashAmount() *num.Uint {
+	if !r.row.HasColumn("cash amount") {
+		return num.UintZero()
+	}
+	return num.MustUintFromString(r.row.mustColumn("cash amount"), 10)
+}
+
+func (r marketRow) decayPower() num.Decimal {
+	if !r.row.HasColumn("decay power") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay power"))
+}
+
+func (r marketRow) decayWeight() num.Decimal {
+	if !r.row.HasColumn("decay weight") {
+		return num.DecimalZero()
+	}
+	return num.MustDecimalFromString(r.row.mustColumn("decay weight"))
+}
+
+func (r marketRow) markPriceType() types.CompositePriceType {
+	if !r.row.HasColumn("price type") {
+		return types.CompositePriceTypeByLastTrade
+	}
+	if r.row.mustColumn("price type") == "last trade" {
+		return types.CompositePriceTypeByLastTrade
+	} else if r.row.mustColumn("price type") == "median" {
+		return types.CompositePriceTypeByMedian
+	} else if r.row.mustColumn("price type") == "weight" {
+		return types.CompositePriceTypeByWeight
+	} else {
+		panic("invalid price type")
+	}
+}
+
+func (r marketRow) compositePriceOracleFromName(config *market.Config, name string) (*datasource.Spec, *datasource.SpecBindingForCompositePrice) {
+	if !r.row.HasColumn(name) {
+		return nil, nil
+	}
+	rawSpec, binding, err := config.OracleConfigs.GetOracleDefinitionForCompositePrice(r.row.Str(name))
+	if err != nil {
+		return nil, nil
+	}
+	spec := datasource.FromOracleSpecProto(rawSpec)
+	filters := spec.Data.GetFilters()
+	ds := datasource.NewDefinition(datasource.ContentTypeOracle).SetOracleConfig(
+		&signedoracle.SpecConfiguration{
+			Signers: spec.Data.GetSigners(),
+			Filters: filters,
+		},
+	)
+	return datasource.SpecFromDefinition(*ds), &datasource.SpecBindingForCompositePrice{PriceSourceProperty: binding.PriceSourceProperty}
+}
+
+func (r marketRow) oracles(config *market.Config) ([]*datasource.Spec, []*datasource.SpecBindingForCompositePrice) {
+	specs := []*datasource.Spec{}
+	bindings := []*datasource.SpecBindingForCompositePrice{}
+	names := []string{"oracle1", "oracle2", "oracle3", "oracle4", "oracle5"}
+	for _, v := range names {
+		spec, binding := r.compositePriceOracleFromName(config, v)
+		if spec == nil {
+			continue
+		}
+		specs = append(specs, spec)
+		bindings = append(bindings, binding)
+	}
+	if len(specs) > 0 {
+		return specs, bindings
+	}
+
+	return nil, nil
 }
 
 func (r marketRow) quadraticSlippageFactor() float64 {

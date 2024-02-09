@@ -21,10 +21,9 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/liquidity/target"
@@ -32,16 +31,19 @@ import (
 	"code.vegaprotocol.io/vega/core/markets"
 	"code.vegaprotocol.io/vega/core/matching"
 	"code.vegaprotocol.io/vega/core/monitor"
-	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/products"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewMarketFromSnapshot(
@@ -64,8 +66,10 @@ func NewMarketFromSnapshot(
 	peggedOrderNotify func(int64),
 	referralDiscountRewardService fee.ReferralDiscountRewardService,
 	volumeDiscountService fee.VolumeDiscountService,
+	banking common.Banking,
 ) (*Market, error) {
 	mkt := em.Market
+
 	positionFactor := num.DecimalFromFloat(10).Pow(num.DecimalFromInt64(mkt.PositionDecimalPlaces))
 	if len(em.Market.ID) == 0 {
 		return nil, common.ErrEmptyMarketID
@@ -79,6 +83,19 @@ func NewMarketFromSnapshot(
 	}
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		// protocol upgrade from v0.73.12, lets populate the new liquidity-fee-settings with a default marginal-cost method
+		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
+		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
+			Method: types.LiquidityFeeMethodMarginalCost,
+		}
+
+		// if the market is in a none opening-auction we need to tell the instrument
+		if as.InAuction() && !as.IsOpeningAuction() {
+			tradableInstrument.Instrument.Product.UpdateAuctionState(ctx, true)
+		}
+	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
@@ -138,7 +155,6 @@ func NewMarketFromSnapshot(
 
 	exp := assetDecimals - mkt.DecimalPlaces
 	priceFactor := num.UintZero().Exp(num.NewUint(10), num.NewUint(exp))
-	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	// TODO(jeremy): remove this once the upgrade with the .73 have run on mainnet
 	// this is required to support the migration to SLA liquidity
@@ -171,9 +187,22 @@ func NewMarketFromSnapshot(
 	if em.ExpiringStopOrders != nil {
 		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
+	// @TODO same as in the non-snapshot market constructor: default to legacy liquidation strategy for the time being
+	// this can be removed once this parameter is no longer optional
+	if mkt.LiquidationStrategy == nil {
+		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
+	}
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, as, timeService, marketLiquidity, positionEngine)
+
+	partyMargin := make(map[string]num.Decimal, len(em.PartyMarginFactors))
+	for _, pmf := range em.PartyMarginFactors {
+		partyMargin[pmf.Party], _ = num.DecimalFromString(pmf.MarginFactor)
+	}
 
 	now := timeService.GetTimeNow()
 	marketType := mkt.MarketType()
+
+	markPriceCalculator := NewCompositePriceCalculatorFromSnapshot(ctx, em.CurrentMarkPrice, timeService, oracleEngine, em.MarkPriceCalculator)
 	market := &Market{
 		log:                           log,
 		mkt:                           mkt,
@@ -192,7 +221,6 @@ func NewMarketFromSnapshot(
 		liquidityEngine:               liquidityEngine,
 		liquidity:                     marketLiquidity,
 		parties:                       map[string]struct{}{},
-		lMonitor:                      lMonitor,
 		tsCalc:                        tsCalc,
 		feeSplitter:                   common.NewFeeSplitterFromSnapshot(em.FeeSplitter, now),
 		as:                            as,
@@ -204,7 +232,6 @@ func NewMarketFromSnapshot(
 		lastBestAskPrice:              em.LastBestAsk.Clone(),
 		lastMidBuyPrice:               em.LastMidBid.Clone(),
 		lastMidSellPrice:              em.LastMidAsk.Clone(),
-		markPrice:                     em.CurrentMarkPrice,
 		lastTradedPrice:               em.LastTradedPrice,
 		priceFactor:                   priceFactor,
 		lastMarketValueProxy:          em.LastMarketValueProxy,
@@ -212,12 +239,21 @@ func NewMarketFromSnapshot(
 		positionFactor:                positionFactor,
 		stateVarEngine:                stateVarEngine,
 		settlementDataInMarket:        em.SettlementData,
-		linearSlippageFactor:          mkt.LinearSlippageFactor,
-		quadraticSlippageFactor:       mkt.QuadraticSlippageFactor,
 		settlementAsset:               asset,
 		stopOrders:                    stopOrders,
 		expiringStopOrders:            expiringStopOrders,
 		perp:                          marketType == types.MarketTypePerp,
+		partyMarginFactor:             partyMargin,
+		liquidation:                   le,
+		banking:                       banking,
+		markPriceCalculator:           markPriceCalculator,
+	}
+
+	markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+
+	if em.InternalCompositePriceCalculator != nil {
+		market.internalCompositePriceCalculator = NewCompositePriceCalculatorFromSnapshot(ctx, nil, timeService, oracleEngine, em.InternalCompositePriceCalculator)
+		market.internalCompositePriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
 	}
 
 	for _, p := range em.Parties {
@@ -246,12 +282,14 @@ func NewMarketFromSnapshot(
 	if mkt.State == types.MarketStateTradingTerminated {
 		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
 	}
-	if mkt.State == types.MarketStateSettled {
-		market.tradableInstrument.Instrument.Unsubscribe(ctx)
-	}
 
 	if em.Closed {
 		market.closed = true
+		market.tradableInstrument.Instrument.Unsubscribe(ctx)
+		market.markPriceCalculator.Close(ctx)
+		if market.internalCompositePriceCalculator != nil {
+			market.internalCompositePriceCalculator.Close(ctx)
+		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
 	return market, nil
@@ -261,7 +299,7 @@ func (m *Market) GetNewStateProviders() []types.StateProvider {
 	return []types.StateProvider{
 		m.position, m.matching, m.tsCalc,
 		m.liquidityEngine.V1StateProvider(), m.liquidityEngine.V2StateProvider(),
-		m.settlement,
+		m.settlement, m.liquidation,
 	}
 }
 
@@ -276,33 +314,46 @@ func (m *Market) GetState() *types.ExecMarket {
 	sort.Strings(parties)
 	assetQuantum, _ := m.collateral.GetAssetQuantum(m.settlementAsset)
 
+	partyMarginFactors := make([]*snapshot.PartyMarginFactor, 0, len(m.partyMarginFactor))
+	for k, d := range m.partyMarginFactor {
+		partyMarginFactors = append(partyMarginFactors, &snapshot.PartyMarginFactor{Party: k, MarginFactor: d.String()})
+	}
+	sort.Slice(partyMarginFactors, func(i, j int) bool {
+		return partyMarginFactors[i].Party < partyMarginFactors[j].Party
+	})
+
 	em := &types.ExecMarket{
-		Market:                     m.mkt.DeepClone(),
-		PriceMonitor:               m.pMonitor.GetState(),
-		AuctionState:               m.as.GetState(),
-		PeggedOrders:               m.peggedOrders.GetState(),
-		ExpiringOrders:             m.expiringOrders.GetState(),
-		LastBestBid:                m.lastBestBidPrice.Clone(),
-		LastBestAsk:                m.lastBestAskPrice.Clone(),
-		LastMidBid:                 m.lastMidBuyPrice.Clone(),
-		LastMidAsk:                 m.lastMidSellPrice.Clone(),
-		LastMarketValueProxy:       m.lastMarketValueProxy,
-		CurrentMarkPrice:           m.markPrice,
-		LastTradedPrice:            m.lastTradedPrice,
-		EquityShare:                m.equityShares.GetState(),
-		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
-		ShortRiskFactor:            rf.Short,
-		LongRiskFactor:             rf.Long,
-		FeeSplitter:                m.feeSplitter.GetState(),
-		SettlementData:             sp,
-		NextMTM:                    m.nextMTM.UnixNano(),
-		Parties:                    parties,
-		Closed:                     m.closed,
-		IsSucceeded:                m.succeeded,
-		StopOrders:                 m.stopOrders.ToProto(),
-		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
-		Product:                    m.tradableInstrument.Instrument.Product.Serialize(),
-		FeesStats:                  m.fee.GetState(assetQuantum),
+		Market:                         m.mkt.DeepClone(),
+		PriceMonitor:                   m.pMonitor.GetState(),
+		AuctionState:                   m.as.GetState(),
+		PeggedOrders:                   m.peggedOrders.GetState(),
+		ExpiringOrders:                 m.expiringOrders.GetState(),
+		LastBestBid:                    m.lastBestBidPrice.Clone(),
+		LastBestAsk:                    m.lastBestAskPrice.Clone(),
+		LastMidBid:                     m.lastMidBuyPrice.Clone(),
+		LastMidAsk:                     m.lastMidSellPrice.Clone(),
+		LastMarketValueProxy:           m.lastMarketValueProxy,
+		LastTradedPrice:                m.lastTradedPrice,
+		EquityShare:                    m.equityShares.GetState(),
+		RiskFactorConsensusReached:     m.risk.IsRiskFactorInitialised(),
+		ShortRiskFactor:                rf.Short,
+		LongRiskFactor:                 rf.Long,
+		FeeSplitter:                    m.feeSplitter.GetState(),
+		SettlementData:                 sp,
+		NextMTM:                        m.nextMTM.UnixNano(),
+		NextInternalCompositePriceCalc: m.nextInternalCompositePriceCalc.UnixNano(),
+		Parties:                        parties,
+		Closed:                         m.closed,
+		IsSucceeded:                    m.succeeded,
+		StopOrders:                     m.stopOrders.ToProto(),
+		ExpiringStopOrders:             m.expiringStopOrders.GetState(),
+		Product:                        m.tradableInstrument.Instrument.Product.Serialize(),
+		FeesStats:                      m.fee.GetState(assetQuantum),
+		PartyMarginFactors:             partyMarginFactors,
+		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+	}
+	if m.perp && m.internalCompositePriceCalculator != nil {
+		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()
 	}
 
 	return em

@@ -23,6 +23,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	vgtest "code.vegaprotocol.io/vega/libs/test"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,10 +94,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 				JoinedAt:       team1CreationDate,
 				StartedAtEpoch: te.currentEpoch,
 			},
+			Referees:  nil,
 			Name:      name,
 			TeamURL:   teamURL,
 			AvatarURL: avatarURL,
 			CreatedAt: team1CreationDate,
+			Closed:    false,
+			AllowList: nil,
 		},
 	}, te.engine.ListTeams())
 
@@ -232,7 +237,7 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	expectTeamUpdatedEvent(t, te)
 
-	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false)))
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer1, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false, nil)))
 
 	assertEqualTeams(t, []types.Team{
 		{
@@ -273,13 +278,13 @@ func testAdministrateTeamSucceeds(t *testing.T) {
 
 	unknownTeamID := types.NewTeamID()
 	require.EqualError(t,
-		te.engine.UpdateTeam(ctx, referrer1, unknownTeamID, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false)),
+		te.engine.UpdateTeam(ctx, referrer1, unknownTeamID, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false, nil)),
 		teams.ErrNoTeamMatchesID(unknownTeamID).Error(),
 	)
 
 	require.ErrorIs(t,
 		teams.ErrOnlyReferrerCanUpdateTeam,
-		te.engine.UpdateTeam(ctx, referrer2, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false)),
+		te.engine.UpdateTeam(ctx, referrer2, teamID1, updateTeamCmd(t, updatedName, updatedTeamURL, updatedAvatarURL, false, nil)),
 	)
 }
 
@@ -450,30 +455,33 @@ func testJoiningTeamSucceeds(t *testing.T) {
 
 	expectTeamUpdatedEvent(t, te)
 
-	require.NoError(t, te.engine.UpdateTeam(ctx, referrer2, teamID2, updateTeamCmd(t, "", "", "", true)))
+	// Closing the team.
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer2, teamID2, updateTeamCmd(t, "", "", "", true, nil)))
 
-	// referee2 just re-joins team 2.
+	// referee2 try to re-join team 2, but joining a closed team without allow-list is disallow.
 	require.Error(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID2)))
-	require.True(t, te.engine.IsTeamMember(referee2))
 
-	// This shows the referee2 moved from team 1 to team 2.
+	// Simulating moving to next epoch.
+	nextEpoch(t, ctx, te, referee2JoiningDate3)
+
+	// This shows the referee2 stayed in team 1.
 	assertEqualTeams(t, []types.Team{
 		{
 			ID: teamID1,
 			Referrer: &types.Membership{
 				PartyID:        referrer1,
 				JoinedAt:       team1CreationDate,
-				StartedAtEpoch: te.currentEpoch - 2,
+				StartedAtEpoch: te.currentEpoch - 3,
 			},
 			Referees: []*types.Membership{
 				{
 					PartyID:        referee1,
 					JoinedAt:       referee1JoiningDate,
-					StartedAtEpoch: te.currentEpoch - 2,
+					StartedAtEpoch: te.currentEpoch - 3,
 				}, {
 					PartyID:        referee2,
 					JoinedAt:       referee2JoiningDate3,
-					StartedAtEpoch: te.currentEpoch,
+					StartedAtEpoch: te.currentEpoch - 1,
 				},
 			},
 			Name:      team1Name,
@@ -483,12 +491,181 @@ func testJoiningTeamSucceeds(t *testing.T) {
 			Referrer: &types.Membership{
 				PartyID:        referrer2,
 				JoinedAt:       team2CreationDate,
-				StartedAtEpoch: te.currentEpoch - 2,
+				StartedAtEpoch: te.currentEpoch - 3,
 			},
 			Referees:  []*types.Membership{},
 			Name:      team2Name,
 			CreatedAt: team2CreationDate,
 			Closed:    true,
+		},
+	}, te.engine.ListTeams())
+
+	// Allow referee2 to join the closed team.
+	expectTeamUpdatedEvent(t, te)
+	require.NoError(t, te.engine.UpdateTeam(ctx, referrer2, teamID2, updateTeamCmd(t, "", "", "", true, []string{referee2.String()})))
+
+	// referee2 can re-join team 2, because that party is specified in allow-list.
+	require.NoError(t, te.engine.JoinTeam(ctx, referee2, joinTeamCmd(t, teamID2)))
+
+	// Simulating moving to next epoch.
+	expectRefereeSwitchedTeamEvent(t, te)
+	nextEpoch(t, ctx, te, referee2JoiningDate3)
+
+	// This shows the referee2 moved to team 2.
+	assertEqualTeams(t, []types.Team{
+		{
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te.currentEpoch - 4,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te.currentEpoch - 4,
+				},
+			},
+			Name:      team1Name,
+			CreatedAt: team1CreationDate,
+		}, {
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te.currentEpoch - 4,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate3,
+					StartedAtEpoch: te.currentEpoch,
+				},
+			},
+			Name:      team2Name,
+			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee2},
+		},
+	}, te.engine.ListTeams())
+
+	// referee1 cannot join team 2, because that party is not specified in allow-list.
+	require.Error(t, te.engine.JoinTeam(ctx, referee1, joinTeamCmd(t, teamID2)))
+
+	// Simulating moving to next epoch.
+	nextEpoch(t, ctx, te, referee2JoiningDate3)
+
+	// This shows the referee1 did not moved to team 2.
+	assertEqualTeams(t, []types.Team{
+		{
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te.currentEpoch - 5,
+				},
+			},
+			Name:      team1Name,
+			CreatedAt: team1CreationDate,
+		}, {
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate3,
+					StartedAtEpoch: te.currentEpoch - 1,
+				},
+			},
+			Name:      team2Name,
+			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee2},
+		},
+	}, te.engine.ListTeams())
+
+	referee4 := newPartyID(t)
+
+	team3CreationDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(team3CreationDate).Times(1)
+	team3Name := vgrand.RandomStr(5)
+	teamID3, referrer3 := newTeamWithCmd(t, ctx, te, &commandspb.CreateReferralSet_Team{
+		Name:      team3Name,
+		Closed:    true,
+		AllowList: []string{referee4.String()},
+	})
+
+	expectRefereeJoinedTeamEvent(t, te)
+	referee4JoiningDate := time.Now()
+	te.timeService.EXPECT().GetTimeNow().Return(referee4JoiningDate).Times(1)
+	require.NoError(t, te.engine.JoinTeam(ctx, referee4, joinTeamCmd(t, teamID3)))
+	require.True(t, te.engine.IsTeamMember(referee4))
+
+	// This shows the referee1 did not moved to team 2.
+	assertEqualTeams(t, []types.Team{
+		{
+			ID: teamID1,
+			Referrer: &types.Membership{
+				PartyID:        referrer1,
+				JoinedAt:       team1CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee1,
+					JoinedAt:       referee1JoiningDate,
+					StartedAtEpoch: te.currentEpoch - 5,
+				},
+			},
+			Name:      team1Name,
+			CreatedAt: team1CreationDate,
+		}, {
+			ID: teamID2,
+			Referrer: &types.Membership{
+				PartyID:        referrer2,
+				JoinedAt:       team2CreationDate,
+				StartedAtEpoch: te.currentEpoch - 5,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee2,
+					JoinedAt:       referee2JoiningDate3,
+					StartedAtEpoch: te.currentEpoch - 1,
+				},
+			},
+			Name:      team2Name,
+			CreatedAt: team2CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee2},
+		}, {
+			ID: teamID3,
+			Referrer: &types.Membership{
+				PartyID:        referrer3,
+				JoinedAt:       team3CreationDate,
+				StartedAtEpoch: te.currentEpoch,
+			},
+			Referees: []*types.Membership{
+				{
+					PartyID:        referee4,
+					JoinedAt:       referee4JoiningDate,
+					StartedAtEpoch: te.currentEpoch,
+				},
+			},
+			Name:      team3Name,
+			CreatedAt: team3CreationDate,
+			Closed:    true,
+			AllowList: []types.PartyID{referee4},
 		},
 	}, te.engine.ListTeams())
 }

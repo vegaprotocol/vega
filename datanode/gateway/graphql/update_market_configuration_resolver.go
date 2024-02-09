@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package gql
 
 import (
@@ -45,7 +33,7 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 	}
 	protoInstrument := obj.Instrument
 
-	var product *vega.UpdateFutureProduct
+	var product UpdateProductConfiguration
 
 	switch p := protoInstrument.Product.(type) {
 	case *vega.UpdateInstrumentConfiguration_Future:
@@ -55,12 +43,27 @@ func (r *updateMarketConfigurationResolver) Instrument(ctx context.Context,
 			DataSourceSpecForTradingTermination: p.Future.DataSourceSpecForTradingTermination,
 			DataSourceSpecBinding:               p.Future.DataSourceSpecBinding,
 		}
+	case *vega.UpdateInstrumentConfiguration_Perpetual:
+		product = &vega.UpdatePerpetualProduct{
+			QuoteName:                           p.Perpetual.QuoteName,
+			MarginFundingFactor:                 p.Perpetual.MarginFundingFactor,
+			InterestRate:                        p.Perpetual.InterestRate,
+			ClampLowerBound:                     p.Perpetual.ClampLowerBound,
+			ClampUpperBound:                     p.Perpetual.ClampUpperBound,
+			FundingRateScalingFactor:            p.Perpetual.FundingRateScalingFactor,
+			FundingRateLowerBound:               p.Perpetual.FundingRateLowerBound,
+			FundingRateUpperBound:               p.Perpetual.FundingRateUpperBound,
+			DataSourceSpecForSettlementSchedule: p.Perpetual.DataSourceSpecForSettlementSchedule,
+			DataSourceSpecForSettlementData:     p.Perpetual.DataSourceSpecForSettlementData,
+			DataSourceSpecBinding:               p.Perpetual.DataSourceSpecBinding,
+		}
 	default:
 		return nil, ErrUnsupportedProduct
 	}
 
 	updateInstrumentConfiguration := &UpdateInstrumentConfiguration{
 		Code:    protoInstrument.Code,
+		Name:    protoInstrument.Name,
 		Product: product,
 	}
 
@@ -115,7 +118,6 @@ func (r *updateMarketConfigurationResolver) LiquidityMonitoringParameters(ctx co
 			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
 			ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
 		},
-		TriggeringRatio: obj.LiquidityMonitoringParameters.TriggeringRatio,
 	}, nil
 }
 

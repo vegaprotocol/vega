@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -41,6 +41,24 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 			"stop_orders_submission.falls_below", errs, cmd.FallsBelow, cmd.RisesAbove != nil)
 		if cmd.FallsBelow.OrderSubmission != nil {
 			market1 = cmd.FallsBelow.OrderSubmission.MarketId
+			if cmd.FallsBelow.SizeOverrideSetting != nil {
+				if *cmd.FallsBelow.SizeOverrideSetting == types.StopOrder_SIZE_OVERRIDE_SETTING_POSITION {
+					if cmd.FallsBelow.SizeOverrideValue != nil {
+						value := cmd.FallsBelow.SizeOverrideValue.GetPercentage()
+						// Check that the string represents a number between >0&&>=1
+						percentage, err := num.DecimalFromString(value)
+						if err != nil {
+							return errs.FinalAddForProperty("stop_orders_submission.falls_below.size_override_value", ErrIsNotValidNumber)
+						}
+						if percentage.LessThanOrEqual(num.DecimalFromFloat(0.0)) {
+							return errs.FinalAddForProperty("stop_orders_submission.falls_below.size_override_value", ErrMustBeBetween01)
+						}
+						if percentage.GreaterThan(num.DecimalFromFloat(1.0)) {
+							return errs.FinalAddForProperty("stop_orders_submission.falls_below.size_override_value", ErrMustBeBetween01)
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -49,6 +67,24 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 			"stop_orders_submission.rises_below", errs, cmd.RisesAbove, cmd.FallsBelow != nil)
 		if cmd.RisesAbove.OrderSubmission != nil {
 			market2 = cmd.RisesAbove.OrderSubmission.MarketId
+			if cmd.RisesAbove.SizeOverrideSetting != nil {
+				if *cmd.RisesAbove.SizeOverrideSetting == types.StopOrder_SIZE_OVERRIDE_SETTING_POSITION {
+					if cmd.RisesAbove.SizeOverrideValue != nil {
+						value := cmd.RisesAbove.SizeOverrideValue.GetPercentage()
+						// Check that the string represents a number between >0&&>=1
+						percentage, err := num.DecimalFromString(value)
+						if err != nil {
+							return errs.FinalAddForProperty("stop_orders_submission.rises_above.size_override_value", ErrIsNotValidNumber)
+						}
+						if percentage.LessThanOrEqual(num.DecimalFromFloat(0.0)) {
+							return errs.FinalAddForProperty("stop_orders_submission.rises_above.size_override_value", ErrMustBeBetween01)
+						}
+						if percentage.GreaterThan(num.DecimalFromFloat(1.0)) {
+							return errs.FinalAddForProperty("stop_orders_submission.rises_above.size_override_value", ErrMustBeBetween01)
+						}
+					}
+				}
+			}
 		}
 	}
 

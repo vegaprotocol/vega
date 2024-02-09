@@ -11,7 +11,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega block explorer APIs";
-    version: "v0.73.0";
+    version: "v0.74.0";
   }
   schemes: [
     HTTP,
@@ -28,7 +28,7 @@ service BlockExplorerService {
 
   // List transactions
   //
-  // List transactions from the Vega blockchain
+  // List transactions from the Vega blockchain from the newest to the oldest transactions.
   rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {}
 
   // Info
@@ -59,12 +59,10 @@ message GetTransactionResponse {
 }
 
 message ListTransactionsRequest {
-  // Number of transactions to be returned from the blockchain.
-  // This is deprecated, use first and last instead.
-  uint32 limit = 1 [deprecated = true];
-  // Optional cursor to paginate the request
+  reserved 1;
+  // Cursor to paginate the request. It can be used in conjunction with the `after` cursor.
   optional string before = 2;
-  // Optional cursor to paginate the request
+  // Cursor to paginate the request. It can be used in conjunction with the `before` cursor.
   optional string after = 3;
   // Filters to apply to the request
   map<string, string> filters = 4;
@@ -74,11 +72,17 @@ message ListTransactionsRequest {
   repeated string exclude_cmd_types = 6;
   // Party IDs filter, can be sender or receiver
   repeated string parties = 7;
-  // Number of transactions to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
-  // On its own, this will return the first `first` transactions.
+  // Number of transactions to be returned from the blockchain.
+  // Use in conjunction with the `after` cursor to paginate forwards. Paginating forwards means toward the most recent
+  // transactions.
+  // It cannot be used in conjunction with the `before` cursor.
+  // On its own, this will return the `first` most recent transactions.
   uint32 first = 8;
-  // Number of transactions to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
-  // On its own, this will return the last `last` transactions.
+  // Number of transactions to be returned from the blockchain.
+  // Use in conjunction with the `before` cursor to paginate backwards. Paginating forwards means toward the least recent
+  // transactions.
+  // It cannot be used in conjunction with the `after` cursor.
+  // On its own, this will return the `last` oldest transactions.
   uint32 last = 9;
 }
 

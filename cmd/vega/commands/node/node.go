@@ -42,8 +42,8 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/version"
 
-	"github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/abci/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"google.golang.org/grpc"
 )
 
@@ -72,6 +72,7 @@ type Command struct {
 
 	ethClient        *ethclient.Client
 	ethConfirmations *ethclient.EthereumConfirmations
+	l2Clients        *ethclient.L2Clients
 
 	abciApp  *appW
 	protocol *protocol.Protocol
@@ -128,7 +129,9 @@ func (n *Command) Run(
 		n.ethConfirmations,
 		n.blockchainClient,
 		vegaPaths,
-		n.stats)
+		n.stats,
+		n.l2Clients,
+	)
 	if err != nil {
 		return err
 	}
@@ -323,8 +326,7 @@ func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkU
 		if err != nil {
 			return err
 		}
-		// n.blockchainClient = blockchain.NewClient(client)
-		n.blockchainClient.Set(client)
+		n.blockchainClient.Set(client, n.tmNode.MempoolSize)
 	case blockchain.ProviderNullChain:
 		// nullchain acts as both the client and the server because its does everything
 		n.nullBlockchain = nullchain.NewClient(
@@ -335,7 +337,7 @@ func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkU
 		n.nullBlockchain.SetABCIApp(n.abciApp)
 		n.blockchainServer = blockchain.NewServer(n.Log, n.nullBlockchain)
 		// n.blockchainClient = blockchain.NewClient(n.nullBlockchain)
-		n.blockchainClient.Set(n.nullBlockchain)
+		n.blockchainClient.Set(n.nullBlockchain, 100*1024*1024)
 
 	default:
 		return ErrUnknownChainProvider
@@ -448,11 +450,16 @@ func (n *Command) startBlockchainClients() error {
 	// We may not need ethereum client initialized when we have not
 	// provided the ethereum endpoint. We skip creating client here
 	// when RPCEnpoint is empty and the nullchain present.
-	if len(n.conf.Ethereum.RPCEndpoint) < 1 {
+	if len(n.conf.Ethereum.RPCEndpoint) < 1 && n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		return nil
 	}
 
 	var err error
+	n.l2Clients, err = ethclient.NewL2Clients(n.ctx, n.Log, n.conf.Ethereum)
+	if err != nil {
+		return fmt.Errorf("could not instantiate ethereum l2 clients: %w", err)
+	}
+
 	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
 	if err != nil {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)

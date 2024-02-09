@@ -75,5 +75,10 @@ var (
 	ErrStopOrderSideNotClosingThePosition                   = errors.New("side used in stop order does not close the position")
 	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
 	ErrStopOrderExpiryInThePast                             = errors.New("stop order expiry in the past")
+	ErrStopOrderSizeOverridePercentageInvalid               = errors.New("stop order size override percentage value is invalid")
 	ErrPartyHasNoExistingLiquidityProvision                 = errors.New("party has no existing liquidity provision")
+	// ErrStopOrderNotAllowedDuringOpeningAuction is returned if a trader attempts to send a stop order to a market that is in opening auction.
+	ErrStopOrderNotAllowedDuringOpeningAuction = errors.New("stop orders are not accepted during the opening auction")
+	// ErrStopOrderNotAllowedSameExpiryTimeForOCO is returned if both sides of an OCO have the same expiry time.
+	ErrStopOrderNotAllowedSameExpiry = errors.New("stop order OCOs must not have the same expiry time")
 )

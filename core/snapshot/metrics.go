@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
+
 	"golang.org/x/exp/maps"
 )
 

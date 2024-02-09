@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	coreversion "code.vegaprotocol.io/vega/version"
 	wversion "code.vegaprotocol.io/vega/wallet/version"
+
 	"github.com/spf13/cobra"
 )
 

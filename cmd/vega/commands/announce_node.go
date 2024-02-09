@@ -35,9 +35,9 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"google.golang.org/grpc"
 
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc"
 )
 
 type AnnounceNodeCmd struct {

@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -24,11 +24,13 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	dstypes "code.vegaprotocol.io/vega/core/datasource/common"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,9 +50,6 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testUpdateMarketPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a update market without liquidity monitoring fails", testUpdateMarketChangeSubmissionWithoutLiquidityMonitoringFails)
 	t.Run("Submitting a update market with liquidity monitoring succeeds", testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds)
-	t.Run("Submitting a liquidity monitoring change with wrong triggering ratio fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails)
-	t.Run("Submitting a liquidity monitoring change with right triggering ratio succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds)
-	t.Run("Submitting a liquidity monitoring change without triggering ratio parameter fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioParameterFails)
 	t.Run("Submitting a liquidity monitoring change without target stake parameters fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails)
 	t.Run("Submitting a liquidity monitoring change with target stake parameters succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithTargetStakeParametersSucceeds)
 	t.Run("Submitting a liquidity monitoring change with non-positive time window fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindowFails)
@@ -58,6 +57,7 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a liquidity monitoring change with non-positive scaling factor fails", testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFactorFails)
 	t.Run("Submitting a liquidity monitoring change with positive scaling factor succeeds", testUpdateMarketLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds)
 	t.Run("Submitting a market change without instrument code fails", testUpdateMarketChangeSubmissionWithoutInstrumentCodeFails)
+	t.Run("Submitting a market change without instrument name fails", testUpdateMarketChangeSubmissionWithoutInstrumentNameFails)
 	t.Run("Submitting a market change with instrument code succeeds", testUpdateMarketChangeSubmissionWithInstrumentCodeSucceeds)
 	t.Run("Submitting a market change without product fails", testUpdateMarketChangeSubmissionWithoutProductFails)
 	t.Run("Submitting a market change with product succeeds", testUpdateMarketChangeSubmissionWithProductSucceeds)
@@ -132,6 +132,74 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a market with external data sources for settlement and termination with empty eth address signers fail", testUpdateMarketWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
 	t.Run("Submitting a market with termination time trigger fails", testUpdateMarketWithTerminationWithTimeTriggerFails)
 	t.Run("Submitting a market withsettlement with time trigger fails", testUpdateMarketWithSettlementWithTimeTriggerFails)
+	t.Run("Submitting a perps market product parameters", testUpdatePerpsMarketChangeSubmissionProductParameters)
+	t.Run("Submitting a perps market with funding rate modifiers", testUpdatePerpetualMarketWithFundingRateModifiers)
+	t.Run("Submitting a market update with invalid mark price configuration ", testUpdateMarketCompositePriceConfiguration)
+	t.Run("Submitting a market update with invalid intenal composite price configuration ", testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
+}
+
+func testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig(t *testing.T) {
+	cases := getCompositePriceConfigurationCases()
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_UpdateMarket{
+					UpdateMarket: &vegapb.UpdateMarket{
+						Changes: &vegapb.UpdateMarketConfiguration{
+							Instrument: &vegapb.UpdateInstrumentConfiguration{
+								Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
+									Perpetual: &vegapb.UpdatePerpetualProduct{
+										InternalCompositePriceConfiguration: c.mpc,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.perps.internal_composite_price_configuration"), c.err)
+		}
+	}
+}
+
+func testUpdateMarketCompositePriceConfiguration(t *testing.T) {
+	cases := getCompositePriceConfigurationCases()
+	cases = append(cases, compositePriceConfigCase{
+		mpc:   nil,
+		field: "",
+		err:   commands.ErrIsRequired,
+	})
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_UpdateMarket{
+					UpdateMarket: &vegapb.UpdateMarket{
+						Changes: &vegapb.UpdateMarketConfiguration{
+							MarkPriceConfiguration: c.mpc,
+						},
+					},
+				},
+			},
+		})
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.mark_price_configuration."+c.field), c.err, c.field)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.update_market.changes.mark_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.mark_price_configuration"), c.err)
+		}
+	}
 }
 
 func testUpdateMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {
@@ -200,104 +268,13 @@ func testUpdateMarketChangeSubmissionWithLiquidityMonitoringSucceeds(t *testing.
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"), commands.ErrIsRequired)
 }
 
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithWrongTriggeringRatioFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with probability of -1",
-			value: "-1",
-		}, {
-			msg:   "with probability of 2",
-			value: "2",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_UpdateMarket{
-						UpdateMarket: &protoTypes.UpdateMarket{
-							Changes: &protoTypes.UpdateMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters.triggering_ratio"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithRightTriggeringRatioSucceeds(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value string
-	}{
-		{
-			msg:   "with ratio of 0",
-			value: "0",
-		}, {
-			msg:   "with ratio of 0.5",
-			value: "0.5",
-		}, {
-			msg:   "with ratio of 1",
-			value: "1",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &protoTypes.ProposalTerms{
-					Change: &protoTypes.ProposalTerms_UpdateMarket{
-						UpdateMarket: &protoTypes.UpdateMarket{
-							Changes: &protoTypes.UpdateMarketConfiguration{
-								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
-						},
-					},
-				},
-			})
-
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
-}
-
-func testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTriggeringRatioParameterFails(t *testing.T) {
-	err := checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
-					},
-				},
-			},
-		},
-	})
-
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.liquidity_monitoring_parameters.triggering_ratio"), commands.ErrIsNotValidNumber)
-}
-
 func testUpdateMarketLiquidityMonitoringChangeSubmissionWithoutTargetStakeParametersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_UpdateMarket{
 				UpdateMarket: &protoTypes.UpdateMarket{
 					Changes: &protoTypes.UpdateMarketConfiguration{
-						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TriggeringRatio: "1",
-						},
+						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{},
 					},
 				},
 			},
@@ -314,7 +291,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithTargetStakeParameter
 				UpdateMarket: &protoTypes.UpdateMarket{
 					Changes: &protoTypes.UpdateMarketConfiguration{
 						LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-							TriggeringRatio:       "1",
 							TargetStakeParameters: &protoTypes.TargetStakeParameters{},
 						},
 					},
@@ -347,7 +323,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveTimeWindo
 						UpdateMarket: &protoTypes.UpdateMarket{
 							Changes: &protoTypes.UpdateMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										TimeWindow: tc.value,
 									},
@@ -404,7 +379,6 @@ func testUpdateMarketLiquidityMonitoringChangeSubmissionWithNonPositiveScalingFa
 						UpdateMarket: &protoTypes.UpdateMarket{
 							Changes: &protoTypes.UpdateMarketConfiguration{
 								LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
-									TriggeringRatio: "1",
 									TargetStakeParameters: &protoTypes.TargetStakeParameters{
 										ScalingFactor: tc.value,
 									},
@@ -681,6 +655,24 @@ func testUpdateMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.price_monitoring_parameters"), commands.ErrIsRequired)
+}
+
+func testUpdateMarketChangeSubmissionWithoutInstrumentNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_UpdateMarket{
+				UpdateMarket: &protoTypes.UpdateMarket{
+					Changes: &protoTypes.UpdateMarketConfiguration{
+						Instrument: &protoTypes.UpdateInstrumentConfiguration{
+							Name: "",
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.name"), commands.ErrIsRequired)
 }
 
 func testUpdateMarketChangeSubmissionWithoutInstrumentCodeFails(t *testing.T) {
@@ -2800,18 +2792,6 @@ func tesUpdateMarketChangeSubmissionWithSlippageFactorBananaFails(t *testing.T) 
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrIsNotValidNumber)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "banana",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrIsNotValidNumber)
 }
 
 func testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.T) {
@@ -2827,18 +2807,6 @@ func testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails(t *testing.
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBePositiveOrZero)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "-0.1",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBePositiveOrZero)
 }
 
 func testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.T) {
@@ -2854,18 +2822,6 @@ func testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails(t *testing.
 		},
 	})
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.linear_slippage_factor"), commands.ErrMustBeAtMost1M)
-	err = checkProposalSubmission(&commandspb.ProposalSubmission{
-		Terms: &protoTypes.ProposalTerms{
-			Change: &protoTypes.ProposalTerms_UpdateMarket{
-				UpdateMarket: &protoTypes.UpdateMarket{
-					Changes: &protoTypes.UpdateMarketConfiguration{
-						QuadraticSlippageFactor: "1000000.000001",
-					},
-				},
-			},
-		},
-	})
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor"), commands.ErrMustBeAtMost1M)
 }
 
 func testUpdateNewMarketChangeSubmissionWithEmptySlippageFactorPasses(t *testing.T) {
@@ -3512,4 +3468,348 @@ func testUpdateMarketWithSettlementWithTimeTriggerFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.internal.timetrigger"), commands.ErrIsNotValid)
+}
+
+func testUpdatePerpetualMarketWithFundingRateModifiers(t *testing.T) {
+	cases := []struct {
+		product vegapb.UpdatePerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("-10"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+			err:  commands.ErrMustBePositive,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateScalingFactor: ptr.From("0.1"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateLowerBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateLowerBound: ptr.From("-100"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("hello"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_upper_bound",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				FundingRateUpperBound: ptr.From("100"),
+				FundingRateLowerBound: ptr.From("200"),
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_lower_bound",
+			err:  commands.ErrIsNotValid,
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_UpdateMarket{
+						UpdateMarket: &vegapb.UpdateMarket{
+							Changes: &vegapb.UpdateMarketConfiguration{
+								Instrument: &vegapb.UpdateInstrumentConfiguration{
+									Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+			errs := err.Get(v.path)
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
+}
+
+func testUpdatePerpsMarketChangeSubmissionProductParameters(t *testing.T) {
+	cases := []struct {
+		product vegapb.UpdatePerpetualProduct
+		err     error
+		path    string
+		desc    string
+	}{
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsRequired,
+			desc: "margin_funding_factor is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "margin_funding_factor is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (< 0)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			err:  commands.ErrMustBeWithinRange01,
+			desc: "margin_funding_factor is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				MarginFundingFactor: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.margin_funding_factor",
+			desc: "margin_funding_factor is valid",
+		},
+		// interest_rate
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsRequired,
+			desc: "interest_rate is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "interest_rate is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "interest_rate is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				InterestRate: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.interest_rate",
+			desc: "interest_rate is valid",
+		},
+		// clamp_lower_bound
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_lower_bound is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_lower_bound is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_lower_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_lower_bound",
+			desc: "clamp_lower_bound is valid",
+		},
+		// clamp_upper_bound
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsRequired,
+			desc: "clamp_upper_bound is empty",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "nope",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrIsNotValidNumber,
+			desc: "clamp_upper_bound is not a valid number",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "-10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (< -1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "10",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeWithinRange11,
+			desc: "clamp_upper_bound is not within range (> 1)",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampUpperBound: "-0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound is valid",
+		},
+		// clamp lower and upper
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound == clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.4",
+				ClampUpperBound: "0.5",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			desc: "clamp_upper_bound > clamp_lower_bound is valid",
+		},
+		{
+			product: vegapb.UpdatePerpetualProduct{
+				ClampLowerBound: "0.5",
+				ClampUpperBound: "0.4",
+			},
+			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.clamp_upper_bound",
+			err:  commands.ErrMustBeGTEClampLowerBound,
+			desc: "clamp_upper_bound < clamp_lower_bound is invalid",
+		},
+	}
+
+	for _, v := range cases {
+		t.Run(v.desc, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &vegapb.ProposalTerms{
+					Change: &vegapb.ProposalTerms_UpdateMarket{
+						UpdateMarket: &vegapb.UpdateMarket{
+							Changes: &vegapb.UpdateMarketConfiguration{
+								Instrument: &vegapb.UpdateInstrumentConfiguration{
+									Product: &vegapb.UpdateInstrumentConfiguration_Perpetual{
+										Perpetual: &v.product,
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			errs := err.Get(v.path)
+
+			// no errors expected
+			if v.err == nil {
+				assert.Len(t, errs, 0, v.desc)
+				return
+			}
+
+			assert.Contains(t, errs, v.err, v.desc)
+		})
+	}
 }

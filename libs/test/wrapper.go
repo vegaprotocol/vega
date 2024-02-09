@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -25,7 +25,7 @@ import (
 func VegaContext(chainId string, blockHeight int64) context.Context {
 	return vgcontext.WithChainID(
 		vgcontext.WithTraceID(
-			vgcontext.WithBlockHeight(context.Background(), blockHeight),
+			vgcontext.WithBlockHeight(context.Background(), uint64(blockHeight)),
 			vgcrypto.RandomHash(),
 		),
 		chainId)

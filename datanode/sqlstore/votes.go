@@ -13,18 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright (c) 2022 Gobalsky Labs Limited
-//
-// Use of this software is governed by the Business Source License included
-// in the LICENSE.DATANODE file and at https://www.mariadb.com/bsl11.
-//
-// Change Date: 18 months from the later of the date of the first publicly
-// available Distribution of this version of the repository, and 25 June 2022.
-//
-// On the date above, in accordance with the Business Source License, use
-// of this software will be governed by version 3 or later of the GNU General
-// Public License.
-
 package sqlstore
 
 import (
@@ -32,10 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+
 	"github.com/georgysavva/scany/pgxscan"
 )
 
@@ -66,18 +54,20 @@ func (vs *Votes) Add(ctx context.Context, v entities.Vote) error {
 			initial_time,
 			total_governance_token_balance,
 			total_governance_token_weight,
-			total_equity_like_share_weight
+			total_equity_like_share_weight,
+			per_market_equity_like_share_weight
 		)
-		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9)
+		 VALUES ($1,  $2,  $3,  $4,  $5, $6, $7, $8, $9, $10)
 		 ON CONFLICT (proposal_id, party_id, vega_time) DO UPDATE SET
 			value = EXCLUDED.value,
 			total_governance_token_balance =EXCLUDED.total_governance_token_balance,
 			total_governance_token_weight = EXCLUDED.total_governance_token_weight,
 			total_equity_like_share_weight = EXCLUDED.total_equity_like_share_weight,
+			per_market_equity_like_share_weight = EXCLUDED.per_market_equity_like_share_weight,
 			tx_hash = EXCLUDED.tx_hash;
 		`,
 		v.ProposalID, v.PartyID, v.Value, v.TxHash, v.VegaTime, v.InitialTime,
-		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight)
+		v.TotalGovernanceTokenBalance, v.TotalGovernanceTokenWeight, v.TotalEquityLikeShareWeight, v.PerMarketEquityLikeShareWeight)
 	return err
 }
 

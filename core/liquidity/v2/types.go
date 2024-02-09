@@ -47,9 +47,33 @@ func (l Provisions) feeForTarget(t *num.Uint) num.Decimal {
 	return l[len(l)-1].Fee
 }
 
+// feeForWeightedAverage calculates the fee based on the weight average of the LP's commitment and their nominated fee factor.
+func (l Provisions) feeForWeightedAverage() num.Decimal {
+	if len(l) == 0 {
+		return num.DecimalZero()
+	}
+
+	sum := num.DecimalZero()
+	totalComittment := num.DecimalZero()
+	for _, i := range l {
+		sum = sum.Add(i.CommitmentAmount.ToDecimal().Mul(i.Fee))
+		totalComittment = totalComittment.Add(i.CommitmentAmount.ToDecimal())
+	}
+	if totalComittment.IsZero() {
+		return sum
+	}
+	return sum.Div(totalComittment)
+}
+
 // sortByFee sorts in-place and returns the LiquidityProvisions for convenience.
 func (l Provisions) sortByFee() Provisions {
 	sort.Slice(l, func(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) })
+	return l
+}
+
+// sortByCommitment sorts in-place and returns the LiquidityProvisions for convenience.
+func (l Provisions) sortByCommitment() Provisions {
+	sort.Slice(l, func(i, j int) bool { return l[i].CommitmentAmount.LT(l[j].CommitmentAmount) })
 	return l
 }
 
@@ -113,6 +137,10 @@ func (l ProvisionsPerParty) Slice() Provisions {
 
 func (l ProvisionsPerParty) FeeForTarget(v *num.Uint) num.Decimal {
 	return l.Slice().sortByFee().feeForTarget(v)
+}
+
+func (l ProvisionsPerParty) FeeForWeightedAverage() num.Decimal {
+	return l.Slice().sortByCommitment().feeForWeightedAverage()
 }
 
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the

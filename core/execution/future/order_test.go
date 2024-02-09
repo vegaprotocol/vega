@@ -21,10 +21,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
-
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/golang/mock/gomock"
@@ -549,8 +548,6 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -690,8 +687,6 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -835,8 +830,6 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -1062,8 +1055,6 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2017,8 +2008,6 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	addAccountWithAmount(tm, "lpprov", 10000000)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2994,9 +2983,6 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	addAccount(t, tm, "bbb")
 
 	// We probably don't need these orders anymore, but they don't do any harm
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
-
 	// place expiring order
 	o1 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
 	o1.ExpiresAt = tm.now.Add(5 * time.Second).UnixNano()
@@ -3128,8 +3114,6 @@ func TestMissingLP(t *testing.T) {
 	addAccount(t, tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
 	// ensure auction durations are 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideBuy, auxParty, 1, 800000)
@@ -3158,7 +3142,7 @@ func TestMissingLP(t *testing.T) {
 	tm.market.OnTick(ctx, now)
 
 	// Here we are in auction
-	assert.True(t, tm.mas.InAuction())
+	assert.False(t, tm.mas.InAuction())
 
 	// Send LP order
 	lps := &types.LiquidityProvisionSubmission{
@@ -3169,8 +3153,7 @@ func TestMissingLP(t *testing.T) {
 
 	tm.market.SubmitLiquidityProvision(ctx, lps, party1, vgcrypto.RandomHash())
 
-	// Check we have 2 orders on each side of the book (4 in total)
-	assert.EqualValues(t, 4, tm.market.GetOrdersOnBookCount())
+	assert.EqualValues(t, 2, tm.market.GetOrdersOnBookCount())
 
 	// Send in a limit order to move the BEST_BID and MID price
 	newBestBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideBuy, auxParty, 1, 810000)
@@ -3179,8 +3162,8 @@ func TestMissingLP(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	// Check we have 5 orders in total
-	assert.EqualValues(t, 5, tm.market.GetOrdersOnBookCount())
+	// Check we have 3 orders in total
+	assert.EqualValues(t, 3, tm.market.GetOrdersOnBookCount())
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
 	tm.now = now
 	tm.market.OnTick(ctx, now)

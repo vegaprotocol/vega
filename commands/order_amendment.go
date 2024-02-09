@@ -1,4 +1,4 @@
-// Copyright (C) 2023  Gobalsky Labs Limited
+// Copyright (C) 2023 Gobalsky Labs Limited
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -17,6 +17,7 @@ package commands
 
 import (
 	"errors"
+	"math"
 	"math/big"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
@@ -68,7 +69,17 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 		}
 	}
 
+	if cmd.Size != nil {
+		isAmending = true
+		if *cmd.Size > math.MaxInt64/2 {
+			errs.AddForProperty("order_amendment.size", ErrSizeIsTooLarge)
+		}
+	}
+
 	if cmd.SizeDelta != 0 {
+		if cmd.Size != nil {
+			errs.AddForProperty("order_amendment.size_delta", ErrMustBeSetTo0IfSizeSet)
+		}
 		isAmending = true
 	}
 

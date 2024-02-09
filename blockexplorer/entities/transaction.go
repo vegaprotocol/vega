@@ -21,25 +21,24 @@ import (
 	"strings"
 	"time"
 
-	tmTypes "github.com/tendermint/tendermint/abci/types"
-	"google.golang.org/protobuf/proto"
-
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/ptr"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
+	tmTypes "github.com/cometbft/cometbft/abci/types"
+	"google.golang.org/protobuf/proto"
 )
 
 type TxResultRow struct {
-	RowID     int64     `db:"rowid"`
-	BlockID   int64     `db:"block_id"`
-	Index     int64     `db:"index"`
-	CreatedAt time.Time `db:"created_at"`
-	TxHash    string    `db:"tx_hash"`
-	TxResult  []byte    `db:"tx_result"`
-	Submitter string    `db:"submitter"`
-	CmdType   string    `db:"cmd_type"`
+	RowID       int64     `db:"rowid"`
+	BlockHeight int64     `db:"block_height"`
+	Index       int64     `db:"index"`
+	CreatedAt   time.Time `db:"created_at"`
+	TxHash      string    `db:"tx_hash"`
+	TxResult    []byte    `db:"tx_result"`
+	Submitter   string    `db:"submitter"`
+	CmdType     string    `db:"cmd_type"`
 }
 
 func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
@@ -66,7 +65,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 	}
 
 	return &pb.Transaction{
-		Block:     uint64(t.BlockID),
+		Block:     uint64(t.BlockHeight),
 		Index:     uint32(t.Index),
 		Type:      extractAttribute(&txResult, "command", "type"),
 		Submitter: extractAttribute(&txResult, "tx", "submitter"),
@@ -84,7 +83,7 @@ func (t *TxResultRow) ToProto() (*pb.Transaction, error) {
 
 func (t *TxResultRow) Cursor() TxCursor {
 	return TxCursor{
-		BlockNumber: uint64(t.BlockID),
+		BlockNumber: uint64(t.BlockHeight),
 		TxIndex:     uint32(t.Index),
 	}
 }
@@ -93,8 +92,8 @@ func extractAttribute(r *tmTypes.TxResult, eType, key string) string {
 	for _, e := range r.Result.Events {
 		if e.Type == eType {
 			for _, a := range e.Attributes {
-				if string(a.Key) == key {
-					return string(a.Value)
+				if a.Key == key {
+					return a.Value
 				}
 			}
 		}
@@ -124,11 +123,21 @@ func TxCursorFromString(s string) (TxCursor, error) {
 	}
 
 	return TxCursor{
-		BlockNumber: blockNumber, // increase by one again to make the behaviour consistent
+		BlockNumber: blockNumber,
 		TxIndex:     uint32(txIndex),
 	}, nil
 }
 
 func (c *TxCursor) String() string {
 	return fmt.Sprintf("%d.%d", c.BlockNumber, c.TxIndex)
+}
+
+// AreValidCursorBoundaries checks if the start and end cursors creates valid
+// set boundaries for cursors, as: [start, end].
+func AreValidCursorBoundaries(start, end *TxCursor) bool {
+	if start.BlockNumber == end.BlockNumber {
+		return start.TxIndex < end.TxIndex
+	}
+
+	return start.BlockNumber < end.BlockNumber
 }

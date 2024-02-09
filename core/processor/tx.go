@@ -24,7 +24,8 @@ import (
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/libs/proto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/tendermint/tendermint/crypto/tmhash"
+
+	"github.com/cometbft/cometbft/crypto/tmhash"
 )
 
 type Tx struct {
@@ -137,9 +138,21 @@ func (t Tx) Command() txn.Command {
 		return txn.UpdateReferralSetCommand
 	case *commandspb.InputData_ApplyReferralCode:
 		return txn.ApplyReferralCodeCommand
+	case *commandspb.InputData_UpdateMarginMode:
+		return txn.UpdateMarginModeCommand
+	case *commandspb.InputData_JoinTeam:
+		return txn.JoinTeamCommand
+	case *commandspb.InputData_BatchProposalSubmission:
+		return txn.BatchProposeCommand
+	case *commandspb.InputData_UpdatePartyProfile:
+		return txn.UpdatePartyProfileCommand
 	default:
 		panic(fmt.Sprintf("command %T is not supported", cmd))
 	}
+}
+
+func (t Tx) GetLength() int {
+	return len(t.originalTx)
 }
 
 func (t Tx) GetNonce() uint64 {
@@ -228,6 +241,14 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.UpdateReferralSet
 	case *commandspb.InputData_ApplyReferralCode:
 		return cmd.ApplyReferralCode
+	case *commandspb.InputData_UpdateMarginMode:
+		return cmd.UpdateMarginMode
+	case *commandspb.InputData_JoinTeam:
+		return cmd.JoinTeam
+	case *commandspb.InputData_BatchProposalSubmission:
+		return cmd.BatchProposalSubmission
+	case *commandspb.InputData_UpdatePartyProfile:
+		return cmd.UpdatePartyProfile
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
@@ -412,9 +433,33 @@ func (t Tx) Unmarshal(i interface{}) error {
 	case *commandspb.InputData_ApplyReferralCode:
 		underlyingCmd, ok := i.(*commandspb.ApplyReferralCode)
 		if !ok {
-			return errors.New("failed to unmarshall to JoinTeam")
+			return errors.New("failed to unmarshall to ApplyReferralCode")
 		}
 		*underlyingCmd = *cmd.ApplyReferralCode
+	case *commandspb.InputData_JoinTeam:
+		underlyingCmd, ok := i.(*commandspb.JoinTeam)
+		if !ok {
+			return errors.New("failed to unmarshall to JoinTeam")
+		}
+		*underlyingCmd = *cmd.JoinTeam
+	case *commandspb.InputData_UpdateMarginMode:
+		underlyingCmd, ok := i.(*commandspb.UpdateMarginMode)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdateMarginMode")
+		}
+		*underlyingCmd = *cmd.UpdateMarginMode
+	case *commandspb.InputData_BatchProposalSubmission:
+		underlyingCmd, ok := i.(*commandspb.BatchProposalSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to BatchProposalSubmission")
+		}
+		*underlyingCmd = *cmd.BatchProposalSubmission
+	case *commandspb.InputData_UpdatePartyProfile:
+		underlyingCmd, ok := i.(*commandspb.UpdatePartyProfile)
+		if !ok {
+			return errors.New("failed to unmarshall to UpdatePartyProfile")
+		}
+		*underlyingCmd = *cmd.UpdatePartyProfile
 	default:
 		return fmt.Errorf("command %T is not supported", cmd)
 	}
