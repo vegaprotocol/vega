@@ -18,7 +18,6 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -93,11 +92,16 @@ func (ps *Parties) ListProfiles(ctx context.Context, ids []string, pagination en
 
 	whereClause := ""
 	if len(ids) > 0 {
-		inClause := make([]string, 0, len(ids))
-		for _, id := range ids {
-			inClause = append(inClause, nextBindVar(&args, id))
+		partyIDs := make([][]byte, len(ids))
+		for i, id := range ids {
+			partyID := entities.PartyID(id)
+			partyIDBytes, err := partyID.Bytes()
+			if err != nil {
+				return nil, entities.PageInfo{}, fmt.Errorf("invalid party ID found: %w", err)
+			}
+			partyIDs[i] = partyIDBytes
 		}
-		whereClause = fmt.Sprintf(" where id IN (%s)", strings.Join(inClause, ", "))
+		whereClause = fmt.Sprintf(" where id = ANY(%s)", nextBindVar(&args, partyIDs))
 	}
 
 	query := `SELECT id AS party_id, alias, metadata FROM parties` + whereClause
