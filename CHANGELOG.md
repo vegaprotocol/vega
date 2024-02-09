@@ -190,6 +190,7 @@
 - [10558](https://github.com/vegaprotocol/vega/issues/10558) - Return current market observable is collateral available is below maintenance margin for specified position.
 - [10604](https://github.com/vegaprotocol/vega/issues/10604) - Register margin modes API subscriber.
 - [10595](https://github.com/vegaprotocol/vega/issues/10595) - Fix failed amends for isolated margin orders causing negative spread in console.
+- [10606](https://github.com/vegaprotocol/vega/issues/10606) - Party profiles `API` was not returning results.
 
 ## 0.73.0
 
