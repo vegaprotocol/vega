@@ -241,6 +241,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.paidLiquidityFeesStatsSub,
 		s.vestingSummarySub,
 		s.transactionResultsSub,
+		s.marginModesSub,
 	}
 }
 
