@@ -614,7 +614,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 			m.internalCompositePriceCalculator = nil
 		} else if m.internalCompositePriceCalculator != nil {
 			// there was previously a intenal composite price calculator
-			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, internalCompositePriceConfig); err != nil {
 				m.internalCompositePriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
 				return err
 			}
@@ -2542,13 +2542,14 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	tradedValue, _ := num.UintFromDecimal(
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
-		m.markPriceCalculator.NewTrade(trade)
-		if m.internalCompositePriceCalculator != nil {
-			m.internalCompositePriceCalculator.NewTrade(trade)
-		}
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 		if tradeT != nil {
 			trade.Type = *tradeT
+		} else {
+			m.markPriceCalculator.NewTrade(trade)
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.NewTrade(trade)
+			}
 		}
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
