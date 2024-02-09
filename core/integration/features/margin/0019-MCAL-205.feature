@@ -225,6 +225,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader2 | USD   | 100000000000 |
       | trader3 | USD   | 4750         |
       | trader4 | USD   | 100000000000 |
+      | trader5 | USD   | 100000000000 |
       | lprov1  | USD   | 100000000000 |
 
     And the parties submit the following liquidity provision:
@@ -309,6 +310,22 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | 1000   | 200100 | sell |
       | 300    | 200000 | sell |
       | 6      | 15802  | sell |
+      | 100    | 15700  | buy  |
+      | 100    | 15690  | buy  |
+      | 200    | 15680  | buy  |
+      | 300    | 15600  | buy  |
+      | 100    | 15500  | buy  |
+      | 1000   | 14900  | buy  |
+
+    # Now ensure the order is still on the book, and we can trade
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | trader5 | ETH/FEB23 | buy  | 5      | 15802 | 1                | TYPE_LIMIT | TIF_GTC | t5-first  |       |
+    Then the order book should have the following volumes for market "ETH/FEB23":
+      | volume | price  | side |
+      | 1000   | 200100 | sell |
+      | 300    | 200000 | sell |
+      | 1      | 15802  | sell |
       | 100    | 15700  | buy  |
       | 100    | 15690  | buy  |
       | 200    | 15680  | buy  |
