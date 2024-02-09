@@ -25,9 +25,11 @@ import (
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/config"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/ipfs"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+	"code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/libs/subscribers"
 	"code.vegaprotocol.io/vega/logging"
@@ -96,6 +98,23 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	if l.conf.SQLStore.WipeOnStartup {
 		if ResetDatabaseAndNetworkHistory(l.ctx, l.Log, l.vegaPaths, l.conf.SQLStore.ConnectionConfig); err != nil {
 			return fmt.Errorf("failed to reset database and network history: %w", err)
+		}
+	} else if !l.conf.SQLStore.WipeOnStartup && l.conf.NetworkHistory.Enabled {
+		ipfsDir := filepath.Join(l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), "store", "ipfs")
+		ipfsExists, err := fs.PathExists(ipfsDir)
+		if err != nil {
+			return fmt.Errorf("failed to check if ipfs store is already initialized")
+		}
+
+		// We do not care for migration when the ipfs store does not exist on the local file system
+		if ipfsExists {
+			preLog.Info("Migrating the IPFS storage to the latest version")
+			if err := ipfs.MigrateIpfsStorageVersion(preLog, ipfsDir); err != nil {
+				return fmt.Errorf("failed to migrate the ipfs version")
+			}
+			preLog.Info("Migrating the IPFS storage finished")
+		} else {
+			preLog.Info("IPFS store not initialized. Migration not needed")
 		}
 	}
 
