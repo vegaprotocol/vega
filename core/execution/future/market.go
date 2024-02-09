@@ -3723,11 +3723,6 @@ func (m *Market) orderCancelReplace(
 
 	defer func() {
 		if err != nil {
-			if err == common.ErrMarginCheckFailed {
-				// we failed the margin check, the order traded in full, and is stopped
-				// the position was already updated
-				return
-			}
 			// if an error happens, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
@@ -3837,13 +3832,6 @@ func (m *Market) orderCancelReplace(
 			// but the trades must go through
 			err = nil
 			return
-		}
-		// now we had an error and no trades, the order is stopped, but we must remove it from the book explicitly
-		m.matching.DeleteOrder(conf.Order)
-		// ensure the position is restored. We update the position restoring the old order, so we really must be setting that to size of zero
-		existingOrder.Size = 0
-		if existingOrder.IcebergOrder != nil {
-			existingOrder.IcebergOrder.ReservedRemaining = 0
 		}
 		// conf should not be returned/used after this
 		conf = nil
