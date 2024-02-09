@@ -3189,8 +3189,8 @@ func implyMarginLevels(maintenanceMargin, orderMargin, marginFactor num.Decimal,
 	}
 	if isolatedMarginMode {
 		marginLevels.OrderMargin = orderMargin.Round(0).String()
-		marginLevels.SearchLevel = num.UintZero().String()
-		marginLevels.CollateralReleaseLevel = num.UintZero().String()
+		marginLevels.SearchLevel = "0"
+		marginLevels.CollateralReleaseLevel = "0"
 		marginLevels.MarginMode = types.MarginModeIsolatedMargin
 		marginLevels.MarginFactor = marginFactor.String()
 	}
@@ -3212,23 +3212,23 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	if err != nil {
 		return nil, formatE(ErrPositionsInvalidAccountBalance, err)
 	}
-	collateralAvailable := marginAccountBalance.Copy()
-	collateralAvailable = collateralAvailable.Add(orderAccountBalance)
-	if req.MarginMode == types.MarginModeCrossMargin {
-		generalAccountBalance, err := num.DecimalFromString(req.GeneralAccountBalance)
-		if err != nil {
-			return nil, formatE(ErrPositionsInvalidAccountBalance, err)
-		}
-		collateralAvailable = collateralAvailable.Add(generalAccountBalance)
-	}
-
 	mkt, err := t.MarketsService.GetByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetByID, err)
 	}
+	collateralAvailable := marginAccountBalance
+	crossMarginMode := req.MarginMode == types.MarginModeCrossMargin
+	if crossMarginMode {
+		generalAccountBalance, err := num.DecimalFromString(req.GeneralAccountBalance)
+		if err != nil {
+			return nil, formatE(ErrPositionsInvalidAccountBalance, err)
+		}
+		collateralAvailable = collateralAvailable.Add(generalAccountBalance).Add(orderAccountBalance)
+	}
 
 	dMarginFactor := num.DecimalZero()
-	if req.MarginMode == types.MarginModeIsolatedMargin {
+	isolatedMarginMode := req.MarginMode == types.MarginModeIsolatedMargin
+	if isolatedMarginMode {
 		if req.MarginFactor == nil {
 			return nil, formatE(ErrMissingMarginFactor, errors.New("margin factor are required with isolated margin"))
 		}
@@ -3342,8 +3342,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		}
 	}
 
-	marginEstimate := t.computeMarginRange(
-		req.MarketId,
+	wMaintenance, bMaintenance, orderMargin := t.computeMarginRange(
 		req.OpenVolume,
 		buyOrders,
 		sellOrders,
@@ -3354,43 +3353,52 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		rf,
 		marginFactorScaledFundingPaymentPerUnitPosition,
 		auction,
-		asset,
-		mkt.TradableInstrument.MarginCalculator.ScalingFactors,
 		req.MarginMode,
 		dMarginFactor,
 		auctionPrice,
 	)
-	var marginDeltaWorst, marginDeltaBest num.Decimal
-	if req.MarginMode == types.MarginModeIsolatedMargin {
+
+	marginEstimate := &v2.MarginEstimate{
+		WorstCase: implyMarginLevels(wMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
+		BestCase:  implyMarginLevels(bMaintenance, orderMargin, dMarginFactor, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", req.MarketId, asset, isolatedMarginMode),
+	}
+
+	var wMarginDelta, bMarginDelta, posMarginDelta num.Decimal
+	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
+	if isolatedMarginMode {
 		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(marginAccountBalance).Sub(orderAccountBalance))
-		marginDeltaBest = marginDeltaWorst
+		posMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Sub(marginAccountBalance))
+		wMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin))
+		bMarginDelta = wMarginDelta
 	} else {
 		worstInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
 		bestInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
-		marginDeltaWorst = num.MaxD(num.DecimalZero(), worstInitial.Sub(marginAccountBalance).Sub(orderAccountBalance))
-		marginDeltaBest = num.MaxD(num.DecimalZero(), bestInitial.Sub(marginAccountBalance).Sub(orderAccountBalance))
+		wMarginDelta = num.MaxD(num.DecimalZero(), worstInitial.Sub(combinedMargin))
+		bMarginDelta = num.MaxD(num.DecimalZero(), bestInitial.Sub(combinedMargin))
 	}
 
-	bColAvail := collateralAvailable
-	wColAvail := collateralAvailable
-	if req.MarginMode == types.MarginModeIsolatedMargin && req.IncludeCollateralIncreaseInAvailableCollateral != nil && *req.IncludeCollateralIncreaseInAvailableCollateral {
-		bColAvail = bColAvail.Add(marginDeltaBest)
-		wColAvail = wColAvail.Add(marginDeltaWorst)
+	if isolatedMarginMode && ptr.UnBox(req.IncludeRequiredPositionMarginInAvailableCollateral) {
+		collateralAvailable = collateralAvailable.Add(posMarginDelta)
 	}
 
-	var liquidationEstimate *v2.LiquidationEstimate
-	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, bColAvail, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
-	if err != nil {
-		return nil, err
+	bPositionOnly, bWithBuy, bWithSell := marketObservable, marketObservable, marketObservable
+	wPositionOnly, wWithBuy, wWithSell := marketObservable, marketObservable, marketObservable
+
+	// only calculate liquidation price if collateral available is above maintenance margin, otherwise return current market observable to signify that the theoretical position would be liquidated instantenously
+	if collateralAvailable.GreaterThanOrEqual(bMaintenance) {
+		bPositionOnly, bWithBuy, bWithSell, err = risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition, isolatedMarginMode, dMarginFactor)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if collateralAvailable.GreaterThanOrEqual(wMaintenance) {
+		wPositionOnly, wWithBuy, wWithSell, err = risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition, isolatedMarginMode, dMarginFactor)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(req.OpenVolume, buyOrders, sellOrders, marketObservable, wColAvail, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, marginFactorScaledFundingPaymentPerUnitPosition)
-	if err != nil {
-		return nil, err
-	}
-
-	if req.ScaleLiquidationPriceToMarketDecimals != nil && *req.ScaleLiquidationPriceToMarketDecimals {
+	if ptr.UnBox(req.ScaleLiquidationPriceToMarketDecimals) {
 		bPositionOnly = t.scaleDecimalFromAssetToMarketPrice(bPositionOnly, dPriceFactor)
 		bWithBuy = t.scaleDecimalFromAssetToMarketPrice(bWithBuy, dPriceFactor)
 		bWithSell = t.scaleDecimalFromAssetToMarketPrice(bWithSell, dPriceFactor)
@@ -3399,7 +3407,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		wWithSell = t.scaleDecimalFromAssetToMarketPrice(wWithSell, dPriceFactor)
 	}
 
-	liquidationEstimate = &v2.LiquidationEstimate{
+	liquidationEstimate := &v2.LiquidationEstimate{
 		WorstCase: &v2.LiquidationPrice{
 			OpenVolumeOnly:      wPositionOnly.Round(0).String(),
 			IncludingBuyOrders:  wWithBuy.Round(0).String(),
@@ -3415,26 +3423,23 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	return &v2.EstimatePositionResponse{
 		Margin: marginEstimate,
 		CollateralIncreaseEstimate: &v2.CollateralIncreaseEstimate{
-			WorstCase: marginDeltaWorst.Round(0).String(),
-			BestCase:  marginDeltaBest.Round(0).String(),
+			WorstCase: wMarginDelta.Round(0).String(),
+			BestCase:  bMarginDelta.Round(0).String(),
 		},
 		Liquidation: liquidationEstimate,
 	}, nil
 }
 
 func (t *TradingDataServiceV2) computeMarginRange(
-	market string,
 	openVolume int64,
 	buyOrders, sellOrders []*risk.OrderInfo,
 	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
 	riskFactors entities.RiskFactor,
 	fundingPaymentPerUnitPosition num.Decimal,
 	auction bool,
-	asset string,
-	scalingFactors *vega.ScalingFactors,
 	marginMode vega.MarginMode,
 	marginFactor, auctionPrice num.Decimal,
-) *v2.MarginEstimate {
+) (num.Decimal, num.Decimal, num.Decimal) {
 	bOrders, sOrders := buyOrders, sellOrders
 	orderMargin := num.DecimalZero()
 	isolatedMarginMode := marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
@@ -3463,10 +3468,7 @@ func (t *TradingDataServiceV2) computeMarginRange(
 	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
 	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, bOrders, sOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, fundingPaymentPerUnitPosition, auction)
 
-	return &v2.MarginEstimate{
-		WorstCase: implyMarginLevels(worst, orderMargin, marginFactor, scalingFactors, "", market, asset, isolatedMarginMode),
-		BestCase:  implyMarginLevels(best, orderMargin, marginFactor, scalingFactors, "", market, asset, isolatedMarginMode),
-	}
+	return worst, best, orderMargin
 }
 
 // ListNetworkParameters returns a list of network parameters.

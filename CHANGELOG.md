@@ -186,6 +186,7 @@
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix for rewards transfers list.
 - [10567](https://github.com/vegaprotocol/vega/issues/10567) - Rewards/Teams/Games API disagree on numbers.
 - [10578](https://github.com/vegaprotocol/vega/issues/10578) - Game API reward amounts should display quantum values and asset ID.
+- [10558](https://github.com/vegaprotocol/vega/issues/10558) - Return current market observable is collateral available is below maintenance margin for specified position.
 
 ## 0.73.0
 

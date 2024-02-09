@@ -174,19 +174,11 @@ func TestEstimatePosition(t *testing.T) {
 
 	assetService := mocks.NewMockAssetService(ctrl)
 	marketService := mocks.NewMockMarketsService(ctrl)
-	marketDataService := mocks.NewMockMarketDataService(ctrl)
 	riskFactorService := mocks.NewMockRiskFactorService(ctrl)
 
 	assetService.EXPECT().GetByID(ctx, assetId).Return(asset, nil).AnyTimes()
 	marketService.EXPECT().GetByID(ctx, marketId).Return(mkt, nil).AnyTimes()
 	riskFactorService.EXPECT().GetMarketRiskFactors(ctx, marketId).Return(rf, nil).AnyTimes()
-
-	apiService := api.TradingDataServiceV2{
-		AssetService:      assetService,
-		MarketsService:    marketService,
-		MarketDataService: marketDataService,
-		RiskFactorService: riskFactorService,
-	}
 
 	testCases := []struct {
 		markPrice                         float64
@@ -269,7 +261,7 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 10 * math.Pow10(assetDecimals),
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
+			marginFactor:              0.5,
 		},
 		{
 			markPrice:     markPrice,
@@ -316,7 +308,7 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     1000 * math.Pow10(assetDecimals),
 			orderMarginAccountBalance: 10 * math.Pow10(assetDecimals),
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
+			marginFactor:              0.3,
 		},
 		{
 			markPrice:     markPrice,
@@ -367,7 +359,7 @@ func TestEstimatePosition(t *testing.T) {
 		},
 		{
 			markPrice:     markPrice,
-			openVolume:    int64(-10 * math.Pow10(positionDecimalPlaces)),
+			openVolume:    -int64(10 * math.Pow10(positionDecimalPlaces)),
 			avgEntryPrice: 111.1 * math.Pow10(marketDecimals),
 			orders: []*v2.OrderInfo{
 				{
@@ -429,8 +421,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:     markPrice,
@@ -448,8 +440,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:                 markPrice,
@@ -460,8 +452,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:     markPrice,
@@ -479,8 +471,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:     markPrice,
@@ -498,8 +490,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:                 markPrice,
@@ -510,8 +502,8 @@ func TestEstimatePosition(t *testing.T) {
 			generalAccountBalance:     0,
 			orderMarginAccountBalance: 0,
 			marginMode:                vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
-			marginFactor:              0.1,
-			expectedCollIncBest:       "1234560000",
+			marginFactor:              0.3,
+			expectedCollIncBest:       "3703680000",
 		},
 		{
 			markPrice:     markPrice,
@@ -561,7 +553,7 @@ func TestEstimatePosition(t *testing.T) {
 			orderMarginAccountBalance:         0,
 			marginMode:                        vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN,
 			marginFactor:                      0.01277,
-			expectedLiquidationBestVolumeOnly: "13717333877",
+			expectedLiquidationBestVolumeOnly: "6781300000",
 		},
 	}
 	for i, tc := range testCases {
@@ -579,7 +571,15 @@ func TestEstimatePosition(t *testing.T) {
 				},
 			},
 		}
+		marketDataService := mocks.NewMockMarketDataService(ctrl)
 		marketDataService.EXPECT().GetMarketDataByID(ctx, marketId).Return(mktData, nil).AnyTimes()
+
+		apiService := api.TradingDataServiceV2{
+			AssetService:      assetService,
+			MarketsService:    marketService,
+			MarketDataService: marketDataService,
+			RiskFactorService: riskFactorService,
+		}
 
 		marginFactor := fmt.Sprintf("%f", tc.marginFactor)
 		exclude := false
@@ -594,8 +594,8 @@ func TestEstimatePosition(t *testing.T) {
 			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
 			MarginMode:                tc.marginMode,
 			MarginFactor:              &marginFactor,
-			IncludeCollateralIncreaseInAvailableCollateral: &exclude,
-			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+			IncludeRequiredPositionMarginInAvailableCollateral: &exclude,
+			ScaleLiquidationPriceToMarketDecimals:              &dontScale,
 		}
 		include := true
 		req2 := &v2.EstimatePositionRequest{
@@ -608,8 +608,8 @@ func TestEstimatePosition(t *testing.T) {
 			OrderMarginAccountBalance: fmt.Sprintf("%f", tc.orderMarginAccountBalance),
 			MarginMode:                tc.marginMode,
 			MarginFactor:              &marginFactor,
-			IncludeCollateralIncreaseInAvailableCollateral: &include,
-			ScaleLiquidationPriceToMarketDecimals:          &dontScale,
+			IncludeRequiredPositionMarginInAvailableCollateral: &include,
+			ScaleLiquidationPriceToMarketDecimals:              &dontScale,
 		}
 
 		isolatedMargin := tc.marginMode == vega.MarginMode_MARGIN_MODE_ISOLATED_MARGIN
@@ -661,6 +661,7 @@ func TestEstimatePosition(t *testing.T) {
 
 		expectedCollIncBest := max(0, initialMarginBest-tc.marginAccountBalance-tc.orderMarginAccountBalance)
 		expectedCollIncWorst := max(0, initialMarginWorst-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+		expectedPosMarginIncrease := 0.0
 		if isolatedMargin {
 			priceFactor := math.Pow10(assetDecimals - marketDecimals)
 			marketOrderNotional := getMarketOrderNotional(tc.markPrice, tc.orders, priceFactor, positionDecimalPlaces)
@@ -670,6 +671,8 @@ func TestEstimatePosition(t *testing.T) {
 			requiredOrderMargin := getLimitOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
 			expectedCollIncBest = max(0, requiredPositionMargin+requiredOrderMargin-tc.marginAccountBalance-tc.orderMarginAccountBalance)
 			expectedCollIncWorst = expectedCollIncBest
+
+			expectedPosMarginIncrease = max(0, requiredPositionMargin-tc.marginAccountBalance)
 		}
 
 		actualCollIncBest, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.BestCase, 64)
@@ -685,15 +688,13 @@ func TestEstimatePosition(t *testing.T) {
 		require.NotNil(t, res2, fmt.Sprintf("test case #%v", i+1))
 
 		if isolatedMargin {
-			if actualCollIncWorst != 0 {
+			if expectedPosMarginIncrease > 0 {
 				if countOrders(tc.orders, entities.SideBuy) > 0 && res.Liquidation.WorstCase.IncludingBuyOrders != "0" {
 					require.NotEqual(t, res.Liquidation.WorstCase.IncludingBuyOrders, res2.Liquidation.WorstCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
 				}
 				if countOrders(tc.orders, entities.SideSell) > 0 && res.Liquidation.WorstCase.IncludingSellOrders != "0" {
 					require.NotEqual(t, res.Liquidation.WorstCase.IncludingSellOrders, res2.Liquidation.WorstCase.IncludingSellOrders, fmt.Sprintf("test case #%v", i+1))
 				}
-			}
-			if actualCollIncBest != 0 {
 				if countOrders(tc.orders, entities.SideBuy) > 0 && res.Liquidation.BestCase.IncludingBuyOrders != "0" {
 					require.NotEqual(t, res.Liquidation.BestCase.IncludingBuyOrders, res2.Liquidation.BestCase.IncludingBuyOrders, fmt.Sprintf("test case #%v", i+1))
 				}
@@ -717,6 +718,16 @@ func TestEstimatePosition(t *testing.T) {
 		compareDps(t, res2.Liquidation.WorstCase.OpenVolumeOnly, res3.Liquidation.WorstCase.OpenVolumeOnly, dp)
 		compareDps(t, res2.Liquidation.WorstCase.IncludingBuyOrders, res3.Liquidation.WorstCase.IncludingBuyOrders, dp)
 		compareDps(t, res2.Liquidation.WorstCase.IncludingSellOrders, res3.Liquidation.WorstCase.IncludingSellOrders, dp)
+
+		liqFp, err := strconv.ParseFloat(res3.Liquidation.WorstCase.OpenVolumeOnly, 64)
+		require.NoError(t, err)
+		effectiveOpenVolume := tc.openVolume + sumMarketOrderVolume(tc.orders)
+		if tc.openVolume != 0 && effectiveOpenVolume > 0 {
+			require.LessOrEqual(t, liqFp, tc.markPrice, fmt.Sprintf("test case #%v", i+1))
+		}
+		if tc.openVolume != 0 && effectiveOpenVolume < 0 {
+			require.GreaterOrEqual(t, liqFp, tc.markPrice, fmt.Sprintf("test case #%v", i+1))
+		}
 	}
 }
 
@@ -745,6 +756,22 @@ func countOrders(orders []*v2.OrderInfo, side vega.Side) int {
 		}
 	}
 	return c
+}
+
+func sumMarketOrderVolume(orders []*v2.OrderInfo) int64 {
+	v := int64(0)
+	for _, o := range orders {
+		if !o.IsMarketOrder {
+			continue
+		}
+		if o.Side == entities.SideBuy {
+			v += int64(o.Remaining)
+		}
+		if o.Side == entities.SideSell {
+			v -= int64(o.Remaining)
+		}
+	}
+	return v
 }
 
 type mockStream struct {
