@@ -7,6 +7,7 @@
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 - [8056](https://github.com/vegaprotocol/vega/issues/8056) - Getting a transfer by ID now returns a `TransferNode`.
+- [10597](https://github.com/vegaprotocol/vega/pull/10597) - Migrate the `IPFS` store for the network history to version 15.
 
 ### 🗑️ Deprecation
 
@@ -86,6 +87,7 @@
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
 - [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 - [10563](https://github.com/vegaprotocol/vega/issues/10563) - Spam protection for create/update referral program.
+- [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 
 ### 🐛 Fixes
 

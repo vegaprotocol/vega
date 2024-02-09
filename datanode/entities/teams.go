@@ -135,6 +135,8 @@ type TeamsStatistics struct {
 	TeamID              TeamID
 	TotalQuantumRewards num.Decimal
 	QuantumRewards      []QuantumRewardsPerEpoch
+	TotalQuantumVolumes *num.Uint
+	QuantumVolumes      []QuantumVolumesPerEpoch
 	TotalGamesPlayed    uint64
 	GamesPlayed         []GameID
 }
@@ -142,6 +144,11 @@ type TeamsStatistics struct {
 type QuantumRewardsPerEpoch struct {
 	Epoch uint64
 	Total num.Decimal
+}
+
+type QuantumVolumesPerEpoch struct {
+	Epoch uint64
+	Total *num.Uint
 }
 
 func (t TeamsStatistics) Cursor() *Cursor {
@@ -165,11 +172,20 @@ func (t TeamsStatistics) ToProto() *v2.TeamStatistics {
 		})
 	}
 
+	quantumVolumes := make([]*v2.QuantumVolumesPerEpoch, 0, len(t.QuantumVolumes))
+	for _, r := range t.QuantumVolumes {
+		quantumVolumes = append(quantumVolumes, &v2.QuantumVolumesPerEpoch{
+			Epoch:               r.Epoch,
+			TotalQuantumVolumes: r.Total.String(),
+		})
+	}
+
 	return &v2.TeamStatistics{
 		TeamId:              string(t.TeamID),
-		TotalQuantumVolume:  "",
+		TotalQuantumVolume:  t.TotalQuantumVolumes.String(),
 		TotalQuantumRewards: t.TotalQuantumRewards.String(),
 		QuantumRewards:      quantumRewards,
+		QuantumVolumes:      quantumVolumes,
 		TotalGamesPlayed:    t.TotalGamesPlayed,
 		GamesPlayed:         gamesPlayed,
 	}
@@ -203,8 +219,10 @@ func (c *TeamsStatisticsCursor) Parse(cursorString string) error {
 
 type TeamMembersStatistics struct {
 	PartyID             PartyID
+	TotalQuantumVolumes *num.Uint
 	TotalQuantumRewards num.Decimal
 	QuantumRewards      []QuantumRewardsPerEpoch
+	QuantumVolumes      []QuantumVolumesPerEpoch
 	TotalGamesPlayed    uint64
 	GamesPlayed         []GameID
 }
@@ -230,11 +248,20 @@ func (t TeamMembersStatistics) ToProto() *v2.TeamMemberStatistics {
 		})
 	}
 
+	quantumVolumes := make([]*v2.QuantumVolumesPerEpoch, 0, len(t.QuantumVolumes))
+	for _, r := range t.QuantumVolumes {
+		quantumVolumes = append(quantumVolumes, &v2.QuantumVolumesPerEpoch{
+			Epoch:               r.Epoch,
+			TotalQuantumVolumes: r.Total.String(),
+		})
+	}
+
 	return &v2.TeamMemberStatistics{
 		PartyId:             string(t.PartyID),
-		TotalQuantumVolume:  "",
+		TotalQuantumVolume:  t.TotalQuantumVolumes.String(),
 		TotalQuantumRewards: t.TotalQuantumRewards.String(),
 		QuantumRewards:      quantumRewards,
+		QuantumVolumes:      quantumVolumes,
 		TotalGamesPlayed:    t.TotalGamesPlayed,
 		GamesPlayed:         gamesPlayed,
 	}

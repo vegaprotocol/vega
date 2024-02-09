@@ -46,11 +46,17 @@ type (
 		RefereeSwitchedTeam() *eventspb.RefereeSwitchedTeam
 	}
 
+	TeamsStatsUpdated interface {
+		events.Event
+		TeamsStatsUpdated() *eventspb.TeamsStatsUpdated
+	}
+
 	TeamStore interface {
 		AddTeam(ctx context.Context, team *entities.Team) error
 		UpdateTeam(ctx context.Context, team *entities.TeamUpdated) error
 		RefereeJoinedTeam(ctx context.Context, referee *entities.TeamMember) error
 		RefereeSwitchedTeam(ctx context.Context, referee *entities.RefereeTeamSwitch) error
+		TeamsStatsUpdated(ctx context.Context, stats *eventspb.TeamsStatsUpdated) error
 	}
 
 	Teams struct {
@@ -71,6 +77,7 @@ func (t *Teams) Types() []events.Type {
 		events.TeamUpdatedEvent,
 		events.RefereeJoinedTeamEvent,
 		events.RefereeSwitchedTeamEvent,
+		events.TeamsStatsUpdatedEvent,
 	}
 }
 
@@ -84,6 +91,8 @@ func (t *Teams) Push(ctx context.Context, evt events.Event) error {
 		return t.consumeRefereeJoinedTeamEvent(ctx, e)
 	case RefereeSwitchedTeam:
 		return t.consumeRefereeSwitchedTeamEvent(ctx, e)
+	case TeamsStatsUpdated:
+		return t.consumeTeamsStatsUpdatedEvent(ctx, e)
 	default:
 		return nil
 	}
@@ -111,4 +120,8 @@ func (t *Teams) consumeRefereeSwitchedTeamEvent(ctx context.Context, e RefereeSw
 	switchedEvt := e.RefereeSwitchedTeam()
 	switched := entities.TeamRefereeHistoryFromProto(switchedEvt, t.vegaTime)
 	return errors.Wrap(t.store.RefereeSwitchedTeam(ctx, switched), "updating referee history")
+}
+
+func (t *Teams) consumeTeamsStatsUpdatedEvent(ctx context.Context, e TeamsStatsUpdated) error {
+	return errors.Wrap(t.store.TeamsStatsUpdated(ctx, e.TeamsStatsUpdated()), "teams stats updated")
 }

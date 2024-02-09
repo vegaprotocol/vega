@@ -52,6 +52,7 @@ func Execute(ctx context.Context) error {
 		LastBlock,
 		UnsafeResetAll,
 		networkhistory.NetworkHistory,
+		MigrateIpfs,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

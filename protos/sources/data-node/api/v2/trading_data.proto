@@ -4261,6 +4261,9 @@ message TeamStatistics {
   uint64 total_games_played = 5;
   // List of games played over the requested epoch period.
   repeated string games_played = 6;
+  // List of volumes over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumVolumesPerEpoch quantum_volumes = 7;
 }
 
 message QuantumRewardsPerEpoch {
@@ -4268,6 +4271,13 @@ message QuantumRewardsPerEpoch {
   uint64 epoch = 1;
   // Total rewards accumulated over the epoch period, expressed in quantum value.
   string total_quantum_rewards = 2;
+}
+
+message QuantumVolumesPerEpoch {
+  // Epoch for which this information is valid.
+  uint64 epoch = 1;
+  // Total volumes accumulated over the epoch period, expressed in quantum value.
+  string total_quantum_volumes = 2;
 }
 
 // Request to list all team members' statistics.
@@ -4322,6 +4332,9 @@ message TeamMemberStatistics {
   uint64 total_games_played = 5;
   // List of games played over the requested epoch period.
   repeated string games_played = 6;
+  // List of volumes over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumVolumesPerEpoch quantum_volumes = 7;
 }
 
 // Request that is sent when listing the referees for a given team.

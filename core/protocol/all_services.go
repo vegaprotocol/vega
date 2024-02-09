@@ -309,9 +309,7 @@ func newServices(
 		svcs.volumeDiscount.OnEpochRestore,
 	)
 
-	svcs.banking = banking.New(
-		svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker,
-		svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 
 	// instantiate the execution engine
 	svcs.executionEngine = execution.NewEngine(

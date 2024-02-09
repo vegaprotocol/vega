@@ -2596,7 +2596,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		aggressor := conf.Order.Party
 		if quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset); err == nil && !quantum.IsZero() {
 			n, _ := num.UintFromDecimal(tradedValue.ToDecimal().Div(quantum))
-			m.marketActivityTracker.RecordNotionalTakerVolume(aggressor, n)
+			m.marketActivityTracker.RecordNotionalTakerVolume(m.mkt.ID, aggressor, n)
 		}
 	}
 	m.feeSplitter.AddTradeValue(tradedValue)
