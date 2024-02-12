@@ -1177,6 +1177,17 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 
 	newMarket := &types.NewSpotMarket{
 		Changes: &types.NewSpotMarketConfiguration{
+			Instrument: &types.InstrumentConfiguration{
+				Name: existingMarket.TradableInstrument.Instrument.Name,
+				Code: existingMarket.TradableInstrument.Instrument.Code,
+				Product: &types.InstrumentConfigurationSpot{
+					Spot: &types.SpotProduct{
+						Name:       existingMarket.TradableInstrument.Instrument.GetSpot().Name,
+						BaseAsset:  existingMarket.TradableInstrument.Instrument.GetSpot().BaseAsset,
+						QuoteAsset: existingMarket.TradableInstrument.Instrument.GetSpot().QuoteAsset,
+					},
+				},
+			},
 			DecimalPlaces:             existingMarket.DecimalPlaces,
 			PositionDecimalPlaces:     existingMarket.PositionDecimalPlaces,
 			Metadata:                  terms.Changes.Metadata,
