@@ -66,6 +66,8 @@ message ERC20 {
   // There’s no limit on the size of a withdrawal
   // note: this is a temporary measure that can be changed by governance.
   string withdraw_threshold = 3;
+  // Chain ID the asset originated from.
+  string chain_id = 4;
 }
 
 // Changes to apply on an existing asset.
