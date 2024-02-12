@@ -844,6 +844,7 @@ message EthContractCallResult {
   string spec_id = 3;
   bytes result = 4;
   optional string error = 5;
+  optional uint64 chain_id = 6;
 }
 
 message PendingKeyRotation {

@@ -298,7 +298,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 			if call.triggered(prevEthBlock, nextEthBlockIsh) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.Number.Uint64())
 				if err != nil {
-					e.log.Error("failed to call contract", logging.Error(err))
+					e.log.Error("failed to call contract", logging.Error(err), logging.Uint64("chain-id", e.chainID))
 					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh, e.chainID)
 					e.forwarder.ForwardFromSelf(event)
 					continue
