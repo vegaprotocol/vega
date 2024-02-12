@@ -210,6 +210,7 @@
 - [10604](https://github.com/vegaprotocol/vega/issues/10604) - Register margin modes API subscriber.
 - [10595](https://github.com/vegaprotocol/vega/issues/10595) - Fix failed amends for isolated margin orders causing negative spread in console.
 - [10606](https://github.com/vegaprotocol/vega/issues/10606) - Party profiles `API` was not returning results.
+- [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
 
 ## 0.73.0
 
