@@ -18,7 +18,9 @@ package assets
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 )
 
@@ -99,7 +101,6 @@ func (s *Service) serialiseK(serialFunc func() ([]byte, error), dataField *[]byt
 	return data, nil
 }
 
-// get the serialised form and hash of the given key.
 func (s *Service) serialise(k string) ([]byte, error) {
 	switch k {
 	case activeKey:
@@ -122,7 +123,7 @@ func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.Stat
 	if s.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
-	// see what we're reloading
+
 	switch pl := p.Data.(type) {
 	case *types.PayloadActiveAssets:
 		return nil, s.restoreActive(ctx, pl.ActiveAssets, p)
@@ -139,6 +140,8 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets,
 	var err error
 	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
+		s.applyMigrations(ctx, p)
+
 		if _, err = s.NewAsset(ctx, p.ID, p.Details); err != nil {
 			return err
 		}
@@ -165,6 +168,8 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	var err error
 	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
+		s.applyMigrations(ctx, p)
+
 		assetID, err := s.NewAsset(ctx, p.ID, p.Details)
 		if err != nil {
 			return err
@@ -180,10 +185,12 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	return err
 }
 
-func (s *Service) restorePendingUpdates(_ context.Context, pending *types.PendingAssetUpdates, p *types.Payload) error {
+func (s *Service) restorePendingUpdates(ctx context.Context, pending *types.PendingAssetUpdates, p *types.Payload) error {
 	var err error
 	s.pendingAssetUpdates = map[string]*Asset{}
 	for _, p := range pending.Assets {
+		s.applyMigrations(ctx, p)
+
 		if err = s.StageAssetUpdate(p); err != nil {
 			return err
 		}
@@ -191,4 +198,17 @@ func (s *Service) restorePendingUpdates(_ context.Context, pending *types.Pendin
 	s.ass.serialisedPendingUpdates, err = proto.Marshal(p.IntoProto())
 
 	return err
+}
+
+func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0") {
+		// Prior the introduction of the second bridge, existing assets did not track
+		// the chain ID they originated from. So, when loaded, assets without a chain
+		// ID are automatically considered to originate from Ethereum Mainnet.
+		if erc20 := p.Details.GetERC20(); erc20 != nil && erc20.ChainID == "" {
+			erc20.ChainID = s.ethClient.ConfiguredChainID()
+			// Ensure the assets are updated in the data-node.
+			s.broker.Send(events.NewAssetEvent(ctx, *p))
+		}
+	}
 }

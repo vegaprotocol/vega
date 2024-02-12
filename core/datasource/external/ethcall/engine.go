@@ -99,7 +99,7 @@ func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthRead
 }
 
 // EnsureChainID tells the engine which chainID it should be related to, and it confirms this against the its client.
-func (e *Engine) EnsureChainID(chainID string, blockInterval uint64, confirmWithClient bool) {
+func (e *Engine) EnsureChainID(ctx context.Context, chainID string, blockInterval uint64, confirmWithClient bool) {
 	chainIDU, _ := strconv.ParseUint(chainID, 10, 64)
 	e.chainID.Store(chainIDU)
 	e.blockInterval.Store(blockInterval)
@@ -110,7 +110,7 @@ func (e *Engine) EnsureChainID(chainID string, blockInterval uint64, confirmWith
 
 	// if the node is a validator, we now check the chainID against the chain the client is connected to.
 	if confirmWithClient {
-		cid, err := e.client.ChainID(context.Background())
+		cid, err := e.client.ChainID(ctx)
 		if err != nil {
 			log.Panic("could not load chain ID", logging.Error(err))
 		}
