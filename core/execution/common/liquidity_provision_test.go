@@ -26,6 +26,7 @@ import (
 	cmocks "code.vegaprotocol.io/vega/core/collateral/mocks"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
+	ammcmocks "code.vegaprotocol.io/vega/core/execution/common/mocks_amm"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	lmocks "code.vegaprotocol.io/vega/core/liquidity/v2/mocks"
@@ -53,7 +54,7 @@ type marketLiquidityTest struct {
 	broker           *bmocks.MockBroker
 	orderBook        *lmocks.MockOrderBook
 	timeService      *cmocks.MockTimeService
-	amm              *mocks.MockAMM
+	amm              *ammcmocks.MockAMM
 }
 
 func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
@@ -84,7 +85,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
 	marketTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
 	epochEngine.NotifyOnEpoch(marketTracker.OnEpochEvent, marketTracker.OnEpochRestore)
-	amm := mocks.NewMockAMM(ctrl)
+	amm := ammcmocks.NewMockAMM(ctrl)
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log,
@@ -138,7 +139,7 @@ func createPartyAndPayLiquidityFee(t *testing.T, amount *num.Uint, testLiquidity
 
 	transfer := testLiquidity.marketLiquidity.NewTransfer(tradingParty, types.TransferTypeLiquidityFeePay, amount.Clone())
 
-	_, err = testLiquidity.collateralEngine.TransferFees(
+	_, err = testLiquidity.collateralEngine.TransferSpotFees(
 		testLiquidity.ctx,
 		testLiquidity.marketID,
 		testLiquidity.asset,
@@ -430,6 +431,21 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return(poolsPartyIDs).AnyTimes()
 
+	testLiquidity.orderBook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(100), nil).AnyTimes()
+	testLiquidity.orderBook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(100), nil).AnyTimes()
+
+	poolMock := ammcmocks.NewMockAMMPool(testLiquidity.ctrl)
+	poolMock.EXPECT().VolumeBetweenPrices(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint64(100)).AnyTimes()
+
+	ammPools := map[string]common.AMMPool{
+		"pool-party-1": poolMock,
+		"pool-party-2": poolMock,
+	}
+
+	// TODO Karal - fix this test
+
+	testLiquidity.amm.EXPECT().GetAMMPools().Return(ammPools).AnyTimes()
+
 	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
 			return &types.LiquidityProvision{
@@ -465,7 +481,7 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	}
 
 	// create all required accounts for spot market.
-	_, _, err = testLiquidity.collateralEngine.CreateMarketAccounts(ctx, testLiquidity.marketID, testLiquidity.asset)
+	err = testLiquidity.collateralEngine.CreateSpotMarketAccounts(ctx, testLiquidity.marketID, testLiquidity.asset)
 	assert.NoError(t, err)
 
 	testLiquidity.liquidityEngine.EXPECT().
