@@ -34,12 +34,12 @@ import (
 )
 
 var (
-	ErrAssetInvalid       = errors.New("asset invalid")
 	ErrAssetDoesNotExist  = errors.New("asset does not exist")
 	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/assets ERC20BridgeView,Notary
+
 type ERC20BridgeView interface {
 	FindAsset(asset *types.AssetDetails) error
 }
@@ -261,12 +261,12 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 			builtin.New(assetID, assetDetails),
 		}, nil
 	case *types.AssetDetailsErc20:
-		// TODO(): fix once the ethereum wallet and client are not required
-		// anymore to construct assets
 		var (
 			asset *erc20.ERC20
 			err   error
 		)
+		// TODO(): fix once the ethereum wallet and client are not required
+		// anymore to construct assets
 		if s.isValidator {
 			asset, err = erc20.New(assetID, assetDetails, s.ethWallet, s.ethClient)
 		} else {

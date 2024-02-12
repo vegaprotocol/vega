@@ -35,14 +35,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-var (
-	ErrUnableToFindDeposit                 = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal              = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetList          = errors.New("unable to find erc20 asset list event")
-	ErrUnableToFindERC20AssetLimitsUpdated = errors.New("unable to find ERC20 asset limits updated event")
-	ErrMissingConfirmations                = errors.New("missing confirmation from ethereum")
-	ErrNotAnErc20Asset                     = errors.New("not an erc20 asset")
-)
+var ErrNotAnErc20Asset = errors.New("not an erc20 asset")
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/assets/erc20 ETHClient
 type ETHClient interface {
@@ -51,11 +44,13 @@ type ETHClient interface {
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
 	ConfirmationsRequired() uint64
+	ConfiguredChainID() string
 }
 
 type ERC20 struct {
 	asset     *types.Asset
 	address   string
+	chainID   string
 	ok        bool
 	wallet    ethnw.EthereumWallet
 	ethClient ETHClient
@@ -78,6 +73,7 @@ func New(
 			Details: asset,
 			Status:  types.AssetStatusProposed,
 		},
+		chainID:   source.ChainID,
 		address:   source.ContractAddress,
 		wallet:    w,
 		ethClient: ethClient,
