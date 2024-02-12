@@ -266,7 +266,8 @@ func NewMarket(
 	// we can't pass in the AMM at this point
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		nil,
 	)
 
 	// The market is initially created in a proposed state
@@ -357,6 +358,9 @@ func NewMarket(
 			market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 		}
 	}
+
+	// now set AMM engine on liquidity market.
+	market.liquidity.SetAMM(market.amm)
 
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
