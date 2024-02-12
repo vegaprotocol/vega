@@ -211,6 +211,7 @@
 - [10595](https://github.com/vegaprotocol/vega/issues/10595) - Fix failed amends for isolated margin orders causing negative spread in console.
 - [10606](https://github.com/vegaprotocol/vega/issues/10606) - Party profiles `API` was not returning results.
 - [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
+- [10621](https://github.com/vegaprotocol/vega/issues/10516) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
 
 ## 0.73.0
 
@@ -838,6 +839,7 @@
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
 - [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
 - [10516](https://github.com/vegaprotocol/vega/issues/10516) - Fix mapping of estimate position.
+
 
 ## 0.70.0
 
