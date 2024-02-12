@@ -327,6 +327,21 @@ func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
 
 func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Time) {
 	penalties := m.liquidityEngine.CalculateSLAPenalties(t)
+	poolOwnersIDs := m.amm.GetAllPoolOwners()
+
+	for _, partyID := range poolOwnersIDs {
+		// TODO Karel - clarify with research if we should apply penalties to pool owners
+		if _, ok := penalties.PenaltiesPerParty[partyID]; ok {
+			continue
+		}
+
+		// set penalty to zero for pool owners as they always meet their obligations for SLA
+		penalties.PenaltiesPerParty[partyID] = &liquidity.SlaPenalty{
+			Fee:  num.DecimalZero(),
+			Bond: num.DecimalZero(),
+		}
+	}
+
 	m.distributeFeesBonusesAndApplyPenalties(ctx, penalties)
 }
 

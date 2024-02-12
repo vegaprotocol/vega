@@ -168,9 +168,12 @@ func (m *MarketLiquidity) processBondPenalties(
 
 		provision := m.liquidityEngine.LiquidityProvisionByPartyID(partyID)
 
-		// bondPenalty x commitmentAmount.
-		amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
-		amountUint, _ := num.UintFromDecimal(amount)
+		amountUint := num.UintZero()
+		if provision != nil {
+			// bondPenalty x commitmentAmount.
+			amount := penalty.Bond.Mul(provision.CommitmentAmount.ToDecimal())
+			amountUint, _ = num.UintFromDecimal(amount)
+		}
 
 		if amountUint.IsZero() {
 			continue
