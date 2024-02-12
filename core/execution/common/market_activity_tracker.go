@@ -418,7 +418,7 @@ func (mt *marketTracker) clearFeeActivity() {
 		mt.epochTotalLpFees = mt.epochTotalLpFees[1:]
 	}
 	mt.epochMakerFeesReceived = append(mt.epochMakerFeesReceived, mt.makerFeesReceived)
-	mt.epochMakerFeesPaid = append(mt.epochMakerFeesReceived, mt.makerFeesPaid)
+	mt.epochMakerFeesPaid = append(mt.epochMakerFeesPaid, mt.makerFeesPaid)
 	mt.epochLpFees = append(mt.epochLpFees, mt.lpFees)
 	mt.makerFeesReceived = map[string]*num.Uint{}
 	mt.makerFeesPaid = map[string]*num.Uint{}
