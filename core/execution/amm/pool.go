@@ -42,12 +42,13 @@ type Pool struct {
 	Commitment *num.Uint
 	Parameters *types.ConcentratedLiquidityParameters
 
-	asset       string
-	market      string
-	party       string
-	collateral  Collateral
-	position    Position
-	priceFactor *num.Uint
+	asset          string
+	market         string
+	party          string
+	collateral     Collateral
+	position       Position
+	priceFactor    *num.Uint
+	positionFactor num.Decimal
 
 	// sqrt function to use.
 	sqrt sqrtFn
@@ -78,20 +79,22 @@ func NewPool(
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
 	priceFactor *num.Uint,
+	positionFactor num.Decimal,
 ) *Pool {
 	pool := &Pool{
-		ID:          id,
-		SubAccount:  subAccount,
-		Commitment:  submit.CommitmentAmount,
-		Parameters:  submit.Parameters,
-		market:      submit.MarketID,
-		party:       submit.Party,
-		asset:       asset,
-		sqrt:        sqrt,
-		collateral:  collateral,
-		position:    position,
-		priceFactor: priceFactor,
-		oneTick:     num.UintZero().Mul(num.UintOne(), priceFactor),
+		ID:             id,
+		SubAccount:     subAccount,
+		Commitment:     submit.CommitmentAmount,
+		Parameters:     submit.Parameters,
+		market:         submit.MarketID,
+		party:          submit.Party,
+		asset:          asset,
+		sqrt:           sqrt,
+		collateral:     collateral,
+		position:       position,
+		priceFactor:    priceFactor,
+		positionFactor: positionFactor,
+		oneTick:        num.UintZero().Mul(num.UintOne(), priceFactor),
 	}
 	pool.setCurves(rf, sf, linearSlippage)
 	return pool
@@ -183,6 +186,7 @@ func generateCurve(
 	marginFactor,
 	linearSlippage num.Decimal,
 	marginRatio *num.Decimal,
+	positionFactor num.Decimal,
 ) *curve {
 	// rf = 1 / ( mf * ( risk-factor + slippage ) )
 	rf := num.DecimalOne().Div(marginFactor.Mul(riskFactor.Add(linearSlippage)))
@@ -190,6 +194,10 @@ func generateCurve(
 		// rf = min(rf, 1/margin-ratio)
 		rf = num.MinD(rf, num.DecimalOne().Div(*marginRatio))
 	}
+
+	// we scale rf by the position factor since that is used to calculate the theoretical volume (pv) at the boundary
+	// just here below, and also when calculating the fair price when the pool is in a short position.
+	rf = rf.Mul(positionFactor)
 
 	// calculate the theoretical volume at the extreme i.e upper-bound for high curve, lower bound for low curve
 	// pv = rf * commitment / p
@@ -232,6 +240,7 @@ func (p *Pool) setCurves(
 		sfs.InitialMargin,
 		linearSlippage,
 		p.Parameters.MarginRatioAtLowerBound,
+		p.positionFactor,
 	)
 
 	p.upper = generateCurve(
@@ -244,6 +253,7 @@ func (p *Pool) setCurves(
 		sfs.InitialMargin,
 		linearSlippage,
 		p.Parameters.MarginRatioAtUpperBound,
+		p.positionFactor,
 	)
 }
 

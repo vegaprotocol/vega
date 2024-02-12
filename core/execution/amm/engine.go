@@ -131,7 +131,8 @@ type Engine struct {
 	idgen      *idgeneration.IDGenerator
 
 	// gets us from the price in the submission -> price in full asset dp
-	priceFactor *num.Uint
+	priceFactor    *num.Uint
+	positionFactor num.Decimal
 
 	// map of party -> pool
 	pools    map[string]*Pool
@@ -154,6 +155,7 @@ func New(
 	risk Risk,
 	position Position,
 	priceFactor *num.Uint,
+	positionFactor num.Decimal,
 ) *Engine {
 	return &Engine{
 		log:                  log,
@@ -168,6 +170,7 @@ func New(
 		minCommitmentQuantum: num.UintZero(),
 		rooter:               &Sqrter{cache: map[string]num.Decimal{}},
 		priceFactor:          priceFactor,
+		positionFactor:       positionFactor,
 	}
 }
 
@@ -180,8 +183,9 @@ func NewFromProto(
 	position Position,
 	state *v1.AmmState,
 	priceFactor *num.Uint,
+	positionFactor num.Decimal,
 ) *Engine {
-	e := New(log, broker, collateral, market, risk, position, priceFactor)
+	e := New(log, broker, collateral, market, risk, position, priceFactor, positionFactor)
 
 	for _, v := range state.SubAccounts {
 		e.subAccounts[v.Key] = v.Value
@@ -467,6 +471,7 @@ func (e *Engine) SubmitAMM(
 		e.risk.GetScalingFactors(),
 		e.risk.GetSlippage(),
 		e.priceFactor,
+		e.positionFactor,
 	)
 
 	if targetPrice != nil {
