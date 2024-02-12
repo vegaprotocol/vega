@@ -614,7 +614,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 			m.internalCompositePriceCalculator = nil
 		} else if m.internalCompositePriceCalculator != nil {
 			// there was previously a intenal composite price calculator
-			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, m.mkt.MarkPriceConfiguration); err != nil {
+			if err := m.internalCompositePriceCalculator.UpdateConfig(ctx, oracleEngine, internalCompositePriceConfig); err != nil {
 				m.internalCompositePriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
 				return err
 			}
@@ -2277,6 +2277,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return nil, nil, m.unregisterAndReject(ctx, order, err)
 		}
 	}
+	passiveOrders := m.getPassiveOrdersCopy(order, trades)
 
 	// if an auction was trigger, and we are a pegged order
 	// or a liquidity order, let's return now.
@@ -2340,6 +2341,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 					m.log.Debug("Unable to check/add immediate trade margin for party",
 						logging.Order(*order), logging.Error(err))
 				}
+				m.matching.RollbackConfirmation(confirmation, passiveOrders)
 				_ = m.unregisterAndReject(
 					ctx, order, types.OrderErrorIsolatedMarginCheckFailed)
 				m.matching.RemoveOrder(order.ID)
@@ -2364,9 +2366,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	if fees != nil {
 		err = m.applyFees(ctx, order, fees)
 		if err != nil {
+			m.matching.RollbackConfirmation(confirmation, passiveOrders)
 			_ = m.unregisterAndReject(
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
+			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
 
@@ -2542,13 +2546,14 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	tradedValue, _ := num.UintFromDecimal(
 		conf.TradedValue().ToDecimal().Div(m.positionFactor))
 	for idx, trade := range conf.Trades {
-		m.markPriceCalculator.NewTrade(trade)
-		if m.internalCompositePriceCalculator != nil {
-			m.internalCompositePriceCalculator.NewTrade(trade)
-		}
 		trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 		if tradeT != nil {
 			trade.Type = *tradeT
+		} else {
+			m.markPriceCalculator.NewTrade(trade)
+			if m.internalCompositePriceCalculator != nil {
+				m.internalCompositePriceCalculator.NewTrade(trade)
+			}
 		}
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
@@ -2596,7 +2601,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		aggressor := conf.Order.Party
 		if quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset); err == nil && !quantum.IsZero() {
 			n, _ := num.UintFromDecimal(tradedValue.ToDecimal().Div(quantum))
-			m.marketActivityTracker.RecordNotionalTakerVolume(aggressor, n)
+			m.marketActivityTracker.RecordNotionalTakerVolume(m.mkt.ID, aggressor, n)
 		}
 	}
 	m.feeSplitter.AddTradeValue(tradedValue)
@@ -3722,11 +3727,6 @@ func (m *Market) orderCancelReplace(
 
 	defer func() {
 		if err != nil {
-			if err == common.ErrMarginCheckFailed {
-				// we failed the margin check, the order traded in full, and is stopped
-				// the position was already updated
-				return
-			}
 			// if an error happens, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
@@ -3791,21 +3791,7 @@ func (m *Market) orderCancelReplace(
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
 	// get the orders in their current state
-	passiveOrders := make([]*types.Order, 0, len(trades))
-	checkBuy := newOrder.Side == types.SideSell
-	for _, t := range trades {
-		id := t.SellOrder
-		if checkBuy {
-			id = t.BuyOrder
-		}
-		o, _ := m.matching.GetOrderByID(id)
-		if o == nil {
-			// this shouldn't be possible
-			continue
-		}
-		// clone the order
-		passiveOrders = append(passiveOrders, o.Clone())
-	}
+	passiveOrders := m.getPassiveOrdersCopy(newOrder, trades)
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
@@ -3836,13 +3822,6 @@ func (m *Market) orderCancelReplace(
 			// but the trades must go through
 			err = nil
 			return
-		}
-		// now we had an error and no trades, the order is stopped, but we must remove it from the book explicitly
-		m.matching.DeleteOrder(conf.Order)
-		// ensure the position is restored. We update the position restoring the old order, so we really must be setting that to size of zero
-		existingOrder.Size = 0
-		if existingOrder.IcebergOrder != nil {
-			existingOrder.IcebergOrder.ReservedRemaining = 0
 		}
 		// conf should not be returned/used after this
 		conf = nil
@@ -3887,6 +3866,21 @@ func (m *Market) orderCancelReplace(
 	}
 
 	return conf, orders, nil
+}
+
+func (m *Market) getPassiveOrdersCopy(order *types.Order, trades []*types.Trade) []*types.Order {
+	ret := make([]*types.Order, 0, len(trades))
+	checkBuy := order.Side == types.SideSell
+	for _, t := range trades {
+		id := t.SellOrder
+		if checkBuy {
+			id = t.BuyOrder
+		}
+		if o, _ := m.matching.GetOrderByID(id); o != nil {
+			ret = append(ret, o.Clone())
+		}
+	}
+	return ret
 }
 
 func (m *Market) orderAmendInPlace(

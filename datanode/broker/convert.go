@@ -190,6 +190,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.PartyMarginModeUpdatedEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY_PROFILE_UPDATED:
 		return events.PartyProfileUpdatedEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TEAMS_STATS_UPDATED:
+		return events.TeamsStatsUpdatedEventFromStream(ctx, be)
 	}
 
 	return nil

@@ -651,8 +651,8 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 		margins := riskevt.MarginLevels()
 		require.Equal(t, tc.expectedMargin, margins.MaintenanceMargin.String())
 
-		// marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction)
-		// require.Equal(t, margins.MaintenanceMargin.Float64(), marginRecalcualted.RoundUp(0).InexactFloat64())
+		marginRecalcualted := risk.CalculateMaintenanceMarginWithSlippageFactors(evt.size, tc.buyOrders, tc.sellOrders, num.DecimalFromInt64(markPrice), num.DecimalOne(), tc.linearSlippageFactor, tc.quadraticSlippageFactor, r.Long, r.Short, constantPerUnitPositionSize, tc.auction)
+		require.Equal(t, margins.MaintenanceMargin.Float64(), marginRecalcualted.RoundUp(0).InexactFloat64())
 	}
 }
 
@@ -1463,7 +1463,7 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		maintenanceMarginFp := maintenanceMargin.InexactFloat64()
 		require.Greater(t, maintenanceMarginFp, 0.0)
 
-		liquidationPrice, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, maintenanceMargin, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize)
+		liquidationPrice, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, maintenanceMargin, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalZero())
 		if tc.expectError {
 			require.Error(t, err)
 			continue
@@ -1473,11 +1473,11 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		liquidationPriceFp := liquidationPrice.InexactFloat64()
 		require.GreaterOrEqual(t, liquidationPriceFp, 0.0)
 
-		require.True(t, markPrice.Div(liquidationPrice).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance))
+		require.True(t, markPrice.Div(liquidationPrice).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance), fmt.Sprintf("Test case %v:", i+1))
 
 		collateral := maintenanceMargin.Mul(num.DecimalFromFloat(tc.collateralFactor))
 
-		liquidationPrice, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize)
+		liquidationPrice, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalOne())
 		require.NoError(t, err)
 		require.False(t, liquidationPrice.IsNegative())
 
@@ -1495,6 +1495,10 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 			require.True(t, liquidationPrice.IsZero(), fmt.Sprintf("Test case %v:", i+1))
 			require.True(t, collateralAfterLoss.IsNegative(), fmt.Sprintf("Test case %v:", i+1))
 		}
+
+		liquidationPriceIsolatedMode, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, true, num.DecimalOne())
+		require.NoError(t, err)
+		require.Equal(t, liquidationPrice, liquidationPrice, liquidationPriceIsolatedMode)
 	}
 }
 
@@ -1767,7 +1771,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 		riskFactorShort := num.DecimalFromFloat(tc.riskFactorShort)
 
 		constantPerUnitPositionSize := num.DecimalFromFloat(tc.margin_funding_factor * tc.funding_payment_to_date)
-		positionOnly, withBuy, withSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, tc.buyOrders, tc.sellOrders, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize)
+		positionOnly, withBuy, withSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, tc.buyOrders, tc.sellOrders, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalOne())
 		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
 
 		sPositionOnly := positionOnly.String()
@@ -1817,7 +1821,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 			lastMarkPrice = o.Price
 		}
 		collateralAfterMtm := collateral.Add(mtmDelta)
-		liquidationPriceForNewPosition, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize)
+		liquidationPriceForNewPosition, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalOne())
 		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
 		require.True(t, withBuy.Equal(liquidationPriceForNewPosition), fmt.Sprintf("Test case %v: withBuy=%s, newPositionOnly=%s", i+1, withBuy.String(), liquidationPriceForNewPosition.String()))
 
@@ -1849,7 +1853,7 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 			lastMarkPrice = o.Price
 		}
 		collateralAfterMtm = collateral.Add(mtmDelta)
-		liquidationPriceForNewPosition, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize)
+		liquidationPriceForNewPosition, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, constantPerUnitPositionSize, false, num.DecimalOne())
 		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
 		require.True(t, withSell.Equal(liquidationPriceForNewPosition), fmt.Sprintf("Test case %v: withSell=%s, newPositionOnly=%s", i+1, withSell.String(), liquidationPriceForNewPosition.String()))
 

@@ -144,6 +144,7 @@ func TestOrderBook_Rollback(t *testing.T) {
 			}
 		}
 		book.ob.RollbackConfirmation(conf, restore)
+		book.ob.RemoveOrder(conf.Order.ID)
 		// now submitting the order a second time should yield the same confirmation object:
 		conf2, err := book.ob.SubmitOrder(c2)
 		require.NoError(t, err)

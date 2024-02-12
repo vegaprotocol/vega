@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.74.0-dev";
+    version: "v0.74.0";
   }
   schemes: [
     HTTP,
@@ -3913,8 +3913,8 @@ message EstimatePositionRequest {
   vega.MarginMode margin_mode = 8 [(google.api.field_behavior) = REQUIRED];
   // Margin factor to be used along with isolated margin mode
   optional string margin_factor = 9;
-  // Whether the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode.
-  optional bool include_collateral_increase_in_available_collateral = 10;
+  // Whether the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode.
+  optional bool include_required_position_margin_in_available_collateral = 10;
   // Whether the liquidation price estimates should be scaled to market decimal places or by asset decimal places. If not set, asset decimal places are used.
   optional bool scale_liquidation_price_to_market_decimals = 11;
 }
@@ -4261,6 +4261,9 @@ message TeamStatistics {
   uint64 total_games_played = 5;
   // List of games played over the requested epoch period.
   repeated string games_played = 6;
+  // List of volumes over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumVolumesPerEpoch quantum_volumes = 7;
 }
 
 message QuantumRewardsPerEpoch {
@@ -4268,6 +4271,13 @@ message QuantumRewardsPerEpoch {
   uint64 epoch = 1;
   // Total rewards accumulated over the epoch period, expressed in quantum value.
   string total_quantum_rewards = 2;
+}
+
+message QuantumVolumesPerEpoch {
+  // Epoch for which this information is valid.
+  uint64 epoch = 1;
+  // Total volumes accumulated over the epoch period, expressed in quantum value.
+  string total_quantum_volumes = 2;
 }
 
 // Request to list all team members' statistics.
@@ -4322,6 +4332,9 @@ message TeamMemberStatistics {
   uint64 total_games_played = 5;
   // List of games played over the requested epoch period.
   repeated string games_played = 6;
+  // List of volumes over the requested epoch period, expressed in quantum
+  // value for each epoch.
+  repeated QuantumVolumesPerEpoch quantum_volumes = 7;
 }
 
 // Request that is sent when listing the referees for a given team.

@@ -41,8 +41,8 @@ const (
 )
 
 var (
-	uScalingFactor  = num.NewUint(u64ScalingFactor)
-	dSscalingFactor = num.DecimalFromInt64(scalingFactor)
+	uScalingFactor = num.NewUint(u64ScalingFactor)
+	dScalingFactor = num.DecimalFromInt64(scalingFactor)
 )
 
 type twPosition struct {
@@ -54,7 +54,7 @@ type twPosition struct {
 type twNotional struct {
 	notional               *num.Uint // last position's price
 	t                      time.Time // time of last recorded notional position
-	currentEpochTWNotional *num.Uint // current epoch's running time weightd notional position
+	currentEpochTWNotional *num.Uint // current epoch's running time-weighted notional position
 }
 
 // marketTracker tracks the activity in the markets in terms of fees and value.
@@ -92,29 +92,35 @@ type marketTracker struct {
 
 // MarketActivityTracker tracks how much fees are paid and received for a market by parties by epoch.
 type MarketActivityTracker struct {
-	log                                 *logging.Logger
-	assetToMarketTrackers               map[string]map[string]*marketTracker
-	eligibilityChecker                  EligibilityChecker
+	log *logging.Logger
+
+	teams              Teams
+	balanceChecker     AccountBalanceChecker
+	eligibilityChecker EligibilityChecker
+
 	currentEpoch                        uint64
 	epochStartTime                      time.Time
-	ss                                  *snapshotState
-	teams                               Teams
-	balanceChecker                      AccountBalanceChecker
 	minEpochsInTeamForRewardEligibility uint64
-	partyContributionCache              map[string][]*types.PartyContributionScore
-	partyTakerNotionalVolume            map[string]*num.Uint
+
+	assetToMarketTrackers            map[string]map[string]*marketTracker
+	partyContributionCache           map[string][]*types.PartyContributionScore
+	partyTakerNotionalVolume         map[string]*num.Uint
+	marketToPartyTakerNotionalVolume map[string]map[string]*num.Uint
+
+	ss *snapshotState
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
 func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
-		assetToMarketTrackers:    map[string]map[string]*marketTracker{},
-		ss:                       &snapshotState{},
-		log:                      log,
-		balanceChecker:           balanceChecker,
-		teams:                    teams,
-		partyContributionCache:   map[string][]*types.PartyContributionScore{},
-		partyTakerNotionalVolume: map[string]*num.Uint{},
+		log:                              log,
+		balanceChecker:                   balanceChecker,
+		teams:                            teams,
+		assetToMarketTrackers:            map[string]map[string]*marketTracker{},
+		partyContributionCache:           map[string][]*types.PartyContributionScore{},
+		partyTakerNotionalVolume:         map[string]*num.Uint{},
+		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
+		ss:                               &snapshotState{},
 	}
 
 	return mat
@@ -125,9 +131,9 @@ func (mat *MarketActivityTracker) OnMinEpochsInTeamForRewardEligibilityUpdated(_
 	return nil
 }
 
-// NeedsInitialisation is a heuristc migration - if there is no time weighted position data when restoring from snapshot, we will restore
+// NeedsInitialisation is a heuristic migration - if there is no time weighted position data when restoring from snapshot, we will restore
 // positions from the market. This will only happen on the one time migration from a version preceding the new metrics. If we're already on a
-// new version, either there are no timeweighted positions and no positions or there are time weighted positions and they will not be restored.
+// new version, either there are no time-weighted positions and no positions or there are time weighted positions and they will not be restored.
 func (mat *MarketActivityTracker) NeedsInitialisation(asset, market string) bool {
 	if tracker, ok := mat.getMarketTracker(asset, market); ok {
 		return len(tracker.twPosition) == 0
@@ -265,7 +271,7 @@ func (mat *MarketActivityTracker) GetMarketsWithEligibleProposer(asset string, m
 	for _, mcs := range scores {
 		scoresString += mcs.Market + ":" + mcs.Score.String() + ","
 	}
-	mat.log.Info("markets contibutions:", logging.String("asset", asset), logging.String("metric", proto.DispatchMetric_name[int32(proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
+	mat.log.Info("markets contributions:", logging.String("asset", asset), logging.String("metric", proto.DispatchMetric_name[int32(proto.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE)]), logging.String("market-scores", scoresString[:len(scoresString)-1]))
 
 	return scores
 }
@@ -282,7 +288,7 @@ func (mat *MarketActivityTracker) clipScoresAt1(scores []*types.MarketContributi
 	sort.SliceStable(scores, func(i, j int) bool { return scores[i].Market < scores[j].Market })
 }
 
-// MarkProposerPaid marks the proposer of the market as having been paid proposer bonus.
+// MarkPaidProposer marks the proposer of the market as having been paid proposer bonus.
 func (mat *MarketActivityTracker) MarkPaidProposer(asset, market, payoutAsset string, marketsInScope []string, funder string) {
 	markets := strings.Join(marketsInScope[:], "_")
 	if len(marketsInScope) == 0 {
@@ -361,7 +367,7 @@ func (mat *MarketActivityTracker) MarketTrackedForAsset(market, asset string) bo
 	return false
 }
 
-// removeMarket is called when the market is removed from the network. It is not immediately removed to give a chance for rewards to be paid at the end of the epoch for activity during the epoch.
+// RemoveMarket is called when the market is removed from the network. It is not immediately removed to give a chance for rewards to be paid at the end of the epoch for activity during the epoch.
 // Instead it is marked for removal and will be removed at the beginning of the next epoch.
 func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 	if markets, ok := mat.assetToMarketTrackers[asset]; ok {
@@ -371,15 +377,14 @@ func (mat *MarketActivityTracker) RemoveMarket(asset, marketID string) {
 	}
 }
 
-// onEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
-func (mat *MarketActivityTracker) OnEpochEvent(_ context.Context, epoch types.Epoch) {
+// OnEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
+func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		mat.epochStartTime = epoch.StartTime
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
-	}
-	if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
+	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
 		for _, market := range mat.assetToMarketTrackers {
 			for _, mt := range market {
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
@@ -679,14 +684,14 @@ func calculateMetricForTeamUtil(asset string,
 	return total.Div(num.DecimalFromInt64(int64(maxIndex))), teamPartyScores
 }
 
-// calculateMetricForParty returns the value of a reward metric score for the given party for markets of the givem assets which are in scope over the given window size.
+// calculateMetricForParty returns the value of a reward metric score for the given party for markets of the given assets which are in scope over the given window size.
 func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, marketsInScope []string, metric vega.DispatchMetric, windowSize int) num.Decimal {
 	// exclude unsupported metrics
 	if metric == vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE {
-		mat.log.Panic("unexpected disaptch metric market value here")
+		mat.log.Panic("unexpected dispatch metric market value here")
 	}
 	if metric == vega.DispatchMetric_DISPATCH_METRIC_VALIDATOR_RANKING {
-		mat.log.Panic("unexpected disaptch metric validator ranking here")
+		mat.log.Panic("unexpected dispatch metric validator ranking here")
 	}
 	uTotal := uint64(0)
 	total := num.DecimalZero()
@@ -766,16 +771,27 @@ func (mat *MarketActivityTracker) calculateMetricForParty(asset, party string, m
 	return num.DecimalZero()
 }
 
-func (mat *MarketActivityTracker) RecordNotionalTakerVolume(party string, volumeToAdd *num.Uint) {
+func (mat *MarketActivityTracker) RecordNotionalTakerVolume(marketID string, party string, volumeToAdd *num.Uint) {
 	if _, ok := mat.partyTakerNotionalVolume[party]; !ok {
 		mat.partyTakerNotionalVolume[party] = volumeToAdd
-		return
+	} else {
+		mat.partyTakerNotionalVolume[party].AddSum(volumeToAdd)
 	}
-	mat.partyTakerNotionalVolume[party].AddSum(volumeToAdd)
+
+	if _, ok := mat.marketToPartyTakerNotionalVolume[marketID]; !ok {
+		mat.marketToPartyTakerNotionalVolume[marketID] = map[string]*num.Uint{
+			party: volumeToAdd.Clone(),
+		}
+	} else if _, ok := mat.marketToPartyTakerNotionalVolume[marketID][party]; !ok {
+		mat.marketToPartyTakerNotionalVolume[marketID][party] = volumeToAdd.Clone()
+	} else {
+		mat.marketToPartyTakerNotionalVolume[marketID][party].AddSum(volumeToAdd)
+	}
 }
 
 func (mat *MarketActivityTracker) clearNotionalTakerVolume() {
 	mat.partyTakerNotionalVolume = map[string]*num.Uint{}
+	mat.marketToPartyTakerNotionalVolume = map[string]map[string]*num.Uint{}
 }
 
 func (mat *MarketActivityTracker) NotionalTakerVolumeForAllParties() map[types.PartyID]*num.Uint {
@@ -784,6 +800,54 @@ func (mat *MarketActivityTracker) NotionalTakerVolumeForAllParties() map[types.P
 		res[types.PartyID(k)] = u.Clone()
 	}
 	return res
+}
+
+func (mat *MarketActivityTracker) TeamStatsForMarkets(allMarketsForAssets, onlyTheseMarkets []string) map[string]map[string]*num.Uint {
+	teams := mat.teams.GetAllTeamsWithParties(0)
+
+	// Pre-fill stats for all teams and their members.
+	partyToTeam := map[string]string{}
+	teamsStats := map[string]map[string]*num.Uint{}
+	for teamID, members := range teams {
+		teamsStats[teamID] = map[string]*num.Uint{}
+		for _, member := range members {
+			teamsStats[teamID][member] = num.UintZero()
+			partyToTeam[member] = teamID
+		}
+	}
+
+	// Filter the markets to get data from.
+	onlyMarketsStats := map[string]map[string]*num.Uint{}
+	if len(onlyTheseMarkets) == 0 {
+		onlyMarketsStats = mat.marketToPartyTakerNotionalVolume
+	} else {
+		for _, marketID := range onlyTheseMarkets {
+			onlyMarketsStats[marketID] = mat.marketToPartyTakerNotionalVolume[marketID]
+		}
+	}
+
+	for _, asset := range allMarketsForAssets {
+		mkts, ok := mat.assetToMarketTrackers[asset]
+		if !ok {
+			continue
+		}
+		for marketID := range mkts {
+			onlyMarketsStats[marketID] = mat.marketToPartyTakerNotionalVolume[marketID]
+		}
+	}
+
+	// Gather only party's stats from those who are in a team.
+	for _, marketStats := range onlyMarketsStats {
+		for partyID, volume := range marketStats {
+			teamID, inTeam := partyToTeam[partyID]
+			if !inTeam {
+				continue
+			}
+			teamsStats[teamID][partyID].AddSum(volume)
+		}
+	}
+
+	return teamsStats
 }
 
 func (mat *MarketActivityTracker) NotionalTakerVolumeForParty(party string) *num.Uint {
@@ -894,7 +958,7 @@ func (mt *marketTracker) recordPosition(party string, absPos uint64, positionFac
 	updatePosition(toi, uint64(scaledAbsPos), t, tn, time)
 }
 
-// processPositionEndOfEpoch is called at the end of the epoch, calcualtes the time weight of the current position and moves it to the next epoch, and records
+// processPositionEndOfEpoch is called at the end of the epoch, calculates the time weight of the current position and moves it to the next epoch, and records
 // the time weighted position of the current epoch in the history.
 func (mt *marketTracker) processPositionEndOfEpoch(epochStartTime time.Time, endEpochTime time.Time) {
 	t := int64(endEpochTime.Sub(epochStartTime).Seconds())
@@ -937,7 +1001,7 @@ func (mt *marketTracker) processM2MEndOfEpoch() {
 		if p == 0 {
 			v = num.DecimalZero()
 		} else {
-			v = m2m.Div(num.DecimalFromInt64(int64(p)).Div(dSscalingFactor))
+			v = m2m.Div(num.DecimalFromInt64(int64(p)).Div(dScalingFactor))
 		}
 		m[party] = v
 		mt.partyM2M[party] = num.DecimalZero()

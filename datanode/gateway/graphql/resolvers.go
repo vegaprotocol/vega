@@ -573,6 +573,10 @@ func (r *VegaResolverRoot) QuantumRewardsPerEpoch() QuantumRewardsPerEpochResolv
 	return (*quantumRewardsPerEpochResolver)(r)
 }
 
+func (r *VegaResolverRoot) QuantumVolumesPerEpoch() QuantumVolumesPerEpochResolver {
+	return (*quantumVolumesPerEpochResolver)(r)
+}
+
 func (r *VegaResolverRoot) TeamMemberStatistics() TeamMemberStatisticsResolver {
 	return (*teamMemberStatsResolver)(r)
 }
@@ -1340,7 +1344,7 @@ func (r *myQueryResolver) EstimatePosition(
 	orderMarginAccountBalance string,
 	marginMode vega.MarginMode,
 	marginFactor *string,
-	includeCollateralIncreaseInAvailableCollateral *bool,
+	incluedRequiredPositionMarginInAvailableCollateral *bool,
 	scaleLiquidationPriceToMarketDecimals *bool,
 ) (*PositionEstimate, error) {
 	ov, err := safeStringInt64(openVolume)
@@ -1358,8 +1362,8 @@ func (r *myQueryResolver) EstimatePosition(
 		OrderMarginAccountBalance: orderMarginAccountBalance,
 		MarginMode:                vegapb.MarginMode(vega.MarginMode_value[marginMode.String()]),
 		MarginFactor:              marginFactor,
-		IncludeCollateralIncreaseInAvailableCollateral: includeCollateralIncreaseInAvailableCollateral,
-		ScaleLiquidationPriceToMarketDecimals:          scaleLiquidationPriceToMarketDecimals,
+		IncludeRequiredPositionMarginInAvailableCollateral: incluedRequiredPositionMarginInAvailableCollateral,
+		ScaleLiquidationPriceToMarketDecimals:              scaleLiquidationPriceToMarketDecimals,
 	}
 
 	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)

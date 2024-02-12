@@ -1,12 +1,32 @@
 # Changelog
 
-## Unreleased 0.74.0
+## Unreleased 0.75.0
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+
+
+## 0.74.0
 
 ### 🚨 Breaking changes
 
 - [9945](https://github.com/vegaprotocol/vega/issues/9945) - Add liquidation strategy.
 - [10215](https://github.com/vegaprotocol/vega/issues/10215) - Listing transactions on block explorer does not support the field `limit` any more.
 - [8056](https://github.com/vegaprotocol/vega/issues/8056) - Getting a transfer by ID now returns a `TransferNode`.
+- [10597](https://github.com/vegaprotocol/vega/pull/10597) - Migrate the `IPFS` store for the network history to version 15.
 
 ### 🗑️ Deprecation
 
@@ -86,6 +106,8 @@
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
 - [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 - [10563](https://github.com/vegaprotocol/vega/issues/10563) - Spam protection for create/update referral program.
+- [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
+- [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
 
 ### 🐛 Fixes
 
@@ -184,6 +206,10 @@
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix for rewards transfers list.
 - [10567](https://github.com/vegaprotocol/vega/issues/10567) - Rewards/Teams/Games API disagree on numbers.
 - [10578](https://github.com/vegaprotocol/vega/issues/10578) - Game API reward amounts should display quantum values and asset ID.
+- [10558](https://github.com/vegaprotocol/vega/issues/10558) - Return current market observable is collateral available is below maintenance margin for specified position.
+- [10604](https://github.com/vegaprotocol/vega/issues/10604) - Register margin modes API subscriber.
+- [10595](https://github.com/vegaprotocol/vega/issues/10595) - Fix failed amends for isolated margin orders causing negative spread in console.
+- [10606](https://github.com/vegaprotocol/vega/issues/10606) - Party profiles `API` was not returning results.
 
 ## 0.73.0
 

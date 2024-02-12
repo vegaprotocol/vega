@@ -731,8 +731,8 @@ type Query {
     marginMode: MarginMode!
     "Margin factor to be used along with isolated margin mode"
     marginFactor: String
-    "Optional argument specifying if the estimated collateral increase should be included in available collateral for liquidation price calculation in isolated margin mode."
-    includeCollateralIncreaseInAvailableCollateral: Boolean
+    "Optional argument specifying if the estimated position margin increase should be included in available collateral for liquidation price calculation in isolated margin mode."
+    includeRequiredPositionMarginInAvailableCollateral: Boolean
     "Optional argument specifying if liquidation price estimates should be scaled to market decimal places, returned in asset decimal places by default"
     scaleLiquidationPriceToMarketDecimals: Boolean
   ): PositionEstimate
@@ -6829,6 +6829,8 @@ type TeamStatistics {
   teamId: String!
   "Total of volume accumulated over the requested epoch period, expressed in quantum value."
   totalQuantumVolume: String!
+  "List of trading volume totals per epoch, over the requested epoch period, expressed in quantum value"
+  quantumVolumes: [QuantumVolumesPerEpoch!]!
   "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
   totalQuantumRewards: String!
   "List of rewards over the requested epoch period, expressed in quantum value for each epoch"
@@ -6842,8 +6844,15 @@ type TeamStatistics {
 type QuantumRewardsPerEpoch {
   "Epoch for which this information is valid."
   epoch: Int!
-  "Total of rewards accumulated over the  epoch period expressed in quantum value."
+  "Total of rewards accumulated over the epoch period expressed in quantum value."
   totalQuantumRewards: String!
+}
+
+type QuantumVolumesPerEpoch {
+  "Epoch for which this information is valid."
+  epoch: Int!
+  "Total volume across all markets, accumulated over the epoch period, expressed in quantum value."
+  totalQuantumVolumes: String!
 }
 
 "Edge type containing a team statistics cursor and its associated team's statistics data"
@@ -6868,6 +6877,8 @@ type TeamMemberStatistics {
   partyId: String!
   "Total of volume accumulated over the requested epoch period, expressed in quantum value."
   totalQuantumVolume: String!
+  "List of trading volume totals per epoch, for the requested epoch period, expressed in quantum value"
+  quantumVolumes: [QuantumVolumesPerEpoch!]!
   "Total of rewards accumulated over the requested epoch period, expressed in quantum value."
   totalQuantumRewards: String!
   "List of rewards over the requested epoch period, expressed in quantum value for each epoch"

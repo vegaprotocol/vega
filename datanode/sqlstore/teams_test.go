@@ -17,6 +17,7 @@ package sqlstore_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -848,6 +850,32 @@ func TestListTeamStatistics(t *testing.T) {
 		}
 		require.NoError(t, blocksStore.Add(ctx, block))
 
+		j := 0
+		evt := &eventspb.TeamsStatsUpdated{
+			AtEpoch: uint64(epoch),
+		}
+		for _, teamID := range teamIDs {
+			membersStats := []*eventspb.TeamMemberStats{}
+
+			for i, member := range teams[teamID] {
+				membersStats = append(membersStats, &eventspb.TeamMemberStats{
+					PartyId:        string(member),
+					NotionalVolume: fmt.Sprintf("%d", i+j),
+				})
+			}
+			// Add some notional volume.
+			// It's done before the rewards as this is what will happen in the core as the
+			// MarketActivityTracker will send teams stats before the reward engine sends the
+			// the reward payout.
+			evt.Stats = append(evt.Stats, &eventspb.TeamStats{
+				TeamId:       string(teamID),
+				MembersStats: membersStats,
+			})
+
+			j += 1
+		}
+		require.NoError(t, teamsStore.TeamsStatsUpdated(ctx, evt))
+
 		seqNum := uint64(0)
 		for teamIdx, teamID := range teamIDs {
 			for _, member := range teams[teamID] {
@@ -921,6 +949,22 @@ func TestListTeamStatistics(t *testing.T) {
 						Total: decimal.NewFromInt(5),
 					},
 				},
+				TotalQuantumVolumes: num.NewUint(2),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(0),
+					}, {
+						Epoch: 2,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(0),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(1),
+					},
+				},
 				TotalGamesPlayed: 1,
 				GamesPlayed:      []entities.GameID{gameIDs[0]},
 			},
@@ -940,6 +984,22 @@ func TestListTeamStatistics(t *testing.T) {
 					}, {
 						Epoch: 3,
 						Total: decimal.NewFromInt(7),
+					},
+				},
+				TotalQuantumVolumes: num.NewUint(6),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 2,
+						Total: num.NewUint(2),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(2),
 					},
 				},
 				TotalGamesPlayed: 1,
@@ -963,6 +1023,22 @@ func TestListTeamStatistics(t *testing.T) {
 						Total: decimal.NewFromInt(9),
 					},
 				},
+				TotalQuantumVolumes: num.NewUint(10),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(2),
+					}, {
+						Epoch: 2,
+						Total: num.NewUint(3),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(2),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(3),
+					},
+				},
 				TotalGamesPlayed: 1,
 				GamesPlayed:      []entities.GameID{gameIDs[2]},
 			},
@@ -982,6 +1058,22 @@ func TestListTeamStatistics(t *testing.T) {
 					}, {
 						Epoch: 3,
 						Total: decimal.NewFromInt(11),
+					},
+				},
+				TotalQuantumVolumes: num.NewUint(14),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(3),
+					}, {
+						Epoch: 2,
+						Total: num.NewUint(4),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(3),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(4),
 					},
 				},
 				TotalGamesPlayed: 1,
@@ -1024,6 +1116,22 @@ func TestListTeamStatistics(t *testing.T) {
 						Total: decimal.NewFromInt(5),
 					},
 				},
+				TotalQuantumVolumes: num.NewUint(2),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(0),
+					}, {
+						Epoch: 2,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(0),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(1),
+					},
+				},
 				TotalGamesPlayed: 1,
 				GamesPlayed:      []entities.GameID{gameIDs[0]},
 			},
@@ -1055,6 +1163,16 @@ func TestListTeamStatistics(t *testing.T) {
 						Total: decimal.NewFromInt(6),
 					},
 				},
+				TotalQuantumVolumes: num.NewUint(2),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(1),
+					},
+				},
 				TotalGamesPlayed: 1,
 				GamesPlayed:      []entities.GameID{gameIDs[1]},
 			},
@@ -1068,6 +1186,16 @@ func TestListTeamStatistics(t *testing.T) {
 					}, {
 						Epoch: 3,
 						Total: decimal.NewFromInt(7),
+					},
+				},
+				TotalQuantumVolumes: num.NewUint(4),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(2),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(2),
 					},
 				},
 				TotalGamesPlayed: 1,
@@ -1103,6 +1231,16 @@ func TestListTeamStatistics(t *testing.T) {
 					}, {
 						Epoch: 3,
 						Total: decimal.NewFromInt(6),
+					},
+				},
+				TotalQuantumVolumes: num.NewUint(2),
+				QuantumVolumes: []entities.QuantumVolumesPerEpoch{
+					{
+						Epoch: 2,
+						Total: num.NewUint(1),
+					}, {
+						Epoch: 3,
+						Total: num.NewUint(1),
 					},
 				},
 				TotalGamesPlayed: 1,

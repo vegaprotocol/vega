@@ -166,6 +166,9 @@ func (mpc *CompositePriceCalculator) UpdateConfig(ctx context.Context, oe excomm
 	mpc.config = config
 	mpc.priceSources = make([]*num.Uint, priceSourcesLen)
 	mpc.sourceLastUpdate = make([]int64, priceSourcesLen)
+	if mpc.bookPriceAtTime == nil {
+		mpc.bookPriceAtTime = map[int64]*num.Uint{}
+	}
 
 	if len(config.DataSources) > 0 {
 		oracles := make([]*products.CompositePriceOracle, 0, len(config.DataSources))
