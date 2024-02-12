@@ -270,6 +270,9 @@ func NewMarketFromSnapshot(
 
 	book.SetOffbookSource(market.amm)
 
+	// now set AMM engine on liquidity market.
+	market.liquidity.SetAMM(market.amm)
+
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
 	}
