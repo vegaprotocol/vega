@@ -340,7 +340,7 @@ func NewMarket(
 		markPriceCalculator:           NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
 	}
 
-	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor)
+	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor)
 
 	// this isn't the nicest way to resolve the dependencies
 	market.matching.SetOffbookSource(market.amm)
