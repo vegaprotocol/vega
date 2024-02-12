@@ -381,30 +381,31 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LiquidityFeeSettings = s
 	}
 
-	markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
-	markPriceConfig.CompositePriceType = row.markPriceType()
+	if existing.MarkPriceConfiguration != nil {
+		markPriceConfig := existing.MarkPriceConfiguration.DeepClone()
+		markPriceConfig.CompositePriceType = row.markPriceType()
 
-	if row.row.HasColumn("decay power") {
-		markPriceConfig.DecayPower = row.decayPower()
+		if row.row.HasColumn("decay power") {
+			markPriceConfig.DecayPower = row.decayPower()
+		}
+		if row.row.HasColumn("decay weight") {
+			markPriceConfig.DecayWeight = row.decayWeight()
+		}
+		if row.row.HasColumn("cash amount") {
+			markPriceConfig.CashAmount = row.cashAmount()
+		}
+		if row.row.HasColumn("source weights") {
+			markPriceConfig.SourceWeights = row.priceSourceWeights()
+		}
+		if row.row.HasColumn("source staleness tolerance") {
+			markPriceConfig.SourceStalenessTolerance = row.priceSourceStalnessTolerance()
+		}
+		if row.row.HasColumn("oracle1") {
+			markPriceConfig.DataSources, markPriceConfig.SpecBindingForCompositePrice = row.oracles(config)
+		}
+		update.Changes.MarkPriceConfiguration = markPriceConfig
+		existing.MarkPriceConfiguration = markPriceConfig
 	}
-	if row.row.HasColumn("decay weight") {
-		markPriceConfig.DecayWeight = row.decayWeight()
-	}
-	if row.row.HasColumn("cash amount") {
-		markPriceConfig.CashAmount = row.cashAmount()
-	}
-	if row.row.HasColumn("source weights") {
-		markPriceConfig.SourceWeights = row.priceSourceWeights()
-	}
-	if row.row.HasColumn("source staleness tolerance") {
-		markPriceConfig.SourceStalenessTolerance = row.priceSourceStalnessTolerance()
-	}
-	if row.row.HasColumn("oracle1") {
-		markPriceConfig.DataSources, markPriceConfig.SpecBindingForCompositePrice = row.oracles(config)
-	}
-
-	update.Changes.MarkPriceConfiguration = markPriceConfig
-	existing.MarkPriceConfiguration = markPriceConfig
 	return update, nil
 }
 
