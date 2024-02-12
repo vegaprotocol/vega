@@ -2624,6 +2624,20 @@ func (mr *MockAMMMockRecorder) GetAMMPools() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMMPools", reflect.TypeOf((*MockAMM)(nil).GetAMMPools))
 }
 
+// GetAllPoolOwners mocks base method.
+func (m *MockAMM) GetAllPoolOwners() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllPoolOwners")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetAllPoolOwners indicates an expected call of GetAllPoolOwners.
+func (mr *MockAMMMockRecorder) GetAllPoolOwners() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPoolOwners", reflect.TypeOf((*MockAMM)(nil).GetAllPoolOwners))
+}
+
 // MockAMMPool is a mock of AMMPool interface.
 type MockAMMPool struct {
 	ctrl     *gomock.Controller
