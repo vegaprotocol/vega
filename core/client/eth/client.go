@@ -70,17 +70,21 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 	return &Client{ETHClient: newEthClientWrapper(ethClient), cfg: cfg}, nil
 }
 
-func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
+func (c *Client) ConfiguredChainID() string {
+	return c.ethConfig.ChainID()
+}
+
+func (c *Client) UpdateEthereumConfig(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if c == nil {
 		return nil
 	}
 
-	netID, err := c.NetworkID(context.Background())
+	netID, err := c.NetworkID(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the network ID form the ethereum client: %w", err)
 	}
 
-	chainID, err := c.ChainID(context.Background())
+	chainID, err := c.ChainID(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the chain ID form the ethereum client: %w", err)
 	}
@@ -93,19 +97,11 @@ func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 		return fmt.Errorf("updated chain ID does not matchthe one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
 
-	// if err := c.verifyStakingContract(context.Background(), ethConfig); err != nil {
-	// 	return fmt.Errorf("failed to verify staking bridge contract: %w", err)
-	// }
-
-	// if err := c.verifyVestingContract(context.Background(), ethConfig); err != nil {
-	// 	return fmt.Errorf("failed to verify vesting bridge contract: %w", err)
-	// }
-
-	if err := c.verifyCollateralContract(context.Background(), ethConfig); err != nil {
+	if err := c.verifyCollateralContract(ctx, ethConfig); err != nil {
 		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
 	}
 
-	if err := c.verifyMultisigContract(context.Background(), ethConfig); err != nil {
+	if err := c.verifyMultisigContract(ctx, ethConfig); err != nil {
 		return fmt.Errorf("failed to verify multisig control contract: %w", err)
 	}
 
@@ -171,20 +167,6 @@ func (c *Client) VerifyContract(ctx context.Context, address ethcommon.Address, 
 
 	return nil
 }
-
-// func (c *Client) verifyStakingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-// 	if address := ethConfig.StakingBridge(); address.HasAddress() {
-// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["staking"])
-// 	}
-// 	return nil
-// }
-
-// func (c *Client) verifyVestingContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-// 	if address := ethConfig.VestingBridge(); address.HasAddress() {
-// 		return c.VerifyContract(ctx, address.Address(), ContractHashes["vesting"])
-// 	}
-// 	return nil
-// }
 
 func (c *Client) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if address := ethConfig.CollateralBridge(); address.HasAddress() {
