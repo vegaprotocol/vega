@@ -520,6 +520,11 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 			upperBound = &d
 		}
 
+		var ipc *CompositePriceConfiguration
+		if pr.Perpetual.InternalCompositePriceConfiguration != nil {
+			ipc = CompositePriceConfigurationFromProto(pr.Perpetual.InternalCompositePriceConfiguration)
+		}
+
 		r.Product = &UpdateInstrumentConfigurationPerps{
 			Perps: &UpdatePerpsProduct{
 				QuoteName:                           pr.Perpetual.QuoteName,
@@ -533,6 +538,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
 				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
 				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perpetual.DataSourceSpecBinding),
+				InternalCompositePrice:              ipc,
 			},
 		}
 	}
@@ -589,6 +595,7 @@ type UpdatePerpsProduct struct {
 	DataSourceSpecForSettlementData     dsdefinition.Definition
 	DataSourceSpecForSettlementSchedule dsdefinition.Definition
 	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+	InternalCompositePrice              *CompositePriceConfiguration
 }
 
 func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
@@ -603,6 +610,11 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
 		upperBound = ptr.From(p.FundingRateUpperBound.String())
 	}
 
+	var ipc *vegapb.CompositePriceConfiguration
+	if p.InternalCompositePrice != nil {
+		ipc = p.InternalCompositePrice.IntoProto()
+	}
+
 	return &vegapb.UpdatePerpetualProduct{
 		QuoteName:                           p.QuoteName,
 		MarginFundingFactor:                 p.MarginFundingFactor.String(),
@@ -615,6 +627,7 @@ func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpetualProduct {
 		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+		InternalCompositePriceConfiguration: ipc,
 	}
 }
 
@@ -628,6 +641,7 @@ func (p UpdatePerpsProduct) DeepClone() *UpdatePerpsProduct {
 		DataSourceSpecForSettlementData:     *p.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecForSettlementSchedule: *p.DataSourceSpecForSettlementSchedule.DeepClone().(*dsdefinition.Definition),
 		DataSourceSpecBinding:               p.DataSourceSpecBinding.DeepClone(),
+		InternalCompositePrice:              p.InternalCompositePrice.DeepClone(),
 	}
 }
 

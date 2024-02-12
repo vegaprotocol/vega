@@ -621,6 +621,7 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		} else if internalCompositePriceConfig != nil {
 			// it's a new index calculator
 			m.internalCompositePriceCalculator = NewCompositePriceCalculator(ctx, internalCompositePriceConfig, oracleEngine, m.timeService)
+			m.internalCompositePriceCalculator.setOraclePriceScalingFunc(m.scaleOracleData)
 		}
 	}
 

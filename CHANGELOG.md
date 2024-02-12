@@ -19,6 +19,15 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxx) -
 
 
+## 0.74.1
+
+### 🐛 Fixes
+
+- [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
+- [10615](https://github.com/vegaprotocol/vega/issues/10615) - Fix oracle scaling function in internal composite price.
+- [10621](https://github.com/vegaprotocol/vega/issues/10516) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
+
+
 ## 0.74.0
 
 ### 🚨 Breaking changes
@@ -837,6 +846,7 @@
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
 - [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
 - [10516](https://github.com/vegaprotocol/vega/issues/10516) - Fix mapping of estimate position.
+
 
 ## 0.70.0
 

@@ -1266,6 +1266,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 				DataSourceSpecForSettlementData:     product.Perps.DataSourceSpecForSettlementData,
 				DataSourceSpecForSettlementSchedule: product.Perps.DataSourceSpecForSettlementSchedule,
 				DataSourceSpecBinding:               product.Perps.DataSourceSpecBinding,
+				InternalCompositePriceConfig:        product.Perps.InternalCompositePrice,
 			},
 		}
 	default:
