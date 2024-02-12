@@ -122,6 +122,10 @@ type testEthClient struct {
 	bind.ContractBackend
 }
 
+func (testEthClient) ConfiguredChainID() string {
+	return "1"
+}
+
 func (testEthClient) HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error) {
 	return nil, nil
 }
