@@ -32,6 +32,7 @@ import (
 func TestAMMPool(t *testing.T) {
 	t.Run("test volume between prices", testVolumeBetweenPrices)
 	t.Run("test trade price", testTradePrice)
+	t.Run("test pool logic with position factor", testPoolPositionFactor)
 }
 
 func testVolumeBetweenPrices(t *testing.T) {
@@ -83,6 +84,26 @@ func testVolumeBetweenPrices(t *testing.T) {
 			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
 	}
+}
+
+func testPoolPositionFactor(t *testing.T) {
+	p := newTestPoolWithPositionFactor(t, num.DecimalFromInt64(1000))
+	defer p.ctrl.Finish()
+
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	volume := p.pool.VolumeBetweenPrices(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
+	assert.Equal(t, int(1818181), int(volume))
+
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	volume = p.pool.VolumeBetweenPrices(types.SideSell, num.NewUint(1800), num.NewUint(2000))
+	assert.Equal(t, int(2222222), int(volume))
+
+	ensurePosition(t, p.pos, -1, num.NewUint(2000))
+	ensureBalances(t, p.col, 1000000)
+
+	// now best price should be the same as if the factor were 1, since its a price and not a volume
+	fairPrice := p.pool.BestPrice(nil)
+	assert.Equal(t, "1409", fairPrice.String())
 }
 
 func testTradePrice(t *testing.T) {
@@ -229,6 +250,11 @@ type tstPool struct {
 
 func newTestPool(t *testing.T) *tstPool {
 	t.Helper()
+	return newTestPoolWithPositionFactor(t, num.DecimalOne())
+}
+
+func newTestPoolWithPositionFactor(t *testing.T, positionFactor num.Decimal) *tstPool {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
 	pos := mocks.NewMockPosition(ctrl)
@@ -269,6 +295,7 @@ func newTestPool(t *testing.T) *tstPool {
 		},
 		num.DecimalZero(),
 		num.UintOne(),
+		positionFactor,
 	)
 
 	return &tstPool{
