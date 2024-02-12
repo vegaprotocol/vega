@@ -400,7 +400,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	risk.EXPECT().GetScalingFactors().AnyTimes().Return(&types.ScalingFactors{InitialMargin: num.DecimalOne()})
 	risk.EXPECT().GetSlippage().AnyTimes().Return(num.DecimalOne())
 
-	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne())
+	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne(), num.DecimalOne())
 
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
