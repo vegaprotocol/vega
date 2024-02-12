@@ -82,6 +82,20 @@ func (mr *MockETHClientMockRecorder) CollateralBridgeAddress() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollateralBridgeAddress", reflect.TypeOf((*MockETHClient)(nil).CollateralBridgeAddress))
 }
 
+// ConfiguredChainID mocks base method.
+func (m *MockETHClient) ConfiguredChainID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfiguredChainID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ConfiguredChainID indicates an expected call of ConfiguredChainID.
+func (mr *MockETHClientMockRecorder) ConfiguredChainID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfiguredChainID", reflect.TypeOf((*MockETHClient)(nil).ConfiguredChainID))
+}
+
 // ConfirmationsRequired mocks base method.
 func (m *MockETHClient) ConfirmationsRequired() uint64 {
 	m.ctrl.T.Helper()

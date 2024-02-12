@@ -85,7 +85,7 @@ type EthCallEngine interface {
 	GetInitialTriggerTime(id string) (uint64, error)
 	OnSpecActivated(ctx context.Context, spec datasource.Spec) error
 	OnSpecDeactivated(ctx context.Context, spec datasource.Spec)
-	EnsureChainID(chainID string, confirmWithClient bool)
+	EnsureChainID(ctx context.Context, chainID string, confirmWithClient bool)
 }
 
 type allServices struct {
@@ -680,7 +680,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 					return fmt.Errorf("invalid Ethereum configuration: %w", err)
 				}
 
-				if err := svcs.ethClient.UpdateEthereumConfig(ethCfg); err != nil {
+				if err := svcs.ethClient.UpdateEthereumConfig(ctx, ethCfg); err != nil {
 					return err
 				}
 
@@ -859,13 +859,13 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param: netparams.BlockchainsEthereumConfig,
-			Watcher: func(_ context.Context, cfg interface{}) error {
+			Watcher: func(ctx context.Context, cfg interface{}) error {
 				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 				if err != nil {
 					return fmt.Errorf("invalid ethereum configuration: %w", err)
 				}
 
-				svcs.ethCallEngine.EnsureChainID(ethCfg.ChainID(), svcs.conf.HaveEthClient())
+				svcs.ethCallEngine.EnsureChainID(ctx, ethCfg.ChainID(), svcs.conf.HaveEthClient())
 
 				// nothing to do if not a validator
 				if !svcs.conf.HaveEthClient() {
