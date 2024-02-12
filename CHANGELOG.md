@@ -203,6 +203,7 @@
 - [10517](https://github.com/vegaprotocol/vega/issues/10517) - Add optional cap to metric based rewards.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
+- [10612](https://github.com/vegaprotocol/vega/issues/10612) - Convert all assets to be associated to the configured Ethereum chain.
 
 ### 🐛 Fixes
 
