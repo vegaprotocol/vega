@@ -320,8 +320,7 @@ type AMMPool interface {
 }
 
 type AMM interface {
-	GetAMMPools() map[string]AMMPool
-	GetAllPoolOwners() []string
+	GetAMMPoolsBySubAccount() map[string]AMMPool
 }
 
 type CommonMarket interface {

@@ -3536,6 +3536,11 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 		return nil, nil, err
 	}
 
+	_, err = e.CreatePartyLiquidityFeeAccount(ctx, subAccount, market, asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return e.accs[generalID].Clone(), e.accs[marginID].Clone(), nil
 }
 
