@@ -3738,6 +3738,12 @@ func (m *Market) orderCancelReplace(
 		}
 		if fees != nil {
 			if err = m.applyFees(ctx, newOrder, fees); err != nil {
+				// couldn't afford the fees, we are restoring the pre-amend order
+				// so rollback the matching engine to its old state (trades did not go through)
+				if conf != nil && len(passiveOrders) > 0 {
+					m.matching.RollbackConfirmation(conf, orders)
+					conf = nil
+				}
 				_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
 				return
 			}
