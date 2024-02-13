@@ -317,6 +317,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquiditySLANonPerformanceBondPenaltyMax:               {},
 	MarketLiquidityStakeToCCYVolume:                              {},
 	MarketLiquidityProvidersFeeCalculationTimeStep:               {},
+	MarketLiquidityEquityLikeShareFeeFraction:                    {},
 	MarketTargetStakeTimeWindow:                                  {},
 	MarketTargetStakeScalingFactor:                               {},
 	MarketPriceMonitoringDefaultParameters:                       {},
