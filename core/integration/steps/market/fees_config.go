@@ -31,6 +31,7 @@ var (
 	defaultFeesConfigs         embed.FS
 	defaultFeesConfigFileNames = []string{
 		"defaults/fees-config/default-none.json",
+		"defaults/fees-config/ten-percent.json",
 	}
 )
 

@@ -1,0 +1,10 @@
+{
+  "factors": {
+    "infrastructureFee": "0.1",
+    "makerFee": "0.1",
+    "liquidityFee": "0.1"
+  },
+  "liquidityFeeSettings": {
+    "method": "METHOD_MARGINAL_COST"
+  }
+}

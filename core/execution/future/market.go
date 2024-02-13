@@ -3725,6 +3725,7 @@ func (m *Market) orderCancelReplace(
 	existingOrder, newOrder *types.Order,
 ) (conf *types.OrderConfirmation, orders []*types.Order, err error) {
 	var fees events.FeesTransfer
+	var passiveOrders []*types.Order
 
 	defer func() {
 		if err != nil {
@@ -3798,7 +3799,7 @@ func (m *Market) orderCancelReplace(
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
 	// get the orders in their current state
-	passiveOrders := m.getPassiveOrdersCopy(newOrder, trades)
+	passiveOrders = m.getPassiveOrdersCopy(newOrder, trades)
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
