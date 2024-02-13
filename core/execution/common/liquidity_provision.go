@@ -48,6 +48,7 @@ type MarketLiquidity struct {
 	broker                Broker
 	orderBook             liquidity.OrderBook
 	equityShares          EquityLikeShares
+	amm                   AMM
 	marketActivityTracker *MarketActivityTracker
 	fee                   *fee.Engine
 
@@ -79,6 +80,7 @@ func NewMarketLiquidity(
 	asset string,
 	priceFactor *num.Uint,
 	priceRange num.Decimal,
+	amm AMM,
 ) *MarketLiquidity {
 	ml := &MarketLiquidity{
 		log:                   log,
@@ -94,9 +96,14 @@ func NewMarketLiquidity(
 		asset:                 asset,
 		priceFactor:           priceFactor,
 		priceRange:            priceRange,
+		amm:                   amm,
 	}
 
 	return ml
+}
+
+func (m *MarketLiquidity) SetAMM(a AMM) {
+	m.amm = a
 }
 
 func (m *MarketLiquidity) bondUpdate(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {

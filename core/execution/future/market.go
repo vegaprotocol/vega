@@ -263,9 +263,10 @@ func NewMarket(
 
 	equityShares := common.NewEquityShares(num.DecimalZero())
 
+	// we can't pass in the AMM at this point
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
 	)
 
 	// The market is initially created in a proposed state
@@ -341,6 +342,7 @@ func NewMarket(
 	}
 
 	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor)
+	market.liquidity.SetAMM(market.amm)
 
 	// this isn't the nicest way to resolve the dependencies
 	market.matching.SetOffbookSource(market.amm)
