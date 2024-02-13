@@ -75,7 +75,8 @@ type Service struct {
 	ethToVega   map[string]string
 	isValidator bool
 
-	bridgeView ERC20BridgeView
+	bridgeView      ERC20BridgeView
+	ethereumChainID string
 }
 
 func New(
@@ -461,4 +462,8 @@ func (s *Service) validateAsset(a *Asset) error {
 	}
 
 	return err
+}
+
+func (s *Service) OnEthereumChainIDUpdated(chainID string) {
+	s.ethereumChainID = chainID
 }
