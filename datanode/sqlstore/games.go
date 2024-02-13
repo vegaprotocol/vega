@@ -74,7 +74,7 @@ type GameReward struct {
 }
 
 func (g *Games) ListGames(ctx context.Context, gameID *string, entityScope *vega.EntityScope, epochFrom, epochTo *uint64,
-	pagination entities.CursorPagination,
+	teamID *entities.TeamID, partyID *entities.PartyID, pagination entities.CursorPagination,
 ) ([]entities.Game, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 
@@ -86,7 +86,7 @@ func (g *Games) ListGames(ctx context.Context, gameID *string, entityScope *vega
 		return nil, pageInfo, fmt.Errorf("backward pagination is not currently supported")
 	}
 
-	query, args, err := g.buildGamesQuery(gameID, entityScope, epochFrom, epochTo, pagination)
+	query, args, err := g.buildGamesQuery(gameID, entityScope, epochFrom, epochTo, teamID, partyID, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -124,7 +124,7 @@ func (g *Games) parseEpochs(from, to *uint64) (uint64, uint64) {
 }
 
 func (g *Games) buildPagingQuery(selectTable string, gameID *string, entityScope *vega.EntityScope, epochFrom, epochTo uint64,
-	pagination entities.CursorPagination,
+	teamID *entities.TeamID, partyID *entities.PartyID, pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
 	selectQuery := fmt.Sprintf(`select distinct game_id, epoch_id from %s`, selectTable)
 	var where []string
@@ -141,6 +141,18 @@ func (g *Games) buildPagingQuery(selectTable string, gameID *string, entityScope
 
 	if entityScope != nil {
 		where = append(where, fmt.Sprintf("entity_scope = %s", nextBindVar(&args, entityScope.String())))
+
+		// only add the teams filter if the entity scope is teams or not specified
+		if *entityScope == vega.EntityScope_ENTITY_SCOPE_TEAMS && teamID != nil {
+			where = append(where, fmt.Sprintf("team_id = %s", nextBindVar(&args, teamID)))
+		}
+	} else if entityScope == nil && teamID != nil {
+		where = append(where, fmt.Sprintf("team_id = %s", nextBindVar(&args, teamID)))
+	}
+
+	// We should be able to filter by party regardless of the entity scope
+	if partyID != nil {
+		where = append(where, fmt.Sprintf("party_id = %s", nextBindVar(&args, partyID)))
 	}
 
 	whereClause := ""
@@ -153,7 +165,7 @@ func (g *Games) buildPagingQuery(selectTable string, gameID *string, entityScope
 }
 
 func (g *Games) buildGamesQuery(gameID *string, entityScope *vega.EntityScope, epochFrom, epochTo *uint64,
-	pagination entities.CursorPagination,
+	teamID *entities.TeamID, partyID *entities.PartyID, pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
 	// Games are intrinsically created by a recurring transfer with a game ID
 	// Rewards are paid out to participants of a game and the game ID is recorded on the reward
@@ -167,7 +179,7 @@ func (g *Games) buildGamesQuery(gameID *string, entityScope *vega.EntityScope, e
 	// The page query determines which games/epochs should be included in the result set for pagination
 	// For example, if we have 100 games, and we want to page on the first 10, we would need to know which games to include rewards for
 	// The number of rewards we may get back in order to build the data will be much more than just 10 records.
-	pageQuery, args, err := g.buildPagingQuery(selectTable, gameID, entityScope, eFrom, eTo, pagination)
+	pageQuery, args, err := g.buildPagingQuery(selectTable, gameID, entityScope, eFrom, eTo, teamID, partyID, pagination)
 	if err != nil {
 		return "", nil, err
 	}

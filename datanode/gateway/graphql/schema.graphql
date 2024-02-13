@@ -833,6 +833,10 @@ type Query {
     epochTo: Int
     "Entity scope to filter for, i.e. individual or team. If not provided games for both individuals and teams will be returned."
     entityScope: EntityScope
+    "Team ID to filter for. This filter will only be applied if entity scope is not specified in the request, or the entity scope is set to teams."
+    teamId: ID
+    "Party ID to filter for. This filter will apply regardless of the entity scope. If the entity scope filter is teams, then the party ID filter will apply to team members."
+    partyId: ID
     "Pagination control"
     pagination: Pagination
   ): GamesConnection!
