@@ -185,6 +185,10 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return([]string{}).AnyTimes()
+	testLiquidity.orderBook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(100), nil).AnyTimes()
+	testLiquidity.orderBook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(100), nil).AnyTimes()
+
+	testLiquidity.amm.EXPECT().GetAMMPools().Return(map[string]common.AMMPool{}).AnyTimes()
 
 	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
@@ -285,7 +289,7 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 
 	testLiquidity.equityShares.EXPECT().AllShares().DoAndReturn(func() map[string]num.Decimal {
 		return weightsPerLP
-	})
+	}).AnyTimes()
 
 	testLiquidity.liquidityEngine.EXPECT().GetAverageLiquidityScores().DoAndReturn(func() map[string]num.Decimal {
 		return scoresPerLP
@@ -393,12 +397,14 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	testLiquidity := newMarketLiquidity(t)
 
 	weightsPerLP := map[string]num.Decimal{
-		"lp-1": num.NewDecimalFromFloat(0.008764241896),
-		"lp-2": num.NewDecimalFromFloat(0.0008764241895),
-		"lp-3": num.NewDecimalFromFloat(0.0175284838),
-		"lp-4": num.NewDecimalFromFloat(0.03505689996),
-		"lp-5": num.NewDecimalFromFloat(0.061349693),
-		"lp-6": num.NewDecimalFromFloat(0.876424189),
+		"lp-1":         num.NewDecimalFromFloat(0.008764241896),
+		"lp-2":         num.NewDecimalFromFloat(0.0008764241895),
+		"lp-3":         num.NewDecimalFromFloat(0.0175284838),
+		"lp-4":         num.NewDecimalFromFloat(0.03505689996),
+		"lp-5":         num.NewDecimalFromFloat(0.061349693),
+		"lp-6":         num.NewDecimalFromFloat(0.2921413963),
+		"pool-party-1": num.NewDecimalFromFloat(0.2921413963),
+		"pool-party-2": num.NewDecimalFromFloat(0.2921413963),
 	}
 
 	expectedAllocatedFess := map[string]num.Uint{
@@ -407,20 +413,20 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 		"lp-3":         *num.NewUint(2000),
 		"lp-4":         *num.NewUint(4000),
 		"lp-5":         *num.NewUint(7000),
-		"lp-6":         *num.NewUint(100000),
-		"pool-party-1": *num.NewUint(50),
-		"pool-party-2": *num.NewUint(80),
+		"lp-6":         *num.NewUint(33333),
+		"pool-party-1": *num.NewUint(33333),
+		"pool-party-2": *num.NewUint(33333),
 	}
 
 	expectedDistributedFess := map[string]num.Uint{
-		"lp-1":         *num.NewUint(13926),
-		"lp-2":         *num.NewUint(1322),
-		"lp-3":         *num.NewUint(25061),
-		"lp-4":         *num.NewUint(44553),
-		"lp-5":         *num.NewUint(29238),
+		"lp-1":         *num.NewUint(1527),
+		"lp-2":         *num.NewUint(144),
+		"lp-3":         *num.NewUint(2743),
+		"lp-4":         *num.NewUint(4877),
+		"lp-5":         *num.NewUint(3200),
 		"lp-6":         *num.NewUint(0),
-		"pool-party-1": *num.NewUint(50),
-		"pool-party-2": *num.NewUint(80),
+		"pool-party-1": *num.NewUint(50804),
+		"pool-party-2": *num.NewUint(50804),
 	}
 
 	poolsPartyIDs := []string{"pool-party-1", "pool-party-2"}
@@ -441,8 +447,6 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 		"pool-party-1": poolMock,
 		"pool-party-2": poolMock,
 	}
-
-	// TODO Karal - fix this test
 
 	testLiquidity.amm.EXPECT().GetAMMPools().Return(ammPools).AnyTimes()
 
