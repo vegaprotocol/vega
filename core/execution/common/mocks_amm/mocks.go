@@ -73,30 +73,16 @@ func (m *MockAMM) EXPECT() *MockAMMMockRecorder {
 	return m.recorder
 }
 
-// GetAMMPools mocks base method.
-func (m *MockAMM) GetAMMPools() map[string]common.AMMPool {
+// GetAMMPoolsBySubAccount mocks base method.
+func (m *MockAMM) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAMMPools")
+	ret := m.ctrl.Call(m, "GetAMMPoolsBySubAccount")
 	ret0, _ := ret[0].(map[string]common.AMMPool)
 	return ret0
 }
 
-// GetAMMPools indicates an expected call of GetAMMPools.
-func (mr *MockAMMMockRecorder) GetAMMPools() *gomock.Call {
+// GetAMMPoolsBySubAccount indicates an expected call of GetAMMPoolsBySubAccount.
+func (mr *MockAMMMockRecorder) GetAMMPoolsBySubAccount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMMPools", reflect.TypeOf((*MockAMM)(nil).GetAMMPools))
-}
-
-// GetAllPoolOwners mocks base method.
-func (m *MockAMM) GetAllPoolOwners() []string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllPoolOwners")
-	ret0, _ := ret[0].([]string)
-	return ret0
-}
-
-// GetAllPoolOwners indicates an expected call of GetAllPoolOwners.
-func (mr *MockAMMMockRecorder) GetAllPoolOwners() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPoolOwners", reflect.TypeOf((*MockAMM)(nil).GetAllPoolOwners))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMMPoolsBySubAccount", reflect.TypeOf((*MockAMM)(nil).GetAMMPoolsBySubAccount))
 }
