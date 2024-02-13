@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -33,7 +32,7 @@ func NewFromSnapshot(
 	log *logging.Logger,
 	pp interface{},
 	marketID string,
-	ts common.TimeService,
+	ts TimeService,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Product,
