@@ -116,7 +116,8 @@ func (m *MarketLiquidity) getAMMScores() (map[string]num.Decimal, error) {
 	}
 	minP, maxP, err := m.ValidOrdersPriceRange()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get valid price range: %w", err)
+		// no price range -> we cannot determine the AMM scores.
+		return nil, nil
 	}
 	pools := m.amm.GetAMMPools()
 	totalSize := num.DecimalZero()
