@@ -76,6 +76,7 @@ type Event interface {
 	// used for events like ExpiredOrders. It is used to increment the sequence ID by the number of records
 	// this event will produce to ensure history tables using time + sequence number to function properly.
 	CompositeCount() uint64
+	Replace(context.Context)
 }
 
 const (
@@ -464,6 +465,12 @@ func newBase(ctx context.Context, t Type) *Base {
 		blockNr: int64(h),
 		et:      t,
 	}
+}
+
+// Replace updates the event to be based on the new given context.
+func (b *Base) Replace(ctx context.Context) {
+	nb := newBase(ctx, b.Type())
+	*b = *nb
 }
 
 // CompositeCount on the base event will default to 1.

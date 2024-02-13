@@ -38,3 +38,14 @@ func TestTimeEvent(t *testing.T) {
 	assert.Equal(t, trace, e.TraceID())
 	assert.Zero(t, e.Sequence())
 }
+
+func TestContextReplace(t *testing.T) {
+	now := time.Now()
+	ctx := vgcontext.WithBlockHeight(context.Background(), 100)
+	e := events.NewTime(ctx, now)
+	assert.Equal(t, int64(100), e.BlockNr())
+
+	ctx = vgcontext.WithBlockHeight(context.Background(), 200)
+	e.Replace(ctx)
+	assert.Equal(t, int64(200), e.BlockNr())
+}

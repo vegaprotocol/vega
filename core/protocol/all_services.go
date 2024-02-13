@@ -463,6 +463,7 @@ func newServices(
 
 func (svcs *allServices) registerTimeServiceCallbacks() {
 	svcs.timeService.NotifyOnTick(
+		svcs.broker.OnTick,
 		svcs.epochService.OnTick,
 		svcs.builtinOracle.OnTick,
 		svcs.netParams.OnTick,
