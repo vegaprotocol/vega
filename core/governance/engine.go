@@ -1194,7 +1194,23 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
 			SLAParams:                 terms.Changes.SLAParams,
+			MarkPriceConfiguration:    terms.Changes.MarkPriceConfiguration,
 		},
+	}
+
+	switch riskModel := terms.Changes.RiskParameters.(type) {
+	case nil:
+		return nil, types.ProposalErrorNoRiskParameters, ErrMissingRiskParameters
+	case *types.UpdateSpotMarketConfigurationSimple:
+		newMarket.Changes.RiskParameters = &types.NewSpotMarketConfigurationSimple{
+			Simple: riskModel.Simple,
+		}
+	case *types.UpdateSpotMarketConfigurationLogNormal:
+		newMarket.Changes.RiskParameters = &types.NewSpotMarketConfigurationLogNormal{
+			LogNormal: riskModel.LogNormal,
+		}
+	default:
+		return nil, types.ProposalErrorUnknownRiskParameterType, ErrUnsupportedRiskParameters
 	}
 
 	if perr, err := validateUpdateSpotMarketChange(terms); err != nil {
