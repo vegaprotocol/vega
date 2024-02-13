@@ -44,7 +44,6 @@ type ETHClient interface {
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
 	ConfirmationsRequired() uint64
-	ConfiguredChainID() string
 }
 
 type ERC20 struct {
