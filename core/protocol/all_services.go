@@ -889,6 +889,18 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			},
 		},
 		{
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(_ context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid ethereum configuration: %w", err)
+				}
+
+				svcs.banking.OnEthereumChainIDUpdated(ethCfg.ChainID())
+				return nil
+			},
+		},
+		{
 			Param: netparams.BlockchainsEthereumL2Configs,
 			Watcher: func(ctx context.Context, cfg interface{}) error {
 				ethCfg, err := types.EthereumL2ConfigsFromUntypedProto(cfg)

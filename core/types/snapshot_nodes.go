@@ -624,6 +624,7 @@ type AssetAction struct {
 	BlockNumber             uint64
 	TxIndex                 uint64
 	Hash                    string
+	ChainID                 string
 	BuiltinD                *BuiltinAssetDeposit
 	Erc20D                  *ERC20Deposit
 	Erc20AL                 *ERC20AssetList
@@ -2562,6 +2563,7 @@ func (aa *AssetAction) IntoProto() *checkpointpb.AssetAction {
 		Hash:               aa.Hash,
 		Erc20BridgeStopped: aa.BridgeStopped,
 		Erc20BridgeResumed: aa.BridgeResume,
+		ChainId:            aa.ChainID,
 	}
 	if aa.BuiltinD != nil {
 		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
@@ -2595,6 +2597,7 @@ func AssetActionFromProto(a *checkpointpb.AssetAction) *AssetAction {
 		State:         a.State,
 		Asset:         a.Asset,
 		BlockNumber:   a.BlockNumber,
+		ChainID:       a.ChainId,
 		TxIndex:       a.TxIndex,
 		Hash:          a.Hash,
 		BridgeStopped: a.Erc20BridgeStopped,

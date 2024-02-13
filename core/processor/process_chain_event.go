@@ -203,7 +203,7 @@ func (app *App) processChainEventERC20(
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}
-		return app.banking.EnableERC20(ctx, act.AssetList, id, evt.Block, evt.Index, txID)
+		return app.banking.EnableERC20(ctx, act.AssetList, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventAssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20EventDeposit:
@@ -211,7 +211,7 @@ func (app *App) processChainEventERC20(
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, txID)
+		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventWithdrawal:
 		act.Withdrawal.VegaAssetID = strings.TrimPrefix(act.Withdrawal.VegaAssetID, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
@@ -223,13 +223,11 @@ func (app *App) processChainEventERC20(
 		if err := app.checkVegaAssetID(act.AssetLimitsUpdated, "ERC20.AssetLimitsUpdated"); err != nil {
 			return err
 		}
-		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID)
+		return app.banking.UpdateERC20(ctx, act.AssetLimitsUpdated, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventBridgeStopped:
-		return app.banking.BridgeStopped(
-			ctx, act.BridgeStopped, id, evt.Block, evt.Index, txID)
+		return app.banking.BridgeStopped(ctx, act.BridgeStopped, id, evt.Block, evt.Index, txID, evt.ChainID)
 	case *types.ERC20EventBridgeResumed:
-		return app.banking.BridgeResumed(
-			ctx, act.BridgeResumed, id, evt.Block, evt.Index, txID)
+		return app.banking.BridgeResumed(ctx, act.BridgeResumed, id, evt.Block, evt.Index, txID, evt.ChainID)
 	default:
 		return ErrUnsupportedEventAction
 	}

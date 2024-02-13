@@ -272,6 +272,7 @@ message TxRef {
   uint64 block_nr = 2;
   string hash = 3;
   uint64 log_index = 4;
+  string chain_id = 5;
 }
 
 message BankingWithdrawals {
