@@ -342,6 +342,7 @@ func NewMarket(
 	}
 
 	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor)
+	// now set AMM engine on liquidity market.
 	market.liquidity.SetAMM(market.amm)
 
 	// this isn't the nicest way to resolve the dependencies
