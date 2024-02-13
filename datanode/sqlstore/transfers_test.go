@@ -542,6 +542,7 @@ func TestGetAllTransfers(t *testing.T) {
 				},
 			},
 		}),
+		TransferWithGameID(ptr.From("c001d00d")),
 	)
 
 	t.Run("Retrieve all transfers", func(t *testing.T) {
@@ -629,6 +630,15 @@ func TestGetAllTransfers(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, expected, TransferDetailsAsTransfers(t, retrieved))
 		}
+	})
+
+	t.Run("Retrieve transfers by game ID", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			GameID: ptr.From(entities.GameID("c001d00d")),
+		}
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+		assert.Equal(t, []entities.Transfer{*transfer3}, TransferDetailsAsTransfers(t, retrieved))
 	})
 }
 

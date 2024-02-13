@@ -1792,6 +1792,8 @@ message ListTransfersRequest {
   optional vega.events.v1.Transfer.Status status = 7;
   // Dispatch strategy's scope to filter for.
   optional Scope scope = 8;
+  // Game ID to filter on
+  optional string game_id = 9;
 
   // Defines the types of a dispatch strategy's scope the API can filter on.
   enum Scope {
