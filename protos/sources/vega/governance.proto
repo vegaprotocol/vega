@@ -105,7 +105,7 @@ message NewSpotMarketConfiguration {
   LiquiditySLAParameters sla_params = 7;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 8;
-    // Mark price configuration.
+  // Mark price configuration.
   CompositePriceConfiguration mark_price_configuration = 9;
 }
 
