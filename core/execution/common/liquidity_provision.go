@@ -28,6 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+
+	"golang.org/x/exp/maps"
 )
 
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
@@ -327,18 +329,14 @@ func (m *MarketLiquidity) OnMarketClosed(ctx context.Context, t time.Time) {
 
 func (m *MarketLiquidity) calculateAndDistribute(ctx context.Context, t time.Time) {
 	penalties := m.liquidityEngine.CalculateSLAPenalties(t)
-	poolOwnersIDs := m.amm.GetAllPoolOwners()
 
-	for _, partyID := range poolOwnersIDs {
-		// TODO Karel - clarify with research if we should apply penalties to pool owners
-		if _, ok := penalties.PenaltiesPerParty[partyID]; ok {
-			continue
-		}
-
-		// set penalty to zero for pool owners as they always meet their obligations for SLA
-		penalties.PenaltiesPerParty[partyID] = &liquidity.SlaPenalty{
-			Fee:  num.DecimalZero(),
-			Bond: num.DecimalZero(),
+	if m.amm != nil {
+		for _, subAccountID := range maps.Keys(m.amm.GetAMMPoolsBySubAccount()) {
+			// set penalty to zero for pool sub accounts as they always meet their obligations for SLA
+			penalties.PenaltiesPerParty[subAccountID] = &liquidity.SlaPenalty{
+				Fee:  num.DecimalZero(),
+				Bond: num.DecimalZero(),
+			}
 		}
 	}
 

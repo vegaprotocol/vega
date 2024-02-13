@@ -33,8 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -71,7 +69,6 @@ type Collateral interface {
 		ctx context.Context,
 		party, subAccount, asset, market string,
 	) (general *types.Account, margin *types.Account, err error)
-	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 }
 
 type Broker interface {
@@ -474,19 +471,6 @@ func (e *Engine) SubmitAMM(
 		return err
 	}
 
-	_, err = e.collateral.GetOrCreatePartyLiquidityFeeAccount(ctx, submit.Party, submit.MarketID, e.market.GetSettlementAsset())
-	if err != nil {
-		e.broker.Send(
-			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
-				submit.CommitmentAmount, submit.Parameters,
-				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonUnspecified,
-			),
-		)
-
-		return err
-	}
-
 	err = e.updateSubAccountBalance(
 		ctx, submit.Party, subAccount, submit.CommitmentAmount,
 	)
@@ -784,10 +768,10 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	return nil
 }
 
-func (e *Engine) GetAMMPools() map[string]common.AMMPool {
+func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 	ret := make(map[string]common.AMMPool, len(e.pools))
-	for k, v := range e.pools {
-		ret[k] = v
+	for _, v := range e.pools {
+		ret[v.SubAccount] = v
 	}
 	return ret
 }
@@ -808,11 +792,6 @@ func (e *Engine) remove(ctx context.Context, party string) {
 	pool := e.pools[party]
 	delete(e.pools, party)
 	e.sendUpdate(ctx, pool)
-}
-
-// GetAllPoolOwners returns a sorted list of all the parties that own a pool.
-func (e *Engine) GetAllPoolOwners() []string {
-	return maps.Keys(e.pools)
 }
 
 func DeriveSubAccount(
