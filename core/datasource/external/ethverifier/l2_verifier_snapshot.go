@@ -117,11 +117,12 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 
 		for _, pr := range v.CallResults.PendingContractCallResult {
 			pending = append(pending, &ethcall.ContractCallEvent{
-				BlockHeight: pr.BlockHeight,
-				BlockTime:   pr.BlockTime,
-				SpecId:      pr.SpecId,
-				Result:      pr.Result,
-				Error:       pr.Error,
+				BlockHeight:   pr.BlockHeight,
+				BlockTime:     pr.BlockTime,
+				SpecId:        pr.SpecId,
+				Result:        pr.Result,
+				Error:         pr.Error,
+				SourceChainID: pr.ChainId,
 			})
 		}
 		verifier.restorePendingCallEvents(ctx, pending)

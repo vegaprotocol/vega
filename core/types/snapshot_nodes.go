@@ -4330,11 +4330,12 @@ func PayloadEthContractCallEventFromProto(svd *snapshot.Payload_EthContractCallR
 
 	for _, pr := range svd.EthContractCallResults.PendingContractCallResult {
 		result := &ethcall.ContractCallEvent{
-			BlockHeight: pr.BlockHeight,
-			BlockTime:   pr.BlockTime,
-			SpecId:      pr.SpecId,
-			Result:      pr.Result,
-			Error:       pr.Error,
+			BlockHeight:   pr.BlockHeight,
+			BlockTime:     pr.BlockTime,
+			SpecId:        pr.SpecId,
+			Result:        pr.Result,
+			Error:         pr.Error,
+			SourceChainID: pr.ChainId,
 		}
 
 		pending = append(pending, result)
@@ -4356,6 +4357,7 @@ func (p *PayloadEthContractCallEvent) IntoProto() *snapshot.Payload_EthContractC
 				SpecId:      p.SpecId,
 				Result:      p.Result,
 				Error:       p.Error,
+				ChainId:     p.SourceChainID,
 			})
 	}
 
