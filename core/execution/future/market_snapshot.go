@@ -177,9 +177,11 @@ func NewMarketFromSnapshot(
 		pMonitor, book, as, asset, mkt.ID, stateVarEngine, positionFactor, mkt.LiquiditySLAParams)
 	equityShares := common.NewEquitySharesFromSnapshot(em.EquityShare)
 
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	// @TODO pass in AMM
 	marketLiquidity := common.NewMarketLiquidity(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
-		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange,
+		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
 	)
 
 	// backward compatibility check for nil
@@ -272,6 +274,7 @@ func NewMarketFromSnapshot(
 	} else {
 		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor)
 	}
+	market.liquidity.SetAMM(market.amm)
 
 	book.SetOffbookSource(market.amm)
 
