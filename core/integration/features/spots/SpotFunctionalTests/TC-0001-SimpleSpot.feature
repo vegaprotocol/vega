@@ -1,6 +1,6 @@
 Feature: Simple Spot Order between two parties match successfully
 
-  Scenario: Simple Spot Order matches with counter party
+  Scenario: Simple Spot Order matches with counter party (0080-SPOT-001, 0080-SPOT-012)
 
   Background:
     Given the fees configuration named "fees-config-1":
