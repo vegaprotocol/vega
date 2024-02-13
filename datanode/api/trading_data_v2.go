@@ -5086,7 +5086,20 @@ func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesR
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, pagination)
+	var (
+		teamID  *entities.TeamID
+		partyID *entities.PartyID
+	)
+
+	if req.TeamId != nil {
+		teamID = ptr.From(entities.TeamID(*req.TeamId))
+	}
+
+	if req.PartyId != nil {
+		partyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+
+	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, teamID, partyID, pagination)
 	if err != nil {
 		return nil, formatE(ErrListGames, err)
 	}
