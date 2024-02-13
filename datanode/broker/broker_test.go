@@ -718,6 +718,8 @@ func (e evt) Type() events.Type {
 	return e.t
 }
 
+func (e evt) Replace(context.Context) {}
+
 func (e evt) Context() context.Context {
 	return e.ctx
 }

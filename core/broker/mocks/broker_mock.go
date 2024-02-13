@@ -73,6 +73,18 @@ func (mr *MockInterfaceMockRecorder) SetStreaming(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreaming", reflect.TypeOf((*MockInterface)(nil).SetStreaming), arg0)
 }
 
+// Stage mocks base method.
+func (m *MockInterface) Stage(arg0 events.Event) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stage", arg0)
+}
+
+// Stage indicates an expected call of Stage.
+func (mr *MockInterfaceMockRecorder) Stage(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stage", reflect.TypeOf((*MockInterface)(nil).Stage), arg0)
+}
+
 // Subscribe mocks base method.
 func (m *MockInterface) Subscribe(arg0 broker.Subscriber) int {
 	m.ctrl.T.Helper()

@@ -135,6 +135,8 @@ func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) Stage(e events.Event) {}
+
 func (b *BrokerStub) GetAllEventsSinceCleared() []events.Event {
 	b.mu.Lock()
 	evs := []events.Event{}

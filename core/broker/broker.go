@@ -36,6 +36,7 @@ type Stats interface {
 //
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/core/broker Interface
 type Interface interface {
+	Stage(event events.Event)
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 	Subscribe(s broker.Subscriber) int
@@ -84,6 +85,8 @@ type Broker struct {
 	fileClient   FileClientSend
 	canStream    bool // whether not we should send events to the socketClient
 	stats        Stats
+
+	staged []events.Event
 }
 
 // New creates a new base broker.
@@ -102,6 +105,7 @@ func New(ctx context.Context, log *logging.Logger, config Config, stats Stats) (
 		config:    config,
 		canStream: bool(config.Socket.Enabled),
 		stats:     stats,
+		staged:    []events.Event{},
 	}
 
 	if config.Socket.Enabled {
@@ -122,6 +126,17 @@ func New(ctx context.Context, log *logging.Logger, config Config, stats Stats) (
 	}
 
 	return b, nil
+}
+
+func (b *Broker) OnTick(ctx context.Context, _ time.Time) {
+	if len(b.staged) == 0 {
+		return
+	}
+	for _, evt := range b.staged {
+		evt.Replace(ctx)
+		b.Send(evt)
+	}
+	b.staged = []events.Event{}
 }
 
 func (b *Broker) sendChannel(sub broker.Subscriber, evts []events.Event) {
@@ -255,6 +270,11 @@ func (b *Broker) SendBatch(events []events.Event) {
 func (b *Broker) Send(event events.Event) {
 	b.stats.IncrementEventCount(1)
 	b.startSending(event.Type(), b.seqGen.setSequence(event))
+}
+
+// Stages an event to be sent at the start of the next block.
+func (b *Broker) Stage(event events.Event) {
+	b.staged = append(b.staged, event)
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map.
