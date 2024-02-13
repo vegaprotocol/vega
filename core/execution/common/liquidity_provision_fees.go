@@ -74,6 +74,10 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	if acc.Balance.IsZero() {
 		return nil
 	}
+	ammScores, err := m.getAMMScores()
+	if err != nil {
+		return fmt.Errorf("failed to get AMM scores: %w", err)
+	}
 
 	// Get equity like shares per party.
 	sharesPerLp := m.equityShares.AllShares()
@@ -84,6 +88,8 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
 	// Multiplies each equity like share with corresponding score.
 	updatedShares := m.updateSharesWithLiquidityScores(sharesPerLp, scoresPerLp)
+	// now adjust the score to account for the AMM share
+	updatedShares = m.mergeScores(updatedShares, ammScores)
 
 	feeTransfer := m.fee.BuildLiquidityFeeAllocationTransfer(updatedShares, acc)
 	if feeTransfer == nil {
@@ -102,6 +108,52 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (m *MarketLiquidity) getAMMScores() (map[string]num.Decimal, error) {
+	if m.amm == nil {
+		return nil, nil
+	}
+	minP, maxP, err := m.ValidOrdersPriceRange()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get valid price range: %w", err)
+	}
+	pools := m.amm.GetAMMPools()
+	totalSize := num.DecimalZero()
+	ammSizes := make(map[string]num.Decimal, len(pools))
+	for amm, pool := range pools {
+		buy, sell := pool.VolumeBetweenPrices(types.SideBuy, minP, maxP), pool.VolumeBetweenPrices(types.SideSell, minP, maxP)
+		size := buy + sell
+		if size == 0 {
+			continue
+		}
+		dSize := num.DecimalFromInt64(int64(size))
+		totalSize = totalSize.Add(dSize)
+		ammSizes[amm] = dSize
+	}
+	ammScores := make(map[string]num.Decimal, len(ammSizes))
+	for p, size := range ammSizes {
+		// get the share of the AMM ELS fees, multiplied by the factor so they are correctly weighted
+		ammScores[p] = size.Div(totalSize).Mul(m.elsFeeFactor)
+	}
+	return ammScores, nil
+}
+
+func (m *MarketLiquidity) mergeScores(els, amm map[string]num.Decimal) map[string]num.Decimal {
+	if len(amm) == 0 {
+		return els
+	}
+	elsFactor := num.DecimalOne().Sub(m.elsFeeFactor) // if amm is entitled to 0.2 of the fees, then ELS receives 0.8
+	for k, v := range els {
+		els[k] = v.Mul(elsFactor)
+	}
+	for k, v := range amm {
+		if ev, ok := els[k]; ok {
+			v = ev.Add(v) // combine AMM and ELS scores if applicable
+		}
+		els[k] = v
+	}
+	return els
 }
 
 func (m *MarketLiquidity) processBondPenalties(

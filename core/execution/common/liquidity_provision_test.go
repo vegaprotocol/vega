@@ -53,6 +53,7 @@ type marketLiquidityTest struct {
 	broker           *bmocks.MockBroker
 	orderBook        *lmocks.MockOrderBook
 	timeService      *cmocks.MockTimeService
+	amm              *mocks.MockAMM
 }
 
 func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
@@ -83,6 +84,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
 	marketTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
 	epochEngine.NotifyOnEpoch(marketTracker.OnEpochEvent, marketTracker.OnEpochRestore)
+	ammMock := mocks.NewMockAMM(ctrl)
 
 	marketLiquidity := common.NewMarketLiquidity(
 		log,
@@ -98,6 +100,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		settlementAsset,
 		num.NewUint(1),
 		num.NewDecimalFromFloat(0.5),
+		ammMock,
 	)
 
 	marketLiquidity.OnMinLPStakeQuantumMultiple(num.DecimalOne())
@@ -116,6 +119,7 @@ func newMarketLiquidity(t *testing.T) *marketLiquidityTest {
 		orderBook:        orderBook,
 		timeService:      timeService,
 		ctx:              context.Background(),
+		amm:              ammMock,
 	}
 }
 
