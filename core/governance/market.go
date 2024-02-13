@@ -354,7 +354,7 @@ func buildSpotMarketFromProposal(
 		LinearSlippageFactor:          num.DecimalZero(),
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquiditySLAParams:            definition.Changes.SLAParams,
-		MarkPriceConfiguration:        defaultMarkPriceConfig,
+		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
