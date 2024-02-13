@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/test"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -78,39 +77,6 @@ func TestCheckProposalSubmissionForUpdateSpotMarket(t *testing.T) {
 	t.Run("Submitting a spot market update with valid competition factor succeeds", testUpdateSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a spot market update with invalid hysteresis epochs fails", testUpdateSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a spot market update with valid hysteresis epochs succeeds", testUpdateSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
-	t.Run("Submitting a spot market update with invalid intenal composite price configuration ", testUpdateSpotMarketChangeSubmissionWithInvalidMarkPriceConfig)
-}
-
-func testUpdateSpotMarketChangeSubmissionWithInvalidMarkPriceConfig(t *testing.T) {
-	cases := getSpotCompositePriceConfigurationCases()
-	cases = append(cases, compositePriceConfigCase{
-		mpc:   nil,
-		field: "",
-		err:   commands.ErrIsRequired,
-	})
-
-	for _, c := range cases {
-		err := checkProposalSubmission(&commandspb.ProposalSubmission{
-			Terms: &vegapb.ProposalTerms{
-				Change: &vegapb.ProposalTerms_UpdateSpotMarket{
-					UpdateSpotMarket: &vegapb.UpdateSpotMarket{
-						Changes: &vegapb.UpdateSpotMarketConfiguration{
-							MarkPriceConfiguration: c.mpc,
-						},
-					},
-				},
-			},
-		})
-		if len(c.field) > 0 {
-			if c.err != nil {
-				assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.mark_price_configuration."+c.field), c.err)
-			} else {
-				assert.Empty(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.mark_price_configuration."+c.field))
-			}
-		} else {
-			assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.mark_price_configuration"), c.err)
-		}
-	}
 }
 
 func testUpdateSpotMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {

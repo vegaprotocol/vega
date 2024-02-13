@@ -907,8 +907,14 @@ func (e *Engine) canVote(
 		return err
 	}
 
-	if proposal.IsMarketUpdate() {
-		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(proposal.MarketUpdate().MarketID, party)
+	if proposal.IsMarketUpdate() || proposal.IsSpotMarketUpdate() {
+		var mktID string
+		if proposal.IsMarketUpdate() {
+			mktID = proposal.MarketUpdate().MarketID
+		} else {
+			mktID = proposal.SpotMarketUpdate().MarketID
+		}
+		partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(mktID, party)
 		if partyELS.IsZero() && voterTokens.IsZero() {
 			return ErrVoterInsufficientTokensAndEquityLikeShare
 		}
@@ -1027,6 +1033,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateSpotMarket:
+		marketUpdate := terms.GetUpdateSpotMarket()
+		if _, ok := e.markets.GetMarket(marketUpdate.MarketID, false); !ok {
+			return types.ProposalErrorInvalidMarket, ErrParentMarketDoesNotExist
+		}
 		enct.shouldNotVerify = true
 		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket())
 	case types.ProposalTermsTypeUpdateReferralProgram:
@@ -1194,7 +1204,6 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
 			SLAParams:                 terms.Changes.SLAParams,
-			MarkPriceConfiguration:    terms.Changes.MarkPriceConfiguration,
 		},
 	}
 

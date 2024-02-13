@@ -1774,6 +1774,38 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 	}
 }
 
+func updateSpotMarketTerms() *types.ProposalTermsUpdateSpotMarket {
+	return &types.ProposalTermsUpdateSpotMarket{
+		UpdateSpotMarket: &types.UpdateSpotMarket{
+			MarketID: vgrand.RandomStr(5),
+			Changes: &types.UpdateSpotMarketConfiguration{
+				RiskParameters: &types.UpdateSpotMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.02),
+						Tau:                   num.DecimalFromFloat(0.0002),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.015),
+							Sigma: num.DecimalFromFloat(0.08),
+						},
+					},
+				},
+				Metadata: []string{"asset_class:spot/crypto", "product:spot"},
+				SLAParams: &types.LiquiditySLAParams{
+					PriceRange:                  num.DecimalOne(),
+					CommitmentMinTimeFraction:   num.DecimalFromFloat(0.2),
+					SlaCompetitionFactor:        num.DecimalFromFloat(0.23),
+					PerformanceHysteresisEpochs: 2,
+				},
+				TargetStakeParameters: &types.TargetStakeParameters{
+					TimeWindow:    1,
+					ScalingFactor: num.DecimalE(),
+				},
+			},
+		},
+	}
+}
+
 func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
 	var dt *dsdefinition.Definition
 	if termExt {
@@ -2065,6 +2097,30 @@ func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) t
 			Description: "some description",
 		},
 	}
+}
+
+func (e *tstEngine) newProposalForSpotMarketUpdate(marketID, partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              updateSpotMarketTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	switch p := prop.Terms.Change.(type) {
+	case *types.ProposalTermsUpdateSpotMarket:
+		p.UpdateSpotMarket.MarketID = marketID
+	}
+	return prop
 }
 
 func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *dstypes.SpecFilter, termBinding *datasource.SpecBindingForFuture, termExt bool) types.Proposal {
@@ -2365,6 +2421,20 @@ func (e *tstEngine) ensureGetMarketFuture(t *testing.T, marketID string) {
 			Instrument: &types.Instrument{
 				Product: &types.InstrumentFuture{
 					Future: &types.Future{},
+				},
+			},
+		},
+	},
+	)
+}
+
+func (e *tstEngine) ensureGetMarketSpot(t *testing.T, marketID string) {
+	t.Helper()
+	e.ensureGetMarket(t, marketID, types.Market{
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Product: &types.InstrumentSpot{
+					Spot: &types.Spot{},
 				},
 			},
 		},

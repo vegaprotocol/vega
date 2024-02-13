@@ -51,14 +51,14 @@ func testSubmittingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1000)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -76,8 +76,8 @@ func testSubmittingProposalForMarketUpdateForUnknownSpotMarketFails(t *testing.T
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 123456789)
@@ -99,7 +99,7 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	newMarketProposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
+	newMarketProposal := eng.newProposalForNewSpotMarket(proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour))
 	marketID := newMarketProposal.ID
 
 	// setup
@@ -113,11 +113,11 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, toSubmit)
-	assert.True(t, toSubmit.IsNewMarket())
+	assert.True(t, toSubmit.IsNewSpotMarket())
 
 	// given
-	updateMarketProposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow().Add(2*time.Hour), nil, nil, true)
-	updateMarketProposal.MarketUpdate().MarketID = marketID
+	updateMarketProposal := eng.newProposalForSpotMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow())
+	updateMarketProposal.SpotMarketUpdate().MarketID = marketID
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 123456789)
@@ -132,6 +132,32 @@ func testSubmittingProposalForSpotMarketUpdateForNotEnactedMarketFails(t *testin
 	// then
 	require.ErrorIs(t, governance.ErrMarketProposalStillOpen, err)
 	require.Nil(t, toSubmit)
+
+	// now the original market proposal passes
+	// given
+	voter1 := vgrand.RandomStr(5)
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+	eng.expectVoteEvent(t, voter1, marketID)
+	err = eng.addYesVote(t, voter1, marketID)
+	require.NoError(t, err)
+
+	afterClosing := time.Unix(newMarketProposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+	eng.ensureStakingAssetTotalSupply(t, 10)
+	eng.ensureTokenBalanceForParty(t, voter1, 7)
+	eng.expectPassedProposalEvent(t, marketID)
+	eng.expectTotalGovernanceTokenFromVoteEvents(t, "1", "7")
+	eng.expectGetMarketState(t, marketID)
+	eng.OnTick(context.Background(), afterClosing)
+
+	// submitting now the market proposal has passed should work
+	eng.ensureTokenBalanceForParty(t, proposer, 1000)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureExistingMarket(t, marketID)
+	eng.ensureGetMarketFuture(t, marketID)
+	eng.expectOpenProposalEvent(t, proposer, updateMarketProposal.ID)
+	toSubmit, err = eng.submitProposal(t, updateMarketProposal)
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
 }
 
 func testSubmittingProposalForSpotMarketUpdateWithInsufficientEquityLikeShareFails(t *testing.T) {
@@ -139,8 +165,8 @@ func testSubmittingProposalForSpotMarketUpdateWithInsufficientEquityLikeShareFai
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("״market-1", party, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("״market-1", party, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	// eng.ensureTokenBalanceForParty(t, party, 100)
@@ -165,13 +191,13 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -243,9 +269,11 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				Name: vgrand.RandomStr(10),
-				Product: &types.InstrumentFuture{
-					Future: &types.Future{
-						SettlementAsset: "BTC",
+				Product: &types.InstrumentSpot{
+					Spot: &types.Spot{
+						Name:       "BTC/USDT",
+						BaseAsset:  "BTC",
+						QuoteAsset: "USDT",
 					},
 				},
 			},
@@ -265,11 +293,11 @@ func testPreEnactmentOfSpotMarketUpdateSucceeds(t *testing.T) {
 
 	// then
 	require.NotEmpty(t, enacted)
-	require.True(t, enacted[0].IsUpdateMarket())
-	updatedMarket := enacted[0].UpdateMarket()
+	require.True(t, enacted[0].IsUpdateSpotMarket())
+	updatedMarket := enacted[0].UpdateSpotMarket()
 	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
-	assert.Equal(t, "UPDATED_MARKET_NAME", updatedMarket.TradableInstrument.Instrument.Name)
-	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentSpot).Spot.BaseAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentSpot).Spot.BaseAsset)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentSpot).Spot.QuoteAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentSpot).Spot.QuoteAsset)
 	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
 	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
 	assert.Equal(t, existingMarket.OpeningAuction.Duration, updatedMarket.OpeningAuction.Duration)
@@ -280,13 +308,13 @@ func testRejectingProposalForSpotMarketUpdateSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("market-1", party, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("market-1", party, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.7)
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1")
 	eng.ensureTokenBalanceForParty(t, party, 10000)
@@ -324,15 +352,15 @@ func testVotingWithoutMinimumTokenHoldersAndEquityLikeShareMakesSpotMarketUpdate
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipationLP, "0.5")
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -405,13 +433,13 @@ func testVotingWithMajorityOfYesFromTokenHoldersMakesSpotMarketUpdateProposalPas
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("״market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -518,13 +546,13 @@ func testVotingWithMajorityOfNoFromTokenHoldersMakesSpotMarketUpdateProposalDecl
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
+	eng.ensureGetMarketSpot(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
 
@@ -633,15 +661,15 @@ func testVotingWithoutTokenAndMajorityOfYesFromEquityLikeShareHoldersMakesSpotMa
 	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
+	eng.ensureGetMarketSpot(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
@@ -734,15 +762,15 @@ func testVotingWithoutTokenAndMajorityOfNoFromEquityLikeShareHoldersMakesSpotMar
 	eng.ensureNetworkParameter(t, netparams.GovernanceProposalUpdateMarketRequiredParticipation, "0.5")
 
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
-	marketID := proposal.MarketUpdate().MarketID
+	proposal := eng.newProposalForSpotMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow())
+	marketID := proposal.SpotMarketUpdate().MarketID
 
 	// setup
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
-	eng.ensureGetMarketFuture(t, marketID)
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
+	eng.ensureGetMarketSpot(t, marketID)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
