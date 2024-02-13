@@ -129,6 +129,7 @@
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
 - [10543](https://github.com/vegaprotocol/vega/issues/10543) - Add `ELS` for `vAMM`.
+- [10541](https://github.com/vegaprotocol/vega/issues/10541) - Add `SLA` for `vAMM`.
 
 ### 🐛 Fixes
 
