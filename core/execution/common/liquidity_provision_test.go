@@ -184,11 +184,9 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	ctx := context.Background()
 
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return([]string{}).AnyTimes()
 	testLiquidity.orderBook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(100), nil).AnyTimes()
 	testLiquidity.orderBook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(100), nil).AnyTimes()
-
-	testLiquidity.amm.EXPECT().GetAMMPools().Return(map[string]common.AMMPool{}).AnyTimes()
+	testLiquidity.amm.EXPECT().GetAMMPoolsBySubAccount().Return(map[string]common.AMMPool{}).AnyTimes()
 
 	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
@@ -435,7 +433,6 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	ctx := context.Background()
 
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return(poolsPartyIDs).AnyTimes()
 
 	testLiquidity.orderBook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(100), nil).AnyTimes()
 	testLiquidity.orderBook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(100), nil).AnyTimes()
@@ -448,7 +445,7 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 		"pool-party-2": poolMock,
 	}
 
-	testLiquidity.amm.EXPECT().GetAMMPools().Return(ammPools).AnyTimes()
+	testLiquidity.amm.EXPECT().GetAMMPoolsBySubAccount().Return(ammPools).AnyTimes()
 
 	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
@@ -664,7 +661,7 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 	}).AnyTimes()
 
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return([]string{}).AnyTimes()
+	testLiquidity.amm.EXPECT().GetAMMPoolsBySubAccount().Return(map[string]common.AMMPool{}).AnyTimes()
 
 	testLiquidity.liquidityEngine.EXPECT().UpdatePartyCommitment(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(partyID string, amount *num.Uint) (*types.LiquidityProvision, error) {
@@ -789,7 +786,8 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 	}).AnyTimes()
 
 	testLiquidity.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	testLiquidity.amm.EXPECT().GetAllPoolOwners().Return([]string{}).AnyTimes()
+
+	testLiquidity.amm.EXPECT().GetAMMPoolsBySubAccount().Return(map[string]common.AMMPool{}).AnyTimes()
 
 	// enable asset first.
 	err := testLiquidity.collateralEngine.EnableAsset(ctx, types.Asset{
