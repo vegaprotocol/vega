@@ -2461,6 +2461,9 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	if req.Scope != nil {
 		filters.Scope = ptr.From(entities.TransferScope(*req.Scope))
 	}
+	if req.GameId != nil {
+		filters.GameID = ptr.From(entities.GameID(*req.GameId))
+	}
 
 	if req.Pubkey == nil {
 		if !isReward {

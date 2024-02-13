@@ -43,6 +43,7 @@ type ListTransfersFilters struct {
 	ToEpoch   *uint64
 	Scope     *entities.TransferScope
 	Status    *entities.TransferStatus
+	GameID    *entities.GameID
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -347,6 +348,10 @@ func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []strin
 			nextBindVar(&args, *filters.ToEpoch),
 			nextBindVar(&args, *filters.ToEpoch),
 		))
+	}
+
+	if filters.GameID != nil {
+		where = append(where, fmt.Sprintf("game_id = %s", nextBindVar(&args, *filters.GameID)))
 	}
 
 	whereStr := ""
