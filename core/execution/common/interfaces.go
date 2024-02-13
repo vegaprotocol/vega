@@ -33,7 +33,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares,MarketLiquidityEngine,Teams,AccountBalanceChecker,Banking,AMM,AMMPool
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -311,6 +311,14 @@ type MarketLiquidityEngine interface {
 type EquityLikeShares interface {
 	AllShares() map[string]num.Decimal
 	SetPartyStake(id string, newStakeU *num.Uint)
+}
+
+type AMMPool interface {
+	VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64
+}
+
+type AMM interface {
+	GetAMMPools() map[string]AMMPool
 }
 
 type CommonMarket interface {
