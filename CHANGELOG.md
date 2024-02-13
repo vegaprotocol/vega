@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [10631](https://github.com/vegaprotocol/vega/issues/10631) - Fix snapshot for `ethCallEvents`
 
 
 ## 0.74.1
