@@ -265,6 +265,7 @@ func NewMarketFromSnapshot(
 	} else {
 		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor)
 	}
+	// now we can set the AMM on the market liquidity engine.
 	market.liquidity.SetAMM(market.amm)
 
 	book.SetOffbookSource(market.amm)
