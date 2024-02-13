@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -44,14 +45,14 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a spot market change with position decimal places below 6 succeeds", testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds)
 	t.Run("Submitting a new spot market without price monitoring succeeds", testNewSpotMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new spot market with price monitoring succeeds", testNewSpotMarketChangeSubmissionWithPriceMonitoringSucceeds)
-	t.Run("Submitting a price monitoring change without triggers succeeds", testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
-	t.Run("Submitting a price monitoring change with triggers succeeds", testPriceMonitoringChangeSubmissionWithTriggersSucceeds)
+	t.Run("Submitting a price monitoring change without triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
+	t.Run("Submitting a price monitoring change with triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggersSucceeds)
 	t.Run("Submitting a price monitoring change without trigger horizon fails", testSpotPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails)
 	t.Run("Submitting a price monitoring change with trigger horizon succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds)
 	t.Run("Submitting a price monitoring change with wrong trigger probability fails", testSpotPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails)
-	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
-	t.Run("Submitting a price monitoring change without trigger auction extension fails", testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
-	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
+	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testSpotPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
+	t.Run("Submitting a price monitoring change without trigger auction extension fails", testSpotPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
+	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a spot market change without instrument name fails", testNewSpotMarketChangeSubmissionWithoutInstrumentNameFails)
 	t.Run("Submitting a spot market change with instrument name succeeds", testNewSpotMarketChangeSubmissionWithInstrumentNameSucceeds)
 	t.Run("Submitting a spot market change without instrument code fails", testNewSpotMarketChangeSubmissionWithoutInstrumentCodeFails)
@@ -101,6 +102,151 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with valid competition factor succeeds", testNewSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a new spot market with invalid hysteresis epochs fails", testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new spot market with valid hysteresis epochs succeeds", testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
+	t.Run("Submitting a new spot market with invalid mark price configuration ", testNewSpotMarketChangeSubmissionWithCompositePriceConfiguration)
+}
+
+func getSpotCompositePriceConfigurationCases() []compositePriceConfigCase {
+	cases := []compositePriceConfigCase{
+		{
+			mpc:   &vega.CompositePriceConfiguration{},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 0,
+			},
+			field: "composite_price_type",
+			err:   commands.ErrIsRequired,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 1,
+			},
+			field: "composite_price_type",
+			err:   fmt.Errorf("only last trade composite price type is supported for spot market"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 2,
+			},
+			field: "composite_price_type",
+			err:   fmt.Errorf("only last trade composite price type is supported for spot market"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 4,
+			},
+			field: "composite_price_type",
+			err:   fmt.Errorf("only last trade composite price type is supported for spot market"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayWeight:        "",
+			},
+			field: "decay_weight",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayPower:         0,
+			},
+			field: "decay_power",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				CashAmount:         "",
+			},
+			field: "cash_amount",
+			err:   nil,
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayPower:         1,
+			},
+			field: "decay_power",
+			err:   fmt.Errorf("must not be defined for price type last trade"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DecayWeight:        "0.5",
+			},
+			field: "decay_weight",
+			err:   fmt.Errorf("must not be defined for price type last trade"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				CashAmount:         "100",
+			},
+			field: "cash_amount",
+			err:   fmt.Errorf("must not be defined for price type last trade"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType:       3,
+				SourceStalenessTolerance: []string{"1", "2"},
+			},
+			field: "source_staleness_tolerance",
+			err:   fmt.Errorf("must not be defined for price type last trade"),
+		},
+		{
+			mpc: &vega.CompositePriceConfiguration{
+				CompositePriceType: 3,
+				DataSourcesSpec: []*protoTypes.DataSourceDefinition{
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+					{SourceType: &vegapb.DataSourceDefinition_External{}},
+				},
+			},
+			field: "data_sources_spec",
+			err:   fmt.Errorf("must not be defined for price type last trade"),
+		},
+	}
+	return cases
+}
+
+func testNewSpotMarketChangeSubmissionWithCompositePriceConfiguration(t *testing.T) {
+	cases := getSpotCompositePriceConfigurationCases()
+	cases = append(cases, compositePriceConfigCase{
+		mpc:   nil,
+		field: "",
+		err:   commands.ErrIsRequired,
+	})
+
+	for _, c := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewSpotMarket{
+					NewSpotMarket: &vegapb.NewSpotMarket{
+						Changes: &vegapb.NewSpotMarketConfiguration{
+							Instrument: &vegapb.InstrumentConfiguration{
+								Product: &vegapb.InstrumentConfiguration_Spot{
+									Spot: &vegapb.SpotProduct{},
+								},
+							},
+							MarkPriceConfiguration: c.mpc,
+						},
+					},
+				},
+			},
+		})
+		if len(c.field) > 0 {
+			if c.err != nil {
+				assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.mark_price_configuration."+c.field), c.err)
+			} else {
+				assert.Empty(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.mark_price_configuration."+c.field))
+			}
+		} else {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.mark_price_configuration"), c.err)
+		}
+	}
 }
 
 func testNewSpotMarketChangeSubmissionWithoutNewSpotMarketFails(t *testing.T) {
@@ -601,6 +747,60 @@ func testSpotPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *
 				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"))
 		})
 	}
+}
+
+func testSpotPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &vegapb.NewSpotMarket{
+					Changes: &vegapb.NewSpotMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
+								{
+									Probability: "0.01",
+								},
+								{
+									Probability: "0.9",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.0.probability"),
+		errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.probability"),
+		errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+}
+
+func testSpotPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &vegapb.NewSpotMarket{
+					Changes: &vegapb.NewSpotMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
+								{
+									AuctionExtension: test.RandomPositiveI64(),
+								},
+								{
+									AuctionExtension: test.RandomPositiveI64(),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers.0.auction_extension"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers.1.auction_extension"), commands.ErrMustBePositive)
 }
 
 func testSpotMarketPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {
