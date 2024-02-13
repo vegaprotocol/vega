@@ -345,7 +345,7 @@ func NewMarket(
 	// this isn't the nicest way to resolve the dependencies
 	market.matching.SetOffbookSource(market.amm)
 
-	market.markPriceCalculator.setOraclePriceScalingFunc(market.scaleOracleData)
+	market.markPriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 
 	if market.IsPerp() {
 		internalCompositePriceConfig := mkt.TradableInstrument.Instrument.GetPerps().InternalCompositePriceConfig
