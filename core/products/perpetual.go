@@ -23,7 +23,6 @@ import (
 	dscommon "code.vegaprotocol.io/vega/core/datasource/common"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
@@ -388,7 +387,7 @@ type Perpetual struct {
 	settlementDataListener func(context.Context, *num.Numeric)
 	broker                 Broker
 	oracle                 scheduledOracle
-	timeService            common.TimeService
+	timeService            TimeService
 
 	// id should be the same as the market id
 	id string
@@ -448,7 +447,7 @@ func (p *Perpetual) Update(ctx context.Context, pp interface{}, oe OracleEngine)
 	return nil
 }
 
-func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, ts common.TimeService, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
+func NewPerpetual(ctx context.Context, log *logging.Logger, p *types.Perps, marketID string, ts TimeService, oe OracleEngine, broker Broker, assetDP uint32) (*Perpetual, error) {
 	// make sure we have all we need
 	if p.DataSourceSpecForSettlementData == nil || p.DataSourceSpecForSettlementSchedule == nil || p.DataSourceSpecBinding == nil {
 		return nil, ErrDataSourceSpecAndBindingAreRequired
