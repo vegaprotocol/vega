@@ -819,7 +819,9 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes", ErrIsRequired)
 	}
 
-	return checkNewSpotMarketConfiguration(change.NewSpotMarket.Changes).AddPrefix("proposal_submission.terms.change.")
+	errs.Merge(checkSpotCompositePriceConfiguration(change.NewSpotMarket.Changes.MarkPriceConfiguration, "new_spot_market.changes.mark_price_configuration").AddPrefix("proposal_submission.terms.change."))
+	errs.Merge(checkNewSpotMarketConfiguration(change.NewSpotMarket.Changes).AddPrefix("proposal_submission.terms.change."))
+	return errs
 }
 
 func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration) Errors {
@@ -857,6 +859,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
+
 	return errs
 }
 
@@ -972,7 +975,6 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 	if change.UpdateSpotMarket == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market", ErrIsRequired)
 	}
-
 	return checkUpdateSpotMarket(change.UpdateSpotMarket).AddPrefix("proposal_submission.terms.change.")
 }
 
@@ -989,6 +991,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 		return errs.FinalAddForProperty("update_spot_market.changes", ErrIsRequired)
 	}
 
+	errs.Merge(checkSpotCompositePriceConfiguration(updateSpotMarket.Changes.MarkPriceConfiguration, "update_spot_market.changes.mark_price_configuration"))
 	changes := updateSpotMarket.Changes
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "update_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
@@ -1986,11 +1989,50 @@ func checkCompositePriceConfiguration(config *protoTypes.CompositePriceConfigura
 	return errs
 }
 
+func checkSpotCompositePriceConfiguration(config *protoTypes.CompositePriceConfiguration, parent string) Errors {
+	errs := NewErrors()
+	if config == nil {
+		errs.AddForProperty(parent, ErrIsRequired)
+		return errs
+	}
+	if config.CompositePriceType == protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_UNSPECIFIED {
+		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), ErrIsRequired)
+	}
+
+	if config.CompositePriceType != protoTypes.CompositePriceType_COMPOSITE_PRICE_TYPE_LAST_TRADE {
+		errs.AddForProperty(fmt.Sprintf("%s.composite_price_type", parent), fmt.Errorf("only last trade composite price type is supported for spot market"))
+	} else {
+		if config.DecayPower != 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_power", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DecayWeight) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.decay_weight", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.CashAmount) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.cash_amount", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.SourceStalenessTolerance) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.source_staleness_tolerance", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.SourceWeights) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.source_weights", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DataSourcesSpec) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+		if len(config.DataSourcesSpec) > 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.data_sources_spec_binding", parent), fmt.Errorf("must not be defined for price type last trade"))
+		}
+	}
+
+	return errs
+}
+
 func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters", ErrIsRequired)
 	}
 
 	switch parameters := config.RiskParameters.(type) {
@@ -1999,7 +2041,7 @@ func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) E
 	case *protoTypes.NewSpotMarketConfiguration_LogNormal:
 		errs.Merge(checkNewSpotLogNormalRiskParameters(parameters))
 	default:
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsNotValid)
+		errs.AddForProperty("new_spot_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs

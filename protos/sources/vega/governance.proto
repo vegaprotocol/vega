@@ -105,6 +105,8 @@ message NewSpotMarketConfiguration {
   LiquiditySLAParameters sla_params = 7;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 8;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 9;
 }
 
 // Configuration for a new futures market on Vega
@@ -238,6 +240,8 @@ message UpdateSpotMarketConfiguration {
   LiquiditySLAParameters sla_params = 4;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 5;
+  // Mark price configuration.
+  CompositePriceConfiguration mark_price_configuration = 6;
 }
 
 // Instrument configuration
