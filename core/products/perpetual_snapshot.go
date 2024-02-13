@@ -19,7 +19,6 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -67,7 +66,7 @@ func NewPerpetualFromSnapshot(
 	log *logging.Logger,
 	p *types.Perps,
 	marketID string,
-	ts common.TimeService,
+	ts TimeService,
 	oe OracleEngine,
 	broker Broker,
 	state *snapshotpb.Perps,
