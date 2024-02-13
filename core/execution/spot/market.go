@@ -1719,7 +1719,7 @@ func (m *Market) CancelOrderWithIDGenerator(ctx context.Context, partyID, orderI
 	return conf, nil
 }
 
-// CancelOrder cancels the given order. If the order is found on the book, we release locked funds from holdingn account to the general account of the party.
+// CancelOrder cancels the given order. If the order is found on the book, we release locked funds from holding account to the general account of the party.
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()

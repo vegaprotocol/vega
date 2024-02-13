@@ -25,11 +25,11 @@ Feature: Spot market
     And the following network parameters are set:
       | name                                                  | value |
       | network.markPriceUpdateMaximumFrequency               | 0s    |
-      | market.liquidity.earlyExitPenalty                   | 0.02  |
-      | market.liquidity.earlyExitPenalty                   | 0.5   |
+      | market.liquidity.earlyExitPenalty                     | 0.02  |
+      | market.liquidity.earlyExitPenalty                     | 0.5   |
       | market.liquidity.bondPenaltyParameter                 | 0     |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.5   |
-      | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.2   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope   | 0.5   |
+      | market.liquidity.sla.nonPerformanceBondPenaltyMax     | 0.2   |
       | market.liquidity.maximumLiquidityFeeFactorLevel       | 0.4   |
       | validators.epoch.length                               | 2s    |
 
@@ -58,6 +58,11 @@ Feature: Spot market
     When the spot markets are updated:
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
+
+    # Attempt to submit a liquidity request we do not have enough funds to cover (0080-SPOT-006)
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    | error                                    |
+      | lp1 | lpprov | BTC/ETH   | 5000              | 0.1 | submission | not enough collateral in general account |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |

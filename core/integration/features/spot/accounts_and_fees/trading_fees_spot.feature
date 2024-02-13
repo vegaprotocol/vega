@@ -1,6 +1,7 @@
 Feature: Spot market
 
-  Scenario: 001 when an order is placed, holding accout should have the holding asset; when there is not enough asset to move to holding account, the order can not be placed. When trade happens, holding asset is released: 0080-SP-FEES-001; 0080-SP-FEES-002; 0080-SP-FEES-003; 0080-SP-FEES-004; 0080-SP-FEES-005; 0080-SP-FEES-006; 0080-SP-FEES-007
+  Scenario: 001 when an order is placed, holding account should have the holding asset; when there is not enough asset to move to holding account,
+            the order can not be placed. When trade happens, holding asset is released: 
 
   Background:
 
@@ -45,7 +46,7 @@ Feature: Spot market
       | party2 | BTC/ETH   | sell | 100    | 3000  | 0                | TYPE_LIMIT | TIF_GTC | party-order2    |
       | party1 | BTC/ETH   | buy  | 200    | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party-order11   |
       | party2 | BTC/ETH   | sell | 100    | 9000  | 0                | TYPE_LIMIT | TIF_GTC | party-order12   |
-    #During opening auction, holding asset is transfered from general account to holding account: 0080-SP-AUC-001
+    # During opening auction, holding asset is transferred from general account to holding account:
     Then "party1" should have holding account balance of "4000" for asset "ETH"
     Then "party1" should have general account balance of "6000" for asset "ETH"
     Then "party2" should have holding account balance of "200" for asset "BTC"
@@ -90,6 +91,7 @@ Feature: Spot market
       | mark price | trading mode            | auction trigger             |
       | 1500       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+    # party2 has a sell which incurs fees, check the transfers are performed.
     Then the following transfers should happen:
       | from   | to     | from account            | to account                       | market id | amount | asset |
       | party1 | party2 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 1000   | ETH   |
@@ -104,7 +106,7 @@ Feature: Spot market
 
     Then "party2" should have holding account balance of "0" for asset "BTC"
     Then "party2" should have general account balance of "300" for asset "BTC"
-    #party2 sold 1 BTC for 10ETH, and should have 10+15=25ETH now, party2 is the price taker, so party2 subtracted 0.04*10 =0.4 from general account for the taker fee, so party2 recieved 24.6ETH
+    #party2 sold 1 BTC for 10ETH, and should have 10+15=25ETH now, party2 is the price taker, so party2 subtracted 0.04*10 =0.4 from general account for the taker fee, so party2 received 24.6ETH
     Then "party2" should have general account balance of "2460" for asset "ETH"
 
     When the network moves ahead "2" blocks
@@ -112,7 +114,7 @@ Feature: Spot market
     Then the order book should have the following volumes for market "BTC/ETH":
       | side | price | volume |
       | buy  | 1000  | 100    |
-    #If the party does not have sufficient funds in their `general` account to cover this transfer, the order should be cancelled: 0080-SP-AUC-002; 0080-SP-AUC-003
+    #If the party does not have sufficient funds in their `general` account to cover this transfer, the order should be cancelled:
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     | error                                                              |
       | party1 | BTC/ETH   | buy  | 1000   | 2000  | 0                | TYPE_LIMIT | TIF_GFN | party-order13 | party does not have sufficient balance to cover the trade and fees |
@@ -135,16 +137,19 @@ Feature: Spot market
     Then "party3" should have general account balance of "8020" for asset "ETH"
     Then "party3" should have general account balance of "100" for asset "BTC"
 
-    #the maker fee + infra fee = 0.04*(1*20)=0.8, party4 will receive 20ETH and with fee 0.8ETH substracted, so party4 recived 19.2ETH
+    #the maker fee + infra fee = 0.04*(1*20)=0.8, party4 will receive 20ETH and with fee 0.8ETH subtracted, so party4 received 19.2ETH
     Then "party4" should have holding account balance of "100" for asset "BTC"
     Then "party4" should have general account balance of "1920" for asset "ETH"
     Then "party4" should have general account balance of "300" for asset "BTC"
 
-    #If the order is cancelled or the size is reduced through an order amendment, funds should be released from the `holding_account` and returned to the `general_account`:0080-SP-FEES-008
+    # If the order is cancelled or the size is reduced through an order amendment, 
+    # funds should be released from the `holding_account` and returned to the `general_account`
+    # (0080-SPOT-007)
     And the parties cancel the following orders:
       | party  | reference     |
       | party4 | party-order15 |
     Then "party4" should have holding account balance of "0" for asset "BTC"
+    Then "party4" should have general account balance of "400" for asset "BTC"
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
@@ -159,7 +164,7 @@ Feature: Spot market
     Then "party4" should have holding account balance of "200" for asset "BTC"
 
     When the network moves ahead "2" blocks
-    #past the price monitoring auction extension, so trade happened, holding account for party3 is release after trading: 0080-SP-AUC-004
+    #past the price monitoring auction extension, so trade happened, holding account for party3 is release after trading:
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             |
       | 2300       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
