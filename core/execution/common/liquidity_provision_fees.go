@@ -74,10 +74,7 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	if acc.Balance.IsZero() {
 		return nil
 	}
-	ammScores, err := m.getAMMScores()
-	if err != nil {
-		return fmt.Errorf("failed to get AMM scores: %w", err)
-	}
+	ammScores := m.getAMMScores()
 
 	// Get equity like shares per party.
 	sharesPerLp := m.equityShares.AllShares()
@@ -110,14 +107,14 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 	return nil
 }
 
-func (m *MarketLiquidity) getAMMScores() (map[string]num.Decimal, error) {
+func (m *MarketLiquidity) getAMMScores() map[string]num.Decimal {
 	if m.amm == nil {
-		return nil, nil
+		return nil
 	}
 	minP, maxP, err := m.ValidOrdersPriceRange()
 	if err != nil {
 		// no price range -> we cannot determine the AMM scores.
-		return nil, nil
+		return nil
 	}
 	pools := m.amm.GetAMMPools()
 	totalSize := num.DecimalZero()
@@ -137,7 +134,7 @@ func (m *MarketLiquidity) getAMMScores() (map[string]num.Decimal, error) {
 		// get the share of the AMM ELS fees, multiplied by the factor so they are correctly weighted
 		ammScores[p] = size.Div(totalSize).Mul(m.elsFeeFactor)
 	}
-	return ammScores, nil
+	return ammScores
 }
 
 func (m *MarketLiquidity) mergeScores(els, amm map[string]num.Decimal) map[string]num.Decimal {
