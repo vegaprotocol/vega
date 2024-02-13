@@ -70,10 +70,6 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 	return &Client{ETHClient: newEthClientWrapper(ethClient), cfg: cfg}, nil
 }
 
-func (c *Client) ConfiguredChainID() string {
-	return c.ethConfig.ChainID()
-}
-
 func (c *Client) UpdateEthereumConfig(ctx context.Context, ethConfig *types.EthereumConfig) error {
 	if c == nil {
 		return nil
