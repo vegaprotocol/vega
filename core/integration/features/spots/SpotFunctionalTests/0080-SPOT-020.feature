@@ -1,7 +1,8 @@
 Feature: Spot Markets
 
-  Scenario: If the fee rates change for any reason within an auction, the amount required to cover fees must be recalculated
-            and the necessary amount should be transferred to or released from the holding_account.(0080-SPOT-019).
+  Scenario: When exiting an auction, for any orders that are still open, the funds held in the parties'
+            holding_account to cover potential fees can be released to their respective general_account,
+            so that the remaining amount in the holding_account is only sufficient to cover the value of the order.(0080-SPOT-020).
 
   Background:
     Given the following network parameters are set:
