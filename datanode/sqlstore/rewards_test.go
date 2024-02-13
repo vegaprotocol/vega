@@ -1170,7 +1170,7 @@ func TestRewardFilterByTeamIDAndGameID(t *testing.T) {
 	ctx := tempTransaction(t)
 	stores := setupGamesTest(t, ctx)
 	startingBlock := addTestBlockForTime(t, ctx, stores.blocks, time.Now())
-	_, gameIDs, gameRewards, teams := setupGamesData(ctx, t, stores, startingBlock, 50)
+	_, gameIDs, gameRewards, teams, _ := setupGamesData(ctx, t, stores, startingBlock, 50)
 	rewards := make([]entities.Reward, 0)
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)

@@ -795,7 +795,7 @@ func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string
 	return res.PartyMarginModes, nil
 }
 
-func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, pagination *v2.Pagination) (*v2.GamesConnection, error) {
+func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.GamesConnection, error) {
 	var from *uint64
 	var to *uint64
 
@@ -813,6 +813,8 @@ func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *
 		EpochTo:     to,
 		EntityScope: entityScope,
 		Pagination:  pagination,
+		TeamId:      teamID,
+		PartyId:     partyID,
 	}
 	res, err := r.tradingDataClientV2.ListGames(ctx, &req)
 	if err != nil {
