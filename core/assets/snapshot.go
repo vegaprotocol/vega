@@ -206,7 +206,7 @@ func (s *Service) applyMigrations(ctx context.Context, p *types.Asset) {
 		// the chain ID they originated from. So, when loaded, assets without a chain
 		// ID are automatically considered to originate from Ethereum Mainnet.
 		if erc20 := p.Details.GetERC20(); erc20 != nil && erc20.ChainID == "" {
-			erc20.ChainID = s.ethClient.ConfiguredChainID()
+			erc20.ChainID = s.ethereumChainID
 			// Ensure the assets are updated in the data-node.
 			s.broker.Send(events.NewAssetEvent(ctx, *p))
 		}
