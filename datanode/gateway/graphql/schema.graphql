@@ -1219,6 +1219,8 @@ type Query {
     status: TransferStatus
     "Optional dispatch strategy's scope to filter for."
     scope: TransferScope
+    "Optional game ID to filter for"
+    gameId: ID
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2904,6 +2906,8 @@ type Party {
     status: TransferStatus
     "Optional dispatch strategy's scope to filter for."
     scope: TransferScope
+    "Optional game ID to filter for"
+    gameId: ID
   ): TransferConnection
 
   "The activity streak"
