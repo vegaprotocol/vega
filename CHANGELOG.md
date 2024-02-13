@@ -19,6 +19,7 @@
 - [10631](https://github.com/vegaprotocol/vega/issues/10631) - Fix snapshot for `ethCallEvents`
 - [10643](https://github.com/vegaprotocol/vega/issues/10643) - Games `API` not showing quantum values and added filter for team and party.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
+- [10641](https://github.com/vegaprotocol/vega/issues/10641) - Fix panic in amend during auction for isolated margin.
 
 
 ## 0.74.0

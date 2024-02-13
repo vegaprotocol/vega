@@ -3769,6 +3769,7 @@ func (m *Market) orderCancelReplace(
 		if m.getMarginMode(newOrder.Party) == types.MarginModeIsolatedMargin {
 			pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, newOrder); err != nil {
+				m.matching.ReplaceOrder(newOrder, existingOrder)
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add margin for party",
 						logging.Order(*newOrder), logging.Error(err))
