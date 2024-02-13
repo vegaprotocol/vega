@@ -525,6 +525,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	market.EXPECT().GetID().AnyTimes().Return(marketID)
 	market.EXPECT().GetSettlementAsset().AnyTimes().Return(assetID)
 	col.EXPECT().GetAssetQuantum(assetID).AnyTimes().Return(num.DecimalOne(), nil)
+	col.EXPECT().GetOrCreatePartyLiquidityFeeAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
 	risk.EXPECT().GetRiskFactors().AnyTimes().Return(&types.RiskFactor{Market: "", Short: num.DecimalOne(), Long: num.DecimalOne()})
 	risk.EXPECT().GetScalingFactors().AnyTimes().Return(&types.ScalingFactors{InitialMargin: num.DecimalOne()})
