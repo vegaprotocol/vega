@@ -806,6 +806,8 @@ func (e evt) Context() context.Context {
 	return e.ctx
 }
 
+func (e evt) Replace(context.Context) {}
+
 func (e *evt) SetSequenceID(s uint64) {
 	e.sid = s
 }

@@ -25,7 +25,9 @@ import (
 
 	"code.vegaprotocol.io/vega/core/datasource"
 	"code.vegaprotocol.io/vega/core/datasource/common"
+	ethcallcommon "code.vegaprotocol.io/vega/core/datasource/external/ethcall/common"
 	"code.vegaprotocol.io/vega/core/events"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -33,6 +35,7 @@ import (
 
 // Broker interface. Do not need to mock (use package broker/mock).
 type Broker interface {
+	Stage(event events.Event)
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
@@ -196,6 +199,17 @@ func (e *Engine) sendNewSpecSubscription(ctx context.Context, update updatedSubs
 	}
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
 	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
+
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		def := update.spec.GetDefinition()
+		switch def.DataSourceType.(type) {
+		case ethcallcommon.Spec:
+			// save to re-send after upgrade
+			// we have to do this because the introduction of the source-chain-id
+			// changes the hash of the proto struct, which is used in generation of the ID
+			e.broker.Stage(events.NewOracleSpecEvent(ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
+		}
+	}
 	e.broker.Send(events.NewOracleSpecEvent(ctx, &vegapb.OracleSpec{ExternalDataSourceSpec: proto}))
 }
 
