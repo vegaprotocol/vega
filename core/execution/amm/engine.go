@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -809,7 +810,7 @@ func (e *Engine) remove(ctx context.Context, party string) {
 	e.sendUpdate(ctx, pool)
 }
 
-// GetAllPoolOwners returns a sorted list of all the parties that own a pool
+// GetAllPoolOwners returns a sorted list of all the parties that own a pool.
 func (e *Engine) GetAllPoolOwners() []string {
 	return maps.Keys(e.pools)
 }
