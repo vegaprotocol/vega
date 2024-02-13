@@ -51,11 +51,13 @@ func resolveTeamEntities(team *v2.TeamGameEntities) ([]GameEntity, error) {
 				TeamID:               e.Team.TeamId,
 				MembersParticipating: resolveIndividuals(e.Team.MembersParticipating),
 			},
-			Rank:               int(e.Rank),
-			Volume:             e.Volume,
-			RewardMetric:       e.RewardMetric,
-			RewardEarned:       e.RewardEarned,
-			TotalRewardsEarned: e.TotalRewardsEarned,
+			Rank:                      int(e.Rank),
+			Volume:                    e.Volume,
+			RewardMetric:              e.RewardMetric,
+			RewardEarned:              e.RewardEarned,
+			TotalRewardsEarned:        e.TotalRewardsEarned,
+			RewardEarnedQuantum:       e.RewardEarnedQuantum,
+			TotalRewardsEarnedQuantum: e.TotalRewardsEarnedQuantum,
 		}
 		entities = append(entities, entity)
 	}
@@ -74,12 +76,14 @@ func resolveIndividuals(individuals []*v2.IndividualGameEntity) []*IndividualGam
 	entities := make([]*IndividualGameEntity, 0)
 	for _, e := range individuals {
 		entity := IndividualGameEntity{
-			Individual:         e.Individual,
-			Rank:               int(e.Rank),
-			Volume:             e.Volume,
-			RewardMetric:       e.RewardMetric,
-			RewardEarned:       e.RewardEarned,
-			TotalRewardsEarned: e.TotalRewardsEarned,
+			Individual:                e.Individual,
+			Rank:                      int(e.Rank),
+			Volume:                    e.Volume,
+			RewardMetric:              e.RewardMetric,
+			RewardEarned:              e.RewardEarned,
+			TotalRewardsEarned:        e.TotalRewardsEarned,
+			RewardEarnedQuantum:       e.RewardEarnedQuantum,
+			TotalRewardsEarnedQuantum: e.TotalRewardsEarnedQuantum,
 		}
 		entities = append(entities, &entity)
 	}
