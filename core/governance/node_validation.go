@@ -68,10 +68,8 @@ func (n *nodeProposal) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeGovernanceValidateAsset
 }
 
-func (n *nodeProposal) Check(ctx context.Context) error {
-	// always keep the last error
-	err := n.checker()
-	if err != nil {
+func (n *nodeProposal) Check(_ context.Context) error {
+	if err := n.checker(); err != nil {
 		return err
 	}
 
@@ -223,8 +221,7 @@ func (n *NodeValidation) Start(ctx context.Context, p *types.Proposal) error {
 	np.state.Store(pendingValidationProposal)
 	n.nodeProposals = append(n.nodeProposals, np)
 
-	return n.witness.StartCheck(
-		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
+	return n.witness.StartCheck(np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
 func (n *NodeValidation) restore(ctx context.Context, p *types.ProposalData) error {

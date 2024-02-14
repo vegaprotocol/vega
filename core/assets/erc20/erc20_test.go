@@ -55,6 +55,7 @@ var token = &types.AssetDetails{
 			ContractAddress:   "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 			WithdrawThreshold: num.NewUint(1000),
 			LifetimeLimit:     num.NewUint(42),
+			ChainID:           "1",
 		},
 	},
 }
@@ -124,6 +125,10 @@ type testEthClient struct {
 
 func (testEthClient) HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error) {
 	return nil, nil
+}
+
+func (testEthClient) ChainID(context.Context) (*big.Int, error) {
+	return big.NewInt(1), nil
 }
 
 func (testEthClient) CollateralBridgeAddress() ethcommon.Address {

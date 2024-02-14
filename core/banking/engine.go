@@ -18,6 +18,7 @@ package banking
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"slices"
 	"sort"
@@ -132,31 +133,44 @@ type dispatchStrategyCacheEntry struct {
 }
 
 type Engine struct {
-	cfg            Config
-	log            *logging.Logger
-	timeService    TimeService
-	broker         broker.Interface
-	col            Collateral
-	witness        Witness
-	notary         Notary
-	assets         Assets
-	top            Topology
-	ethEventSource EthereumEventSource
+	cfg         Config
+	log         *logging.Logger
+	timeService TimeService
+	broker      broker.Interface
+	col         Collateral
+	witness     Witness
+	notary      Notary
+	assets      Assets
+	top         Topology
 
-	// ethChainID stores the Ethereum Mainnet chain ID. It is used during the
-	// chain event deduplication phase, to ensure we correctly deduplicate
-	// chain events that have been seen before the introduce of the second bridge.
-	ethChainID string
 	// assetActions tracks all the asset actions the engine must process on network
 	// tick.
 	assetActions map[string]*assetAction
 	// seenAssetActions keeps track of all asset action the node has seen.
 	seenAssetActions *treeset.Set
 
-	lastSeenEthBlock uint64 // the block height of the latest ERC20 chain event
-	withdrawals      map[string]withdrawalRef
-	withdrawalCnt    *big.Int
-	deposits         map[string]*types.Deposit
+	// primaryEthChainID stores the Ethereum Mainnet chain ID. It is used during the
+	// chain event deduplication phase, to ensure we correctly deduplicate
+	// chain events that have been seen before the introduce of the second bridge.
+	primaryEthChainID string
+	// lastSeenPrimaryEthBlock holds the block height of the latest ERC20 chain
+	// event, from the primary chain, processed by the engine.
+	lastSeenPrimaryEthBlock uint64
+	primaryBridgeState      *bridgeState
+	primaryBridgeView       ERC20BridgeView
+	primaryEthEventSource   EthereumEventSource
+
+	// lastSeenSecondaryEthBlock holds the block height of the latest ERC20 chain
+	// event, from the secondary chain, processed by the engine.
+	lastSeenSecondaryEthBlock uint64
+	secondaryEthChainID       string
+	secondaryBridgeState      *bridgeState
+	secondaryBridgeView       ERC20BridgeView
+	secondaryEthEventSource   EthereumEventSource
+
+	withdrawals   map[string]withdrawalRef
+	withdrawalCnt *big.Int
+	deposits      map[string]*types.Deposit
 
 	currentEpoch uint64
 	bss          *bankingSnapshotState
@@ -188,9 +202,6 @@ type Engine struct {
 	// transfer id to recurringTransfers
 	recurringTransfersMap map[string]*types.RecurringTransfer
 
-	bridgeState *bridgeState
-	bridgeView  ERC20BridgeView
-
 	minWithdrawQuantumMultiple num.Decimal
 
 	maxGovTransferQunatumMultiplier num.Decimal
@@ -202,8 +213,7 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(
-	log *logging.Logger,
+func New(log *logging.Logger,
 	cfg Config,
 	col Collateral,
 	witness Witness,
@@ -213,8 +223,10 @@ func New(
 	broker broker.Interface,
 	top Topology,
 	marketActivityTracker MarketActivityTracker,
-	bridgeView ERC20BridgeView,
-	ethEventSource EthereumEventSource,
+	primaryBridgeView ERC20BridgeView,
+	secondaryBridgeView ERC20BridgeView,
+	primaryEthEventSource EthereumEventSource,
+	secondaryEthEventSource EthereumEventSource,
 ) (e *Engine) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -229,7 +241,8 @@ func New(
 		assets:                          assets,
 		notary:                          notary,
 		top:                             top,
-		ethEventSource:                  ethEventSource,
+		primaryEthEventSource:           primaryEthEventSource,
+		secondaryEthEventSource:         secondaryEthEventSource,
 		assetActions:                    map[string]*assetAction{},
 		seenAssetActions:                treeset.NewWithStringComparator(),
 		withdrawals:                     map[string]withdrawalRef{},
@@ -247,12 +260,16 @@ func New(
 		minWithdrawQuantumMultiple:      num.DecimalZero(),
 		marketActivityTracker:           marketActivityTracker,
 		hashToStrategy:                  map[string]*dispatchStrategyCacheEntry{},
-		bridgeState: &bridgeState{
+		primaryBridgeState: &bridgeState{
+			active: true,
+		},
+		secondaryBridgeState: &bridgeState{
 			active: true,
 		},
 		feeDiscountPerPartyAndAsset:               map[partyAssetKey]*num.Uint{},
 		pendingPerAssetAndPartyFeeDiscountUpdates: map[string]map[string]*num.Uint{},
-		bridgeView: bridgeView,
+		primaryBridgeView:                         primaryBridgeView,
+		secondaryBridgeView:                       secondaryBridgeView,
 	}
 }
 
@@ -271,8 +288,12 @@ func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal
 	return nil
 }
 
-func (e *Engine) OnEthereumChainIDUpdated(ethChainID string) {
-	e.ethChainID = ethChainID
+func (e *Engine) OnPrimaryEthChainIDUpdated(chainID string) {
+	e.primaryEthChainID = chainID
+}
+
+func (e *Engine) OnSecondaryEthChainIDUpdated(chainID string) {
+	e.secondaryEthChainID = chainID
 }
 
 // ReloadConf updates the internal configuration.
@@ -400,10 +421,18 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction, now time.T
 	case aa.IsERC20AssetLimitsUpdated():
 		return e.finalizeAssetLimitsUpdated(ctx, aa.erc20AssetLimitsUpdated.VegaAssetID)
 	case aa.IsERC20BridgeStopped():
-		e.bridgeState.NewBridgeStopped(aa.blockHeight, aa.logIndex)
+		b, err := e.bridgeStateForChainID(aa.chainID)
+		if err != nil {
+			return err
+		}
+		b.NewBridgeStopped(aa.blockHeight, aa.logIndex)
 		return nil
 	case aa.IsERC20BridgeResumed():
-		e.bridgeState.NewBridgeResumed(aa.blockHeight, aa.logIndex)
+		b, err := e.bridgeStateForChainID(aa.chainID)
+		if err != nil {
+			return err
+		}
+		b.NewBridgeResumed(aa.blockHeight, aa.logIndex)
 		return nil
 	default:
 		return ErrUnknownAssetAction
@@ -462,9 +491,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit, now time
 	return nil
 }
 
-func (e *Engine) finalizeWithdraw(
-	ctx context.Context, w *types.Withdrawal,
-) error {
+func (e *Engine) finalizeWithdraw(ctx context.Context, w *types.Withdrawal) error {
 	// always send the withdrawal event, don't delete it from the map because we
 	// may still receive events
 	defer func() {
@@ -569,6 +596,28 @@ func (e *Engine) sendTeamsStats(ctx context.Context, seq uint64) {
 
 	if len(teamsStats) > 0 {
 		e.broker.Send(events.NewTeamsStatsUpdatedEvent(ctx, seq, teamsStats))
+	}
+}
+
+func (e *Engine) bridgeViewForChainID(chainID string) (ERC20BridgeView, error) {
+	switch chainID {
+	case e.primaryEthChainID:
+		return e.primaryBridgeView, nil
+	case e.secondaryEthChainID:
+		return e.secondaryBridgeView, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
+	}
+}
+
+func (e *Engine) bridgeStateForChainID(chainID string) (*bridgeState, error) {
+	switch chainID {
+	case e.primaryEthChainID:
+		return e.primaryBridgeState, nil
+	case e.secondaryEthChainID:
+		return e.secondaryBridgeState, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
 	}
 }
 

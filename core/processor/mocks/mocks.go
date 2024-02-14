@@ -1679,7 +1679,7 @@ func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2, arg3, arg4, ar
 }
 
 // ERC20WithdrawalEvent mocks base method.
-func (m *MockBanking) ERC20WithdrawalEvent(arg0 context.Context, arg1 *types.ERC20Withdrawal, arg2, arg3 uint64, arg4 string) error {
+func (m *MockBanking) ERC20WithdrawalEvent(arg0 context.Context, arg1 *types.ERC20Withdrawal, arg2 uint64, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ERC20WithdrawalEvent", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
