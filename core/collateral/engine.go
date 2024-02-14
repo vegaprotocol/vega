@@ -3549,43 +3549,52 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 	return e.accs[generalID].Clone(), e.accs[marginID].Clone(), nil
 }
 
+func (e *Engine) getSubAccounts(subAccount, owner, asset, market string) (*types.Account, *types.Account, *types.Account, error) {
+	ownerGeneral, err := e.GetAccountByID(e.accountID(noMarket, owner, asset, types.AccountTypeGeneral))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party general account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	subAccountGeneral, err := e.GetAccountByID(e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party sub account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
+	subAccountMargin, err := e.GetAccountByID(e.accountID(market, subAccount, asset, types.AccountTypeMargin))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the party margin sub account",
+			logging.String("owner-id", owner),
+			logging.String("market-id", market),
+			logging.Error(err),
+		)
+		return nil, nil, nil, err
+	}
+
+	return ownerGeneral, subAccountGeneral, subAccountMargin, nil
+}
+
 func (e *Engine) getSubAccountTransferRequest(
 	party, subAccount, asset, market string,
 	amount *num.Uint,
 	typ types.TransferType,
 ) (*types.TransferRequest, error) {
-	partyGeneral, err := e.GetAccountByID(e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
+	ownerGeneral, subAccountGeneral, subAccountMargin, err := e.getSubAccounts(subAccount, party, asset, market)
 	if err != nil {
-		e.log.Error(
-			"Failed to get the party general account",
-			logging.String("owner-id", party),
-			logging.String("market-id", market),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-
-	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	partySubAccount, err := e.GetAccountByID(e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the party sub account",
-			logging.String("owner-id", party),
-			logging.String("market-id", market),
-			logging.Error(err),
-		)
-		return nil, err
-	}
-
-	// we'll need this account for all transfer types anyway (settlements, margin-risk updates)
-	partySubAccountMargin, err := e.GetAccountByID(e.accountID(market, subAccount, asset, types.AccountTypeMargin))
-	if err != nil {
-		e.log.Error(
-			"Failed to get the party margin sub account",
-			logging.String("owner-id", party),
-			logging.String("market-id", market),
-			logging.Error(err),
-		)
 		return nil, err
 	}
 
@@ -3599,15 +3608,15 @@ func (e *Engine) getSubAccountTransferRequest(
 	switch typ {
 	case types.TransferTypeAMMSubAccountLow:
 		// do we have enough in the general account to make the transfer?
-		if !amount.IsZero() && partyGeneral.Balance.LT(amount) {
+		if !amount.IsZero() && ownerGeneral.Balance.LT(amount) {
 			return nil, errors.New("not enough collateral in general account")
 		}
-		treq.FromAccount = []*types.Account{partyGeneral}
-		treq.ToAccount = []*types.Account{partySubAccount}
+		treq.FromAccount = []*types.Account{ownerGeneral}
+		treq.ToAccount = []*types.Account{subAccountGeneral}
 		return treq, nil
-	case types.TransferTypeBondHigh:
-		treq.FromAccount = []*types.Account{partySubAccount, partySubAccountMargin}
-		treq.ToAccount = []*types.Account{partyGeneral}
+	case types.TransferTypeAMMSubAccountHigh:
+		treq.FromAccount = []*types.Account{subAccountGeneral, subAccountMargin}
+		treq.ToAccount = []*types.Account{ownerGeneral}
 		return treq, nil
 	default:
 		return nil, errors.New("unsupported transfer type for sub accounts")
@@ -3646,6 +3655,96 @@ func (e *Engine) SubAccountUpdate(
 	}
 
 	return res, nil
+}
+
+func (e *Engine) SubAccountRelease(
+	ctx context.Context,
+	party, subAccount, asset, market string,
+	pos events.MarketPosition,
+) (*types.LedgerMovement, events.Margin, error) {
+	ownerGeneral, subAccountGeneral, subAccountMargin, err := e.getSubAccounts(subAccount, party, asset, market)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// subaccount has a position so construct a margin-update thing which we can pass to
+	// the market to closeout its position.
+	var closeout events.Margin
+	if pos.Size() != 0 {
+		closeout = &marginUpdate{
+			MarketPosition:  pos,
+			asset:           asset,
+			marketID:        market,
+			marginShortFall: num.UintZero(),
+		}
+	}
+
+	// one transfer from general to general
+	treq := &types.TransferRequest{
+		Amount:      subAccountGeneral.Balance.Clone(),
+		MinAmount:   subAccountGeneral.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMSubAccountRelease,
+		FromAccount: []*types.Account{subAccountGeneral},
+		ToAccount:   []*types.Account{ownerGeneral},
+	}
+
+	res, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, v := range res.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	// one transfer from margin to network insurance
+	globalInsurance, err := e.GetGlobalInsuranceAccount(asset)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	treq = &types.TransferRequest{
+		Amount:      subAccountMargin.Balance.Clone(),
+		MinAmount:   subAccountMargin.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMSubAccountRelease,
+		FromAccount: []*types.Account{subAccountMargin},
+		ToAccount:   []*types.Account{globalInsurance},
+	}
+
+	res, err = e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, v := range res.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+		}
+	}
+
+	return res, closeout, nil
 }
 
 // GetPartyMarginAccount returns a margin account given the partyID and market.

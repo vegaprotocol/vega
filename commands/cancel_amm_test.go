@@ -37,13 +37,29 @@ func TestCheckCancelAMM(t *testing.T) {
 		{
 			submission: commandspb.CancelAMM{
 				MarketId: "notavalidmarketid",
+				Method:   commandspb.CancelAMM_METHOD_IMMEDIATE,
 			},
 			errStr: "cancel_amm.market_id (should be a valid Vega ID)",
 		},
 		{
 			submission: commandspb.CancelAMM{
 				MarketId: "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				Method:   commandspb.CancelAMM_METHOD_IMMEDIATE,
 			},
+		},
+		{
+			submission: commandspb.CancelAMM{
+				MarketId: "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				Method:   commandspb.CancelAMM_METHOD_UNSPECIFIED,
+			},
+			errStr: "cancel_amm.method (is required)",
+		},
+		{
+			submission: commandspb.CancelAMM{
+				MarketId: "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				Method:   commandspb.CancelAMM_Method(999),
+			},
+			errStr: "cancel_amm.method (is not a valid value)",
 		},
 	}
 

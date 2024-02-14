@@ -479,6 +479,15 @@ message AmendAMM {
 
 // Command that allow the submitter to create an AMM pool for a given market.
 message CancelAMM {
-  // The market ID.
+  enum Method {
+    METHOD_UNSPECIFIED = 0;
+    // Cancellation will be immediate and any open positions will be transferred to the network for liquidation.
+    METHOD_IMMEDIATE = 1;
+    // AMM will only trade to reduce its position, and will be cancelled once its position reaches zero.
+    METHOD_REDUCE_ONLY = 2;
+  }
+  // Market ID to cancel an AMM for.
   string market_id = 1;
+  // Method to use to cancel the AMM.
+  Method method = 2;
 }

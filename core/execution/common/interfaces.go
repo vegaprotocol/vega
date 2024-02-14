@@ -192,6 +192,10 @@ type Collateral interface {
 		transferType types.TransferType,
 		amount *num.Uint,
 	) (*types.LedgerMovement, error)
+	SubAccountRelease(
+		ctx context.Context,
+		party, subAccount, asset, market string, pos events.MarketPosition,
+	) (*types.LedgerMovement, events.Margin, error)
 	CreatePartyAMMsSubAccounts(
 		ctx context.Context,
 		party, subAccount, asset, market string,
@@ -363,7 +367,7 @@ type CommonMarket interface {
 
 	SubmitAMM(context.Context, *types.SubmitAMM, string) error
 	AmendAMM(context.Context, *types.AmendAMM) error
-	CancelAMM(context.Context, *types.CancelAMM) error
+	CancelAMM(context.Context, *types.CancelAMM, string) error
 
 	PostRestore(context.Context) error
 }
