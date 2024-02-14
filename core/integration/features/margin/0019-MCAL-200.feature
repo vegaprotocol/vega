@@ -105,7 +105,7 @@ Feature: Amending order does not result in trades, margin is not covered, orders
       | trader3 | t3-to-amend | STATUS_STOPPED |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 4740        | 0      | 5688    | 0       | isolated margin | 0.3           | 0     |
+      | trader3 | ETH/FEB23 | 5070        | 0      | 6084    | 0       | isolated margin | 0.3           | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/FEB23 | 14220  | 4650    |

@@ -21,9 +21,13 @@
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10641](https://github.com/vegaprotocol/vega/issues/10641) - Fix panic in amend during auction for isolated margin.
 - [10656](https://github.com/vegaprotocol/vega/issues/10656) - Fix funding rates bounds can be null for perpetuals.
+- [10664](https://github.com/vegaprotocol/vega/issues/10664) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book. 
+- [10661](https://github.com/vegaprotocol/vega/issues/10661) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
+- [10660](https://github.com/vegaprotocol/vega/issues/10660) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
 - [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
 - [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
+- [10673](https://github.com/vegaprotocol/vega/issues/10673) - Fix error handling for isolated margin when insufficient funds. 
 
 ## 0.74.1
 
