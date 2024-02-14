@@ -1,18 +1,6 @@
 # Changelog
 
-## Unreleased 0.75.0
-
-### 🚨 Breaking changes
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
-
-### 🛠 Improvements
-
-- [10647](https://github.com/vegaprotocol/vega/issues/10647) - Add filter by game ID to transfers API.
+## 0.74.2
 
 ### 🐛 Fixes
 
@@ -24,18 +12,6 @@
 - [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
 
 ## 0.74.1
-
-### 🚨 Breaking changes
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
-
-### 🛠 Improvements
-
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
 
 ### 🐛 Fixes
 
