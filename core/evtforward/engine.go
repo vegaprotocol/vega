@@ -143,6 +143,70 @@ func (e *Engine) SetupEthereumEngine(
 	return nil
 }
 
+func (e *Engine) SetupSecondaryEthereumEngine(
+	client ethereum.Client,
+	forwarder ethereum.Forwarder,
+	config ethereum.Config,
+	ethCfg *types.SecondaryEthereumConfig,
+	assets ethereum.Assets,
+) error {
+	if e.log.IsDebug() {
+		e.log.Debug("Ethereum configuration has been loaded")
+	}
+
+	if e.ethEngine != nil {
+		if e.log.IsDebug() {
+			e.log.Debug("Stopping previous Ethereum Event Forwarder")
+		}
+		e.Stop()
+	}
+
+	if e.log.IsDebug() {
+		e.log.Debug("Setting up the Ethereum Event Forwarder")
+	}
+
+	ethLogger := e.log.Named(ethereumLogger)
+	ethLogger.SetLevel(config.Level.Get())
+
+	filterer, err := ethereum.NewLogFilterer(
+		e.cfg.Ethereum,
+		ethLogger,
+		client,
+		ethCfg.CollateralBridge(),
+		types.EthereumContract{},
+		types.EthereumContract{},
+		ethCfg.MultiSigControl(),
+		assets,
+	)
+	if err != nil {
+		return fmt.Errorf("couldn't create the log filterer: %w", err)
+	}
+
+	e.ethEngine = ethereum.NewEngine(
+		e.cfg.Ethereum,
+		ethLogger,
+		filterer,
+		forwarder,
+		types.EthereumContract{},
+		types.EthereumContract{},
+		ethCfg.MultiSigControl(),
+		ethCfg.ChainID(),
+	)
+
+	e.UpdateCollateralStartingBlock(filterer.CurrentHeight(context.Background()))
+
+	if e.multisigControlStartingBlock != 0 {
+		e.ethEngine.UpdateMultiSigControlStartingBlock(e.multisigControlStartingBlock)
+	}
+	if e.stakingStartingBlock != 0 {
+		e.ethEngine.UpdateStakingStartingBlock(e.stakingStartingBlock)
+	}
+
+	e.Start()
+
+	return nil
+}
+
 func (e *Engine) Start() {
 	if e.ethEngine != nil {
 		go func() {
@@ -195,6 +259,20 @@ func (e *NoopEngine) SetupEthereumEngine(
 ) error {
 	if e.log.IsDebug() {
 		e.log.Debug("Starting Ethereum configuration is a no-op")
+	}
+
+	return nil
+}
+
+func (e *NoopEngine) SetupSecondaryEthereumEngine(
+	_ ethereum.Client,
+	_ ethereum.Forwarder,
+	_ ethereum.Config,
+	_ *types.SecondaryEthereumConfig,
+	_ ethereum.Assets,
+) error {
+	if e.log.IsDebug() {
+		e.log.Debug("Starting secondary Ethereum configuration is a no-op")
 	}
 
 	return nil

@@ -32,7 +32,7 @@ func TestAssetActionDeduplication(t *testing.T) {
 	ctx := context.Background()
 
 	eng := getTestEngine(t)
-	eng.OnEthereumChainIDUpdated("1")
+	eng.OnPrimaryEthChainIDUpdated("1")
 
 	id1 := vgrand.RandomStr(5)
 	txHash1 := vgrand.RandomStr(5)

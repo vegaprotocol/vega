@@ -55,6 +55,7 @@ func testRejectsERC20ProposalForAddressAlreadyUsed(t *testing.T) {
 			ContractAddress:   "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990",
 			LifetimeLimit:     num.NewUint(1),
 			WithdrawThreshold: num.NewUint(1),
+			ChainID:           "1",
 		},
 	}
 	proposal.Terms.Change = newAssetERC20

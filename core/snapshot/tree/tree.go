@@ -200,7 +200,7 @@ func (t *Tree) AddSnapshot(s *types.Snapshot) error {
 		if n.IsLeaf {
 			payload, ok := payloads[n.Key]
 			if !ok {
-				return fmt.Errorf("the payloads for key %q is missing from the snapshot: %w", n.Key, err)
+				return fmt.Errorf("the payload for key %q is missing from the snapshot", n.Key)
 			}
 			value, err = proto.Marshal(payload.IntoProto())
 			if err != nil {
