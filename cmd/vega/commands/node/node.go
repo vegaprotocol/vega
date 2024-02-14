@@ -70,9 +70,13 @@ type Command struct {
 
 	vegaPaths paths.Paths
 
-	ethClient        *ethclient.Client
-	ethConfirmations *ethclient.EthereumConfirmations
-	l2Clients        *ethclient.L2Clients
+	primaryEthClient        *ethclient.PrimaryClient
+	primaryEthConfirmations *ethclient.EthereumConfirmations
+
+	secondaryEthClient        *ethclient.SecondaryClient
+	secondaryEthConfirmations *ethclient.EthereumConfirmations
+
+	l2Clients *ethclient.L2Clients
 
 	abciApp  *appW
 	protocol *protocol.Protocol
@@ -108,7 +112,7 @@ func (n *Command) Run(
 	}
 
 	if err := n.loadNodeWallets(); err != nil {
-		return err
+		return fmt.Errorf("could not load the node wallets: %w", err)
 	}
 
 	if err := n.startBlockchainClients(); err != nil {
@@ -125,8 +129,10 @@ func (n *Command) Run(
 		n.cancel,
 		n.stopBlockchain,
 		n.nodeWallets,
-		n.ethClient,
-		n.ethConfirmations,
+		n.primaryEthClient,
+		n.secondaryEthClient,
+		n.primaryEthConfirmations,
+		n.secondaryEthConfirmations,
 		n.blockchainClient,
 		vegaPaths,
 		n.stats,
@@ -450,7 +456,7 @@ func (n *Command) startBlockchainClients() error {
 	// We may not need ethereum client initialized when we have not
 	// provided the ethereum endpoint. We skip creating client here
 	// when RPCEnpoint is empty and the nullchain present.
-	if len(n.conf.Ethereum.RPCEndpoint) < 1 && n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+	if n.conf.IsNullChain() && !n.conf.HaveEthClient() {
 		return nil
 	}
 
@@ -460,11 +466,19 @@ func (n *Command) startBlockchainClients() error {
 		return fmt.Errorf("could not instantiate ethereum l2 clients: %w", err)
 	}
 
-	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.Ethereum)
+	n.primaryEthClient, err = ethclient.PrimaryDial(n.ctx, n.conf.Ethereum)
 	if err != nil {
-		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+		return fmt.Errorf("could not instantiate primary ethereum client: %w", err)
 	}
-	n.ethConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.ethClient, nil)
+
+	n.secondaryEthClient, err = ethclient.SecondaryDial(n.ctx, n.conf.Ethereum)
+	if err != nil {
+		return fmt.Errorf("could not instantiate secondary ethereum client: %w", err)
+	}
+
+	n.primaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.primaryEthClient, nil)
+
+	n.secondaryEthConfirmations = ethclient.NewEthereumConfirmations(n.conf.Ethereum, n.secondaryEthClient, nil)
 
 	return nil
 }

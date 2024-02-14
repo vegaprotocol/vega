@@ -43,7 +43,6 @@ import (
 
 var (
 	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
-	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 	ErrIssueSignaturesUnexpectedKind   = errors.New("unexpected node-signature kind")
 )
 

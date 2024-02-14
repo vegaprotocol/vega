@@ -49,7 +49,7 @@ func (e *Engine) deduplicateAssetAction(action *assetAction) error {
 	//
 	// This verification is only meaningful on actions coming from Ethereum
 	// Mainnet, hence the condition.
-	if ref.ChainId != "" && ref.ChainId == e.ethChainID {
+	if ref.ChainId != "" && ref.ChainId == e.primaryEthChainID {
 		ref.ChainId = ""
 
 		refKeyWithChainID, err := buildRefKey(ref)

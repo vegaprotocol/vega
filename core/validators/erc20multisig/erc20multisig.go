@@ -25,18 +25,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-func NewERC20MultisigTopology(
-	config Config,
-	log *logging.Logger,
-	witness Witness,
-	broker broker.Interface,
-	ethClient EthereumClient,
-	ethConfirmation EthConfirmations,
-	netp *netparams.Store,
-) *Topology {
+func NewERC20MultisigTopology(config Config, log *logging.Logger, witness Witness, broker broker.Interface, ethClient EthereumClient, ethConfirmation EthConfirmations, netp *netparams.Store) *Topology {
 	ocv := NewOnChainVerifier(config, log, ethClient, ethConfirmation)
 	_ = netp.Watch(netparams.WatchParam{
-		Param: netparams.BlockchainsEthereumConfig,
+		Param: netparams.BlockchainsPrimaryEthereumConfig,
 		Watcher: func(_ context.Context, cfg interface{}) error {
 			ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
 			if err != nil {

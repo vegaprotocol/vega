@@ -98,19 +98,19 @@ func (e *ERC20LogicView) FindAsset(
 	if name, err := t.Name(&bind.CallOpts{}); err != nil {
 		validationErrs.Add(fmt.Errorf("couldn't get name: %w", err))
 	} else if name != asset.Name {
-		validationErrs.Add(fmt.Errorf("invalid name, expected(%s), got(%s)", asset.Name, name))
+		validationErrs.Add(fmt.Errorf("invalid name, contract(%s), proposal(%s)", name, asset.Name))
 	}
 
 	if symbol, err := t.Symbol(&bind.CallOpts{}); err != nil {
 		validationErrs.Add(fmt.Errorf("couldn't get symbol: %w", err))
 	} else if symbol != asset.Symbol {
-		validationErrs.Add(fmt.Errorf("invalid symbol, expected(%s), got(%s)", asset.Symbol, symbol))
+		validationErrs.Add(fmt.Errorf("invalid symbol, contract(%s), proposal(%s)", symbol, asset.Symbol))
 	}
 
 	if decimals, err := t.Decimals(&bind.CallOpts{}); err != nil {
 		validationErrs.Add(fmt.Errorf("couldn't get decimals: %w", err))
 	} else if uint64(decimals) != asset.Decimals {
-		validationErrs.Add(fmt.Errorf("invalid decimals, expected(%d), got(%d)", asset.Decimals, decimals))
+		validationErrs.Add(fmt.Errorf("invalid decimals, contract(%d), proposal(%d)", decimals, asset.Decimals))
 	}
 
 	if validationErrs.HasAny() {
