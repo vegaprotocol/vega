@@ -198,6 +198,7 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},
@@ -412,6 +413,7 @@ func TestLiquidityProvisionsAmendments(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},
@@ -528,6 +530,7 @@ func TestCancelLiquidityProvisionDuringOpeningAuction(t *testing.T) {
 			Source: types.AssetDetailsErc20{
 				ERC20: &types.ERC20{
 					ContractAddress: "addrs",
+					ChainID:         "1",
 				},
 			},
 		},

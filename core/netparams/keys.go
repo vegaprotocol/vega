@@ -179,9 +179,9 @@ const (
 	SpamProtectionUpdateProfileMinFunds = "spam.protection.updatePartyProfile.min.funds"
 
 	// blockchain specifics?
-	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
-	BlockchainsArbitrumConfig    = "blockchains.arbitrumConfig"
-	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
+	BlockchainsPrimaryEthereumConfig   = "blockchains.ethereumConfig"
+	BlockchainsSecondaryEthereumConfig = "blockchains.secondaryEthereumConfig"
+	BlockchainsEthereumL2Configs       = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
@@ -374,8 +374,8 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalReferralProgramRequiredMajority:            {},
 	GovernanceProposalReferralProgramMinProposerBalance:          {},
 	GovernanceProposalReferralProgramMinVoterBalance:             {},
-	BlockchainsEthereumConfig:                                    {},
-	BlockchainsArbitrumConfig:                                    {},
+	BlockchainsPrimaryEthereumConfig:                             {},
+	BlockchainsSecondaryEthereumConfig:                           {},
 	MarketLiquidityProvisionShapesMaxSize:                        {},
 	MarketProbabilityOfTradingTauScaling:                         {},
 	MarketMinProbabilityOfTradingForLPOrders:                     {},

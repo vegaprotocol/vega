@@ -17,7 +17,6 @@ package protocol
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 
@@ -28,11 +27,6 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"golang.org/x/exp/maps"
-)
-
-var (
-	ErrUnknownChainProvider    = errors.New("unknown chain provider")
-	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
 )
 
 // UponGenesis loads all asset from genesis state.
@@ -66,9 +60,7 @@ func (svcs *allServices) UponGenesis(ctx context.Context, rawstate []byte) (err 
 	return nil
 }
 
-func (svcs *allServices) loadAsset(
-	ctx context.Context, id string, v *proto.AssetDetails,
-) error {
+func (svcs *allServices) loadAsset(ctx context.Context, id string, v *proto.AssetDetails) error {
 	rawAsset, err := types.AssetDetailsFromProto(v)
 	if err != nil {
 		return err

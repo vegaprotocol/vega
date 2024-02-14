@@ -55,6 +55,7 @@ type asset struct {
 			ContractAddress   string `json:"contract_address"`
 			LifetimeLimit     string `json:"lifetime_limit"`
 			WithdrawThreshold string `json:"withdraw_threshold"`
+			ChainID           string `json:"chain_id"`
 		} `json:"erc20,omitempty"`
 	}
 }

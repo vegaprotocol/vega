@@ -42,7 +42,8 @@ type StdTime struct{}
 func (StdTime) Now() time.Time { return time.Now() }
 
 type EthereumConfirmations struct {
-	cfg       Config
+	retryDelay time.Duration
+
 	ethClient EthereumClientConfirmations
 
 	time Time
@@ -53,18 +54,14 @@ type EthereumConfirmations struct {
 	curHeightLastUpdate time.Time
 }
 
-func NewEthereumConfirmations(
-	cfg Config,
-	ethClient EthereumClientConfirmations,
-	time Time,
-) *EthereumConfirmations {
+func NewEthereumConfirmations(cfg Config, ethClient EthereumClientConfirmations, time Time) *EthereumConfirmations {
 	if time == nil {
 		time = StdTime{}
 	}
 	return &EthereumConfirmations{
-		cfg:       cfg,
-		ethClient: ethClient,
-		time:      time,
+		retryDelay: cfg.RetryDelay.Get(),
+		ethClient:  ethClient,
+		time:       time,
 	}
 }
 
@@ -91,18 +88,16 @@ func (e *EthereumConfirmations) CheckRequiredConfirmations(block uint64, require
 	return nil
 }
 
-func (e *EthereumConfirmations) currentHeight(
-	_ context.Context,
-) (uint64, error) {
+func (e *EthereumConfirmations) currentHeight(ctx context.Context) (uint64, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	// if last update of the heigh was more that 15 seconds
+	// if last update of the height was more that 15 seconds
 	// ago, we try to update, we assume an eth block takes
 	// ~15 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	if now := e.time.Now(); e.curHeightLastUpdate.Add(e.cfg.RetryDelay.Get()).Before(now) {
+	if now := e.time.Now(); e.curHeightLastUpdate.Add(e.retryDelay).Before(now) {
 		// get the last block header
 		h, err := e.ethClient.HeaderByNumber(ctx, nil)
 		if err != nil {

@@ -17,6 +17,7 @@ package banking
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sort"
 
@@ -37,7 +38,8 @@ var (
 	assetActionsKey          = (&types.PayloadBankingAssetActions{}).Key()
 	recurringTransfersKey    = (&types.PayloadBankingRecurringTransfers{}).Key()
 	scheduledTransfersKey    = (&types.PayloadBankingScheduledTransfers{}).Key()
-	bridgeStateKey           = (&types.PayloadBankingBridgeState{}).Key()
+	primaryBridgeStateKey    = (&types.PayloadBankingPrimaryBridgeState{}).Key()
+	secondaryBridgeStateKey  = (&types.PayloadBankingSecondaryBridgeState{}).Key()
 	recurringGovTransfersKey = (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	scheduledGovTransfersKey = (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 	transferFeeDiscountsKey  = (&types.PayloadBankingTransferFeeDiscounts{}).Key()
@@ -49,7 +51,7 @@ var (
 		assetActionsKey,
 		recurringTransfersKey,
 		scheduledTransfersKey,
-		bridgeStateKey,
+		primaryBridgeStateKey,
 		recurringGovTransfersKey,
 		scheduledGovTransfersKey,
 		transferFeeDiscountsKey,
@@ -63,7 +65,8 @@ type bankingSnapshotState struct {
 	serialisedAssetActions          []byte
 	serialisedRecurringTransfers    []byte
 	serialisedScheduledTransfers    []byte
-	serialisedBridgeState           []byte
+	serialisedPrimaryBridgeState    []byte
+	serialisedSecondaryBridgeState  []byte
 	serialisedGovRecurringTransfers []byte
 	serialisedGovScheduledTransfers []byte
 	serialisedTransferFeeDiscounts  []byte
@@ -81,13 +84,27 @@ func (e *Engine) Stopped() bool {
 	return false
 }
 
-func (e *Engine) serialiseBridgeState() ([]byte, error) {
+func (e *Engine) serialisePrimaryBridgeState() ([]byte, error) {
 	payload := types.Payload{
-		Data: &types.PayloadBankingBridgeState{
+		Data: &types.PayloadBankingPrimaryBridgeState{
 			BankingBridgeState: &types.BankingBridgeState{
-				Active:      e.bridgeState.active,
-				BlockHeight: e.bridgeState.block,
-				LogIndex:    e.bridgeState.logIndex,
+				Active:      e.primaryBridgeState.active,
+				BlockHeight: e.primaryBridgeState.block,
+				LogIndex:    e.primaryBridgeState.logIndex,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (e *Engine) serialiseSecondaryBridgeState() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingPrimaryBridgeState{
+			BankingBridgeState: &types.BankingBridgeState{
+				Active:      e.primaryBridgeState.active,
+				BlockHeight: e.primaryBridgeState.block,
+				LogIndex:    e.primaryBridgeState.logIndex,
 			},
 		},
 	}
@@ -195,7 +212,8 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 func (e *Engine) serialiseSeen() ([]byte, error) {
 	seen := &types.PayloadBankingSeen{
 		BankingSeen: &types.BankingSeen{
-			LastSeenEthBlock: e.lastSeenEthBlock,
+			LastSeenPrimaryEthBlock:   e.lastSeenPrimaryEthBlock,
+			LastSeenSecondaryEthBlock: e.lastSeenSecondaryEthBlock,
 		},
 	}
 	seen.BankingSeen.Refs = make([]string, 0, e.seenAssetActions.Size())
@@ -263,8 +281,10 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return e.serialiseK(e.serialiseScheduledGovernanceTransfers, &e.bss.serialisedGovScheduledTransfers)
 	case transferFeeDiscountsKey:
 		return e.serialiseK(e.serialisedTransferFeeDiscounts, &e.bss.serialisedTransferFeeDiscounts)
-	case bridgeStateKey:
-		return e.serialiseK(e.serialiseBridgeState, &e.bss.serialisedBridgeState)
+	case primaryBridgeStateKey:
+		return e.serialiseK(e.serialisePrimaryBridgeState, &e.bss.serialisedPrimaryBridgeState)
+	case secondaryBridgeStateKey:
+		return e.serialiseK(e.serialiseSecondaryBridgeState, &e.bss.serialisedSecondaryBridgeState)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -297,8 +317,10 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreRecurringGovernanceTransfers(ctx, pl.BankingRecurringGovernanceTransfers, p)
 	case *types.PayloadBankingScheduledGovernanceTransfers:
 		return nil, e.restoreScheduledGovernanceTransfers(ctx, pl.BankingScheduledGovernanceTransfers, p)
-	case *types.PayloadBankingBridgeState:
-		return nil, e.restoreBridgeState(pl.BankingBridgeState, p)
+	case *types.PayloadBankingPrimaryBridgeState:
+		return nil, e.restorePrimaryBridgeState(pl.BankingBridgeState, p)
+	case *types.PayloadBankingSecondaryBridgeState:
+		return nil, e.restoreSecondaryBridgeState(pl.BankingBridgeState, p)
 	case *types.PayloadBankingTransferFeeDiscounts:
 		return nil, e.restoreTransferFeeDiscounts(pl.BankingTransferFeeDiscounts, p)
 	default:
@@ -341,16 +363,29 @@ func (e *Engine) restoreScheduledGovernanceTransfers(ctx context.Context, transf
 	return err
 }
 
-func (e *Engine) restoreBridgeState(state *types.BankingBridgeState, p *types.Payload) (err error) {
+func (e *Engine) restorePrimaryBridgeState(state *types.BankingBridgeState, p *types.Payload) (err error) {
 	if state != nil {
-		e.bridgeState = &bridgeState{
+		e.primaryBridgeState = &bridgeState{
 			active:   state.Active,
 			block:    state.BlockHeight,
 			logIndex: state.LogIndex,
 		}
 	}
 
-	e.bss.serialisedBridgeState, err = proto.Marshal(p.IntoProto())
+	e.bss.serialisedPrimaryBridgeState, err = proto.Marshal(p.IntoProto())
+	return
+}
+
+func (e *Engine) restoreSecondaryBridgeState(state *types.BankingBridgeState, p *types.Payload) (err error) {
+	if state != nil {
+		e.secondaryBridgeState = &bridgeState{
+			active:   state.Active,
+			block:    state.BlockHeight,
+			logIndex: state.LogIndex,
+		}
+	}
+
+	e.bss.serialisedSecondaryBridgeState, err = proto.Marshal(p.IntoProto())
 	return
 }
 
@@ -389,7 +424,8 @@ func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	for _, v := range seen.Refs {
 		e.seenAssetActions.Add(v)
 	}
-	e.lastSeenEthBlock = seen.LastSeenEthBlock
+	e.lastSeenPrimaryEthBlock = seen.LastSeenPrimaryEthBlock
+	e.lastSeenSecondaryEthBlock = seen.LastSeenSecondaryEthBlock
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -397,7 +433,10 @@ func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Payload) error {
 	var err error
 
-	e.loadAssetActions(aa.AssetAction)
+	if err := e.loadAssetActions(aa.AssetAction); err != nil {
+		return fmt.Errorf("could not load asset actions: %w", err)
+	}
+
 	for _, aa := range e.assetActions {
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
 			e.log.Panic("unable to restore witness resource", logging.String("id", aa.id), logging.Error(err))
@@ -426,15 +465,20 @@ func (e *Engine) restoreTransferFeeDiscounts(
 	return
 }
 
-func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {
+func (e *Engine) OnEpochRestore(_ context.Context, ep types.Epoch) {
 	e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
 	e.currentEpoch = ep.Seq
 }
 
-func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	if e.lastSeenEthBlock != 0 {
-		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
-		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+func (e *Engine) OnStateLoaded(_ context.Context) error {
+	if e.lastSeenPrimaryEthBlock != 0 {
+		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
+		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
+	}
+
+	if e.lastSeenSecondaryEthBlock != 0 {
+		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
+		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
 	}
 	return nil
 }

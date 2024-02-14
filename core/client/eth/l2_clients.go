@@ -73,8 +73,7 @@ func NewL2Clients(
 		}
 
 		clients[v.ChainID] = clt
-		confirmations[v.ChainID] = NewEthereumConfirmations(
-			cfg, clt, nil)
+		confirmations[v.ChainID] = NewEthereumConfirmations(cfg, clt, nil)
 	}
 
 	return &L2Clients{
@@ -154,8 +153,7 @@ func (e *L2Clients) ReloadConf(cfg Config) {
 		}
 
 		e.clients[v.ChainID] = clt
-		e.confirmations[v.ChainID] = NewEthereumConfirmations(
-			cfg, clt, nil)
+		e.confirmations[v.ChainID] = NewEthereumConfirmations(cfg, clt, nil)
 	}
 }
 

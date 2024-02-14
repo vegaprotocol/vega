@@ -194,10 +194,11 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	epochEngine := emocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 
-	bridgeView := amocks.NewMockERC20BridgeView(ctrl)
+	primaryBridgeView := amocks.NewMockERC20BridgeView(ctrl)
+	secondaryBridgeView := amocks.NewMockERC20BridgeView(ctrl)
 	notary := amocks.NewMockNotary(ctrl)
 
-	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet().Ethereum, nil, broker, bridgeView, notary, false)
+	asset, _ := assets.New(context.Background(), log, assets.NewDefaultConfig(), getNodeWallet().Ethereum, nil, nil, broker, primaryBridgeView, secondaryBridgeView, notary, false)
 	teams := emocks.NewMockTeams(ctrl)
 	bc := emocks.NewMockAccountBalanceChecker(ctrl)
 	marketTracker := common.NewMarketActivityTracker(log, teams, bc)

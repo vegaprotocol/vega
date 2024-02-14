@@ -68,31 +68,39 @@ type Service struct {
 	pendingAssetUpdates map[string]*Asset
 
 	ethWallet nweth.EthereumWallet
-	ethClient erc20.ETHClient
-	notary    Notary
-	ass       *assetsSnapshotState
+
+	primaryEthChainID string
+	primaryEthClient  erc20.ETHClient
+	primaryBridgeView ERC20BridgeView
+
+	secondaryEthChainID string
+	secondaryEthClient  erc20.ETHClient
+	secondaryBridgeView ERC20BridgeView
+
+	notary Notary
+	ass    *assetsSnapshotState
 
 	ethToVega   map[string]string
 	isValidator bool
-
-	bridgeView      ERC20BridgeView
-	ethereumChainID string
 }
 
 func New(
+	ctx context.Context,
 	log *logging.Logger,
 	cfg Config,
 	nw nweth.EthereumWallet,
-	ethClient erc20.ETHClient,
+	primaryEthClient erc20.ETHClient,
+	secondaryEthClient erc20.ETHClient,
 	broker broker.Interface,
-	bridgeView ERC20BridgeView,
+	primaryBridgeView ERC20BridgeView,
+	secondaryBridgeView ERC20BridgeView,
 	notary Notary,
 	isValidator bool,
-) *Service {
+) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	return &Service{
+	s := &Service{
 		log:                 log,
 		cfg:                 cfg,
 		broker:              broker,
@@ -100,13 +108,31 @@ func New(
 		pendingAssets:       map[string]*Asset{},
 		pendingAssetUpdates: map[string]*Asset{},
 		ethWallet:           nw,
-		ethClient:           ethClient,
+		primaryEthClient:    primaryEthClient,
+		secondaryEthClient:  secondaryEthClient,
 		notary:              notary,
 		ass:                 &assetsSnapshotState{},
 		isValidator:         isValidator,
 		ethToVega:           map[string]string{},
-		bridgeView:          bridgeView,
+		primaryBridgeView:   primaryBridgeView,
+		secondaryBridgeView: secondaryBridgeView,
 	}
+
+	if isValidator {
+		primaryChainID, err := s.primaryEthClient.ChainID(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch chain ID from the primary ethereum client: %w", err)
+		}
+		s.primaryEthChainID = primaryChainID.String()
+
+		secondaryChainID, err := s.secondaryEthClient.ChainID(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("could not fetch chain ID from the secondary ethereum client: %w", err)
+		}
+		s.secondaryEthChainID = secondaryChainID.String()
+	}
+
+	return s, nil
 }
 
 // ReloadConf updates the internal configuration.
@@ -231,7 +257,7 @@ func (s *Service) IsEnabled(assetID string) bool {
 	return ok
 }
 
-func (s *Service) OnTick(ctx context.Context, _ time.Time) {
+func (s *Service) OnTick(_ context.Context, _ time.Time) {
 	s.notary.OfferSignatures(types.NodeSignatureKindAssetNew, s.offerERC20NotarySignatures)
 }
 
@@ -262,19 +288,23 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 			builtin.New(assetID, assetDetails),
 		}, nil
 	case *types.AssetDetailsErc20:
-		var (
-			asset *erc20.ERC20
-			err   error
-		)
-		// TODO(): fix once the ethereum wallet and client are not required
-		// anymore to construct assets
+		var asset *erc20.ERC20
 		if s.isValidator {
-			asset, err = erc20.New(assetID, assetDetails, s.ethWallet, s.ethClient)
+			client, err := s.ethClientByChainID(assetDetails.GetERC20().ChainID)
+			if err != nil {
+				return nil, err
+			}
+			a, err := erc20.New(assetID, assetDetails, s.ethWallet, client)
+			if err != nil {
+				return nil, err
+			}
+			asset = a
 		} else {
-			asset, err = erc20.New(assetID, assetDetails, nil, nil)
-		}
-		if err != nil {
-			return nil, err
+			a, err := erc20.New(assetID, assetDetails, nil, nil)
+			if err != nil {
+				return nil, err
+			}
+			asset = a
 		}
 		return &Asset{asset}, nil
 	default:
@@ -282,23 +312,33 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 	}
 }
 
-func (s *Service) buildAssetFromProto(asset *types.Asset) (*Asset, error) {
+func (s *Service) buildAssetUpdateFromProto(asset *types.Asset) (*Asset, error) {
 	switch asset.Details.Source.(type) {
 	case *types.AssetDetailsBuiltinAsset:
 		return &Asset{
 			builtin.New(asset.ID, asset.Details),
 		}, nil
 	case *types.AssetDetailsErc20:
-		// TODO(): fix once the ethereum wallet and client are not required
-		// anymore to construct assets
 		var (
 			erc20Asset *erc20.ERC20
 			err        error
 		)
 		if s.isValidator {
-			erc20Asset, err = erc20.New(asset.ID, asset.Details, s.ethWallet, s.ethClient)
+			client, err := s.ethClientByChainID(asset.Details.GetERC20().ChainID)
+			if err != nil {
+				return nil, err
+			}
+			a, err := erc20.New(asset.ID, asset.Details, s.ethWallet, client)
+			if err != nil {
+				return nil, err
+			}
+			erc20Asset = a
 		} else {
-			erc20Asset, err = erc20.New(asset.ID, asset.Details, nil, nil)
+			a, err := erc20.New(asset.ID, asset.Details, nil, nil)
+			if err != nil {
+				return nil, err
+			}
+			erc20Asset = a
 		}
 		if err != nil {
 			return nil, err
@@ -332,7 +372,7 @@ func (s *Service) StageAssetUpdate(updatedAssetProto *types.Asset) error {
 		return ErrAssetDoesNotExist
 	}
 
-	updatedAsset, err := s.buildAssetFromProto(updatedAssetProto)
+	updatedAsset, err := s.buildAssetUpdateFromProto(updatedAssetProto)
 	if err != nil {
 		return fmt.Errorf("couldn't update asset: %w", err)
 	}
@@ -452,18 +492,39 @@ func (s *Service) ValidateAsset(assetID string) error {
 }
 
 func (s *Service) validateAsset(a *Asset) error {
-	var err error
-	if erc20, ok := a.ERC20(); ok {
-		err = s.bridgeView.FindAsset(erc20.Type().Details.DeepClone())
-		// no error, our asset exists on chain
-		if err == nil {
-			erc20.SetValid()
+	if erc20Asset, ok := a.ERC20(); ok {
+		details := erc20Asset.Type().Details
+		bridgeView, err := s.bridgeViewByChainID(details.GetERC20().ChainID)
+		if err != nil {
+			return err
 		}
+		if err := bridgeView.FindAsset(details); err != nil {
+			return err
+		}
+		// no error, our asset exists on chain
+		erc20Asset.SetValid()
 	}
-
-	return err
+	return nil
 }
 
-func (s *Service) OnEthereumChainIDUpdated(chainID string) {
-	s.ethereumChainID = chainID
+func (s *Service) ethClientByChainID(chainID string) (erc20.ETHClient, error) {
+	switch chainID {
+	case s.primaryEthChainID:
+		return s.primaryEthClient, nil
+	case s.secondaryEthChainID:
+		return s.secondaryEthClient, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
+	}
+}
+
+func (s *Service) bridgeViewByChainID(chainID string) (ERC20BridgeView, error) {
+	switch chainID {
+	case s.primaryEthChainID:
+		return s.primaryBridgeView, nil
+	case s.secondaryEthChainID:
+		return s.secondaryBridgeView, nil
+	default:
+		return nil, fmt.Errorf("chain id %q is not supported", chainID)
+	}
 }

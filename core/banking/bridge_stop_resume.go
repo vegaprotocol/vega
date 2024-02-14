@@ -21,7 +21,12 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 )
 
-func (e *Engine) BridgeStopped(ctx context.Context, stopped bool, id string, block uint64, logIndex uint64, ethTxHash string, chainID string) error {
+func (e *Engine) BridgeStopped(_ context.Context, stopped bool, id string, block uint64, logIndex uint64, ethTxHash string, chainID string) error {
+	bridgeView, err := e.bridgeViewForChainID(chainID)
+	if err != nil {
+		return err
+	}
+
 	aa := &assetAction{
 		id:                 id,
 		state:              newPendingState(),
@@ -30,13 +35,19 @@ func (e *Engine) BridgeStopped(ctx context.Context, stopped bool, id string, blo
 		txHash:             ethTxHash,
 		chainID:            chainID,
 		erc20BridgeStopped: &types.ERC20EventBridgeStopped{BridgeStopped: stopped},
-		bridgeView:         e.bridgeView,
+		bridgeView:         bridgeView,
 	}
+
 	e.assetActions[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
-func (e *Engine) BridgeResumed(ctx context.Context, resumed bool, id string, block uint64, logIndex uint64, ethTxHash string, chainID string) error {
+func (e *Engine) BridgeResumed(_ context.Context, resumed bool, id string, block uint64, logIndex uint64, ethTxHash string, chainID string) error {
+	bridgeView, err := e.bridgeViewForChainID(chainID)
+	if err != nil {
+		return err
+	}
+
 	aa := &assetAction{
 		id:                 id,
 		state:              newPendingState(),
@@ -45,7 +56,7 @@ func (e *Engine) BridgeResumed(ctx context.Context, resumed bool, id string, blo
 		logIndex:           logIndex,
 		txHash:             ethTxHash,
 		chainID:            chainID,
-		bridgeView:         e.bridgeView,
+		bridgeView:         bridgeView,
 	}
 	e.assetActions[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))

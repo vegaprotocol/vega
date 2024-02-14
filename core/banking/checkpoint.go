@@ -43,10 +43,12 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Banking{
 		TransfersAtTime:              e.getScheduledTransfers(),
 		RecurringTransfers:           e.getRecurringTransfers(),
+		PrimaryBridgeState:           e.getPrimaryBridgeState(),
+		LastSeenPrimaryEthBlock:      e.lastSeenPrimaryEthBlock,
 		GovernanceTransfersAtTime:    e.getScheduledGovernanceTransfers(),
 		RecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
-		BridgeState:                  e.getBridgeState(),
-		LastSeenEthBlock:             e.lastSeenEthBlock,
+		SecondaryBridgeState:         e.getSecondaryBridgeState(),
+		LastSeenSecondaryEthBlock:    e.lastSeenSecondaryEthBlock,
 	}
 
 	msg.SeenRefs = make([]string, 0, e.seenAssetActions.Size())
@@ -83,24 +85,33 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	evts = append(evts, e.loadScheduledGovernanceTransfers(ctx, b.GovernanceTransfersAtTime)...)
 	evts = append(evts, e.loadRecurringGovernanceTransfers(ctx, b.RecurringGovernanceTransfers)...)
 
-	e.loadBridgeState(b.BridgeState)
+	e.loadPrimaryBridgeState(b.PrimaryBridgeState)
+	e.loadSecondaryBridgeState(b.SecondaryBridgeState)
 
 	e.seenAssetActions = treeset.NewWithStringComparator()
 	for _, v := range b.SeenRefs {
 		e.seenAssetActions.Add(v)
 	}
 
-	e.lastSeenEthBlock = b.LastSeenEthBlock
-	if e.lastSeenEthBlock != 0 {
-		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
-		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+	e.lastSeenPrimaryEthBlock = b.LastSeenPrimaryEthBlock
+	if e.lastSeenPrimaryEthBlock != 0 {
+		e.log.Info("restoring primary collateral bridge starting block", logging.Uint64("block", e.lastSeenPrimaryEthBlock))
+		e.primaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenPrimaryEthBlock)
+	}
+
+	e.lastSeenSecondaryEthBlock = b.LastSeenSecondaryEthBlock
+	if e.lastSeenSecondaryEthBlock != 0 {
+		e.log.Info("restoring secondary collateral bridge starting block", logging.Uint64("block", e.lastSeenSecondaryEthBlock))
+		e.secondaryEthEventSource.UpdateCollateralStartingBlock(e.lastSeenSecondaryEthBlock)
 	}
 
 	aa := make([]*types.AssetAction, 0, len(b.AssetActions))
 	for _, a := range b.AssetActions {
 		aa = append(aa, types.AssetActionFromProto(a))
 	}
-	e.loadAssetActions(aa)
+	if err := e.loadAssetActions(aa); err != nil {
+		return fmt.Errorf("could not load asset actions: %w", err)
+	}
 	for _, aa := range e.assetActions {
 		e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 	}
@@ -112,7 +123,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
+func (e *Engine) loadAssetActions(aa []*types.AssetAction) error {
 	for _, v := range aa {
 		var (
 			err           error
@@ -138,6 +149,19 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
 		}
 
+		// This handle old asset actions that are not associated to a chain ID
+		// yet, that are likely asset actions that should be associated to the
+		// primary bridge.
+		var bridgeView ERC20BridgeView
+		if v.ChainID == "" {
+			bridgeView = e.primaryBridgeView
+		} else {
+			bridgeView, err = e.bridgeViewForChainID(v.ChainID)
+			if err != nil {
+				return err
+			}
+		}
+
 		state := &atomic.Uint32{}
 		state.Store(v.State)
 		aa := &assetAction{
@@ -155,14 +179,8 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			erc20BridgeStopped:      bridgeStopped,
 			erc20BridgeResumed:      bridgeResumed,
 			// this is needed every time now
-			bridgeView: e.bridgeView,
+			bridgeView: bridgeView,
 		}
-
-		e.log.Info("loadAssetActions",
-			zap.Any("action", fmt.Sprintf("%+v", aa)),
-			zap.String("ref", aa.getRef().Hash),
-			zap.String("chain-id", v.ChainID),
-		)
 
 		if len(aa.getRef().Hash) == 0 {
 			// if we're here it means that the IntoProto code has not done its job properly for a particular asset action type
@@ -177,20 +195,39 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			e.deposits[v.ID] = e.newDeposit(v.ID, v.Erc20D.TargetPartyID, v.Erc20D.VegaAssetID, v.Erc20D.Amount, v.Hash)
 		}
 	}
+	return nil
 }
 
-func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
+func (e *Engine) loadPrimaryBridgeState(state *checkpoint.BridgeState) {
 	// this would eventually be nil if we restore from a checkpoint
 	// which have been produce from an old version of the core.
 	// we set it to active by default in the case
 	if state == nil {
-		e.bridgeState = &bridgeState{
+		e.primaryBridgeState = &bridgeState{
 			active: true,
 		}
 		return
 	}
 
-	e.bridgeState = &bridgeState{
+	e.primaryBridgeState = &bridgeState{
+		active:   state.Active,
+		block:    state.BlockHeight,
+		logIndex: state.LogIndex,
+	}
+}
+
+func (e *Engine) loadSecondaryBridgeState(state *checkpoint.BridgeState) {
+	// this would eventually be nil if we restore from a checkpoint
+	// which have been produce from an old version of the core.
+	// we set it to active by default in the case
+	if state == nil {
+		e.secondaryBridgeState = &bridgeState{
+			active: true,
+		}
+		return
+	}
+
+	e.secondaryBridgeState = &bridgeState{
 		active:   state.Active,
 		block:    state.BlockHeight,
 		logIndex: state.LogIndex,
@@ -273,11 +310,19 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 	return evts
 }
 
-func (e *Engine) getBridgeState() *checkpoint.BridgeState {
+func (e *Engine) getPrimaryBridgeState() *checkpoint.BridgeState {
 	return &checkpoint.BridgeState{
-		Active:      e.bridgeState.active,
-		BlockHeight: e.bridgeState.block,
-		LogIndex:    e.bridgeState.logIndex,
+		Active:      e.primaryBridgeState.active,
+		BlockHeight: e.primaryBridgeState.block,
+		LogIndex:    e.primaryBridgeState.logIndex,
+	}
+}
+
+func (e *Engine) getSecondaryBridgeState() *checkpoint.BridgeState {
+	return &checkpoint.BridgeState{
+		Active:      e.secondaryBridgeState.active,
+		BlockHeight: e.secondaryBridgeState.block,
+		LogIndex:    e.secondaryBridgeState.logIndex,
 	}
 }
 
