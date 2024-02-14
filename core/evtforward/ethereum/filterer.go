@@ -87,8 +87,7 @@ type LogFilterer struct {
 	stakingBridgeFilterer *staking.StakingFilterer
 	stakingBridge         types.EthereumContract
 
-	vestingBridgeFilterer *staking.StakingFilterer
-	vestingBridge         types.EthereumContract
+	vestingBridge types.EthereumContract
 
 	multiSigControlABI      ethabi.ABI
 	multiSigControlFilterer *multisig.MultisigControlFilterer
@@ -119,19 +118,17 @@ func NewLogFilterer(
 		return nil, fmt.Errorf("couldn't load collateral bridge ABI: %w", err)
 	}
 
-	stakingBridgeFilterer, err := staking.NewStakingFilterer(stakingBridge.Address(), ethClient)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for staking bridge: %w", err)
+	var stakingBridgeFilterer *staking.StakingFilterer
+	if stakingBridge.HasAddress() {
+		stakingBridgeFilterer, err = staking.NewStakingFilterer(stakingBridge.Address(), ethClient)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't create log filterer for staking bridge: %w", err)
+		}
 	}
 
 	stakingBridgeABI, err := ethabi.JSON(strings.NewReader(staking.StakingMetaData.ABI))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load staking bridge ABI: %w", err)
-	}
-
-	vestingBridgeFilterer, err := staking.NewStakingFilterer(vestingBridge.Address(), ethClient)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for vesting bridge: %w", err)
 	}
 
 	multiSigControlFilterer, err := multisig.NewMultisigControlFilterer(multiSigControl.Address(), ethClient)
@@ -154,7 +151,6 @@ func NewLogFilterer(
 		stakingBridgeABI:         stakingBridgeABI,
 		stakingBridgeFilterer:    stakingBridgeFilterer,
 		stakingBridge:            stakingBridge,
-		vestingBridgeFilterer:    vestingBridgeFilterer,
 		vestingBridge:            vestingBridge,
 		assets:                   assets,
 		multiSigControl:          multiSigControl,

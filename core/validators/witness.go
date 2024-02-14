@@ -319,20 +319,16 @@ func (w *Witness) start(ctx context.Context, r *res, initialDelay *int64) {
 
 	backff := newBackoff(ctx, r.checkUntil.Sub(w.now))
 	f := func() error {
-		w.log.Debug("Checking the resource",
-			logging.String("asset-source", r.res.GetID()),
-		)
-		err := r.res.Check(ctx)
-		if err != nil {
-			w.log.Debug("error checking resource", logging.Error(err))
-			// dump error
+		w.log.Debug("Checking the resource", logging.String("asset-source", r.res.GetID()))
+
+		if err := r.res.Check(ctx); err != nil {
+			w.log.Error("Checking the resource failed", logging.Error(err))
 			return err
 		}
 		return nil
 	}
 
-	err := backoff.Retry(f, backff)
-	if err != nil {
+	if err := backoff.Retry(f, backff); err != nil {
 		return
 	}
 

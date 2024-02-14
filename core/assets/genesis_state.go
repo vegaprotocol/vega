@@ -43,6 +43,7 @@ type Erc20 struct {
 	ContractAddress   string `json:"contract_address"`
 	LifetimeLimit     string `json:"lifetime_limit"`
 	WithdrawThreshold string `json:"withdraw_threshold"`
+	ChainID           string `json:"chain_id"`
 }
 
 func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
@@ -75,6 +76,7 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 				ContractAddress:   a.Source.Erc20.ContractAddress,
 				WithdrawThreshold: a.Source.Erc20.WithdrawThreshold,
 				LifetimeLimit:     a.Source.Erc20.LifetimeLimit,
+				ChainId:           a.Source.Erc20.ChainID,
 			},
 		}
 	}

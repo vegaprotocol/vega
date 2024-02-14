@@ -100,6 +100,7 @@ func testVerifyERC20Assets(t *testing.T) {
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xBC944ba38753A6fCAdd634Be98379330dbaB3Eb8",
+				ChainID:         "1",
 			},
 		},
 	}
@@ -112,6 +113,7 @@ func testVerifyERC20Assets(t *testing.T) {
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "invalid",
+				ChainID:         "1",
 			},
 		},
 	}
@@ -124,6 +126,7 @@ func testVerifyERC20Assets(t *testing.T) {
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xF0a9b5d3a00b53362F9b73892124743BAaE526c4",
+				ChainID:         "1",
 			},
 		},
 	}

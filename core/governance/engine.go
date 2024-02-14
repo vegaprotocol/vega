@@ -1351,6 +1351,7 @@ func (e *Engine) updatedAssetFromProposal(p *proposal) (*types.Asset, types.Prop
 				ContractAddress:   erc20.Address(),
 				LifetimeLimit:     src.ERC20Update.LifetimeLimit.Clone(),
 				WithdrawThreshold: src.ERC20Update.WithdrawThreshold.Clone(),
+				ChainID:           erc20.ChainID(),
 			},
 		}
 	default:

@@ -31,22 +31,9 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-var (
-	ErrUnexpectedContractHash   = errors.New("hash of contract bytecode not as expected")
-	ErrUnexpectedSolidityFormat = errors.New("unexpected format of solidity bytecode")
-)
-
-// ContractHashes the sha3-256(contract-bytecode stripped of metadata).
-var ContractHashes = map[string]string{
-	"staking":    "d66948e12817f8ae6ca94d56b43ca12e66416e7e9bc23bb09056957b25afc6bd",
-	"vesting":    "5278802577f4aca315b9524bfa78790f8f0fae08939ec58bc9e8f0ea40123b09",
-	"collateral": "1cd7f315188baf26f70c77a764df361c5d01bd365b109b96033b8755ee2b2750",
-	"multisig":   "5b7070e6159628455b38f5796e8d0dc08185aaaa1fb6073767c88552d396c6c2",
-}
-
-type PrimaryClient struct {
+type SecondaryClient struct {
 	ETHClient
-	ethConfig *types.EthereumConfig
+	ethConfig *types.SecondaryEthereumConfig
 
 	// this is all just to prevent spamming the infura just
 	// to get the last height of the blockchain
@@ -57,23 +44,23 @@ type PrimaryClient struct {
 	retryDelay time.Duration
 }
 
-func PrimaryDial(ctx context.Context, cfg Config) (*PrimaryClient, error) {
-	if len(cfg.RPCEndpoint) <= 0 {
-		return nil, errors.New("no ethereum rpc endpoint configured. the configuration have move from the NodeWallet section to the Ethereum section, please make sure your vega configuration is up to date")
+func SecondaryDial(ctx context.Context, cfg Config) (*SecondaryClient, error) {
+	if len(cfg.SecondaryRPCEndpoint) <= 0 {
+		return nil, errors.New("no secondary ethereum rpc endpoint configured")
 	}
 
-	ethClient, err := ethclient.DialContext(ctx, cfg.RPCEndpoint)
+	ethClient, err := ethclient.DialContext(ctx, cfg.SecondaryRPCEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
+		return nil, fmt.Errorf("couldn't instantiate secondary Ethereum client: %w", err)
 	}
 
-	return &PrimaryClient{
+	return &SecondaryClient{
 		ETHClient:  newEthClientWrapper(ethClient),
 		retryDelay: cfg.RetryDelay.Get(),
 	}, nil
 }
 
-func (c *PrimaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *types.EthereumConfig) error {
+func (c *SecondaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *types.SecondaryEthereumConfig) error {
 	if c == nil {
 		return nil
 	}
@@ -85,7 +72,7 @@ func (c *PrimaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *typ
 
 	chainID, err := c.ChainID(ctx)
 	if err != nil {
-		return fmt.Errorf("couldn't retrieve the chain ID from the ethereum client: %w", err)
+		return fmt.Errorf("couldn't retrieve the chain ID form the ethereum client: %w", err)
 	}
 
 	if netID.String() != ethConfig.NetworkID() {
@@ -96,28 +83,20 @@ func (c *PrimaryClient) UpdateEthereumConfig(ctx context.Context, ethConfig *typ
 		return fmt.Errorf("updated chain ID does not match the one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
 
-	if err := c.verifyCollateralContract(ctx, ethConfig); err != nil {
-		return fmt.Errorf("failed to verify collateral bridge contract: %w", err)
-	}
-
-	if err := c.verifyMultisigContract(ctx, ethConfig); err != nil {
-		return fmt.Errorf("failed to verify multisig control contract: %w", err)
-	}
-
 	c.ethConfig = ethConfig
 
 	return nil
 }
 
-func (c *PrimaryClient) CollateralBridgeAddress() ethcommon.Address {
+func (c *SecondaryClient) CollateralBridgeAddress() ethcommon.Address {
 	return c.ethConfig.CollateralBridge().Address()
 }
 
-func (c *PrimaryClient) CollateralBridgeAddressHex() string {
+func (c *SecondaryClient) CollateralBridgeAddressHex() string {
 	return c.ethConfig.CollateralBridge().HexAddress()
 }
 
-func (c *PrimaryClient) CurrentHeight(ctx context.Context) (uint64, error) {
+func (c *SecondaryClient) CurrentHeight(ctx context.Context) (uint64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -133,12 +112,12 @@ func (c *PrimaryClient) CurrentHeight(ctx context.Context) (uint64, error) {
 	return c.currentHeight, nil
 }
 
-func (c *PrimaryClient) ConfirmationsRequired() uint64 {
+func (c *SecondaryClient) ConfirmationsRequired() uint64 {
 	return c.ethConfig.Confirmations()
 }
 
 // VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected.
-func (c *PrimaryClient) VerifyContract(ctx context.Context, address ethcommon.Address, expectedHash string) error {
+func (c *SecondaryClient) VerifyContract(ctx context.Context, address ethcommon.Address, expectedHash string) error {
 	// nil block number means latest block
 	b, err := c.CodeAt(ctx, address, nil)
 	if err != nil {
@@ -162,22 +141,6 @@ func (c *PrimaryClient) VerifyContract(ctx context.Context, address ethcommon.Ad
 	h := hex.EncodeToString(vgcrypto.Hash(b))
 	if h != expectedHash {
 		return fmt.Errorf("%w: address: %s, hash: %s, expected: %s", ErrUnexpectedContractHash, address, h, expectedHash)
-	}
-
-	return nil
-}
-
-func (c *PrimaryClient) verifyCollateralContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.CollateralBridge(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["collateral"])
-	}
-
-	return nil
-}
-
-func (c *PrimaryClient) verifyMultisigContract(ctx context.Context, ethConfig *types.EthereumConfig) error {
-	if address := ethConfig.MultiSigControl(); address.HasAddress() {
-		return c.VerifyContract(ctx, address.Address(), ContractHashes["multisig"])
 	}
 
 	return nil
