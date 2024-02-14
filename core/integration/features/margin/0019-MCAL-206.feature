@@ -21,7 +21,7 @@ Feature: Amending an order during auction for a party in isolated margin such th
       | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | 2                       | default-futures |
 
   @MCAL206
-  Scenario: The new order would result in trades does not change the state of the book
+  Scenario: replicated panic when amending an order during auction
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount       |
       | trader1 | USD   | 100000000000 |
@@ -54,6 +54,7 @@ Feature: Amending an order during auction for a party in isolated margin such th
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | trader3 | ETH/FEB23 | 10680       | 0      | 12816   | 0       | isolated margin | 0.3           | 15120 |
 
+    #order margin: 16800*3*0.3=15120
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 14220  | 0       | 15120        |
@@ -86,64 +87,4 @@ Feature: Amending an order during auction for a party in isolated margin such th
 
 
 
-
-#   # trader3 to place first order in isolated margin mode, check balance and margin levels
-#   When the parties place the following orders with ticks:
-#     | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
-#     | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
-#   Then the parties should have the following margin levels:
-#     | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-#     | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
-#   And the order book should have the following volumes for market "ETH/FEB23":
-#     | volume | price  | side |
-#     | 1000   | 200100 | sell |
-#     | 300    | 200000 | sell |
-#     | 600    | 15802  | sell |
-#     | 100    | 15700  | buy  |
-#     | 100    | 15690  | buy  |
-#     | 200    | 15680  | buy  |
-#     | 300    | 15600  | buy  |
-#     | 100    | 15500  | buy  |
-#     | 1000   | 14900  | buy  |
-#   And the parties should have the following account balances:
-#     | party   | asset | market id | margin | general | order margin |
-#     | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
-
-#   # trader3 submits an order that would result in a trade, but they don't have enough margin
-#   # Make sure the book is in the correct state, and the order gets rejected.
-#   When the parties place the following orders with ticks:
-#     | party   | market id | side | volume | price | resulting trades | type       | tif     | reference | error               |
-#     | trader3 | ETH/FEB23 | buy  | 50     | 15802 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
-#   Then the parties should have the following margin levels:
-#     | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-#     | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
-#   And the parties should have the following account balances:
-#     | party   | asset | market id | margin | general | order margin |
-#     | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
-#   And the order book should have the following volumes for market "ETH/FEB23":
-#     | volume | price  | side |
-#     | 1000   | 200100 | sell |
-#     | 300    | 200000 | sell |
-#     | 600    | 15802  | sell |
-#     | 100    | 15700  | buy  |
-#     | 100    | 15690  | buy  |
-#     | 200    | 15680  | buy  |
-#     | 300    | 15600  | buy  |
-#     | 100    | 15500  | buy  |
-#     | 1000   | 14900  | buy  |
-#   # Now ensure the order is still on the book, and we can trade
-#   When the parties place the following orders with ticks:
-#     | party   | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-#     | trader5 | ETH/FEB23 | buy  | 50     | 15802 | 1                | TYPE_LIMIT | TIF_GTC | t5-first  |       |
-#   Then the order book should have the following volumes for market "ETH/FEB23":
-#     | volume | price  | side |
-#     | 1000   | 200100 | sell |
-#     | 300    | 200000 | sell |
-#     | 550    | 15802  | sell |
-#     | 100    | 15700  | buy  |
-#     | 100    | 15690  | buy  |
-#     | 200    | 15680  | buy  |
-#     | 300    | 15600  | buy  |
-#     | 100    | 15500  | buy  |
-#     | 1000   | 14900  | buy  |
 
