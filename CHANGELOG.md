@@ -22,6 +22,7 @@
 - [10641](https://github.com/vegaprotocol/vega/issues/10641) - Fix panic in amend during auction for isolated margin.
 - [10656](https://github.com/vegaprotocol/vega/issues/10656) - Fix funding rates bounds can be null for perpetuals.
 - [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
+- [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
 
 ## 0.74.1
 
