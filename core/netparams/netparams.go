@@ -40,7 +40,8 @@ var (
 	}
 	// a list of network parameter which cannot be updated.
 	updateDisallowed = []string{
-		BlockchainsEthereumConfig,
+		BlockchainsPrimaryEthereumConfig,
+		BlockchainsSecondaryEthereumConfig,
 	}
 )
 

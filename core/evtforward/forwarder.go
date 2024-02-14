@@ -80,8 +80,11 @@ type Forwarder struct {
 	timeService      TimeService
 	nodes            []string
 
-	top  ValidatorTopology
-	efss *efSnapshotState
+	top ValidatorTopology
+
+	// scope allows us to hack the snapshot system, so we can have multiple
+	// instances of this engine being snapshotted.
+	scope string
 }
 
 type tsEvt struct {
@@ -90,7 +93,13 @@ type tsEvt struct {
 }
 
 // New creates a new instance of the event forwarder.
-func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService, top ValidatorTopology) *Forwarder {
+func New(log *logging.Logger,
+	cfg Config,
+	cmd Commander,
+	timeService TimeService,
+	top ValidatorTopology,
+	scope string,
+) *Forwarder {
 	log = log.Named(forwarderLogger)
 	log.SetLevel(cfg.Level.Get())
 	var allowlist atomic.Value
@@ -109,7 +118,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, timeService TimeService
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
-		efss:             &efSnapshotState{},
+		scope:            scope,
 	}
 	forwarder.updateValidatorsList()
 	return forwarder

@@ -44,6 +44,7 @@ type ETHClient interface {
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
 	ConfirmationsRequired() uint64
+	ChainID(ctx context.Context) (*big.Int, error)
 }
 
 type ERC20 struct {
@@ -105,6 +106,10 @@ func (e *ERC20) ProtoAsset() *typespb.Asset {
 
 func (e ERC20) Type() *types.Asset {
 	return e.asset.DeepClone()
+}
+
+func (e ERC20) ChainID() string {
+	return e.chainID
 }
 
 func (e *ERC20) GetAssetClass() common.AssetClass {

@@ -103,7 +103,7 @@ func (s *coreService) updateConfig(conf Config) {
 
 func (s *coreService) LastBlockHeight(
 	ctx context.Context,
-	req *protoapi.LastBlockHeightRequest,
+	_ *protoapi.LastBlockHeightRequest,
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 

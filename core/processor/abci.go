@@ -210,49 +210,51 @@ type App struct {
 	rates          *ratelimit.Rates
 
 	// service injection
-	assets                 Assets
-	banking                Banking
-	broker                 Broker
-	witness                Witness
-	evtfwd                 EvtForwarder
-	exec                   ExecutionEngine
-	ghandler               *genesis.Handler
-	gov                    GovernanceEngine
-	notary                 Notary
-	stats                  Stats
-	time                   TimeService
-	top                    ValidatorTopology
-	netp                   NetworkParameters
-	oracles                *Oracle
-	delegation             DelegationEngine
-	limits                 Limits
-	stake                  StakeVerifier
-	stakingAccounts        StakingAccounts
-	checkpoint             Checkpoint
-	spam                   SpamEngine
-	pow                    PoWEngine
-	epoch                  EpochService
-	snapshotEngine         SnapshotEngine
-	stateVar               StateVarEngine
-	teamsEngine            TeamsEngine
-	partiesEngine          PartiesEngine
-	referralProgram        ReferralProgram
-	volumeDiscountProgram  VolumeDiscountProgram
-	protocolUpgradeService ProtocolUpgradeService
-	erc20MultiSigTopology  ERC20MultiSigTopology
-	gastimator             *Gastimator
-	ethCallEngine          EthCallEngine
-	balanceChecker         BalanceChecker
+	assets                         Assets
+	banking                        Banking
+	broker                         Broker
+	witness                        Witness
+	primaryEvtForwarder            EvtForwarder
+	primaryChainID                 uint64
+	secondaryEvtForwarder          EvtForwarder
+	secondaryChainID               uint64
+	exec                           ExecutionEngine
+	ghandler                       *genesis.Handler
+	gov                            GovernanceEngine
+	notary                         Notary
+	stats                          Stats
+	time                           TimeService
+	top                            ValidatorTopology
+	netp                           NetworkParameters
+	oracles                        *Oracle
+	delegation                     DelegationEngine
+	limits                         Limits
+	stake                          StakeVerifier
+	stakingAccounts                StakingAccounts
+	checkpoint                     Checkpoint
+	spam                           SpamEngine
+	pow                            PoWEngine
+	epoch                          EpochService
+	snapshotEngine                 SnapshotEngine
+	stateVar                       StateVarEngine
+	teamsEngine                    TeamsEngine
+	partiesEngine                  PartiesEngine
+	referralProgram                ReferralProgram
+	volumeDiscountProgram          VolumeDiscountProgram
+	protocolUpgradeService         ProtocolUpgradeService
+	primaryErc20MultiSigTopology   ERC20MultiSigTopology
+	secondaryErc20MultiSigTopology ERC20MultiSigTopology
+	gastimator                     *Gastimator
+	ethCallEngine                  EthCallEngine
+	balanceChecker                 BalanceChecker
 
 	nilPow  bool
 	nilSpam bool
 
-	maxBatchSize   atomic.Uint64
-	defaultChainID uint64
+	maxBatchSize atomic.Uint64
 }
 
-func NewApp(
-	log *logging.Logger,
+func NewApp(log *logging.Logger,
 	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
@@ -261,7 +263,8 @@ func NewApp(
 	banking Banking,
 	broker Broker,
 	witness Witness,
-	evtfwd EvtForwarder,
+	primaryEvtForwarder,
+	secondaryEvtForwarder EvtForwarder,
 	exec ExecutionEngine,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
@@ -286,7 +289,7 @@ func NewApp(
 	volumeDiscountProgram VolumeDiscountProgram,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
-	version string, // we need the version for snapshot reload
+	version string,
 	protocolUpgradeService ProtocolUpgradeService,
 	codec abci.Codec,
 	gastimator *Gastimator,
@@ -309,41 +312,43 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:                 assets,
-		banking:                banking,
-		broker:                 broker,
-		witness:                witness,
-		evtfwd:                 evtfwd,
-		exec:                   exec,
-		ghandler:               ghandler,
-		gov:                    gov,
-		notary:                 notary,
-		stats:                  stats,
-		time:                   time,
-		top:                    top,
-		netp:                   netp,
-		oracles:                oracles,
-		delegation:             delegation,
-		limits:                 limits,
-		stake:                  stake,
-		checkpoint:             checkpoint,
-		spam:                   spam,
-		pow:                    pow,
-		stakingAccounts:        stakingAccounts,
-		epoch:                  epoch,
-		snapshotEngine:         snapshot,
-		stateVar:               stateVarEngine,
-		teamsEngine:            teamsEngine,
-		referralProgram:        referralProgram,
-		volumeDiscountProgram:  volumeDiscountProgram,
-		version:                version,
-		blockchainClient:       blockchainClient,
-		erc20MultiSigTopology:  erc20MultiSigTopology,
-		protocolUpgradeService: protocolUpgradeService,
-		gastimator:             gastimator,
-		ethCallEngine:          ethCallEngine,
-		balanceChecker:         balanceChecker,
-		partiesEngine:          partiesEngine,
+		assets:                         assets,
+		banking:                        banking,
+		broker:                         broker,
+		witness:                        witness,
+		primaryEvtForwarder:            primaryEvtForwarder,
+		secondaryEvtForwarder:          secondaryEvtForwarder,
+		exec:                           exec,
+		ghandler:                       ghandler,
+		gov:                            gov,
+		notary:                         notary,
+		stats:                          stats,
+		time:                           time,
+		top:                            top,
+		netp:                           netp,
+		oracles:                        oracles,
+		delegation:                     delegation,
+		limits:                         limits,
+		stake:                          stake,
+		checkpoint:                     checkpoint,
+		spam:                           spam,
+		pow:                            pow,
+		stakingAccounts:                stakingAccounts,
+		epoch:                          epoch,
+		snapshotEngine:                 snapshot,
+		stateVar:                       stateVarEngine,
+		teamsEngine:                    teamsEngine,
+		referralProgram:                referralProgram,
+		volumeDiscountProgram:          volumeDiscountProgram,
+		version:                        version,
+		blockchainClient:               blockchainClient,
+		primaryErc20MultiSigTopology:   erc20MultiSigTopology,
+		secondaryErc20MultiSigTopology: erc20MultiSigTopology,
+		protocolUpgradeService:         protocolUpgradeService,
+		gastimator:                     gastimator,
+		ethCallEngine:                  ethCallEngine,
+		balanceChecker:                 balanceChecker,
+		partiesEngine:                  partiesEngine,
 	}
 
 	// setup handlers
@@ -627,17 +632,28 @@ func (app *App) ensureConfig() {
 	if app.cfg.KeepCheckpointsMax < 1 {
 		app.cfg.KeepCheckpointsMax = 1
 	}
+
 	v := &proto.EthereumConfig{}
-	if err := app.netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, v); err != nil {
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsPrimaryEthereumConfig, v); err != nil {
 		return
 	}
-	cID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	primaryChainID, err := strconv.ParseUint(v.ChainId, 10, 64)
 	if err != nil {
 		return
 	}
-	app.defaultChainID = cID
-	app.gov.OnChainIDUpdate(cID)
-	app.exec.OnChainIDUpdate(cID)
+	app.primaryChainID = primaryChainID
+	_ = app.gov.OnChainIDUpdate(primaryChainID)
+	_ = app.exec.OnChainIDUpdate(primaryChainID)
+
+	secondaryChainConfig := &proto.SecondaryEthereumConfig{}
+	if err := app.netp.GetJSONStruct(netparams.BlockchainsSecondaryEthereumConfig, secondaryChainConfig); err != nil {
+		return
+	}
+	secondaryChainID, err := strconv.ParseUint(v.ChainId, 10, 64)
+	if err != nil {
+		return
+	}
+	app.secondaryChainID = secondaryChainID
 }
 
 // ReloadConf updates the internal configuration.
@@ -1779,9 +1795,7 @@ func (app *App) DeliverAmendOrder(
 	return nil
 }
 
-func (app *App) DeliverWithdraw(
-	ctx context.Context, tx abci.Tx, id string,
-) error {
+func (app *App) DeliverWithdraw(ctx context.Context, tx abci.Tx, id string) error {
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -2693,7 +2707,7 @@ func (app *App) UpdatePartyProfile(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) error {
+func (app *App) OnBlockchainPrimaryEthereumConfigUpdate(_ context.Context, conf any) error {
 	cfg, err := types.EthereumConfigFromUntypedProto(conf)
 	if err != nil {
 		return err
@@ -2702,7 +2716,20 @@ func (app *App) OnBlockchainEthereumConfigUpdate(ctx context.Context, conf any) 
 	if err != nil {
 		return err
 	}
-	app.defaultChainID = cID
-	app.exec.OnChainIDUpdate(cID)
+	app.primaryChainID = cID
+	_ = app.exec.OnChainIDUpdate(cID)
 	return app.gov.OnChainIDUpdate(cID)
+}
+
+func (app *App) OnBlockchainSecondaryEthereumConfigUpdate(_ context.Context, conf any) error {
+	cfg, err := types.SecondaryEthereumConfigFromUntypedProto(conf)
+	if err != nil {
+		return err
+	}
+	cID, err := strconv.ParseUint(cfg.ChainID(), 10, 64)
+	if err != nil {
+		return err
+	}
+	app.secondaryChainID = cID
+	return nil
 }

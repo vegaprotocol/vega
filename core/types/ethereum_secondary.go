@@ -22,7 +22,7 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-type ArbitrumConfig struct {
+type SecondaryEthereumConfig struct {
 	chainID          string
 	networkID        string
 	confirmations    uint64
@@ -30,26 +30,26 @@ type ArbitrumConfig struct {
 	multiSigControl  EthereumContract
 }
 
-func ArbitrumConfigFromUntypedProto(v interface{}) (*ArbitrumConfig, error) {
-	cfg, err := toArbitrumConfigProto(v)
+func SecondaryEthereumConfigFromUntypedProto(v interface{}) (*SecondaryEthereumConfig, error) {
+	cfg, err := toSecondaryEthereumConfigProto(v)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't convert untyped proto to ArbitrumConfig proto: %w", err)
+		return nil, fmt.Errorf("couldn't convert untyped proto to SecondaryEthereumConfig proto: %w", err)
 	}
 
-	ethConfig, err := ArbitrumConfigFromProto(cfg)
+	ethConfig, err := SecondaryConfigFromProto(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't build ArbitrumConfig: %w", err)
+		return nil, fmt.Errorf("couldn't build SecondaryEthereumConfig: %w", err)
 	}
 
 	return ethConfig, nil
 }
 
-func ArbitrumConfigFromProto(cfgProto *proto.ArbitrumConfig) (*ArbitrumConfig, error) {
-	if err := CheckArbitrumConfig(cfgProto); err != nil {
-		return nil, fmt.Errorf("invalid Arbitrum configuration: %w", err)
+func SecondaryConfigFromProto(cfgProto *proto.SecondaryEthereumConfig) (*SecondaryEthereumConfig, error) {
+	if err := CheckSecondaryEthereumConfig(cfgProto); err != nil {
+		return nil, fmt.Errorf("invalid second ethereum configuration: %w", err)
 	}
 
-	cfg := &ArbitrumConfig{
+	cfg := &SecondaryEthereumConfig{
 		chainID:       cfgProto.ChainId,
 		networkID:     cfgProto.NetworkId,
 		confirmations: uint64(cfgProto.Confirmations),
@@ -65,39 +65,39 @@ func ArbitrumConfigFromProto(cfgProto *proto.ArbitrumConfig) (*ArbitrumConfig, e
 	return cfg, nil
 }
 
-func (c *ArbitrumConfig) ChainID() string {
+func (c *SecondaryEthereumConfig) ChainID() string {
 	return c.chainID
 }
 
-func (c *ArbitrumConfig) NetworkID() string {
+func (c *SecondaryEthereumConfig) NetworkID() string {
 	return c.networkID
 }
 
-func (c *ArbitrumConfig) Confirmations() uint64 {
+func (c *SecondaryEthereumConfig) Confirmations() uint64 {
 	return c.confirmations
 }
 
-func (c *ArbitrumConfig) CollateralBridge() EthereumContract {
+func (c *SecondaryEthereumConfig) CollateralBridge() EthereumContract {
 	return c.collateralBridge
 }
 
-func (c *ArbitrumConfig) MultiSigControl() EthereumContract {
+func (c *SecondaryEthereumConfig) MultiSigControl() EthereumContract {
 	return c.multiSigControl
 }
 
-// CheckUntypedArbitrumConfig verifies the `v` parameter is a proto.ArbitrumConfig
+// CheckUntypedSecondaryEthereumConfig verifies the `v` parameter is a proto.SecondaryEthereumConfig
 // struct and check if it's valid.
-func CheckUntypedArbitrumConfig(v interface{}, _ interface{}) error {
-	cfg, err := toArbitrumConfigProto(v)
+func CheckUntypedSecondaryEthereumConfig(v interface{}, _ interface{}) error {
+	cfg, err := toSecondaryEthereumConfigProto(v)
 	if err != nil {
 		return err
 	}
 
-	return CheckArbitrumConfig(cfg)
+	return CheckSecondaryEthereumConfig(cfg)
 }
 
-// CheckArbitrumConfig verifies the proto.ArbitrumConfig is valid.
-func CheckArbitrumConfig(cfgProto *proto.ArbitrumConfig) error {
+// CheckSecondaryEthereumConfig verifies the proto.SecondaryEthereumConfig is valid.
+func CheckSecondaryEthereumConfig(cfgProto *proto.SecondaryEthereumConfig) error {
 	if len(cfgProto.NetworkId) == 0 {
 		return ErrMissingNetworkID
 	}
@@ -126,10 +126,10 @@ func CheckArbitrumConfig(cfgProto *proto.ArbitrumConfig) error {
 	return nil
 }
 
-func toArbitrumConfigProto(v interface{}) (*proto.ArbitrumConfig, error) {
-	cfg, ok := v.(*proto.ArbitrumConfig)
+func toSecondaryEthereumConfigProto(v interface{}) (*proto.SecondaryEthereumConfig, error) {
+	cfg, ok := v.(*proto.SecondaryEthereumConfig)
 	if !ok {
-		return nil, fmt.Errorf("type %q is not a ArbitrumConfig proto", vgreflect.TypeName(v))
+		return nil, fmt.Errorf("type %q is not a SecondaryEthereumConfig proto", vgreflect.TypeName(v))
 	}
 	return cfg, nil
 }

@@ -1561,8 +1561,8 @@ message EthereumConfig {
   EthereumContractConfig multisig_control_contract = 7;
 }
 
-// Arbitrum configuration details.
-message ArbitrumConfig {
+// Secondary Ethereum configuration details.
+message SecondaryEthereumConfig {
   // Network ID of this Ethereum network.
   string network_id = 1;
   // Chain ID of this Ethereum network.

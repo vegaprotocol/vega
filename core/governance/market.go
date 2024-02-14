@@ -760,7 +760,7 @@ func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.Pr
 
 func getEVMChainIDs(netp NetParams) []uint64 {
 	ethCfg := &proto.EthereumConfig{}
-	if err := netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, ethCfg); err != nil {
+	if err := netp.GetJSONStruct(netparams.BlockchainsPrimaryEthereumConfig, ethCfg); err != nil {
 		panic(fmt.Sprintf("could not load ethereum config from network parameter, this should never happen: %v", err))
 	}
 	cID, err := strconv.ParseUint(ethCfg.ChainId, 10, 64)

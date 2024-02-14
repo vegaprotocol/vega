@@ -26,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
-	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
@@ -51,7 +50,7 @@ type Snapshot struct {
 type Metadata struct {
 	Version         int64       // the version of the AVL tree
 	NodeHashes      []*NodeHash // the nodes of the AVL tree ordered such that it can be imported with identical shape
-	ChunkHashes     []string    // the hashes of each chunk so that we can verifiy they are complete when sent over state-sync
+	ChunkHashes     []string    // the hashes of each chunk so that we can verify they are complete when sent over state-sync
 	ProtocolVersion string      // the version of the protocol that generated this snapshot
 	ProtocolUpgrade bool        // whether or not this snapshot was taken for the purpose of a protocol upgrade
 }
@@ -91,46 +90,6 @@ type PayloadProofOfWork struct {
 	ActiveParams     []*snapshot.ProofOfWorkParams
 	ActiveStates     []*snapshot.ProofOfWorkState
 	LastPruningBlock uint64
-}
-
-type PayloadBankingBridgeState struct {
-	BankingBridgeState *BankingBridgeState
-}
-
-type PayloadBankingWithdrawals struct {
-	BankingWithdrawals *BankingWithdrawals
-}
-
-type PayloadBankingDeposits struct {
-	BankingDeposits *BankingDeposits
-}
-
-type PayloadBankingSeen struct {
-	BankingSeen *BankingSeen
-}
-
-type PayloadBankingAssetActions struct {
-	BankingAssetActions *BankingAssetActions
-}
-
-type PayloadBankingRecurringTransfers struct {
-	BankingRecurringTransfers *checkpointpb.RecurringTransfers
-}
-
-type PayloadBankingScheduledTransfers struct {
-	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
-}
-
-type PayloadBankingRecurringGovernanceTransfers struct {
-	BankingRecurringGovernanceTransfers []*checkpointpb.GovernanceTransfer
-}
-
-type PayloadBankingScheduledGovernanceTransfers struct {
-	BankingScheduledGovernanceTransfers []*checkpointpb.ScheduledGovernanceTransferAtTime
-}
-
-type PayloadBankingTransferFeeDiscounts struct {
-	BankingTransferFeeDiscounts *snapshot.BankingTransferFeeDiscounts
 }
 
 type PayloadCheckpoint struct {
@@ -319,13 +278,6 @@ type Resource struct {
 	ID         string
 	CheckUntil time.Time
 	Votes      []string
-}
-
-type PayloadEventForwarder struct {
-	// keys are deprecated, to be removed after 74
-	Keys []string
-	// Buckets are used with the new upgrade
-	Buckets []*snapshot.EventForwarderBucket
 }
 
 type PayloadERC20MultiSigTopologyVerified struct {
@@ -588,55 +540,6 @@ type EquityShareLP struct {
 	VStake num.Decimal
 }
 
-type BankingBridgeState struct {
-	Active      bool
-	BlockHeight uint64
-	LogIndex    uint64
-}
-
-type BankingWithdrawals struct {
-	Withdrawals []*RWithdrawal
-}
-
-type RWithdrawal struct {
-	Ref        string
-	Withdrawal *Withdrawal
-}
-
-type BankingDeposits struct {
-	Deposit []*BDeposit
-}
-
-type BDeposit struct {
-	ID      string
-	Deposit *Deposit
-}
-
-type BankingSeen struct {
-	Refs             []string
-	LastSeenEthBlock uint64
-}
-
-type BankingAssetActions struct {
-	AssetAction []*AssetAction
-}
-
-type AssetAction struct {
-	ID                      string
-	State                   uint32
-	Asset                   string
-	BlockNumber             uint64
-	TxIndex                 uint64
-	Hash                    string
-	ChainID                 string
-	BuiltinD                *BuiltinAssetDeposit
-	Erc20D                  *ERC20Deposit
-	Erc20AL                 *ERC20AssetList
-	ERC20AssetLimitsUpdated *ERC20AssetLimitsUpdated
-	BridgeStopped           bool
-	BridgeResume            bool
-}
-
 type CPState struct {
 	NextCp int64
 }
@@ -833,8 +736,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadPendingAssetsFromProto(dt)
 	case *snapshot.Payload_PendingAssetUpdates:
 		ret.Data = PayloadPendingAssetUpdatesFromProto(dt)
-	case *snapshot.Payload_BankingBridgeState:
-		ret.Data = PayloadBankingBridgeStateFromProto(dt)
+	case *snapshot.Payload_BankingPrimaryBridgeState:
+		ret.Data = PayloadBankingPrimaryBridgeStateFromProto(dt)
+	case *snapshot.Payload_BankingSecondaryBridgeState:
+		ret.Data = PayloadBankingSecondaryBridgeStateFromProto(dt)
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = PayloadBankingWithdrawalsFromProto(dt)
 	case *snapshot.Payload_BankingDeposits:
@@ -1022,7 +927,9 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingDeposits:
 		ret.Data = dt
-	case *snapshot.Payload_BankingBridgeState:
+	case *snapshot.Payload_BankingPrimaryBridgeState:
+		ret.Data = dt
+	case *snapshot.Payload_BankingSecondaryBridgeState:
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = dt
@@ -1488,286 +1395,6 @@ func (*PayloadSpotLiquidityTarget) Namespace() SnapshotNamespace {
 
 func (p *PayloadSpotLiquidityTarget) Key() string {
 	return fmt.Sprintf("target:%v", p.Target.MarketId)
-}
-
-func PayloadBankingBridgeStateFromProto(pbbs *snapshot.Payload_BankingBridgeState) *PayloadBankingBridgeState {
-	return &PayloadBankingBridgeState{
-		BankingBridgeState: &BankingBridgeState{
-			Active:      pbbs.BankingBridgeState.BridgeState.Active,
-			BlockHeight: pbbs.BankingBridgeState.BridgeState.BlockHeight,
-			LogIndex:    pbbs.BankingBridgeState.BridgeState.LogIndex,
-		},
-	}
-}
-
-func (p PayloadBankingBridgeState) IntoProto() *snapshot.Payload_BankingBridgeState {
-	return &snapshot.Payload_BankingBridgeState{
-		BankingBridgeState: &snapshot.BankingBridgeState{
-			BridgeState: &checkpointpb.BridgeState{
-				Active:      p.BankingBridgeState.Active,
-				BlockHeight: p.BankingBridgeState.BlockHeight,
-				LogIndex:    p.BankingBridgeState.LogIndex,
-			},
-		},
-	}
-}
-
-func (*PayloadBankingBridgeState) isPayload() {}
-
-func (p *PayloadBankingBridgeState) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingBridgeState) Key() string {
-	return "bridgeState"
-}
-
-func (*PayloadBankingBridgeState) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingWithdrawalsFromProto(pbw *snapshot.Payload_BankingWithdrawals) *PayloadBankingWithdrawals {
-	return &PayloadBankingWithdrawals{
-		BankingWithdrawals: BankingWithdrawalsFromProto(pbw.BankingWithdrawals),
-	}
-}
-
-func (p PayloadBankingWithdrawals) IntoProto() *snapshot.Payload_BankingWithdrawals {
-	return &snapshot.Payload_BankingWithdrawals{
-		BankingWithdrawals: p.BankingWithdrawals.IntoProto(),
-	}
-}
-
-func (*PayloadBankingWithdrawals) isPayload() {}
-
-func (p *PayloadBankingWithdrawals) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingWithdrawals) Key() string {
-	return "withdrawals"
-}
-
-func (*PayloadBankingWithdrawals) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingDepositsFromProto(pbd *snapshot.Payload_BankingDeposits) *PayloadBankingDeposits {
-	return &PayloadBankingDeposits{
-		BankingDeposits: BankingDepositsFromProto(pbd.BankingDeposits),
-	}
-}
-
-func (p PayloadBankingDeposits) IntoProto() *snapshot.Payload_BankingDeposits {
-	return &snapshot.Payload_BankingDeposits{
-		BankingDeposits: p.BankingDeposits.IntoProto(),
-	}
-}
-
-func (*PayloadBankingDeposits) isPayload() {}
-
-func (p *PayloadBankingDeposits) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingDeposits) Key() string {
-	return "deposits"
-}
-
-func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingRecurringGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingRecurringGovernanceTransfers) *PayloadBankingRecurringGovernanceTransfers {
-	return &PayloadBankingRecurringGovernanceTransfers{
-		BankingRecurringGovernanceTransfers: pbd.BankingRecurringGovernanceTransfers.RecurringTransfers,
-	}
-}
-
-func (p PayloadBankingRecurringGovernanceTransfers) IntoProto() *snapshot.Payload_BankingRecurringGovernanceTransfers {
-	return &snapshot.Payload_BankingRecurringGovernanceTransfers{
-		BankingRecurringGovernanceTransfers: &snapshot.BankingRecurringGovernanceTransfers{
-			RecurringTransfers: p.BankingRecurringGovernanceTransfers,
-		},
-	}
-}
-
-func (*PayloadBankingRecurringGovernanceTransfers) isPayload() {}
-
-func (p *PayloadBankingRecurringGovernanceTransfers) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingRecurringGovernanceTransfers) Key() string {
-	return "recurringGovernanceTransfers"
-}
-
-func (*PayloadBankingRecurringGovernanceTransfers) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
-	return &PayloadBankingRecurringTransfers{
-		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
-	}
-}
-
-func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
-	return &snapshot.Payload_BankingRecurringTransfers{
-		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
-			RecurringTransfers: p.BankingRecurringTransfers,
-		},
-	}
-}
-
-func (*PayloadBankingRecurringTransfers) isPayload() {}
-
-func (p *PayloadBankingRecurringTransfers) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingRecurringTransfers) Key() string {
-	return "recurringTransfers"
-}
-
-func (*PayloadBankingRecurringTransfers) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingScheduledTransfersFromProto(pbd *snapshot.Payload_BankingScheduledTransfers) *PayloadBankingScheduledTransfers {
-	return &PayloadBankingScheduledTransfers{
-		BankingScheduledTransfers: pbd.BankingScheduledTransfers.TransfersAtTime,
-	}
-}
-
-func (p PayloadBankingScheduledTransfers) IntoProto() *snapshot.Payload_BankingScheduledTransfers {
-	return &snapshot.Payload_BankingScheduledTransfers{
-		BankingScheduledTransfers: &snapshot.BankingScheduledTransfers{
-			TransfersAtTime: p.BankingScheduledTransfers,
-		},
-	}
-}
-
-func (*PayloadBankingScheduledTransfers) isPayload() {}
-
-func (p *PayloadBankingScheduledTransfers) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingScheduledTransfers) Key() string {
-	return "scheduledTransfers"
-}
-
-func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingScheduledGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingScheduledGovernanceTransfers) *PayloadBankingScheduledGovernanceTransfers {
-	return &PayloadBankingScheduledGovernanceTransfers{
-		BankingScheduledGovernanceTransfers: pbd.BankingScheduledGovernanceTransfers.TransfersAtTime,
-	}
-}
-
-func (p PayloadBankingScheduledGovernanceTransfers) IntoProto() *snapshot.Payload_BankingScheduledGovernanceTransfers {
-	return &snapshot.Payload_BankingScheduledGovernanceTransfers{
-		BankingScheduledGovernanceTransfers: &snapshot.BankingScheduledGovernanceTransfers{
-			TransfersAtTime: p.BankingScheduledGovernanceTransfers,
-		},
-	}
-}
-
-func (*PayloadBankingScheduledGovernanceTransfers) isPayload() {}
-
-func (p *PayloadBankingScheduledGovernanceTransfers) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingScheduledGovernanceTransfers) Key() string {
-	return "scheduledGovernanceTransfers"
-}
-
-func (*PayloadBankingScheduledGovernanceTransfers) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingTransferFeeDiscountsFromProto(pbd *snapshot.Payload_BankingTransferFeeDiscounts) *PayloadBankingTransferFeeDiscounts {
-	return &PayloadBankingTransferFeeDiscounts{
-		BankingTransferFeeDiscounts: pbd.BankingTransferFeeDiscounts,
-	}
-}
-
-func (p PayloadBankingTransferFeeDiscounts) IntoProto() *snapshot.Payload_BankingTransferFeeDiscounts {
-	return &snapshot.Payload_BankingTransferFeeDiscounts{
-		BankingTransferFeeDiscounts: &snapshot.BankingTransferFeeDiscounts{
-			PartyAssetDiscount: p.BankingTransferFeeDiscounts.PartyAssetDiscount,
-		},
-	}
-}
-
-func (*PayloadBankingTransferFeeDiscounts) isPayload() {}
-
-func (p *PayloadBankingTransferFeeDiscounts) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingTransferFeeDiscounts) Key() string {
-	return "transferFeeDiscounts"
-}
-
-func (*PayloadBankingTransferFeeDiscounts) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingSeenFromProto(pbs *snapshot.Payload_BankingSeen) *PayloadBankingSeen {
-	return &PayloadBankingSeen{
-		BankingSeen: BankingSeenFromProto(pbs.BankingSeen),
-	}
-}
-
-func (p PayloadBankingSeen) IntoProto() *snapshot.Payload_BankingSeen {
-	return &snapshot.Payload_BankingSeen{
-		BankingSeen: p.BankingSeen.IntoProto(),
-	}
-}
-
-func (*PayloadBankingSeen) isPayload() {}
-
-func (p *PayloadBankingSeen) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingSeen) Key() string {
-	return "seen"
-}
-
-func (*PayloadBankingSeen) Namespace() SnapshotNamespace {
-	return BankingSnapshot
-}
-
-func PayloadBankingAssetActionsFromProto(pbs *snapshot.Payload_BankingAssetActions) *PayloadBankingAssetActions {
-	return &PayloadBankingAssetActions{
-		BankingAssetActions: BankingAssetActionsFromProto(pbs.BankingAssetActions),
-	}
-}
-
-func (p PayloadBankingAssetActions) IntoProto() *snapshot.Payload_BankingAssetActions {
-	return &snapshot.Payload_BankingAssetActions{
-		BankingAssetActions: p.BankingAssetActions.IntoProto(),
-	}
-}
-
-func (*PayloadBankingAssetActions) isPayload() {}
-
-func (p *PayloadBankingAssetActions) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadBankingAssetActions) Key() string {
-	return "assetActions"
-}
-
-func (*PayloadBankingAssetActions) Namespace() SnapshotNamespace {
-	return BankingSnapshot
 }
 
 func PayloadCheckpointFromProto(pc *snapshot.Payload_Checkpoint) *PayloadCheckpoint {
@@ -2465,176 +2092,6 @@ func (*PayloadStakingAccounts) Key() string {
 
 func (*PayloadStakingAccounts) Namespace() SnapshotNamespace {
 	return StakingSnapshot
-}
-
-func BankingWithdrawalsFromProto(bw *snapshot.BankingWithdrawals) *BankingWithdrawals {
-	ret := &BankingWithdrawals{
-		Withdrawals: make([]*RWithdrawal, 0, len(bw.Withdrawals)),
-	}
-	for _, w := range bw.Withdrawals {
-		ret.Withdrawals = append(ret.Withdrawals, RWithdrawalFromProto(w))
-	}
-	return ret
-}
-
-func (b BankingWithdrawals) IntoProto() *snapshot.BankingWithdrawals {
-	ret := snapshot.BankingWithdrawals{
-		Withdrawals: make([]*snapshot.Withdrawal, 0, len(b.Withdrawals)),
-	}
-	for _, w := range b.Withdrawals {
-		ret.Withdrawals = append(ret.Withdrawals, w.IntoProto())
-	}
-	return &ret
-}
-
-func RWithdrawalFromProto(rw *snapshot.Withdrawal) *RWithdrawal {
-	return &RWithdrawal{
-		Ref:        rw.Ref,
-		Withdrawal: WithdrawalFromProto(rw.Withdrawal),
-	}
-}
-
-func (r RWithdrawal) IntoProto() *snapshot.Withdrawal {
-	return &snapshot.Withdrawal{
-		Ref:        r.Ref,
-		Withdrawal: r.Withdrawal.IntoProto(),
-	}
-}
-
-func BankingDepositsFromProto(bd *snapshot.BankingDeposits) *BankingDeposits {
-	ret := &BankingDeposits{
-		Deposit: make([]*BDeposit, 0, len(bd.Deposit)),
-	}
-	for _, d := range bd.Deposit {
-		ret.Deposit = append(ret.Deposit, BDepositFromProto(d))
-	}
-	return ret
-}
-
-func (b BankingDeposits) IntoProto() *snapshot.BankingDeposits {
-	ret := snapshot.BankingDeposits{
-		Deposit: make([]*snapshot.Deposit, 0, len(b.Deposit)),
-	}
-	for _, d := range b.Deposit {
-		ret.Deposit = append(ret.Deposit, d.IntoProto())
-	}
-	return &ret
-}
-
-func BDepositFromProto(d *snapshot.Deposit) *BDeposit {
-	return &BDeposit{
-		ID:      d.Id,
-		Deposit: DepositFromProto(d.Deposit),
-	}
-}
-
-func (b BDeposit) IntoProto() *snapshot.Deposit {
-	return &snapshot.Deposit{
-		Id:      b.ID,
-		Deposit: b.Deposit.IntoProto(),
-	}
-}
-
-func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
-	ret := BankingSeen{
-		Refs:             bs.Refs,
-		LastSeenEthBlock: bs.LastSeenEthBlock,
-	}
-	return &ret
-}
-
-func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
-	ret := snapshot.BankingSeen{
-		Refs:             b.Refs,
-		LastSeenEthBlock: b.LastSeenEthBlock,
-	}
-	return &ret
-}
-
-func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
-	ret := snapshot.BankingAssetActions{
-		AssetAction: make([]*checkpointpb.AssetAction, 0, len(a.AssetAction)),
-	}
-	for _, aa := range a.AssetAction {
-		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
-	}
-	return &ret
-}
-
-func (aa *AssetAction) IntoProto() *checkpointpb.AssetAction {
-	ret := &checkpointpb.AssetAction{
-		Id:                 aa.ID,
-		State:              aa.State,
-		Asset:              aa.Asset,
-		BlockNumber:        aa.BlockNumber,
-		TxIndex:            aa.TxIndex,
-		Hash:               aa.Hash,
-		Erc20BridgeStopped: aa.BridgeStopped,
-		Erc20BridgeResumed: aa.BridgeResume,
-		ChainId:            aa.ChainID,
-	}
-	if aa.BuiltinD != nil {
-		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
-	}
-	if aa.Erc20D != nil {
-		ret.Erc20Deposit = aa.Erc20D.IntoProto()
-	}
-	if aa.Erc20AL != nil {
-		ret.AssetList = aa.Erc20AL.IntoProto()
-	}
-	if aa.ERC20AssetLimitsUpdated != nil {
-		ret.Erc20AssetLimitsUpdated = aa.ERC20AssetLimitsUpdated.IntoProto()
-	}
-	return ret
-}
-
-func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAssetActions {
-	ret := BankingAssetActions{
-		AssetAction: make([]*AssetAction, 0, len(aa.AssetAction)),
-	}
-
-	for _, a := range aa.AssetAction {
-		ret.AssetAction = append(ret.AssetAction, AssetActionFromProto(a))
-	}
-	return &ret
-}
-
-func AssetActionFromProto(a *checkpointpb.AssetAction) *AssetAction {
-	aa := &AssetAction{
-		ID:            a.Id,
-		State:         a.State,
-		Asset:         a.Asset,
-		BlockNumber:   a.BlockNumber,
-		ChainID:       a.ChainId,
-		TxIndex:       a.TxIndex,
-		Hash:          a.Hash,
-		BridgeStopped: a.Erc20BridgeStopped,
-		BridgeResume:  a.Erc20BridgeResumed,
-	}
-
-	if a.Erc20Deposit != nil {
-		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
-		if err == nil {
-			aa.Erc20D = erc20d
-		}
-	}
-
-	if a.BuiltinDeposit != nil {
-		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
-		if err == nil {
-			aa.BuiltinD = builtind
-		}
-	}
-
-	if a.AssetList != nil {
-		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
-	}
-
-	if a.Erc20AssetLimitsUpdated != nil {
-		aa.ERC20AssetLimitsUpdated = NewERC20AssetLimitsUpdatedFromProto(a.Erc20AssetLimitsUpdated)
-	}
-
-	return aa
 }
 
 func CheckpointFromProto(c *snapshot.Checkpoint) *CPState {
@@ -4435,36 +3892,6 @@ func (*PayloadStakeVerifierDeposited) Key() string {
 
 func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
 	return StakeVerifierSnapshot
-}
-
-func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
-	return &PayloadEventForwarder{
-		Keys:    ef.EventForwarder.AckedEvents,
-		Buckets: ef.EventForwarder.Buckets,
-	}
-}
-
-func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
-	return &snapshot.Payload_EventForwarder{
-		EventForwarder: &snapshot.EventForwarder{
-			AckedEvents: p.Keys,
-			Buckets:     p.Buckets,
-		},
-	}
-}
-
-func (*PayloadEventForwarder) isPayload() {}
-
-func (p *PayloadEventForwarder) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadEventForwarder) Key() string {
-	return "all"
-}
-
-func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
-	return EventForwarderSnapshot
 }
 
 func PayloadWitnessFromProto(w *snapshot.Payload_Witness) *PayloadWitness {

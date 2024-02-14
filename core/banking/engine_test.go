@@ -51,9 +51,10 @@ type testEngine struct {
 	top                   *mocks.MockTopology
 	broker                *bmocks.MockBroker
 	epoch                 *mocks.MockEpochService
-	bridgeView            *mocks.MockERC20BridgeView
+	primaryBridgeView     *mocks.MockERC20BridgeView
 	marketActivityTracker *mocks.MockMarketActivityTracker
 	ethSource             *mocks.MockEthereumEventSource
+	secondaryBridgeView   *mocks.MockERC20BridgeView
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -67,15 +68,17 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmocks.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
 	epoch := mocks.NewMockEpochService(ctrl)
-	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
+	primaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
+	secondaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
 	ethSource := mocks.NewMockEthereumEventSource(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, bridgeView, ethSource)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, primaryBridgeView, secondaryBridgeView, ethSource, nil)
 
-	eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne())
+	require.NoError(t, eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne()))
+	eng.OnPrimaryEthChainIDUpdated("1")
 
 	return &testEngine{
 		Engine:                eng,
@@ -87,7 +90,8 @@ func getTestEngine(t *testing.T) *testEngine {
 		broker:                broker,
 		top:                   top,
 		epoch:                 epoch,
-		bridgeView:            bridgeView,
+		primaryBridgeView:     primaryBridgeView,
+		secondaryBridgeView:   secondaryBridgeView,
 		marketActivityTracker: marketActivityTracker,
 		ethSource:             ethSource,
 	}

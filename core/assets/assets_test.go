@@ -18,6 +18,7 @@ package assets_test
 import (
 	"context"
 	"encoding/hex"
+	"math/big"
 	"testing"
 	"time"
 
@@ -37,12 +38,14 @@ import (
 
 type testService struct {
 	*assets.Service
-	broker     *bmocks.MockInterface
-	bridgeView *mocks.MockERC20BridgeView
-	notary     *mocks.MockNotary
-	ctrl       *gomock.Controller
-	ethClient  *erc20mocks.MockETHClient
-	ethWallet  *nwethmocks.MockEthereumWallet
+	broker              *bmocks.MockInterface
+	primaryBridgeView   *mocks.MockERC20BridgeView
+	secondaryBridgeView *mocks.MockERC20BridgeView
+	notary              *mocks.MockNotary
+	ctrl                *gomock.Controller
+	primaryEthClient    *erc20mocks.MockETHClient
+	ethWallet           *nwethmocks.MockEthereumWallet
+	secondaryEthClient  *erc20mocks.MockETHClient
 }
 
 func TestAssets(t *testing.T) {
@@ -54,20 +57,6 @@ func testOffersSignaturesOnTickSuccess(t *testing.T) {
 	service := getTestService(t)
 
 	assetID := hex.EncodeToString([]byte("asset_id"))
-	nodeSignature := []byte("node_signature")
-
-	service.broker.EXPECT().Send(gomock.Any()).Times(2)
-	service.ethClient.EXPECT().CollateralBridgeAddress().Times(1)
-	service.ethWallet.EXPECT().Algo().Times(1)
-	service.ethWallet.EXPECT().Sign(gomock.Any()).Return(nodeSignature, nil).Times(1)
-
-	service.notary.EXPECT().
-		OfferSignatures(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(kind types.NodeSignatureKind, f func(id string) []byte) {
-			require.Equal(t, kind, types.NodeSignatureKindAssetNew)
-			require.Equal(t, nodeSignature, f(assetID))
-		},
-	)
 
 	assetDetails := &types.AssetDetails{
 		Name:     vgrand.RandomStr(5),
@@ -79,18 +68,31 @@ func testOffersSignaturesOnTickSuccess(t *testing.T) {
 				ContractAddress:   vgrand.RandomStr(5),
 				LifetimeLimit:     num.NewUint(42),
 				WithdrawThreshold: num.NewUint(84),
+				ChainID:           "1",
 			},
 		},
 	}
 
 	ctx := context.Background()
 
+	service.broker.EXPECT().Send(gomock.Any()).Times(1)
 	_, err := service.NewAsset(ctx, assetID, assetDetails)
 	require.NoError(t, err)
 
-	err = service.Enable(ctx, assetID)
-	require.NoError(t, err)
+	service.broker.EXPECT().Send(gomock.Any()).Times(1)
+	require.NoError(t, service.Enable(ctx, assetID))
 
+	nodeSignature := []byte("node_signature")
+	service.notary.EXPECT().
+		OfferSignatures(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(kind types.NodeSignatureKind, f func(id string) []byte) {
+			require.Equal(t, kind, types.NodeSignatureKindAssetNew)
+			require.Equal(t, nodeSignature, f(assetID))
+		},
+	)
+	service.primaryEthClient.EXPECT().CollateralBridgeAddress().Times(1)
+	service.ethWallet.EXPECT().Algo().Times(1)
+	service.ethWallet.EXPECT().Sign(gomock.Any()).Return(nodeSignature, nil).Times(1)
 	service.OnTick(ctx, time.Now())
 }
 
@@ -110,6 +112,7 @@ func testStagingAssetUpdateForUnknownAssetFails(t *testing.T) {
 					ContractAddress:   vgrand.RandomStr(5),
 					LifetimeLimit:     num.NewUint(42),
 					WithdrawThreshold: num.NewUint(84),
+					ChainID:           "1",
 				},
 			},
 		},
@@ -127,20 +130,26 @@ func getTestService(t *testing.T) *testService {
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
-	ethClient := erc20mocks.NewMockETHClient(ctrl)
+	primaryEthClient := erc20mocks.NewMockETHClient(ctrl)
+	primaryEthClient.EXPECT().ChainID(gomock.Any()).AnyTimes().Return(big.NewInt(1), nil)
+	secondaryEthClient := erc20mocks.NewMockETHClient(ctrl)
+	secondaryEthClient.EXPECT().ChainID(gomock.Any()).AnyTimes().Return(big.NewInt(2), nil)
 	broker := bmocks.NewMockInterface(ctrl)
-	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
+	primaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
+	secondaryBridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	ethWallet := nwethmocks.NewMockEthereumWallet(ctrl)
 
-	service := assets.New(logger, conf, ethWallet, ethClient, broker, bridgeView, notary, true)
+	service, _ := assets.New(context.Background(), logger, conf, ethWallet, primaryEthClient, secondaryEthClient, broker, primaryBridgeView, secondaryBridgeView, notary, true)
 	return &testService{
-		Service:    service,
-		broker:     broker,
-		ctrl:       ctrl,
-		bridgeView: bridgeView,
-		notary:     notary,
-		ethClient:  ethClient,
-		ethWallet:  ethWallet,
+		Service:             service,
+		broker:              broker,
+		ctrl:                ctrl,
+		primaryBridgeView:   primaryBridgeView,
+		secondaryBridgeView: secondaryBridgeView,
+		notary:              notary,
+		primaryEthClient:    primaryEthClient,
+		secondaryEthClient:  secondaryEthClient,
+		ethWallet:           ethWallet,
 	}
 }
