@@ -59,20 +59,14 @@ func (es *Epochs) Add(ctx context.Context, r entities.Epoch) error {
 func (es *Epochs) GetAll(ctx context.Context) ([]entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "GetAll")()
 	epochs := []entities.Epoch{}
-	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id, vega_time DESC)
-		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
-    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
-    	LEFT JOIN blocks be on e.end_time = be.vega_time;`
+	query := `SELECT * FROM current_epochs order by id, vega_time desc;`
 	err := pgxscan.Select(ctx, es.Connection, &epochs, query)
 	return epochs, err
 }
 
 func (es *Epochs) Get(ctx context.Context, ID uint64) (entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "Get")()
-	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs WHERE id=$1 ORDER BY id, vega_time DESC)
-		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
-    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
-    	LEFT JOIN blocks be on e.end_time = be.vega_time;`
+	query := `SELECT * FROM current_epochs WHERE id = $1;`
 
 	epoch := entities.Epoch{}
 	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, ID))
@@ -80,21 +74,14 @@ func (es *Epochs) Get(ctx context.Context, ID uint64) (entities.Epoch, error) {
 
 func (es *Epochs) GetByBlock(ctx context.Context, height uint64) (entities.Epoch, error) {
 	defer metrics.StartSQLQuery("Epochs", "GetByBlock")()
-	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id, vega_time DESC)
-		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
-		LEFT JOIN blocks bs on e.start_time = bs.vega_time
-		LEFT JOIN blocks be on e.end_time = be.vega_time 
-		WHERE bs.height <= $1 AND (be.height > $1 or be.height is NULL);`
+	query := `SELECT * FROM current_epochs WHERE first_block <= $1 AND (last_block > $1 or last_block is NULL) ORDER BY id, vega_time desc;`
 
 	epoch := entities.Epoch{}
 	return epoch, es.wrapE(pgxscan.Get(ctx, es.Connection, &epoch, query, height))
 }
 
 func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
-	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id DESC, vega_time DESC)
-		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
-    	LEFT JOIN blocks bs on e.start_time = bs.vega_time
-    	LEFT JOIN blocks be on e.end_time = be.vega_time ORDER BY id DESC, vega_time DESC FETCH FIRST ROW ONLY;`
+	query := `SELECT * FROM current_epochs ORDER BY id DESC, vega_time DESC FETCH FIRST ROW ONLY;`
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
