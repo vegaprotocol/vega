@@ -75,7 +75,7 @@ Feature: Amending an order during auction for a party in isolated margin such th
 
     And the orders should have the following status:
       | party   | reference | status        |
-      | trader3 | t3-sell-1 | STATUS_ACTIVE |
+      | trader3 | t3-sell-1 | STATUS_STOPPED |
 
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
