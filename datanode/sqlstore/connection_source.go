@@ -184,6 +184,31 @@ func (s *ConnectionSource) Close() {
 	s.pool.Close()
 }
 
+func (s *ConnectionSource) RefreshMaterializedViews(ctx context.Context) error {
+	conn := ctx.Value(connectionContextKey{}).(*pgx.Conn)
+	materializedViewsToRefresh := []struct {
+		name         string
+		concurrently bool
+	}{
+		{"game_stats", false},
+		{"game_stats_current", false},
+	}
+
+	for _, view := range materializedViewsToRefresh {
+		sql := "REFRESH MATERIALIZED VIEW "
+		if view.concurrently {
+			sql += "CONCURRENTLY "
+		}
+		sql += view.name
+
+		_, err := conn.Exec(ctx, sql)
+		if err != nil {
+			return fmt.Errorf("failed to refresh materialized view %s: %w", view.name, err)
+		}
+	}
+	return nil
+}
+
 func (s *ConnectionSource) wrapE(err error) error {
 	return wrapE(err)
 }
