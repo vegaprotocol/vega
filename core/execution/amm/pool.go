@@ -278,6 +278,63 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l *num.Uint) *num.Uint {
 	return res
 }
 
+// OrderbookShape returns slices of virtual buy and sell orders that the AMM has over a given range
+// and is essentially a view on the AMM's personal order-book.
+func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order) {
+
+	buys := []*types.Order{}
+	sells := []*types.Order{}
+
+	if from == nil {
+		from = p.lower.low
+	}
+	if to == nil {
+		to = p.upper.high
+	}
+
+	// any volume strictly below the fair price will be a buy, and volume above will be a sell
+	side := types.SideBuy
+	fairPrice := p.fairPrice()
+
+	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
+
+		from = num.Max(from, cu.low)
+		to = num.Min(to, cu.high)
+		price := from
+		for price.LT(to) {
+
+			next := num.UintZero().AddSum(price, p.oneTick)
+			volume, _ := num.UintZero().Delta(
+				impliedPosition(p.sqrt(price), p.sqrt(cu.high), cu.l),
+				impliedPosition(p.sqrt(next), p.sqrt(cu.high), cu.l),
+			)
+
+			if side == types.SideBuy && next.GT(fairPrice) {
+				// now switch to sells, we're over the fair-price now
+				side = types.SideSell
+			}
+
+			order := &types.Order{
+				Size:  volume.Uint64(),
+				Side:  side,
+				Price: price.Clone(),
+			}
+
+			if side == types.SideBuy {
+				buys = append(buys, order)
+			} else {
+				sells = append(sells, order)
+			}
+
+			price = next
+		}
+
+	}
+	ordersFromCurve(p.lower, from, to)
+	ordersFromCurve(p.upper, from, to)
+	return buys, sells
+}
+
 // VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
 // that is trading with the pool. If `nil` is provided for either price then we take the full volume in that direction.
 func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
