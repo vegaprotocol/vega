@@ -234,7 +234,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 		var toRemove int
 		for _, order := range pricelevel.orders {
 			// Check the price is good and the total volume will not be exceeded
-			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
+			if checkPrice(order.Price) && totalVolume+order.TrueRemaining() <= volume {
 				// Remove this order
 				extractedOrders = append(extractedOrders, order.Clone())
 				totalVolume += order.TrueRemaining()
