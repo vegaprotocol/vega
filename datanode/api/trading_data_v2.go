@@ -2436,8 +2436,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 // ListTransfers lists transfers using cursor pagination. If a pubkey is provided, it will list transfers for that pubkey.
 func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTransfersV2")()
+	const transfersDefaultPageSize int32 = 50
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	// the default size is too big for transfers so if no pagination is provided, set it to something smaller
+	if req.Pagination == nil {
+		pagination.Forward.Limit = ptr.From(transfersDefaultPageSize)
+	}
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
