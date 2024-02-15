@@ -1544,13 +1544,16 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
 		conf, err := m.cancelOrder(ctx, order.Party, order.ID)
-		if err != nil {
+		// it is possible for a party in isolated margin that their orders have been stopped when uncrossed
+		// due to having insufficient order margin so we don't need to panic in this case
+		if (m.getMarginMode(order.Party) == types.MarginModeCrossMargin && err == common.ErrOrderNotFound) || (err != nil && err != common.ErrOrderNotFound) {
 			m.log.Panic("Failed to cancel order",
 				logging.Error(err),
 				logging.String("OrderID", order.ID))
 		}
-
-		updatedOrders = append(updatedOrders, conf.Order)
+		if err == nil {
+			updatedOrders = append(updatedOrders, conf.Order)
+		}
 	}
 
 	wasOpeningAuction := m.IsOpeningAuction()
