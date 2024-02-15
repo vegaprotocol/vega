@@ -446,6 +446,98 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:  "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:  "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+							Markets:         []string{"market1", "market2"},
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+							Markets:         []string{"market1", "market2"},
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{

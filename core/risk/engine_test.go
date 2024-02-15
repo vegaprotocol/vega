@@ -609,6 +609,28 @@ func TestMarginWithNoOrdersOnBook(t *testing.T) {
 			funding_payment_to_date: 10,
 			auction:                 true,
 		},
+		{
+			expectedMargin: "121",
+			positionSize:   1,
+			buyOrders:      []*risk.OrderInfo{},
+			sellOrders: []*risk.OrderInfo{
+				{
+					TrueRemaining: 5,
+					Price:         num.DecimalFromInt64(markPrice + 2),
+					IsMarketOrder: false,
+				},
+				{
+					TrueRemaining: 2,
+					Price:         num.DecimalFromInt64(markPrice + 7),
+					IsMarketOrder: false,
+				},
+			},
+			linearSlippageFactor:    num.DecimalFromFloat(0.01),
+			quadraticSlippageFactor: num.DecimalZero(),
+			margin_funding_factor:   1,
+			funding_payment_to_date: 10,
+			auction:                 false,
+		},
 	}
 
 	for _, tc := range testCases {
