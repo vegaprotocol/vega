@@ -2091,6 +2091,11 @@ func (e *Engine) getFeeTransferRequest(
 		return getAccountLogError(marketID, t.Owner, types.AccountTypeMargin)
 	}
 
+	orderMarginAccount := func() *types.Account {
+		acc, _ := e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountTypeOrderMargin))
+		return acc
+	}
+
 	referralPendingRewardAccount := func() (*types.Account, error) {
 		return getAccountLogError(noMarket, systemOwner, types.AccountTypePendingFeeReferralReward)
 	}
@@ -2131,11 +2136,16 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
+
 		pendingRewardAccount, err := referralPendingRewardAccount()
 		if err != nil {
 			return nil, err
 		}
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{pendingRewardAccount}
 	case types.TransferTypeFeeReferrerRewardDistribute:
 		pendingRewardAccount, err := referralPendingRewardAccount()
@@ -2149,8 +2159,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
-
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{infraFee}
 	case types.TransferTypeInfrastructureFeeDistribute:
 		treq.FromAccount = []*types.Account{infraFee}
@@ -2160,7 +2173,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{liquiFee}
 	case types.TransferTypeLiquidityFeeDistribute:
 		treq.FromAccount = []*types.Account{liquiFee}
@@ -2170,7 +2187,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{makerFee}
 	case types.TransferTypeMakerFeeReceive:
 		treq.FromAccount = []*types.Account{makerFee}
