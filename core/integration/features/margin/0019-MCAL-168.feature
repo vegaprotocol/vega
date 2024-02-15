@@ -68,6 +68,20 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | party  | party-sell  | STATUS_FILLED |
       | party1 | party1-sell | STATUS_ACTIVE |
 
+    #margin for party: 15900*0.2*3+15500*0.2*5=25040
+    #margin for party1: 15900*0.2*3+15300*0.2*2=15660
+    #order margin for party1: 15300*0.2*3=9180
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party  | USD   | ETH/FEB23 | 25040  | 1400    | 0            |
+      | party1 | USD   | ETH/FEB23 | 15660  | 1600    | 9180         |
+
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 44520       | 0      | 53424   | 0       | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 27825       | 0      | 33390   | 0       | isolated margin | 0.2           | 9180  |
+
     #party1's order is partially filled, and the rest of the order is left on the order book
     And the order book should have the following volumes for market "ETH/FEB23":
       | side | price | volume |
@@ -86,12 +100,12 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | sell | 15300 | 0      |
 
     # in M2M party has insufficient margin hence getting closed out, party1 then trades with the network...
-
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party  | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 0     |
       | party1 | ETH/FEB23 | 16065       | 0      | 19278   | 0       | isolated margin | 0.2           | 0     |
 
+    #margin for party1: 3*0.2*15300=9180
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
       | party  | USD   | ETH/FEB23 | 0      | 1400    | 0            |
