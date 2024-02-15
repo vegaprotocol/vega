@@ -659,8 +659,13 @@ func TestEstimatePosition(t *testing.T) {
 		initialMarginWorst, err := strconv.ParseFloat(res.Margin.WorstCase.InitialMargin, 64)
 		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
 
-		expectedCollIncBest := max(0, initialMarginBest-tc.marginAccountBalance-tc.orderMarginAccountBalance)
-		expectedCollIncWorst := max(0, initialMarginWorst-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+		releaseMarginBest, err := strconv.ParseFloat(res.Margin.BestCase.CollateralReleaseLevel, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+		releaseMarginWorst, err := strconv.ParseFloat(res.Margin.WorstCase.CollateralReleaseLevel, 64)
+		require.NoError(t, err, fmt.Sprintf("test case #%v", i+1))
+
+		expectedCollIncBest := 0.0
+		expectedCollIncWorst := 0.0
 		expectedPosMarginIncrease := 0.0
 		if isolatedMargin {
 			priceFactor := math.Pow10(assetDecimals - marketDecimals)
@@ -669,10 +674,20 @@ func TestEstimatePosition(t *testing.T) {
 
 			requiredPositionMargin := math.Abs(adjNotional) * tc.marginFactor
 			requiredOrderMargin := getLimitOrderNotional(t, tc.orders, priceFactor, positionDecimalPlaces) * tc.marginFactor
-			expectedCollIncBest = max(0, requiredPositionMargin+requiredOrderMargin-tc.marginAccountBalance-tc.orderMarginAccountBalance)
+			expectedCollIncBest = requiredPositionMargin + requiredOrderMargin - tc.marginAccountBalance - tc.orderMarginAccountBalance
 			expectedCollIncWorst = expectedCollIncBest
 
 			expectedPosMarginIncrease = max(0, requiredPositionMargin-tc.marginAccountBalance)
+		} else {
+			collat := tc.marginAccountBalance + tc.orderMarginAccountBalance
+			bDelta := initialMarginBest - collat
+			wDelta := initialMarginWorst - collat
+			if bDelta > 0 || collat > releaseMarginBest {
+				expectedCollIncBest = bDelta
+			}
+			if wDelta > 0 || collat > releaseMarginWorst {
+				expectedCollIncWorst = wDelta
+			}
 		}
 
 		actualCollIncBest, err := strconv.ParseFloat(res.CollateralIncreaseEstimate.BestCase, 64)
