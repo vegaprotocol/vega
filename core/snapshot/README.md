@@ -257,9 +257,9 @@ Reproducing a failed soak-test locally is very easy as you can trivially use the
 
 - Download the `testnet` folder of artefacts from the system-test run that produced the bad snapshot
 - Clone the `system-tests` repo and find the script `tests/soak-test/run.py`
-- Run the script to first replay the chain: `poetry run python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --replay`
+- Run the script to first replay the chain: `poetry run python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --replay`. **It's important to use `node2` as it's a non-validator node.**
 - It will write logs files from the node to `node-0.log` and `err-node-0.log`
-- Restart the node from the problem snapshot `poetry run python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --block BLOCK_NUM`
+- Restart the node from the problem snapshot `poetry run python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --block BLOCK_NUM`. **It's important to use `node2` as it's a non-validator node.**
 - It will write log files from the node to `node-BLOCK_NUM.log` and `err-node-BLOCK_NUM.log`
 - Compare the two logs to see where state has diverged
 
