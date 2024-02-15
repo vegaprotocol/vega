@@ -256,10 +256,10 @@ It also means that our effective coverage of snapshots mirror the system-test AC
 Reproducing a failed soak-test locally is very easy as you can trivially use the same script as the CI. The steps are:
 
 - Download the `testnet` folder of artefacts from the system-test run that produced the bad snapshot
-- Clone the `jenkins-shared-library` repo and find the script `main/resources/bin/pv-snapshot-all`
-- Run the script to first replay the chain: `pv-snapshot-all --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --replay`
+- Clone the `system-tests` repo and find the script `tests/soak-test/run.py`
+- Run the script to first replay the chain: `python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --replay`
 - It will write logs files from the node to `node-0.log` and `err-node-0.log`
-- Restart the node from the problem snapshot `pv-snapshot-all --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --block BLOCK_NUM`
+- Restart the node from the problem snapshot `python3 run.py --tm-home=tendermint/node2 --vega-home=vega/node2 --vega-binary=../vega --block BLOCK_NUM`
 - It will write log files from the node to `node-BLOCK_NUM.log` and `err-node-BLOCK_NUM.log`
 - Compare the two logs to see where state has diverged
 
