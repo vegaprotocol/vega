@@ -24,6 +24,7 @@
 - [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
 - [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
+- [10677](https://github.com/vegaprotocol/vega/issues/10677) - Fix validation of market proposer bonus to allow specifying/not specifying asset for metric for market proposer.
 
 ## 0.74.1
 
