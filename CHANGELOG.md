@@ -25,6 +25,8 @@
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
 - [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
 - [10677](https://github.com/vegaprotocol/vega/issues/10677) - Fix validation of market proposer bonus to allow specifying/not specifying asset for metric for market proposer.
+- [10669](https://github.com/vegaprotocol/vega/issues/10669) - Fix fees handling for spots in governance auction
+
 
 ## 0.74.1
 
