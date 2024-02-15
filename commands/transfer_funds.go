@@ -179,8 +179,8 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 	if len(dispatchStrategy.AssetForMetric) > 0 && !IsVegaID(dispatchStrategy.AssetForMetric) {
 		errs.AddForProperty(prefix+".asset_for_metric", ErrShouldBeAValidVegaID)
 	}
-	if len(dispatchStrategy.AssetForMetric) > 0 && (toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS || toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING) {
-		errs.AddForProperty(prefix+".asset_for_metric", errors.New("not be specified when to_account type is MARKET_PROPOSERS or VALIDATOR_RANKING"))
+	if len(dispatchStrategy.AssetForMetric) > 0 && toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_VALIDATOR_RANKING {
+		errs.AddForProperty(prefix+".asset_for_metric", errors.New("not be specified when to_account type is VALIDATOR_RANKING"))
 	}
 	// check that that the metric makes sense for the account type
 	if toAccountType == vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES && dispatchStrategy.Metric != vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED {
