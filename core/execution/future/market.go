@@ -2582,7 +2582,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 				if err != nil {
 					m.log.Error("failed to update isolated margin on position change", logging.Error(err))
 					if err == risk.ErrInsufficientFundsForMaintenanceMargin {
-						m.handleIsolatedMarginInsufficientOrderMargin(ctx, conf.PassiveOrdersAffected[idx].Party)
+						m.handleIsolatedMarginInsufficientOrderMargin(ctx, aggressor)
 					}
 				}
 			}
