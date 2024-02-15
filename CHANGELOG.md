@@ -28,6 +28,7 @@
 - [10669](https://github.com/vegaprotocol/vega/issues/10669) - Fix fees handling for spots in governance auction
 - [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
 - [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
+- [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
 
 ## 0.74.1
 
