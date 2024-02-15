@@ -2690,17 +2690,18 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		if fees != nil {
 			fee = fees.TotalFeesAmountPerParty()[trade.Buyer]
 		}
+
 		// release buyer's trade + fees quote quantity from the holding account
 		transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
 		if err != nil {
-			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
+			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
 		transfers = append(transfers, transfer)
 
 		// release seller's base quantity from the holding account
 		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero())
 		if err != nil {
-			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
+			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
 		transfers = append(transfers, transfer)
 	} else {
@@ -2799,6 +2800,11 @@ func (m *Market) calculateFees(party string, size uint64, price *num.Uint, side 
 		return num.UintZero(), err
 	}
 
+	// if we're in uncrossing governance auction fees will be nil
+	if fees == nil {
+		return num.UintZero(), nil
+	}
+
 	return fees.TotalFeesAmountPerParty()[party], err
 }
 
@@ -2814,6 +2820,10 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsFBA() {
 		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+	} else {
+		if !m.as.IsOpeningAuction() {
+			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		}
 	}
 	return fees, err
 }
