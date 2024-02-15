@@ -25,7 +25,11 @@ import (
 )
 
 const (
-	DefaultPageSize int32 = 1000
+	// DefaultPageSize is the default number of records that will be returned if no paging constraints
+	// are provided in an API request that supports pagination.
+	// If we set this too large, we get errors relating to gRPC message size so for now set it to
+	// something small and if users want more, they should set the appropriate limit in their request.
+	DefaultPageSize int32 = 50
 	maxPageSize     int32 = 5000
 )
 
