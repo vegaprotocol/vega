@@ -2705,7 +2705,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 	var fee num.Decimal
 	provisions := m.liquidityEngine.ProvisionsPerParty()
 
-	// FIXME: just a temporay patch for validators testnet
+	// FIXME: just a temporary patch for validators testnet
 	// so the state of the network is fixed.
 	if m.mkt.Fees.LiquidityFeeSettings == nil {
 		m.mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
