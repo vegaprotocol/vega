@@ -26,7 +26,8 @@
 - [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
 - [10677](https://github.com/vegaprotocol/vega/issues/10677) - Fix validation of market proposer bonus to allow specifying/not specifying asset for metric for market proposer.
 - [10669](https://github.com/vegaprotocol/vega/issues/10669) - Fix fees handling for spots in governance auction
-
+- [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
+- [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
 
 ## 0.74.1
 
