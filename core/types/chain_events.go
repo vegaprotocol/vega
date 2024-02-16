@@ -542,7 +542,9 @@ type ERC20Event struct {
 	// Index of the transaction
 	Index uint64
 	// The block in which the transaction was added
-	Block uint64
+	Block   uint64
+	ChainID string
+
 	// The action
 	//
 	// Types that are valid to be assigned to Action:
@@ -564,8 +566,9 @@ type erc20EventAction interface {
 
 func NewERC20Event(p *vegapb.ERC20Event) (*ERC20Event, error) {
 	e := ERC20Event{
-		Index: p.Index,
-		Block: p.Block,
+		Index:   p.Index,
+		Block:   p.Block,
+		ChainID: p.ChainId,
 	}
 
 	var err error

@@ -320,12 +320,12 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
 	err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
 	assert.NoError(t, err)
-	eng.erc.f(eng.erc.r, true)
+	eng.witness.f(eng.witness.r, true)
 
 	d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
 	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
 	assert.NoError(t, err)
-	eng.erc.f(eng.erc.r, true)
+	eng.witness.f(eng.witness.r, true)
 
 	eng.OnTick(context.Background(), time.Now())
 	state2, _, err := eng.GetState(seenKey)
@@ -434,18 +434,12 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	key := (&types.PayloadBankingScheduledTransfers{}).Key()
 	eng := getTestEngine(t)
 
+	state, _, err := eng.GetState(key)
+	require.Nil(t, err)
+
 	fromAcc := types.Account{
 		Balance: num.NewUint(1000),
 	}
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	eng.tsvc.EXPECT().GetTimeNow().Times(4)
-	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
-	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-
-	state, _, err := eng.GetState(key)
-	require.Nil(t, err)
 
 	now := time.Unix(1111, 0)
 	deliver := now.Add(time.Hour)
@@ -467,6 +461,11 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 		},
 	}
 
+	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
+	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Times(1).Return(&fromAcc, nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(now)
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	require.NoError(t, eng.TransferFunds(ctx, oneoff))
 
 	// test the new transfer prompts a change
@@ -561,12 +560,7 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
 	e := getTestEngine(t)
-
-	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
-		func() time.Time {
-			return time.Unix(10, 0)
-		}).Times(3)
-	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	require.NoError(t, e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1)))
 	e.OnTick(ctx, time.Unix(10, 0))
 	e.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
 
@@ -602,6 +596,7 @@ func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
 	dsHash := hex.EncodeToString(crypto.Hash(p))
 
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
 
 	// test the new transfer prompts a change
@@ -675,7 +670,7 @@ func TestAssetListRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{name: assetNameETH, quantum: num.DecimalFromFloat(100)}), nil)
-	require.NoError(t, eng.EnableERC20(ctx, &types.ERC20AssetList{}, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", 1000, 1000, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301"))
+	require.NoError(t, eng.EnableERC20(ctx, &types.ERC20AssetList{}, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", 1000, 1000, "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301", "1"))
 
 	state, _, err := eng.GetState(key)
 	require.Nil(t, err)

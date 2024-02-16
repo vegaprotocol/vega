@@ -112,11 +112,10 @@ type timesToTransfers struct {
 	transfer  []scheduledTransfer
 }
 
-func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
+func (e *Engine) distributeScheduledTransfers(ctx context.Context, now time.Time) error {
 	ttfs := []timesToTransfers{}
 
 	// iterate over those scheduled transfers to sort them by time
-	now := e.timeService.GetTimeNow()
 	for k, v := range e.scheduledTransfers {
 		if now.UnixNano() >= k {
 			ttfs = append(ttfs, timesToTransfers{k, v})
