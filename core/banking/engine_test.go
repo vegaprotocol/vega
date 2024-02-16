@@ -33,6 +33,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
@@ -43,7 +44,7 @@ var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 type testEngine struct {
 	*banking.Engine
 	ctrl                  *gomock.Controller
-	erc                   *fakeERC
+	witness               *fakeWitness
 	col                   *mocks.MockCollateral
 	assets                *mocks.MockAssets
 	tsvc                  *mocks.MockTimeService
@@ -58,7 +59,7 @@ type testEngine struct {
 func getTestEngine(t *testing.T) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	erc := &fakeERC{}
+	witness := &fakeWitness{}
 	col := mocks.NewMockCollateral(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
@@ -72,14 +73,14 @@ func getTestEngine(t *testing.T) *testEngine {
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, marketActivityTracker, bridgeView, ethSource)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, witness, tsvc, assets, notary, broker, top, marketActivityTracker, bridgeView, ethSource)
 
 	eng.OnMaxQuantumAmountUpdate(context.Background(), num.DecimalOne())
 
 	return &testEngine{
 		Engine:                eng,
 		ctrl:                  ctrl,
-		erc:                   erc,
+		witness:               witness,
 		col:                   col,
 		assets:                assets,
 		tsvc:                  tsvc,
@@ -103,7 +104,6 @@ func TestBanking(t *testing.T) {
 func testDepositSuccess(t *testing.T) {
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -113,31 +113,29 @@ func testDepositSuccess(t *testing.T) {
 		Amount:      num.NewUint(42),
 	}
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(2)
-
 	// call the deposit function
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
-	// then we call the callback from the fake erc
-	eng.erc.r.Check(context.Background())
-	eng.erc.f(eng.erc.r, true)
+	// then we call the callback from the fake witness
+	eng.witness.r.Check(context.Background())
+	eng.witness.f(eng.witness.r, true)
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.LedgerMovement{}, nil)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(6)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
+
 	bad := &types.BuiltinAssetDeposit{
 		VegaAssetID: "VGT",
 		PartyID:     "someparty",
@@ -145,40 +143,37 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	}
 
 	// call the deposit function
-	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
-	assert.NoError(t, err)
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
+	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42))
 
-	// then we call the callback from the fake erc
-	eng.erc.r.Check(context.Background())
-	eng.erc.f(eng.erc.r, true)
+	// then we call the callback from the fake witness
+	eng.witness.r.Check(context.Background())
+	eng.witness.f(eng.witness.r, true)
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.LedgerMovement{}, nil)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.OnTick(context.Background(), time.Now())
 
 	// call the deposit function
-	err = eng.DepositBuiltinAsset(context.Background(), bad, "depositid2", 43)
-	assert.NoError(t, err)
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
+	require.NoError(t, eng.DepositBuiltinAsset(context.Background(), bad, "depositid2", 43))
 
-	// then we call the callback from the fake erc
-	eng.erc.r.Check(context.Background())
-	eng.erc.f(eng.erc.r, true)
+	// then we call the callback from the fake witness
+	eng.witness.r.Check(context.Background())
+	eng.witness.f(eng.witness.r, true)
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
 	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.LedgerMovement{}, nil)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(2)
 	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositFailure(t *testing.T) {
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(5)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -189,22 +184,21 @@ func testDepositFailure(t *testing.T) {
 	}
 
 	// call the deposit function
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.NoError(t, err)
 
-	// then we call the callback from the fake erc
-	eng.erc.r.Check(context.Background())
-	eng.erc.f(eng.erc.r, false)
+	// then we call the callback from the fake witness
+	eng.witness.r.Check(context.Background())
+	eng.witness.f(eng.witness.r, false)
 
 	// then we call time update, expect collateral to never be called
-	eng.tsvc.EXPECT().GetTimeNow().Times(1)
 	eng.OnTick(context.Background(), time.Now())
 }
 
 func testDepositError(t *testing.T) {
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -214,11 +208,12 @@ func testDepositError(t *testing.T) {
 		Amount:      num.NewUint(42),
 	}
 
-	// set an error to be return by the fake erc
+	// set an error to be return by the fake witness
 	expectError := errors.New("bad bad bad")
-	eng.erc.err = expectError
+	eng.witness.err = expectError
 
 	// call the deposit function
+	eng.tsvc.EXPECT().GetTimeNow().Times(2).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }
@@ -226,7 +221,6 @@ func testDepositError(t *testing.T) {
 func testDepositFailureNotBuiltin(t *testing.T) {
 	eng := getTestEngine(t)
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	expectError := errors.New("bad bad bad")
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, expectError)
@@ -238,11 +232,12 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	}
 
 	// call the deposit function
+	eng.tsvc.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
 	assert.EqualError(t, err, expectError.Error())
 }
 
-type fakeERC struct {
+type fakeWitness struct {
 	r validators.Resource
 	f func(interface{}, bool)
 	t time.Time
@@ -250,14 +245,14 @@ type fakeERC struct {
 	err error
 }
 
-func (f *fakeERC) StartCheck(r validators.Resource, fn func(interface{}, bool), t time.Time) error {
+func (f *fakeWitness) StartCheck(r validators.Resource, fn func(interface{}, bool), t time.Time) error {
 	f.r = r
 	f.f = fn
 	f.t = t
 	return f.err
 }
 
-func (f *fakeERC) RestoreResource(r validators.Resource, fn func(interface{}, bool)) error {
+func (f *fakeWitness) RestoreResource(r validators.Resource, fn func(interface{}, bool)) error {
 	f.r = r
 	f.f = fn
 	return nil

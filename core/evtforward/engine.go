@@ -126,6 +126,7 @@ func (e *Engine) SetupEthereumEngine(
 		ethCfg.StakingBridge(),
 		ethCfg.VestingBridge(),
 		ethCfg.MultiSigControl(),
+		ethCfg.ChainID(),
 	)
 
 	e.UpdateCollateralStartingBlock(filterer.CurrentHeight(context.Background()))
