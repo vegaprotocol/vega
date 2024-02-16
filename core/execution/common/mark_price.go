@@ -255,6 +255,9 @@ func (mpc *CompositePriceCalculator) CalculateBookMarkPriceAtTimeT(initialScalin
 }
 
 func (mpc *CompositePriceCalculator) GetPrice() *num.Uint {
+	if mpc.price != nil {
+		return mpc.price.Clone()
+	}
 	return mpc.price
 }
 
