@@ -78,15 +78,28 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 
 	// Get equity like shares per party.
 	sharesPerLp := m.equityShares.AllShares()
-	if len(sharesPerLp) == 0 {
+	// get the LP scores
+	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
+	if len(sharesPerLp) == 0 && len(ammScores) == 0 && len(scoresPerLp) == 0 {
 		return nil
 	}
-
-	scoresPerLp := m.liquidityEngine.GetAverageLiquidityScores()
-	// Multiplies each equity like share with corresponding score.
+	// add either the score and/or the ELS where needed
+	for id, av := range ammScores {
+		if _, ok := sharesPerLp[id]; !ok {
+			sharesPerLp[id] = num.DecimalZero()
+		}
+		if v, ok := scoresPerLp[id]; ok {
+			av = av.Add(v)
+		}
+		// add the AMM LP score to the scores map
+		scoresPerLp[id] = av
+	}
+	// a map of all the LP scores, both AMM and LPs, scaled to 1.
+	scaledScores := m.scaleScores(scoresPerLp)
+	// Multiplies each equity like share with corresponding score, scaled to 1.
 	updatedShares := m.updateSharesWithLiquidityScores(sharesPerLp, scoresPerLp)
-	// now adjust the score to account for the AMM share
-	updatedShares = m.mergeScores(updatedShares, ammScores)
+	// now combine the above maps, multiply the ELS part with the fee factor, the score-based map by 1 - factor.
+	updatedShares = m.mergeScores(updatedShares, scaledScores)
 
 	feeTransfer := m.fee.BuildLiquidityFeeAllocationTransfer(updatedShares, acc)
 	if feeTransfer == nil {
@@ -108,51 +121,105 @@ func (m *MarketLiquidity) AllocateFees(ctx context.Context) error {
 }
 
 func (m *MarketLiquidity) getAMMScores() map[string]num.Decimal {
-	if m.amm == nil {
-		return nil
-	}
-	minP, maxP, err := m.ValidOrdersPriceRange()
-	if err != nil {
-		m.log.Debug("get amm scores error", logging.Error(err))
-		// no price range -> we cannot determine the AMM scores.
-		return nil
-	}
-	pools := m.amm.GetAMMPoolsBySubAccount()
-	totalSize := num.DecimalZero()
-	ammSizes := make(map[string]num.Decimal, len(pools))
-	for amm, pool := range pools {
-		buy, sell := pool.VolumeBetweenPrices(types.SideBuy, minP, maxP), pool.VolumeBetweenPrices(types.SideSell, minP, maxP)
-		size := buy + sell
-		if size == 0 {
-			continue
-		}
-		dSize := num.DecimalFromInt64(int64(size))
-		totalSize = totalSize.Add(dSize)
-		ammSizes[amm] = dSize
-	}
-	ammScores := make(map[string]num.Decimal, len(ammSizes))
-	for p, size := range ammSizes {
-		// get the share of the AMM ELS fees, multiplied by the factor so they are correctly weighted
-		ammScores[p] = size.Div(totalSize).Mul(m.elsFeeFactor)
+	ammScores := make(map[string]num.Decimal, len(m.ammStats))
+	for id, vals := range m.ammStats {
+		ammScores[id] = vals.score
 	}
 	return ammScores
 }
 
-func (m *MarketLiquidity) mergeScores(els, amm map[string]num.Decimal) map[string]num.Decimal {
-	if len(amm) == 0 {
+func (m *MarketLiquidity) updateAMMCommitment(count int64) {
+	minP, maxP, err := m.ValidOrdersPriceRange()
+	if err != nil {
+		m.log.Debug("get amm scores error", logging.Error(err))
+		// no price range -> we cannot determine the AMM scores.
+		return
+	}
+	skipScore := false
+	bestB, err := m.orderBook.GetBestStaticBidPrice()
+	if err != nil {
+		m.log.Debug("could not get best bid", logging.Error(err))
+		skipScore = true
+	}
+	bestA, err := m.orderBook.GetBestStaticAskPrice()
+	if err != nil {
+		m.log.Debug("could not get best ask", logging.Error(err))
+		skipScore = true
+	}
+	bb, ba := num.DecimalFromUint(bestB), num.DecimalFromUint(bestA)
+	for amm, pool := range m.amm.GetAMMPoolsBySubAccount() {
+		buy, sell := pool.OrderbookShape(minP, maxP)
+		buyTotal, sellTotal := num.UintZero(), num.UintZero()
+		for _, b := range buy {
+			size := num.UintFromUint64(b.Size)
+			buyTotal.AddSum(size.Mul(size, b.Price))
+		}
+		for _, s := range sell {
+			size := num.UintFromUint64(s.Size)
+			sellTotal.AddSum(size.Mul(size, s.Price))
+		}
+		value := buyTotal
+		if sellTotal.LT(buyTotal) {
+			value = sellTotal
+		}
+		// divide the lesser value by the market.liquidity.stakeToCcyVolume to get the equivalent bond
+		stake := num.DecimalFromUint(value).Div(m.stakeToCcyVolume)
+		as, ok := m.ammStats[amm]
+		if !ok {
+			as = newAMMState(count)
+			m.ammStats[amm] = as
+		}
+		score := as.score
+		if !skipScore {
+			score = m.liquidityEngine.GetPartyLiquidityScore(append(buy, sell...), bb, ba, minP, maxP)
+		}
+		// set the stake and score
+		as.UpdateTick(stake, score)
+	}
+}
+
+func (m *MarketLiquidity) scaleScores(scores map[string]num.Decimal) map[string]num.Decimal {
+	if len(scores) == 0 {
+		return scores
+	}
+	total := num.DecimalZero()
+	for _, s := range scores {
+		total = total.Add(s)
+	}
+	for k, v := range scores {
+		scores[k] = v.Div(total)
+	}
+	return scores
+}
+
+func (m *MarketLiquidity) mergeScores(els, scores map[string]num.Decimal) map[string]num.Decimal {
+	if len(scores) == 0 {
 		return els
 	}
-	elsFactor := num.DecimalOne().Sub(m.elsFeeFactor) // if amm is entitled to 0.2 of the fees, then ELS receives 0.8
+	if len(els) == 0 {
+		return scores // this probably never happens
+	}
+	// len(scores) because every entry in the ELS map will have a score
+	// the other way around is not certain.
+	ret := make(map[string]num.Decimal, len(scores))
+	scoreFactor := num.DecimalOne().Sub(m.elsFeeFactor) // if amm is entitled to 0.2 of the fees, then ELS receives 0.8
 	for k, v := range els {
-		els[k] = v.Mul(elsFactor)
-	}
-	for k, v := range amm {
-		if ev, ok := els[k]; ok {
-			v = ev.Add(v) // combine AMM and ELS scores if applicable
+		if v.IsZero() {
+			continue // omit zero values
 		}
-		els[k] = v
+		ret[k] = v.Mul(m.elsFeeFactor) // the score * ELS map is entitled to the elsFeeFactor of the total fees
 	}
-	return els
+	for k, v := range scores {
+		rv := v.Mul(scoreFactor)
+		if ev, ok := ret[k]; ok {
+			rv = rv.Add(ev) // party has ELS, just add the portion of fees they are entitled to from the second bucket
+		}
+		if rv.IsZero() {
+			continue // again, leave out the zero values
+		}
+		ret[k] = rv // add the entry to the map of either the score-based portion, or the sum of ELS and score.
+	}
+	return ret
 }
 
 func (m *MarketLiquidity) processBondPenalties(

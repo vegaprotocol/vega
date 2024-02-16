@@ -462,6 +462,7 @@ type ExecMarket struct {
 	MarkPriceCalculator              *snapshot.CompositePriceCalculator
 	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
 	Amm                              *snapshot.AmmState
+	MarketLiquidity                  *snapshot.MarketLiquidity
 }
 
 type ExecSpotMarket struct {
@@ -3722,6 +3723,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		MarkPriceCalculator:              em.MarkPriceCalculator,
 		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
 		Amm:                              em.Amm,
+		MarketLiquidity:                  em.MarketLiquidity,
 	}
 
 	for _, o := range em.ExpiringOrders {
