@@ -64,8 +64,8 @@ func (s *Verifier) serialiseLastEthBlock() ([]byte, error) {
 		pl = types.Payload{
 			Data: &types.PayloadEthOracleLastBlock{
 				EthOracleLastBlock: &types.EthBlock{
-					Height: 5287944,
-					Time:   1707926160,
+					Height: 5300370,
+					Time:   1708083132,
 				},
 			},
 		}
