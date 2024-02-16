@@ -72,7 +72,7 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		// if already exists, do nothing
 		if e, ok := v.engines[c.ChainID]; ok {
 			// the blockInterval might have changed, so let just call that.
-			e.EnsureChainID(c.ChainID, c.BlockInterval, v.isValidator)
+			e.EnsureChainID(ctx, c.ChainID, c.BlockInterval, v.isValidator)
 			continue
 		}
 

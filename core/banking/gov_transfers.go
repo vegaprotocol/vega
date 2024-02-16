@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -54,9 +55,8 @@ var (
 	}
 )
 
-func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
+func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context, now time.Time) {
 	timepoints := []int64{}
-	now := e.timeService.GetTimeNow()
 	for k := range e.scheduledGovernanceTransfers {
 		if now.UnixNano() >= k {
 			timepoints = append(timepoints, k)

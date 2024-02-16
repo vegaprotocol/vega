@@ -40,7 +40,6 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/processor TimeService,EpochService,DelegationEngine,ExecutionEngine,GovernanceEngine,Stats,Assets,ValidatorTopology,Notary,EvtForwarder,Witness,Banking,NetworkParameters,OraclesEngine,OracleAdaptors,Limits,StakeVerifier,StakingAccounts,ERC20MultiSigTopology,Checkpoint
 
 var (
-	ErrInvalidSignature                       = errors.New("invalid signature")
 	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent                  = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator          = errors.New("node signature not sent by validator")
@@ -216,15 +215,15 @@ type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
 	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
-	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
-	UpdateERC20(context.Context, *types.ERC20AssetLimitsUpdated, string, uint64, uint64, string) error
-	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
+	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string, string) error
+	UpdateERC20(context.Context, *types.ERC20AssetLimitsUpdated, string, uint64, uint64, string, string) error
+	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
 	TransferFunds(context.Context, *types.TransferFunds) error
 	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
-	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
-	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
+	BridgeStopped(context.Context, bool, string, uint64, uint64, string, string) error
+	BridgeResumed(context.Context, bool, string, uint64, uint64, string, string) error
 	CheckTransfer(t *types.TransferBase) error
 	NewGovernanceTransfer(ctx context.Context, ID, reference string, transferConfig *types.NewTransferConfiguration) error
 	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
