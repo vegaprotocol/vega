@@ -76,25 +76,32 @@ type Engine struct {
 	poller                *poller
 	mu                    sync.Mutex
 
-	chainID uint64
+	chainID       uint64
+	blockInterval uint64
 }
 
 func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
 	e := &Engine{
-		log:         log,
-		cfg:         cfg,
-		isValidator: isValidator,
-		client:      client,
-		forwarder:   forwarder,
-		calls:       make(map[string]Call),
-		poller:      newPoller(cfg.PollEvery.Get()),
+		log:           log,
+		cfg:           cfg,
+		isValidator:   isValidator,
+		client:        client,
+		forwarder:     forwarder,
+		calls:         make(map[string]Call),
+		poller:        newPoller(cfg.PollEvery.Get()),
+		blockInterval: 1,
 	}
 	return e
 }
 
 // EnsureChainID tells the engine which chainID it should be related to, and it confirms this against the its client.
-func (e *Engine) EnsureChainID(chainID string, confirmWithClient bool) {
+func (e *Engine) EnsureChainID(chainID string, blockInterval uint64, confirmWithClient bool) {
 	e.chainID, _ = strconv.ParseUint(chainID, 10, 64)
+	e.blockInterval = blockInterval
+	// cover backward compatibility for L2
+	if e.blockInterval == 0 {
+		e.blockInterval = 1
+	}
 
 	// if the node is a validator, we now check the chainID against the chain the client is connected to.
 	if confirmWithClient {
@@ -286,10 +293,16 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 
 	// Go through an eth blocks one at a time until we get to the most recent one
 	for prevEthBlock := e.prevEthBlock; prevEthBlock.NumberU64() < lastEthBlock.Number.Uint64(); prevEthBlock = e.prevEthBlock {
-		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + 1)
+		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + e.blockInterval)
 		nextEthBlock, err := e.client.HeaderByNumber(ctx, nextBlockNum)
 		if err != nil {
-			e.log.Error("failed to get next block header", logging.Error(err))
+			e.log.Error("failed to get next block header",
+				logging.Error(err),
+				logging.Uint64("chain-id", e.chainID),
+				logging.Uint64("prev-block", prevEthBlock.NumberU64()),
+				logging.Uint64("last-block", lastEthBlock.Number.Uint64()),
+				logging.Uint64("expect-next-block", nextBlockNum.Uint64()),
+			)
 			return
 		}
 
