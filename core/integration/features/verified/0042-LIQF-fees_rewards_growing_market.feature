@@ -12,12 +12,13 @@ Feature:
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the following network parameters are set:
-      | name                                               | value |
-      | market.value.windowLength                          | 5m    |
-      | network.markPriceUpdateMaximumFrequency            | 0s    |
-      | limits.markets.maxPeggedOrders                     | 8     |
-      | validators.epoch.length                            | 10s   |
+      | name                                             | value |
+      | market.value.windowLength                        | 5m    |
+      | network.markPriceUpdateMaximumFrequency          | 0s    |
+      | limits.markets.maxPeggedOrders                   | 8     |
+      | validators.epoch.length                          | 10s   |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
+      | market.liquidity.equityLikeShareFeeFraction      | 1     |
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 0.0              | 24h         | 2.5            |
