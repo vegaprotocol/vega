@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [971](https://github.com/vegaprotocol/core-test-coverage/issues/971) - Add `AMM` support to the integration test framework.
 
 ### 🐛 Fixes
 
