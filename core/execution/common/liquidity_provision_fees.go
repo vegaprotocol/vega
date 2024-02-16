@@ -129,6 +129,10 @@ func (m *MarketLiquidity) getAMMScores() map[string]num.Decimal {
 }
 
 func (m *MarketLiquidity) updateAMMCommitment(count int64) {
+	if m.amm == nil {
+		// spot market, amm won't be set
+		return
+	}
 	minP, maxP, err := m.ValidOrdersPriceRange()
 	if err != nil {
 		m.log.Debug("get amm scores error", logging.Error(err))
