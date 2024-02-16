@@ -59,45 +59,64 @@ Feature: when party holds both orders and positions, amend order so order is fil
 
     #AC: 0019-MCAL-168, 0019-MCAL-169, amend order price so order get filled/partially filled
     When the parties amend the following orders:
-      | party  | reference   | price | size delta | tif     | error               |
-      | party  | party-sell  | 15500 | 0          | TIF_GTC | margin check failed |
-      | party1 | party1-sell | 15300 | 0          | TIF_GTC | margin check failed |
-    When the network moves ahead "2" blocks
+      | party  | reference   | price | size delta | tif     | error |
+      | party  | party-sell  | 15500 | 0          | TIF_GTC |       |
+      | party1 | party1-sell | 15300 | 0          | TIF_GTC |       |
+
+    Then the orders should have the following status:
+      | party  | reference   | status        |
+      | party  | party-sell  | STATUS_FILLED |
+      | party1 | party1-sell | STATUS_ACTIVE |
+
+    #margin for party: 15900*0.2*3+15500*0.2*5=25040
+    #margin for party1: 15900*0.2*3+15300*0.2*2=15660
+    #order margin for party1: 15300*0.2*3=9180
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party  | USD   | ETH/FEB23 | 25040  | 1400    | 0            |
+      | party1 | USD   | ETH/FEB23 | 15660  | 1600    | 9180         |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 0.2           | 0     |
+      | party  | ETH/FEB23 | 44520       | 0      | 53424   | 0       | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 27825       | 0      | 33390   | 0       | isolated margin | 0.2           | 9180  |
 
-  Then the parties should have the following account balances:
-    | party  | asset | market id | margin | general | order margin |
-    | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
-    | party1 | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
+    #party1's order is partially filled, and the rest of the order is left on the order book
+    And the order book should have the following volumes for market "ETH/FEB23":
+      | side | price | volume |
+      | sell | 15300 | 3      |
+    When the network moves ahead "2" blocks
+    Then the mark price should be "15300" for the market "ETH/FEB23"
 
-  And the parties place the following orders:
-    | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-    | party  | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
-    | party1 | ETH/FEB23 | sell | 5      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+    Then the orders should have the following status:
+      | party  | reference   | status        |
+      | party  | party-sell  | STATUS_FILLED |
+      | party1 | party1-sell | STATUS_FILLED |
 
-  #AC: 0019-MCAL-168, 0019-MCAL-169, amend order size when party has/does not have enough collateral
-  When the parties amend the following orders:
-    | party  | reference   | price | size delta | tif     | error               |
-    | party  | party-sell  | 16900 | 1          | TIF_GTC | margin check failed |
-    | party1 | party1-sell | 16900 | -1         | TIF_GTC |                     |
-  When the network moves ahead "2" blocks
+    #party1's order is partially filled, and the rest of the order is canceled
+    And the order book should have the following volumes for market "ETH/FEB23":
+      | side | price | volume |
+      | sell | 15300 | 0      |
 
-  And the parties should have the following margin levels:
-    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-    | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 0     |
-    | party1 | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 13520 |
+    # in M2M party has insufficient margin hence getting closed out, party1 then trades with the network...
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 16065       | 0      | 19278   | 0       | isolated margin | 0.2           | 0     |
 
-  Then the parties should have the following account balances:
-    | party  | asset | market id | margin | general | order margin |
-    | party  | USD   | ETH/FEB23 | 9540   | 16900   | 0            |
-    | party1 | USD   | ETH/FEB23 | 9540   | 3380    | 13520        |
+    #margin for party1: 3*0.2*15300=9180
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party  | USD   | ETH/FEB23 | 0      | 1400    | 0            |
+      | party1 | USD   | ETH/FEB23 | 9180   | 1600    | 0            |
 
-
-
-
-
-
+    And the following trades should be executed:
+      | buyer           | price | size | seller  |
+      | buySideProvider | 15900 | 3    | party   |
+      | buySideProvider | 15900 | 3    | party1  |
+      | buySideProvider | 15500 | 5    | party   |
+      | buySideProvider | 15300 | 2    | party1  |
+      | party           | 15300 | 8    | network |
+      | party1          | 15300 | 5    | network |
+      | network         | 15300 | 3    | party1  |

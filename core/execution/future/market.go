@@ -1544,13 +1544,16 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Process each order we have to cancel
 	for _, order := range ordersToCancel {
 		conf, err := m.cancelOrder(ctx, order.Party, order.ID)
-		if err != nil {
+		// it is possible for a party in isolated margin that their orders have been stopped when uncrossed
+		// due to having insufficient order margin so we don't need to panic in this case
+		if (m.getMarginMode(order.Party) == types.MarginModeCrossMargin && err == common.ErrOrderNotFound) || (err != nil && err != common.ErrOrderNotFound) {
 			m.log.Panic("Failed to cancel order",
 				logging.Error(err),
 				logging.String("OrderID", order.ID))
 		}
-
-		updatedOrders = append(updatedOrders, conf.Order)
+		if err == nil {
+			updatedOrders = append(updatedOrders, conf.Order)
+		}
 	}
 
 	wasOpeningAuction := m.IsOpeningAuction()
@@ -2278,7 +2281,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return nil, nil, m.unregisterAndReject(ctx, order, err)
 		}
 	}
-	passiveOrders := m.getPassiveOrdersCopy(order, trades)
 
 	// if an auction was trigger, and we are a pegged order
 	// or a liquidity order, let's return now.
@@ -2293,6 +2295,30 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	order.Status = types.OrderStatusActive
+
+	// NB: this is the position with the trades included and the order sizes updated to remaining!!!
+	// NB: this is not touching the actual position from the position engine but is all done on a clone, so that
+	// in handle confirmation this will be done as per normal.
+	posWithTrades := pos.UpdateInPlaceOnTrades(m.log, order.Side, trades, order)
+	// First, check whether the order will trade, either fully or in part, immediately upon entry. If so:
+	// If the trade would increase the party's position, the required additional funds as specified in the Increasing Position section will be calculated.
+	// The total expected margin balance (current plus new funds) will then be compared to the maintenance margin for the expected position,
+	// if the margin balance would be less than maintenance, instead reject the order in it's entirety.
+	// If the margin will be greater than the maintenance margin their general account will be checked for sufficient funds.
+	// If they have sufficient, that amount will be moved into their margin account and the immediately matching portion of the order will trade.
+	// If they do not have sufficient, the order will be rejected in it's entirety for not meeting margin requirements.
+	// If the trade would decrease the party's position, that portion will trade and margin will be released as in the Decreasing Position.
+	// If the order is not persistent this is the end, if it is persistent any portion of the order which
+	// has not traded in step 1 will move to being placed on the order book.
+	if len(trades) > 0 && marginMode == types.MarginModeIsolatedMargin {
+		if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add immediate trade margin for party",
+					logging.Order(*order), logging.Error(err))
+			}
+			return nil, nil, common.ErrMarginCheckFailed
+		}
+	}
 
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
@@ -2322,33 +2348,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	confirmation.Trades = trades
 
 	if marginMode == types.MarginModeIsolatedMargin {
-		// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-		// NB: this is not touching the actual position from the position engine but is all done on a clone, so that
-		// in handle confirmation this will be done as per normal.
-		posWithTrades := pos.UpdateInPlaceOnTrades(m.log, order.Side, trades, order)
-		// First, check whether the order will trade, either fully or in part, immediately upon entry. If so:
-		// If the trade would increase the party's position, the required additional funds as specified in the Increasing Position section will be calculated.
-		// The total expected margin balance (current plus new funds) will then be compared to the maintenance margin for the expected position,
-		// if the margin balance would be less than maintenance, instead reject the order in it's entirety.
-		// If the margin will be greater than the maintenance margin their general account will be checked for sufficient funds.
-		// If they have sufficient, that amount will be moved into their margin account and the immediately matching portion of the order will trade.
-		// If they do not have sufficient, the order will be rejected in it's entirety for not meeting margin requirements.
-		// If the trade would decrease the party's position, that portion will trade and margin will be released as in the Decreasing Position.
-		// If the order is not persistent this is the end, if it is persistent any portion of the order which
-		// has not traded in step 1 will move to being placed on the order book.
-		if len(trades) > 0 {
-			if err := m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, order, trades, false); err != nil {
-				if m.log.GetLevel() <= logging.DebugLevel {
-					m.log.Debug("Unable to check/add immediate trade margin for party",
-						logging.Order(*order), logging.Error(err))
-				}
-				m.matching.RollbackConfirmation(confirmation, passiveOrders)
-				_ = m.unregisterAndReject(
-					ctx, order, types.OrderErrorIsolatedMarginCheckFailed)
-				m.matching.RemoveOrder(order.ID)
-				return nil, nil, common.ErrMarginCheckFailed
-			}
-		}
 		// now we need to check if the party has sufficient funds to cover the order margin for the remaining size
 		// if not the remaining order is cancelled.
 		// if successful the required order margin are transferred to the order margin account.
@@ -2367,7 +2366,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	if fees != nil {
 		err = m.applyFees(ctx, order, fees)
 		if err != nil {
-			m.matching.RollbackConfirmation(confirmation, passiveOrders)
 			_ = m.unregisterAndReject(
 				ctx, order, types.OrderErrorMarginCheckFailed)
 			m.matching.RemoveOrder(order.ID)
@@ -2584,7 +2582,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 				if err != nil {
 					m.log.Error("failed to update isolated margin on position change", logging.Error(err))
 					if err == risk.ErrInsufficientFundsForMaintenanceMargin {
-						m.handleIsolatedMarginInsufficientOrderMargin(ctx, conf.PassiveOrdersAffected[idx].Party)
+						m.handleIsolatedMarginInsufficientOrderMargin(ctx, aggressor)
 					}
 				}
 			}
@@ -2977,7 +2975,35 @@ func (m *Market) updateIsolatedMarginOnAggressor(ctx context.Context, pos *posit
 	if err != nil {
 		return err
 	}
-	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, orders, trades, marginFactor, order.Side, isAmend)
+
+	totalTrades := uint64(0)
+	for _, t := range trades {
+		totalTrades += t.Size
+	}
+
+	clonedOrders := make([]*types.Order, 0, len(orders))
+	found := false
+	for _, o := range orders {
+		if o.ID == order.ID {
+			clonedOrder := order.Clone()
+			clonedOrder.Remaining -= totalTrades
+			if clonedOrder.Remaining > 0 {
+				clonedOrders = append(clonedOrders, clonedOrder)
+			}
+			found = true
+		} else {
+			clonedOrders = append(clonedOrders, o)
+		}
+	}
+	if !found {
+		clonedOrder := order.Clone()
+		clonedOrder.Remaining -= totalTrades
+		if clonedOrder.Remaining > 0 {
+			clonedOrders = append(clonedOrders, clonedOrder)
+		}
+	}
+
+	risk, err := m.risk.UpdateIsolatedMarginOnAggressor(ctx, mpos, marketObservable, increment, clonedOrders, trades, marginFactor, order.Side, isAmend)
 	if err != nil {
 		return err
 	}
@@ -3727,7 +3753,7 @@ func (m *Market) orderCancelReplace(
 	var fees events.FeesTransfer
 
 	defer func() {
-		if err != nil {
+		if err != nil && !(err == common.ErrMarginCheckFailed && conf != nil) {
 			// if an error happens, the order never hit the book, so we can
 			// just rollback the position size
 			_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
@@ -3737,7 +3763,7 @@ func (m *Market) orderCancelReplace(
 			return
 		}
 		if fees != nil {
-			if err = m.applyFees(ctx, newOrder, fees); err != nil {
+			if feeErr := m.applyFees(ctx, newOrder, fees); feeErr != nil {
 				_ = m.position.AmendOrder(ctx, newOrder, existingOrder)
 				return
 			}
@@ -3769,6 +3795,7 @@ func (m *Market) orderCancelReplace(
 		if m.getMarginMode(newOrder.Party) == types.MarginModeIsolatedMargin {
 			pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, newOrder); err != nil {
+				existingOrder.Status = newOrder.Status
 				m.matching.ReplaceOrder(newOrder, existingOrder)
 				if m.log.GetLevel() <= logging.DebugLevel {
 					m.log.Debug("Unable to check/add margin for party",
@@ -3792,12 +3819,25 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		return nil, nil, errors.New("couldn't insert order in book")
 	}
-	// get the orders in their current state
-	passiveOrders := m.getPassiveOrdersCopy(newOrder, trades)
 
 	// try to apply fees on the trade
 	if fees, err = m.calcFees(trades); err != nil {
 		return nil, nil, errors.New("could not calculate fees for order")
+	}
+
+	marginMode := m.getMarginMode(newOrder.Party)
+	pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
+	posWithTrades := pos
+	if len(trades) > 0 && marginMode == types.MarginModeIsolatedMargin {
+		posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
+		// NB: this is the position with the trades included and the order sizes updated to remaining!!!
+		if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
+			if m.log.GetLevel() <= logging.DebugLevel {
+				m.log.Debug("Unable to check/add immediate trade margin for party",
+					logging.Order(*newOrder), logging.Error(err))
+			}
+			return nil, nil, common.ErrMarginCheckFailed
+		}
 	}
 
 	// "hot-swap" of the orders
@@ -3805,58 +3845,16 @@ func (m *Market) orderCancelReplace(
 	if err != nil {
 		m.log.Panic("unable to submit order", logging.Error(err))
 	}
-	// now set up a defer call to roll back the orderbook if needed
-	defer func() {
-		if err == nil || conf == nil {
-			return
-		}
-		// we have a confirmation and error, so margin check failed
-		// if we have passive orders here, that means the order was submitted to the book and traded
-		// check if the order uncrossed either partially or in full
-		if len(passiveOrders) > 0 {
-			// we failed the margin check, and the order uncrossed in full. We have to roll the orders back
-			if conf.Order.TrueRemaining() == 0 {
-				m.matching.RollbackConfirmation(conf, passiveOrders)
-				conf = nil // the confirmation cannot be used/relied on, the amend failed
-				return
-			}
-			// in this case, we have traded, but not the full amended order. The order is stopped
-			// but the trades must go through
-			err = nil
-			return
-		}
-		// conf should not be returned/used after this
-		conf = nil
-	}()
 
 	// replace the trades in the confirmation to have
 	// the ones with the fees embedded
 	conf.Trades = trades
-	marginMode := m.getMarginMode(newOrder.Party)
 	if marginMode == types.MarginModeIsolatedMargin {
-		pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
-		posWithTrades := pos
-		if len(trades) > 0 {
-			posWithTrades = pos.UpdateInPlaceOnTrades(m.log, newOrder.Side, trades, newOrder)
-			// NB: this is the position with the trades included and the order sizes updated to remaining!!!
-			if err = m.updateIsolatedMarginOnAggressor(ctx, posWithTrades, newOrder, trades, true); err != nil {
-				if m.log.GetLevel() <= logging.DebugLevel {
-					m.log.Debug("Unable to check/add immediate trade margin for party",
-						logging.Order(*newOrder), logging.Error(err))
-				}
-				newOrder.Status = types.OrderStatusStopped
-				m.broker.Send(events.NewOrderEvent(ctx, newOrder))
-				return conf, nil, common.ErrMarginCheckFailed
-			}
-		}
 		if err = m.updateIsolatedMarginOnOrder(ctx, posWithTrades, newOrder); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
 					logging.Order(*newOrder), logging.Error(err))
 			}
-			existingOrder.Status = newOrder.Status
-			newOrder.Status = types.OrderStatusStopped
-			m.broker.Send(events.NewOrderEvent(ctx, newOrder))
 			return conf, nil, common.ErrMarginCheckFailed
 		}
 	}
@@ -3868,21 +3866,6 @@ func (m *Market) orderCancelReplace(
 	}
 
 	return conf, orders, nil
-}
-
-func (m *Market) getPassiveOrdersCopy(order *types.Order, trades []*types.Trade) []*types.Order {
-	ret := make([]*types.Order, 0, len(trades))
-	checkBuy := order.Side == types.SideSell
-	for _, t := range trades {
-		id := t.SellOrder
-		if checkBuy {
-			id = t.BuyOrder
-		}
-		if o, _ := m.matching.GetOrderByID(id); o != nil {
-			ret = append(ret, o.Clone())
-		}
-	}
-	return ret
 }
 
 func (m *Market) orderAmendInPlace(

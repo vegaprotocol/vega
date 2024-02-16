@@ -102,8 +102,8 @@ Feature: Test order amendment such that the full order is matched but the party 
             | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 317000 |
 
         When the parties amend the following orders:
-            | party  | reference | price | size delta | tif     | error |
-            | party1 | buy-1     | 20100 | 0          | TIF_GTC |       |
+            | party  | reference | price | size delta | tif     | error               |
+            | party1 | buy-1     | 20100 | 0          | TIF_GTC | margin check failed |
 
         And the orders should have the following status:
             | party  | reference | status         |
@@ -111,5 +111,5 @@ Feature: Test order amendment such that the full order is matched but the party 
 
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general | order margin |
-            | party1 | USD   | ETH/FEB23 | 40200  | 2718    | 276800       |
+            | party1 | USD   | ETH/FEB23 | 40200  | 279518  | 0            |
 
