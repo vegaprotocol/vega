@@ -3,11 +3,12 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
   @SLABug
   Scenario: 001: 0070-MKTD-007, 0042-LIQF-001, 0018-RSKM-005, 0018-RSKM-008
     Given the following network parameters are set:
-      | name                                               | value |
-      | market.value.windowLength                          | 1h    |
-      | network.markPriceUpdateMaximumFrequency            | 0s    |
-      | limits.markets.maxPeggedOrders                     | 18    |
+      | name                                             | value |
+      | market.value.windowLength                        | 1h    |
+      | network.markPriceUpdateMaximumFrequency          | 0s    |
+      | limits.markets.maxPeggedOrders                   | 18    |
       | market.liquidity.providersFeeCalculationTimeStep | 600s  |
+      | market.liquidity.equityLikeShareFeeFraction      | 1     |
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
       | lqm-params         | 0.0              | 24h         | 1.0            |
@@ -360,7 +361,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond    |
-      | lp1   | ETH   | USD/DEC21 | 3841456 | 99999989278673 | 1000000 |
+      | lp1   | ETH   | USD/DEC21 | 3841456 | 99999989278976 | 1000000 |
       | lp1   | USD   |           |         | 100000000000   |         |
 
     # amend LP commintment amount
@@ -428,7 +429,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond       |
-      | lp1   | ETH   | USD/DEC19 | 5554318 | 99996388565811 | 3600000000 |
+      | lp1   | ETH   | USD/DEC19 | 5554318 | 99996388566114 | 3600000000 |
 
     # Reduce LP stake below target, results in slashing
     And the parties submit the following liquidity provision:
@@ -440,7 +441,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     # This should be slashed, as amendment brought market below target stake, but is currently not
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond |
-      | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
+      | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328986 | 10   |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |

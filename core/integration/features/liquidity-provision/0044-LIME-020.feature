@@ -13,13 +13,14 @@ Feature: Test LP mechanics when there are multiple liquidity providers;
       | lqm-params         | 1.0              | 20s         | 1              |
 
     And the following network parameters are set:
-      | name                                          | value |
-      | market.value.windowLength                     | 60s   |
-      | network.markPriceUpdateMaximumFrequency       | 0s    |
-      | limits.markets.maxPeggedOrders                | 6     |
-      | market.auction.minimumDuration                | 1     |
-      | market.fee.factors.infrastructureFee          | 0.001 |
-      | market.fee.factors.makerFee                   | 0.004 |
+      | name                                        | value |
+      | market.value.windowLength                   | 60s   |
+      | network.markPriceUpdateMaximumFrequency     | 0s    |
+      | limits.markets.maxPeggedOrders              | 6     |
+      | market.auction.minimumDuration              | 1     |
+      | market.fee.factors.infrastructureFee        | 0.001 |
+      | market.fee.factors.makerFee                 | 0.004 |
+      | market.liquidity.equityLikeShareFeeFraction | 1     |
     #risk factor short:3.5569036
     #risk factor long:0.801225765
     And the following assets are registered:
