@@ -301,10 +301,10 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 	for _, provision := range appliedLiquidityProvisions {
 		// now we can setup our party stake to calculate equities
 		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
+		// force update of shares so they are updated for all, used to be in the loop, but should be
+		// fine to just do this once
+		_ = m.equityShares.AllShares()
 	}
-	// force update of shares so they are updated for all, used to be in the loop, but should be
-	// fine to just do this once
-	_ = m.equityShares.AllShares()
 }
 
 func (m *MarketLiquidity) OnEpochStart(
