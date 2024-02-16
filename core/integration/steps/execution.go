@@ -54,4 +54,9 @@ type Execution interface {
 	OnEpochEvent(ctx context.Context, epoch types.Epoch)
 	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	UpdateMarginMode(ctx context.Context, party, marketID string, marginMode types.MarginMode, marginFactor num.Decimal) error
+
+	// AMM stuff
+	SubmitAMM(ctx context.Context, submit *types.SubmitAMM) error
+	AmendAMM(ctx context.Context, submit *types.AmendAMM) error
+	CancelAMM(ctx context.Context, cancel *types.CancelAMM) error
 }

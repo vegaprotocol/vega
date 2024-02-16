@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/steps"
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
@@ -556,6 +557,35 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`the volume discount stats at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheVolumeDiscountStatsShouldBe(execsetup.broker, epoch, table)
+	})
+	// AMM steps
+	s.Step(`^the parties submit the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties amend the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesAmendTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties cancel the following AMM:$`, func(table *godog.Table) error {
+		return steps.PartiesCancelTheFollowingAMMs(execsetup.executionEngine, table)
+	})
+	s.Step(`^the AMM pool status should be:$`, func(table *godog.Table) error {
+		return steps.AMMPoolStatusShouldBe(execsetup.broker, table)
+	})
+	s.Step(`^the following AMM pool events should be emitted:$`, func(table *godog.Table) error {
+		return steps.ExpectToSeeAMMEvents(execsetup.broker, table)
+	})
+	// AMM specific debugging
+	s.Step(`^debug all AMM pool events$`, func() error {
+		return steps.DebugAMMPoolEvents(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug AMM pool events for party "([^"]+)"$`, func(party string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, ptr.From(party), nil)
+	})
+	s.Step(`^debug all AMM pool events for market "([^"]+)"$`, func(market string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, nil, ptr.From(market))
+	})
+	s.Step(`^debug all AMM pool events for market "([^"]+)" and party "([^"]+)"$`, func(market, party string) error {
+		return steps.DebugAMMPoolEventsForPartyMarket(execsetup.broker, execsetup.log, ptr.From(party), ptr.From(market))
 	})
 
 	// Debug steps
