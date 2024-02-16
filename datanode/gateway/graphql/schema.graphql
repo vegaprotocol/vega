@@ -833,6 +833,10 @@ type Query {
     epochTo: Int
     "Entity scope to filter for, i.e. individual or team. If not provided games for both individuals and teams will be returned."
     entityScope: EntityScope
+    "Team ID to filter for. This filter will only be applied if entity scope is not specified in the request, or the entity scope is set to teams."
+    teamId: ID
+    "Party ID to filter for. This filter will apply regardless of the entity scope. If the entity scope filter is teams, then the party ID filter will apply to team members."
+    partyId: ID
     "Pagination control"
     pagination: Pagination
   ): GamesConnection!
@@ -1215,6 +1219,8 @@ type Query {
     status: TransferStatus
     "Optional dispatch strategy's scope to filter for."
     scope: TransferScope
+    "Optional game ID to filter for"
+    gameId: ID
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2072,11 +2078,11 @@ type Perpetual {
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
   "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments"
-  fundingRateScalingFactor: String!
+  fundingRateScalingFactor: String
   "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
-  fundingRateLowerBound: String!
+  fundingRateLowerBound: String
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
-  fundingRateUpperBound: String!
+  fundingRateUpperBound: String
   "Optional configuration driving the internal composite price calculation for perpetual product"
   internalCompositePriceConfig: CompositePriceConfiguration
 }
@@ -2900,6 +2906,8 @@ type Party {
     status: TransferStatus
     "Optional dispatch strategy's scope to filter for."
     scope: TransferScope
+    "Optional game ID to filter for"
+    gameId: ID
   ): TransferConnection
 
   "The activity streak"

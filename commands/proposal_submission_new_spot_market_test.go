@@ -44,14 +44,14 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a spot market change with position decimal places below 6 succeeds", testNewSpotMarketChangeSubmissionWithPositionDecimalPlacesBelow7Succeeds)
 	t.Run("Submitting a new spot market without price monitoring succeeds", testNewSpotMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new spot market with price monitoring succeeds", testNewSpotMarketChangeSubmissionWithPriceMonitoringSucceeds)
-	t.Run("Submitting a price monitoring change without triggers succeeds", testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
-	t.Run("Submitting a price monitoring change with triggers succeeds", testPriceMonitoringChangeSubmissionWithTriggersSucceeds)
+	t.Run("Submitting a price monitoring change without triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
+	t.Run("Submitting a price monitoring change with triggers succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggersSucceeds)
 	t.Run("Submitting a price monitoring change without trigger horizon fails", testSpotPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails)
 	t.Run("Submitting a price monitoring change with trigger horizon succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds)
 	t.Run("Submitting a price monitoring change with wrong trigger probability fails", testSpotPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails)
-	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
-	t.Run("Submitting a price monitoring change without trigger auction extension fails", testPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
-	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
+	t.Run("Submitting a price monitoring change with right trigger probability succeeds", testSpotPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds)
+	t.Run("Submitting a price monitoring change without trigger auction extension fails", testSpotPriceMonitoringChangeSubmissionWithoutTriggerAuctionExtensionFails)
+	t.Run("Submitting a price monitoring change with trigger auction extension succeeds", testSpotPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds)
 	t.Run("Submitting a spot market change without instrument name fails", testNewSpotMarketChangeSubmissionWithoutInstrumentNameFails)
 	t.Run("Submitting a spot market change with instrument name succeeds", testNewSpotMarketChangeSubmissionWithInstrumentNameSucceeds)
 	t.Run("Submitting a spot market change without instrument code fails", testNewSpotMarketChangeSubmissionWithoutInstrumentCodeFails)
@@ -601,6 +601,60 @@ func testSpotPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *
 				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"))
 		})
 	}
+}
+
+func testSpotPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &vegapb.NewSpotMarket{
+					Changes: &vegapb.NewSpotMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
+								{
+									Probability: "0.01",
+								},
+								{
+									Probability: "0.9",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.0.probability"),
+		errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.probability"),
+		errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+}
+
+func testSpotPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &vegapb.ProposalTerms{
+			Change: &vegapb.ProposalTerms_NewSpotMarket{
+				NewSpotMarket: &vegapb.NewSpotMarket{
+					Changes: &vegapb.NewSpotMarketConfiguration{
+						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
+							Triggers: []*vegapb.PriceMonitoringTrigger{
+								{
+									AuctionExtension: test.RandomPositiveI64(),
+								},
+								{
+									AuctionExtension: test.RandomPositiveI64(),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers.0.auction_extension"), commands.ErrMustBePositive)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers.1.auction_extension"), commands.ErrMustBePositive)
 }
 
 func testSpotMarketPriceMonitoringChangeSubmissionWithRightTriggerProbabilitySucceeds(t *testing.T) {

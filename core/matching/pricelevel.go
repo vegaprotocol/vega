@@ -81,28 +81,6 @@ func (l *PriceLevel) addOrder(o *types.Order) {
 	l.volume += o.TrueRemaining()
 }
 
-func (l *PriceLevel) replaceOrder(o *types.Order) {
-	for i, co := range l.orders {
-		if co.ID == o.ID {
-			l.volume -= co.TrueRemaining()
-			l.volume += o.TrueRemaining()
-			l.orders[i] = o
-			return
-		}
-	}
-	// the order was already removed, add it back according to its CreatedAt timestamp
-	i := sort.Search(len(l.orders), func(i int) bool { return l.orders[i].CreatedAt >= o.CreatedAt })
-	if i >= len(l.orders) {
-		l.orders = append(l.orders, o)
-		l.volume += o.TrueRemaining()
-		return
-	}
-	l.orders = append(l.orders, nil)
-	copy(l.orders[i+1:], l.orders[i:])
-	l.orders[i] = o
-	l.volume += o.TrueRemaining()
-}
-
 func (l *PriceLevel) removeOrder(index int) {
 	// decrease total volume
 	l.volume -= l.orders[index].TrueRemaining()

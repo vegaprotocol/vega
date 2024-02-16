@@ -49,14 +49,14 @@ func TestListGames(t *testing.T) {
 	ctx := tempTransaction(t)
 	stores := setupGamesTest(t, ctx)
 	startingBlock := addTestBlockForTime(t, ctx, stores.blocks, time.Now())
-	gamesData, gameIDs, _, _ := setupGamesData(ctx, t, stores, startingBlock, 50)
+	gamesData, gameIDs, _, teams, individuals := setupGamesData(ctx, t, stores, startingBlock, 50)
 	src := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(src)
 	t.Run("Should list all games data if no filter is given", func(t *testing.T) {
 		t.Run("and return all data for the most recent epoch if no epoch is given", func(t *testing.T) {
 			want := filterForEpochs(50, 50, gamesData)
 			t.Run("if no pagination is given", func(t *testing.T) {
-				got, _, err := stores.games.ListGames(ctx, nil, nil, nil, nil, entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, nil, nil, nil, nil, nil, entities.CursorPagination{})
 				assert.NoError(t, err)
 				assert.Equal(t, want, got)
 			})
@@ -65,7 +65,7 @@ func TestListGames(t *testing.T) {
 				first := int32(2)
 				pagination, err := entities.NewCursorPagination(&first, nil, nil, nil, true)
 				require.NoError(t, err)
-				got, pageInfo, err := stores.games.ListGames(ctx, nil, nil, nil, nil, pagination)
+				got, pageInfo, err := stores.games.ListGames(ctx, nil, nil, nil, nil, nil, nil, pagination)
 				assert.NoError(t, err)
 				want := want[:2]
 				assert.Equal(t, want, got)
@@ -82,7 +82,7 @@ func TestListGames(t *testing.T) {
 				after := gamesData[1].Cursor().Encode()
 				pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, true)
 				require.NoError(t, err)
-				got, pageInfo, err := stores.games.ListGames(ctx, nil, nil, nil, nil, pagination)
+				got, pageInfo, err := stores.games.ListGames(ctx, nil, nil, nil, nil, nil, nil, pagination)
 				assert.NoError(t, err)
 				want := want[2:4]
 				assert.Equal(t, want, got)
@@ -98,7 +98,7 @@ func TestListGames(t *testing.T) {
 				last := int32(2)
 				pagination, err := entities.NewCursorPagination(nil, nil, &last, nil, true)
 				require.NoError(t, err)
-				_, _, err = stores.games.ListGames(ctx, nil, nil, nil, nil, pagination)
+				_, _, err = stores.games.ListGames(ctx, nil, nil, nil, nil, nil, nil, pagination)
 				assert.Error(t, err)
 			})
 
@@ -107,7 +107,7 @@ func TestListGames(t *testing.T) {
 				before := gamesData[2].Cursor().Encode()
 				pagination, err := entities.NewCursorPagination(nil, nil, &last, &before, true)
 				require.NoError(t, err)
-				_, _, err = stores.games.ListGames(ctx, nil, nil, nil, nil, pagination)
+				_, _, err = stores.games.ListGames(ctx, nil, nil, nil, nil, nil, nil, pagination)
 				assert.Error(t, err)
 			})
 		})
@@ -115,7 +115,7 @@ func TestListGames(t *testing.T) {
 			t.Run("when start is less than 30 epochs before most recent", func(t *testing.T) {
 				epochFrom := uint64(1)
 				epochTo := uint64(20)
-				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				want := filterForEpochs(1, 20, gamesData)
 				require.Equal(t, len(want), len(got))
@@ -124,7 +124,7 @@ func TestListGames(t *testing.T) {
 			t.Run("when start is more than 30 epochs before most recent", func(t *testing.T) {
 				want := filterForEpochs(1, 30, gamesData)
 				epochFrom := uint64(1)
-				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), nil, entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), nil, nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
@@ -133,7 +133,7 @@ func TestListGames(t *testing.T) {
 		t.Run("and return all data from 30 previous epochs to given end epoch", func(t *testing.T) {
 			t.Run("if no start epoch given", func(t *testing.T) {
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, nil, nil, ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, nil, nil, ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				want := filterForEpochs(11, 40, gamesData)
 				require.Equal(t, len(want), len(got))
@@ -142,7 +142,7 @@ func TestListGames(t *testing.T) {
 			t.Run("if start is more than 30 epochs before end", func(t *testing.T) {
 				epochFrom := uint64(1)
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, nil, ptr.From(epochFrom), ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				want := filterForEpochs(11, 40, gamesData)
 				require.Equal(t, len(want), len(got))
@@ -155,7 +155,7 @@ func TestListGames(t *testing.T) {
 			i := r.Intn(len(gameIDs))
 			gameID := gameIDs[i]
 			want := filterForGameID(filterForEpochs(50, 50, gamesData), gameID)
-			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, nil, nil, entities.CursorPagination{})
+			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, nil, nil, nil, nil, entities.CursorPagination{})
 			require.NoError(t, err)
 			require.Equal(t, len(want), len(got))
 			assert.Equal(t, want, got)
@@ -165,7 +165,7 @@ func TestListGames(t *testing.T) {
 			gameID := gameIDs[i]
 			want := filterForGameID(filterForEpochs(11, 40, gamesData), gameID)
 			epochTo := uint64(40)
-			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, nil, ptr.From(epochTo), entities.CursorPagination{})
+			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, nil, ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 			require.NoError(t, err)
 			require.Equal(t, len(want), len(got))
 			assert.Equal(t, want, got)
@@ -176,7 +176,7 @@ func TestListGames(t *testing.T) {
 			want := filterForGameID(filterForEpochs(21, 40, gamesData), gameID)
 			epochFrom := uint64(21)
 			epochTo := uint64(40)
-			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, ptr.From(epochFrom), ptr.From(epochTo), entities.CursorPagination{})
+			got, _, err := stores.games.ListGames(ctx, ptr.From(gameID), nil, ptr.From(epochFrom), ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 			require.NoError(t, err)
 			require.Equal(t, len(want), len(got))
 			assert.Equal(t, want, got)
@@ -187,7 +187,7 @@ func TestListGames(t *testing.T) {
 			t.Run("when entity scope is teams", func(t *testing.T) {
 				entityScope := vega.EntityScope_ENTITY_SCOPE_TEAMS
 				want := filterForEntityScope(filterForEpochs(50, 50, gamesData), entityScope)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, nil, entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, nil, nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
@@ -195,7 +195,7 @@ func TestListGames(t *testing.T) {
 			t.Run("when entity scope is individuals", func(t *testing.T) {
 				entityScope := vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS
 				want := filterForEntityScope(filterForEpochs(50, 50, gamesData), entityScope)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, nil, entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, nil, nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
@@ -206,7 +206,7 @@ func TestListGames(t *testing.T) {
 				entityScope := vega.EntityScope_ENTITY_SCOPE_TEAMS
 				want := filterForEntityScope(filterForEpochs(11, 40, gamesData), entityScope)
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				for i, w := range want {
@@ -227,7 +227,7 @@ func TestListGames(t *testing.T) {
 				entityScope := vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS
 				want := filterForEntityScope(filterForEpochs(11, 40, gamesData), entityScope)
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), nil, ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
@@ -239,7 +239,7 @@ func TestListGames(t *testing.T) {
 				want := filterForEntityScope(filterForEpochs(21, 40, gamesData), entityScope)
 				epochFrom := uint64(21)
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), ptr.From(epochFrom), ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), ptr.From(epochFrom), ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
@@ -249,11 +249,68 @@ func TestListGames(t *testing.T) {
 				want := filterForEntityScope(filterForEpochs(21, 40, gamesData), entityScope)
 				epochFrom := uint64(21)
 				epochTo := uint64(40)
-				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), ptr.From(epochFrom), ptr.From(epochTo), entities.CursorPagination{})
+				got, _, err := stores.games.ListGames(ctx, nil, ptr.From(entityScope), ptr.From(epochFrom), ptr.From(epochTo), nil, nil, entities.CursorPagination{})
 				require.NoError(t, err)
 				require.Equal(t, len(want), len(got))
 				assert.Equal(t, want, got)
 			})
+		})
+	})
+	t.Run("Should list game stats for a team if entity scope is not set and team ID is provided", func(t *testing.T) {
+		t.Run("and return data from the most recent epoch if no epoch is given", func(t *testing.T) {
+			// Randomly choose a team
+			teamID := pickRandomTeam(r, teams)
+			want := filterForTeamID(filterForEpochs(50, 50, gamesData), teamID.String())
+			got, _, err := stores.games.ListGames(ctx, nil, nil, nil, nil, ptr.From(teamID), nil, entities.CursorPagination{})
+			require.NoError(t, err)
+			require.Equal(t, len(want), len(got))
+			assert.Equal(t, want, got)
+		})
+	})
+	t.Run("Should list games stats for an individual", func(t *testing.T) {
+		t.Run("And the entity scope is not set and individual ID is provided", func(t *testing.T) {
+			i := r.Intn(100)
+			var partyID entities.PartyID
+
+			if i%2 == 0 {
+				// choose a random team member
+				teamID := pickRandomTeam(r, teams)
+				members := teams[teamID.String()]
+				j := r.Intn(len(members))
+				partyID = members[j].ID
+			} else {
+				// choose a random individual
+				j := r.Intn(len(individuals))
+				partyID = individuals[j].ID
+			}
+			want := filterForPartyID(filterForEpochs(50, 50, gamesData), partyID.String())
+			got, _, err := stores.games.ListGames(ctx, nil, nil, nil, nil, nil, ptr.From(partyID), entities.CursorPagination{})
+			require.NoError(t, err)
+			require.Equal(t, len(want), len(got))
+			assert.Equal(t, want, got)
+		})
+		t.Run("And the entity scope is teams and individual ID is provided", func(t *testing.T) {
+			teamID := pickRandomTeam(r, teams)
+			members := teams[teamID.String()]
+			j := r.Intn(len(members))
+			partyID := members[j].ID
+
+			want := filterForPartyID(filterForEpochs(50, 50, gamesData), partyID.String())
+			got, _, err := stores.games.ListGames(ctx, nil, ptr.From(vega.EntityScope_ENTITY_SCOPE_TEAMS), nil, nil, nil, ptr.From(partyID), entities.CursorPagination{})
+			require.NoError(t, err)
+			require.Equal(t, len(want), len(got))
+			assert.Equal(t, want, got)
+		})
+		t.Run("And the entity scope is individuals and individual ID is provided", func(t *testing.T) {
+			// choose a random individual
+			j := r.Intn(len(individuals))
+			partyID := individuals[j].ID
+
+			want := filterForPartyID(filterForEpochs(50, 50, gamesData), partyID.String())
+			got, _, err := stores.games.ListGames(ctx, nil, ptr.From(vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS), nil, nil, nil, ptr.From(partyID), entities.CursorPagination{})
+			require.NoError(t, err)
+			require.Equal(t, len(want), len(got))
+			assert.Equal(t, want, got)
 		})
 	})
 }
@@ -298,7 +355,7 @@ func setupResultsStore(t *testing.T, gameIDs []string, epochCount int64) map[gam
 }
 
 func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block entities.Block, epochCount int64) (
-	[]entities.Game, []string, map[gameDataKey][]entities.Reward, map[string][]entities.Party,
+	[]entities.Game, []string, map[gameDataKey][]entities.Reward, map[string][]entities.Party, []entities.Party,
 ) {
 	t.Helper()
 
@@ -559,7 +616,13 @@ func setupGamesData(ctx context.Context, t *testing.T, stores gameStores, block 
 		results = append(results, game)
 	}
 
-	return orderResults(results), gameIDs, rewards, teams
+	// IMPORTANT!!!! We MUST refresh the materialized views or the tests will fail because there will be NO DATA!!!
+	_, err := connectionSource.Connection.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats")
+	require.NoError(t, err)
+	_, err = connectionSource.Connection.Exec(ctx, "REFRESH MATERIALIZED VIEW game_stats_current")
+	require.NoError(t, err)
+
+	return orderResults(results), gameIDs, rewards, teams, individuals
 }
 
 func orderResults(results []entities.Game) []entities.Game {
@@ -590,6 +653,45 @@ func filterForGameID(gamesData []entities.Game, gameID string) []entities.Game {
 	for _, game := range gamesData {
 		if game.ID.String() == gameID {
 			filtered = append(filtered, game)
+		}
+	}
+	return orderResults(filtered)
+}
+
+func filterForTeamID(gamesData []entities.Game, teamID string) []entities.Game {
+	filtered := make([]entities.Game, 0)
+	for _, game := range gamesData {
+		for _, entity := range game.Entities {
+			if teamEntity, ok := entity.(*entities.TeamGameEntity); ok {
+				if teamEntity.Team.TeamID.String() == teamID {
+					filtered = append(filtered, game)
+					break
+				}
+			}
+		}
+	}
+
+	return filtered
+}
+
+func filterForPartyID(gamesData []entities.Game, partyID string) []entities.Game {
+	filtered := make([]entities.Game, 0)
+	for _, game := range gamesData {
+		for _, entity := range game.Entities {
+			switch e := entity.(type) {
+			case *entities.TeamGameEntity:
+				for _, member := range e.Team.MembersParticipating {
+					if member.Individual == partyID {
+						filtered = append(filtered, game)
+						break
+					}
+				}
+			case *entities.IndividualGameEntity:
+				if e.Individual == partyID {
+					filtered = append(filtered, game)
+					break
+				}
+			}
 		}
 	}
 	return orderResults(filtered)
@@ -697,4 +799,16 @@ func rankEntity(entities map[string]*num.Uint) map[string]uint64 {
 		ranks[e.ID] = uint64(i + 1)
 	}
 	return ranks
+}
+
+func pickRandomTeam(r *rand.Rand, teams map[string][]entities.Party) entities.TeamID {
+	i := r.Intn(len(teams))
+	j := 0
+	for k := range teams {
+		if i == j {
+			return entities.TeamID(k)
+		}
+		j++
+	}
+	return ""
 }

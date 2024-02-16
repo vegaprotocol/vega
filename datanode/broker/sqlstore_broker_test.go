@@ -538,6 +538,10 @@ func (t *testTransactionManager) Rollback(ctx context.Context) error {
 	return nil
 }
 
+func (t *testTransactionManager) RefreshMaterializedViews(_ context.Context) error {
+	return nil
+}
+
 type errorTestSQLBrokerSubscriber struct {
 	*testSQLBrokerSubscriber
 }

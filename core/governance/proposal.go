@@ -127,7 +127,7 @@ func (p *proposal) Close(accounts StakingAccounts, markets Markets) {
 	// Proposals, other than market updates, solely relies on votes using the
 	// governance tokens. So, only proposals for market update can go beyond this
 	// guard.
-	if !p.IsMarketUpdate() {
+	if !p.IsMarketUpdate() && !p.IsSpotMarketUpdate() {
 		return
 	}
 
@@ -199,7 +199,13 @@ func (p *proposal) countTokens(votes map[string]*types.Vote, accounts StakingAcc
 func (p *proposal) countEquityLikeShare(votes map[string]*types.Vote, markets Markets) num.Decimal {
 	tally := num.DecimalZero()
 	for _, v := range votes {
-		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(p.MarketUpdate().MarketID, v.PartyID)
+		var marketID string
+		if p.MarketUpdate() != nil {
+			marketID = p.MarketUpdate().MarketID
+		} else {
+			marketID = p.SpotMarketUpdate().MarketID
+		}
+		v.TotalEquityLikeShareWeight, _ = markets.GetEquityLikeShareForMarketAndParty(marketID, v.PartyID)
 		tally = tally.Add(v.TotalEquityLikeShareWeight)
 	}
 

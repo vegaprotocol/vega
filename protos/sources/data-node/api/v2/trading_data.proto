@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.74.1";
+    version: "v0.74.2";
   }
   schemes: [
     HTTP,
@@ -1792,6 +1792,8 @@ message ListTransfersRequest {
   optional vega.events.v1.Transfer.Status status = 7;
   // Dispatch strategy's scope to filter for.
   optional Scope scope = 8;
+  // Game ID to filter on
+  optional string game_id = 9;
 
   // Defines the types of a dispatch strategy's scope the API can filter on.
   enum Scope {
@@ -4612,6 +4614,12 @@ message ListGamesRequest {
   optional vega.EntityScope entity_scope = 4;
   // Pagination controls.
   optional Pagination pagination = 5;
+  // Team ID to filter for. This filter will only be applied if entity scope is not specified
+  // in the request, or the entity scope is set to teams.
+  optional string team_id = 6;
+  // Party ID to filter for. This filter will apply regardless of the entity scope.
+  // If the entity scope filter is teams, then the party ID filter will apply to team members.
+  optional string party_id = 7;
 }
 
 // Response containing games data.

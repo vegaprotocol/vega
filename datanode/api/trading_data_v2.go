@@ -2436,8 +2436,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 // ListTransfers lists transfers using cursor pagination. If a pubkey is provided, it will list transfers for that pubkey.
 func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTransfersV2")()
+	const transfersDefaultPageSize int32 = 50
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	// the default size is too big for transfers so if no pagination is provided, set it to something smaller
+	if req.Pagination == nil {
+		pagination.Forward.Limit = ptr.From(transfersDefaultPageSize)
+	}
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
@@ -2460,6 +2465,9 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	}
 	if req.Scope != nil {
 		filters.Scope = ptr.From(entities.TransferScope(*req.Scope))
+	}
+	if req.GameId != nil {
+		filters.GameID = ptr.From(entities.GameID(*req.GameId))
 	}
 
 	if req.Pubkey == nil {
@@ -3367,14 +3375,22 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
 	if isolatedMarginMode {
 		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
-		posMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Sub(marginAccountBalance))
-		wMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin))
+		posMarginDelta = requiredPositionMargin.Sub(marginAccountBalance)
+		wMarginDelta = requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin)
 		bMarginDelta = wMarginDelta
 	} else {
-		worstInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
-		bestInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
-		wMarginDelta = num.MaxD(num.DecimalZero(), worstInitial.Sub(combinedMargin))
-		bMarginDelta = num.MaxD(num.DecimalZero(), bestInitial.Sub(combinedMargin))
+		wInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
+		bInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
+		wRelease, _ := num.DecimalFromString(marginEstimate.WorstCase.CollateralReleaseLevel)
+		bRelease, _ := num.DecimalFromString(marginEstimate.BestCase.CollateralReleaseLevel)
+		wMarginDifference := wInitial.Sub(combinedMargin)
+		bMarginDifference := bInitial.Sub(combinedMargin)
+		if wMarginDifference.IsPositive() || combinedMargin.GreaterThan(wRelease) {
+			wMarginDelta = wMarginDifference
+		}
+		if bMarginDifference.IsPositive() || combinedMargin.GreaterThan(bRelease) {
+			bMarginDelta = bMarginDifference
+		}
 	}
 
 	if isolatedMarginMode && ptr.UnBox(req.IncludeRequiredPositionMarginInAvailableCollateral) {
@@ -5086,7 +5102,20 @@ func (t *TradingDataServiceV2) ListGames(ctx context.Context, req *v2.ListGamesR
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, pagination)
+	var (
+		teamID  *entities.TeamID
+		partyID *entities.PartyID
+	)
+
+	if req.TeamId != nil {
+		teamID = ptr.From(entities.TeamID(*req.TeamId))
+	}
+
+	if req.PartyId != nil {
+		partyID = ptr.From(entities.PartyID(*req.PartyId))
+	}
+
+	games, pageInfo, err := t.gamesService.ListGames(ctx, req.GameId, req.EntityScope, req.EpochFrom, req.EpochTo, teamID, partyID, pagination)
 	if err != nil {
 		return nil, formatE(ErrListGames, err)
 	}

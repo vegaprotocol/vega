@@ -795,7 +795,7 @@ func (r *myQueryResolver) PartyMarginModes(ctx context.Context, marketID *string
 	return res.PartyMarginModes, nil
 }
 
-func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, pagination *v2.Pagination) (*v2.GamesConnection, error) {
+func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *int, epochTo *int, entityScope *vega.EntityScope, teamID *string, partyID *string, pagination *v2.Pagination) (*v2.GamesConnection, error) {
 	var from *uint64
 	var to *uint64
 
@@ -813,6 +813,8 @@ func (r *myQueryResolver) Games(ctx context.Context, gameID *string, epochFrom *
 		EpochTo:     to,
 		EntityScope: entityScope,
 		Pagination:  pagination,
+		TeamId:      teamID,
+		PartyId:     partyID,
 	}
 	res, err := r.tradingDataClientV2.ListGames(ctx, &req)
 	if err != nil {
@@ -911,8 +913,9 @@ func (r *myQueryResolver) TransfersConnection(
 	toEpoch *int,
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
+	gameID *string,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*v2.TransferNode, error) {
@@ -2124,8 +2127,9 @@ func (r *myPartyResolver) TransfersConnection(
 	fromEpoch, toEpoch *int,
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
+	gameID *string,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,

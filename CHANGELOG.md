@@ -4,19 +4,44 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🗑️ Deprecation
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx) -
+- [](https://github.com/vegaprotocol/vega/issues/xxx)
+
+
+## 0.74.2
+
+### 🐛 Fixes
+
+- [10631](https://github.com/vegaprotocol/vega/issues/10631) - Fix snapshot for `ethCallEvents`
+- [10643](https://github.com/vegaprotocol/vega/issues/10643) - Games `API` not showing quantum values and added filter for team and party.
+- [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
+- [10641](https://github.com/vegaprotocol/vega/issues/10641) - Fix panic in amend during auction for isolated margin.
+- [10656](https://github.com/vegaprotocol/vega/issues/10656) - Fix funding rates bounds can be null for perpetuals.
+- [10664](https://github.com/vegaprotocol/vega/issues/10664) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book. 
+- [10661](https://github.com/vegaprotocol/vega/issues/10661) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
+- [10660](https://github.com/vegaprotocol/vega/issues/10660) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
+- [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
+- [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
+- [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
+- [10673](https://github.com/vegaprotocol/vega/issues/10673) - Fix error handling for isolated margin when insufficient funds. 
+- [10677](https://github.com/vegaprotocol/vega/issues/10677) - Fix validation of market proposer bonus to allow specifying/not specifying asset for metric for market proposer.
+- [10669](https://github.com/vegaprotocol/vega/issues/10669) - Fix fees handling for spots in governance auction
+- [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
+- [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
+- [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
+- [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
+- [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 
 
 ## 0.74.1
@@ -25,10 +50,7 @@
 
 - [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
 - [10615](https://github.com/vegaprotocol/vega/issues/10615) - Fix oracle scaling function in internal composite price.
-- [10621](https://github.com/vegaprotocol/vega/issues/10516) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
-
-
-## 0.74.0
+- [10621](https://github.com/vegaprotocol/vega/issues/10621) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
 
 ### 🚨 Breaking changes
 
@@ -219,6 +241,9 @@
 - [10604](https://github.com/vegaprotocol/vega/issues/10604) - Register margin modes API subscriber.
 - [10595](https://github.com/vegaprotocol/vega/issues/10595) - Fix failed amends for isolated margin orders causing negative spread in console.
 - [10606](https://github.com/vegaprotocol/vega/issues/10606) - Party profiles `API` was not returning results.
+- [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
+- [9244](https://github.com/vegaprotocol/vega/issues/9244) - fix unit tests to use spot markets.
+- [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
 
 ## 0.73.0
 
@@ -846,7 +871,6 @@
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.
 - [9793](https://github.com/vegaprotocol/vega/issues/9793) - Map network owner correctly in creating account from transfer.
 - [10516](https://github.com/vegaprotocol/vega/issues/10516) - Fix mapping of estimate position.
-
 
 ## 0.70.0
 

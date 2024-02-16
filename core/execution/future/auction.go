@@ -134,9 +134,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 	// Liquidity auctions are no longer a thing, we know we're not in opening auction here
 	// if we're not in price auction, we should just let the liquidity auction expire
 	if m.as.Trigger() == types.AuctionTriggerLiquidityTargetNotMet || m.as.Trigger() == types.AuctionTriggerUnableToDeployLPOrders {
-		if end := m.as.ExpiresAt(); end == nil || !end.Before(now) {
-			m.as.SetReadyToLeave()
-		}
+		m.as.SetReadyToLeave()
 	}
 	// price and liquidity auctions
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()

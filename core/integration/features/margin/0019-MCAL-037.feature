@@ -207,7 +207,7 @@ Feature: Test magin under isolated margin mode when there is not enough collater
     When the parties amend the following orders:
       | party  | reference  | price | size delta | tif     | error               |
       | party  | party-buy  | 16900 | 0          | TIF_GTC | margin check failed |
-      | party1 | party1-buy | 16900 | 0          | TIF_GTC |                     |
+      | party1 | party1-buy | 16900 | 0          | TIF_GTC | margin check failed |
 
     And the orders should have the following status:
       | party  | reference  | status         |
@@ -218,76 +218,76 @@ Feature: Test magin under isolated margin mode when there is not enough collater
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party  | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 5070        | 0      | 6084    |         | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 9570        | 0      | 11484   |         | isolated margin | 0.2           | 0     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
       | party  | USD   | ETH/FEB23 | 0      | 3000    | 0            |
-      | party1 | USD   | ETH/FEB23 | 10140  | 0       | 19860        |
+      | party1 | USD   | ETH/FEB23 | 10140  | 19860   |              |
     When the parties submit update margin mode:
       | party  | market    | margin_mode  |
       | party1 | ETH/FEB23 | cross margin |
     Then the network moves ahead "2" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 30000  | 0       | 0            |
+      | party1 | USD   | ETH/FEB23 | 10140  | 19860   | 0            |
 
-  Scenario: 003 test when party holds short orders
-    #and for party1, part of the orders are filled immediately, and the rest should fail
-    Given the parties deposit on asset's general account the following amount:
-      | party            | asset | amount       |
-      | buySideProvider  | USD   | 100000000000 |
-      | sellSideProvider | USD   | 100000000000 |
-      | party            | USD   | 33800        |
-      | party1           | USD   | 200000       |
+Scenario: 003 test when party holds short orders
+  #and for party1, part of the orders are filled immediately, and the rest should fail
+  Given the parties deposit on asset's general account the following amount:
+    | party            | asset | amount       |
+    | buySideProvider  | USD   | 100000000000 |
+    | sellSideProvider | USD   | 100000000000 |
+    | party            | USD   | 33800        |
+    | party1           | USD   | 200000       |
 
-    And the parties place the following orders:
-      | party            | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
-      | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | buySideProvider  | ETH/FEB23 | buy  | 3      | 14900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | sellSideProvider | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
-      | party            | ETH/FEB23 | sell | 10     | 16900  | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
-      | party1           | ETH/FEB23 | sell | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |             |
+  And the parties place the following orders:
+    | party            | market id | side | volume | price  | resulting trades | type       | tif     | reference   |
+    | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |             |
+    | buySideProvider  | ETH/FEB23 | buy  | 3      | 14900  | 0                | TYPE_LIMIT | TIF_GTC |             |
+    | buySideProvider  | ETH/FEB23 | buy  | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
+    | sellSideProvider | ETH/FEB23 | sell | 3      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |             |
+    | party            | ETH/FEB23 | sell | 10     | 16900  | 0                | TYPE_LIMIT | TIF_GTC | party-sell  |
+    | party1           | ETH/FEB23 | sell | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+    | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |             |
 
-    When the network moves ahead "2" blocks
-    # Check mark-price matches the specification
-    Then the mark price should be "15900" for the market "ETH/FEB23"
+  When the network moves ahead "2" blocks
+  # Check mark-price matches the specification
+  Then the mark price should be "15900" for the market "ETH/FEB23"
 
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party  | ETH/FEB23 | isolated margin | 0.2           |       |
-      | party1 | ETH/FEB23 | isolated margin | 0.2           |       |
+  And the parties submit update margin mode:
+    | party  | market    | margin_mode     | margin_factor | error |
+    | party  | ETH/FEB23 | isolated margin | 0.2           |       |
+    | party1 | ETH/FEB23 | isolated margin | 0.2           |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order  |
-      | party  | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 33800  |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 200000 |
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order  |
+    | party  | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 33800  |
+    | party1 | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 200000 |
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | order margin |
-      | party  | USD   | ETH/FEB23 | 0      | 0       | 33800        |
-      | party1 | USD   | ETH/FEB23 | 0      | 0       | 200000       |
+  Then the parties should have the following account balances:
+    | party  | asset | market id | margin | general | order margin |
+    | party  | USD   | ETH/FEB23 | 0      | 0       | 33800        |
+    | party1 | USD   | ETH/FEB23 | 0      | 0       | 200000       |
 
-    And the network moves ahead "1" blocks
+  And the network moves ahead "1" blocks
 
-    When the parties amend the following orders:
-      | party  | reference   | price | size delta | tif     | error               |
-      | party  | party-sell  | 14900 | 0          | TIF_GTC | margin check failed |
-      | party1 | party1-sell | 14900 | 0          | TIF_GTC | margin check failed |
+  When the parties amend the following orders:
+    | party  | reference   | price | size delta | tif     | error               |
+    | party  | party-sell  | 14900 | 0          | TIF_GTC |                     | # fully filled
+    | party1 | party1-sell | 14900 | 0          | TIF_GTC | margin check failed |
 
-    And the orders should have the following status:
-      | party  | reference   | status         |
-      | party  | party-sell  | STATUS_STOPPED |
-      | party1 | party1-sell | STATUS_STOPPED |
+  And the orders should have the following status:
+    | party  | reference   | status         |
+    | party  | party-sell  | STATUS_FILLED  |
+    | party1 | party1-sell | STATUS_STOPPED |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 0     |
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party  | ETH/FEB23 | 55650       | 0      | 66780   |         | isolated margin | 0.2           | 0     |
+    | party1 | ETH/FEB23 | 0           | 0      | 0       |         | isolated margin | 0.2           | 0     |
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | order margin |
-      | party  | USD   | ETH/FEB23 | 0      | 33800   | 0            |
-      | party1 | USD   | ETH/FEB23 | 0      | 200000  | 0            |
+  Then the parties should have the following account balances:
+    | party  | asset | market id | margin | general | order margin |
+    | party  | USD   | ETH/FEB23 | 29800  | 4000    | 0            |
+    | party1 | USD   | ETH/FEB23 | 0      | 200000  | 0            |

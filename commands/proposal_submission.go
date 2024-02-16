@@ -819,7 +819,8 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes", ErrIsRequired)
 	}
 
-	return checkNewSpotMarketConfiguration(change.NewSpotMarket.Changes).AddPrefix("proposal_submission.terms.change.")
+	errs.Merge(checkNewSpotMarketConfiguration(change.NewSpotMarket.Changes).AddPrefix("proposal_submission.terms.change."))
+	return errs
 }
 
 func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration) Errors {
@@ -857,6 +858,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
+
 	return errs
 }
 
@@ -972,7 +974,6 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 	if change.UpdateSpotMarket == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market", ErrIsRequired)
 	}
-
 	return checkUpdateSpotMarket(change.UpdateSpotMarket).AddPrefix("proposal_submission.terms.change.")
 }
 
@@ -1990,7 +1991,7 @@ func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) E
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsRequired)
+		return errs.FinalAddForProperty("new_spot_market.changes.risk_parameters", ErrIsRequired)
 	}
 
 	switch parameters := config.RiskParameters.(type) {
@@ -1999,7 +2000,7 @@ func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) E
 	case *protoTypes.NewSpotMarketConfiguration_LogNormal:
 		errs.Merge(checkNewSpotLogNormalRiskParameters(parameters))
 	default:
-		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsNotValid)
+		errs.AddForProperty("new_spot_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs

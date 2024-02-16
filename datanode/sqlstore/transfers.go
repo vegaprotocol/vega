@@ -43,6 +43,7 @@ type ListTransfersFilters struct {
 	ToEpoch   *uint64
 	Scope     *entities.TransferScope
 	Status    *entities.TransferStatus
+	GameID    *entities.GameID
 }
 
 func NewTransfers(connectionSource *ConnectionSource) *Transfers {
@@ -221,13 +222,9 @@ func (t *Transfers) GetByID(ctx context.Context, id string) (entities.TransferDe
 func (t *Transfers) GetAllRewards(ctx context.Context, pagination entities.CursorPagination, filters ListTransfersFilters) ([]entities.TransferDetails, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("Transfers", "GetAllRewards")()
 
-	where := []string{
-		"dispatch_strategy->>'metric' <> '0'",
-	}
-
 	args := []any{entities.Recurring, entities.GovernanceRecurring}
 
-	transfers, pageInfo, err := t.getRecurringTransfers(ctx, pagination, filters, where, args)
+	transfers, pageInfo, err := t.getRecurringTransfers(ctx, pagination, filters, []string{}, args)
 	if err != nil {
 		return nil, entities.PageInfo{}, fmt.Errorf("could not get recurring transfers: %w", err)
 	}
@@ -245,7 +242,6 @@ func (t *Transfers) GetRewardTransfersFromParty(ctx context.Context, pagination 
 
 	where := []string{
 		"from_account_id IN (SELECT id FROM accounts WHERE accounts.party_id = $3)",
-		"dispatch_strategy->>'metric' <> '0'",
 	}
 
 	args := []any{entities.Recurring, entities.GovernanceRecurring, partyID}
@@ -311,7 +307,7 @@ func (t *Transfers) getRecurringTransfers(ctx context.Context, pagination entiti
 		SELECT tc.* FROM transfers_current as tc
 		JOIN accounts as a on tc.to_account_id = a.id
 		WHERE transfer_type IN ($1, $2)
-		AND (a.type = 12 OR jsonb_typeof(tc.dispatch_strategy) != 'null')
+		AND a.type = 12 OR (jsonb_typeof(tc.dispatch_strategy) != 'null' AND dispatch_strategy->>'metric' <> '0')
 )
 SELECT *
 FROM recurring_transfers
@@ -347,6 +343,10 @@ func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []strin
 			nextBindVar(&args, *filters.ToEpoch),
 			nextBindVar(&args, *filters.ToEpoch),
 		))
+	}
+
+	if filters.GameID != nil {
+		where = append(where, fmt.Sprintf("game_id = %s", nextBindVar(&args, *filters.GameID)))
 	}
 
 	whereStr := ""

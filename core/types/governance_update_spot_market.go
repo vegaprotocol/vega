@@ -122,7 +122,6 @@ func (n UpdateSpotMarket) DeepClone() *UpdateSpotMarket {
 }
 
 type UpdateSpotMarketConfiguration struct {
-	Instrument                *UpdateInstrumentConfiguration
 	Metadata                  []string
 	PriceMonitoringParameters *PriceMonitoringParameters
 	TargetStakeParameters     *TargetStakeParameters
@@ -132,8 +131,7 @@ type UpdateSpotMarketConfiguration struct {
 
 func (n UpdateSpotMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
-		stringer.PtrToString(n.Instrument),
+		"metadata(%v) priceMonitoring(%s) targetStakeParameters(%s) risk(%s) slaParams(%s)",
 		MetadataList(n.Metadata).String(),
 		stringer.PtrToString(n.PriceMonitoringParameters),
 		stringer.PtrToString(n.TargetStakeParameters),
@@ -148,9 +146,6 @@ func (n UpdateSpotMarketConfiguration) DeepClone() *UpdateSpotMarketConfiguratio
 		SLAParams: n.SLAParams.DeepClone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
-	if n.Instrument != nil {
-		cpy.Instrument = n.Instrument.DeepClone()
-	}
 	if n.PriceMonitoringParameters != nil {
 		cpy.PriceMonitoringParameters = n.PriceMonitoringParameters.DeepClone()
 	}
