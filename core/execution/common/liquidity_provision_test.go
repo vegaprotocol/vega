@@ -150,6 +150,8 @@ func createPartyAndPayLiquidityFee(t *testing.T, amount *num.Uint, testLiquidity
 
 func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 	testLiquidity := newMarketLiquidity(t)
+	// set fee factor to 1, so fees are not paid out based on score.
+	testLiquidity.marketLiquidity.SetELSFeeFraction(num.DecimalOne())
 
 	weightsPerLP := map[string]num.Decimal{
 		"lp-1": num.NewDecimalFromFloat(0.008764241896),
@@ -393,6 +395,8 @@ func TestLiquidityProvisionsFeeDistribution(t *testing.T) {
 
 func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	testLiquidity := newMarketLiquidity(t)
+	// set fee factor to 1, so fees are not paid out based on score.
+	testLiquidity.marketLiquidity.SetELSFeeFraction(num.DecimalOne())
 
 	weightsPerLP := map[string]num.Decimal{
 		"lp-1":         num.NewDecimalFromFloat(0.008764241896),
