@@ -198,8 +198,8 @@ func (e *Engine) serialiseSeen() ([]byte, error) {
 			LastSeenEthBlock: e.lastSeenEthBlock,
 		},
 	}
-	seen.BankingSeen.Refs = make([]string, 0, e.seen.Size())
-	iter := e.seen.Iterator()
+	seen.BankingSeen.Refs = make([]string, 0, e.seenAssetActions.Size())
+	iter := e.seenAssetActions.Iterator()
 	for iter.Next() {
 		seen.BankingSeen.Refs = append(seen.BankingSeen.Refs, iter.Value().(string))
 	}
@@ -385,9 +385,9 @@ func (e *Engine) restoreWithdrawals(withdrawals *types.BankingWithdrawals, p *ty
 func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	var err error
 	e.log.Info("restoring seen", logging.Int("n", len(seen.Refs)))
-	e.seen = treeset.NewWithStringComparator()
+	e.seenAssetActions = treeset.NewWithStringComparator()
 	for _, v := range seen.Refs {
-		e.seen.Add(v)
+		e.seenAssetActions.Add(v)
 	}
 	e.lastSeenEthBlock = seen.LastSeenEthBlock
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
@@ -398,7 +398,7 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 	var err error
 
 	e.loadAssetActions(aa.AssetAction)
-	for _, aa := range e.assetActs {
+	for _, aa := range e.assetActions {
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
 			e.log.Panic("unable to restore witness resource", logging.String("id", aa.id), logging.Error(err))
 		}

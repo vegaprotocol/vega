@@ -17,6 +17,7 @@ package banking
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync/atomic"
 
@@ -31,6 +32,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/emirpasic/gods/sets/treeset"
+	"go.uber.org/zap"
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -47,13 +49,13 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		LastSeenEthBlock:             e.lastSeenEthBlock,
 	}
 
-	msg.SeenRefs = make([]string, 0, e.seen.Size())
-	iter := e.seen.Iterator()
+	msg.SeenRefs = make([]string, 0, e.seenAssetActions.Size())
+	iter := e.seenAssetActions.Iterator()
 	for iter.Next() {
 		msg.SeenRefs = append(msg.SeenRefs, iter.Value().(string))
 	}
 
-	msg.AssetActions = make([]*checkpoint.AssetAction, 0, len(e.assetActs))
+	msg.AssetActions = make([]*checkpoint.AssetAction, 0, len(e.assetActions))
 	for _, aa := range e.getAssetActions() {
 		msg.AssetActions = append(msg.AssetActions, aa.IntoProto())
 	}
@@ -83,9 +85,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	e.loadBridgeState(b.BridgeState)
 
-	e.seen = treeset.NewWithStringComparator()
+	e.seenAssetActions = treeset.NewWithStringComparator()
 	for _, v := range b.SeenRefs {
-		e.seen.Add(v)
+		e.seenAssetActions.Add(v)
 	}
 
 	e.lastSeenEthBlock = b.LastSeenEthBlock
@@ -99,7 +101,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		aa = append(aa, types.AssetActionFromProto(a))
 	}
 	e.loadAssetActions(aa)
-	for _, aa := range e.assetActs {
+	for _, aa := range e.assetActions {
 		e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 	}
 
@@ -145,6 +147,7 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			asset:                   asset,
 			logIndex:                v.TxIndex,
 			txHash:                  v.Hash,
+			chainID:                 v.ChainID,
 			builtinD:                v.BuiltinD,
 			erc20AL:                 v.Erc20AL,
 			erc20D:                  v.Erc20D,
@@ -155,12 +158,18 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 			bridgeView: e.bridgeView,
 		}
 
+		e.log.Info("loadAssetActions",
+			zap.Any("action", fmt.Sprintf("%+v", aa)),
+			zap.String("ref", aa.getRef().Hash),
+			zap.String("chain-id", v.ChainID),
+		)
+
 		if len(aa.getRef().Hash) == 0 {
 			// if we're here it means that the IntoProto code has not done its job properly for a particular asset action type
 			e.log.Panic("asset action has not been serialised correct and is empty", logging.String("txHash", aa.txHash))
 		}
 
-		e.assetActs[v.ID] = aa
+		e.assetActions[v.ID] = aa
 		// store the deposit in the deposits
 		if v.BuiltinD != nil {
 			e.deposits[v.ID] = e.newDeposit(v.ID, v.BuiltinD.PartyID, v.BuiltinD.VegaAssetID, v.BuiltinD.Amount, v.Hash)
@@ -323,8 +332,8 @@ func (e *Engine) getScheduledGovernanceTransfers() []*checkpoint.ScheduledGovern
 }
 
 func (e *Engine) getAssetActions() []*types.AssetAction {
-	aa := make([]*types.AssetAction, 0, len(e.assetActs))
-	for _, v := range e.assetActs {
+	aa := make([]*types.AssetAction, 0, len(e.assetActions))
+	for _, v := range e.assetActions {
 		// this is optional as bridge action don't have one
 		var assetID string
 		if v.asset != nil {
@@ -341,20 +350,28 @@ func (e *Engine) getAssetActions() []*types.AssetAction {
 			bridgeResumed = true
 		}
 
-		aa = append(aa, &types.AssetAction{
+		action := types.AssetAction{
 			ID:                      v.id,
 			State:                   v.state.Load(),
 			BlockNumber:             v.blockHeight,
 			Asset:                   assetID,
 			TxIndex:                 v.logIndex,
 			Hash:                    v.txHash,
+			ChainID:                 v.chainID,
 			BuiltinD:                v.builtinD,
 			Erc20AL:                 v.erc20AL,
 			Erc20D:                  v.erc20D,
 			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
 			BridgeStopped:           bridgeStopped,
 			BridgeResume:            bridgeResumed,
-		})
+		}
+
+		e.log.Info("getAssetActions",
+			zap.Any("action", fmt.Sprintf("%+v", action)),
+			zap.String("ref", v.getRef().Hash),
+		)
+
+		aa = append(aa, &action)
 	}
 
 	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
