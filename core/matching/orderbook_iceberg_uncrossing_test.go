@@ -75,7 +75,7 @@ func makeIcebergForPanic(t *testing.T, orderbook *tstOB, market string, id strin
 // to make it minimal but it it's close enough. In summary there are 3 steps below:
 // 1. the iceberg order is submitted with peak size of 3832 and size of 8400
 // 2. the order is amended to decrease the size and change the price - hence going through ReplaceOrder
-// 3. size offset only amendment - no price change - done with amendOrder
+// 3. size offset only amendment - no price change - done with amendOrder.
 func TestIcebergPanic(t *testing.T) {
 	market := vgrand.RandomStr(5)
 	book := getTestOrderBook(t, market)
