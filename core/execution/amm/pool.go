@@ -300,7 +300,6 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 		to = num.Min(to, cu.high)
 		price := from
 		for price.LT(to) {
-
 			next := num.UintZero().AddSum(price, p.oneTick)
 			volume, _ := num.UintZero().Delta(
 				impliedPosition(p.sqrt(price), p.sqrt(cu.high), cu.l),
