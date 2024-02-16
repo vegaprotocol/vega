@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/broker"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -1191,6 +1192,90 @@ func (b *BrokerStub) GetTrades() []vegapb.Trade {
 		trades = append(trades, t.Trade())
 	}
 	return trades
+}
+
+// AMM events concentrated here
+
+func (b *BrokerStub) GetAMMPoolEvents() []*events.AMMPool {
+	data := b.GetImmBatch(events.AMMPoolEvent)
+	ret := make([]*events.AMMPool, 0, len(data))
+	for _, e := range data {
+		switch et := e.(type) {
+		case events.AMMPool:
+			ret = append(ret, ptr.From(et))
+		case *events.AMMPool:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetAMMPoolEventsByParty(party string) []*events.AMMPool {
+	evts := b.GetAMMPoolEvents()
+	ret := make([]*events.AMMPool, 0, 5) // we expect to get more than 1
+	for _, e := range evts {
+		if e.IsParty(party) {
+			ret = append(ret, e)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetAMMPoolEventsByMarket(id string) []*events.AMMPool {
+	evts := b.GetAMMPoolEvents()
+	ret := make([]*events.AMMPool, 0, 10)
+	for _, e := range evts {
+		if e.MarketID() == id {
+			ret = append(ret, e)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetAMMPoolEventsByPartyAndMarket(party, mID string) []*events.AMMPool {
+	evts := b.GetAMMPoolEvents()
+	ret := make([]*events.AMMPool, 0, 5)
+	for _, e := range evts {
+		if e.IsParty(party) && e.MarketID() == mID {
+			ret = append(ret, e)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetLastAMMPoolEvents() map[string]map[string]*events.AMMPool {
+	ret := map[string]map[string]*events.AMMPool{}
+	evts := b.GetAMMPoolEvents()
+	for _, e := range evts {
+		mID := e.MarketID()
+		mmap, ok := ret[mID]
+		if !ok {
+			mmap = map[string]*events.AMMPool{}
+		}
+		mmap[e.PartyID()] = e
+		ret[mID] = mmap
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetAMMPoolEventMap() map[string]map[string][]*events.AMMPool {
+	ret := map[string]map[string][]*events.AMMPool{}
+	evts := b.GetAMMPoolEvents()
+	for _, e := range evts {
+		mID := e.MarketID()
+		mmap, ok := ret[mID]
+		if !ok {
+			mmap = map[string][]*events.AMMPool{}
+		}
+		pID := e.PartyID()
+		ps, ok := mmap[pID]
+		if !ok {
+			ps = []*events.AMMPool{}
+		}
+		mmap[pID] = append(ps, e)
+		ret[mID] = mmap
+	}
+	return ret
 }
 
 func (b *BrokerStub) ResetType(t events.Type) {

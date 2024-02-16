@@ -70,6 +70,11 @@ func (p *ConcentratedLiquidityParameters) ApplyUpdate(update *ConcentratedLiquid
 	}
 }
 
+func (p ConcentratedLiquidityParameters) IntoProto() *commandspb.SubmitAMM_ConcentratedLiquidityParameters {
+	ret := &commandspb.SubmitAMM_ConcentratedLiquidityParameters{}
+	return ret
+}
+
 type SubmitAMM struct {
 	AMMBaseCommand
 	CommitmentAmount *num.Uint
@@ -108,10 +113,74 @@ func NewSubmitAMMFromProto(
 	}
 }
 
+func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
+	// set defaults, this is why we don't use a pointer receiver
+	zero := num.UintZero() // this call clones, we are just calling String(), so we only need a single 0-value
+	if s.CommitmentAmount == nil {
+		s.CommitmentAmount = zero
+	}
+	// create a shallow copy, because this field is a pointer, we mustn't reassign anything
+	cpy := *s.Parameters
+	s.Parameters = &cpy
+	// this should be split to a different function, because this is modifying the
+	if cpy.LowerBound == nil {
+		cpy.LowerBound = zero
+	}
+	if cpy.UpperBound == nil {
+		cpy.UpperBound = zero
+	}
+	if cpy.Base == nil {
+		cpy.Base = zero
+	}
+	return &commandspb.SubmitAMM{
+		MarketId:          s.MarketID,
+		CommitmentAmount:  s.CommitmentAmount.String(),
+		SlippageTolerance: s.SlippageTolerance.String(),
+		ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+			UpperBound:              s.Parameters.UpperBound.String(),
+			LowerBound:              s.Parameters.LowerBound.String(),
+			Base:                    s.Parameters.Base.String(),
+			MarginRatioAtUpperBound: s.Parameters.MarginRatioAtUpperBound.String(),
+			MarginRatioAtLowerBound: s.Parameters.MarginRatioAtLowerBound.String(),
+		},
+	}
+}
+
 type AmendAMM struct {
 	AMMBaseCommand
 	CommitmentAmount *num.Uint
 	Parameters       *ConcentratedLiquidityParameters
+}
+
+func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
+	ret := &commandspb.AmendAMM{
+		MarketId:          a.MarketID,
+		CommitmentAmount:  nil,
+		SlippageTolerance: a.SlippageTolerance.String(),
+	}
+	if a.CommitmentAmount != nil {
+		ret.CommitmentAmount = ptr.From(a.CommitmentAmount.String())
+	}
+	if a.Parameters == nil {
+		return ret
+	}
+	ret.ConcentratedLiquidityParameters = &commandspb.AmendAMM_ConcentratedLiquidityParameters{}
+	if a.Parameters.Base != nil {
+		ret.ConcentratedLiquidityParameters.Base = ptr.From(a.Parameters.Base.String())
+	}
+	if a.Parameters.LowerBound != nil {
+		ret.ConcentratedLiquidityParameters.LowerBound = ptr.From(a.Parameters.LowerBound.String())
+	}
+	if a.Parameters.UpperBound != nil {
+		ret.ConcentratedLiquidityParameters.UpperBound = ptr.From(a.Parameters.UpperBound.String())
+	}
+	if a.Parameters.MarginRatioAtLowerBound != nil {
+		ret.ConcentratedLiquidityParameters.MarginRatioAtLowerBound = ptr.From(a.Parameters.MarginRatioAtLowerBound.String())
+	}
+	if a.Parameters.MarginRatioAtUpperBound != nil {
+		ret.ConcentratedLiquidityParameters.MarginRatioAtUpperBound = ptr.From(a.Parameters.MarginRatioAtUpperBound.String())
+	}
+	return ret
 }
 
 func NewAmendAMMFromProto(
@@ -174,6 +243,13 @@ type CancelAMM struct {
 	Method   AMMPoolCancellationMethod
 }
 
+func (c CancelAMM) IntoProto() *commandspb.CancelAMM {
+	return &commandspb.CancelAMM{
+		MarketId: c.MarketID,
+		Method:   c.Method,
+	}
+}
+
 func NewCancelAMMFromProto(
 	cancelAMM *commandspb.CancelAMM,
 	party string,
@@ -189,8 +265,8 @@ type AMMPoolCancellationMethod = commandspb.CancelAMM_Method
 
 const (
 	AMMPoolCancellationMethodUnspecified AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_UNSPECIFIED
-	AMMPoolCancellationMethodImmediate   AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_IMMEDIATE
-	AMMPoolCancellationMethodReduceOnly  AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_REDUCE_ONLY
+	AMMPoolCancellationMethodImmediate                             = commandspb.CancelAMM_METHOD_IMMEDIATE
+	AMMPoolCancellationMethodReduceOnly                            = commandspb.CancelAMM_METHOD_REDUCE_ONLY
 )
 
 type AMMPoolStatusReason = eventspb.AMMPool_StatusReason
