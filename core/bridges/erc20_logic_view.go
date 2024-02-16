@@ -64,8 +64,6 @@ type EthConfirmations interface {
 	Check(uint64) error
 }
 
-// ERC20Logic yea that's a weird name but
-// it just matches the name of the contract.
 type ERC20LogicView struct {
 	clt      ETHClient
 	ethConfs EthConfirmations

@@ -314,6 +314,7 @@ message AssetAction {
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
   bool erc20_bridge_stopped = 11;
   bool erc20_bridge_resumed = 12;
+  string chain_id = 13;
 }
 
 message ELSShare {

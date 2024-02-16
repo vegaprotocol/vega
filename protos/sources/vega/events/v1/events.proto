@@ -393,6 +393,7 @@ message ERC20MultiSigSignerEvent {
   string tx_hash = 6;
   uint64 log_index = 7;
   uint64 block_number = 8;
+  string chain_id = 9;
 }
 
 message ERC20MultiSigThresholdSetEvent {
@@ -403,6 +404,7 @@ message ERC20MultiSigThresholdSetEvent {
   string tx_hash = 5;
   uint64 log_index = 6;
   uint64 block_number = 7;
+  string chain_id = 8;
 }
 
 message CheckpointEvent {

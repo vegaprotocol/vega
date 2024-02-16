@@ -49,10 +49,10 @@ func (e *Engine) EnableERC20(
 	al *types.ERC20AssetList,
 	id string,
 	blockNumber, txIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	asset, _ := e.assets.Get(al.VegaAssetID)
-	if _, ok := e.assetActs[al.VegaAssetID]; ok {
+	if _, ok := e.assetActions[al.VegaAssetID]; ok {
 		e.log.Error("asset already being listed", logging.AssetID(al.VegaAssetID))
 		return ErrAssetAlreadyBeingListed
 	}
@@ -65,6 +65,7 @@ func (e *Engine) EnableERC20(
 		blockHeight: blockNumber,
 		logIndex:    txIndex,
 		txHash:      txHash,
+		chainID:     chainID,
 		bridgeView:  e.bridgeView,
 	}
 	e.addAction(aa)
@@ -76,7 +77,7 @@ func (e *Engine) UpdateERC20(
 	event *types.ERC20AssetLimitsUpdated,
 	id string,
 	blockNumber, txIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	asset, err := e.assets.Get(event.VegaAssetID)
 	if err != nil {
@@ -92,6 +93,7 @@ func (e *Engine) UpdateERC20(
 		blockHeight:             blockNumber,
 		logIndex:                txIndex,
 		txHash:                  txHash,
+		chainID:                 chainID,
 		bridgeView:              e.bridgeView,
 	}
 	e.addAction(aa)
@@ -103,7 +105,7 @@ func (e *Engine) DepositERC20(
 	d *types.ERC20Deposit,
 	id string,
 	blockNumber, logIndex uint64,
-	txHash string,
+	txHash, chainID string,
 ) error {
 	dep := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
 
@@ -132,6 +134,7 @@ func (e *Engine) DepositERC20(
 		blockHeight: blockNumber,
 		logIndex:    logIndex,
 		txHash:      txHash,
+		chainID:     chainID,
 		bridgeView:  e.bridgeView,
 	}
 	e.addAction(aa)
@@ -321,7 +324,7 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 }
 
 func (e *Engine) addAction(aa *assetAction) {
-	e.assetActs[aa.id] = aa
+	e.assetActions[aa.id] = aa
 	if aa.blockHeight > e.lastSeenEthBlock {
 		e.lastSeenEthBlock = aa.blockHeight
 	}
