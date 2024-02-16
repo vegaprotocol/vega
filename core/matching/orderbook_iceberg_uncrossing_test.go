@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -56,6 +57,56 @@ func assertTradeSizes(t *testing.T, trades []*types.Trade, sizes ...uint64) {
 	for i := range trades {
 		assert.Equal(t, trades[i].Size, sizes[i])
 	}
+}
+
+func makeIcebergForPanic(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
+	t.Helper()
+	order := getOrder(t, market, id, side, price, partyid, size)
+	order.IcebergOrder = &types.IcebergOrder{
+		PeakSize:           3832,
+		MinimumVisibleSize: 493,
+	}
+	_, err := orderbook.ob.SubmitOrder(order)
+	assert.NoError(t, err)
+	return order
+}
+
+// TestIcebergPanic is reproducing a bug observed in the market sim. It's skipping a few steps
+// to make it minimal but it it's close enough. In summary there are 3 steps below:
+// 1. the iceberg order is submitted with peak size of 3832 and size of 8400
+// 2. the order is amended to decrease the size and change the price - hence going through ReplaceOrder
+// 3. size offset only amendment - no price change - done with amendOrder.
+func TestIcebergPanic(t *testing.T) {
+	market := vgrand.RandomStr(5)
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.ob.EnterAuction()
+
+	o1 := makeIcebergForPanic(t, book, market, crypto.RandomHash(), types.SideBuy, 101, "party01", 8400)
+	makeOrder(t, book, market, "SellOrder01", types.SideSell, 101, "party02", 10000)
+
+	book.ob.GetIndicativeTrades()
+
+	// decrease the size - not changing the peak size = 3832
+	o2 := o1.Clone()
+	o2.Size = 1569
+	o2.Remaining = 1569
+	o2.IcebergOrder.ReservedRemaining = 0
+	book.ob.ReplaceOrder(o1, o2)
+
+	// size offset of -512
+	o3 := o2.Clone()
+	o3.Size = 1057
+	o3.Remaining = 1057
+	o3.IcebergOrder.ReservedRemaining = 0
+	book.ob.AmendOrder(o2, o3)
+
+	book.ob.GetIndicativeTrades()
 }
 
 func TestIcebergExtractedSide(t *testing.T) {
