@@ -27,7 +27,9 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
@@ -809,6 +811,48 @@ func (r RowWrapper) DurationSec(name string) time.Duration {
 		return 0
 	}
 	return time.Duration(n) * time.Second
+}
+
+func (r RowWrapper) MustAMMCancelationMethod(name string) types.AMMPoolCancellationMethod {
+	cancelMethod, err := AMMCancelMethod(r.MustStr(name))
+	panicW(name, err)
+	return cancelMethod
+}
+
+func (r RowWrapper) MustAMMPoolStatus(name string) types.AMMPoolStatus {
+	ps, err := AMMPoolStatus(r.MustStr(name))
+	panicW(name, err)
+	return ps
+}
+
+func (r RowWrapper) MustPoolStatusReason(name string) types.AMMPoolStatusReason {
+	pr, err := AMMPoolStatusReason(r.MustStr(name))
+	panicW(name, err)
+	return pr
+}
+
+func AMMCancelMethod(rawValue string) (types.AMMPoolCancellationMethod, error) {
+	ty, ok := commandspb.CancelAMM_Method_value[rawValue]
+	if !ok {
+		return types.AMMPoolCancellationMethod(ty), fmt.Errorf("invalid cancelation method: %v", rawValue)
+	}
+	return types.AMMPoolCancellationMethod(ty), nil
+}
+
+func AMMPoolStatus(rawValue string) (types.AMMPoolStatus, error) {
+	ps, ok := eventspb.AMMPool_Status_value[rawValue]
+	if !ok {
+		return types.AMMPoolStatusUnspecified, fmt.Errorf("invalid AMM pool status: %s", rawValue)
+	}
+	return types.AMMPoolStatus(ps), nil
+}
+
+func AMMPoolStatusReason(rawValue string) (types.AMMPoolStatusReason, error) {
+	pr, ok := eventspb.AMMPool_StatusReason_value[rawValue]
+	if !ok {
+		return types.AMMPoolStatusReasonUnspecified, fmt.Errorf("invalid AMM pool status reason: %s", rawValue)
+	}
+	return types.AMMPoolStatusReason(pr), nil
 }
 
 func panicW(field string, err error) {
