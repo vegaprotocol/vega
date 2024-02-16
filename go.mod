@@ -382,6 +382,7 @@ require (
 
 replace (
 	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.3
+	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.38.6-0.20240216152701-1e2ce7ef6d48
 	github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20221123183204-2e7a2feee5bb
 	github.com/muesli/cancelreader => github.com/vegaprotocol/cancelreader v0.0.0-20230724130739-6f2217a69449
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.3.1-uint256
