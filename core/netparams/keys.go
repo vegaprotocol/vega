@@ -180,6 +180,7 @@ const (
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig    = "blockchains.ethereumConfig"
+	BlockchainsArbitrumConfig    = "blockchains.arbitrumConfig"
 	BlockchainsEthereumL2Configs = "blockchains.ethereumRpcAndEvmCompatDataSourcesConfig"
 
 	// length of epoch in seconds.
@@ -374,6 +375,7 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalReferralProgramMinProposerBalance:          {},
 	GovernanceProposalReferralProgramMinVoterBalance:             {},
 	BlockchainsEthereumConfig:                                    {},
+	BlockchainsArbitrumConfig:                                    {},
 	MarketLiquidityProvisionShapesMaxSize:                        {},
 	MarketProbabilityOfTradingTauScaling:                         {},
 	MarketMinProbabilityOfTradingForLPOrders:                     {},

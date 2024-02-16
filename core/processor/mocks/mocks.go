@@ -1581,31 +1581,31 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 }
 
 // BridgeResumed mocks base method.
-func (m *MockBanking) BridgeResumed(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) BridgeResumed(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BridgeResumed", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "BridgeResumed", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // BridgeResumed indicates an expected call of BridgeResumed.
-func (mr *MockBankingMockRecorder) BridgeResumed(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) BridgeResumed(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeResumed", reflect.TypeOf((*MockBanking)(nil).BridgeResumed), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeResumed", reflect.TypeOf((*MockBanking)(nil).BridgeResumed), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // BridgeStopped mocks base method.
-func (m *MockBanking) BridgeStopped(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) BridgeStopped(arg0 context.Context, arg1 bool, arg2 string, arg3, arg4 uint64, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BridgeStopped", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "BridgeStopped", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // BridgeStopped indicates an expected call of BridgeStopped.
-func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeStopped", reflect.TypeOf((*MockBanking)(nil).BridgeStopped), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeStopped", reflect.TypeOf((*MockBanking)(nil).BridgeStopped), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // CancelGovTransfer mocks base method.
@@ -1665,17 +1665,17 @@ func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1, arg2, arg3 in
 }
 
 // DepositERC20 mocks base method.
-func (m *MockBanking) DepositERC20(arg0 context.Context, arg1 *types.ERC20Deposit, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) DepositERC20(arg0 context.Context, arg1 *types.ERC20Deposit, arg2 string, arg3, arg4 uint64, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DepositERC20", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "DepositERC20", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DepositERC20 indicates an expected call of DepositERC20.
-func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // ERC20WithdrawalEvent mocks base method.
@@ -1707,17 +1707,17 @@ func (mr *MockBankingMockRecorder) EnableBuiltinAsset(arg0, arg1 interface{}) *g
 }
 
 // EnableERC20 mocks base method.
-func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *types.ERC20AssetList, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *types.ERC20AssetList, arg2 string, arg3, arg4 uint64, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnableERC20 indicates an expected call of EnableERC20.
-func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NewGovernanceTransfer mocks base method.
@@ -1749,17 +1749,17 @@ func (mr *MockBankingMockRecorder) TransferFunds(arg0, arg1 interface{}) *gomock
 }
 
 // UpdateERC20 mocks base method.
-func (m *MockBanking) UpdateERC20(arg0 context.Context, arg1 *types.ERC20AssetLimitsUpdated, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) UpdateERC20(arg0 context.Context, arg1 *types.ERC20AssetLimitsUpdated, arg2 string, arg3, arg4 uint64, arg5, arg6 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateERC20", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "UpdateERC20", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateERC20 indicates an expected call of UpdateERC20.
-func (mr *MockBankingMockRecorder) UpdateERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) UpdateERC20(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateERC20", reflect.TypeOf((*MockBanking)(nil).UpdateERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateERC20", reflect.TypeOf((*MockBanking)(nil).UpdateERC20), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // VerifyCancelGovernanceTransfer mocks base method.
