@@ -179,6 +179,32 @@ func (e *exEng) ProcessBatch(ctx context.Context, party string) error {
 	return nil
 }
 
+func (e *exEng) SubmitAMM(ctx context.Context, submission *types.SubmitAMM) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.SubmitAMM(ctx, submission, idgen.NextID()); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, submission.Party, submission.IntoProto(), "submitAMM"))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) AmendAMM(ctx context.Context, submission *types.AmendAMM) error {
+	if err := e.Engine.AmendAMM(ctx, submission); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, submission.Party, submission.IntoProto(), "amendAMM"))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) CancelAMM(ctx context.Context, cancel *types.CancelAMM) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.CancelAMM(ctx, cancel, idgen.NextID()); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, cancel.Party, cancel.IntoProto(), "cancelAMM"))
+		return err
+	}
+	return nil
+}
+
 type noopValidation struct{}
 
 func (n noopValidation) CheckOrderCancellation(cancel *commandspb.OrderCancellation) error {
