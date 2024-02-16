@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/cucumber/godog"
 )
 
