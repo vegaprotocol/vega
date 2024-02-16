@@ -174,6 +174,9 @@ func NewMarketFromSnapshot(
 		log, liquidityEngine, collateralEngine, broker, book, equityShares, marketActivityTracker,
 		feeEngine, common.FutureMarketType, mkt.ID, asset, priceFactor, mkt.LiquiditySLAParams.PriceRange, nil,
 	)
+	if err := marketLiquidity.SetState(em.MarketLiquidity); err != nil {
+		return nil, fmt.Errorf("unable to restore the market liquidity state: %w", err)
+	}
 
 	// backward compatibility check for nil
 	stopOrders := stoporders.New(log)
@@ -369,6 +372,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
 		Amm:                            m.amm.IntoProto(),
+		MarketLiquidity:                m.liquidity.GetState(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {
 		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()

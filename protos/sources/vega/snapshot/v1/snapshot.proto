@@ -537,6 +537,7 @@ message Market {
   optional CompositePriceCalculator internal_composite_price_calculator = 30;
   int64 next_internal_composite_price_calc = 31;
   AmmState amm = 32;
+  MarketLiquidity market_liquidity = 33;
 }
 
 message PartyMarginFactor {
@@ -1367,4 +1368,16 @@ message PartyProfile {
   string party_id = 1;
   string alias = 2;
   repeated vega.Metadata metadata = 3;
+}
+
+message AMMValues {
+  string party = 1;
+  string stake = 2;
+  string score = 3;
+  int64 tick = 4;
+}
+
+message MarketLiquidity {
+  int64 tick = 1;
+  repeated AMMValues amm = 2;
 }
