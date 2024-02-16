@@ -3547,22 +3547,13 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
 	party, subAccount, asset, market string,
 ) (general *types.Account, margin *types.Account, err error) {
-	generalID := e.accountID(noMarket, subAccount, asset, types.AccountTypeGeneral)
-	if _, ok := e.accs[generalID]; ok {
-		return nil, nil, errors.New("general sub account already exists")
-	}
 
-	marginID := e.accountID(market, subAccount, asset, types.AccountTypeMargin)
-	if _, ok := e.accs[marginID]; ok {
-		return nil, nil, errors.New("general sub account already exists")
-	}
-
-	_, err = e.CreatePartyGeneralAccount(ctx, subAccount, asset)
+	generalID, err := e.CreatePartyGeneralAccount(ctx, subAccount, asset)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	_, err = e.CreatePartyMarginAccount(ctx, subAccount, market, asset)
+	marginID, err := e.CreatePartyMarginAccount(ctx, subAccount, market, asset)
 	if err != nil {
 		return nil, nil, err
 	}
