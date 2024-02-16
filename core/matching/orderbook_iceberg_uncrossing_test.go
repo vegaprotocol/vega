@@ -106,7 +106,7 @@ func TestIcebergPanic(t *testing.T) {
 	o3.IcebergOrder.ReservedRemaining = 0
 	book.ob.AmendOrder(o2, o3)
 
-	require.Panics(t, func() { book.ob.GetIndicativeTrades() })
+	book.ob.GetIndicativeTrades()
 }
 
 func TestIcebergExtractedSide(t *testing.T) {

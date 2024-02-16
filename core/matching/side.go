@@ -166,7 +166,11 @@ func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *typ
 		return -int64(dec), nil
 	}
 
-	return 0, nil
+	// this is the case where we have an iceberg with no reserve, and reducing its visible peak
+	if oldOrder.Remaining < amendOrder.Remaining {
+		panic("we should not be increasing iceberg visble size in-place")
+	}
+	return -int64(oldOrder.Remaining - amendOrder.Remaining), nil
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (int64, error) {
