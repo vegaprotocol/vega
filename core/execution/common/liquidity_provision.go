@@ -66,6 +66,9 @@ type MarketLiquidity struct {
 
 	bondPenaltyFactor num.Decimal
 	elsFeeFactor      num.Decimal
+	stakeToCcyVolume  num.Decimal
+	ammStats          map[string]*AMMState
+	tick              int64
 }
 
 func NewMarketLiquidity(
@@ -99,6 +102,7 @@ func NewMarketLiquidity(
 		priceFactor:           priceFactor,
 		priceRange:            priceRange,
 		amm:                   amm,
+		ammStats:              map[string]*AMMState{},
 	}
 
 	return ml
@@ -297,9 +301,10 @@ func (m *MarketLiquidity) syncPartyCommitmentWithBondAccount(
 	for _, provision := range appliedLiquidityProvisions {
 		// now we can setup our party stake to calculate equities
 		m.equityShares.SetPartyStake(provision.Party, provision.CommitmentAmount.Clone())
-		// force update of shares so they are updated for all
-		_ = m.equityShares.AllShares()
 	}
+	// force update of shares so they are updated for all, used to be in the loop, but should be
+	// fine to just do this once
+	_ = m.equityShares.AllShares()
 }
 
 func (m *MarketLiquidity) OnEpochStart(
@@ -309,6 +314,13 @@ func (m *MarketLiquidity) OnEpochStart(
 ) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
+	// submit AMM stake
+	for party, amm := range m.ammStats {
+		stake, _ := num.UintFromDecimal(amm.stake)
+		m.equityShares.SetPartyStake(party, stake)
+		amm.StartEpoch() // mark as new epoch having started
+	}
+	m.tick = 0 // start of a new epoch, we are at tick 0
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
 	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)
 }
@@ -356,6 +368,10 @@ func (m *MarketLiquidity) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	m.updateLiquidityScores()
+	// first tick since the start of the epoch will be 0
+	m.updateAMMCommitment(m.tick)
+	// increment tick
+	m.tick++
 }
 
 func (m *MarketLiquidity) EndBlock(markPrice, midPrice *num.Uint, positionFactor num.Decimal) {
@@ -886,6 +902,7 @@ func (m *MarketLiquidity) OnEarlyExitPenalty(earlyExitPenalty num.Decimal) {
 
 func (m *MarketLiquidity) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 	m.liquidityEngine.OnStakeToCcyVolumeUpdate(stakeToCcyVolume)
+	m.stakeToCcyVolume = stakeToCcyVolume
 }
 
 func (m *MarketLiquidity) OnProvidersFeeCalculationTimeStep(d time.Duration) {

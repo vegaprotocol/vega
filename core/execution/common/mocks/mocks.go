@@ -1632,6 +1632,20 @@ func (mr *MockLiquidityEngineMockRecorder) GetLegacyOrders() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLegacyOrders", reflect.TypeOf((*MockLiquidityEngine)(nil).GetLegacyOrders))
 }
 
+// GetPartyLiquidityScore mocks base method.
+func (m *MockLiquidityEngine) GetPartyLiquidityScore(arg0 []*types.Order, arg1, arg2 decimal.Decimal, arg3, arg4 *num.Uint) decimal.Decimal {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPartyLiquidityScore", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(decimal.Decimal)
+	return ret0
+}
+
+// GetPartyLiquidityScore indicates an expected call of GetPartyLiquidityScore.
+func (mr *MockLiquidityEngineMockRecorder) GetPartyLiquidityScore(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyLiquidityScore", reflect.TypeOf((*MockLiquidityEngine)(nil).GetPartyLiquidityScore), arg0, arg1, arg2, arg3, arg4)
+}
+
 // IsLiquidityProvider mocks base method.
 func (m *MockLiquidityEngine) IsLiquidityProvider(arg0 string) bool {
 	m.ctrl.T.Helper()

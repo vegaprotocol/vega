@@ -268,6 +268,7 @@ type LiquidityEngine interface {
 	OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal)
 	OnProvidersFeeCalculationTimeStep(time.Duration)
 	IsProbabilityOfTradingInitialised() bool
+	GetPartyLiquidityScore(orders []*types.Order, bestBid, bestAsk num.Decimal, minP, maxP *num.Uint) num.Decimal
 
 	LiquidityProviderSLAStats(t time.Time) []*types.LiquidityProviderSLA
 
@@ -318,6 +319,7 @@ type EquityLikeShares interface {
 
 type AMMPool interface {
 	VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64
+	OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order)
 }
 
 type AMM interface {

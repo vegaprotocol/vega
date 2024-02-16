@@ -281,7 +281,6 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l *num.Uint) *num.Uint {
 // OrderbookShape returns slices of virtual buy and sell orders that the AMM has over a given range
 // and is essentially a view on the AMM's personal order-book.
 func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order) {
-
 	buys := []*types.Order{}
 	sells := []*types.Order{}
 
@@ -297,7 +296,6 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	fairPrice := p.fairPrice()
 
 	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
-
 		from = num.Max(from, cu.low)
 		to = num.Min(to, cu.high)
 		price := from
@@ -328,7 +326,6 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 
 			price = next
 		}
-
 	}
 	ordersFromCurve(p.lower, from, to)
 	ordersFromCurve(p.upper, from, to)
@@ -525,14 +522,10 @@ func (p *Pool) fairPrice() *num.Uint {
 // virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
 func (p *Pool) virtualBalances(pos int64, ae *num.Uint, side types.Side) (num.Decimal, num.Decimal) {
 	switch {
-	case pos < 0:
-		return p.virtualBalancesShort(pos, ae)
-	case pos > 0:
-		return p.virtualBalancesLong(pos, ae)
-	case side == types.SideBuy:
+	case pos < 0, side == types.SideBuy:
 		// zero position but incoming is buy which will make pool short
 		return p.virtualBalancesShort(pos, ae)
-	case side == types.SideSell:
+	case pos > 0, side == types.SideSell:
 		// zero position but incoming is sell which will make pool long
 		return p.virtualBalancesLong(pos, ae)
 	default:
