@@ -20,14 +20,12 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 
-	migrate "github.com/ipfs/fs-repo-migrations/tools/go-migrate"
-
-	"github.com/ipfs/kubo/repo/fsrepo"
-	"github.com/ipfs/kubo/repo/fsrepo/migrations"
-
 	mg12 "github.com/ipfs/fs-repo-migrations/fs-repo-12-to-13/migration"
 	mg13 "github.com/ipfs/fs-repo-migrations/fs-repo-13-to-14/migration"
 	mg14 "github.com/ipfs/fs-repo-migrations/fs-repo-14-to-15/migration"
+	migrate "github.com/ipfs/fs-repo-migrations/tools/go-migrate"
+	"github.com/ipfs/kubo/repo/fsrepo"
+	"github.com/ipfs/kubo/repo/fsrepo/migrations"
 )
 
 // LatestSupportedVersion returns the latest version supported by the kubo library.
@@ -69,7 +67,6 @@ func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 
 func runMigrations(currentVersion int, ipfsDir string) error {
 	migrationsSteps, err := requiredMigrations(currentVersion)
-
 	if err != nil {
 		return fmt.Errorf("failed to determine required migrations: %w", err)
 	}
@@ -87,7 +84,6 @@ func runMigrations(currentVersion int, ipfsDir string) error {
 		}); err != nil {
 			return fmt.Errorf("failed to run migration for %s: %w", m.Versions(), err)
 		}
-
 	}
 
 	return nil
