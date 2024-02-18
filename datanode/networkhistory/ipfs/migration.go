@@ -38,11 +38,6 @@ func latestSupportedVersion() int {
 
 // MigrateIpfsStorageVersion migrates the IPFS store to the latest supported by the
 // library version.
-// High level overview:
-//  1. Check version of the local store,
-//  2. Check max supported version for the kubo library,
-//  3. Connect to local or remote IPFS node and download required migration binaries,
-//  4. Run downloaded binaries to migrate the file system.
 func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 	repoVersion, err := migrations.RepoVersion(ipfsDir)
 	if err != nil {
