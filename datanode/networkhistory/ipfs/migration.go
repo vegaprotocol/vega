@@ -16,41 +16,24 @@
 package ipfs
 
 import (
-	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
 
+	migrate "github.com/ipfs/fs-repo-migrations/tools/go-migrate"
+
 	"github.com/ipfs/kubo/repo/fsrepo"
 	"github.com/ipfs/kubo/repo/fsrepo/migrations"
+
+	mg12 "github.com/ipfs/fs-repo-migrations/fs-repo-12-to-13/migration"
+	mg13 "github.com/ipfs/fs-repo-migrations/fs-repo-13-to-14/migration"
+	mg14 "github.com/ipfs/fs-repo-migrations/fs-repo-14-to-15/migration"
 )
-
-func createFetcher(distPath string, ipfsDir string) migrations.Fetcher {
-	const userAgent = "fs-repo-migrations"
-
-	if distPath == "" {
-		distPath = migrations.GetDistPathEnv(migrations.LatestIpfsDist)
-	}
-
-	return migrations.NewMultiFetcher(
-		newIpfsFetcher(distPath, ipfsDir, 0),
-		migrations.NewHttpFetcher(distPath, "", userAgent, 0))
-}
 
 // LatestSupportedVersion returns the latest version supported by the kubo library.
 func latestSupportedVersion() int {
 	// TODO: Maybe We should hardcode it to be safe and control when the migration happens?
 	return fsrepo.RepoVersion
-}
-
-// IsMigrationNeeded check if migration of the IPFS repository is needed.
-func isMigrationNeeded(ipfsDir string) (bool, error) {
-	repoVersion, err := migrations.RepoVersion(ipfsDir)
-	if err != nil {
-		return false, fmt.Errorf("failed to check version for the %s IPFS repository: %w", ipfsDir, err)
-	}
-
-	return repoVersion < latestSupportedVersion(), nil
 }
 
 // MigrateIpfsStorageVersion migrates the IPFS store to the latest supported by the
@@ -61,14 +44,17 @@ func isMigrationNeeded(ipfsDir string) (bool, error) {
 //  3. Connect to local or remote IPFS node and download required migration binaries,
 //  4. Run downloaded binaries to migrate the file system.
 func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
-	isMigrationNeeded, err := isMigrationNeeded(ipfsDir)
+	repoVersion, err := migrations.RepoVersion(ipfsDir)
 	if err != nil {
-		return fmt.Errorf("failed to check if the ipfs migration is needed: %w", err)
+		return fmt.Errorf("failed to check version for the %s IPFS repository: %w", ipfsDir, err)
 	}
-	if !isMigrationNeeded {
+
+	// migration not needed
+	if repoVersion >= latestSupportedVersion() {
 		if log != nil {
 			log.Info("The IPFS for the network-history is up to date. Migration not needed")
 		}
+
 		return nil
 	}
 
@@ -77,11 +63,78 @@ func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 		return fmt.Errorf("failed to find local ipfs directory: %w", err)
 	}
 
-	fetcher := createFetcher("", localIpfsDir)
-	err = migrations.RunMigration(context.Background(), fetcher, latestSupportedVersion(), localIpfsDir, false)
-	if err != nil {
+	// fetcher := createFetcher("", localIpfsDir)
+	// err = migrations.RunMigration(context.Background(), fetcher, latestSupportedVersion(), localIpfsDir, false)
+	if err := runMigrations(repoVersion, localIpfsDir); err != nil {
 		return fmt.Errorf("failed to execute the ipfs migration: %w", err)
 	}
 
 	return nil
+}
+
+func runMigrations(currentVersion int, ipfsDir string) error {
+	migrationsSteps, err := requiredMigrations(currentVersion)
+
+	if err != nil {
+		return fmt.Errorf("failed to determine required migrations: %w", err)
+	}
+
+	for _, m := range migrationsSteps {
+		if err := m.Apply(migrate.Options{
+			Flags: migrate.Flags{
+				// Force: true,
+				Revert:   false,
+				Path:     ipfsDir,
+				Verbose:  true,
+				NoRevert: true,
+			},
+			Verbose: true,
+		}); err != nil {
+			return fmt.Errorf("failed to run migration for %s: %w", m.Versions(), err)
+		}
+
+	}
+
+	return nil
+}
+
+func requiredMigrations(currentVersion int) ([]migrate.Migration, error) {
+	availableMigrations := []migrate.Migration{
+		// We do not care about older versions. We are migrating repository
+		// for vega 0.73. `Vega@v0.73` has `kubo@v0.20.0` which should contain
+		// repository v13 (as per https://github.com/ipfs/fs-repo-migrations/tree/master?tab=readme-ov-file#when-should-i-migrate).
+		// Older versions depends on ancient versions of packages that causes
+		// issue for go 1.21...
+		nil,               // 0-1
+		nil,               // 1-2
+		nil,               // 2-3
+		nil,               // 3-4
+		nil,               // 4-5
+		nil,               // 5-6
+		nil,               // 6-7
+		nil,               // 7-8
+		nil,               // 8-9
+		nil,               // 9-10
+		nil,               // 10-11
+		nil,               // 11-12
+		&mg12.Migration{}, // 12-13
+		&mg13.Migration{}, // 13-14
+		&mg14.Migration{}, // 14-15
+	}
+
+	requiredMigrations := []migrate.Migration{}
+
+	// no migration required
+	if currentVersion >= len(availableMigrations) {
+		return requiredMigrations, nil
+	}
+
+	for fromVersion := currentVersion; fromVersion < len(availableMigrations); fromVersion++ {
+		if availableMigrations[fromVersion] == nil {
+			return nil, fmt.Errorf("migration from version %d is not supported: minimum supported version to migrate the ipfs repo from is 13", fromVersion)
+		}
+		requiredMigrations = append(requiredMigrations, availableMigrations[fromVersion])
+	}
+
+	return requiredMigrations, nil
 }
