@@ -116,3 +116,7 @@ func (m *Market) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d time.Durat
 func (m *Market) OnMarketLiquidityV2BondPenaltyFactorUpdate(d num.Decimal) {
 	m.liquidity.OnBondPenaltyFactorUpdate(d)
 }
+
+func (m *Market) OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal) {
+	m.liquidity.SetELSFeeFraction(d)
+}

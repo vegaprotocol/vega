@@ -47,6 +47,7 @@ const (
 	MarketLiquiditySLANonPerformanceBondPenaltySlope = "market.liquidity.sla.nonPerformanceBondPenaltySlope"
 	MarketLiquidityStakeToCCYVolume                  = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeCalculationTimeStep   = "market.liquidity.providersFeeCalculationTimeStep"
+	MarketLiquidityEquityLikeShareFeeFraction        = "market.liquidity.equityLikeShareFeeFraction"
 
 	RewardAsset = "reward.asset"
 

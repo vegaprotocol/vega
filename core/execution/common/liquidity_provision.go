@@ -62,6 +62,7 @@ type MarketLiquidity struct {
 	minLPStakeQuantumMultiple num.Decimal
 
 	bondPenaltyFactor num.Decimal
+	elsFeeFactor      num.Decimal
 }
 
 func NewMarketLiquidity(

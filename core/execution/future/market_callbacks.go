@@ -148,3 +148,7 @@ func (m *Market) OnMarketLiquidityV2StakeToCCYVolume(d num.Decimal) {
 func (m *Market) OnMarketLiquidityV2ProvidersFeeCalculationTimeStep(d time.Duration) {
 	m.liquidity.OnProvidersFeeCalculationTimeStep(d)
 }
+
+func (m *Market) OnMarketLiquidityEquityLikeShareFeeFractionUpdate(d num.Decimal) {
+	m.liquidity.SetELSFeeFraction(d)
+}

@@ -316,6 +316,10 @@ func (m *MarketLiquidity) distributeFeesBonusesAndApplyPenalties(
 	m.distributePerformanceBonuses(ctx, partyIDs, bonusPerParty)
 }
 
+func (m *MarketLiquidity) SetELSFeeFraction(d num.Decimal) {
+	m.elsFeeFactor = d
+}
+
 func sortedKeys[K constraints.Ordered, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {

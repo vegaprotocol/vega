@@ -159,6 +159,9 @@
 - [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
 - [10615](https://github.com/vegaprotocol/vega/issues/10615) - Fix oracle scaling function in internal composite price.
 - [10621](https://github.com/vegaprotocol/vega/issues/10621) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
+- [10643](https://github.com/vegaprotocol/vega/issues/10643) - Games `API` not showing quantum values and added filter for team and party.
+
+## 0.74.0
 
 ### 🚨 Breaking changes
 
