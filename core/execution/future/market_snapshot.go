@@ -84,7 +84,7 @@ func NewMarketFromSnapshot(
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
 		// protocol upgrade from v0.73.12, lets populate the new liquidity-fee-settings with a default marginal-cost method
 		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
 		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
