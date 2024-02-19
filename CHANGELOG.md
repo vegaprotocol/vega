@@ -28,6 +28,7 @@
 
 - [10702](https://github.com/vegaprotocol/vega/pull/10700) - Use second precision in `GetMarginIncrease()` so that perpetual product uses second precision everywhere.
 - [10698](https://github.com/vegaprotocol/vega/issues/10698) - Prevent `L2` from making too many `RPC` calls.
+- [971](https://github.com/vegaprotocol/core-test-coverage/issues/971) - Add `AMM` support to the integration test framework.
 
 ## 0.74.2
 
