@@ -1524,6 +1524,9 @@ message EthereumL2Config {
   uint32 confirmations = 3;
   // Display name of this network
   string name = 4;
+  // Polling interval for the internal engine, needs to be adapted
+  // to the source chain depending on its block production rate.
+  uint64 block_interval = 5;
 }
 
 message EthereumL2Configs {

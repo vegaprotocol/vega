@@ -87,7 +87,7 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 		}
 
 		e := ethcall.NewEngine(v.log, v.cfg, v.isValidator, clt, v.forwarder)
-		e.EnsureChainID(c.ChainID, v.isValidator)
+		e.EnsureChainID(c.ChainID, c.BlockInterval, v.isValidator)
 		v.engines[c.ChainID] = e
 
 		// if we are restoring from a snapshot we want to delay starting the engine
