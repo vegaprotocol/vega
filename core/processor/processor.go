@@ -112,7 +112,7 @@ type ExecutionEngine interface {
 
 	SubmitAMM(ctx context.Context, sub *types.SubmitAMM, deterministicID string) error
 	AmendAMM(ctx context.Context, sub *types.AmendAMM) error
-	CancelAMM(ctx context.Context, sub *types.CancelAMM) error
+	CancelAMM(ctx context.Context, sub *types.CancelAMM, deterministicID string) error
 }
 
 type GovernanceEngine interface {

@@ -4932,6 +4932,19 @@ func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM) error {
 	return m.amm.AmendAMM(ctx, amend)
 }
 
-func (m *Market) CancelAMM(context.Context, *types.CancelAMM) error {
+func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, deterministicID string) error {
+	closeout, err := m.amm.CancelAMM(ctx, cancel)
+	if err != nil {
+		return err
+	}
+
+	if closeout == nil {
+		return nil
+	}
+
+	// pool is closed but now its position needs to be closed out
+	m.idgen = idgeneration.New(deterministicID)
+	defer func() { m.idgen = nil }()
+	m.resolveClosedOutParties(ctx, []events.Margin{closeout})
 	return nil
 }
