@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10700](https://github.com/vegaprotocol/vega/pull/10700) - Do not use external binaries for the `IPFS` migration in the data node
 
 ### 🐛 Fixes
 
