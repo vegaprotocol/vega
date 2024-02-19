@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/datasource"
@@ -76,31 +77,35 @@ type Engine struct {
 	poller                *poller
 	mu                    sync.Mutex
 
-	chainID       uint64
-	blockInterval uint64
+	chainID       atomic.Uint64
+	blockInterval atomic.Uint64
 }
 
 func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
 	e := &Engine{
-		log:           log,
-		cfg:           cfg,
-		isValidator:   isValidator,
-		client:        client,
-		forwarder:     forwarder,
-		calls:         make(map[string]Call),
-		poller:        newPoller(cfg.PollEvery.Get()),
-		blockInterval: 1,
+		log:         log,
+		cfg:         cfg,
+		isValidator: isValidator,
+		client:      client,
+		forwarder:   forwarder,
+		calls:       make(map[string]Call),
+		poller:      newPoller(cfg.PollEvery.Get()),
 	}
+
+	// default to 1 block interval
+	e.blockInterval.Store(1)
+
 	return e
 }
 
 // EnsureChainID tells the engine which chainID it should be related to, and it confirms this against the its client.
 func (e *Engine) EnsureChainID(chainID string, blockInterval uint64, confirmWithClient bool) {
-	e.chainID, _ = strconv.ParseUint(chainID, 10, 64)
-	e.blockInterval = blockInterval
+	chainIDU, _ := strconv.ParseUint(chainID, 10, 64)
+	e.chainID.Store(chainIDU)
+	e.blockInterval.Store(blockInterval)
 	// cover backward compatibility for L2
-	if e.blockInterval == 0 {
-		e.blockInterval = 1
+	if e.blockInterval.Load() == 0 {
+		e.blockInterval.Store(1)
 	}
 
 	// if the node is a validator, we now check the chainID against the chain the client is connected to.
@@ -110,10 +115,10 @@ func (e *Engine) EnsureChainID(chainID string, blockInterval uint64, confirmWith
 			log.Panic("could not load chain ID", logging.Error(err))
 		}
 
-		if cid.Uint64() != e.chainID {
+		if cid.Uint64() != e.chainID.Load() {
 			log.Panic("chain ID mismatch between ethCall engine and EVM client",
 				logging.Uint64("client-chain-id", cid.Uint64()),
-				logging.Uint64("engine-chain-id", e.chainID),
+				logging.Uint64("engine-chain-id", e.chainID.Load()),
 			)
 		}
 	}
@@ -128,7 +133,7 @@ func (e *Engine) Start() {
 			defer cancelEthereumQueries()
 
 			e.cancelEthereumQueries = cancelEthereumQueries
-			e.log.Info("Starting ethereum contract call polling engine", logging.Uint64("chain-id", e.chainID))
+			e.log.Info("Starting ethereum contract call polling engine", logging.Uint64("chain-id", e.chainID.Load()))
 
 			e.poller.Loop(func() {
 				e.Poll(ctx, time.Now())
@@ -248,7 +253,7 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec datasource.Spec) erro
 
 		// here ensure we are on the engine with the right network ID
 		// not an error, just return
-		if e.chainID != d.SourceChainID {
+		if e.chainID.Load() != d.SourceChainID {
 			return nil
 		}
 
@@ -281,7 +286,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	}
 
 	e.log.Info("tick",
-		logging.Uint64("chainID", e.chainID),
+		logging.Uint64("chainID", e.chainID.Load()),
 		logging.Time("wallTime", wallTime),
 		logging.BigInt("ethBlock", lastEthBlock.Number),
 		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time), 0)))
@@ -293,12 +298,12 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 
 	// Go through an eth blocks one at a time until we get to the most recent one
 	for prevEthBlock := e.prevEthBlock; prevEthBlock.NumberU64() < lastEthBlock.Number.Uint64(); prevEthBlock = e.prevEthBlock {
-		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + e.blockInterval)
+		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + e.blockInterval.Load())
 		nextEthBlock, err := e.client.HeaderByNumber(ctx, nextBlockNum)
 		if err != nil {
 			e.log.Error("failed to get next block header",
 				logging.Error(err),
-				logging.Uint64("chain-id", e.chainID),
+				logging.Uint64("chain-id", e.chainID.Load()),
 				logging.Uint64("prev-block", prevEthBlock.NumberU64()),
 				logging.Uint64("last-block", lastEthBlock.Number.Uint64()),
 				logging.Uint64("expect-next-block", nextBlockNum.Uint64()),
@@ -311,14 +316,14 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 			if call.triggered(prevEthBlock, nextEthBlockIsh) {
 				res, err := call.Call(ctx, e.client, nextEthBlock.Number.Uint64())
 				if err != nil {
-					e.log.Error("failed to call contract", logging.Error(err), logging.Uint64("chain-id", e.chainID))
-					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh, e.chainID)
+					e.log.Error("failed to call contract", logging.Error(err), logging.Uint64("chain-id", e.chainID.Load()))
+					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh, e.chainID.Load())
 					e.forwarder.ForwardFromSelf(event)
 					continue
 				}
 
 				if res.PassesFilters {
-					event := makeChainEvent(res, specID, nextEthBlockIsh, e.chainID)
+					event := makeChainEvent(res, specID, nextEthBlockIsh, e.chainID.Load())
 					e.forwarder.ForwardFromSelf(event)
 				}
 			}
