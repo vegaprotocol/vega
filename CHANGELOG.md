@@ -43,6 +43,7 @@
 - [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
+- [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended. 
 
 
 ## 0.74.1
