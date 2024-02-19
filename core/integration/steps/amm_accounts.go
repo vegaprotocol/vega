@@ -33,12 +33,12 @@ func PartiesHaveTheFollowingAMMBalances(broker *stubs.BrokerStub, exec Execution
 		if !ok {
 			return fmt.Errorf("alias %s for AMM sub account does not exist", alias)
 		}
-		acc, err := broker.GetAccountByID(id)
+		acc, err := broker.GetPartyGeneralAccount(id, row.asset())
 		if err != nil {
-			return fmt.Errorf("account alias %s (ID %s) does not exist: %v", alias, id, err)
+			return fmt.Errorf("account alias %s (ID %s) for asset %s does not exist: %v", alias, id, row.asset(), err)
 		}
 		if bal := row.balance(); acc.Balance != bal {
-			return fmt.Errorf("account alias %s (ID %s) expected balance %s, instead got %s", alias, id, bal, acc.Balance)
+			return fmt.Errorf("account alias %s (ID %s) for asset %s: expected balance %s - instead got %s", alias, id, row.asset(), bal, acc.Balance)
 		}
 	}
 	return nil
@@ -53,6 +53,7 @@ func parseAMMAccountTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"account alias",
 		"balance",
+		"asset",
 	}, nil)
 }
 
@@ -62,4 +63,8 @@ func (a ammAccRow) alias() string {
 
 func (a ammAccRow) balance() string {
 	return a.r.MustStr("balance")
+}
+
+func (a ammAccRow) asset() string {
+	return a.r.MustStr("asset")
 }
