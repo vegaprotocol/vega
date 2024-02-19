@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.73.14
+
+### 🐛 Fixes
+
+- Suspend all markets and set funding margin factor to 0.
+
 ## 0.73.13 patched
 
 ### 🐛 Fixes
