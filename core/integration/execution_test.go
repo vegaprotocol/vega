@@ -202,7 +202,8 @@ func (e *exEng) SubmitAMM(ctx context.Context, submission *types.SubmitAMM) erro
 }
 
 func (e *exEng) AmendAMM(ctx context.Context, submission *types.AmendAMM) error {
-	if err := e.Engine.AmendAMM(ctx, submission); err != nil {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	if err := e.Engine.AmendAMM(ctx, submission, idgen.NextID()); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, submission.Party, submission.IntoProto(), "amendAMM"))
 		return err
 	}
