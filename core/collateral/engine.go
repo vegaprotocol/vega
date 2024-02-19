@@ -3692,7 +3692,7 @@ func (e *Engine) SubAccountRelease(
 	ctx context.Context,
 	party, subAccount, asset, market string,
 	pos events.MarketPosition,
-) (*types.LedgerMovement, events.Margin, error) {
+) ([]*types.LedgerMovement, events.Margin, error) {
 	ownerGeneral, subAccountGeneral, subAccountMargin, err := e.getSubAccounts(subAccount, party, asset, market)
 	if err != nil {
 		return nil, nil, err
@@ -3709,7 +3709,6 @@ func (e *Engine) SubAccountRelease(
 			marginShortFall: num.UintZero(),
 		}
 	}
-
 	// one transfer from general to general
 	treq := &types.TransferRequest{
 		Amount:      subAccountGeneral.Balance.Clone(),
@@ -3720,12 +3719,12 @@ func (e *Engine) SubAccountRelease(
 		ToAccount:   []*types.Account{ownerGeneral},
 	}
 
-	res, err := e.getLedgerEntries(ctx, treq)
+	gres, err := e.getLedgerEntries(ctx, treq)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for _, v := range res.Entries {
+	for _, v := range gres.Entries {
 		// increment the to account
 		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
 			e.log.Error(
@@ -3755,12 +3754,12 @@ func (e *Engine) SubAccountRelease(
 		ToAccount:   []*types.Account{globalInsurance},
 	}
 
-	res, err = e.getLedgerEntries(ctx, treq)
+	mres, err := e.getLedgerEntries(ctx, treq)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for _, v := range res.Entries {
+	for _, v := range mres.Entries {
 		// increment the to account
 		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
 			e.log.Error(
@@ -3775,7 +3774,7 @@ func (e *Engine) SubAccountRelease(
 		}
 	}
 
-	return res, closeout, nil
+	return []*types.LedgerMovement{gres, mres}, closeout, nil
 }
 
 // GetPartyMarginAccount returns a margin account given the partyID and market.
