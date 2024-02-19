@@ -267,17 +267,17 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendAMM mocks base method.
-func (m *MockExecutionEngine) AmendAMM(arg0 context.Context, arg1 *types.AmendAMM) error {
+func (m *MockExecutionEngine) AmendAMM(arg0 context.Context, arg1 *types.AmendAMM, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendAMM", arg0, arg1)
+	ret := m.ctrl.Call(m, "AmendAMM", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AmendAMM indicates an expected call of AmendAMM.
-func (mr *MockExecutionEngineMockRecorder) AmendAMM(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) AmendAMM(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendAMM", reflect.TypeOf((*MockExecutionEngine)(nil).AmendAMM), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendAMM", reflect.TypeOf((*MockExecutionEngine)(nil).AmendAMM), arg0, arg1, arg2)
 }
 
 // AmendLiquidityProvision mocks base method.

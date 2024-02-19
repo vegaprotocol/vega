@@ -430,12 +430,16 @@ func (e *Engine) SubmitAMM(
 	deterministicID string,
 	targetPrice *num.Uint,
 ) error {
+
+	idgen := idgeneration.New(deterministicID)
+	poolID := idgen.NextID()
+
 	subAccount := DeriveSubAccount(submit.Party, submit.MarketID, version, 0)
 	_, ok := e.pools[submit.Party]
 	if ok {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
+				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonPartyAlreadyOwnsAPool,
 			),
@@ -447,7 +451,7 @@ func (e *Engine) SubmitAMM(
 	if err := e.ensureCommitmentAmount(ctx, submit.CommitmentAmount); err != nil {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
+				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCommitmentTooLow,
 			),
@@ -459,7 +463,7 @@ func (e *Engine) SubmitAMM(
 	if err != nil {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
+				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonUnspecified,
 			),
@@ -474,7 +478,7 @@ func (e *Engine) SubmitAMM(
 	if err != nil {
 		e.broker.Send(
 			events.NewAMMPoolEvent(
-				ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
+				ctx, submit.Party, e.market.GetID(), subAccount, poolID,
 				submit.CommitmentAmount, submit.Parameters,
 				types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotFillCommitment,
 			),
@@ -483,7 +487,7 @@ func (e *Engine) SubmitAMM(
 		return err
 	}
 	pool := NewPool(
-		deterministicID,
+		poolID,
 		subAccount,
 		e.market.GetSettlementAsset(),
 		submit,
@@ -498,7 +502,7 @@ func (e *Engine) SubmitAMM(
 	)
 
 	if targetPrice != nil {
-		if err := e.rebasePool(ctx, pool, targetPrice, submit.SlippageTolerance); err != nil {
+		if err := e.rebasePool(ctx, pool, targetPrice, submit.SlippageTolerance, idgen); err != nil {
 			if err := e.updateSubAccountBalance(ctx, submit.Party, subAccount, num.UintZero()); err != nil {
 				e.log.Panic("unable to remove sub account balances", logging.Error(err))
 			}
@@ -506,7 +510,7 @@ func (e *Engine) SubmitAMM(
 			// couldn't rebase the pool so it gets rejected
 			e.broker.Send(
 				events.NewAMMPoolEvent(
-					ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
+					ctx, submit.Party, e.market.GetID(), subAccount, poolID,
 					submit.CommitmentAmount, submit.Parameters,
 					types.AMMPoolStatusRejected, types.AMMPoolStatusReasonCannotRebase,
 				),
@@ -522,6 +526,7 @@ func (e *Engine) SubmitAMM(
 func (e *Engine) AmendAMM(
 	ctx context.Context,
 	amend *types.AmendAMM,
+	deterministicID string,
 ) error {
 	pool, ok := e.pools[amend.Party]
 	if !ok {
@@ -543,7 +548,7 @@ func (e *Engine) AmendAMM(
 	}
 
 	pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
-	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance); err != nil {
+	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance, idgeneration.New(deterministicID)); err != nil {
 		// couldn't rebase the pool back to its original fair price so the amend is rejected
 		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, oldCommitment); err != nil {
 			e.log.Panic("could not revert balances are failed rebase", logging.Error(err))
@@ -698,7 +703,7 @@ func (e *Engine) updateSubAccountBalance(
 }
 
 // rebasePool submits an order on behalf of the given pool to pull it fair-price towards the target.
-func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal) error {
+func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal, idgen common.IDGenerator) error {
 	if target.LT(pool.lower.low) || target.GT(pool.upper.high) {
 		return ErrRebaseTargetOutsideBounds
 	}
@@ -752,7 +757,6 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 		logging.String("price", order.Price.String()),
 		logging.String("side", order.Side.String()),
 	)
-	idgen := idgeneration.New(pool.ID)
 
 	conf, err := e.market.SubmitOrderWithIDGeneratorAndOrderID(ctx, order, pool.SubAccount, idgen, idgen.NextID(), true)
 	if err != nil {
