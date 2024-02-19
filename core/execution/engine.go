@@ -322,12 +322,13 @@ func (e *Engine) SubmitAMM(
 func (e *Engine) AmendAMM(
 	ctx context.Context,
 	submit *types.AmendAMM,
+	deterministicID string,
 ) error {
 	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
 		return err
 	}
 
-	return e.allMarkets[submit.MarketID].AmendAMM(ctx, submit)
+	return e.allMarkets[submit.MarketID].AmendAMM(ctx, submit, deterministicID)
 }
 
 func (e *Engine) CancelAMM(
