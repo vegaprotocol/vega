@@ -430,7 +430,6 @@ func (e *Engine) SubmitAMM(
 	deterministicID string,
 	targetPrice *num.Uint,
 ) error {
-
 	idgen := idgeneration.New(deterministicID)
 	poolID := idgen.NextID()
 

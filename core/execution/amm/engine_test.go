@@ -193,7 +193,7 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	party, _ := getParty(t, tst)
 	amend := getPoolAmendment(t, party, tst.marketID)
 
-	err := tst.engine.AmendAMM(ctx, amend)
+	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
@@ -218,7 +218,7 @@ func TestAmendAMMWithRebase(t *testing.T) {
 	// so that an order will be submitting to rebase the pool
 	expectOrderSubmission(t, tst, subAccount, types.OrderStatusFilled, nil)
 
-	err := tst.engine.AmendAMM(ctx, amend)
+	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
 	require.NoError(t, err)
 }
 
@@ -346,7 +346,7 @@ func TestAmendMakesClosingPoolActive(t *testing.T) {
 	)
 	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
 	amend := getPoolAmendment(t, party, tst.marketID)
-	require.NoError(t, tst.engine.AmendAMM(ctx, amend))
+	require.NoError(t, tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash()))
 
 	// pool is active again
 	assert.False(t, tst.engine.poolsCpy[0].closing())
@@ -421,7 +421,7 @@ func expectSubAccountRelease(t *testing.T, tst *tstEngine, party, subAccount str
 		tst.assetID,
 		tst.marketID,
 		gomock.Any(),
-	).Times(1).Return(&types.LedgerMovement{}, nil, nil)
+	).Times(1).Return([]*types.LedgerMovement{}, nil, nil)
 }
 
 func expectOrderSubmission(t *testing.T, tst *tstEngine, subAccount string, status types.OrderStatus, err error) {
