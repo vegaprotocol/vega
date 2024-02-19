@@ -1,4 +1,4 @@
-Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on February 4th 2024
+Feature: Reproduce INJ/USDT-PERP market configuration as voted in on mainnet on February 4th 2024
 
   Background:
     Given time is updated to "2024-02-04T16:00:00Z"
@@ -28,10 +28,10 @@ Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on 
       | 0.03        | 0.85                         | 1                             | 0.5                    |
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | TUSDT | ldo.price           | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.9                   | 0.1095        | -0.0005           | 0.0005            | USDT       | 18                  |
+      | perp-oracle | TUSDT | inj.price           | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.9                   | 0.1095        | -0.0005           | 0.0005            | USDT       | 18                  |
     And the markets:
       | id            | quote name | asset | risk model            | margin calculator | auction duration | fees | price monitoring | data source config | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params | market type |
-      | LDO/USDT-PERP | USDT       | TUSDT | log-normal-risk-model | margin-calculator | 3600             | fees | price-monitoring | perp-oracle        | 4              | 1                       | 0.001                  | 0                         | sla        | perp        |
+      | INJ/USDT-PERP | USDT       | TUSDT | log-normal-risk-model | margin-calculator | 3600             | fees | price-monitoring | perp-oracle        | 4              | 1                       | 0.001                  | 0                         | sla        | perp        |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 30    |
@@ -49,24 +49,24 @@ Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on 
 
     When the parties submit the following liquidity provision:
       | id  | party | market id     | commitment amount | fee | lp type    |
-      | lp1 | lp    | LDO/USDT-PERP | 90000000          | 0.1 | submission |
-      | lp1 | lp    | LDO/USDT-PERP | 90000000          | 0.1 | submission |
+      | lp1 | lp    | INJ/USDT-PERP | 90000000          | 0.1 | submission |
+      | lp1 | lp    | INJ/USDT-PERP | 90000000          | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party | market id     | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp    | LDO/USDT-PERP | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lp    | LDO/USDT-PERP | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lp    | INJ/USDT-PERP | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lp    | INJ/USDT-PERP | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
-      | party | market id     | side | volume | price  | resulting trades | type       | tif     |
-      | aux   | LDO/USDT-PERP | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | LDO/USDT-PERP | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | LDO/USDT-PERP | buy  | 1      | 32000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | LDO/USDT-PERP | sell | 1      | 32000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id     | side | volume | price   | resulting trades | type       | tif     |
+      | aux   | INJ/USDT-PERP | buy  | 1      | 1       | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | INJ/USDT-PERP | sell | 1      | 2000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | INJ/USDT-PERP | buy  | 1      | 385000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | INJ/USDT-PERP | sell | 1      | 385000  | 0                | TYPE_LIMIT | TIF_GTC |
     
-    When the opening auction period ends for market "LDO/USDT-PERP"
-    Then the market data for the market "LDO/USDT-PERP" should be:
+    When the opening auction period ends for market "INJ/USDT-PERP"
+    Then the market data for the market "INJ/USDT-PERP" should be:
       | horizon | ref price | min bound | max bound |
-      | 360     | 32000     | 31148     | 32874     |  
-      | 1440    | 32000     | 30318     | 33772     |
-      | 4320    | 32000     | 29140     | 35130     |
-      | 21600   | 32000     | 25944     | 39409     |
+      | 360     | 385000    | 374745    | 395526    |  
+      | 1440    | 385000    | 364753    | 406329    |
+      | 4320    | 385000    | 350586    | 422662    |
+      | 21600   | 385000    | 312135    | 474144    |

@@ -1,4 +1,4 @@
-Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on February 4th 2024
+Feature: Reproduce BTC/USDT-PERP market configuration as updated on February 11th 2024
 
   Background:
     Given time is updated to "2024-02-04T16:00:00Z"
@@ -6,8 +6,8 @@ Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on 
       | id    | decimal places |
       | TUSDT | 6              |
     And the log normal risk model named "log-normal-risk-model":
-      | risk aversion | tau       | mu | r | sigma |
-      | 0.000001      | 0.0000071 | 0  | 0 | 1.5   |
+      | risk aversion | tau         | mu    | r | sigma |
+      | 0.000001      | 0.000003995 | 0.016 | 0 | 1     |
     And the margin calculator named "margin-calculator":
       | search factor | initial factor | release factor |
       | 1.1           | 1.5            | 1.7            |
@@ -28,10 +28,10 @@ Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on 
       | 0.03        | 0.85                         | 1                             | 0.5                    |
     And the perpetual oracles from "0xCAFECAFE1":
       | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | TUSDT | ldo.price           | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.9                   | 0.1095        | -0.0005           | 0.0005            | USDT       | 18                  |
+      | perp-oracle | TUSDT | eth.price           | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0.9                   | 0.1095        | -0.0005           | 0.0005            | USDT       | 18                  |
     And the markets:
       | id            | quote name | asset | risk model            | margin calculator | auction duration | fees | price monitoring | data source config | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params | market type |
-      | LDO/USDT-PERP | USDT       | TUSDT | log-normal-risk-model | margin-calculator | 3600             | fees | price-monitoring | perp-oracle        | 4              | 1                       | 0.001                  | 0                         | sla        | perp        |
+      | BTC/USDT-PERP | USDT       | TUSDT | log-normal-risk-model | margin-calculator | 3600             | fees | price-monitoring | perp-oracle        | 4              | 1                       | 0.001                  | 0                         | sla        | perp        |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 30    |
@@ -49,24 +49,24 @@ Feature: Reproduce LDO/USDT-PERP market configuration as voted in on mainnet on 
 
     When the parties submit the following liquidity provision:
       | id  | party | market id     | commitment amount | fee | lp type    |
-      | lp1 | lp    | LDO/USDT-PERP | 90000000          | 0.1 | submission |
-      | lp1 | lp    | LDO/USDT-PERP | 90000000          | 0.1 | submission |
+      | lp1 | lp    | BTC/USDT-PERP | 90000000          | 0.1 | submission |
+      | lp1 | lp    | BTC/USDT-PERP | 90000000          | 0.1 | submission |
     And the parties place the following pegged iceberg orders:
       | party | market id     | peak size | minimum visible size | side | pegged reference | volume     | offset |
-      | lp    | LDO/USDT-PERP | 2         | 1                    | buy  | BID              | 50         | 100    |
-      | lp    | LDO/USDT-PERP | 2         | 1                    | sell | ASK              | 50         | 100    |
+      | lp    | BTC/USDT-PERP | 2         | 1                    | buy  | BID              | 50         | 100    |
+      | lp    | BTC/USDT-PERP | 2         | 1                    | sell | ASK              | 50         | 100    |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
-      | party | market id     | side | volume | price  | resulting trades | type       | tif     |
-      | aux   | LDO/USDT-PERP | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | LDO/USDT-PERP | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | LDO/USDT-PERP | buy  | 1      | 32000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | LDO/USDT-PERP | sell | 1      | 32000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id     | side | volume | price      | resulting trades | type       | tif     |
+      | aux   | BTC/USDT-PERP | buy  | 1      | 1          | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/USDT-PERP | sell | 1      | 2000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | BTC/USDT-PERP | buy  | 1      | 520000000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | BTC/USDT-PERP | sell | 1      | 520000000  | 0                | TYPE_LIMIT | TIF_GTC |
     
-    When the opening auction period ends for market "LDO/USDT-PERP"
-    Then the market data for the market "LDO/USDT-PERP" should be:
+    When the opening auction period ends for market "BTC/USDT-PERP"
+    Then the market data for the market "BTC/USDT-PERP" should be:
       | horizon | ref price | min bound | max bound |
-      | 360     | 32000     | 31148     | 32874     |  
-      | 1440    | 32000     | 30318     | 33772     |
-      | 4320    | 32000     | 29140     | 35130     |
-      | 21600   | 32000     | 25944     | 39409     |
+      | 360     | 520000000 | 510725426 | 529437150 |  
+      | 1440    | 520000000 | 501610731 | 539039617 |
+      | 4320    | 520000000 | 488548773 | 553402620 |
+      | 21600   | 520000000 | 452206310 | 597561106 |
