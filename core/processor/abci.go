@@ -2638,7 +2638,7 @@ func (app *App) DeliverAmendAMM(ctx context.Context, tx abci.Tx, deterministicID
 	}
 
 	amend := types.NewAmendAMMFromProto(params, tx.Party())
-	return app.exec.AmendAMM(ctx, amend)
+	return app.exec.AmendAMM(ctx, amend, deterministicID)
 }
 
 func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicID string) error {
