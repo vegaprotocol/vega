@@ -166,7 +166,8 @@ func (e *Engine) restoreSpotMarket(ctx context.Context, em *types.ExecSpotMarket
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*future.Market, error) {
 	marketConfig := em.Market
 	// ensure the default chain ID is set, can be removed after protocol upgrade
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+	if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+		e.log.Info(">>> EXECUTION.ENGINE upgrading to v0.74.0")
 		e.ensureChainIDSet(marketConfig)
 	}
 

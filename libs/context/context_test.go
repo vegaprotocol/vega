@@ -17,9 +17,11 @@ package context_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/version"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -39,4 +41,33 @@ func TestRestoreDataInContext(t *testing.T) {
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.0"))
 	assert.False(t, vgcontext.InProgressUpgradeFrom(ctx, "v0.74.1"))
 	assert.False(t, vgcontext.InProgressSnapshotRestore(ctx))
+}
+
+func TestUpgradeTo(t *testing.T) {
+	current := strings.Split(strings.Split(version.Get(), "-")[0], "+")[0]
+	data := []struct {
+		from, to string
+	}{
+		{
+			from: "v0.1.0",
+			to:   "v0.1.1",
+		},
+		{
+			from: current,
+			to:   current + "2",
+		},
+		{
+			from: current + "2",
+			to:   current + "3",
+		},
+	}
+	for _, d := range data {
+		ctx := vgcontext.WithSnapshotInfo(context.Background(), d.from, true)
+		assert.True(t, vgcontext.InProgressUpgradeFrom(ctx, d.from))
+		assert.True(t, vgcontext.InProgressUpgradeTo(ctx, current))
+		assert.False(t, vgcontext.InProgressUpgradeTo(ctx, d.to))
+	}
+	// for completeness:
+	assert.False(t, vgcontext.InProgressUpgradeTo(context.Background(), current))
+	assert.False(t, vgcontext.InProgressUpgradeFrom(context.Background(), current))
 }

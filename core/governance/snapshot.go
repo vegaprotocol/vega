@@ -255,7 +255,8 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 	vevts := []events.Event{}
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+			e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
@@ -265,7 +266,8 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			invalidVotes: votesAsMap(p.Invalid),
 		}
 
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+			e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 			if nm := pp.Proposal.Terms.GetNewMarket(); nm != nil {
 				e.log.Info("migrating liquidity fee settings for new market proposal", logging.String("pid", pp.ID))
 				nm.Changes.LiquidityFeeSettings = &types.LiquidityFeeSettings{
@@ -279,7 +281,8 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 				}
 			}
 		}
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+			e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 			if pp.Terms.IsNewMarket() {
 				pp.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
 			}
@@ -324,7 +327,8 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.BatchProposals)))
 	for _, bpp := range active.BatchProposals {
 		bpt := types.BatchProposalFromSnapshotProto(bpp.BatchProposal.Proposal, bpp.Proposals)
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+			e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 			e.ensureChainIDSet(bpt.Proposals...)
 		}
 		bp := &batchProposal{
@@ -336,7 +340,8 @@ func (e *Engine) restoreBatchActiveProposals(ctx context.Context, active *types.
 
 		evts = append(evts, events.NewProposalEventFromProto(ctx, bp.BatchProposal.ToProto()))
 		for _, p := range bp.BatchProposal.Proposals {
-			if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+			if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+				e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 				if p.Terms.IsNewMarket() {
 					p.Terms.GetNewMarket().Changes.MarkPriceConfiguration = defaultMarkPriceConfig.DeepClone()
 				}
@@ -380,7 +385,8 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 	vevts := []events.Event{}
 	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
-		if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		if vgcontext.InProgressUpgradeTo(ctx, "v0.74.0") {
+			e.log.Info(">>> GOVERNANCE.ENGINE Upgrading to v0.74.0")
 			e.ensureChainIDSet(p.Proposal)
 		}
 		pp := &proposal{
@@ -438,14 +444,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if perp := nm.Changes.GetPerps(); perp != nil {
 				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
 					}
 				}
 				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
 					}
@@ -455,14 +461,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if future := nm.Changes.GetFuture(); future != nil {
 				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
 					}
 				}
 				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
 					}
@@ -474,14 +480,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if perp := um.Changes.GetPerps(); perp != nil {
 				switch pt := perp.Perps.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementData.DataSourceType = pt
 					}
 				}
 				switch pt := perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if pt.SourceChainID == 0 {
+					if pt.SourceChainID == 0 && !pt.IsZero() {
 						pt.SourceChainID = e.chainID
 						perp.Perps.DataSourceSpecForSettlementSchedule.DataSourceType = pt
 					}
@@ -491,14 +497,14 @@ func (e *Engine) ensureChainIDSet(props ...*types.Proposal) {
 			if future := um.Changes.GetFuture(); future != nil {
 				switch ft := future.Future.DataSourceSpecForSettlementData.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForSettlementData.DataSourceType = ft
 					}
 				}
 				switch ft := future.Future.DataSourceSpecForTradingTermination.DataSourceType.(type) {
 				case ethcallcommon.Spec:
-					if ft.SourceChainID == 0 {
+					if ft.SourceChainID == 0 && !ft.IsZero() {
 						ft.SourceChainID = e.chainID
 						future.Future.DataSourceSpecForTradingTermination.DataSourceType = ft
 					}
