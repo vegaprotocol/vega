@@ -27,12 +27,21 @@ import (
 
 func TheFollowingTransfersShouldHappen(
 	broker *stubs.BrokerStub,
+	exec Execution,
 	table *godog.Table,
 ) error {
 	transfers := broker.GetTransfers(true)
 
 	for _, r := range parseTransferTable(table) {
 		row := transferRow{row: r}
+		if row.IsAMM() {
+			id, ok := exec.GetAMMSubAccountID(row.From())
+			if !ok {
+				return fmt.Errorf("no AMM sub account ID found for alias %s", row.From())
+			}
+			// reassign the value to the derived ID
+			row.row.values["from"] = id
+		}
 
 		matched, divergingAmounts := matchTransfers(transfers, row)
 
@@ -96,6 +105,7 @@ func parseTransferTable(table *godog.Table) []RowWrapper {
 		"asset",
 	}, []string{
 		"type",
+		"is amm",
 	})
 }
 
@@ -141,4 +151,11 @@ func (r transferRow) Amount() uint64 {
 
 func (r transferRow) Asset() string {
 	return r.row.MustStr("asset")
+}
+
+func (r transferRow) IsAMM() bool {
+	if !r.row.HasColumn("is amm") {
+		return false
+	}
+	return r.row.MustBool("is amm")
 }
