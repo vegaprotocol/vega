@@ -3526,7 +3526,6 @@ func (e *Engine) CreatePartyAMMsSubAccounts(
 	ctx context.Context,
 	party, subAccount, asset, market string,
 ) (general *types.Account, margin *types.Account, err error) {
-
 	generalID, err := e.CreatePartyGeneralAccount(ctx, subAccount, asset)
 	if err != nil {
 		return nil, nil, err
