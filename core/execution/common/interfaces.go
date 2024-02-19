@@ -195,7 +195,7 @@ type Collateral interface {
 	SubAccountRelease(
 		ctx context.Context,
 		party, subAccount, asset, market string, pos events.MarketPosition,
-	) (*types.LedgerMovement, events.Margin, error)
+	) ([]*types.LedgerMovement, events.Margin, error)
 	CreatePartyAMMsSubAccounts(
 		ctx context.Context,
 		party, subAccount, asset, market string,
