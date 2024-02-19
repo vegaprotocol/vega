@@ -64,7 +64,7 @@ type Collateral interface {
 	SubAccountRelease(
 		ctx context.Context,
 		party, subAccount, asset, market string, mevt events.MarketPosition,
-	) (*types.LedgerMovement, events.Margin, error)
+	) ([]*types.LedgerMovement, events.Margin, error)
 	CreatePartyAMMsSubAccounts(
 		ctx context.Context,
 		party, subAccount, asset, market string,
@@ -648,7 +648,7 @@ func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool) (events.Mar
 	}
 
 	e.broker.Send(events.NewLedgerMovements(
-		ctx, []*types.LedgerMovement{ledgerMovements}))
+		ctx, ledgerMovements))
 	return closeout, nil
 }
 
