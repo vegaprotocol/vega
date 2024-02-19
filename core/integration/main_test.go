@@ -479,7 +479,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheTransfersOfFollowingTypesShouldHappen(execsetup.broker, table)
 	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
-		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
+		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the mark price should be "([^"]*)" for the market "([^"]*)"$`, func(rawMarkPrice, marketID string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.executionEngine, marketID, rawMarkPrice)
