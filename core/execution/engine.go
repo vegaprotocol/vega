@@ -1276,6 +1276,9 @@ func (e *Engine) migrate7314(ctx context.Context) {
 	}
 
 	for _, mkt := range e.futureMarketsCpy {
+		if mkt.GetMarketState() != types.MarketStateActive && mkt.GetMarketState() != types.MarketStateSuspended {
+			continue
+		}
 		// suspend the markets
 		err := e.UpdateMarketState(ctx, &types.MarketStateUpdateConfiguration{
 			MarketID:        mkt.GetID(),
