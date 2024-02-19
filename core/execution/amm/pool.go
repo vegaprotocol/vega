@@ -521,10 +521,10 @@ func (p *Pool) fairPrice() *num.Uint {
 // virtualBalances returns the pools x, y values where x is the balance in contracts and y is the balance in asset.
 func (p *Pool) virtualBalances(pos int64, ae *num.Uint, side types.Side) (num.Decimal, num.Decimal) {
 	switch {
-	case pos < 0, side == types.SideBuy:
+	case pos < 0, pos == 0 && side == types.SideBuy:
 		// zero position but incoming is buy which will make pool short
 		return p.virtualBalancesShort(pos, ae)
-	case pos > 0, side == types.SideSell:
+	case pos > 0, pos == 0 && side == types.SideSell:
 		// zero position but incoming is sell which will make pool long
 		return p.virtualBalancesLong(pos, ae)
 	default:
