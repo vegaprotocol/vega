@@ -144,6 +144,9 @@
 - [10611](https://github.com/vegaprotocol/vega/issues/10611) - Added internal config price to update `perps`.
 - [10615](https://github.com/vegaprotocol/vega/issues/10615) - Fix oracle scaling function in internal composite price.
 - [10621](https://github.com/vegaprotocol/vega/issues/10621) - Fix market activity tracker storing incorrect data for previous `epochMakerFeesPaid`.
+- [10643](https://github.com/vegaprotocol/vega/issues/10643) - Games `API` not showing quantum values and added filter for team and party.
+
+## 0.74.0
 
 ### 🚨 Breaking changes
 
@@ -233,6 +236,7 @@
 - [10517](https://github.com/vegaprotocol/vega/issues/10517) - Add optional cap to metric based rewards.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
+- [10543](https://github.com/vegaprotocol/vega/issues/10543) - Add `ELS` for `vAMM`.
 
 ### 🐛 Fixes
 
