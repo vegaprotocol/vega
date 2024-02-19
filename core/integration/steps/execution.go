@@ -60,4 +60,6 @@ type Execution interface {
 	SubmitAMM(ctx context.Context, submit *types.SubmitAMM) error
 	AmendAMM(ctx context.Context, submit *types.AmendAMM) error
 	CancelAMM(ctx context.Context, cancel *types.CancelAMM) error
+	GetAMMSubAccountID(alias string) (string, bool)
+	SetAMMSubAccountIDAlias(alias, id string)
 }
