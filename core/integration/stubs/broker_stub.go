@@ -929,6 +929,20 @@ func (b *BrokerStub) GetPartyVestingAccount(party, asset string) (ga vegapb.Acco
 	return
 }
 
+func (b *BrokerStub) GetAccountByID(id string) (*vegapb.Account, error) {
+	batch := b.GetAccountEvents()
+	var acc *vegapb.Account
+	for _, e := range batch {
+		if v := e.Account(); v.Id == id {
+			acc = &v
+		}
+	}
+	if acc == nil {
+		return nil, AccountDoesNotExistErr
+	}
+	return acc, nil
+}
+
 // GetPartyVestingAccount returns the latest event WRT the party's general account.
 func (b *BrokerStub) GetPartyVestedAccount(party, asset string) (ga vegapb.Account, err error) {
 	batch := b.GetAccountEvents()
