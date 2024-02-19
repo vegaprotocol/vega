@@ -3047,7 +3047,7 @@ func (m *Market) SubmitAMM(context.Context, *types.SubmitAMM, string) error {
 	return errors.New("unimplemented")
 }
 
-func (m *Market) AmendAMM(context.Context, *types.AmendAMM) error {
+func (m *Market) AmendAMM(context.Context, *types.AmendAMM, string) error {
 	return errors.New("unimplemented")
 }
 

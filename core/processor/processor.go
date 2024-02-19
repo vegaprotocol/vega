@@ -111,7 +111,7 @@ type ExecutionEngine interface {
 	OnChainIDUpdate(uint64) error
 
 	SubmitAMM(ctx context.Context, sub *types.SubmitAMM, deterministicID string) error
-	AmendAMM(ctx context.Context, sub *types.AmendAMM) error
+	AmendAMM(ctx context.Context, sub *types.AmendAMM, deterministicID string) error
 	CancelAMM(ctx context.Context, sub *types.CancelAMM, deterministicID string) error
 }
 
