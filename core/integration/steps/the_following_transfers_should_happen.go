@@ -35,12 +35,18 @@ func TheFollowingTransfersShouldHappen(
 	for _, r := range parseTransferTable(table) {
 		row := transferRow{row: r}
 		if row.IsAMM() {
-			id, ok := exec.GetAMMSubAccountID(row.From())
-			if !ok {
-				return fmt.Errorf("no AMM sub account ID found for alias %s", row.From())
+			found := false
+			if id, ok := exec.GetAMMSubAccountID(row.From()); ok {
+				row.row.values["from"] = id
+				found = true
 			}
-			// reassign the value to the derived ID
-			row.row.values["from"] = id
+			if id, ok := exec.GetAMMSubAccountID(row.To()); ok {
+				row.row.values["to"] = id
+				found = true
+			}
+			if !found {
+				return fmt.Errorf("no AMM aliases found for from (%s) or to (%s)", row.From(), row.To())
+			}
 		}
 
 		matched, divergingAmounts := matchTransfers(transfers, row)
