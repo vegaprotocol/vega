@@ -29,6 +29,7 @@ message AMMPool {
     STATUS_REJECTED = 2;
     STATUS_CANCELLED = 3;
     STATUS_STOPPED = 4;
+    STATUS_REDUCE_ONLY = 5;
   }
 
   enum StatusReason {
