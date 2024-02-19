@@ -36,5 +36,13 @@ func checkCancelAMM(cmd *commandspb.CancelAMM) Errors {
 		errs.AddForProperty("cancel_amm.market_id", ErrShouldBeAValidVegaID)
 	}
 
+	if cmd.Method == commandspb.CancelAMM_METHOD_UNSPECIFIED {
+		errs.AddForProperty("cancel_amm.method", ErrIsRequired)
+	}
+
+	if _, ok := commandspb.CancelAMM_Method_name[int32(cmd.Method)]; !ok {
+		errs.AddForProperty("cancel_amm.method", ErrIsNotValid)
+	}
+
 	return errs
 }
