@@ -4493,11 +4493,11 @@ type PerpetualProduct {
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
   "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
-  fundingRateScalingFactor: String!
+  fundingRateScalingFactor: String
   "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
-  fundingRateLowerBound: String!
+  fundingRateLowerBound: String
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
-  fundingRateUpperBound: String!
+  fundingRateUpperBound: String
 }
 
 """
@@ -4725,11 +4725,11 @@ type UpdatePerpetualProduct {
   "Binding between the data source spec and the settlement data"
   dataSourceSpecBinding: DataSourceSpecPerpetualBinding!
   "Factor applied to funding-rates. This scales the impact that spot price deviations have on funding payments."
-  fundingRateScalingFactor: String!
+  fundingRateScalingFactor: String
   "Lower bound for the funding-rate such that the funding-rate will never be lower than this value"
-  fundingRateLowerBound: String!
+  fundingRateLowerBound: String
   "Upper bound for the funding-rate such that the funding-rate will never be higher than this value"
-  fundingRateUpperBound: String!
+  fundingRateUpperBound: String
 }
 
 union UpdateMarketRiskParameters =
