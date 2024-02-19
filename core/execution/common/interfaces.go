@@ -195,7 +195,7 @@ type Collateral interface {
 	SubAccountRelease(
 		ctx context.Context,
 		party, subAccount, asset, market string, pos events.MarketPosition,
-	) (*types.LedgerMovement, events.Margin, error)
+	) ([]*types.LedgerMovement, events.Margin, error)
 	CreatePartyAMMsSubAccounts(
 		ctx context.Context,
 		party, subAccount, asset, market string,
@@ -366,7 +366,7 @@ type CommonMarket interface {
 	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
 
 	SubmitAMM(context.Context, *types.SubmitAMM, string) error
-	AmendAMM(context.Context, *types.AmendAMM) error
+	AmendAMM(context.Context, *types.AmendAMM, string) error
 	CancelAMM(context.Context, *types.CancelAMM, string) error
 
 	PostRestore(context.Context) error

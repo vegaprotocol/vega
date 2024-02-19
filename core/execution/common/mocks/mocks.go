@@ -822,10 +822,10 @@ func (mr *MockCollateralMockRecorder) RollbackMarginUpdateOnOrder(arg0, arg1, ar
 }
 
 // SubAccountRelease mocks base method.
-func (m *MockCollateral) SubAccountRelease(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 events.MarketPosition) (*types.LedgerMovement, events.Margin, error) {
+func (m *MockCollateral) SubAccountRelease(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 events.MarketPosition) ([]*types.LedgerMovement, events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubAccountRelease", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
 	ret1, _ := ret[1].(events.Margin)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
