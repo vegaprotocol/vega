@@ -4847,8 +4847,8 @@ func (m *Market) SubmitAMM(ctx context.Context, submit *types.SubmitAMM, determi
 	return err
 }
 
-func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM) error {
-	return m.amm.AmendAMM(ctx, amend)
+func (m *Market) AmendAMM(ctx context.Context, amend *types.AmendAMM, deterministicID string) error {
+	return m.amm.AmendAMM(ctx, amend, deterministicID)
 }
 
 func (m *Market) CancelAMM(ctx context.Context, cancel *types.CancelAMM, deterministicID string) error {
