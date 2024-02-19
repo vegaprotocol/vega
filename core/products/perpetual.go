@@ -941,6 +941,8 @@ func (p *Perpetual) calculateInterestTerm(externalTWAP, internalTWAP *num.Uint, 
 // GetMarginIncrease returns the estimated extra margin required to account for the next funding payment
 // for a party with a position of +1.
 func (p *Perpetual) GetMarginIncrease(t int64) num.Decimal {
+	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
+
 	// if we have no data, or the funding factor is zero, then the margin increase will always be zero
 	if !p.haveDataBeforeGivenTime(t) || p.p.MarginFundingFactor.IsZero() {
 		return num.DecimalZero()

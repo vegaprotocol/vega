@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10702](https://github.com/vegaprotocol/vega/pull/10700) - Use second precision in `GetMarginIncrease()` so that perpetual product uses second precision everywhere.
 
 
 ## 0.74.2
