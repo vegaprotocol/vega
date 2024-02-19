@@ -90,8 +90,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			MarginFactor:           num.DecimalZero(),
 		}
 	}
-	// negative increment == short positions require extra margin, otherwise long requires extra margin
-	longFP := inc.IsPositive()
 
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
@@ -249,11 +247,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	if !inc.IsZero() && !openVolume.IsZero() {
 		// openVolume and inc are signed, but this is fine, we only apply the positive values
 		incD := num.MaxD(num.DecimalZero(), inc.Mul(openVolume))
-		if longFP {
-			marginMaintenanceLng = marginMaintenanceLng.Add(incD)
-		} else {
-			marginMaintenanceSht = marginMaintenanceSht.Add(incD)
-		}
+		marginMaintenanceLng = marginMaintenanceLng.Add(incD)
+		marginMaintenanceSht = marginMaintenanceSht.Add(incD)
 	}
 
 	// the greatest liability is the most positive number
@@ -262,11 +257,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 	if marginMaintenanceSht.IsPositive() {
 		return newMarginLevels(marginMaintenanceSht, e.scalingFactorsUint)
-	}
-
-	// for some reason, margin is negative or zero, let's just use the increment if set:
-	if !inc.IsZero() {
-		return newMarginLevels(inc, e.scalingFactorsUint)
 	}
 
 	return &types.MarginLevels{

@@ -259,19 +259,6 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	return uncrossedOrders, ordersToCancel, nil
 }
 
-// RollbackConfirmation is only used to restore the book if the margin check fails after a cancel and replace
-// amendment of an order. We need to uncross the book to determine the exit price and calculate the margin correctly.
-// if the margin check then fails, we should restore the passive orders to their original state on the book.
-func (b *OrderBook) RollbackConfirmation(conf *types.OrderConfirmation, orders []*types.Order) error {
-	for _, o := range orders {
-		// we don't have to go through the SubmitOrder flow here, because the order was already validated
-		// and we know this order will not uncross. Replace or add this order wherever needed
-		b.add(o)                          // simply adds order to the map, reassigns if the order exists already
-		b.getSide(o.Side).replaceOrder(o) // replace will replace, or append if the order was removed somehow
-	}
-	return nil
-}
-
 func (b OrderBook) InAuction() bool {
 	return b.auction
 }
