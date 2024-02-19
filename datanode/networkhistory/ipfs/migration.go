@@ -56,8 +56,6 @@ func MigrateIpfsStorageVersion(log *logging.Logger, ipfsDir string) error {
 		return fmt.Errorf("failed to find local ipfs directory: %w", err)
 	}
 
-	// fetcher := createFetcher("", localIpfsDir)
-	// err = migrations.RunMigration(context.Background(), fetcher, latestSupportedVersion(), localIpfsDir, false)
 	if err := runMigrations(repoVersion, localIpfsDir); err != nil {
 		return fmt.Errorf("failed to execute the ipfs migration: %w", err)
 	}
