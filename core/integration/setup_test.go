@@ -518,5 +518,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.RewardsVestingBenefitTiers,
 			Watcher: execsetup.vesting.OnBenefitTiersUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityEquityLikeShareFeeFraction,
+			Watcher: execsetup.executionEngine.OnMarketLiquidityEquityLikeShareFeeFractionUpdate,
+		},
 	)
 }
