@@ -34,7 +34,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 
 	if m.mkt.State == types.MarketStateSuspendedViaGovernance {
 		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
-			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration.Seconds())})
 		}
 	}
 
