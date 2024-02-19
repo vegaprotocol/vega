@@ -149,6 +149,10 @@ type Market struct {
 	minDuration time.Duration
 }
 
+func (m *Market) Migration7314UpdateFundingScalingFactor() {
+	/* nothing to do */
+}
+
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
 func NewMarket(
 	log *logging.Logger,

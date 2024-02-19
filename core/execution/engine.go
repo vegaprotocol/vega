@@ -108,6 +108,8 @@ type Engine struct {
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
 	skipRestoreSuccessors map[string]struct{}
+
+	suspendMarketOnUpgrade7314 bool
 }
 
 type netParamsValues struct {
@@ -1268,8 +1270,35 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	return types.ErrInvalidMarketID
 }
 
+func (e *Engine) migrate7314(ctx context.Context) {
+	if !e.suspendMarketOnUpgrade7314 {
+		return
+	}
+
+	for _, mkt := range e.futureMarketsCpy {
+		// suspend the markets
+		err := e.UpdateMarketState(ctx, &types.MarketStateUpdateConfiguration{
+			MarketID:        mkt.GetID(),
+			SettlementPrice: nil,
+			UpdateType:      types.MarketStateUpdateTypeSuspend,
+		})
+		if err != nil {
+			e.log.Panic("could not update market state", logging.Error(err))
+		}
+
+		// upgrade the margin funding factors to be 0
+		mkt.Migration7314UpdateFundingScalingFactor()
+		// send updates to datanode
+		e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
+	}
+
+	e.suspendMarketOnUpgrade7314 = false
+}
+
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "OnTick")
+
+	e.migrate7314(ctx)
 
 	e.log.Debug("updating engine on new time update")
 

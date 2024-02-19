@@ -377,6 +377,10 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	m.updateLiquidityFee(ctx)
 }
 
+func (m *Market) Migration7314UpdateFundingScalingFactor() {
+	m.tradableInstrument.Instrument.Product.Migration7314UpdateMarginFactor()
+}
+
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
 	m.epoch = epoch
 	m.liquidityEngine.OnEpochRestore(epoch)

@@ -74,6 +74,9 @@ type Product interface {
 	GetMarginIncrease(int64) num.Decimal
 	GetData(t int64) *types.ProductData
 	GetCurrentPeriod() uint64
+
+	// FIXME: to be removed after upgrade 73.14
+	Migration7314UpdateMarginFactor()
 }
 
 // New instance a new product from a Market framework product configuration.

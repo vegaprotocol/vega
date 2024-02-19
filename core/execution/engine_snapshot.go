@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/execution/spot"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -354,6 +355,10 @@ func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
 }
 
 func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+		e.suspendMarketOnUpgrade7314 = true
+	}
+
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
 		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)

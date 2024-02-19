@@ -278,6 +278,10 @@ type Perpetual struct {
 	externalTWAP *cachedTWAP
 }
 
+func (p *Perpetual) Migration7314UpdateMarginFactor() {
+	p.p.MarginFundingFactor = num.DecimalZero()
+}
+
 func (p Perpetual) GetCurrentPeriod() uint64 {
 	return p.seq
 }

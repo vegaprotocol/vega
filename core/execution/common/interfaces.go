@@ -344,6 +344,9 @@ type CommonMarket interface {
 	SubmitStopOrdersWithIDGeneratorAndOrderIDs(context.Context, *types.StopOrdersSubmission, string, IDGenerator, *string, *string) (*types.OrderConfirmation, error)
 
 	PostRestore(context.Context) error
+
+	// FIXME: to remove past the patch upgrade
+	Migration7314UpdateFundingScalingFactor()
 }
 
 type AccountBalanceChecker interface {

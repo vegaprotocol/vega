@@ -53,6 +53,10 @@ type Future struct {
 	assetDP                    uint32
 }
 
+func (p *Future) Migration7314UpdateMarginFactor() {
+	/* nothing to do */
+}
+
 func (_ Future) GetCurrentPeriod() uint64 { return 0 }
 
 func (f *Future) UnsubscribeTradingTerminated(ctx context.Context) {
