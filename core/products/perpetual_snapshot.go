@@ -84,7 +84,7 @@ func NewPerpetualFromSnapshot(
 	perps.startedAt = state.StartedAt
 	perps.seq = state.Seq
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
 		// do it the old way where we'd regenerate the cached values by adding the points again
 		perps.externalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
 		perps.internalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
