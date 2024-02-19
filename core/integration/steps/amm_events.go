@@ -76,8 +76,38 @@ func ExpectToSeeAMMEvents(broker *stubs.BrokerStub, table *godog.Table) error {
 	return nil
 }
 
+func SetAMMSubAccountAlias(broker *stubs.BrokerStub, exec Execution, table *godog.Table) error {
+	// get the most recent event by market and party
+	recent := broker.GetLastAMMPoolEvents()
+	for _, r := range parseAMMAccountAlias(table) {
+		row := ammEvtRow{
+			r: r,
+		}
+		mID, pID := row.market(), row.party()
+		mmap, ok := recent[mID]
+		if !ok {
+			return fmt.Errorf("no AMM events found for market %s", mID)
+		}
+		pEvt, ok := mmap[pID]
+		if !ok {
+			return fmt.Errorf("no AMM event found for party %s in market %s", pID, mID)
+		}
+		acc := pEvt.AMMPool().SubAccount
+		exec.SetAMMSubAccountIDAlias(row.alias(), acc)
+	}
+	return nil
+}
+
 type ammEvtRow struct {
 	r RowWrapper
+}
+
+func parseAMMAccountAlias(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"market id",
+		"alias",
+	}, nil)
 }
 
 func parseAMMEventTable(table *godog.Table) []RowWrapper {
@@ -195,4 +225,8 @@ func (a ammEvtRow) reason() (types.AMMPoolStatusReason, bool) {
 	}
 	sr := a.r.MustPoolStatusReason("reason")
 	return sr, true
+}
+
+func (a ammEvtRow) alias() string {
+	return a.r.MustStr("alias")
 }

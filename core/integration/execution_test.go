@@ -46,15 +46,28 @@ type batchIntruction struct {
 // if any of the ingress methods returns an error (as the processor would).
 type exEng struct {
 	*execution.Engine
-	broker *stubs.BrokerStub
-	batch  *batchIntruction
+	broker   *stubs.BrokerStub
+	batch    *batchIntruction
+	ammAlias map[string]string
 }
 
 func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 	return &exEng{
-		Engine: e,
-		broker: broker,
+		Engine:   e,
+		broker:   broker,
+		ammAlias: map[string]string{},
 	}
+}
+
+// GetAMMSubAccountID returns the derived account ID based on the alias.
+func (e *exEng) GetAMMSubAccountID(alias string) (string, bool) {
+	id, ok := e.ammAlias[alias]
+	return id, ok
+}
+
+// SetAMMSubAccountIDAlias creates an alias for a derived AMM sub account.
+func (e *exEng) SetAMMSubAccountIDAlias(alias, id string) {
+	e.ammAlias[alias] = id
 }
 
 func (e *exEng) BlockEnd(ctx context.Context) {
