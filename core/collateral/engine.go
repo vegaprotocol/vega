@@ -124,6 +124,8 @@ type Engine struct {
 	// we'll use it only once after an upgrade
 	// to make sure asset are being created
 	ensuredAssetAccounts bool
+
+	migrate744 bool
 }
 
 // New instantiates a new collateral engine.
@@ -149,6 +151,11 @@ func New(log *logging.Logger, conf Config, ts TimeService, broker Broker) *Engin
 }
 
 func (e *Engine) BeginBlock(ctx context.Context) {
+	if e.migrate744 {
+		e.migrate744 = false
+		ExecuteMigration744(ctx, e.broker, e.log, e)
+	}
+
 	// FIXME(jeremy): to be removed after the migration from
 	// 72.x to 73, this will ensure all per assets accounts are being
 	// created after the restart
