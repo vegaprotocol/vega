@@ -517,7 +517,10 @@ func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.De
 func (p *Pool) fairPrice() *num.Uint {
 	pos, ae := p.getPosition()
 	if pos == 0 {
-		return p.lower.high.Clone()
+		if p.lower != nil {
+			return p.lower.high.Clone()
+		}
+		return p.upper.low.Clone()
 	}
 
 	x, y := p.virtualBalances(pos, ae, types.SideUnspecified)
