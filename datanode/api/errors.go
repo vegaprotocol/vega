@@ -339,6 +339,7 @@ var (
 	ErrListPartyMarginModes = errors.New("failed to list parties margin modes")
 	// ErrGetTimeWeightedNotionalPosition is returned when the time weighted notional position cannot be retrieved.
 	ErrGetTimeWeightedNotionalPosition = errors.New("failed to get time weighted notional position")
+	ErrListAMMPools                    = errors.New("failed to list AMM pools")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
