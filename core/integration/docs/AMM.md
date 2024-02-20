@@ -143,6 +143,35 @@ And the following transfers should happen:
   | party1 | ACCOUNT_TYPE_GENERAL | party1-amm-acc | ACCOUNT_TYPE_GENERAL |           | 10000  | ETH   | true   |
 ```
 
+### Checking AMM trades
+
+Because the parties who created the vAMM don't actually trade directly, the derived party ID will appear as the buyer or seller. The account owner alias created above should therefore be used to check the buyer/seller of trades involving the vAMM pools:
+
+```
+Then the following trades should be executed:
+  | buyer  | price | size | seller      | is amm |
+  | party5 | 106   | 1    | vamm1-alias | true   |
+  | party5 | 110   | 1    | party2      |        |
+  | party5 | 128   | 2    | vamm1-alias | true   |
+  | party5 | 140   | 1    | party4      |        |
+```
+
+This step has added the `is amm` column (optional) which should be set to `true` to lookup the actual party ID using the vAMM alias created in the step outlined above.
+
+### Checking vAMM position
+
+Like any party, we may want to check the overall position of a vAMM pool. To do this, we can use the existing step to check the profit and loss. Like with the trade-check and transfer checks, a boolean column `is amm` was added to instruct the integration test framewokr to interpret the party ID given as being a vAMM alias.
+
+```
+Then the parties should have the following profit and loss:
+  | party    | volume | unrealised pnl | realised pnl | is amm |
+  | party5   | 5      | 88             | 0            |        |
+  | party1   | 1      | 40             | 0            |        |
+  | party2   | -2     | -70            | 0            |        |
+  | party4   | -1     | 0              | 0            |        |
+  | vamm1-id | -3     | -58            | 0            | true   |
+```
+
 ### DEBUG STEPS
 
 The debug steps specific to AMMs are simply ways of printing out the AMM pool event data in human-readable form:
