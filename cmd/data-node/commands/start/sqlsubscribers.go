@@ -81,6 +81,7 @@ type SQLSubscribers struct {
 	partyVestingBalancesStore   *sqlstore.PartyVestingBalance
 	gamesStore                  *sqlstore.Games
 	marginModesStore            *sqlstore.MarginModes
+	ammPoolsStore               *sqlstore.AMMPools
 
 	// Services
 	candleService                 *candlesv2.Svc
@@ -136,6 +137,7 @@ type SQLSubscribers struct {
 	transactionResultsService     *service.TransactionResults
 	gamesService                  *service.Games
 	marginModesService            *service.MarginModes
+	ammPoolsService               *service.AMMPools
 
 	// Subscribers
 	accountSub                *sqlsubscribers.Account
@@ -187,6 +189,7 @@ type SQLSubscribers struct {
 	vestingSummarySub         *sqlsubscribers.VestingBalancesSummary
 	transactionResultsSub     *sqlsubscribers.TransactionResults
 	marginModesSub            *sqlsubscribers.MarginModes
+	ammPoolsSub               *sqlsubscribers.AMMPools
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -242,6 +245,7 @@ func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
 		s.vestingSummarySub,
 		s.transactionResultsSub,
 		s.marginModesSub,
+		s.ammPoolsSub,
 	}
 }
 
@@ -302,6 +306,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.partyVestingBalancesStore = sqlstore.NewPartyVestingBalances(transactionalConnectionSource)
 	s.gamesStore = sqlstore.NewGames(transactionalConnectionSource)
 	s.marginModesStore = sqlstore.NewMarginModes(transactionalConnectionSource)
+	s.ammPoolsStore = sqlstore.NewAMMPools(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -357,6 +362,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.partyVestingBalancesService = service.NewPartyVestingBalances(s.partyVestingBalancesStore)
 	s.gamesService = service.NewGames(s.gamesStore)
 	s.marginModesService = service.NewMarginModes(s.marginModesStore)
+	s.ammPoolsService = service.NewAMMPools(s.ammPoolsStore)
 
 	s.transactionResultsSub = sqlsubscribers.NewTransactionResults(log)
 	s.transactionResultsService = service.NewTransactionResults(s.transactionResultsSub)
@@ -425,4 +431,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.paidLiquidityFeesStatsSub = sqlsubscribers.NewPaidLiquidityFeesStats(s.paidLiquidityFeesStatsService)
 	s.vestingSummarySub = sqlsubscribers.NewVestingBalancesSummary(s.partyVestingBalancesStore, s.partyLockedBalancesStore)
 	s.marginModesSub = sqlsubscribers.NewMarginModes(s.marginModesService)
+	s.ammPoolsSub = sqlsubscribers.NewAMMPools(s.ammPoolsService)
 }
