@@ -30,6 +30,10 @@ func checkBatchMarketInstructions(cmd *commandspb.BatchMarketInstructions) Error
 		return errs.FinalAddForProperty("batch_market_instructions", ErrIsRequired)
 	}
 
+	if len(cmd.UpdateMarginMode) > 0 {
+		return errs.FinalAddForProperty("batch_market_instructions.update_margin_mode", ErrIsDisabled)
+	}
+
 	// there's very little to verify here, only if the batch is not empty
 	// all transaction verification is done when processing then.
 	if len(cmd.Cancellations)+

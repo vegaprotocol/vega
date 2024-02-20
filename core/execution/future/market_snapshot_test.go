@@ -180,7 +180,7 @@ func TestRestoreMarketUpgradeV0_73_2(t *testing.T) {
 	em.Market.Fees.LiquidityFeeSettings = nil
 
 	// and set in the context the information that says we are upgrading
-	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.13", true)
+	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.14", true)
 	snap, err := newMarketFromSnapshot(t, ctx, ctrl, em, oracleEngine)
 	require.NoError(t, err)
 	require.NotEmpty(t, snap)
@@ -277,6 +277,7 @@ func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Contr
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().Stage(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
 	timeService.EXPECT().GetTimeNow().AnyTimes()

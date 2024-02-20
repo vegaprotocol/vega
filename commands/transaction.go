@@ -253,7 +253,9 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 		case *commandspb.InputData_ApplyReferralCode:
 			errs.Merge(checkApplyReferralCode(cmd.ApplyReferralCode))
 		case *commandspb.InputData_UpdateMarginMode:
-			errs.Merge(checkUpdateMarginMode(cmd.UpdateMarginMode))
+			// FIXME: Disable Update margin mode for now
+			errs.AddForProperty("update_margin_mode", ErrIsDuplicated)
+			// errs.Merge(checkUpdateMarginMode(cmd.UpdateMarginMode))
 		case *commandspb.InputData_JoinTeam:
 			errs.Merge(checkJoinTeam(cmd.JoinTeam))
 		case *commandspb.InputData_UpdatePartyProfile:

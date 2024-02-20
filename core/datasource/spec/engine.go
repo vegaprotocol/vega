@@ -200,7 +200,7 @@ func (e *Engine) sendNewSpecSubscription(ctx context.Context, update updatedSubs
 	proto.Spec.CreatedAt = update.specActivatedAt.UnixNano()
 	proto.Spec.Status = vegapb.DataSourceSpec_STATUS_ACTIVE
 
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
 		def := update.spec.GetDefinition()
 		switch def.DataSourceType.(type) {
 		case ethcallcommon.Spec:

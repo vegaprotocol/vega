@@ -101,7 +101,7 @@ func (f *Forwarder) restore(ctx context.Context, p *types.PayloadEventForwarder)
 	}
 
 	// upgrading from 73.12, we need to load previous snapshot format
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.13") {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
 		// add at 0 time, so it's always way in the past.
 		bucket := &ackedEvtBucket{
 			ts:     0,
