@@ -1382,7 +1382,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
 		if m.as.InAuction() {
-			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration.Seconds())})
 			evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 			if evt != nil {
 				m.broker.Send(evt)
@@ -2316,6 +2316,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				m.log.Debug("Unable to check/add immediate trade margin for party",
 					logging.Order(*order), logging.Error(err))
 			}
+			_ = m.position.UnregisterOrder(ctx, order)
 			return nil, nil, common.ErrMarginCheckFailed
 		}
 	}
@@ -3683,6 +3684,7 @@ func (m *Market) amendOrder(
 			pos, _ := m.position.GetPositionByPartyID(amendedOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, amendedOrder); err == risk.ErrInsufficientFundsForMarginInGeneralAccount {
 				m.log.Error("party has insufficient margin to cover the order change, going to cancel all orders for the party")
+				_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
 				return nil, nil, common.ErrMarginCheckFailed
 			}
 		}
