@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -77,13 +76,6 @@ func NewMarketFromSnapshot(
 	}
 
 	assetDecimals := assetDetails.DecimalPlaces()
-
-	// FIXME: this is to ensure the fundingRateFactors for markets are all set to 0
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		if mkt.TradableInstrument.Instrument.GetPerps() != nil {
-			mkt.TradableInstrument.Instrument.GetPerps().FundingRateScalingFactor = ptr.From(num.MustDecimalFromString("0"))
-		}
-	}
 
 	tradableInstrument, err := markets.NewTradableInstrumentFromSnapshot(ctx, log, mkt.TradableInstrument, em.Market.ID,
 		timeService, oracleEngine, broker, em.Product, uint32(assetDecimals))
@@ -300,11 +292,6 @@ func NewMarketFromSnapshot(
 			market.internalCompositePriceCalculator.Close(ctx)
 		}
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
-	}
-
-	// FIXME: We need to send the market update to the datanode to me make sure the change to the fundingRateFactor are propagated
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		broker.Stage(events.NewMarketUpdatedEvent(ctx, *market.Mkt()))
 	}
 
 	return market, nil
