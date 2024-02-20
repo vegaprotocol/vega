@@ -70,6 +70,7 @@ type TimeService interface {
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
+	Stage(event events.Event)
 }
 
 type StateVarEngine interface {
