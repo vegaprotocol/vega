@@ -341,6 +341,7 @@ var (
 	ErrGetTimeWeightedNotionalPosition = errors.New("failed to get time weighted notional position")
 
 	ErrDateRangeValidationFailed = errors.New("invalid date range")
+	ErrListAMMPools              = errors.New("failed to list AMM pools")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
