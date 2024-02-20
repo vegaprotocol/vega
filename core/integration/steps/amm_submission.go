@@ -85,16 +85,16 @@ func PartiesCancelTheFollowingAMMs(exec Execution, table *godog.Table) error {
 
 func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",              // str
-		"market id",          // str
-		"amount",             // uint
-		"slippage",           // dec
-		"base",               // uint
+		"party",     // str
+		"market id", // str
+		"amount",    // uint
+		"slippage",  // dec
+		"base",      // uint
+	}, []string{
 		"lower bound",        // uint
 		"upper bound",        // uint
 		"lower margin ratio", // dec
 		"upper margin ratio", // dec
-	}, []string{
 		"error",
 	})
 }
@@ -130,6 +130,22 @@ type ammRow struct {
 }
 
 func (a ammRow) toSubmission() *types.SubmitAMM {
+	reqPairs := [][2]string{
+		{"lower bound", "lower margin ratio"},
+		{"upper bound", "upper margin ratio"},
+	}
+	// at least one of the pairs is required
+	hasOne := false
+	for _, pair := range reqPairs {
+		if req := a.r.HasColumn(pair[0]); req != a.r.HasColumn(pair[1]) {
+			panic(fmt.Sprintf("values for %s and %s should be provided in pairs", pair[0], pair[1]))
+		} else if req {
+			hasOne = true
+		}
+	}
+	if !hasOne {
+		panic("required at least one pair of bound parameters (upper/lower bound + margin ratio)")
+	}
 	return &types.SubmitAMM{
 		AMMBaseCommand: types.AMMBaseCommand{
 			MarketID:          a.marketID(),
@@ -141,8 +157,8 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 			Base:                    a.base(),
 			LowerBound:              a.lowerBound(),
 			UpperBound:              a.upperBound(),
-			MarginRatioAtLowerBound: ptr.From(a.lowerMargin()),
-			MarginRatioAtUpperBound: ptr.From(a.upperMargin()),
+			MarginRatioAtLowerBound: a.lowerMargin(),
+			MarginRatioAtUpperBound: a.upperMargin(),
 		},
 	}
 }
@@ -173,11 +189,11 @@ func (a ammRow) toAmendment() *types.AmendAMM {
 		paramSet = true
 	}
 	if a.r.HasColumn("lower margin ratio") {
-		params.MarginRatioAtLowerBound = ptr.From(a.lowerMargin())
+		params.MarginRatioAtLowerBound = a.lowerMargin()
 		paramSet = true
 	}
 	if a.r.HasColumn("upper margin ratio") {
-		params.MarginRatioAtUpperBound = ptr.From(a.upperMargin())
+		params.MarginRatioAtUpperBound = a.upperMargin()
 		paramSet = true
 	}
 	if paramSet {
@@ -215,19 +231,31 @@ func (a ammRow) base() *num.Uint {
 }
 
 func (a ammRow) lowerBound() *num.Uint {
+	if !a.r.HasColumn("lower bound") {
+		return nil
+	}
 	return a.r.MustUint("lower bound")
 }
 
 func (a ammRow) upperBound() *num.Uint {
+	if !a.r.HasColumn("upper bound") {
+		return nil
+	}
 	return a.r.MustUint("upper bound")
 }
 
-func (a ammRow) lowerMargin() num.Decimal {
-	return a.r.MustDecimal("lower margin ratio")
+func (a ammRow) lowerMargin() *num.Decimal {
+	if !a.r.HasColumn("lower bound") {
+		return nil
+	}
+	return ptr.From(a.r.MustDecimal("lower margin ratio"))
 }
 
-func (a ammRow) upperMargin() num.Decimal {
-	return a.r.MustDecimal("upper margin ratio")
+func (a ammRow) upperMargin() *num.Decimal {
+	if !a.r.HasColumn("upper bound") {
+		return nil
+	}
+	return ptr.From(a.r.MustDecimal("upper margin ratio"))
 }
 
 func (a ammRow) method() types.AMMPoolCancellationMethod {
