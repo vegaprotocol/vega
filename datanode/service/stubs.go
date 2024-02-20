@@ -66,6 +66,7 @@ type (
 	}
 	Games       struct{ *sqlstore.Games }
 	MarginModes struct{ *sqlstore.MarginModes }
+	AMMPools    struct{ *sqlstore.AMMPools }
 )
 
 type (
@@ -211,4 +212,8 @@ func NewGames(store *sqlstore.Games) *Games {
 
 func NewMarginModes(store *sqlstore.MarginModes) *MarginModes {
 	return &MarginModes{MarginModes: store}
+}
+
+func NewAMMPools(store *sqlstore.AMMPools) *AMMPools {
+	return &AMMPools{AMMPools: store}
 }

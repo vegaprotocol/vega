@@ -927,6 +927,13 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
+  // List AMM Pools
+  //
+  // Get a list of AMM pools or filter by market ID, party ID or pool ID
+  rpc ListAMMPools(ListAMMPoolsRequest) returns (ListAMMPoolsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "AMMPool"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -4779,4 +4786,40 @@ message PartyMarginMode {
   optional string max_theoretical_leverage = 6;
   // Epoch at which the update happened.
   uint64 at_epoch = 7;
+}
+
+message ListAMMPoolsRequest {
+  // Party ID to filter for.
+  optional string party_id = 1;
+  // Market ID to filter for. If party ID is provided, the market filter is ignored
+  optional string market_id = 2;
+  // Pool ID to filter for. If party ID or market ID is provided, the pool ID filter is ignored.
+  optional string pool_id = 3;
+  // Party's underlying AMM sub-account to filter for. A party's AMM sub-account will remain the
+  // same regardless of the AMM pool.
+  optional string sub_account = 4;
+  // Filter for AMM pools with the given status. This filter will be ignored if any of the other
+  // filters have been set.
+  optional vega.events.v1.AMMPool.Status status = 5;
+  // Pagination controls.
+  optional Pagination pagination = 6;
+}
+
+message ListAMMPoolsResponse {
+  // Page of AMM pool data and corresponding page information.
+  AMMPoolsConnection amm_pools = 1;
+}
+
+message AMMPoolsConnection {
+  // Page of AMM pool data and their corresponding cursors.
+  repeated AMMPoolEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+message AMMPoolEdge {
+  // AMM pool data.
+  vega.events.v1.AMMPool node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
 }
