@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/amm"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/liquidation"
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -265,6 +266,13 @@ func NewMarketFromSnapshot(
 		market.internalCompositePriceCalculator.SetOraclePriceScalingFunc(market.scaleOracleData)
 	}
 
+	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
+	if em.Amm == nil {
+		market.amm = amm.New(log, broker, collateralEngine, market, nil, market.risk, market.position)
+	} else {
+		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, nil, market.risk, market.position, em.Amm)
+	}
+
 	for _, p := range em.Parties {
 		market.parties[p] = struct{}{}
 	}
@@ -366,6 +374,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		FeesStats:                      m.fee.GetState(assetQuantum),
 		PartyMarginFactors:             partyMarginFactors,
 		MarkPriceCalculator:            m.markPriceCalculator.IntoProto(),
+		Amm:                            m.amm.IntoProto(),
 	}
 	if m.perp && m.internalCompositePriceCalculator != nil {
 		em.InternalCompositePriceCalculator = m.internalCompositePriceCalculator.IntoProto()
