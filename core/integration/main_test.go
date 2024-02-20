@@ -392,7 +392,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ThePartiesShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
 	})
 	s.Step(`^the parties should have the following profit and loss:$`, func(table *godog.Table) error {
-		return steps.PartiesHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
+		return steps.PartiesHaveTheFollowingProfitAndLoss(execsetup.executionEngine, execsetup.positionPlugin, table)
 	})
 	s.Step(`^the order book should have the following volumes for market "([^"]*)":$`, func(marketID string, table *godog.Table) error {
 		return steps.TheOrderBookOfMarketShouldHaveTheFollowingVolumes(execsetup.broker, marketID, table)
@@ -449,7 +449,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheFollowingNetworkTradesShouldBeExecuted(execsetup.broker, table)
 	})
 	s.Step(`^the following trades should be executed:$`, func(table *godog.Table) error {
-		return steps.TheFollowingTradesShouldBeExecuted(execsetup.broker, table)
+		return steps.TheFollowingTradesShouldBeExecuted(execsetup.executionEngine, execsetup.broker, table)
 	})
 	s.Step(`^the trading mode should be "([^"]*)" for the market "([^"]*)"$`, func(tradingMode, marketID string) error {
 		return steps.TheTradingModeShouldBeForMarket(execsetup.executionEngine, marketID, tradingMode)
