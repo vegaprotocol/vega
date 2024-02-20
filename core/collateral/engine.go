@@ -77,6 +77,7 @@ var (
 // we no longer need to generate this mock here, we can use the broker/mocks package instead.
 type Broker interface {
 	Send(event events.Event)
+	Stage(event events.Event)
 	SendBatch(events []events.Event)
 }
 
