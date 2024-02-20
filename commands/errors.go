@@ -91,6 +91,7 @@ var (
 	ErrIsLimitedTo255Characters                        = errors.New("is limited to 255 characters")
 	ErrCannotBeBlank                                   = errors.New("cannot be blank")
 	ErrIsDuplicated                                    = errors.New("is duplicated")
+	ErrIsDisabled                                      = errors.New("is disabled")
 	ErrMustBeAtMost250                                 = errors.New("must be at most 250")
 )
 

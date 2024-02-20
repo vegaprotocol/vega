@@ -219,6 +219,7 @@ func testEVMConfigBasic(t *testing.T) {
 		chainID       string
 		networkID     string
 		confirmations uint32
+		blockInterval uint64
 		expect        error
 	}{
 		{
@@ -226,23 +227,27 @@ func testEVMConfigBasic(t *testing.T) {
 			chainID:       "11",
 			networkID:     "12",
 			confirmations: 1,
+			blockInterval: 1,
 		},
 		{
 			chainID:       "11",
 			networkID:     "12",
 			confirmations: 1,
+			blockInterval: 1,
 			expect:        types.ErrMissingNetworkName,
 		},
 		{
 			name:          "hello",
 			networkID:     "12",
 			confirmations: 1,
+			blockInterval: 1,
 			expect:        types.ErrMissingChainID,
 		},
 		{
 			name:          "hello",
 			chainID:       "11",
 			confirmations: 1,
+			blockInterval: 1,
 			expect:        types.ErrMissingNetworkID,
 		},
 		{
@@ -250,7 +255,16 @@ func testEVMConfigBasic(t *testing.T) {
 			chainID:       "11",
 			networkID:     "12",
 			confirmations: 0,
+			blockInterval: 1,
 			expect:        types.ErrConfirmationsMustBeHigherThan0,
+		},
+		{
+			name:          "hello",
+			chainID:       "11",
+			networkID:     "12",
+			confirmations: 1,
+			blockInterval: 0,
+			expect:        types.ErrBlockIntervalMustBeHigherThan0,
 		},
 	}
 
@@ -264,6 +278,7 @@ func testEVMConfigBasic(t *testing.T) {
 						ChainId:       tc.chainID,
 						Name:          tc.name,
 						Confirmations: tc.confirmations,
+						BlockInterval: tc.blockInterval,
 					},
 				},
 			}
@@ -285,6 +300,7 @@ func testEVMConfigRejectDuplicateFields(t *testing.T) {
 		ChainId:       "9999",
 		Name:          "999999",
 		Confirmations: 100,
+		BlockInterval: 1,
 	}
 
 	c := original
@@ -324,13 +340,13 @@ func testEVMAmendOrAppendOnly(t *testing.T) {
 	cfgs2 = validEVMConfigs()
 	cfgs2.Configs[0].Name += "hello"
 	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
-	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmationsAndBlockInterval, err)
 
 	// try to change the chainID
 	cfgs2 = validEVMConfigs()
 	cfgs2.Configs[0].ChainId += "1"
 	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
-	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmationsAndBlockInterval, err)
 
 	// try to change the networkID (counts as a remove)
 	cfgs2 = validEVMConfigs()
@@ -348,7 +364,7 @@ func testEVMAmendOrAppendOnly(t *testing.T) {
 	}
 	cfgs2.Configs = append(cfgs2.Configs, &new_cfg)
 	err = types.CheckEthereumL2Configs(cfgs1, cfgs2)
-	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmations, err)
+	require.ErrorIs(t, types.ErrCanOnlyAmendedConfirmationsAndBlockInterval, err)
 }
 
 func validEthereumConfig() *proto.EthereumConfig {
@@ -382,12 +398,14 @@ func validEVMConfigs() *proto.EthereumL2Configs {
 				ChainId:       "2",
 				Name:          "hello",
 				Confirmations: 12,
+				BlockInterval: 1,
 			},
 			{
 				NetworkId:     "2",
 				ChainId:       "3",
 				Name:          "helloagain",
 				Confirmations: 13,
+				BlockInterval: 1,
 			},
 		},
 	}

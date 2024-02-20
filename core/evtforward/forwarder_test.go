@@ -220,7 +220,7 @@ func getTestChainEvent(txid string) *commandspb.ChainEvent {
 
 func TestMigrationTo74(t *testing.T) {
 	evtFwd := getTestEvtFwd(t)
-	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.73.13", true)
+	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.73.14", true)
 	evtFwd.top.EXPECT().AllNodeIDs().AnyTimes().Return(testAllPubKeys)
 
 	hashes := []string{

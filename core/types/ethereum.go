@@ -34,12 +34,13 @@ var (
 	ErrUnsupportedCollateralBridgeDeploymentBlockHeight   = errors.New("setting collateral bridge contract deployment block height in Ethereum config is not supported")
 	ErrAtLeastOneOfStakingOrVestingBridgeAddressMustBeSet = errors.New("at least one of the stacking bridge or token vesting contract addresses must be specified")
 	ErrConfirmationsMustBeHigherThan0                     = errors.New("confirmation must be > 0 in Ethereum config")
+	ErrBlockIntervalMustBeHigherThan0                     = errors.New("block interval must be > 0 in Ethereum config")
 	ErrMissingNetworkName                                 = errors.New("missing network name")
 	ErrDuplicateNetworkName                               = errors.New("duplicate network name")
 	ErrDuplicateNetworkID                                 = errors.New("duplicate network ID name")
 	ErrDuplicateChainID                                   = errors.New("duplicate chain ID name")
 	ErrCannotRemoveL2Config                               = errors.New("L2 config cannot be removed")
-	ErrCanOnlyAmendedConfirmations                        = errors.New("can only amended L2 config confirmations")
+	ErrCanOnlyAmendedConfirmationsAndBlockInterval        = errors.New("can only amended L2 config confirmations and block interval")
 )
 
 type EthereumConfig struct {
@@ -242,6 +243,7 @@ type EthereumL2Config struct {
 	NetworkID     string
 	Confirmations uint64
 	Name          string
+	BlockInterval uint64
 }
 
 func toEthereumL2ConfigsProto(v interface{}) (*proto.EthereumL2Configs, error) {
@@ -278,6 +280,7 @@ func EthereumL2ConfigsFromProto(cfgProto *proto.EthereumL2Configs) (*EthereumL2C
 			ChainID:       v.ChainId,
 			Name:          v.Name,
 			Confirmations: uint64(v.Confirmations),
+			BlockInterval: v.BlockInterval,
 		})
 	}
 
@@ -321,6 +324,10 @@ func CheckEthereumL2Configs(cfgProto *proto.EthereumL2Configs, prev *proto.Ether
 		if v.Confirmations == 0 {
 			return ErrConfirmationsMustBeHigherThan0
 		}
+
+		if v.BlockInterval == 0 {
+			return ErrBlockIntervalMustBeHigherThan0
+		}
 	}
 
 	// it wasn't previously set to anything (from genesis) so nothing to check
@@ -337,7 +344,7 @@ func CheckEthereumL2Configs(cfgProto *proto.EthereumL2Configs, prev *proto.Ether
 		}
 
 		if !isUpdate(v, c) {
-			return ErrCanOnlyAmendedConfirmations
+			return ErrCanOnlyAmendedConfirmationsAndBlockInterval
 		}
 	}
 

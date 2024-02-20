@@ -480,7 +480,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
 		if m.as.InAuction() {
-			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration.Seconds())})
 			evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 			if evt != nil {
 				m.broker.Send(evt)

@@ -79,10 +79,6 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 	s.getPriceLevel(o.Price).addOrder(o)
 }
 
-func (s *OrderBookSide) replaceOrder(o *types.Order) {
-	s.getPriceLevel(o.Price).replaceOrder(o)
-}
-
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty.
 func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
@@ -166,7 +162,11 @@ func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *typ
 		return -int64(dec), nil
 	}
 
-	return 0, nil
+	// this is the case where we have an iceberg with no reserve, and reducing its visible peak
+	if oldOrder.Remaining < amendOrder.Remaining {
+		panic("we should not be increasing iceberg visble size in-place")
+	}
+	return -int64(oldOrder.Remaining - amendOrder.Remaining), nil
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (int64, error) {
@@ -234,7 +234,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 		var toRemove int
 		for _, order := range pricelevel.orders {
 			// Check the price is good and the total volume will not be exceeded
-			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
+			if checkPrice(order.Price) && totalVolume+order.TrueRemaining() <= volume {
 				// Remove this order
 				extractedOrders = append(extractedOrders, order.Clone())
 				totalVolume += order.TrueRemaining()
