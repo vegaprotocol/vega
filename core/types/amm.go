@@ -39,12 +39,21 @@ type ConcentratedLiquidityParameters struct {
 }
 
 func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_ConcentratedLiquidityParameters {
+	upper, lower, marginUpper, marginLower := "", "", "", ""
+	if p.UpperBound != nil {
+		upper = p.UpperBound.String()
+		marginUpper = p.MarginRatioAtUpperBound.String()
+	}
+	if p.LowerBound != nil {
+		lower = p.LowerBound.String()
+		marginLower = p.MarginRatioAtLowerBound.String()
+	}
 	return &eventspb.AMMPool_ConcentratedLiquidityParameters{
 		Base:                    p.Base.String(),
-		LowerBound:              p.LowerBound.String(),
-		UpperBound:              p.UpperBound.String(),
-		MarginRatioAtUpperBound: p.MarginRatioAtUpperBound.String(),
-		MarginRatioAtLowerBound: p.MarginRatioAtLowerBound.String(),
+		LowerBound:              lower,
+		UpperBound:              upper,
+		MarginRatioAtUpperBound: marginUpper,
+		MarginRatioAtLowerBound: marginLower,
 	}
 }
 
@@ -86,13 +95,24 @@ func NewSubmitAMMFromProto(
 	party string,
 ) *SubmitAMM {
 	// all parameters have been validated by the command package here.
+	var (
+		upperBound, lowerBound   *num.Uint
+		upperMargin, lowerMargin *num.Decimal
+	)
 
 	commitment, _ := num.UintFromString(submitAMM.CommitmentAmount, 10)
 	base, _ := num.UintFromString(submitAMM.ConcentratedLiquidityParameters.Base, 10)
-	lowerBound, _ := num.UintFromString(submitAMM.ConcentratedLiquidityParameters.LowerBound, 10)
-	upperBound, _ := num.UintFromString(submitAMM.ConcentratedLiquidityParameters.UpperBound, 10)
-	marginRatioAtUpperBound, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
-	marginRatioAtLowerBound, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
+	if len(submitAMM.ConcentratedLiquidityParameters.LowerBound) > 0 {
+		lowerBound, _ = num.UintFromString(submitAMM.ConcentratedLiquidityParameters.LowerBound, 10)
+		lm, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
+		lowerMargin = ptr.From(lm)
+	}
+	if len(submitAMM.ConcentratedLiquidityParameters.UpperBound) > 0 {
+		upperBound, _ = num.UintFromString(submitAMM.ConcentratedLiquidityParameters.UpperBound, 10)
+		// this must be set if upper bound is set
+		um, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
+		upperMargin = ptr.From(um)
+	}
 
 	slippage, _ := num.DecimalFromString(submitAMM.SlippageTolerance)
 
@@ -107,8 +127,8 @@ func NewSubmitAMMFromProto(
 			Base:                    base,
 			LowerBound:              lowerBound,
 			UpperBound:              upperBound,
-			MarginRatioAtLowerBound: &marginRatioAtLowerBound,
-			MarginRatioAtUpperBound: &marginRatioAtUpperBound,
+			MarginRatioAtLowerBound: lowerMargin,
+			MarginRatioAtUpperBound: upperMargin,
 		},
 	}
 }
@@ -123,25 +143,28 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 	cpy := *s.Parameters
 	s.Parameters = &cpy
 	// this should be split to a different function, because this is modifying the
-	if cpy.LowerBound == nil {
-		cpy.LowerBound = zero
+	var lower, upper, marginLower, marginUpper, base string
+	if s.Parameters.LowerBound != nil {
+		lower = s.Parameters.LowerBound.String()
+		marginLower = s.Parameters.MarginRatioAtLowerBound.String()
 	}
-	if cpy.UpperBound == nil {
-		cpy.UpperBound = zero
+	if s.Parameters.UpperBound != nil {
+		upper = s.Parameters.UpperBound.String()
+		marginUpper = s.Parameters.MarginRatioAtUpperBound.String()
 	}
-	if cpy.Base == nil {
-		cpy.Base = zero
+	if s.Parameters.Base != nil {
+		base = s.Parameters.Base.String()
 	}
 	return &commandspb.SubmitAMM{
 		MarketId:          s.MarketID,
 		CommitmentAmount:  s.CommitmentAmount.String(),
 		SlippageTolerance: s.SlippageTolerance.String(),
 		ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-			UpperBound:              s.Parameters.UpperBound.String(),
-			LowerBound:              s.Parameters.LowerBound.String(),
-			Base:                    s.Parameters.Base.String(),
-			MarginRatioAtUpperBound: s.Parameters.MarginRatioAtUpperBound.String(),
-			MarginRatioAtLowerBound: s.Parameters.MarginRatioAtLowerBound.String(),
+			UpperBound:              upper,
+			LowerBound:              lower,
+			Base:                    base,
+			MarginRatioAtUpperBound: marginUpper,
+			MarginRatioAtLowerBound: marginLower,
 		},
 	}
 }
