@@ -70,7 +70,9 @@ func (v *L2EthCallEngines) OnEthereumL2ConfigsUpdated(
 	// new L2 configured, instatiate the verifier for it.
 	for _, c := range ethCfg.Configs {
 		// if already exists, do nothing
-		if _, ok := v.engines[c.ChainID]; ok {
+		if e, ok := v.engines[c.ChainID]; ok {
+			// the blockInterval might have changed, so let just call that.
+			e.EnsureChainID(c.ChainID, c.BlockInterval, v.isValidator)
 			continue
 		}
 
