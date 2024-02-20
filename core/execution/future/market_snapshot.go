@@ -37,7 +37,6 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
@@ -84,19 +83,6 @@ func NewMarketFromSnapshot(
 	}
 
 	as := monitor.NewAuctionStateFromSnapshot(mkt, em.AuctionState)
-
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		// protocol upgrade from v0.73.12, lets populate the new liquidity-fee-settings with a default marginal-cost method
-		log.Info("migrating liquidity fee settings for existing market", logging.String("mid", mkt.ID))
-		mkt.Fees.LiquidityFeeSettings = &types.LiquidityFeeSettings{
-			Method: types.LiquidityFeeMethodMarginalCost,
-		}
-
-		// if the market is in a none opening-auction we need to tell the instrument
-		if as.InAuction() && !as.IsOpeningAuction() {
-			tradableInstrument.Instrument.Product.UpdateAuctionState(ctx, true)
-		}
-	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
