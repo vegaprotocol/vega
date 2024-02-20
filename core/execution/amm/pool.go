@@ -347,18 +347,36 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
 	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
 	var cu *curve
-	if pos < 0 || (pos == 0 && side == types.SideBuy) {
-		cu = p.upper
-	} else {
+	var high, low *num.Uint
+	if p.upper != nil && p.lower != nil {
+		if pos < 0 || (pos == 0 && side == types.SideBuy) {
+			cu = p.upper
+		} else {
+			cu = p.lower
+		}
+		high, low = cu.high, cu.low
+	} else if p.upper == nil {
 		cu = p.lower
+		high, low = cu.high, cu.low
+		// we should treat this as an upper curve
+		if pos < 0 || (pos == 0 && side == types.SideBuy) {
+			high, low = low, high
+		}
+	} else {
+		cu = p.upper
+		high, low = cu.high, cu.low
+		// we should treat this as an lower curve
+		if pos > 0 || (pos == 0 && side != types.SideBuy) {
+			high, low = low, high
+		}
 	}
 
 	if price1 == nil {
-		st = cu.low
+		st = low
 	}
 
 	if price2 == nil {
-		nd = cu.high
+		nd = high
 	}
 
 	if st.EQ(nd) {
@@ -370,16 +388,16 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 	}
 
 	// there is no volume outside of the bounds for the curve so we snap st, nd to the boundaries
-	st = num.Max(st, cu.low)
-	nd = num.Min(nd, cu.high)
+	st = num.Max(st, low)
+	nd = num.Min(nd, high)
 	if st.GTE(nd) {
 		return 0
 	}
 
 	// abs(P(st) - P(nd))
 	volume, _ := num.UintZero().Delta(
-		impliedPosition(p.sqrt(st), p.sqrt(cu.high), cu.l),
-		impliedPosition(p.sqrt(nd), p.sqrt(cu.high), cu.l),
+		impliedPosition(p.sqrt(st), p.sqrt(high), cu.l),
+		impliedPosition(p.sqrt(nd), p.sqrt(high), cu.l),
 	)
 
 	if p.closing() {
@@ -456,7 +474,16 @@ func (p *Pool) getPosition() (int64, *num.Uint) {
 // x = P + (cc * rf) / sqrt(pl) + L / sqrt(pl),
 // y = abs(P) * average-entry + L * sqrt(pl).
 func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
+	var high, low *num.Uint
 	cu := p.upper
+	if p.upper != nil {
+		high = p.upper.high
+		low = p.upper.low
+	} else {
+		cu = p.lower
+		high = p.lower.low
+		low = p.lower.high
+	}
 	balance := p.getBalance()
 
 	// lets start with x
@@ -465,10 +492,10 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 	term1x := num.DecimalFromInt64(-pos)
 
 	// cc * rf / pu
-	term2x := cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(cu.high))
+	term2x := cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(high))
 
 	// L / sqrt(pl)
-	term3x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
+	term3x := cu.l.ToDecimal().Div(p.sqrt(high))
 
 	// x = P + (cc * rf / pu) + (L / sqrt(pl))
 	x := term2x.Add(term3x).Sub(term1x)
@@ -479,7 +506,7 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 	term1y := ae.Mul(ae, num.NewUint(uint64(-pos)))
 
 	// L * sqrt(pl)
-	term2y := cu.l.ToDecimal().Mul(p.sqrt(cu.low))
+	term2y := cu.l.ToDecimal().Mul(p.sqrt(low))
 
 	// y = abs(P) * average-entry + L * pl
 	y := term1y.ToDecimal().Add(term2y)
@@ -491,20 +518,27 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 // x = P + (L / sqrt(pu)),
 // y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
 func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
+	var high *num.Uint
 	cu := p.lower
+	if p.lower != nil {
+		high = cu.high
+	} else {
+		cu = p.upper
+		high = cu.low
+	}
 	// lets start with x
 
 	// P
 	term1x := num.DecimalFromInt64(pos)
 
 	// L / sqrt(pu)
-	term2x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
+	term2x := cu.l.ToDecimal().Div(p.sqrt(high))
 	x := term1x.Add(term2x)
 
 	// now lets move to y
 
 	// L * (sqrt(pu) - sqrt(pl)) + (L * sqrt(pl)) => L * sqrt(pu)
-	term1y := cu.l.ToDecimal().Mul(p.sqrt(cu.high))
+	term1y := cu.l.ToDecimal().Mul(p.sqrt(high))
 
 	// P * average-entry
 	term2y := ae.Mul(ae, num.NewUint(uint64(pos)))
