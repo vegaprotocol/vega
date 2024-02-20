@@ -865,7 +865,7 @@ func (c *waiter) Wait() error {
 func newWaiter() *waiter {
 	ch := make(chan struct{}, 1)
 	ctx, cancelFn := context.WithCancel(context.Background())
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(WaiterInterval)
 
 	go func() {
 		<-ticker.C
