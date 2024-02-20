@@ -703,7 +703,7 @@ func (e *Engine) updateSubAccountBalance(
 
 // rebasePool submits an order on behalf of the given pool to pull it fair-price towards the target.
 func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal, idgen common.IDGenerator) error {
-	if target.LT(pool.lower.low) || target.GT(pool.upper.high) {
+	if (pool.lower != nil && target.LT(pool.lower.low)) || (pool.upper != nil && target.GT(pool.upper.high)) {
 		return ErrRebaseTargetOutsideBounds
 	}
 
