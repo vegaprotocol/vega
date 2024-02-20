@@ -239,6 +239,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.transactionResultsService,
 		l.gamesService,
 		l.marginModesService,
+		l.ammPoolsService,
 	)
 	return grpcServer
 }
