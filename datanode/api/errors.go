@@ -335,6 +335,7 @@ var (
 	ErrInvalidTransferAmount = newInvalidArgumentError("invalid transfer amount")
 
 	ErrListPartyMarginModes = errors.New("failed to list parties margin modes")
+	ErrListAMMPools         = errors.New("failed to list AMM pools")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

@@ -772,6 +772,25 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) AmmPools(ctx context.Context, partyID *string, marketID *string, poolID *string,
+	subAccount *string, status *v1.AMMPool_Status, pagination *v2.Pagination,
+) (*v2.AMMPoolsConnection, error) {
+	req := &v2.ListAMMPoolsRequest{
+		PartyId:    partyID,
+		MarketId:   marketID,
+		PoolId:     poolID,
+		SubAccount: subAccount,
+		Status:     status,
+		Pagination: pagination,
+	}
+
+	res, err := r.tradingDataClientV2.ListAMMPools(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.AmmPools, nil
+}
+
 func (r *myQueryResolver) PartiesProfilesConnection(ctx context.Context, ids []string, pagination *v2.Pagination) (*v2.PartiesProfilesConnection, error) {
 	req := v2.ListPartiesProfilesRequest{
 		Parties:    ids,
