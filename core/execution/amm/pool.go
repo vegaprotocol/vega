@@ -232,35 +232,39 @@ func (p *Pool) setCurves(
 	linearSlippage num.Decimal,
 ) {
 	// convert the bounds into asset precision
-	lowerBound := num.UintZero().Mul(p.Parameters.LowerBound, p.priceFactor)
 	base := num.UintZero().Mul(p.Parameters.Base, p.priceFactor)
-	upperBound := num.UintZero().Mul(p.Parameters.UpperBound, p.priceFactor)
 
-	p.lower = generateCurve(
-		p.sqrt,
-		p.Commitment.Clone(),
-		lowerBound,
-		base,
-		lowerBound,
-		rfs.Long,
-		sfs.InitialMargin,
-		linearSlippage,
-		p.Parameters.MarginRatioAtLowerBound,
-		p.positionFactor,
-	)
+	if p.Parameters.LowerBound != nil {
+		lowerBound := num.UintZero().Mul(p.Parameters.LowerBound, p.priceFactor)
+		p.lower = generateCurve(
+			p.sqrt,
+			p.Commitment.Clone(),
+			lowerBound,
+			base,
+			lowerBound,
+			rfs.Long,
+			sfs.InitialMargin,
+			linearSlippage,
+			p.Parameters.MarginRatioAtLowerBound,
+			p.positionFactor,
+		)
+	}
 
-	p.upper = generateCurve(
-		p.sqrt,
-		p.Commitment.Clone(),
-		base.Clone(),
-		upperBound,
-		upperBound,
-		rfs.Short,
-		sfs.InitialMargin,
-		linearSlippage,
-		p.Parameters.MarginRatioAtUpperBound,
-		p.positionFactor,
-	)
+	if p.Parameters.UpperBound != nil {
+		upperBound := num.UintZero().Mul(p.Parameters.UpperBound, p.priceFactor)
+		p.upper = generateCurve(
+			p.sqrt,
+			p.Commitment.Clone(),
+			base.Clone(),
+			upperBound,
+			upperBound,
+			rfs.Short,
+			sfs.InitialMargin,
+			linearSlippage,
+			p.Parameters.MarginRatioAtUpperBound,
+			p.positionFactor,
+		)
+	}
 }
 
 // impliedPosition returns the position of the pool if its fair-price were the given price. `l` is
@@ -284,10 +288,10 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	buys := []*types.Order{}
 	sells := []*types.Order{}
 
-	if from == nil {
+	if from == nil && p.lower != nil {
 		from = p.lower.low
 	}
-	if to == nil {
+	if to == nil && p.upper != nil {
 		to = p.upper.high
 	}
 
@@ -296,6 +300,9 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	fairPrice := p.fairPrice()
 
 	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
+		if cu == nil {
+			return
+		}
 		from = num.Max(from, cu.low)
 		to = num.Min(to, cu.high)
 		price := from
