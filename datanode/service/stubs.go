@@ -69,6 +69,7 @@ type (
 	TimeWeightedNotionalPosition struct {
 		*sqlstore.TimeWeightedNotionalPosition
 	}
+	AMMPools struct{ *sqlstore.AMMPools }
 )
 
 type (
@@ -218,4 +219,8 @@ func NewMarginModes(store *sqlstore.MarginModes) *MarginModes {
 
 func NewTimeWeightedNotionalPosition(store *sqlstore.TimeWeightedNotionalPosition) *TimeWeightedNotionalPosition {
 	return &TimeWeightedNotionalPosition{TimeWeightedNotionalPosition: store}
+}
+
+func NewAMMPools(store *sqlstore.AMMPools) *AMMPools {
+	return &AMMPools{AMMPools: store}
 }

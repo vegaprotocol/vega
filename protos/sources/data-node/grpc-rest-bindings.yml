@@ -209,6 +209,8 @@ http:
       get: "/api/v2/margin-modes"
     - selector: datanode.api.v2.TradingDataService.GetTimeWeightedNotionalPosition
       get: "/api/v2/time-weighted-notional-position"
+    - selector: datanode.api.v2.TradingDataService.ListAMMPools
+      get: "/api/v2/amm-pools"
 
     # websockets
 

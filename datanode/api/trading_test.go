@@ -165,6 +165,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	gameService := service.NewGames(sqlstore.NewGames(sqlConn))
 	marginModesService := service.NewMarginModes(sqlstore.NewMarginModes(sqlConn))
 	timeWeightedNotionPositionService := service.NewTimeWeightedNotionalPosition(sqlstore.NewTimeWeightedNotionalPosition(sqlConn))
+	ammPoolsService := service.NewAMMPools(sqlstore.NewAMMPools(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -225,6 +226,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		gameService,
 		marginModesService,
 		timeWeightedNotionPositionService,
+		ammPoolsService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")
