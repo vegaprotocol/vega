@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -13,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
@@ -64,7 +66,7 @@ type Risk interface {
 }
 
 type Position interface {
-	GetPositionByPartyID(partyID string) (events.MarketPosition, bool)
+	GetPositionsByParty(ids ...string) []events.MarketPosition
 }
 
 type sqrtFn func(*num.Uint) *num.Uint
@@ -134,6 +136,67 @@ func New(
 		minCommitmentQuantum: num.UintZero(),
 		rooter:               &Sqrter{cache: map[string]*num.Uint{}},
 	}
+}
+
+func NewFromProto(
+	log *logging.Logger,
+	broker Broker,
+	collateral Collateral,
+	market Market,
+	assets Assets,
+	risk Risk,
+	position Position,
+	state *v1.AmmState,
+) *Engine {
+	e := New(log, broker, collateral, market, assets, risk, position)
+
+	for _, v := range state.SubAccounts {
+		e.subAccounts[v.Key] = v.Value
+	}
+
+	for _, v := range state.Sqrter {
+		e.rooter.cache[v.Key] = num.MustUintFromString(v.Value, 10)
+	}
+
+	for _, v := range state.Pools {
+		e.pools[v.Party] = NewPoolFromProto(e.rooter.sqrt, e.collateral, e.position, v.Pool)
+	}
+
+	return e
+}
+
+func (e *Engine) IntoProto() *v1.AmmState {
+	state := &v1.AmmState{
+		Sqrter:      make([]*v1.StringMapEntry, 0, len(e.rooter.cache)),
+		SubAccounts: make([]*v1.StringMapEntry, 0, len(e.subAccounts)),
+		Pools:       make([]*v1.PoolMapEntry, 0, len(e.pools)),
+	}
+
+	for k, v := range e.rooter.cache {
+		state.Sqrter = append(state.Sqrter, &v1.StringMapEntry{
+			Key:   k,
+			Value: v.String(),
+		})
+	}
+	sort.Slice(state.Sqrter, func(i, j int) bool { return state.Sqrter[i].Key < state.Sqrter[j].Key })
+
+	for k, v := range e.subAccounts {
+		state.SubAccounts = append(state.SubAccounts, &v1.StringMapEntry{
+			Key:   k,
+			Value: v,
+		})
+	}
+	sort.Slice(state.SubAccounts, func(i, j int) bool { return state.SubAccounts[i].Key < state.SubAccounts[j].Key })
+
+	for k, v := range e.pools {
+		state.Pools = append(state.Pools, &v1.PoolMapEntry{
+			Party: k,
+			Pool:  v.IntoProto(),
+		})
+	}
+	sort.Slice(state.Pools, func(i, j int) bool { return state.Pools[i].Party < state.Pools[j].Party })
+
+	return state
 }
 
 func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) {
