@@ -435,6 +435,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^"([^"]*)" should have one account per asset$`, func(owner string) error {
 		return steps.PartyShouldHaveOneAccountPerAsset(execsetup.broker, owner)
 	})
+	s.Step(`^"([^"]*)" should have only the following accounts:$`, func(owner string, table *godog.Table) error {
+		return steps.PartyShouldHaveOnlyTheFollowingAccounts(execsetup.broker, owner, table)
+	})
 	s.Step(`^"([^"]*)" should have one margin account per market$`, func(owner string) error {
 		return steps.PartyShouldHaveOneMarginAccountPerMarket(execsetup.broker, owner)
 	})
