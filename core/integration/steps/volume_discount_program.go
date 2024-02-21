@@ -137,3 +137,12 @@ func PartyHasTheFollowingTakerNotional(party, notional string, vde *volumediscou
 	}
 	return nil
 }
+
+func AMMHasTheFollowingNotionalValue(exec Execution, vde *volumediscount.Engine, alias, value string) error {
+	id, ok := exec.GetAMMSubAccountID(alias)
+	if !ok {
+		return fmt.Errorf("unknown vAMM alias %s", alias)
+	}
+	// from this point, it's the same as for a normal party
+	return PartyHasTheFollowingTakerNotional(id, value, vde)
+}
