@@ -292,4 +292,14 @@ func validateDispatchStrategy(toAccountType vega.AccountType, dispatchStrategy *
 			}
 		}
 	}
+	if dispatchStrategy.CapRewardFeeMultiple != nil && len(*dispatchStrategy.CapRewardFeeMultiple) > 0 {
+		cap, err := num.DecimalFromString(*dispatchStrategy.CapRewardFeeMultiple)
+		if err != nil {
+			errs.AddForProperty(prefix+".cap_reward_fee_multiple", ErrIsNotValidNumber)
+		} else {
+			if cap.LessThanOrEqual(num.DecimalZero()) {
+				errs.AddForProperty(prefix+".cap_reward_fee_multiple", ErrMustBePositive)
+			}
+		}
+	}
 }
