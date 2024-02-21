@@ -169,3 +169,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
       | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 88     | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 274    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+
+    # TODO: vamm does not appear to have any notional. Neither party nor alias work.
+    #And the AMM "vamm1-id" has the following taker notional "4000"
+    #And the party "vamm1" has the following taker notional "4000"
