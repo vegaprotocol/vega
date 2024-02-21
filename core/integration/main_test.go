@@ -720,6 +720,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
 	})
 
+	s.Step(`^the AMM "([^"]+)" has the following taker notional "([^"]+)"$`, func(alias, notional string) error {
+		return steps.AMMHasTheFollowingNotionalValue(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, notional)
+	})
+
 	s.Step(`^create the network treasury account for asset "([^"]*)"$`, func(asset string) error {
 		return steps.CreateNetworkTreasuryAccount(execsetup.collateralEngine, asset)
 	})
