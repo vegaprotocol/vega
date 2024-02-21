@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	types "code.vegaprotocol.io/vega/protos/vega"
+
 	"github.com/cucumber/godog"
 )
 
@@ -50,8 +51,6 @@ func PartyShouldHaveOnlyTheFollowingAccounts(
 		row := accountTypeAndAssetRow{row: r}
 		found := false
 		for _, acc := range samePartyAccounts {
-			fmt.Println(acc.Type.Enum().String(), acc.Asset, acc.Balance)
-
 			if row.Type() == acc.Type.Enum().String() && row.Asset() == acc.Asset && (len(row.Amount()) == 0 || row.Amount() == acc.Balance) {
 				found = true
 				break
