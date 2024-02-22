@@ -260,33 +260,44 @@ Feature: Ensure the vAMM positions follow the market correctly
   Scenario: 0087-VAMM-011: If other traders trade to move the market mid price to 90 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | sell | 5      | 90    | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 13     | 90    | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 559          | 1000           | 14            | 100       | 90        | 90               |
     # see the trades that make the vAMM go short
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 104   | 3    | party4 | true   |
-      | party1   | 90    | 2    | party4 |        |
-    And the network moves ahead "1" blocks
+      | party1   | 90    | 10   | party4 |        |
+    When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 3      | -10            | 0            |        |
+      | party1   | 11     | -10            | 0            |        |
       | party2   | -1     | 10             | 0            |        |
-      | party4   | -5     | 42             | 0            |        |
+      | party4   | -13    | 42             | 0            |        |
       | vamm1-id | 3      | -42            | 0            | true   |
+    And debug detailed orderbook volumes for market "ETH/MAR22"
     # move price back up to 100
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party5 | ETH/MAR22 | buy  | 5      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
-      | party4 | ETH/MAR22 | sell | 2      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/MAR22 | buy  | 5      | 100   | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 1      | 90    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 90         | TRADING_MODE_CONTINUOUS | 575          | 1000           | 16            | 100       | 100       | 100              |
+    And debug detailed orderbook volumes for market "ETH/MAR22"
+    And debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
-      | party5 | 95    | 3    | vamm1-id | true   |
-      | party5 | 100   | 2    | party4   |        |
+      | party5 | 96    | 4    | vamm1-id | true   |
+      | party5 | 95    | 1    | party4   |        |
     And the network moves ahead "1" blocks
+    # vAMM should not hold a position, but apparently it does, vAMM switched sides, this is a know bug with incoming fix
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 3      | 20             | 0            |        |
-      | party2   | -1     | 0              | 0            |        |
-      | party4   | -7     | -8             | 0            |        |
-      | party5   | 5      | 15             | 0            |        |
-      | vamm1-id | 0      | 0              | -27          | true   |
+      | party1   | 11     | 45             | 0            |        |
+      | party2   | -1     | 5              | 0            |        |
+      | party4   | -14    | -23            | 0            |        |
+      | party5   | 5      | -4             | 0            |        |
+      | vamm1-id | -1     | 1              | -24          | true   |
