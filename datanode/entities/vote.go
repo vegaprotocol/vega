@@ -65,7 +65,7 @@ func (v Vote) ToProto() *vega.Vote {
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
 		Timestamp:                   v.InitialTime.UnixNano(),
-		ELSPerMarket:                perMarketELSWeight,
+		ElsPerMarket:                perMarketELSWeight,
 	}
 }
 
@@ -88,7 +88,7 @@ func VoteFromProto(pv *vega.Vote, txHash TxHash) (Vote, error) {
 	// We need deterministic ordering of the share weights to prevent network history segment hashes from diverting
 	perMarketELSWeight := make([]PerMarketELSWeight, 0)
 
-	for _, pair := range pv.ELSPerMarket {
+	for _, pair := range pv.ElsPerMarket {
 		perMarketELSWeight = append(perMarketELSWeight, PerMarketELSWeight{
 			Market: pair.MarketId,
 			ELS:    pair.Els,

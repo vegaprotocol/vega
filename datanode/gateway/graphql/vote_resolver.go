@@ -44,5 +44,5 @@ func (r *voteResolver) EquityLikeShareWeight(_ context.Context, obj *proto.Vote)
 }
 
 func (r *voteResolver) EquityLikeSharePerMarket(_ context.Context, obj *proto.Vote) ([]*proto.VoteELSPair, error) {
-	return obj.ELSPerMarket, nil
+	return obj.ElsPerMarket, nil
 }

@@ -109,7 +109,7 @@ func (v Vote) IntoProto() *vegapb.Vote {
 		TotalGovernanceTokenBalance: num.UintToString(v.TotalGovernanceTokenBalance),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
-		ELSPerMarket:                ELSMap,
+		ElsPerMarket:                ELSMap,
 	}
 }
 
@@ -133,9 +133,9 @@ func VoteFromProto(v *vegapb.Vote) (*Vote, error) {
 	if len(v.TotalEquityLikeShareWeight) > 0 {
 		ret.TotalEquityLikeShareWeight, _ = num.DecimalFromString(v.TotalEquityLikeShareWeight)
 	}
-	if len(v.ELSPerMarket) > 0 {
-		els := make(map[string]num.Decimal, len(v.ELSPerMarket))
-		for _, pair := range v.ELSPerMarket {
+	if len(v.ElsPerMarket) > 0 {
+		els := make(map[string]num.Decimal, len(v.ElsPerMarket))
+		for _, pair := range v.ElsPerMarket {
 			share, err := num.DecimalFromString(pair.Els)
 			if err != nil {
 				return nil, err
