@@ -30,12 +30,12 @@ import (
 )
 
 func TestAMMPool(t *testing.T) {
-	t.Run("test volume between prices", testVolumeBetweenPrices)
+	t.Run("test volume between prices", TestVolumeBetweenPrices)
 	t.Run("test trade price", testTradePrice)
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 }
 
-func testVolumeBetweenPrices(t *testing.T) {
+func TestVolumeBetweenPrices(t *testing.T) {
 	p := newTestPool(t)
 	defer p.ctrl.Finish()
 
@@ -74,6 +74,14 @@ func testVolumeBetweenPrices(t *testing.T) {
 			price2:         num.NewUint(2500),
 			side:           types.SideSell,
 			expectedVolume: 2222,
+		},
+		{
+			name:           "sign flip",
+			price1:         num.NewUint(500),
+			price2:         num.NewUint(3500),
+			side:           types.SideSell,
+			expectedVolume: 4040,
+			position:       10,
 		},
 	}
 

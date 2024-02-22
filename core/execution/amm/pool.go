@@ -36,6 +36,26 @@ type curve struct {
 	rf   num.Decimal // commitment scaling factor
 }
 
+func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
+	if c.l.IsZero() {
+		return 0
+	}
+
+	st = num.Max(st, c.low)
+	nd = num.Min(nd, c.high)
+
+	if st.GTE(nd) {
+		return 0
+	}
+
+	// abs(P(st) - P(nd))
+	volume, _ := num.UintZero().Delta(
+		impliedPosition(sqrt(st), sqrt(c.high), c.l),
+		impliedPosition(sqrt(nd), sqrt(c.high), c.l),
+	)
+	return volume.Uint64()
+}
+
 type Pool struct {
 	ID         string
 	SubAccount string
@@ -301,18 +321,15 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 		price := from
 		for price.LT(to) {
 			next := num.UintZero().AddSum(price, p.oneTick)
-			volume, _ := num.UintZero().Delta(
-				impliedPosition(p.sqrt(price), p.sqrt(cu.high), cu.l),
-				impliedPosition(p.sqrt(next), p.sqrt(cu.high), cu.l),
-			)
 
+			volume := cu.volumeBetweenPrices(p.sqrt, price, next)
 			if side == types.SideBuy && next.GT(fairPrice) {
 				// now switch to sells, we're over the fair-price now
 				side = types.SideSell
 			}
 
 			order := &types.Order{
-				Size:  volume.Uint64(),
+				Size:  volume,
 				Side:  side,
 				Price: price.Clone(),
 			}
@@ -337,21 +354,12 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 	pos, _ := p.getPosition()
 	st, nd := price1, price2
 
-	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
-	var cu *curve
-	if pos < 0 || (pos == 0 && side == types.SideBuy) {
-		cu = p.upper
-	} else {
-		cu = p.lower
-	}
-
 	if price1 == nil {
-		st = cu.low
+		st = p.lower.low
 	}
 
 	if price2 == nil {
-		nd = cu.high
+		nd = p.upper.high
 	}
 
 	if st.EQ(nd) {
@@ -362,24 +370,28 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 		st, nd = nd, st
 	}
 
-	// there is no volume outside of the bounds for the curve so we snap st, nd to the boundaries
-	st = num.Max(st, cu.low)
-	nd = num.Min(nd, cu.high)
-	if st.GTE(nd) {
-		return 0
+	var other *curve
+	var volume uint64
+	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
+	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
+	if pos < 0 || (pos == 0 && side == types.SideBuy) {
+		volume = p.upper.volumeBetweenPrices(p.sqrt, st, nd)
+		other = p.lower
+	} else {
+		volume = p.lower.volumeBetweenPrices(p.sqrt, st, nd)
+		other = p.upper
 	}
-
-	// abs(P(st) - P(nd))
-	volume, _ := num.UintZero().Delta(
-		impliedPosition(p.sqrt(st), p.sqrt(cu.high), cu.l),
-		impliedPosition(p.sqrt(nd), p.sqrt(cu.high), cu.l),
-	)
 
 	if p.closing() {
-		return num.MinV(volume.Uint64(), uint64(num.AbsV(pos)))
+		return num.MinV(volume, uint64(num.AbsV(pos)))
 	}
 
-	return volume.Uint64()
+	// if the position is non-zero, the incoming order could push us across to the other curve
+	// so we need to check for volume there too
+	if pos != 0 {
+		volume += other.volumeBetweenPrices(p.sqrt, st, nd)
+	}
+	return volume
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.
