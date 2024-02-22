@@ -318,7 +318,6 @@ type EquityLikeShares interface {
 }
 
 type AMMPool interface {
-	VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64
 	OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order)
 }
 

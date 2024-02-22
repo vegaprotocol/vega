@@ -439,16 +439,16 @@ message SubmitAMM {
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
 
   message ConcentratedLiquidityParameters {
-    // The upper price bound configuration for the pool.
-    string upper_bound = 1;
-    // The lower price bound configuration for the pool.
-    string lower_bound = 2;
-    // The base price bound configuration for the pool.
+    // The upper price bound configuration for the pool. If unset the AMM will never hold a short position.
+    optional string upper_bound = 1;
+    // Lower price bound configuration for the pool. If unset the AMM will never hold a long position.
+    optional string lower_bound = 2;
+    // Base price bound configuration for the pool.
     string base = 3;
-    // The margin ration at bounds.
-    string margin_ratio_at_upper_bound = 4;
-    // The margin ration at bounds.
-    string margin_ratio_at_lower_bound = 5;
+    // Margin ratio at upper bounds. Must be set if an upper bound is provided.
+    optional string margin_ratio_at_upper_bound = 4;
+    // Margin ratio at lower bounds. Must be set if a lower bound is provided.
+    optional string margin_ratio_at_lower_bound = 5;
   }
 }
 

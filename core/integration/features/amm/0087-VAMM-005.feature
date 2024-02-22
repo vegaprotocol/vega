@@ -103,18 +103,19 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 0.25               | 150         | 0.25               |
 
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | lower margin ratio |
-      | vamm2 | ETH/MAR22 | 1000   | 0.1      | 90   | 85          | 0.25               |
+      | party | market id | amount | slippage | base | lower bound | lower margin ratio | error                        |
+      | vamm2 | ETH/MAR22 | 1000   | 0.1      | 90   | 85          | 0.25               | rebase target outside bounds |
+    # can't rebase because the target is 100 and thats outside of its bounds given there is no upper
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | lower bound | lower margin ratio |
-      | vamm2 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 90   | 85          | 0.25               |
+      | party | market id | amount | status          | base | lower bound | lower margin ratio | reason                      |
+      | vamm2 | ETH/MAR22 | 1000   | STATUS_REJECTED | 90  | 85          | 0.25                | STATUS_REASON_CANNOT_REBASE |
 
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | upper bound | upper margin ratio |
-      | vamm3 | ETH/MAR22 | 1000   | 0.1      | 110  | 150         | 0.25               |
+      | party | market id | amount | slippage | base | upper bound | upper margin ratio | error                        |
+      | vamm3 | ETH/MAR22 | 1000   | 0.1      | 110  | 150         | 0.25               | rebase target outside bounds |
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | upper bound | upper margin ratio |
-      | vamm3 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 110  | 150         | 0.25               |
+      | party | market id | amount | status          | base | upper bound | upper margin ratio | reason                      |
+      | vamm3 | ETH/MAR22 | 1000   | STATUS_REJECTED | 110  | 150         | 0.25               | STATUS_REASON_CANNOT_REBASE |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | lower margin ratio |
@@ -124,11 +125,12 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | vamm4 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 105  | 99          | 0.1                |
 
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | upper bound | upper margin ratio |
-      | vamm5 | ETH/MAR22 | 1000   | 0.1      | 95   | 101         | 0.02               |
+      | party | market id | amount | slippage | base | upper bound | upper margin ratio | error                                                                              |
+      | vamm5 | ETH/MAR22 | 1000   | 0.1      | 99   | 101         | 0.02               | rebasing trade failed: OrderError: non-persistent order trades out of price bounds |
+    # the non-persistent rebasing order triggers price-monitoring so is rejected
     Then the AMM pool status should be:
-      | party | market id | amount | status        | base | upper bound | upper margin ratio |
-      | vamm5 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 95   | 101         | 0.02               |
+      | party | market id | amount | status          | base | upper bound | upper margin ratio | reason                      |
+      | vamm5 | ETH/MAR22 | 1000   | STATUS_REJECTED | 99  | 101          | 0.02               | STATUS_REASON_CANNOT_REBASE |
 
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
@@ -137,13 +139,12 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | party | market id | amount | status        | base | lower bound | lower margin ratio | upper bound | upper margin ratio |
       | vamm6 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 101  | 95          | 0.01               | 105         | 0.01               |
 
-    # This case doesn't quite make sense to submit, the slippage + bound and base makes it kind of impossible to rebase
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | lower margin ratio | error                      |
-      | vamm7 | ETH/MAR22 | 1000   | 0.01     | 110  | 99          | 0.1                | rebase-order did not trade |
+      | party | market id | amount | slippage | base | lower bound | lower margin ratio |
+      | vamm7 | ETH/MAR22 | 1000   | 0.01     | 110  | 99          | 0.1                |
     Then the AMM pool status should be:
-      | party | market id | amount | status          | base | lower bound | lower margin ratio | reason                      |
-      | vamm7 | ETH/MAR22 | 1000   | STATUS_REJECTED | 110  | 99          | 0.1                | STATUS_REASON_CANNOT_REBASE |
+      | party | market id | amount | status          | base | lower bound | lower margin ratio | 
+      | vamm7 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 110  | 99          | 0.1                  | 
 
     And set the following AMM sub account aliases:
       | party | market id | alias     |
