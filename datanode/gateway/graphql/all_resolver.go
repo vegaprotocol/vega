@@ -97,7 +97,9 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*vegapb.Mar
 	return res.Market, nil
 }
 
-func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *apipb.Pagination, isReward *bool, fromEpoch *int, toEpoch *int, status *eventspb.Transfer_Status, scope *apipb.ListTransfersRequest_Scope, gameID *string) (*apipb.TransferConnection, error) {
+func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *apipb.Pagination, isReward *bool, fromEpoch *int, toEpoch *int,
+	status *eventspb.Transfer_Status, scope *apipb.ListTransfersRequest_Scope, gameID *string, fromAccountType, toAccountType *vegapb.AccountType,
+) (*apipb.TransferConnection, error) {
 	// if direction is nil just default to ToOrFrom, except when isReward is not nil and true, and partyID is not nil, in which case the API requires the direction to be FROM
 	if direction == nil && (isReward != nil && *isReward && partyID != nil) {
 		d := TransferDirectionFrom
@@ -126,15 +128,17 @@ func (r *allResolver) transfersConnection(ctx context.Context, partyID *string, 
 	}
 
 	res, err := r.clt2.ListTransfers(ctx, &apipb.ListTransfersRequest{
-		Pubkey:     partyID,
-		Direction:  transferDirection,
-		Pagination: pagination,
-		IsReward:   isReward,
-		FromEpoch:  fromEpochU,
-		ToEpoch:    toEpochU,
-		Status:     status,
-		Scope:      scope,
-		GameId:     gameID,
+		Pubkey:          partyID,
+		Direction:       transferDirection,
+		Pagination:      pagination,
+		IsReward:        isReward,
+		FromEpoch:       fromEpochU,
+		ToEpoch:         toEpochU,
+		Status:          status,
+		Scope:           scope,
+		GameId:          gameID,
+		FromAccountType: fromAccountType,
+		ToAccountType:   toAccountType,
 	})
 	if err != nil {
 		return nil, err

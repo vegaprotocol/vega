@@ -1221,6 +1221,10 @@ type Query {
     scope: TransferScope
     "Optional game ID to filter for"
     gameId: ID
+    "Optional from account type to filter for"
+    fromAccountType: AccountType
+    "Optional to account type to filter for"
+    toAccountType: AccountType
   ): TransferConnection
 
   "Find a transfer using its ID"
@@ -2908,6 +2912,10 @@ type Party {
     scope: TransferScope
     "Optional game ID to filter for"
     gameId: ID
+    "Optional from account type to filter for"
+    fromAccountType: AccountType
+    "Optional to account type to filter for"
+    toAccountType: AccountType
   ): TransferConnection
 
   "The activity streak"
