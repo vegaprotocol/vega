@@ -18,6 +18,13 @@
 
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
+## 0.74.4
+
+### 🐛 Fixes
+
+- Apply fix to restore balances from manipulator withdrawals
+
+
 ## 0.74.3
 
 ### 🛠 Improvements
