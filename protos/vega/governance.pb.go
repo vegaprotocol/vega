@@ -3683,7 +3683,7 @@ type VoteELSPair struct {
 
 	// The market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The equity like share weight for this market.
+	// The equity-like share weight for this market.
 	Els string `protobuf:"bytes,2,opt,name=els,proto3" json:"els,omitempty"`
 }
 

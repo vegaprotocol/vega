@@ -5801,7 +5801,7 @@ type MarketData struct {
 	PriceMonitoringBounds []*PriceMonitoringBounds `protobuf:"bytes,24,rep,name=price_monitoring_bounds,json=priceMonitoringBounds,proto3" json:"price_monitoring_bounds,omitempty"`
 	// Market value proxy.
 	MarketValueProxy string `protobuf:"bytes,25,opt,name=market_value_proxy,json=marketValueProxy,proto3" json:"market_value_proxy,omitempty"`
-	// Equity like share of liquidity fee for each liquidity provider.
+	// Equity-like share of liquidity fee for each liquidity provider.
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare `protobuf:"bytes,26,rep,name=liquidity_provider_fee_share,json=liquidityProviderFeeShare,proto3" json:"liquidity_provider_fee_share,omitempty"`
 	// Current state of the market.
 	MarketState Market_State `protobuf:"varint,27,opt,name=market_state,json=marketState,proto3,enum=vega.Market_State" json:"market_state,omitempty"`
@@ -6214,7 +6214,7 @@ func (x *CompositePriceState) GetPriceSources() []*CompositePriceSource {
 	return nil
 }
 
-// Equity like share of liquidity fee for each liquidity provider
+// Equity-like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
