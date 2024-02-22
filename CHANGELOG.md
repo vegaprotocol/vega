@@ -12,10 +12,12 @@
 
 ### 🛠 Improvements
 
+- [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
+- [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ## 0.74.3

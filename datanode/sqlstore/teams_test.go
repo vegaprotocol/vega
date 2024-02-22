@@ -787,6 +787,7 @@ func TestListTeamStatistics(t *testing.T) {
 	teamsStore := sqlstore.NewTeams(connectionSource)
 	blocksStore := sqlstore.NewBlocks(connectionSource)
 	rewardsStore := sqlstore.NewRewards(ctx, connectionSource)
+	epochStore := sqlstore.NewEpochs(connectionSource)
 
 	member11 := entities.PartyID(GenerateID())
 	member12 := entities.PartyID(GenerateID())
@@ -849,6 +850,16 @@ func TestListTeamStatistics(t *testing.T) {
 			Hash:     []byte(vgcrypto.RandomHash()),
 		}
 		require.NoError(t, blocksStore.Add(ctx, block))
+		require.NoError(t, epochStore.Add(ctx, entities.Epoch{
+			ID:         epoch,
+			StartTime:  blockTime.Add(-1 * time.Minute),
+			ExpireTime: blockTime,
+			EndTime:    ptr.From(blockTime),
+			TxHash:     generateTxHash(),
+			VegaTime:   blockTime,
+			FirstBlock: ptr.From(epoch),
+			LastBlock:  ptr.From(epoch),
+		}))
 
 		j := 0
 		evt := &eventspb.TeamsStatsUpdated{
