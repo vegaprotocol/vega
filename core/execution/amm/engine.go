@@ -162,6 +162,10 @@ func New(
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
 ) *Engine {
+
+	log = log.Named("amm")
+	log.SetLevel(logging.DebugLevel)
+
 	return &Engine{
 		log:                  log,
 		broker:               broker,
@@ -311,7 +315,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 		}
 
 		if agg.Side == types.SideBuy {
-			if price.GTE(outer) || price.GT(agg.Price) {
+			if price.GTE(outer) || (agg.Type != types.OrderTypeMarket && price.GT(agg.Price)) {
 				// either fair price is out of bounds, or is selling at higher than incoming buy
 				continue
 			}
@@ -320,7 +324,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 		}
 
 		if agg.Side == types.SideSell {
-			if price.LTE(outer) || price.LT(agg.Price) {
+			if price.LTE(outer) || (agg.Type != types.OrderTypeMarket && price.LT(agg.Price)) {
 				// either fair price is out of bounds, or is buying at lower than incoming sell
 				continue
 			}
