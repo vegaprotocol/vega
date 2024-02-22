@@ -85,7 +85,7 @@ var (
 // credit back the different accounts.
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
 	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.3") {
-		ExecuteMigration744(ctx, e.broker, e.log, e)
+		e.migrate744 = true
 	}
 	return nil
 }
@@ -155,5 +155,5 @@ func ExecuteMigration744(
 	}
 
 	// send the events to the datanode
-	broker.Stage(events.NewLedgerMovements(ctx, ledgerMovements))
+	broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
 }
