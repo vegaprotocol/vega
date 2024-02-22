@@ -126,21 +126,25 @@ Feature: Ensure the vAMM positions follow the market correctly
   Scenario: 0087-VAMM-007: If other traders trade to move the market mid price to 90 the vAMM has a long position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | sell | 5      | 90    | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 13     | 90    | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 559          | 1000           | 14            | 100       | 90        | 90               |
     # see the trades that make the vAMM go short
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 104   | 3    | party4 | true   |
-      | party1   | 90    | 2    | party4 |        |
-    And the network moves ahead "1" blocks
+      | party1   | 90    | 10   | party4 |        |
+    When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 3      | -10            | 0            |        |
+      | party1   | 11     | -10            | 0            |        |
       | party2   | -1     | 10             | 0            |        |
-      | party4   | -5     | 42             | 0            |        |
+      | party4   | -13    | 42             | 0            |        |
       | vamm1-id | 3      | -42            | 0            | true   |
 
-  @VAMM
+  @VAMM2
   Scenario: 0087-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -178,22 +182,27 @@ Feature: Ensure the vAMM positions follow the market correctly
   Scenario: 0087-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | sell | 19     | 85    | 4                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 26     | 85    | 4                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/MAR22 | sell | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
     # see the trades that make the vAMM go short
-    Then the following trades should be executed:
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 1079         | 1000           | 27            | 100       | 85        | 85               |
+    And debug trades
+    And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 104   | 3    | party4 | true   |
       | party1   | 90    | 10   | party4 |        |
       | vamm1-id | 95    | 3    | party4 | true   |
-      | party3   | 85    | 3    | party4 |        |
+      | party3   | 85    | 10   | party4 |        |
 
     When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 11     | -65            | 0            |        |
       | party2   | -1     | 15             | 0            |        |
-      | party3   | 3      | 0              | 0            |        |
-      | party4   | -19    | 137            | 0            |        |
+      | party3   | 10     | 0              | 0            |        |
+      | party4   | -26    | 137            | 0            |        |
       | vamm1-id | 6      | -87            | 0            | true   |
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
@@ -201,25 +210,27 @@ Feature: Ensure the vAMM positions follow the market correctly
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
       | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 87     | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 225    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 315    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
 
     # Now make sure we don't trade with vAMM below 85
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | sell | 10     | 75    | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 19     | 75    | 2                | TYPE_LIMIT | TIF_GTC |
+    # vAMM closes its position, but no more
     Then the following trades should be executed:
-      | buyer  | price | size | seller | is amm |
-      | party3 | 85    | 7    | party4 | false  |
-      | lp1    | 75    | 3    | party4 | false  |
+      | buyer    | price | size | seller | is amm |
+      | vamm1-id | 89    | 4    | party4 | true   |
+      | lp1      | 75    | 15   | party4 | false  |
     When the network moves ahead "1" blocks
+    # position is zero for vamm1-id
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 11     | -175           | 0            |        |
       | party2   | -1     | 25             | 0            |        |
       | party3   | 10     | -100           | 0            |        |
-      | party4   | -29    | 397            | 0            |        |
-      | vamm1-id | 6      | -147           | 0            | true   |
-      | lp1      | 3      | 0              | 0            |        |
+      | party4   | -45    | 453            | 0            |        |
+      | vamm1-id | 0      | 0              | -1006        | true   |
+      | lp1      | 15     | 0              | 0            |        |
     # TODO: vamm does not appear to have any notional. Neither party nor alias work.
     #And the AMM "vamm1-id" has the following taker notional "4000"
     #And the party "vamm1" has the following taker notional "4000"
@@ -229,12 +240,16 @@ Feature: Ensure the vAMM positions follow the market correctly
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 2      | 110   | 2                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 1      | 130   | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 119          | 1000           | 3             | 100       | 110       | 110              |
     # see the trades that make the vAMM go short
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party4 | 106   | 1    | vamm1-id | true   |
       | party4 | 110   | 1    | party2   |        |
-    And the network moves ahead "1" blocks
+    When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party1   | 1      | 10             | 0            |        |
@@ -244,16 +259,21 @@ Feature: Ensure the vAMM positions follow the market correctly
     # now return the price back to 100, vAMM should hold position of 0
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/MAR22 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
+      | party4 | ETH/MAR22 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/MAR22 | sell | 3      | 110   | 2                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 110        | TRADING_MODE_CONTINUOUS | 175          | 1000           | 4             | 100       | 100       | 100              |
+    And the following trades should be executed:
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 120   | 1    | party2 | true   |
-    And the network moves ahead "1" blocks
+      | party4   | 110   | 1    | party2 |        |
+    When the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party1   | 1      | 20             | 0            |        |
-      | party2   | -3     | -30            | 0            |        |
-      | party4   | 2      | 24             | 0            |        |
+      | party1   | 1      | 10             | 0            |        |
+      | party2   | -4     | 0              | 0            |        |
+      | party4   | 3      | 4              | 0            |        |
       | vamm1-id | 0      | 0              | -14          | true   |
 
   @VAMM
@@ -277,7 +297,6 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party2   | -1     | 10             | 0            |        |
       | party4   | -13    | 42             | 0            |        |
       | vamm1-id | 3      | -42            | 0            | true   |
-    And debug detailed orderbook volumes for market "ETH/MAR22"
     # move price back up to 100
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -286,8 +305,6 @@ Feature: Ensure the vAMM positions follow the market correctly
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 90         | TRADING_MODE_CONTINUOUS | 575          | 1000           | 16            | 100       | 100       | 100              |
-    And debug detailed orderbook volumes for market "ETH/MAR22"
-    And debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party5 | 96    | 4    | vamm1-id | true   |

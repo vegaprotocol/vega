@@ -47,11 +47,17 @@ func TheFollowingTradesShouldBeExecuted(
 		}
 		// remap buyer/seller to AMM IDs
 		if row.HasColumn("is amm") && row.MustBool("is amm") {
+			found := false
 			if id, ok := exec.GetAMMSubAccountID(buyer); ok {
 				buyer = id
+				found = true
 			}
 			if id, ok := exec.GetAMMSubAccountID(seller); ok {
 				seller = id
+				found = true
+			}
+			if !found {
+				return fmt.Errorf("could not find pool ID for buyer (%s) or seller (%s)", buyer, seller)
 			}
 		}
 
