@@ -224,7 +224,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     #And the AMM "vamm1-id" has the following taker notional "4000"
     #And the party "vamm1" has the following taker notional "4000"
 
-  @VAMM2
+  @VAMM
   Scenario: 0087-VAMM-010: If other traders trade to move the market mid price to 110 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -255,3 +255,38 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party2   | -3     | -30            | 0            |        |
       | party4   | 2      | 24             | 0            |        |
       | vamm1-id | 0      | 0              | -14          | true   |
+
+  @VAMM
+  Scenario: 0087-VAMM-011: If other traders trade to move the market mid price to 90 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | sell | 5      | 90    | 2                | TYPE_LIMIT | TIF_GTC |
+    # see the trades that make the vAMM go short
+    Then the following trades should be executed:
+      | buyer    | price | size | seller | is amm |
+      | vamm1-id | 104   | 3    | party4 | true   |
+      | party1   | 90    | 2    | party4 |        |
+    And the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 3      | -10            | 0            |        |
+      | party2   | -1     | 10             | 0            |        |
+      | party4   | -5     | 42             | 0            |        |
+      | vamm1-id | 3      | -42            | 0            | true   |
+    # move price back up to 100
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5 | ETH/MAR22 | buy  | 5      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | sell | 2      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | price | size | seller   | is amm |
+      | party5 | 95    | 3    | vamm1-id | true   |
+      | party5 | 100   | 2    | party4   |        |
+    And the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 3      | 20             | 0            |        |
+      | party2   | -1     | 0              | 0            |        |
+      | party4   | -7     | -8             | 0            |        |
+      | party5   | 5      | 15             | 0            |        |
+      | vamm1-id | 0      | 0              | -27          | true   |
