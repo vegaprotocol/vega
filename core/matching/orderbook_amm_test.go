@@ -33,6 +33,7 @@ import (
 func TestOrderbookAMM(t *testing.T) {
 	t.Run("test empty book and AMM", testEmptyBookAndAMM)
 	t.Run("test empty book and matching AMM", testEmptyBookMatchingAMM)
+	t.Run("test empty book and matching AMM with incoming FOK", testEmptyBookMatchingAMMFOK)
 	t.Run("test matching between price levels", testMatchBetweenPriceLevels)
 	t.Run("test matching with orders on both sides", testMatchOrdersBothSide)
 }
@@ -77,6 +78,31 @@ func testEmptyBookMatchingAMM(t *testing.T) {
 	// uncross
 	tst.obs.EXPECT().SubmitOrder(gomock.Any(), nil, price).Times(1).Return(generated)
 	tst.obs.EXPECT().NotifyFinished().Times(1)
+	conf, err := tst.book.SubmitOrder(o)
+	assert.NoError(t, err)
+	assertConf(t, conf, 2, 10)
+}
+
+func testEmptyBookMatchingAMMFOK(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+	price := num.NewUint(100)
+
+	o := createOrder(t, tst, 20, price)
+	generated := createGeneratedOrders(t, tst, price)
+
+	o.TimeInForce = types.OrderTimeInForceFOK
+
+	// fake uncross
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), nil, price).Times(2).Return(generated)
+	tst.obs.EXPECT().NotifyFinished().Times(2)
+	trades, err := tst.book.GetTrades(o)
+	assert.NoError(t, err)
+	assert.Len(t, trades, 2)
+
+	// uncross
+	tst.obs.EXPECT().SubmitOrder(gomock.Any(), nil, price).Times(2).Return(generated)
+	tst.obs.EXPECT().NotifyFinished().Times(2)
 	conf, err := tst.book.SubmitOrder(o)
 	assert.NoError(t, err)
 	assertConf(t, conf, 2, 10)
