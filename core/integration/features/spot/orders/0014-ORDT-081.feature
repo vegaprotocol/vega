@@ -108,7 +108,7 @@ Feature: Spot market
       | party2 | BTC/ETH   | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
       | party5 | BTC/ETH   | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | sell1     |
 
-    # Now place the persistent GTC order to rest on the book at the back of the price levels
+    # Now place the persistent GTT order to rest on the book at the back of the price levels
     # It will not trade
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
