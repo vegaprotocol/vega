@@ -688,7 +688,9 @@ message Vote {
 }
 
 message VoteELSPair {
+  // The market ID.
   string market_id = 1;
+  // The equity like share weight for this market.
   string els = 2;
 }
 

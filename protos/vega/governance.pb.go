@@ -3681,8 +3681,10 @@ type VoteELSPair struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	Els      string `protobuf:"bytes,2,opt,name=els,proto3" json:"els,omitempty"`
+	// The equity like share weight for this market.
+	Els string `protobuf:"bytes,2,opt,name=els,proto3" json:"els,omitempty"`
 }
 
 func (x *VoteELSPair) Reset() {

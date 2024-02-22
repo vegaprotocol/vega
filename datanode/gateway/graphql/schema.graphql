@@ -5261,6 +5261,16 @@ type Vote {
 
   "The weight of this vote based on the total equity like share"
   equityLikeShareWeight: String!
+
+  "The equity like share weight per market (only for batch proposals)"
+  equityLikeSharePerMarket: [EquityLikeShareWeightPerMarket]
+}
+
+type EquityLikeShareWeightPerMarket {
+  "The market ID"
+  marketId: String!
+  "The equity like share weight for this market"
+  equityLikeShareWeight: String!
 }
 
 type ProposalVote {
