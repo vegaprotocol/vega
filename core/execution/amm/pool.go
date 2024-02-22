@@ -203,6 +203,18 @@ func (p *Pool) Update(
 }
 
 // generateCurve creates the curve details and calculates its virtual liquidity.
+func generateEmptyCurve(
+	base *num.Uint,
+) *curve {
+	return &curve{
+		l:    num.UintZero(),
+		rf:   num.DecimalZero(),
+		low:  base.Clone(),
+		high: base.Clone(),
+	}
+}
+
+// generateCurve creates the curve details and calculates its virtual liquidity.
 func generateCurve(
 	sqrt sqrtFn,
 	commitment,
@@ -462,6 +474,10 @@ func (p *Pool) getPosition() (int64, *num.Uint) {
 // y = abs(P) * average-entry + L * sqrt(pl).
 func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.upper
+	if cu.l.IsZero() {
+		panic("should not be calculating balances on empty-curve side")
+	}
+
 	balance := p.getBalance()
 
 	// lets start with x
@@ -497,6 +513,10 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 // y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
 func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.lower
+	if cu.l.IsZero() {
+		panic("should not be calculating balances on empty-curve side")
+	}
+
 	// lets start with x
 
 	// P
