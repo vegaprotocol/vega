@@ -131,7 +131,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     Then the following trades should be executed:
       | buyer    | price | size | seller | is amm |
       | vamm1-id | 104   | 3    | party4 | true   |
-      | party1   | 90    | 2    | party4 | true   |
+      | party1   | 90    | 2    | party4 |        |
     And the network moves ahead "1" blocks
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
@@ -173,3 +173,85 @@ Feature: Ensure the vAMM positions follow the market correctly
     # TODO: vamm does not appear to have any notional. Neither party nor alias work.
     #And the AMM "vamm1-id" has the following taker notional "4000"
     #And the party "vamm1" has the following taker notional "4000"
+
+  @VAMM
+  Scenario: 0087-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | sell | 19     | 85    | 4                | TYPE_LIMIT | TIF_GTC |
+    # see the trades that make the vAMM go short
+    Then the following trades should be executed:
+      | buyer    | price | size | seller | is amm |
+      | vamm1-id | 104   | 3    | party4 | true   |
+      | party1   | 90    | 10   | party4 |        |
+      | vamm1-id | 95    | 3    | party4 | true   |
+      | party3   | 85    | 3    | party4 |        |
+
+    When the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 11     | -65            | 0            |        |
+      | party2   | -1     | 15             | 0            |        |
+      | party3   | 3      | 0              | 0            |        |
+      | party4   | -19    | 137            | 0            |        |
+      | vamm1-id | 6      | -87            | 0            | true   |
+    # vAMM receives fees, but loses out in the MTM settlement
+    And the following transfers should happen:
+      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 87     | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 225    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+
+    # Now make sure we don't trade with vAMM below 85
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | sell | 10     | 75    | 2                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | price | size | seller | is amm |
+      | party3 | 85    | 7    | party4 | false  |
+      | lp1    | 75    | 3    | party4 | false  |
+    When the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 11     | -175           | 0            |        |
+      | party2   | -1     | 25             | 0            |        |
+      | party3   | 10     | -100           | 0            |        |
+      | party4   | -29    | 397            | 0            |        |
+      | vamm1-id | 6      | -147           | 0            | true   |
+      | lp1      | 3      | 0              | 0            |        |
+    # TODO: vamm does not appear to have any notional. Neither party nor alias work.
+    #And the AMM "vamm1-id" has the following taker notional "4000"
+    #And the party "vamm1" has the following taker notional "4000"
+
+  @VAMM2
+  Scenario: 0087-VAMM-010: If other traders trade to move the market mid price to 110 and then trade to move the mid price back to 100 the vAMM will have a position of 0.
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | buy  | 2      | 110   | 2                | TYPE_LIMIT | TIF_GTC |
+    # see the trades that make the vAMM go short
+    Then the following trades should be executed:
+      | buyer  | price | size | seller   | is amm |
+      | party4 | 106   | 1    | vamm1-id | true   |
+      | party4 | 110   | 1    | party2   |        |
+    And the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 1      | 10             | 0            |        |
+      | party2   | -2     | -10            | 0            |        |
+      | party4   | 2      | 4              | 0            |        |
+      | vamm1-id | -1     | -4             | 0            | true   |
+    # now return the price back to 100, vAMM should hold position of 0
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/MAR22 | sell | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer    | price | size | seller | is amm |
+      | vamm1-id | 120   | 1    | party2 | true   |
+    And the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 1      | 20             | 0            |        |
+      | party2   | -3     | -30            | 0            |        |
+      | party4   | 2      | 24             | 0            |        |
+      | vamm1-id | 0      | 0              | -14          | true   |
