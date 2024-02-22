@@ -296,6 +296,17 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 
 	// first we find all amm's whose best-price would allow a trade with the incoming order
 	for _, p := range e.poolsCpy {
+		var high, low *num.Uint
+		if p.upper != nil {
+			high = p.upper.high
+		} else {
+			high = p.lower.low
+		}
+		if p.lower != nil {
+			low = p.lower.low
+		} else {
+			low = p.upper.high
+		}
 		// if pool is in reducing only mode and order will increase its position, we don't want to trade
 		if !p.canTrade(agg) {
 			continue
@@ -316,7 +327,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				continue
 			}
 			active = append(active, p)
-			best = num.Min(best, p.upper.high)
+			best = num.Min(best, high)
 		}
 
 		if agg.Side == types.SideSell {
@@ -325,7 +336,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				continue
 			}
 			active = append(active, p)
-			best = num.Max(best, p.lower.low)
+			best = num.Max(best, low)
 		}
 	}
 
@@ -703,7 +714,7 @@ func (e *Engine) updateSubAccountBalance(
 
 // rebasePool submits an order on behalf of the given pool to pull it fair-price towards the target.
 func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal, idgen common.IDGenerator) error {
-	if target.LT(pool.lower.low) || target.GT(pool.upper.high) {
+	if (pool.lower != nil && target.LT(pool.lower.low)) || (pool.upper != nil && target.GT(pool.upper.high)) {
 		return ErrRebaseTargetOutsideBounds
 	}
 

@@ -104,7 +104,7 @@ Then the following AMM pool events should be emitted:
 The AMM pool and sub-accounts are assigned derrived ID's, which can't be specified from the integration test scenario. To allow verifying the balances of the accounts, and check whether or not the expected transfers to and from said account happened, it's possible to assign aliases to the derived ID's.
 
 ```
-Then set the the following AMM sub account aliases:
+Then set the following AMM sub account aliases:
   | party    | market id | alias               |
   | party ID | market ID | account owner alias |
 ```
@@ -141,6 +141,46 @@ Then set the the following AMM sub account aliases:
 And the following transfers should happen:
   | from   | from account         | to             | to account           | market id | amount | asset | is amm |
   | party1 | ACCOUNT_TYPE_GENERAL | party1-amm-acc | ACCOUNT_TYPE_GENERAL |           | 10000  | ETH   | true   |
+```
+
+It's important to note that a vAMM will be receiving fees from particular markets, and when holding a position, will create a margin account on the given market, transfers for this can be checked using the same alias like so:
+
+```
+And the following transfers should happen:
+  | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
+  |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+  |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 2      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
+  | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 88     | USD   | true   | TRANSFER_TYPE_MTM_LOSS          |
+  | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 274    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
+```
+
+### Checking AMM trades
+
+Because the parties who created the vAMM don't actually trade directly, the derived party ID will appear as the buyer or seller. The account owner alias created above should therefore be used to check the buyer/seller of trades involving the vAMM pools:
+
+```
+Then the following trades should be executed:
+  | buyer  | price | size | seller      | is amm |
+  | party5 | 106   | 1    | vamm1-alias | true   |
+  | party5 | 110   | 1    | party2      |        |
+  | party5 | 128   | 2    | vamm1-alias | true   |
+  | party5 | 140   | 1    | party4      |        |
+```
+
+This step has added the `is amm` column (optional) which should be set to `true` to lookup the actual party ID using the vAMM alias created in the step outlined above.
+
+### Checking vAMM position
+
+Like any party, we may want to check the overall position of a vAMM pool. To do this, we can use the existing step to check the profit and loss. Like with the trade-check and transfer checks, a boolean column `is amm` was added to instruct the integration test framewokr to interpret the party ID given as being a vAMM alias.
+
+```
+Then the parties should have the following profit and loss:
+  | party    | volume | unrealised pnl | realised pnl | is amm |
+  | party5   | 5      | 88             | 0            |        |
+  | party1   | 1      | 40             | 0            |        |
+  | party2   | -2     | -70            | 0            |        |
+  | party4   | -1     | 0              | 0            |        |
+  | vamm1-id | -3     | -58            | 0            | true   |
 ```
 
 ### DEBUG STEPS

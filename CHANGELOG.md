@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10719](https://github.com/vegaprotocol/vega/issues/10719) - Add integration tests for `vAMM` spec `ACs`.
 
 ### 🐛 Fixes
 
