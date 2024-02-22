@@ -18,7 +18,6 @@ package entities
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -46,23 +45,27 @@ type Vote struct {
 }
 
 func (v Vote) ToProto() *vega.Vote {
-	perMarketELSWeight := make(map[string]string)
+	var perMarketELSWeight []*vega.VoteELSPair
 
-	if len(v.PerMarketEquityLikeShareWeight) > 0 {
+	if ln := len(v.PerMarketEquityLikeShareWeight); ln > 0 {
+		perMarketELSWeight = make([]*vega.VoteELSPair, 0, ln)
 		for _, w := range v.PerMarketEquityLikeShareWeight {
-			perMarketELSWeight[w.Market] = w.ELS
+			perMarketELSWeight = append(perMarketELSWeight, &vega.VoteELSPair{
+				MarketId: w.Market,
+				Els:      w.ELS,
+			})
 		}
 	}
 
 	return &vega.Vote{
-		PartyId:                        v.PartyID.String(),
-		ProposalId:                     v.ProposalID.String(),
-		Value:                          vega.Vote_Value(v.Value),
-		TotalGovernanceTokenBalance:    v.TotalGovernanceTokenBalance.String(),
-		TotalGovernanceTokenWeight:     v.TotalGovernanceTokenWeight.String(),
-		TotalEquityLikeShareWeight:     v.TotalEquityLikeShareWeight.String(),
-		Timestamp:                      v.InitialTime.UnixNano(),
-		PerMarketEquityLikeShareWeight: perMarketELSWeight,
+		PartyId:                     v.PartyID.String(),
+		ProposalId:                  v.ProposalID.String(),
+		Value:                       vega.Vote_Value(v.Value),
+		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.String(),
+		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
+		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
+		Timestamp:                   v.InitialTime.UnixNano(),
+		ElsPerMarket:                perMarketELSWeight,
 	}
 }
 
@@ -85,16 +88,12 @@ func VoteFromProto(pv *vega.Vote, txHash TxHash) (Vote, error) {
 	// We need deterministic ordering of the share weights to prevent network history segment hashes from diverting
 	perMarketELSWeight := make([]PerMarketELSWeight, 0)
 
-	for k, v := range pv.PerMarketEquityLikeShareWeight {
+	for _, pair := range pv.ElsPerMarket {
 		perMarketELSWeight = append(perMarketELSWeight, PerMarketELSWeight{
-			Market: k,
-			ELS:    v,
+			Market: pair.MarketId,
+			ELS:    pair.Els,
 		})
 	}
-
-	sort.Slice(perMarketELSWeight, func(i, j int) bool {
-		return perMarketELSWeight[i].Market < perMarketELSWeight[j].Market
-	})
 
 	v := Vote{
 		PartyID:                        PartyID(pv.PartyId),
