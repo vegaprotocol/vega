@@ -421,7 +421,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 		}
 
 		// first check for volume between the theoretical best price and the first price level
-		_, oo := s.uncrossOffbook(len(s.levels)-1, fake, idealPrice, true)
+		_, oo := s.uncrossOffbook(len(s.levels), fake, idealPrice, true)
 		for _, order := range oo {
 			totalVolumeToFill += order.Remaining
 		}
@@ -648,7 +648,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 	}
 
 	if agg.TimeInForce == types.OrderTimeInForceFOK {
-		_, oo := s.uncrossOffbook(len(s.levels)-1, fake, theoreticalBestTrade, true)
+		_, oo := s.uncrossOffbook(len(s.levels), fake, theoreticalBestTrade, true)
 		for _, order := range oo {
 			totalVolumeToFill += order.Remaining
 		}

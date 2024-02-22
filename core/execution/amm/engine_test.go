@@ -44,6 +44,7 @@ func TestSubmitAMM(t *testing.T) {
 	t.Run("test rebase on submit order target out of bounds", testSubmitTargetIsOutOfBounds)
 
 	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit market order", testSubmitMarketOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
 }
 
@@ -238,6 +239,7 @@ func testBasicSubmitOrder(t *testing.T) {
 		Remaining: 1000000,
 		Side:      types.SideBuy,
 		Price:     num.NewUint(2100),
+		Type:      types.OrderTypeLimit,
 	}
 
 	ensureBalances(t, tst.col, 10000000000)
@@ -246,6 +248,32 @@ func testBasicSubmitOrder(t *testing.T) {
 	require.Len(t, orders, 1)
 	assert.Equal(t, "2004", orders[0].Price.String())
 	assert.Equal(t, uint64(120731), orders[0].Size)
+}
+
+func testSubmitMarketOrder(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(2100),
+		Type:      types.OrderTypeMarket,
+	}
+
+	ensurePosition(t, tst.pos, 0, num.NewUint(0))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(1980), num.NewUint(1990))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2005", orders[0].Price.String())
+	assert.Equal(t, uint64(129839), orders[0].Size)
 }
 
 func testSubmitOrderProRata(t *testing.T) {
