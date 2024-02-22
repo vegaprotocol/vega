@@ -36,8 +36,8 @@ const (
     SELECT *
     FROM teams_stats
     WHERE at_epoch > (
-      SELECT MAX(at_epoch) - $1
-      FROM teams_stats
+      SELECT MAX(id) - $1
+      FROM epochs
     ) %s
   ),
   team_numbers AS (
@@ -77,8 +77,8 @@ FROM team_numbers tn
     SELECT *
     FROM teams_stats
     WHERE at_epoch > (
-      SELECT MAX(at_epoch) - $1
-      FROM teams_stats
+      SELECT MAX(id) - $1
+      FROM epochs
     ) AND team_id = $2 %s
   ),
   members_numbers AS (
