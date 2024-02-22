@@ -340,6 +340,10 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
+func (r *VegaResolverRoot) EquityLikeShareWeightPerMarket() EquityLikeShareWeightPerMarketResolver {
+	return (*elsWeightPerMarketResolver)(r)
+}
+
 func (r *VegaResolverRoot) NodeData() NodeDataResolver {
 	return (*nodeDataResolver)(r)
 }
