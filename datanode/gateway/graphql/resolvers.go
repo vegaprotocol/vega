@@ -914,8 +914,9 @@ func (r *myQueryResolver) TransfersConnection(
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
 	gameID *string,
+	fromAccountType, toAccountType *vega.AccountType,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
+	return r.r.transfersConnection(ctx, partyID, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID, fromAccountType, toAccountType)
 }
 
 func (r *myQueryResolver) Transfer(ctx context.Context, id string) (*v2.TransferNode, error) {
@@ -2128,8 +2129,9 @@ func (r *myPartyResolver) TransfersConnection(
 	status *eventspb.Transfer_Status,
 	scope *v2.ListTransfersRequest_Scope,
 	gameID *string,
+	fromAccountType, toAccountType *vega.AccountType,
 ) (*v2.TransferConnection, error) {
-	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID)
+	return r.r.transfersConnection(ctx, &party.Id, direction, pagination, isReward, fromEpoch, toEpoch, status, scope, gameID, fromAccountType, toAccountType)
 }
 
 func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *vegapb.Party, assetID *string, pagination *v2.Pagination,

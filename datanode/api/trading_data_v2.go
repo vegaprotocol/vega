@@ -2469,6 +2469,8 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	if req.GameId != nil {
 		filters.GameID = ptr.From(entities.GameID(*req.GameId))
 	}
+	filters.FromAccountType = req.FromAccountType
+	filters.ToAccountType = req.ToAccountType
 
 	if req.Pubkey == nil {
 		if !isReward {

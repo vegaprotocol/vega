@@ -1794,6 +1794,10 @@ message ListTransfersRequest {
   optional Scope scope = 8;
   // Game ID to filter on
   optional string game_id = 9;
+  // Account type to filter on for transfers from account
+  optional vega.AccountType from_account_type = 10;
+  // Account type to filter on for transfers to account
+  optional vega.AccountType to_account_type = 11;
 
   // Defines the types of a dispatch strategy's scope the API can filter on.
   enum Scope {
