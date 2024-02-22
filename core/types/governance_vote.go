@@ -17,6 +17,7 @@ package types
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -87,6 +88,19 @@ type Vote struct {
 }
 
 func (v Vote) IntoProto() *vegapb.Vote {
+	var ELSMap []*vegapb.VoteELSPair
+	if ln := len(v.PerMarketEquityLikeShareWeight); ln > 0 {
+		ELSMap = make([]*vegapb.VoteELSPair, 0, ln)
+		for mkt, els := range v.PerMarketEquityLikeShareWeight {
+			ELSMap = append(ELSMap, &vegapb.VoteELSPair{
+				MarketId: mkt,
+				Els:      els.String(),
+			})
+		}
+		sort.SliceStable(ELSMap, func(i, j int) bool {
+			return ELSMap[i].MarketId > ELSMap[j].MarketId
+		})
+	}
 	return &vegapb.Vote{
 		PartyId:                     v.PartyID,
 		Value:                       v.Value,
@@ -95,6 +109,7 @@ func (v Vote) IntoProto() *vegapb.Vote {
 		TotalGovernanceTokenBalance: num.UintToString(v.TotalGovernanceTokenBalance),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 		TotalEquityLikeShareWeight:  v.TotalEquityLikeShareWeight.String(),
+		ELSPerMarket:                ELSMap,
 	}
 }
 
@@ -117,6 +132,17 @@ func VoteFromProto(v *vegapb.Vote) (*Vote, error) {
 	}
 	if len(v.TotalEquityLikeShareWeight) > 0 {
 		ret.TotalEquityLikeShareWeight, _ = num.DecimalFromString(v.TotalEquityLikeShareWeight)
+	}
+	if len(v.ELSPerMarket) > 0 {
+		els := make(map[string]num.Decimal, len(v.ELSPerMarket))
+		for _, pair := range v.ELSPerMarket {
+			share, err := num.DecimalFromString(pair.Els)
+			if err != nil {
+				return nil, err
+			}
+			els[pair.MarketId] = share
+		}
+		ret.PerMarketEquityLikeShareWeight = els
 	}
 	return &ret, nil
 }

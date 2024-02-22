@@ -684,7 +684,12 @@ message Vote {
   // The weight of the vote compared to the total amount of equity-like share on the market. It is only populated if the vote is for a single type proposal.
   string total_equity_like_share_weight = 7;
   // The per market weight of the vote compared to the total amount of equity-like share on the market.. It is only populated if the vote is for a batch type proposal.
-  map<string, string> per_market_equity_like_share_weight = 8;
+  repeated VoteELSPair ELS_per_market = 8;
+}
+
+message VoteELSPair {
+  string market_id = 1;
+  string els = 2;
 }
 
 message UpdateVolumeDiscountProgram {
