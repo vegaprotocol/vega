@@ -12,7 +12,7 @@ import (
 
 const (
 	// The vega asset ID for Tether USD.
-	TetherUSD = "bf1e88d19db4b3ca0d1d5bdb73718a01686b18cf731ca26adedf3c8b83802bba"
+	TetherUSD = "c9fe6fc24fce121b2cc72680543a886055abb560043fda394ba5376203b7527d"
 )
 
 // NOTE: All prices here are expressed in the USDT assets requiring a 6 decimals precision.
