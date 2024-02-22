@@ -12,6 +12,7 @@
 
 ### 🛠 Improvements
 
+- [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
