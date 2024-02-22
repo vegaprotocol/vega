@@ -30,14 +30,15 @@ type ephemeralPosition struct {
 }
 
 type curve struct {
-	l    *num.Uint   // virtual liquidity
-	high *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
-	low  *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
-	rf   num.Decimal // commitment scaling factor
+	l     *num.Uint   // virtual liquidity
+	high  *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
+	low   *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
+	rf    num.Decimal // commitment scaling factor
+	empty bool        // if true the curve is of zero length and represents no liquidity on this side of the amm
 }
 
 func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
-	if c.l.IsZero() {
+	if c.l.IsZero() || c.empty {
 		return 0
 	}
 
@@ -207,10 +208,11 @@ func generateEmptyCurve(
 	base *num.Uint,
 ) *curve {
 	return &curve{
-		l:    num.UintZero(),
-		rf:   num.DecimalZero(),
-		low:  base.Clone(),
-		high: base.Clone(),
+		l:     num.UintZero(),
+		rf:    num.DecimalZero(),
+		low:   base.Clone(),
+		high:  base.Clone(),
+		empty: true,
 	}
 }
 
@@ -474,7 +476,7 @@ func (p *Pool) getPosition() (int64, *num.Uint) {
 // y = abs(P) * average-entry + L * sqrt(pl).
 func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.upper
-	if cu.l.IsZero() {
+	if cu.empty {
 		panic("should not be calculating balances on empty-curve side")
 	}
 
@@ -513,7 +515,7 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 // y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
 func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
 	cu := p.lower
-	if cu.l.IsZero() {
+	if cu.empty {
 		panic("should not be calculating balances on empty-curve side")
 	}
 
