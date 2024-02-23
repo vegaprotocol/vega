@@ -493,9 +493,11 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool, idea
 			break
 		}
 
-		obTrades, obOrders := s.uncrossOffbook(idx, fake, idealPrice, true)
-		trades = append(trades, obTrades...)
-		offbookOrders = append(offbookOrders, obOrders...)
+		if fake.Remaining != 0 {
+			obTrades, obOrders := s.uncrossOffbook(idx, fake, idealPrice, true)
+			trades = append(trades, obTrades...)
+			offbookOrders = append(offbookOrders, obOrders...)
+		}
 
 		// the orders are still part of the levels, so we just have to move on anyway
 		idx--
