@@ -1362,6 +1362,12 @@ func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
 }
 
 func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	defer func() {
+		if m.mkt.GetID() == "53d34c0b8cb45d0ff6232e605191b5d215fc8b0d949b2efb495dbf223448192d" && changes.UpdateType == types.MarketStateUpdateTypeResume {
+			panic("OK")
+		}
+	}()
+
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
 	// make deterministic ID for this market, concatenate
 	// the block hash and the market ID
@@ -1394,6 +1400,8 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
 	} else if changes.UpdateType == types.MarketStateUpdateTypeResume && m.mkt.State == types.MarketStateSuspendedViaGovernance {
+		fmt.Printf("IN HERE\n")
+
 		if m.as.GetState().Trigger == types.AuctionTriggerGovernanceSuspension && m.as.GetState().Extension == types.AuctionTriggerUnspecified {
 			m.as.EndGovernanceSuspensionAuction()
 			m.leaveAuction(ctx, m.timeService.GetTimeNow())
