@@ -316,11 +316,12 @@ Feature: Ensure the vAMM positions follow the market correctly
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 90         | TRADING_MODE_CONTINUOUS | 575          | 1000           | 16            | 100       | 100       | 100              |
-    Then the following trades should be executed:
+    And the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party5 | 96    | 4    | vamm1-id | true   |
       | party5 | 95    | 1    | party4   |        |
-    And the network moves ahead "1" blocks
+
+    When the network moves ahead "1" blocks
     # vAMM should not hold a position, but apparently it does, vAMM switched sides, this is a know bug with incoming fix
 	Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
