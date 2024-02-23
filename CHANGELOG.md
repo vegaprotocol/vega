@@ -18,6 +18,7 @@
 ### 🐛 Fixes
 
 - [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
+- [10743](https://github.com/vegaprotocol/vega/issues/10722) - When SLA hysteresis epochs are updated resize the ring using new value.
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
 - [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended. 
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
