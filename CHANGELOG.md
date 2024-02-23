@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.74.9
+
+### 🐛 Fixes
+
+- [10811](https://github.com/vegaprotocol/vega/issues/10811) - Ethereum call events are now properly `deduplicated` when restoring from a snapshot.
+- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
+
+
 ## 0.74.8
 
 ### 🐛 Fixes
