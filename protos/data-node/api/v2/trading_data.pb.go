@@ -3441,7 +3441,7 @@ type AggregatedLedgerEntry struct {
 	FromAccountBalance string `protobuf:"bytes,12,opt,name=from_account_balance,json=fromAccountBalance,proto3" json:"from_account_balance,omitempty"`
 	// Receiver account balance after the transfer.
 	ToAccountBalance string `protobuf:"bytes,13,opt,name=to_account_balance,json=toAccountBalance,proto3" json:"to_account_balance,omitempty"`
-	// Transfer ID associated with the entry.
+	// Transfer ID associated with the ledger entry.
 	TransferId string `protobuf:"bytes,14,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
 }
 
