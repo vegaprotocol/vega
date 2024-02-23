@@ -1,6 +1,9 @@
 Feature: Spot market SLA
 
   Scenario: 001 0044-LIME-046, when fraction_of_time_on_book = 0
+
+    Given time is updated to "2023-07-20T00:00:00Z"
+
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0         | 0                  |
@@ -30,8 +33,6 @@ Feature: Spot market SLA
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
       | validators.epoch.length                             | 2s    |
-
-    Given time is updated to "2023-07-20T00:00:00Z"
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
@@ -94,7 +95,7 @@ Feature: Spot market SLA
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2400         | 3000           | 0             |
 
     Then the network moves ahead "5" blocks
-    And the network treasury balance should be "1050" for the asset "ETH"
-    Then the party "lp1" lp liquidity bond account balance should be "1950" for the market "BTC/ETH"
+    And the network treasury balance should be "1800" for the asset "ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "1200" for the market "BTC/ETH"
 
 
