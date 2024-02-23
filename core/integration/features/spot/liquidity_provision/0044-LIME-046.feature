@@ -1,6 +1,6 @@
 Feature: Spot market SLA
 
-  Scenario: 001
+  Scenario: 001 0044-LIME-046, when fraction_of_time_on_book = 0
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0         | 0                  |
@@ -39,6 +39,7 @@ Feature: Spot market SLA
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
+      | market.liquidity.stakeToCcyVolume                | 1     |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
@@ -61,60 +62,39 @@ Feature: Spot market SLA
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee | lp type    |
-      | lp1 | lp1   | BTC/ETH   | 2000              | 0.1 | submission |
-      # | lp2 | lp2   | BTC/ETH   | 2000              | 0.1 | submission |
-
-    And the parties should have the following account balances:
-      | party | asset | market id | general |
-      | lp1   | BTC   | BTC/ETH   | 60      |
-      | lp2   | ETH   | BTC/ETH   | 4000    |
+      | lp1 | lp1   | BTC/ETH   | 3000              | 0.1 | submission |
 
     Then the network moves ahead "1" blocks
     And the network treasury balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
     And the party "lp1" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
-    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "3000" for the market "BTC/ETH"
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 1600         | 2000           | 0             |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | 2400         | 3000           | 0             |
 
     # place orders and generate trades
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
       | party1 | BTC/ETH   | buy  | 6      | 8     | 0                | TYPE_LIMIT | TIF_GTC | party-order5 |      |
-      | lp1    | BTC/ETH   | buy  | 1      | 12    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b        |      |
       | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order3 |      |
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
-      | lp1    | BTC/ETH   | sell | 1      | 19    | 0                | TYPE_LIMIT | TIF_GTC | lp1-s        |      |
       | party2 | BTC/ETH   | sell | 6      | 24    | 0                | TYPE_LIMIT | TIF_GTC | party-order6 |      |
 
-    When the network moves ahead "4" blocks
+    When the network moves ahead "2" blocks
+
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 | 15    | 1    | party2 |
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1600         | 2000           | 0             |
+      | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2400         | 3000           | 0             |
 
-    And the parties should have the following account balances:
-      | party | asset | market id | general |
-      | lp1   | BTC   | BTC/ETH   | 50      |
-      | lp1   | ETH   | BTC/ETH   | 1880    |
+    Then the network moves ahead "5" blocks
+    And the network treasury balance should be "1050" for the asset "ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "1950" for the market "BTC/ETH"
 
-    # And the parties place the following orders:
-    #   | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
-    #   | lp1   | BTC/ETH   | buy  | 6      | 8     | 0                | TYPE_LIMIT | TIF_GTC | lp-order1 |      |
-    #   | lp1   | BTC/ETH   | sell | 6      | 24    | 0                | TYPE_LIMIT | TIF_GTC | lp-order2 |      |
-
-    Then the network moves ahead "2" blocks
-    Then the parties cancel the following orders:
-      | party | reference |
-      | lp1   | lp1-b     |
-      | lp1   | lp1-s     |
-
-    Then the network moves ahead "10" blocks
-    And the network treasury balance should be "0" for the asset "ETH"
-    Then the party "lp1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
-    And the global insurance pool balance should be "0" for the asset "ETH"
-    And the global insurance pool balance should be "0" for the asset "BTC"
 

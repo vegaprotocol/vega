@@ -1,6 +1,6 @@
 Feature: Spot market SLA
 
-  Scenario:
+  Scenario: 0044-LIME-045, when target stake > total stake, and LP reduces LP commitment
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0         | 0                  |
