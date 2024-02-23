@@ -145,3 +145,54 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party4   | -3     | 0              | 0            |        |
       | party5   | 3      | 0              | 0            |        |
       #| vamm1-id | 0      | 0              | 0            | true   |
+
+  @VAMM
+  Scenario: 0087-VAMM-014: If other traders trade to move the market mid price to 90 and then in one trade move the mid price to 110 then trade to move the mid price to 120 the vAMM will have a larger (more negative) but comparable position to if they had been moved straight from 100 to 120.
+    # to drop the mid price to 90, we need a sell order at 100 on the book
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party4 | ETH/MAR22 | sell | 2      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/MAR22 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 79           | 1000           | 2             | 100       | 90        | 90               |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party5 | 100   | 1    | party4 |
+
+    # Now, in a single trade bump the mid price to 110, there is 1 sell order on tbe book for 1@100, place a buy order that uncrosses
+    # and stays on the book, so volume should be 2
+     When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5 | ETH/MAR22 | buy  | 2      | 100   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 119          | 1000           | 3             | 100       | 110       | 110              |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party5 | 100   | 1    | party4 |
+    And debug detailed orderbook volumes for market "ETH/MAR22"
+    
+    # Now move the price to 120, we need some more buy and sell orders on the book, and we need to get rid of the sell 1@120
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party5 | ETH/MAR22 | buy  | 3      | 120   | 2                | TYPE_LIMIT | TIF_GTC | p5b1      |
+      | party4 | ETH/MAR22 | sell | 2      | 130   | 0                | TYPE_LIMIT | TIF_GTC | p4s       |
+      | party5 | ETH/MAR22 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | p5b2      |
+    Then the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
+      | 100        | TRADING_MODE_CONTINUOUS | 239          | 1000           | 6             | 100       | 120       | 120              |
+    And the following trades should be executed:
+      | buyer  | price | size | seller   | is amm |
+      | party5 | 120   | 1    | party2   |        |
+      | party5 | 113   | 2    | vamm1-id | true   |
+
+    # check the PnL/position, we should see the vAMM holding short
+    When the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party1   | 1      | 20             | 0            |        |
+      | party2   | -2     | -20            | 0            |        |
+      | party4   | -2     | -40            | 0            |        |
+      | party5   | 5      | 54             | 0            |        |
+      | vamm1-id | -2     | -14            | 0            | true   |
