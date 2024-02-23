@@ -528,7 +528,8 @@ func (r submitOrderRow) ExpirationDate(now time.Time) int64 {
 	}
 
 	if r.TimeInForce() == types.OrderTimeInForceGTT {
-		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
+		// Allow negative expires in seconds for testing purposes
+		return now.Add(r.row.MustDurationSec2("expires in")).Local().UnixNano()
 	}
 	// non GTT orders don't need an expiry time
 	return 0
