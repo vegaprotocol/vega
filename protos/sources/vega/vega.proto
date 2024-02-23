@@ -1317,7 +1317,7 @@ message MarketData {
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
   // Market value proxy.
   string market_value_proxy = 25;
-  // Equity like share of liquidity fee for each liquidity provider.
+  // Equity-like share of liquidity fee for each liquidity provider.
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // Current state of the market.
   Market.State market_state = 27;
@@ -1353,7 +1353,7 @@ message CompositePriceState {
   repeated CompositePriceSource price_sources = 1;
 }
 
-// Equity like share of liquidity fee for each liquidity provider
+// Equity-like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;

@@ -12,11 +12,13 @@
 
 ### 🛠 Improvements
 
+- [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
+- [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
 
 ## 0.74.3
 
