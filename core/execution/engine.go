@@ -584,6 +584,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 		if state == types.MarketStateCancelled || state == types.MarketStateClosed || state == types.MarketStateRejected || state == types.MarketStateSettled || state == types.MarketStateTradingTerminated {
 			return fmt.Errorf("invalid state update request. Market is already in a terminal state")
 		}
+		if changes.UpdateType == types.MarketStateUpdateTypeSuspend && state == types.MarketStateSuspendedViaGovernance {
+			return fmt.Errorf("invalid state update request. Market for suspend is already suspended")
+		}
 		if changes.UpdateType == types.MarketStateUpdateTypeResume && state != types.MarketStateSuspendedViaGovernance {
 			return fmt.Errorf("invalid state update request. Market for resume is not suspended")
 		}
@@ -609,6 +612,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 
 func (e *Engine) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
 	if market, ok := e.allMarkets[changes.MarketID]; ok {
+		if err := e.VerifyUpdateMarketState(changes); err != nil {
+			return err
+		}
 		return market.UpdateMarketState(ctx, changes)
 	}
 	return ErrMarketDoesNotExist
