@@ -19,6 +19,7 @@
 
 - [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
+- [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended. 
 
 ## 0.74.3
 
