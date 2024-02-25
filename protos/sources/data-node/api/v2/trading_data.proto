@@ -1498,6 +1498,8 @@ message AggregatedLedgerEntry {
   string from_account_balance = 12;
   // Receiver account balance after the transfer.
   string to_account_balance = 13;
+  // Transfer ID associated with the ledger entry.
+  string transfer_id = 14;
 }
 
 // -- LedgerEntries --
