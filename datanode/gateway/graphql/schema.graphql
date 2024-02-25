@@ -5628,6 +5628,8 @@ type AggregatedLedgerEntry {
   fromAccountBalance: String!
   "Receiver account balance after the transfer"
   toAccountBalance: String!
+  "Transfer ID associated with this aggregated ledger entry"
+  transferId: ID!
 }
 
 type AggregatedLedgerEntriesEdge {
