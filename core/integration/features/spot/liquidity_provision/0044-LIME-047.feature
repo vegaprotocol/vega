@@ -1,6 +1,6 @@
 Feature: Spot market SLA
 
-  Scenario: 001 0044-LIME-046, when a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.commitmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6
+  Scenario: 001 0044-LIME-047, when a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.commitmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.2, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -29,7 +29,7 @@ Feature: Spot market SLA
       | network.markPriceUpdateMaximumFrequency             | 2s    |
       | market.liquidity.earlyExitPenalty                   | 0.25  |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
-      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.7   |
+      | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.2   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
       | validators.epoch.length                             | 2s    |
@@ -95,7 +95,7 @@ Feature: Spot market SLA
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2400         | 3000           | 0             |
 
     Then the network moves ahead "5" blocks
-    And the network treasury balance should be "1800" for the asset "ETH"
-    Then the party "lp1" lp liquidity bond account balance should be "1200" for the market "BTC/ETH"
+    And the network treasury balance should be "600" for the asset "ETH"
+    Then the party "lp1" lp liquidity bond account balance should be "2400" for the market "BTC/ETH"
 
 
