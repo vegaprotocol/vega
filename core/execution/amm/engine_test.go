@@ -51,17 +51,18 @@ func TestSubmitAMM(t *testing.T) {
 func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
+	t.Run("test best prices and volume", TestBestPricesAndVolume)
 }
 
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
-	t.Run("test amend AMM with rebase", TestAmendAMMWithRebase)
+	t.Run("test amend AMM with rebase", testAmendAMMWithRebase)
 }
 
 func TestClosingAMM(t *testing.T) {
-	t.Run("test closing a pool as reduce only when its position is 0", TestClosingReduceOnlyPool)
-	t.Run("test amending closing pool makes it actives", TestAmendMakesClosingPoolActive)
-	t.Run("test closing pool removed when position hits zero", TestClosingPoolRemovedWhenPositionZero)
+	t.Run("test closing a pool as reduce only when its position is 0", testClosingReduceOnlyPool)
+	t.Run("test amending closing pool makes it actives", testAmendMakesClosingPoolActive)
+	t.Run("test closing pool removed when position hits zero", testClosingPoolRemovedWhenPositionZero)
 }
 
 func testOnePoolPerParty(t *testing.T) {
@@ -198,7 +199,7 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
-func TestAmendAMMWithRebase(t *testing.T) {
+func testAmendAMMWithRebase(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -326,7 +327,31 @@ func testSubmitOrderProRata(t *testing.T) {
 	}
 }
 
-func TestClosingReduceOnlyPool(t *testing.T) {
+func TestBestPricesAndVolume(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	// create three pools
+	for i := 0; i < 3; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
+
+		expectSubaccountCreation(t, tst, party, subAccount)
+		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	}
+
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(9).Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.NewUint(0)}},
+	)
+
+	bid, bvolume, ask, avolume := tst.engine.BestPricesAndVolumes()
+	assert.Equal(t, "1999", bid.String())
+	assert.Equal(t, "2001", ask.String())
+	assert.Equal(t, uint64(38526), bvolume)
+	assert.Equal(t, uint64(36615), avolume)
+}
+
+func testClosingReduceOnlyPool(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -367,7 +392,7 @@ func TestClosingPoolImmediate(t *testing.T) {
 	assert.Len(t, tst.engine.pools, 0)
 }
 
-func TestAmendMakesClosingPoolActive(t *testing.T) {
+func testAmendMakesClosingPoolActive(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -397,7 +422,7 @@ func TestAmendMakesClosingPoolActive(t *testing.T) {
 	assert.False(t, tst.engine.poolsCpy[0].closing())
 }
 
-func TestClosingPoolRemovedWhenPositionZero(t *testing.T) {
+func testClosingPoolRemovedWhenPositionZero(t *testing.T) {
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	tst := getTestEngine(t)
 
