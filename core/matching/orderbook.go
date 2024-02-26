@@ -44,6 +44,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/matching OffbookSource
 type OffbookSource interface {
+	BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64)
 	SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order
 	NotifyFinished()
 }
@@ -615,12 +616,41 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 
 // BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book.
 func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
-	return b.buy.BestPriceAndVolume()
+	price, volume, err := b.buy.BestPriceAndVolume()
+
+	if b.buy.offbook != nil {
+		oPrice, oVolume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+
+		// no off source volume, return the orderbook
+		if oVolume == 0 {
+			return price, volume, err
+		}
+
+		if err == nil && oPrice.EQ(price) {
+			oVolume += volume
+		}
+		return oPrice, oVolume, nil
+	}
+	return price, volume, err
 }
 
 // BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book.
 func (b *OrderBook) BestOfferPriceAndVolume() (*num.Uint, uint64, error) {
-	return b.sell.BestPriceAndVolume()
+	price, volume, err := b.sell.BestPriceAndVolume()
+	if b.sell.offbook != nil {
+		_, _, oPrice, oVolume := b.sell.offbook.BestPricesAndVolumes()
+
+		// no off source volume, return the orderbook
+		if oVolume == 0 {
+			return price, volume, err
+		}
+
+		if err == nil && oPrice.EQ(price) {
+			oVolume += volume
+		}
+		return oPrice, oVolume, nil
+	}
+	return price, volume, err
 }
 
 func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
@@ -1050,29 +1080,85 @@ func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*t
 }
 
 func (b *OrderBook) GetBestBidPrice() (*num.Uint, error) {
+	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	if b.buy.offbook != nil {
+		price, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+		if volume != 0 {
+			return price, nil
+		}
+	}
 	price, _, err := b.buy.BestPriceAndVolume()
 	return price, err
 }
 
 func (b *OrderBook) GetBestStaticBidPrice() (*num.Uint, error) {
+	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	if b.buy.offbook != nil {
+		price, volume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+		if volume != 0 {
+			return price, nil
+		}
+	}
 	return b.buy.BestStaticPrice()
 }
 
 func (b *OrderBook) GetBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
-	return b.buy.BestStaticPriceAndVolume()
+	price, volume, err := b.buy.BestStaticPriceAndVolume()
+	if b.buy.offbook != nil {
+		oPrice, oVolume, _, _ := b.buy.offbook.BestPricesAndVolumes()
+
+		// no off source volume, return the orderbook
+		if oVolume == 0 {
+			return price, volume, err
+		}
+
+		if err == nil && oPrice.EQ(price) {
+			oVolume += volume
+		}
+		return oPrice, oVolume, nil
+	}
+	return price, volume, err
 }
 
 func (b *OrderBook) GetBestAskPrice() (*num.Uint, error) {
+	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	if b.sell.offbook != nil {
+		_, _, price, volume := b.sell.offbook.BestPricesAndVolumes()
+		if volume != 0 {
+			return price, nil
+		}
+	}
 	price, _, err := b.sell.BestPriceAndVolume()
 	return price, err
 }
 
 func (b *OrderBook) GetBestStaticAskPrice() (*num.Uint, error) {
+	// AMM price can never be crossed with the orderbook, so if there is a best price with volume use it
+	if b.sell.offbook != nil {
+		_, _, price, volume := b.sell.offbook.BestPricesAndVolumes()
+		if volume != 0 {
+			return price, nil
+		}
+	}
 	return b.sell.BestStaticPrice()
 }
 
 func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) {
-	return b.sell.BestStaticPriceAndVolume()
+	price, volume, err := b.sell.BestStaticPriceAndVolume()
+	if b.sell.offbook != nil {
+		_, _, oPrice, oVolume := b.sell.offbook.BestPricesAndVolumes()
+
+		// no off source volume, return the orderbook
+		if oVolume == 0 {
+			return price, volume, err
+		}
+
+		if err == nil && oPrice.EQ(price) {
+			oVolume += volume
+		}
+		return oPrice, oVolume, nil
+	}
+	return price, volume, err
 }
 
 func (b *OrderBook) GetLastTradedPrice() *num.Uint {
