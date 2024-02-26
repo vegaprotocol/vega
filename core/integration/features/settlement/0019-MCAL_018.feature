@@ -25,7 +25,7 @@ Feature: check when settlement data precision is different/equal to the settleme
       | limits.markets.maxPeggedOrders | 2     |
 
   @Perpetual
-  Scenario: 001 oracle data decimal > asset decimal 0070-MKTD-018
+  Scenario: 001 oracle data decimal > asset decimal 0070-MKTD-018, 0019-MCAL-091
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
       | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 1e6                    | 1e6                       | -1                      | perp        | default-futures |

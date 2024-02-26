@@ -45,7 +45,7 @@ Feature: amend the order and it gets partially matched and you have cover for th
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party | ETH/FEB23 | 42930       | 0      | 51516   | 0       | isolated margin | 0.2           | 0     |
+      | party | ETH/FEB23 | 42930       | 0      | 51516   | 0       | isolated margin | 0.6           | 0     |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | order margin |

@@ -77,7 +77,7 @@ Feature:  switch to isolated margin without position and with orders during auct
       | party5 | ETH/FEB23 | cross margin | 0.4           |       |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party5 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0.4           | 0     |
+      | party5 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0             | 0     |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -223,7 +223,7 @@ Feature:  switch to isolated margin without position and with orders during auct
       | party3 | ETH/FEB23 | cross margin | 0.4           |       |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party3 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0.4           | 0     |
+      | party3 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0             | 0     |
 
     #AC0019-MCAL-125:switch to isolated margin with position and orders successful in auction
     And the parties submit update margin mode:
@@ -261,13 +261,13 @@ Feature:  switch to isolated margin without position and with orders during auct
       | party1 | ETH/FEB23 | cross margin | 0.4           |       |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 8691        | 9560   | 10429   | 12167   | cross margin | 0.4           | 0     |
+      | party1 | ETH/FEB23 | 8691        | 9560   | 10429   | 12167   | cross margin | 0             | 0     |
 
     #AC0019-MCAL-139:switch to cross margin without position and with orders successful in auction
     And the parties submit update margin mode:
       | party  | market    | margin_mode  | margin_factor | error |
-      | party5 | ETH/FEB23 | cross margin | 0.5           |       |
+      | party5 | ETH/FEB23 | cross margin |               |       |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party5 | ETH/FEB23 | 1480        | 1628   | 1776    | 2072    | cross margin | 0.5           | 0     |
+      | party5 | ETH/FEB23 | 1480        | 1628   | 1776    | 2072    | cross margin | 0             | 0     |
 

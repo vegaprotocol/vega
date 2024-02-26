@@ -54,13 +54,13 @@ Feature: Test switch between margin mode
 
     #switch to cross margin
     And the parties submit update margin mode:
-      | party  | market    | margin_mode  | margin_factor |
-      | party1 | ETH/FEB23 | cross margin | 0.4           |
+      | party  | market    | margin_mode  |
+      | party1 | ETH/FEB23 | cross margin |
 
     #AC0019-MCAL-101:switch back to cross margin with no position and no order in continuous mode
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0.4           | 0     |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0             | 0     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -73,7 +73,7 @@ Feature: Test switch between margin mode
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0.4           | 0     |
+      | party1 | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0             | 0     |
 
     #AC0019-MCAL-106:switch to isolated margin without position and with orders with margin factor such that position margin is < initial should fail in continuous
     #order margin: 6*15800*0.11=10428
@@ -142,7 +142,7 @@ Feature: Test switch between margin mode
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 7950        | 8745   | 9540    | 11130   | cross margin | 0.4           | 0     |
+      | party1 | ETH/FEB23 | 7950        | 8745   | 9540    | 11130   | cross margin | 0             | 0     |
 
     #AC0019-MCAL-115:switch to isolate margin with out of range margin factor
     And the parties submit update margin mode:

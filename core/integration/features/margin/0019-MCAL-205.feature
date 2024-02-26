@@ -80,7 +80,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -103,7 +103,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 50     | 15802 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
@@ -194,7 +194,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -217,7 +217,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 50     | 15801 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 350     | 4650         |
@@ -309,7 +309,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-first  |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the order book should have the following volumes for market "ETH/FEB23":
       | volume | price  | side |
       | 1000   | 200100 | sell |
@@ -333,7 +333,7 @@ Feature: Submitting an order that with isolated margin when the party doesn't ha
       | trader3 | ETH/FEB23 | buy  | 7      | 15802 | 0                | TYPE_LIMIT | TIF_GTC | t3-second | margin check failed |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 4650  |
+      | trader3 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 0      | 100     | 4650         |

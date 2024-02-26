@@ -65,7 +65,7 @@ Feature: Test magin under isolated margin mode
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party | ETH/FEB23 | 5565        | 6121   | 6678    | 7791    | cross margin | 0.9           | 0     |
+      | party | ETH/FEB23 | 5565        | 6121   | 6678    | 7791    | cross margin | 0             | 0     |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
@@ -98,7 +98,7 @@ Feature: Test magin under isolated margin mode
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party | ETH/FEB23 | 5565        | 0      | 6678    | 0       | isolated margin | 0.9           | 0     |
+      | party | ETH/FEB23 | 5565        | 0      | 6678    | 0       | isolated margin | 0.7           | 0     |
 
     #AC: 0019-MCAL-059, increase margin factor
     And the parties submit update margin mode:
