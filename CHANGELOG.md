@@ -263,6 +263,8 @@
 - [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
 - [9244](https://github.com/vegaprotocol/vega/issues/9244) - fix unit tests to use spot markets.
 - [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
+- [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
+- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
 
 ## 0.73.0
 

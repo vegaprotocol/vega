@@ -60,7 +60,7 @@ Feature: Test magin under isolated margin mode when there is not enough collater
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0.9           | 0     |
+      | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0             | 0     |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
@@ -76,7 +76,7 @@ Feature: Test magin under isolated margin mode when there is not enough collater
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0.9           | 0     |
+      | party | ETH/FEB23 | 9540        | 10494  | 11448   | 13356   | cross margin | 0             | 0     |
 
     #AC: 0019-MCAL-066 switch to isolated margin is accepted when party has sufficent balance
     And the parties submit update margin mode:
