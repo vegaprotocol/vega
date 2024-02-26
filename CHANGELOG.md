@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased 0.74.5
+## 0.74.6
+
+### 🐛 Fixes
+
+- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
+- Reduce event forwarder snapshot size.
+
+## 0.74.5
 
 ### 🛠 Improvements
 
@@ -13,7 +20,6 @@
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
 - [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended.
 - [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended.
-- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
 
 ## 0.74.3
 
