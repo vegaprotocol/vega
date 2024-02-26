@@ -86,13 +86,17 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party2 | ETH   | ETH/DEC19 | 132000  | 9867000 |
 
 
-    # send in external data to the perpetual market, it should not change anything and a MTM should not happen
+    # send in external data to the perpetual market, funding payment is triggered
     When the network moves ahead "1" blocks
-    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                   | time offset |
       | perp.ETH.value   | 2100000000000000000000  | 0s         |
       | perp.funding.cue | 1511924180              | 0s          |
-    
+    Then the transfers of following types should NOT happen:
+      | type                   |
+      | TRANSFER_TYPE_MTM_WIN  |
+      | TRANSFER_TYPE_MTM_LOSS |
+
     # move to the block before we should MTM and check for no changes
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
@@ -103,6 +107,11 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
 
     ## Now take us past the MTM frequency time
     When the network moves ahead "1" blocks
+    Then the transfers of following types should happen:
+      | type                   |
+      | TRANSFER_TYPE_MTM_WIN  |
+      | TRANSFER_TYPE_MTM_LOSS |
+
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
       | party1 | ETH   | ETH/DEC19 | 7682400 | 1317600 |
@@ -128,38 +137,39 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
       | perp.funding.cue | 1575072009 | 0s          |
-
-    # funding payment is -100, funding-rate ~-0.05,
-    # party 1 loses 200000, party 2/3 gain 10000 in their margin account
-    Then the parties should have the following account balances:
+    # funding payment is -815
+    Then the following funding period events should be emitted:
+      | start      | end        | internal twap | external twap | funding payment |
+      | 1511924180 | 1575072009 | 1285          | 2100          | -815            |
+    And the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7482400 | 1317600 |
-      | party3 | ETH   | ETH/DEC19 | 2705200 | 7392800 |
-      | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
+      | party1 | ETH   | ETH/DEC19 | 7370000 | 0       |
+      | party2 | ETH   | ETH/DEC19 | 2605200 | 9208800 |
+      | party3 | ETH   | ETH/DEC19 | 2605200 | 8207800 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -2     | -1000000       | -200000      |
-      | party2 | 1      | 1000000        | 100000       |
-      | party3 | 1      | 0              | 100000       |
+      | party1 | -2     | -1000000       | -1630000     |
+      | party2 | 1      | 1000000        | 815000       |
+      | party3 | 1      | 0              | 815000       |
 
     # move to the block before the next MTM should be no changes
     When the network moves ahead "3" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7482400 | 1317600 |
-      | party3 | ETH   | ETH/DEC19 | 2705200 | 7392800 |
-      | party2 | ETH   | ETH/DEC19 | 2705200 | 8393800 |
+      | party1 | ETH   | ETH/DEC19 | 7370000 | 0       |
+      | party2 | ETH   | ETH/DEC19 | 2605200 | 9208800 |
+      | party3 | ETH   | ETH/DEC19 | 2605200 | 8207800 |
 
     ## Now take us past the MTM frequency time and things should change
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7480400 | 1317600 |
-      | party3 | ETH   | ETH/DEC19 | 2706200 | 7392800 |
-      | party2 | ETH   | ETH/DEC19 | 2706200 | 8393800 |
+      | party1 | ETH   | ETH/DEC19 | 7368000 | 0       |
+      | party2 | ETH   | ETH/DEC19 | 2606200 | 9208800 |
+      | party3 | ETH   | ETH/DEC19 | 2606200 | 8207800 |
     And the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount  | asset |
-      | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 200000 | ETH   |
+      | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1630000 | ETH   |
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 

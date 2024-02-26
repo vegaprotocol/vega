@@ -45,7 +45,7 @@ import (
 )
 
 func TestPeriodicSettlement(t *testing.T) {
-	t.Run("incoming data ignored before leaving opening auction", testIncomingDataIgnoredBeforeLeavingOpeningAuction)
+	t.Run("incoming data ignored before leaving opening auction", testIncomingExternalDataIgnoredBeforeLeavingOpeningAuction)
 	t.Run("period end with no data point", testPeriodEndWithNoDataPoints)
 	t.Run("equal internal and external prices", testEqualInternalAndExternalPrices)
 	t.Run("constant difference long pays short", testConstantDifferenceLongPaysShort)
@@ -128,7 +128,7 @@ func TestRealData(t *testing.T) {
 	}
 }
 
-func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
+func testIncomingExternalDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()
 
@@ -136,9 +136,15 @@ func testIncomingDataIgnoredBeforeLeavingOpeningAuction(t *testing.T) {
 
 	// no error because its really a callback from the oracle engine, but we expect no events
 	perp.perpetual.AddTestExternalPoint(ctx, num.UintOne(), 2000)
+	data := perp.perpetual.GetData(2000)
+	require.Nil(t, data)
 
+	// internal data point recevied without error
+	perp.broker.EXPECT().Send(gomock.AssignableToTypeOf(&events.FundingPeriodDataPoint{})).Times(1)
 	err := perp.perpetual.SubmitDataPoint(ctx, num.UintOne(), 2000)
-	assert.ErrorIs(t, err, products.ErrInitialPeriodNotStarted)
+	data = perp.perpetual.GetData(2000)
+	assert.NoError(t, err)
+	require.Nil(t, data)
 
 	// check that settlement cues are ignored, we expect no events when it is
 	perp.perpetual.PromptSettlementCue(ctx, 4000)

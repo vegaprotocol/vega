@@ -26,6 +26,7 @@
 - [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail. 
 - [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check. 
 - [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position. 
+- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
 
 ## 0.74.3
 

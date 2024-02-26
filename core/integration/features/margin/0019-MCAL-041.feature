@@ -52,7 +52,7 @@ Feature: Test order margin during auction
     #order margin short: (2*15910+1*15920)*0.3=14322
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-201, when party has no position, and place short orders size -3 during auction, and long order size 1 which can offset, order margin should be updated using max(price, markPrice, indicativePrice)
     And the parties place the following orders:
@@ -63,7 +63,7 @@ Feature: Test order margin during auction
     #order margin long: 1*15800*0.3=5750
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-202, when party has no position, and place short orders size -3 during auction, and long orders size 2 which can offset, order margin should be updated using max(price, markPrice, indicativePrice)
     And the parties place the following orders:
@@ -74,7 +74,7 @@ Feature: Test order margin during auction
     #order margin long: 2*15800*0.3=9480
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-203, when party has no position, and place short orders size -3 during auction, and long orders size 3 which can offset, order margin should be updated using max(price, markPrice, indicativePrice)
     And the parties place the following orders:
@@ -85,7 +85,7 @@ Feature: Test order margin during auction
     #order margin long: 3*15800*0.3=14220
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-204, when party has no position, and place short orders size -3 during auction, and long orders size 4, which is over the offset size, order margin should be updated using max(price, markPrice, indicativePrice)
     #order margin short: (2*15910+1*15920)*0.3=14322
@@ -96,7 +96,7 @@ Feature: Test order margin during auction
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 19080 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 19080 |
 
     #AC: 0019-MCAL-205,When the party changes the order price during auction, order margin should be updated using max(price, markPrice, indicativePrice)
     When the parties amend the following orders:
@@ -118,7 +118,7 @@ Feature: Test order margin during auction
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
     When the network moves ahead "2" blocks
 
     And the market data for the market "ETH/FEB23" should be:
@@ -129,7 +129,7 @@ Feature: Test order margin during auction
     #order margin short: (2*15910+1*15920)*0.3=14322
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-207, when party has no position, and place 2 short orders size 3 and 4 long orders of size 4, which is over the offset size, order margin should be updated using max(price, markPrice, indicativePrice)
     #order margin long: (3*15800+15750)*0.3=18945
@@ -140,5 +140,5 @@ Feature: Test order margin during auction
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 18945 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 18945 |
 

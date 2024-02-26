@@ -140,4 +140,4 @@ Feature: Test internal and external twap calculation
         # but these are type int so the decimal is truncated
         Then the product data for the market "ETH/DEC19" should be:
             | internal twap | external twap |
-            | 9             | 10            |
+            | 10            | 10            |

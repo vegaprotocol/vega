@@ -1051,7 +1051,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false)
 		m.nextInternalCompositePriceCalc = t.Add(m.internalCompositePriceFrequency)
 		if (prevInternalCompositePrice == nil || !m.internalCompositePriceCalculator.GetPrice().EQ(prevInternalCompositePrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentInternalCompositePrice().IsZero() {
@@ -1068,7 +1068,7 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long)
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false)
 		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
 		// on the standard mark price
 		if m.internalCompositePriceCalculator == nil && m.perp &&
@@ -1570,30 +1570,33 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
-
+	t := m.timeService.GetTimeNow().UnixNano()
+	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
 	m.markPriceCalculator.CalculateMarkPrice(
-		m.timeService.GetTimeNow().UnixNano(),
+		t,
 		m.matching,
 		m.mtmDelta,
 		m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 		m.mkt.LinearSlippageFactor,
 		m.risk.GetRiskFactors().Short,
-		m.risk.GetRiskFactors().Long)
+		m.risk.GetRiskFactors().Long,
+		true)
 
 	if wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 	}
-
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
 			m.internalCompositePriceCalculator.CalculateMarkPrice(
-				m.timeService.GetTimeNow().UnixNano(),
+				t,
 				m.matching,
 				m.internalCompositePriceFrequency,
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
-				m.risk.GetRiskFactors().Long)
+				m.risk.GetRiskFactors().Long,
+				true)
 
 			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
 				m.internalCompositePriceCalculator.OverridePrice(m.lastTradedPrice)
@@ -4347,7 +4350,8 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 				m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
-				m.risk.GetRiskFactors().Long)
+				m.risk.GetRiskFactors().Long,
+				false)
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
@@ -4357,7 +4361,8 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 					m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
 					m.mkt.LinearSlippageFactor,
 					m.risk.GetRiskFactors().Short,
-					m.risk.GetRiskFactors().Long)
+					m.risk.GetRiskFactors().Long,
+					false)
 			}
 
 			if m.perp {
