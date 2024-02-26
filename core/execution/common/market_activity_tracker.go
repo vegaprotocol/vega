@@ -101,13 +101,14 @@ type MarketActivityTracker struct {
 	currentEpoch                        uint64
 	epochStartTime                      time.Time
 	minEpochsInTeamForRewardEligibility uint64
-
-	assetToMarketTrackers            map[string]map[string]*marketTracker
-	partyContributionCache           map[string][]*types.PartyContributionScore
-	partyTakerNotionalVolume         map[string]*num.Uint
-	marketToPartyTakerNotionalVolume map[string]map[string]*num.Uint
-
-	ss *snapshotState
+	assetToMarketTrackers               map[string]map[string]*marketTracker
+	partyContributionCache              map[string][]*types.PartyContributionScore
+	partyTakerNotionalVolume            map[string]*num.Uint
+	marketToPartyTakerNotionalVolume    map[string]map[string]*num.Uint
+	// transient map that is used and accessible only between the end of one epoch and the beginning of the next
+	// it's not needed for the snapshot because the switching between end of one epoch and the beginning of the new one is atommic.
+	takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint
+	ss                   *snapshotState
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
@@ -121,6 +122,7 @@ func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker A
 		partyTakerNotionalVolume:         map[string]*num.Uint{},
 		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
 		ss:                               &snapshotState{},
+		takerFeesPaidInEpoch:             map[string]map[string]map[string]*num.Uint{},
 	}
 
 	return mat
@@ -384,9 +386,12 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 		mat.partyContributionCache = map[string][]*types.PartyContributionScore{}
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
+		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
 	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
-		for _, market := range mat.assetToMarketTrackers {
-			for _, mt := range market {
+		for asset, market := range mat.assetToMarketTrackers {
+			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
+			for mkt, mt := range market {
+				mat.takerFeesPaidInEpoch[asset][mkt] = mt.makerFeesPaid
 				mt.processNotionalEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processPositionEndOfEpoch(epoch.StartTime, epoch.EndTime)
 				mt.processM2MEndOfEpoch()
@@ -1062,6 +1067,25 @@ func getTotalFees(totalFees []*num.Uint, windowSize int) num.Decimal {
 		total.AddSum(totalFees[ind])
 	}
 	return total.ToDecimal()
+}
+
+func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []string) map[string]*num.Uint {
+	takerFees := map[string]*num.Uint{}
+	ast, ok := mat.takerFeesPaidInEpoch[asset]
+	if !ok {
+		return takerFees
+	}
+	for _, m := range markets {
+		if fees, ok := ast[m]; ok {
+			for party, fees := range fees {
+				if _, ok := takerFees[party]; !ok {
+					takerFees[party] = num.UintZero()
+				}
+				takerFees[party].AddSum(fees)
+			}
+		}
+	}
+	return takerFees
 }
 
 // calcTotalForWindowU returns the total relevant data from the given slice starting from the given dataIdx-1, going back <window_size> elements.

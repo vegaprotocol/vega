@@ -1126,6 +1126,8 @@ message DispatchStrategy {
   DistributionStrategy distribution_strategy = 12;
   // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
   repeated Rank rank_table = 13;
+  // If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
+  optional string cap_reward_fee_multiple = 14;
 }
 
 message Rank {

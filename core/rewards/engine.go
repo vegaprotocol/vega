@@ -46,6 +46,7 @@ type MarketActivityTracker interface {
 	GetProposer(market string) string
 	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
 	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
+	GetLastEpochTakeFees(asset string, market []string) map[string]*num.Uint
 }
 
 // EpochEngine notifies the reward engine at the end of an epoch.
@@ -335,6 +336,25 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	return payouts
 }
 
+func (e *Engine) convertTakerFeesToRewardAsset(takerFees map[string]*num.Uint, fromAsset string, toAsset string) map[string]*num.Uint {
+	out := make(map[string]*num.Uint, len(takerFees))
+	fromQuantum, err := e.collateral.GetAssetQuantum(fromAsset)
+	if err != nil {
+		return out
+	}
+	toQuantum, err := e.collateral.GetAssetQuantum(toAsset)
+	if err != nil {
+		return out
+	}
+
+	quantumRatio := toQuantum.Div(fromQuantum)
+	for k, u := range takerFees {
+		toAssetAmt, _ := num.UintFromDecimal(u.ToDecimal().Mul(quantumRatio))
+		out[k] = toAssetAmt
+	}
+	return out
+}
+
 func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 	asMultiplier := e.activityStreak.GetRewardsDistributionMultiplier(party)
 	_, vsMultiplier := e.vesting.GetRewardBonusMultiplier(party)
@@ -361,14 +381,18 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 		if ds == nil {
 			return nil
 		}
+		var takerFeesPaidInRewardAsset map[string]*num.Uint
+		if ds.CapRewardFeeMultiple != nil {
+			takerFeesPaid := e.marketActivityTracker.GetLastEpochTakeFees(ds.AssetForMetric, ds.Markets)
+			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
+		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
 			partyScores := e.marketActivityTracker.CalculateMetricForIndividuals(ds)
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, pcs := range partyScores {
 				partyRewardFactors[pcs.Party] = e.getRewardMultiplierForParty(pcs.Party)
 			}
-
-			return calculateRewardsByContributionIndividual(epochSeq, account.Asset, account.ID, account.Balance, partyScores, partyRewardFactors, timestamp, ds)
+			return calculateRewardsByContributionIndividual(epochSeq, account.Asset, account.ID, account.Balance, partyScores, partyRewardFactors, timestamp, ds, takerFeesPaidInRewardAsset)
 		} else {
 			teamScores, partyScores := e.marketActivityTracker.CalculateMetricForTeams(ds)
 			partyRewardFactors := map[string]num.Decimal{}
@@ -377,7 +401,7 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 					partyRewardFactors[pcs.Party] = e.getRewardMultiplierForParty(pcs.Party)
 				}
 			}
-			return calculateRewardsByContributionTeam(epochSeq, account.Asset, account.ID, account.Balance, teamScores, partyScores, partyRewardFactors, timestamp, ds)
+			return calculateRewardsByContributionTeam(epochSeq, account.Asset, account.ID, account.Balance, teamScores, partyScores, partyRewardFactors, timestamp, ds, takerFeesPaidInRewardAsset)
 		}
 
 	case types.AccountTypeMarketProposerReward:
