@@ -2206,9 +2206,6 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.Or
 }
 
 func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
-	if order.ID == "ad1da77f46b404933f08920756ed381edacebbf369954b2014b29708bdc4c1ae" && order.MarketID == "ce4688093178cd2a90c70e78a7897a61a58b0f542f900d95a66f2a52dc2483e1" {
-		println()
-	}
 	isPegged := order.PeggedOrder != nil
 	if isPegged {
 		order.Status = types.OrderStatusParked
@@ -2336,7 +2333,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		} else if aggressorFee != nil {
 			if err := m.collateral.PartyCanCoverFees(m.settlementAsset, m.mkt.ID, order.Party, aggressorFee); err != nil {
 				m.log.Error("insufficient funds to cover fees", logging.Order(order), logging.Error(err))
-				m.unregisterAndReject(ctx, order, err)
+				m.unregisterAndReject(ctx, order, types.OrderErrorInsufficientFundsToPayFees)
 				return nil, nil, err
 			}
 		}
@@ -2586,10 +2583,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
 			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
 		}
-		if conf.PassiveOrdersAffected[idx].ID == "ecff5b78521659a83466be15ae7a88a98f3372143ded3e83af9e4aaa24a99c19" && m.mkt.ID == "ce4688093178cd2a90c70e78a7897a61a58b0f542f900d95a66f2a52dc2483e1" {
-			println()
-		}
-
 		// if the passive party is in isolated margin we need to update the margin on the position change
 		if m.getMarginMode(conf.PassiveOrdersAffected[idx].Party) == types.MarginModeIsolatedMargin {
 			pos, _ := m.position.GetPositionByPartyID(conf.PassiveOrdersAffected[idx].Party)
@@ -3430,9 +3423,6 @@ func (m *Market) AmendOrderWithIDGenerator(
 		return nil, common.ErrTradingNotAllowed
 	}
 
-	if orderAmendment.OrderID == "ecff5b78521659a83466be15ae7a88a98f3372143ded3e83af9e4aaa24a99c19" && m.mkt.ID == "ce4688093178cd2a90c70e78a7897a61a58b0f542f900d95a66f2a52dc2483e1" {
-		println()
-	}
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		m.log.Error("failed to amend order", logging.String("marketID", orderAmendment.MarketID), logging.String("orderID", orderAmendment.OrderID), logging.Error(err))
