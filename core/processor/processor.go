@@ -74,6 +74,7 @@ type DelegationEngine interface {
 //nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
+	CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string) error
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)

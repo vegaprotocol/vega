@@ -2997,3 +2997,19 @@ func (m *Market) GetMarketCounters() *types.MarketCounters {
 type IDGen interface {
 	NextID() string
 }
+
+func (m *Market) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	margins := num.UintZero().Mul(orderSubmission.Price, num.NewUint(orderSubmission.Size))
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.quoteAsset)
+	if err != nil {
+		return err
+	}
+	if margins.ToDecimal().Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+		return risk.ErrInsufficientFundsForMaintenanceMargin
+	}
+	return nil
+}

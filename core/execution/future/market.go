@@ -79,7 +79,8 @@ type Market struct {
 	closingAt   time.Time
 	timeService common.TimeService
 
-	mu sync.Mutex
+	mu   sync.Mutex
+	lock sync.RWMutex
 
 	lastTradedPrice *num.Uint
 	priceFactor     *num.Uint
@@ -4800,4 +4801,27 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 	}
 
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
+}
+
+func (m *Market) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
+	margins := num.UintZero().Mul(orderSubmission.Price, num.NewUint(orderSubmission.Size))
+	rf := num.DecimalOne()
+
+	factor := m.mkt.LinearSlippageFactor
+	if m.risk.IsRiskFactorInitialised() {
+		if orderSubmission.Side == types.SideBuy {
+			rf = m.risk.GetRiskFactors().Long
+		} else {
+			rf = m.risk.GetRiskFactors().Short
+		}
+	}
+
+	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
+	if err != nil {
+		return err
+	}
+	if margins.ToDecimal().Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+		return risk.ErrInsufficientFundsForMaintenanceMargin
+	}
+	return nil
 }

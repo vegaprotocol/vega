@@ -362,6 +362,20 @@ func (mr *MockExecutionEngineMockRecorder) CancelStopOrders(arg0, arg1, arg2, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).CancelStopOrders), arg0, arg1, arg2, arg3)
 }
 
+// CheckOrderSubmission mocks base method.
+func (m *MockExecutionEngine) CheckOrderSubmission(arg0 *types.OrderSubmission, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckOrderSubmission", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckOrderSubmission indicates an expected call of CheckOrderSubmission.
+func (mr *MockExecutionEngineMockRecorder) CheckOrderSubmission(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckOrderSubmission", reflect.TypeOf((*MockExecutionEngine)(nil).CheckOrderSubmission), arg0, arg1)
+}
+
 // Hash mocks base method.
 func (m *MockExecutionEngine) Hash() []byte {
 	m.ctrl.T.Helper()

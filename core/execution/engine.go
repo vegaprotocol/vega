@@ -109,7 +109,8 @@ type Engine struct {
 	isSuccessor     map[string]string
 	successorWindow time.Duration
 	// only used once, during CP restore, this doesn't need to be included in a snapshot or checkpoint.
-	skipRestoreSuccessors map[string]struct{}
+	skipRestoreSuccessors                 map[string]struct{}
+	minMaintenanceMarginQuantumMultiplier num.Decimal
 }
 
 type netParamsValues struct {
@@ -1930,4 +1931,19 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	}
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
+}
+
+func (e *Engine) OnMinimalMarginQuantumMultipleUpdate(_ context.Context, multiplier num.Decimal) error {
+	e.minMaintenanceMarginQuantumMultiplier = multiplier
+	return nil
+}
+
+func (e *Engine) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string) error {
+	if mkt := e.allMarkets[orderSubmission.MarketID]; mkt == nil {
+		return types.ErrInvalidMarketID
+	}
+	if ftr := e.futureMarkets[orderSubmission.MarketID]; ftr != nil {
+		return ftr.CheckOrderSubmission(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
+	}
+	return e.spotMarkets[orderSubmission.MarketID].CheckOrderSubmission(orderSubmission, party, e.minMaintenanceMarginQuantumMultiplier)
 }
