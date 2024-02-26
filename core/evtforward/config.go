@@ -29,6 +29,8 @@ const (
 	// how often the Event Forwarder needs to select a node to send the event
 	// if nothing was received.
 	defaultRetryRate = 10 * time.Second
+
+	DefaultKeepHashesDuration = 24 * 2 * time.Hour
 )
 
 // Config represents governance specific configuration.
@@ -48,11 +50,13 @@ type Config struct {
 // NewDefaultConfig creates an instance of the package specific configuration.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:                                    encoding.LogLevel{Level: logging.InfoLevel},
-		RetryRate:                                encoding.Duration{Duration: defaultRetryRate},
-		KeepHashesDurationForTestOnlyDoNotChange: encoding.Duration{Duration: 24 * 7 * time.Hour},
-		BlockchainQueueAllowlist:                 []string{},
-		Ethereum:                                 ethereum.NewDefaultConfig(),
-		EthCall:                                  ethcall.NewDefaultConfig(),
+		Level:     encoding.LogLevel{Level: logging.InfoLevel},
+		RetryRate: encoding.Duration{Duration: defaultRetryRate},
+		KeepHashesDurationForTestOnlyDoNotChange: encoding.Duration{
+			Duration: DefaultKeepHashesDuration,
+		},
+		BlockchainQueueAllowlist: []string{},
+		Ethereum:                 ethereum.NewDefaultConfig(),
+		EthCall:                  ethcall.NewDefaultConfig(),
 	}
 }
