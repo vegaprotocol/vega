@@ -61,7 +61,7 @@ func Use(use func(*Config) error) Option {
 }
 
 // NewWatcher instantiate a new watcher from the vega config files.
-func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, opts ...Option) (*Watcher, error) {
+func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, migrateConfig func(*Config), opts ...Option) (*Watcher, error) {
 	watcherLog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
 	watcherLog.SetLevel(logging.DebugLevel)
@@ -83,7 +83,7 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 		opt(w)
 	}
 
-	err = w.load()
+	err = w.load(migrateConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -171,12 +171,19 @@ func (w *Watcher) Use(fns ...func(*Config) error) {
 	w.mu.Unlock()
 }
 
-func (w *Watcher) load() error {
+func (w *Watcher) load(migrateConfig func(*Config)) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	if err := paths.ReadStructuredFile(w.configFilePath, &w.cfg); err != nil {
 		return fmt.Errorf("couldn't read configuration file at %s: %w", w.configFilePath, err)
+	}
+
+	if migrateConfig != nil {
+		migrateConfig(&w.cfg)
+		if err := paths.WriteStructuredFile(w.configFilePath, &w.cfg); err != nil {
+			return fmt.Errorf("couldn't write migrated configuration file at %s: %w", w.configFilePath, err)
+		}
 	}
 
 	for _, f := range w.cfgHandlers {
@@ -204,7 +211,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 					time.Sleep(50 * time.Millisecond)
 				}
 				w.log.Info("configuration updated", logging.String("event", event.Name))
-				err := w.load()
+				err := w.load(nil)
 				if err != nil {
 					w.log.Error("unable to load configuration", logging.Error(err))
 					continue
