@@ -29,7 +29,7 @@ Feature: Test funding payment triggering closeout for Perps market
       | party2 | USD   | 10000000  |
       | party3 | USD   | 10000000  |
       | aux    | USD   | 100000000 |
-      | aux2   | USD   | 1515000   |
+      | aux2   | USD   | 1695000   |
       | lpprov | USD   | 100000000 |
 
     When the parties submit the following liquidity provision:
@@ -98,10 +98,15 @@ Feature: Test funding payment triggering closeout for Perps market
 
     When the network moves ahead "1" blocks
 
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin  | general |
+      | aux2  | USD   | ETH/DEC19 | 1473200 | 241800  |
+
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux   | ETH/DEC19 | sell | 1      | 2001  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2001  | 1                | TYPE_LIMIT | TIF_GTC |
+
     # Allow network close-outs to kick in
     Then the network moves ahead "1" blocks
 

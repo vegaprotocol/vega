@@ -81,7 +81,7 @@ Feature: Switch mode during auction
     When the network moves ahead "1" blocks
     And the parties should have the following margin levels:
       | party  | market id | maintenance | initial | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 12720       | 15264   | cross margin | 0.6           | 0     |
+      | party1 | ETH/FEB23 | 12720       | 15264   | cross margin | 0             | 0     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party1 | USD   | ETH/FEB23 | 15264  | 257236  | 1000 |
@@ -102,7 +102,7 @@ Feature: Switch mode during auction
     #MTM from price change
     And the parties should have the following margin levels:
       | party  | market id | maintenance | initial | search | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 12640       | 15168   | 13904  | 17696   | cross margin | 0.6           | 0     |
+      | party1 | ETH/FEB23 | 12640       | 15168   | 13904  | 17696   | cross margin | 0             | 0     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party1 | USD   | ETH/FEB23 | 15264  | 257236  | 1000 |

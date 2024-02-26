@@ -111,8 +111,8 @@ Feature: Test funding payment triggering closeout for Perps market
     And the mark price should be "2000" for the market "ETH/DEC19"
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | aux    | -1     | -1000000       | 0            |
-      | aux2   | 1      | 1000000        | 0            |
+      | aux    | -1     | -1000000       |  96000       |
+      | aux2   | 1      | 1000000        | -96000       |
       | party1 | -2     | -1000000       | 0            |
       | party2 | 1      | 1000000        | 0            |
       | party3 | 1      | 0              | 0            |
@@ -135,21 +135,21 @@ Feature: Test funding payment triggering closeout for Perps market
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | USD   | ETH/DEC19 | 8802400 | 1317600 |
-      | party3 | USD   | ETH/DEC19 | 2605200 | 6832800 |
-      | party2 | USD   | ETH/DEC19 | 2605200 | 7833800 |
+      | party1 | USD   | ETH/DEC19 | 7682400 | 2629600 |
+      | party3 | USD   | ETH/DEC19 | 2605200 | 6736800 |
+      | party2 | USD   | ETH/DEC19 | 2605200 | 7737800 |
       | aux2   | USD   | ETH/DEC19 | 0       | 0       |
 
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | aux    | -1     | -1000000       | 1120000      |
+      | aux    | -1     | -1000000       | 1216000      |
       | aux2   | 0      | 0              | -2388999     |
       | party1 | -2     | -1000000       | 1120000      |
       | party2 | 1      | 1000000        | -560000      |
       | party3 | 1      | 0              | -560000      |
       | lpprov | 0      | 0              | 0            |
 
-    And the insurance pool balance should be "2269099" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2173099" for the market "ETH/DEC19"
 
 
 

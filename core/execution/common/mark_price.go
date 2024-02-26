@@ -267,11 +267,11 @@ func (mpc *CompositePriceCalculator) GetConfig() *types.CompositePriceConfigurat
 
 // CalculateMarkPrice is called at the end of each mark price calculation interval and calculates the mark price
 // using the mark price type methodology.
-func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal) *num.Uint {
+func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, leavingAuction bool) *num.Uint {
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
 		// if there are no trades, the mark price remains what it was before.
 		if len(mpc.trades) > 0 {
-			mpc.price = mpc.trades[len(mpc.trades)-1].Price
+			mpc.price = mpc.trades[len(mpc.trades)-1].Price.Clone()
 		}
 		mpc.trades = []*types.Trade{}
 		return mpc.price
