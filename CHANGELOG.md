@@ -22,7 +22,10 @@
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
 - [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended. 
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10750](https://github.com/vegaprotocol/vega/issues/10750) - Handle cancellation of order on entering auction for party in isolated margin mode. 
+- [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail. 
+- [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check. 
+- [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position. 
 
 ## 0.74.3
 

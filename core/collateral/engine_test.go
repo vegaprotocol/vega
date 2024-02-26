@@ -18,6 +18,7 @@ package collateral_test
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -426,6 +427,41 @@ func testFeesTransferContinuousNoTransfer(t *testing.T) {
 		context.Background(), testMarketID, testMarketAsset, transferFees{})
 	assert.Nil(t, transfers)
 	assert.Nil(t, err)
+}
+
+func TestPartyHasSufficientBalanceForFees(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	party := "myparty"
+	// create party
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	gen, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	require.NoError(t, err)
+
+	mar, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	// add funds
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.UpdateBalance(context.Background(), gen, num.NewUint(100))
+	assert.Nil(t, err)
+
+	// there's no margin account balance but the party has enough funds in the margin account
+	require.Nil(t, eng.PartyCanCoverFees(testMarketAsset, testMarketID, party, num.NewUint(50)))
+
+	// there's no margin account balance and the party has insufficient funds to cover fees in the general account
+	require.Error(t, fmt.Errorf("party has insufficient funds to cover fees"), eng.PartyCanCoverFees(testMarketAsset, testMarketID, party, num.NewUint(101)))
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	err = eng.UpdateBalance(context.Background(), mar, num.NewUint(500))
+	assert.Nil(t, err)
+
+	// there's enough in the margin + general to cover the fees
+	require.Nil(t, eng.PartyCanCoverFees(testMarketAsset, testMarketID, party, num.NewUint(101)))
+
+	// there's not enough in the margin + general to cover the fees
+	require.Error(t, fmt.Errorf("party has insufficient funds to cover fees"), eng.PartyCanCoverFees(testMarketAsset, testMarketID, party, num.NewUint(601)))
 }
 
 func testReleasePartyMarginAccount(t *testing.T) {
