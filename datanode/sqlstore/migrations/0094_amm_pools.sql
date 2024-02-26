@@ -5,7 +5,7 @@ do $$
 begin
     if not exists (select 1 from pg_type where typname = 'amm_pool_status') then
         create type amm_pool_status as enum(
-            'STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_REJECTED', 'STATUS_CANCELLED', 'STATUS_STOPPED'
+            'STATUS_UNSPECIFIED', 'STATUS_ACTIVE', 'STATUS_REJECTED', 'STATUS_CANCELLED', 'STATUS_STOPPED', 'STATUS_REDUCE_ONLY'
         );
     end if;
 end $$;
