@@ -4804,7 +4804,6 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 }
 
 func (m *Market) CheckOrderSubmission(orderSubmission *types.OrderSubmission, party string, quantumMultiplier num.Decimal) error {
-	margins := num.UintZero().Mul(orderSubmission.Price, num.NewUint(orderSubmission.Size))
 	rf := num.DecimalOne()
 
 	factor := m.mkt.LinearSlippageFactor
@@ -4816,11 +4815,14 @@ func (m *Market) CheckOrderSubmission(orderSubmission *types.OrderSubmission, pa
 		}
 	}
 
+	price := num.UintZero().Mul(orderSubmission.Price, m.priceFactor)
+	margins := num.UintZero().Mul(price, num.NewUint(orderSubmission.Size)).ToDecimal().Div(m.positionFactor)
+
 	assetQuantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
 	if err != nil {
 		return err
 	}
-	if margins.ToDecimal().Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
+	if margins.Mul(rf.Add(factor)).Div(assetQuantum).LessThan(quantumMultiplier.Mul(assetQuantum)) {
 		return risk.ErrInsufficientFundsForMaintenanceMargin
 	}
 	return nil
