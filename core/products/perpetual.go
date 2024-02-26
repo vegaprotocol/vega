@@ -597,8 +597,9 @@ func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
 	// store internal data submitted at the end of opening auction
 	temp := p.internalTWAP
 	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
-	p.internalTWAP.sumProduct = temp.sumProduct.Clone()
-	p.internalTWAP.points = temp.points
+	for _, pt := range temp.points {
+		p.internalTWAP.addPoint(pt)
+	}
 	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTwapAsNilOrString(p.startedAt), p.externalTWAP.getTwapAsNilOrString(p.startedAt)))
 }
 

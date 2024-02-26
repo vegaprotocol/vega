@@ -22,6 +22,7 @@
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
 - [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended. 
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
+- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ## 0.74.3
@@ -263,8 +264,6 @@
 - [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
 - [9244](https://github.com/vegaprotocol/vega/issues/9244) - fix unit tests to use spot markets.
 - [10625](https://github.com/vegaprotocol/vega/issues/10625) - Fix panic in update spot market.
-- [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
-- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
 
 ## 0.73.0
 
