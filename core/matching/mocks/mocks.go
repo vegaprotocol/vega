@@ -35,6 +35,23 @@ func (m *MockOffbookSource) EXPECT() *MockOffbookSourceMockRecorder {
 	return m.recorder
 }
 
+// BestPricesAndVolumes mocks base method.
+func (m *MockOffbookSource) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BestPricesAndVolumes")
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(uint64)
+	ret2, _ := ret[2].(*num.Uint)
+	ret3, _ := ret[3].(uint64)
+	return ret0, ret1, ret2, ret3
+}
+
+// BestPricesAndVolumes indicates an expected call of BestPricesAndVolumes.
+func (mr *MockOffbookSourceMockRecorder) BestPricesAndVolumes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BestPricesAndVolumes", reflect.TypeOf((*MockOffbookSource)(nil).BestPricesAndVolumes))
+}
+
 // NotifyFinished mocks base method.
 func (m *MockOffbookSource) NotifyFinished() {
 	m.ctrl.T.Helper()

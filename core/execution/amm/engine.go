@@ -272,6 +272,38 @@ func (e *Engine) IsPoolSubAccount(key string) bool {
 	return yes
 }
 
+// BestPricesAndVolumes returns the best bid/ask and their volumes across all the registered AMM's.
+func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
+	var bestBid, bestAsk *num.Uint
+	var bestBidVolume, bestAskVolume uint64
+
+	for _, pool := range e.poolsCpy {
+		// get the pool's current price
+		fp := pool.BestPrice(nil)
+
+		// get the volume on the buy side by simulating an incoming sell order
+		bid := num.UintZero().Sub(fp, pool.oneTick)
+		volume := pool.TradableVolumeInRange(types.SideSell, fp.Clone(), bid)
+		if bestBid == nil || bid.GT(bestBid) {
+			bestBid = bid
+			bestBidVolume = volume
+		} else if bid.EQ(bestBid) {
+			bestBidVolume += volume
+		}
+
+		// get the volume on the sell side by simulating an incoming buy order
+		ask := num.UintZero().Add(fp, pool.oneTick)
+		volume = pool.TradableVolumeInRange(types.SideBuy, fp.Clone(), ask)
+		if bestAsk == nil || ask.LT(bestAsk) {
+			bestAsk = ask
+			bestAskVolume = volume
+		} else if ask.EQ(bestAsk) {
+			bestAskVolume += volume
+		}
+	}
+	return bestBid, bestBidVolume, bestAsk, bestAskVolume
+}
+
 // SubmitOrder takes an aggressive order and generates matching orders with the registered AMMs such that
 // volume is only taken in the interval (inner, outer) where inner and outer are price-levels on the orderbook.
 func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order {
