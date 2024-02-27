@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
+- [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
@@ -20,13 +21,14 @@
 - [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
 - [10743](https://github.com/vegaprotocol/vega/issues/10722) - When SLA hysteresis epochs are updated resize the ring using new value.
 - [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
-- [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended. 
+- [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
-- [10750](https://github.com/vegaprotocol/vega/issues/10750) - Handle cancellation of order on entering auction for party in isolated margin mode. 
-- [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail. 
-- [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check. 
-- [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position. 
+- [10750](https://github.com/vegaprotocol/vega/issues/10750) - Handle cancellation of order on entering auction for party in isolated margin mode.
+- [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail.
+- [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check.
+- [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position.
 - [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
+- [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
 
 ## 0.74.3
 
