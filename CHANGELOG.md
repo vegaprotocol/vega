@@ -12,12 +12,33 @@
 
 ### 🛠 Improvements
 
+- [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10722](https://github.com/vegaprotocol/vega/issues/10722) - Team API aggregation does not aggregate from the latest epoch.
+- [10743](https://github.com/vegaprotocol/vega/issues/10722) - When SLA hysteresis epochs are updated resize the ring using new value.
+- [10725](https://github.com/vegaprotocol/vega/issues/10725) - Batch proposal votes to contain `ELS` per market.
+- [10744](https://github.com/vegaprotocol/vega/issues/10744) - Prevent governance suspension of a market already governance suspended.
+- [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
+- [10750](https://github.com/vegaprotocol/vega/issues/10750) - Handle cancellation of order on entering auction for party in isolated margin mode.
+- [10748](https://github.com/vegaprotocol/vega/issues/10748) - Ensure apply fees cannot fail.
+- [10752](https://github.com/vegaprotocol/vega/issues/10752) - Handle amend in place correctly for failure in isolated margin check.
+- [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position.
+- [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
+- [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
 
+## 0.74.3
+
+### 🛠 Improvements
+
+- [10700](https://github.com/vegaprotocol/vega/pull/10700) - Do not use external binaries for the `IPFS` migration in the data node
+
+### 🐛 Fixes
+
+- [10702](https://github.com/vegaprotocol/vega/pull/10700) - Use second precision in `GetMarginIncrease()` so that perpetual product uses second precision everywhere.
+- [10698](https://github.com/vegaprotocol/vega/issues/10698) - Prevent `L2` from making too many `RPC` calls.
 
 ## 0.74.2
 
@@ -28,13 +49,13 @@
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10641](https://github.com/vegaprotocol/vega/issues/10641) - Fix panic in amend during auction for isolated margin.
 - [10656](https://github.com/vegaprotocol/vega/issues/10656) - Fix funding rates bounds can be null for perpetuals.
-- [10664](https://github.com/vegaprotocol/vega/issues/10664) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book. 
+- [10664](https://github.com/vegaprotocol/vega/issues/10664) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
 - [10661](https://github.com/vegaprotocol/vega/issues/10661) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
 - [10660](https://github.com/vegaprotocol/vega/issues/10660) - Fix isolated margin handling of submit/amend to get rid of trying to restore the state of the order book.
 - [10601](https://github.com/vegaprotocol/vega/issues/10601) - Fix epoch by block height API is slow.
 - [10299](https://github.com/vegaprotocol/vega/issues/10299) - Fix rewards transfers filter.
 - [10666](https://github.com/vegaprotocol/vega/issues/10666) - Fix game API is slow.
-- [10673](https://github.com/vegaprotocol/vega/issues/10673) - Fix error handling for isolated margin when insufficient funds. 
+- [10673](https://github.com/vegaprotocol/vega/issues/10673) - Fix error handling for isolated margin when insufficient funds.
 - [10677](https://github.com/vegaprotocol/vega/issues/10677) - Fix validation of market proposer bonus to allow specifying/not specifying asset for metric for market proposer.
 - [10669](https://github.com/vegaprotocol/vega/issues/10669) - Fix fees handling for spots in governance auction
 - [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
@@ -42,6 +63,8 @@
 - [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
 - [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
+- [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
+- [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended.
 
 
 ## 0.74.1
@@ -137,6 +160,7 @@
 - [10523](https://github.com/vegaprotocol/vega/issues/10523) - Fix repeated games statistics for multiple recurring transfers.
 - [10527](https://github.com/vegaprotocol/vega/issues/10527) - Add support for `byte32` type in market proposal oracle definition.
 - [10563](https://github.com/vegaprotocol/vega/issues/10563) - Spam protection for create/update referral program.
+- [10517](https://github.com/vegaprotocol/vega/issues/10517) - Add optional cap to metric based rewards.
 - [10246](https://github.com/vegaprotocol/vega/issues/10246) - Add quantum volumes to teams statistics API.
 - [10550](https://github.com/vegaprotocol/vega/issues/10550) - Update network parameters with default values.
 

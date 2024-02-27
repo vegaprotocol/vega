@@ -6,8 +6,8 @@ Feature: Simple test creating a perpetual market.
       | ETH | 18             |
       | USD | 0              |
     And the perpetual oracles from "0xCAFECAFE1":
-      | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals |
-      | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 18                  |
+      | name        | asset | settlement property | settlement type | schedule property | schedule type  | margin funding factor | interest rate | clamp lower bound | clamp upper bound | quote name | settlement decimals | source weights | source staleness tolerance |
+      | perp-oracle | ETH   | perp.ETH.value      | TYPE_INTEGER    | perp.funding.cue  | TYPE_TIMESTAMP | 0                     | 0             | 0                 | 0                 | ETH        | 18                  | 1,0,0,0        | 100s,0s,0s,0s              |
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 1.0         | 0.5                          | 1                             | 1.0                    |
@@ -202,3 +202,116 @@ Feature: Simple test creating a perpetual market.
       | market id | state                              | settlement price |
       | ETH/DEC19 | MARKET_STATE_UPDATE_TYPE_TERMINATE | 976              |
     Then the market state should be "STATE_CANCELLED" for the market "ETH/DEC19"
+
+  @Perpetual
+  Scenario: 004 Create a new perp market and run through funding periods with: no oracle data -> no payment, 1 oracle observation & no trading -> payment based internal TWAP=auction uncrossing price, multiple internal and external observations => funding payment calculated as expected.
+    Given the following network parameters are set:
+      | name                                          | value |
+      | network.internalCompositePriceUpdateFrequency | 0s    |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 3905000000000000  | 0.3 | submission |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | peak size | minimum visible size | side | pegged reference | volume     | offset |
+      | lpprov | ETH/DEC19 | 400000000 | 100                  | buy  | BID              | 8000000000 | 1      |
+      | lpprov | ETH/DEC19 | 400000000 | 100                  | sell | ASK              | 8000000000 | 1      |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | type       | tif     |
+      | trader1 | ETH/DEC19 | buy  | 1      | 1001  | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell | 1      |  951  | TYPE_LIMIT | TIF_GTC |
+    When the opening auction period ends for market "ETH/DEC19"
+    Then system unix time is "1575072002"
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             | open interest |
+      | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1             |
+    And the following funding period events should be emitted:
+      | start      | end        | internal twap    | external twap    |
+      | 1575072002 |            | 9760000000000000 |                  |
+
+    # perps payment doesn't happen in the absence of oracle data
+    When the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value      | time offset |
+      | perp.funding.cue | 1575072003 |  0s         |
+    And the following funding period events should be emitted:
+      | start      | end         | internal twap    | external twap    |
+      | 1575072002 | 1575072003  | 9760000000000000 |                  |
+      | 1575072003 |             | 9760000000000000 |                  |
+    Then the transfers of following types should NOT happen:
+      | type                                  |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
+
+    # perps payment happens in absence of trades after the opening auction (opening auction sets mark price so that's already one internal observation) 
+    When the network moves ahead "4" blocks
+    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value            | time offset |
+      | perp.ETH.value   | 9770000000000000 | -1s         |
+      | perp.funding.cue | 1575072007       |  0s         |
+    Then system unix time is "1575072006"
+    # funding payment = 976 - 977 = -1
+    # TODO: is 13 decimal places fine, it's asset - market so seems like internal precision, do we ever use that externally?? It's fine on API but would be nice to understand   
+    And the following funding period events should be emitted:
+      | start      | end         | internal twap    | external twap    | funding payment | funding rate        |
+      | 1575072003 | 1575072007  | 9760000000000000 | 9770000000000000 | -10000000000000 | -0.0010235414534289 |
+      | 1575072007 |             | 9760000000000000 | 9770000000000000 |                 |                     | 
+    And the following transfers should happen:
+      | type                                  | from    | to      | from account             | to account              | market id | amount    | asset |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | trader2 | market  | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 100000000 | ETH   |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | market  | trader1 | ACCOUNT_TYPE_SETTLEMENT  | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 100000000 | ETH   |
+
+    # perps payment calculated correctly with multiple internal and external observations
+    When the network moves ahead "2" blocks
+
+    Then the mark price should be "976" for the market "ETH/DEC19"
+
+    And the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | type       | tif     | resulting trades |
+      | trader3 | ETH/DEC19 | buy  | 1      |  980  | TYPE_LIMIT | TIF_GTC | 0                |
+      | trader4 | ETH/DEC19 | sell | 1      |  980  | TYPE_LIMIT | TIF_FOK | 1                |
+
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             |
+      | 980        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+    And system unix time is "1575072008"
+
+    When the network moves ahead "4" blocks
+    And the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | type       | tif     | resulting trades |
+      | trader3 | ETH/DEC19 | buy  | 1      |  989  | TYPE_LIMIT | TIF_GTC | 0                |
+      | trader4 | ETH/DEC19 | sell | 1      |  989  | TYPE_LIMIT | TIF_FOK | 1                |
+    
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader3 | 989   | 1    | trader4 |
+    
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | auction trigger             |
+      | 989        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+    And system unix time is "1575072012"
+    
+    When the network moves ahead "1" blocks
+    And the oracles broadcast data with block time signed with "0xCAFECAFE1":
+      | name             | value            | time offset |
+      | perp.ETH.value   | 9760000000000000 | -5s         |
+      # resubmitting same value at a different time should have no effect
+      | perp.ETH.value   | 9760000000000000 | -2s         |
+      | perp.ETH.value   | 9720000000000000 | -1s         |
+      | perp.funding.cue | 1575072014       |  0s         |
+    Then system unix time is "1575072013"
+    # internal TWAP = (976*1+980*4+989*2)/7=982
+    # external TWAP = (977*1+976*4+972*2)/7=975
+    # funding payment = 7
+    Then debug funding period events
+
+    And the following funding period events should be emitted:
+      | start      | end        | internal twap    | external twap    | funding payment | funding rate       |
+      | 1575072007 | 1575072014 | 9820000000000000 | 9750000000000000 | 70000000000000  | 0.0071794871794872 |
+      | 1575072014 |            | 9890000000000000 | 9720000000000000 |                 |                    |
+    # payments for trader3 and trader4 should be twice those of trader1 and trader2
+    And the following transfers should happen:
+      | type                                  | from    | to      | from account             | to account              | market id |  amount    | asset |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | trader1 | market  | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |  700000000 | ETH   |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | market  | trader2 | ACCOUNT_TYPE_SETTLEMENT  | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 |  700000000 | ETH   |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS | trader3 | market  | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1400000000 | ETH   |
+      | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  | market  | trader4 | ACCOUNT_TYPE_SETTLEMENT  | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1400000000 | ETH   |
+    

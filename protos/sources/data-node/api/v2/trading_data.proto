@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.74.2";
+    version: "v0.75.0-dev";
   }
   schemes: [
     HTTP,
@@ -1498,6 +1498,8 @@ message AggregatedLedgerEntry {
   string from_account_balance = 12;
   // Receiver account balance after the transfer.
   string to_account_balance = 13;
+  // Transfer ID associated with the ledger entry.
+  string transfer_id = 14;
 }
 
 // -- LedgerEntries --
@@ -1794,6 +1796,10 @@ message ListTransfersRequest {
   optional Scope scope = 8;
   // Game ID to filter on
   optional string game_id = 9;
+  // Account type to filter on for transfers from account
+  optional vega.AccountType from_account_type = 10;
+  // Account type to filter on for transfers to account
+  optional vega.AccountType to_account_type = 11;
 
   // Defines the types of a dispatch strategy's scope the API can filter on.
   enum Scope {

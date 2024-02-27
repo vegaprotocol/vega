@@ -480,7 +480,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
 		if m.as.InAuction() {
-			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration.Seconds())})
 			evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 			if evt != nil {
 				m.broker.Send(evt)
@@ -890,6 +890,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			m.OnAuctionEnded()
 		}
 	}()
+
+	// Check here that the orders are still valid in terms of holding amounts
+	m.checkFeeTransfersWhileInAuction(ctx)
 
 	_, ordersToCancel := m.uncrossOnLeaveAuction(ctx)
 
@@ -2638,6 +2641,63 @@ func (m *Market) processFeesTransfersOnEnterAuction(ctx context.Context) {
 				continue
 			}
 			transfers = append(transfers, transfer)
+		}
+	}
+	if len(transfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	}
+	// cancel all orders with insufficient funds
+	for _, o := range ordersToCancel {
+		m.cancelOrder(ctx, o.Party, o.ID)
+	}
+}
+
+func (m *Market) checkFeeTransfersWhileInAuction(ctx context.Context) {
+	parties := make([]string, 0, len(m.parties))
+	for v := range m.parties {
+		parties = append(parties, v)
+	}
+	sort.Strings(parties)
+	ordersToCancel := []*types.Order{}
+	transfers := []*types.LedgerMovement{}
+	for _, party := range parties {
+		orders := m.matching.GetOrdersPerParty(party)
+		for _, o := range orders {
+			if o.Side == types.SideSell {
+				continue
+			}
+			// if the side is buy then the fees are paid directly by the buyer which must have an account in quote asset
+			// with sufficient funds
+			fees, err := m.calculateFees(party, o.TrueRemaining(), o.Price, o.Side)
+			if err != nil {
+				m.log.Error("error calculating fees for order", logging.Order(o), logging.Error(err))
+				ordersToCancel = append(ordersToCancel, o)
+				continue
+			}
+			if fees.IsZero() {
+				continue
+			}
+			// check if we have already handled this fee and if so that it matches
+			_, paidFees := m.orderHoldingTracker.GetCurrentHolding(o.ID)
+
+			if fees.GT(paidFees) {
+				// We need to recalculate the fees amount
+				var newFees num.Uint
+				newFees.Sub(fees, paidFees)
+				if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, &newFees); err != nil {
+					m.log.Error("party has insufficient funds to cover for fees for order", logging.Order(o), logging.Error(err))
+					ordersToCancel = append(ordersToCancel, o)
+					continue
+				}
+				// party has sufficient funds to cover for fees - transfer fees from the party general account to the party holding account
+				transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, &newFees)
+				if err != nil {
+					m.log.Error("failed to transfer from general account to holding account", logging.Order(o), logging.Error(err))
+					ordersToCancel = append(ordersToCancel, o)
+					continue
+				}
+				transfers = append(transfers, transfer)
+			}
 		}
 	}
 	if len(transfers) > 0 {

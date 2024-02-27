@@ -82,6 +82,20 @@ func (mr *MockMarketActivityTrackerMockRecorder) GetAllMarketIDs() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMarketIDs", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetAllMarketIDs))
 }
 
+// GetLastEpochTakeFees mocks base method.
+func (m *MockMarketActivityTracker) GetLastEpochTakeFees(arg0 string, arg1 []string) map[string]*num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastEpochTakeFees", arg0, arg1)
+	ret0, _ := ret[0].(map[string]*num.Uint)
+	return ret0
+}
+
+// GetLastEpochTakeFees indicates an expected call of GetLastEpochTakeFees.
+func (mr *MockMarketActivityTrackerMockRecorder) GetLastEpochTakeFees(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastEpochTakeFees", reflect.TypeOf((*MockMarketActivityTracker)(nil).GetLastEpochTakeFees), arg0, arg1)
+}
+
 // GetProposer mocks base method.
 func (m *MockMarketActivityTracker) GetProposer(arg0 string) string {
 	m.ctrl.T.Helper()

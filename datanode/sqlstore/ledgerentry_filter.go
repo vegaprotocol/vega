@@ -156,15 +156,6 @@ func transferTypeFilterToDBQuery(transferTypeFilter []entities.LedgerMovementTyp
 	return "ledger.type IN (" + strings.Join(maps.Values(transferTypesMap), ", ") + ")"
 }
 
-func transfersFilterToDBQuery(transfersFilter entities.TransferID, args *[]interface{}) string {
-	if transfersFilter == "" {
-		return ""
-	}
-
-	transfersFilterString := fmt.Sprintf(`ledger.transfer_id=%s`, nextBindVar(args, transfersFilter))
-	return transfersFilterString
-}
-
 func handlePartiesFiltering(filter *entities.LedgerEntryFilter) error {
 	var partyIDFrom entities.PartyID
 	var partyIDTo entities.PartyID

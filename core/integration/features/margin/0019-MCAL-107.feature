@@ -119,11 +119,11 @@ Feature:  switch to isolated margin without position and with orders in auction
 
     #AC0019-MCAL-103:switch back to cross margin with no position and no order in continuous mode in auction
     And the parties submit update margin mode:
-      | party  | market    | margin_mode  | margin_factor |
-      | party1 | ETH/FEB23 | cross margin |               |
+      | party  | market    | margin_mode  |
+      | party1 | ETH/FEB23 | cross margin |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0.7           | 0     |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | cross margin | 0             | 0     |
 
 

@@ -203,3 +203,66 @@ func TestSubmitOrderWhenSuspended(t *testing.T) {
 	_, err = exec.engine.SubmitOrder(vgctx, os1, "p1", idgen, "o1p1")
 	require.NoError(t, err)
 }
+
+func TestDoubleSuspendMarketViaGovernance(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
+	now := time.Now()
+	exec := getEngine(t, paths2.New(t.TempDir()), now)
+	pubKey := &dstypes.SignerPubKey{
+		PubKey: &dstypes.PubKey{
+			Key: "0xDEADBEEF",
+		},
+	}
+	mkt := newMarket("MarketID", pubKey)
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
+	require.NoError(t, err)
+
+	exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
+
+	// during opening auction
+	state, err := exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, state.MarketState)
+	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
+
+	config := &types.MarketStateUpdateConfiguration{
+		MarketID:        mkt.ID,
+		UpdateType:      types.MarketStateUpdateTypeSuspend,
+		SettlementPrice: num.NewUint(100),
+	}
+	require.NoError(t, exec.engine.UpdateMarketState(ctx, config))
+
+	// after governance suspension
+	state, err = exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateSuspendedViaGovernance, state.MarketState)
+	require.Equal(t, types.MarketTradingModeSuspendedViaGovernance, state.MarketTradingMode)
+	require.Equal(t, types.AuctionTriggerGovernanceSuspension, state.Trigger)
+	require.Equal(t, types.AuctionTriggerUnspecified, state.ExtensionTrigger)
+
+	// suspend again
+	require.Error(t, fmt.Errorf("invalid state update request. Market for suspend is already suspended"), exec.engine.UpdateMarketState(ctx, config))
+	state, err = exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateSuspendedViaGovernance, state.MarketState)
+	require.Equal(t, types.MarketTradingModeSuspendedViaGovernance, state.MarketTradingMode)
+	require.Equal(t, types.AuctionTriggerGovernanceSuspension, state.Trigger)
+	require.Equal(t, types.AuctionTriggerUnspecified, state.ExtensionTrigger)
+
+	exec.engine.OnTick(ctx, exec.timeService.GetTimeNow())
+
+	config.UpdateType = types.MarketStateUpdateTypeResume
+	require.NoError(t, exec.engine.UpdateMarketState(ctx, config))
+
+	exec.engine.OnTick(ctx, exec.timeService.GetTimeNow())
+
+	// after governance suspension ended - enter liquidity auction
+	state, err = exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketStateActive, state.MarketState)
+	require.Equal(t, types.MarketTradingModeContinuous, state.MarketTradingMode)
+	require.Equal(t, types.AuctionTriggerUnspecified, state.Trigger)
+	require.Equal(t, types.AuctionTriggerUnspecified, state.ExtensionTrigger)
+	require.Equal(t, int64(0), state.AuctionEnd)
+	require.Equal(t, int64(0), state.AuctionStart)
+}

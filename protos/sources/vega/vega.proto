@@ -1126,6 +1126,8 @@ message DispatchStrategy {
   DistributionStrategy distribution_strategy = 12;
   // Ordered list, using start rank, defining the rank bands and share ratio for each band. Mandatory for the rank distribution strategy.
   repeated Rank rank_table = 13;
+  // If set, the actual amount of rewards transferred to each public key during distribution for this transfer will be `min(calculated_reward_in_quantum, cap_reward_fee_multiple × fees_paid_this_epoch_in_quantum).
+  optional string cap_reward_fee_multiple = 14;
 }
 
 message Rank {
@@ -1315,7 +1317,7 @@ message MarketData {
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
   // Market value proxy.
   string market_value_proxy = 25;
-  // Equity like share of liquidity fee for each liquidity provider.
+  // Equity-like share of liquidity fee for each liquidity provider.
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // Current state of the market.
   Market.State market_state = 27;
@@ -1351,7 +1353,7 @@ message CompositePriceState {
   repeated CompositePriceSource price_sources = 1;
 }
 
-// Equity like share of liquidity fee for each liquidity provider
+// Equity-like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;
@@ -1524,6 +1526,9 @@ message EthereumL2Config {
   uint32 confirmations = 3;
   // Display name of this network
   string name = 4;
+  // Polling interval for the internal engine, needs to be adapted
+  // to the source chain depending on its block production rate.
+  uint64 block_interval = 5;
 }
 
 message EthereumL2Configs {
