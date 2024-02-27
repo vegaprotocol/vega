@@ -22,6 +22,7 @@ Feature: Disposing position outside bounds
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 6200    | 0.99        | 5                 |
+      | 7200    | 0.99        | 5                 |
     And the markets:
       | id        | quote name | asset    | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | liquidation strategy | sla params    |
       | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | price-monitoring | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-1  | default-basic |
@@ -257,6 +258,7 @@ Feature: Disposing position outside bounds
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
+      | 190        | TRADING_MODE_CONTINUOUS | 7200    | 185       | 216       |
     And the parties should have the following profit and loss:
       | party       | volume | unrealised pnl | realised pnl |
       | atRiskParty | 0      | 0              | -50          |
