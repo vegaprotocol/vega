@@ -342,7 +342,7 @@ func NewMarket(
 		markPriceCalculator:           common.NewCompositePriceCalculator(ctx, mkt.MarkPriceConfiguration, oracleEngine, timeService),
 	}
 
-	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor)
+	market.amm = amm.New(log, broker, collateralEngine, market, riskEngine, positionEngine, priceFactor, positionFactor, marketActivityTracker)
 	// now set AMM engine on liquidity market.
 	market.liquidity.SetAMM(market.amm)
 
