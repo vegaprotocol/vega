@@ -3512,14 +3512,7 @@ func testUpdatePerpetualMarketWithFundingRateModifiers(t *testing.T) {
 				FundingRateScalingFactor: ptr.From("-10"),
 			},
 			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
-			err:  commands.ErrMustBePositive,
-		},
-		{
-			product: vegapb.UpdatePerpetualProduct{
-				FundingRateScalingFactor: ptr.From("0"),
-			},
-			path: "proposal_submission.terms.change.update_market.changes.instrument.product.perps.funding_rate_scaling_factor",
-			err:  commands.ErrMustBePositive,
+			err:  commands.ErrMustBePositiveOrZero,
 		},
 		{
 			product: vegapb.UpdatePerpetualProduct{

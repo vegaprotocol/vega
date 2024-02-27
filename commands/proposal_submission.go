@@ -1276,8 +1276,8 @@ func checkNewPerps(perps *protoTypes.PerpetualProduct, parentProperty string) Er
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
 		}
-		if !sf.IsPositive() {
-			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		if sf.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositiveOrZero)
 		}
 	}
 
@@ -1425,8 +1425,8 @@ func checkUpdatePerps(perps *protoTypes.UpdatePerpetualProduct, parentProperty s
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrIsNotValidNumber)
 		}
-		if !sf.IsPositive() {
-			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositive)
+		if sf.IsNegative() {
+			errs.AddForProperty(fmt.Sprintf("%s.perps.funding_rate_scaling_factor", parentProperty), ErrMustBePositiveOrZero)
 		}
 	}
 
