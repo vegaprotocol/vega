@@ -251,9 +251,9 @@ func NewMarketFromSnapshot(
 
 	// just check for nil first just in case we are on a protocol upgrade from a version were AMM were not supported.
 	if em.Amm == nil {
-		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor)
+		market.amm = amm.New(log, broker, collateralEngine, market, market.risk, market.position, market.priceFactor, positionFactor, marketActivityTracker)
 	} else {
-		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor)
+		market.amm = amm.NewFromProto(log, broker, collateralEngine, market, market.risk, market.position, em.Amm, market.priceFactor, positionFactor, marketActivityTracker)
 	}
 	// now we can set the AMM on the market liquidity engine.
 	market.liquidity.SetAMM(market.amm)
