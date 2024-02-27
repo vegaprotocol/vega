@@ -179,6 +179,7 @@ type Collateral interface {
 	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
 	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error)
 	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
+	PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error
 	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)
 	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	GetPartyLiquidityFeeAccount(market, partyID, asset string) (*types.Account, error)

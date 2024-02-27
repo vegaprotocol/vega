@@ -929,6 +929,25 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	return e.transferFees(ctx, marketID, assetID, ft)
 }
 
+func (e *Engine) PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error {
+	generalAccount, err := e.GetPartyGeneralAccount(partyID, asset)
+	if err != nil {
+		return err
+	}
+	generalAccountBalance := generalAccount.Balance
+	marginAccount, _ := e.GetPartyMarginAccount(mktID, partyID, asset)
+
+	marginAccountBalance := num.UintZero()
+	if marginAccount != nil {
+		marginAccountBalance = marginAccount.Balance
+	}
+
+	if num.Sum(generalAccountBalance, marginAccountBalance).LT(amount) {
+		return fmt.Errorf("party has insufficient funds to cover fees")
+	}
+	return nil
+}
+
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
 	if err != nil {
