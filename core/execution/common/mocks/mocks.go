@@ -716,6 +716,20 @@ func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3, arg4 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3, arg4)
 }
 
+// PartyCanCoverFees mocks base method.
+func (m *MockCollateral) PartyCanCoverFees(arg0, arg1, arg2 string, arg3 *num.Uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PartyCanCoverFees", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PartyCanCoverFees indicates an expected call of PartyCanCoverFees.
+func (mr *MockCollateralMockRecorder) PartyCanCoverFees(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyCanCoverFees", reflect.TypeOf((*MockCollateral)(nil).PartyCanCoverFees), arg0, arg1, arg2, arg3)
+}
+
 // PartyHasSufficientBalance mocks base method.
 func (m *MockCollateral) PartyHasSufficientBalance(arg0, arg1 string, arg2 *num.Uint) error {
 	m.ctrl.T.Helper()

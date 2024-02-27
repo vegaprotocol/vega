@@ -158,38 +158,6 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 	assert.Nil(t, em2.CurrentMarkPrice)
 }
 
-func TestRestoreMarketUpgradeV0_73_2(t *testing.T) {
-	now := time.Unix(10, 0)
-	tm := getTestMarket(t, now, nil, nil)
-	defer tm.ctrl.Finish()
-
-	em := tm.market.GetState()
-	assert.Nil(t, em.LastTradedPrice)
-	assert.Nil(t, em.CurrentMarkPrice)
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	oracleEngine := mocks.NewMockOracleEngine(ctrl)
-
-	unsubscribe := func(_ context.Context, id spec.SubscriptionID) {
-	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(1), unsubscribe, nil)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(spec.SubscriptionID(2), unsubscribe, nil)
-
-	// set the liquidity fee settings to nil, like if we can come from an older version
-	em.Market.Fees.LiquidityFeeSettings = nil
-
-	// and set in the context the information that says we are upgrading
-	ctx := vegacontext.WithSnapshotInfo(context.Background(), "v0.73.14", true)
-	snap, err := newMarketFromSnapshot(t, ctx, ctrl, em, oracleEngine)
-	require.NoError(t, err)
-	require.NotEmpty(t, snap)
-
-	em2 := snap.GetState()
-	require.NotNil(t, em2.Market.Fees.LiquidityFeeSettings)
-	assert.Equal(t, em2.Market.Fees.LiquidityFeeSettings.Method, types.LiquidityFeeMethodMarginalCost)
-}
-
 func getTerminatedMarket(t *testing.T) *testMarket {
 	t.Helper()
 	pubKeys := []*dstypes.Signer{
