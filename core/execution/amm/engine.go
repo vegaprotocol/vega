@@ -130,6 +130,8 @@ type Engine struct {
 	log *logging.Logger
 
 	broker Broker
+	// TODO karel - use interface for market activity tracker
+	marketActivityTracker *common.MarketActivityTracker
 
 	risk       Risk
 	collateral Collateral
@@ -163,21 +165,23 @@ func New(
 	position Position,
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
+	marketActivityTracker *common.MarketActivityTracker,
 ) *Engine {
 	return &Engine{
-		log:                  log,
-		broker:               broker,
-		risk:                 risk,
-		collateral:           collateral,
-		position:             position,
-		market:               market,
-		pools:                map[string]*Pool{},
-		poolsCpy:             []*Pool{},
-		subAccounts:          map[string]string{},
-		minCommitmentQuantum: num.UintZero(),
-		rooter:               &Sqrter{cache: map[string]num.Decimal{}},
-		priceFactor:          priceFactor,
-		positionFactor:       positionFactor,
+		log:                   log,
+		broker:                broker,
+		risk:                  risk,
+		collateral:            collateral,
+		position:              position,
+		market:                market,
+		marketActivityTracker: marketActivityTracker,
+		pools:                 map[string]*Pool{},
+		poolsCpy:              []*Pool{},
+		subAccounts:           map[string]string{},
+		minCommitmentQuantum:  num.UintZero(),
+		rooter:                &Sqrter{cache: map[string]num.Decimal{}},
+		priceFactor:           priceFactor,
+		positionFactor:        positionFactor,
 	}
 }
 
@@ -191,8 +195,9 @@ func NewFromProto(
 	state *v1.AmmState,
 	priceFactor *num.Uint,
 	positionFactor num.Decimal,
+	marketActivityTracker *common.MarketActivityTracker,
 ) *Engine {
-	e := New(log, broker, collateral, market, risk, position, priceFactor, positionFactor)
+	e := New(log, broker, collateral, market, risk, position, priceFactor, positionFactor, marketActivityTracker)
 
 	for _, v := range state.SubAccounts {
 		e.subAccounts[v.Key] = v.Value
@@ -927,10 +932,19 @@ func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 	return ret
 }
 
+func (e *Engine) GetAllSubAccounts() []string {
+	ret := make([]string, 0, len(e.subAccounts))
+	for _, subAccount := range e.subAccounts {
+		ret = append(ret, subAccount)
+	}
+	return ret
+}
+
 func (e *Engine) add(p *Pool) {
 	e.pools[p.party] = p
 	e.poolsCpy = append(e.poolsCpy, p)
 	e.subAccounts[p.SubAccount] = p.party
+	e.marketActivityTracker.AddAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), p.SubAccount)
 }
 
 func (e *Engine) remove(ctx context.Context, party string) {
@@ -945,6 +959,7 @@ func (e *Engine) remove(ctx context.Context, party string) {
 	delete(e.pools, party)
 	delete(e.subAccounts, pool.SubAccount)
 	e.sendUpdate(ctx, pool)
+	e.marketActivityTracker.RemoveAMMSubAccount(e.market.GetSettlementAsset(), e.market.GetID(), pool.SubAccount)
 }
 
 func DeriveSubAccount(

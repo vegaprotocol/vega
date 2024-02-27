@@ -87,3 +87,17 @@ func (mr *MockAMMMockRecorder) GetAMMPoolsBySubAccount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAMMPoolsBySubAccount", reflect.TypeOf((*MockAMM)(nil).GetAMMPoolsBySubAccount))
 }
+
+// GetAllSubAccounts mocks base method.
+func (m *MockAMM) GetAllSubAccounts() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllSubAccounts")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetAllSubAccounts indicates an expected call of GetAllSubAccounts.
+func (mr *MockAMMMockRecorder) GetAllSubAccounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllSubAccounts", reflect.TypeOf((*MockAMM)(nil).GetAllSubAccounts))
+}
