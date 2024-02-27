@@ -43,7 +43,6 @@ func TestSwitchFromIsolatedMargin(t *testing.T) {
 	e.as.EXPECT().InAuction().Return(false).AnyTimes()
 	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
-	e.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Return(num.NewUint(999), nil)
 	risk := e.SwitchFromIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne())
 	require.Equal(t, num.NewUint(20), risk.Transfer().Amount.Amount)
 	require.Equal(t, num.NewUint(20), risk.Transfer().MinAmount)
@@ -69,7 +68,6 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	e.as.EXPECT().InAuction().Return(false).AnyTimes()
 	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	e.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Return(num.NewUint(999), nil).AnyTimes()
 
 	// margin factor too low - 0.01 * 1000 * 1 = 10 < 31 initial margin
 	_, err := e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), []*types.Order{}, num.DecimalFromFloat(0.01), nil)
