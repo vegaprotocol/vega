@@ -1095,6 +1095,9 @@ enum IndividualScope {
   INDIVIDUAL_SCOPE_IN_TEAM = 2;
   // All parties that are not part of a team are within the scope of this reward.
   INDIVIDUAL_SCOPE_NOT_IN_TEAM = 3;
+  // All keys representing AMM parties, excluding those directly controlled by parties
+  // are within the scope of this reward.
+  INDIVIDUAL_SCOPE_AMM = 4;
 }
 
 enum DistributionStrategy {

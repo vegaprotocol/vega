@@ -323,6 +323,7 @@ type AMMPool interface {
 
 type AMM interface {
 	GetAMMPoolsBySubAccount() map[string]AMMPool
+	GetAllSubAccounts() []string
 }
 
 type CommonMarket interface {
