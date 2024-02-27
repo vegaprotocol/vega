@@ -27,7 +27,6 @@ Feature: Disposing position outside bounds
       | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | price-monitoring | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-1  | default-basic |
       | ETH/MAR23 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | price-monitoring | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-2  | default-basic |
 
- 
   Scenario: Network considers volume outside price-monitoring bounds as avaliable to dispose against when calculating max consumption (0012-POSR-019)(0012-POSR-020)(0012-POSR-025)(0012-POSR-029)
     # Orderbook setup such that LPs post orders outside of price-monitoring bounds using limit ormal orders and iceberg orders. The avaliable volume should include volume outside bounds and the full size of the iceberg orders.
 
@@ -98,20 +97,16 @@ Feature: Disposing position outside bounds
       | atRiskParty | 0      | 0              | -1700        |
       | network     | 100    | 0              | 0            |
 
-    # Network disposes its position with trades outside price monitoring bouunds
+    # Network cannot dispose of its position outside of price monitoring bounds
     Given the market data for the market "ETH/MAR23" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
     When the network moves ahead "1" blocks
-    Then the following trades should be executed:
-      | buyer | price | size | seller  |
-      | lp1   | 180   | 5    | network |
-      | lp1   | 179   | 5    | network |
     And the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | network | 90     | 0              | -105         |
+      | network | 100     | 0             | 0            |
 
-
+  @me
   Scenario: Network does not consider volume outside liquidity range as avaliable to dispose against when calculating max consumption (0012-POSR-019)(0012-POSR-021)(0012-POSR-025)
     # Orderbook setup such that LPs post a mix of limit orders within and outside liquidity range. Only the volume inside the liquidity price range should be considered.
 
@@ -169,7 +164,7 @@ Feature: Disposing position outside bounds
     # Market moves against atRiskParty whom is liquidated
     Given the parties amend the following orders:
       | party | reference | price | size delta | tif     |
-      | lp1   | best-bid  | 180   | 0          | TIF_GTC |
+      | lp1   | best-bid  | 186   | 0          | TIF_GTC |
       | lp1   | best-ask  | 220   | 0          | TIF_GTC |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -185,15 +180,14 @@ Feature: Disposing position outside bounds
     # Network only able do dispose volume against orders inside liquidity range
     Given the market data for the market "ETH/MAR23" should be:
       | mark price | trading mode            | static mid price |
-      | 190        | TRADING_MODE_CONTINUOUS | 200              |
+      | 190        | TRADING_MODE_CONTINUOUS | 203              |
     When the network moves ahead "1" blocks
     Then the following trades should be executed:
       | buyer | price | size | seller  |
-      | lp1   | 180   | 5    | network |
+      | lp1   | 186   | 5    | network |
     And the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | network | 95     | 0              | -50          |
-
+      | network | 95     | 0              | -20          |
 
   Scenario: Volume on the book within liquidity price range but outside price monitoring bounds, network able to dispose position (0012-POSR-026)(0012-POSR-028)
 
@@ -261,14 +255,14 @@ Feature: Disposing position outside bounds
       | atRiskParty | 0      | 0              | -20          |
       | network     | 1      | 0              | 0            |
 
-    # Network disposes its position with trades outside price monitoring bouunds
+    # Network doesn't trade because it would be outside of price bounds
     Given the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
     When the network moves ahead "1" blocks
-    Then the following trades should be executed:
-      | buyer | price | size | seller  |
-      | lp1   | 180   | 1    | network |
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | network     | 1      | 0              | 0            |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |

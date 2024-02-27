@@ -1121,8 +1121,6 @@ Feature: Fees calculations
       | trader3a | 1002  | 100  | trader4  |
       | trader3a | 900   | 200  | trader4  |
       | network  | 900   | 300  | trader3a |
-      | aux1     | 500   | 100  | network  |
-      | aux1     | 490   | 200  | network  |
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
