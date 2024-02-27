@@ -137,11 +137,12 @@ type UpdateMarketConfiguration struct {
 	LiquidityFeeSettings          *LiquidityFeeSettings
 	LiquidationStrategy           *LiquidationStrategy
 	MarkPriceConfiguration        *CompositePriceConfiguration
+	TickSize                      *num.Uint
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), markPriceConfiguration(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), markPriceConfiguration(%s), tickSize(%s)",
 		stringer.PtrToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		stringer.PtrToString(n.PriceMonitoringParameters),
@@ -150,6 +151,7 @@ func (n UpdateMarketConfiguration) String() string {
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 		stringer.PtrToString(n.MarkPriceConfiguration),
+		num.UintToString(n.TickSize),
 	)
 }
 
@@ -158,6 +160,7 @@ func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 		Metadata:                make([]string, len(n.Metadata)),
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
+		TickSize:                n.TickSize.Clone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -228,6 +231,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		LiquidityFeeSettings:          liquidityFeeSettings,
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
+		TickSize:                      n.TickSize.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -309,6 +313,13 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		}
 	}
 
+	var tickSize *num.Uint
+	if len(p.TickSize) == 0 {
+		tickSize = num.NewUint(1)
+	} else {
+		tickSize, _ = num.UintFromString(p.TickSize, 10)
+	}
+
 	r := &UpdateMarketConfiguration{
 		Instrument:                    instrument,
 		Metadata:                      md,
@@ -320,6 +331,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        CompositePriceConfigurationFromProto(p.MarkPriceConfiguration),
+		TickSize:                      tickSize,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

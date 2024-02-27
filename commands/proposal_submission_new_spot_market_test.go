@@ -101,6 +101,33 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with valid competition factor succeeds", testNewSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a new spot market with invalid hysteresis epochs fails", testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new spot market with valid hysteresis epochs succeeds", testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
+
+	t.Run("Submitting a new spot market with invalid tick size fails and valid tick size succeeds", testNewSpotMarketTickSize)
+}
+
+func testNewSpotMarketTickSize(t *testing.T) {
+	cases := getTickSizeCases()
+	for _, tsc := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewSpotMarket{
+					NewSpotMarket: &vegapb.NewSpotMarket{
+						Changes: &vegapb.NewSpotMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Spot{},
+							},
+							TickSize: tsc.tickSize,
+						},
+					},
+				},
+			},
+		})
+		if tsc.err != nil {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.tick_size"), tsc.err)
+		} else {
+			assert.Empty(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.tick_size"))
+		}
+	}
 }
 
 func testNewSpotMarketChangeSubmissionWithoutNewSpotMarketFails(t *testing.T) {

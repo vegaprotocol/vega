@@ -2625,6 +2625,9 @@ type Market {
 
   "Configuration driving the mark price for the market"
   markPriceConfiguration: CompositePriceConfiguration!
+
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 """
@@ -4640,6 +4643,8 @@ type NewMarket {
   liquidationStrategy: LiquidationStrategy
   "Configuration for mark price calculation for the market"
   markPriceConfiguration: CompositePriceConfiguration!
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type CompositePriceConfiguration {
@@ -4701,6 +4706,8 @@ type UpdateMarketConfiguration {
   liquidationStrategy: LiquidationStrategy
   "Configuration for mark price calculation for the market"
   markPriceConfiguration: CompositePriceConfiguration
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type UpdateInstrumentConfiguration {
@@ -4928,6 +4935,8 @@ type NewSpotMarket {
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 "Update an existing spot market on Vega"
@@ -4951,6 +4960,8 @@ type UpdateSpotMarketConfiguration {
   liquiditySLAParams: LiquiditySLAParameters!
   "Specifies how the liquidity fee for the market will be calculated"
   liquidityFeeSettings: LiquidityFeeSettings
+  "The market minimum tick size"
+  tickSize: String!
 }
 
 type LiquiditySLAParameters {

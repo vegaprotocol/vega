@@ -141,6 +141,8 @@ func TestEstimatePosition(t *testing.T) {
 		Decimals: assetDecimals,
 	}
 
+	tickSize := num.DecimalOne()
+
 	mkt := entities.Market{
 		DecimalPlaces:           marketDecimals,
 		PositionDecimalPlaces:   positionDecimalPlaces,
@@ -165,6 +167,7 @@ func TestEstimatePosition(t *testing.T) {
 				},
 			},
 		},
+		TickSize: &tickSize,
 	}
 
 	rf := entities.RiskFactor{

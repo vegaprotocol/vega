@@ -135,7 +135,30 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a perps market product parameters", testUpdatePerpsMarketChangeSubmissionProductParameters)
 	t.Run("Submitting a perps market with funding rate modifiers", testUpdatePerpetualMarketWithFundingRateModifiers)
 	t.Run("Submitting a market update with invalid mark price configuration ", testUpdateMarketCompositePriceConfiguration)
-	t.Run("Submitting a market update with invalid intenal composite price configuration ", testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
+	t.Run("Submitting a market update with invalid intenal composite price configuration", testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig)
+	t.Run("Submitting a market update with invalid tick size fails and valid tick size succeeds", testUpdateMarketTickSize)
+}
+
+func testUpdateMarketTickSize(t *testing.T) {
+	cases := getTickSizeCases()
+	for _, tsc := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_UpdateMarket{
+					UpdateMarket: &vegapb.UpdateMarket{
+						Changes: &vegapb.UpdateMarketConfiguration{
+							TickSize: tsc.tickSize,
+						},
+					},
+				},
+			},
+		})
+		if tsc.err != nil {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.tick_size"), tsc.err)
+		} else {
+			assert.Empty(t, err.Get("proposal_submission.terms.change.update_market.changes.tick_size"))
+		}
+	}
 }
 
 func testUpdatePerpsMarketChangeSubmissionWithInternalCompositePriceConfig(t *testing.T) {

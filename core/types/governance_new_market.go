@@ -411,6 +411,7 @@ type NewMarketConfiguration struct {
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
+	TickSize               *num.Uint
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -457,6 +458,7 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LiquidityFeeSettings:          liquidityFeeSettings,
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        n.MarkPriceConfiguration.IntoProto(),
+		TickSize:                      n.TickSize.String(),
 	}
 	if n.Successor != nil {
 		r.Successor = n.Successor.IntoProto()
@@ -477,6 +479,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		Metadata:                make([]string, len(n.Metadata)),
 		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
 		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
+		TickSize:                n.TickSize.Clone(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -509,7 +512,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 
 func (n NewMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s)",
+		"decimalPlaces(%v) positionDecimalPlaces(%v) metadata(%v) instrument(%s) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s), CompositePriceConfiguration(%s), TickSize(%s)",
 		n.Metadata,
 		n.DecimalPlaces,
 		n.PositionDecimalPlaces,
@@ -520,6 +523,7 @@ func (n NewMarketConfiguration) String() string {
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 		stringer.PtrToString(n.MarkPriceConfiguration),
+		num.UintToString(n.TickSize),
 	)
 }
 
@@ -601,6 +605,14 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		markPriceConfig = CompositePriceConfigurationFromProto(p.MarkPriceConfiguration)
 	}
 
+	var tickSize *num.Uint
+	// this is for supporting migration
+	if len(p.TickSize) == 0 {
+		tickSize = num.NewUint(1)
+	} else {
+		tickSize, _ = num.UintFromString(p.TickSize, 10)
+	}
+
 	r := &NewMarketConfiguration{
 		Instrument:                    instrument,
 		DecimalPlaces:                 p.DecimalPlaces,
@@ -614,6 +626,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        markPriceConfig,
+		TickSize:                      tickSize,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {

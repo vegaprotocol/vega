@@ -169,6 +169,7 @@ func getTestMarket(termInt bool) types.Market {
 				ScalingFactor: num.DecimalZero(),
 			},
 		},
+		TickSize:    num.UintOne(),
 		TradingMode: 0,
 		State:       0,
 		MarketTimestamps: &types.MarketTimestamps{

@@ -1072,9 +1072,16 @@ type Market struct {
 	InsurancePoolFraction  num.Decimal
 	LiquidationStrategy    *LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
+	TickSize               *num.Uint
 }
 
 func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
+	var tickSize *num.Uint
+	if len(mkt.TickSize) == 0 {
+		tickSize = num.NewUint(1)
+	} else {
+		tickSize, _ = num.UintFromString(mkt.TickSize, 10)
+	}
 	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
 	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
 	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
@@ -1131,6 +1138,7 @@ func MarketFromProto(mkt *vegapb.Market) (*Market, error) {
 		InsurancePoolFraction:         insFraction,
 		LiquidationStrategy:           ls,
 		MarkPriceConfiguration:        markPriceConfiguration,
+		TickSize:                      tickSize,
 	}
 
 	if mkt.LiquiditySlaParams != nil {
@@ -1202,6 +1210,7 @@ func (m Market) IntoProto() *vegapb.Market {
 		ParentMarketId:                parent,
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.IntoProto(),
+		TickSize:                      m.TickSize.String(),
 	}
 	return r
 }
@@ -1212,7 +1221,7 @@ func (m Market) GetID() string {
 
 func (m Market) String() string {
 	return fmt.Sprintf(
-		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s)",
+		"ID(%s) tradableInstrument(%s) decimalPlaces(%v) positionDecimalPlaces(%v) fees(%s) openingAuction(%s) priceMonitoringSettings(%s) liquidityMonitoringParameters(%s) tradingMode(%s) state(%s) marketTimestamps(%s) tickSize(%s)",
 		m.ID,
 		stringer.PtrToString(m.TradableInstrument),
 		m.DecimalPlaces,
@@ -1224,6 +1233,7 @@ func (m Market) String() string {
 		m.TradingMode.String(),
 		m.State.String(),
 		stringer.PtrToString(m.MarketTimestamps),
+		num.UintToString(m.TickSize),
 	)
 }
 
@@ -1252,6 +1262,7 @@ func (m Market) DeepClone() *Market {
 		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
 		ParentMarketID:          m.ParentMarketID,
 		InsurancePoolFraction:   m.InsurancePoolFraction,
+		TickSize:                m.TickSize.Clone(),
 	}
 
 	if m.LiquiditySLAParams != nil {

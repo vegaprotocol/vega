@@ -1325,14 +1325,28 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 
 	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
-		return price.AddSum(offset), nil
+		price = price.AddSum(offset)
+		if !num.UintZero().Mod(price, m.mkt.TickSize).IsZero() {
+			price = price.Div(price.AddSum(m.mkt.TickSize), m.mkt.TickSize)
+			price = price.Mul(price, m.mkt.TickSize)
+		}
+		return price, nil
 	}
 
 	if price.LTE(offset) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	return num.UintZero().Sub(price, offset), nil
+	price.Sub(price, offset)
+	if !num.UintZero().Mod(price, m.mkt.TickSize).IsZero() {
+		price.Div(price, m.mkt.TickSize)
+		price.Mul(price, m.mkt.TickSize)
+		if price.LTE(offset) {
+			return num.UintZero(), common.ErrUnableToReprice
+		}
+	}
+
+	return price, nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -1700,8 +1714,21 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 			}
 			return reason
 		}
+		return m.validateTickSize(order.PeggedOrder.Offset)
 	}
 
+	if order.OriginalPrice != nil {
+		return m.validateTickSize(order.OriginalPrice)
+	}
+
+	return nil
+}
+
+func (m *Market) validateTickSize(price *num.Uint) error {
+	d := num.UintZero().Mod(price, m.mkt.TickSize)
+	if !d.IsZero() {
+		return types.ErrOrderNotInTickSize
+	}
 	return nil
 }
 
@@ -3518,6 +3545,12 @@ func (m *Market) amendOrder(
 	amendedOrder, err := existingOrder.ApplyOrderAmendment(orderAmendment, m.timeService.GetTimeNow().UnixNano(), m.priceFactor)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
+		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	if err := m.position.ValidateAmendOrder(existingOrder, amendedOrder); err != nil {
