@@ -27,7 +27,7 @@ Feature: Disposing position outside bounds
       | ETH/MAR22 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | price-monitoring | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-1  | default-basic |
       | ETH/MAR23 | ETH        | USD.0.10 | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | price-monitoring | default-eth-for-future | 0.001                  | 0                         | liquidation-strat-2  | default-basic |
 
- 
+
   Scenario: Network considers volume outside price-monitoring bounds as avaliable to dispose against when calculating max consumption (0012-POSR-019)(0012-POSR-020)(0012-POSR-025)(0012-POSR-029)
     # Orderbook setup such that LPs post orders outside of price-monitoring bounds using limit ormal orders and iceberg orders. The avaliable volume should include volume outside bounds and the full size of the iceberg orders.
 
@@ -195,7 +195,7 @@ Feature: Disposing position outside bounds
       | network | 95     | 0              | -50          |
 
 
-  Scenario: Volume on the book within liquidity price range but outside price monitoring bounds, network able to dispose position (0012-POSR-026)(0012-POSR-028)
+  Scenario: Volume on the book within liquidity price range but outside price monitoring bounds, network able to dispose position (0012-POSR-026)(0012-POSR-030)
 
     # Market configuiration
     Given the liquidity sla params named "sla-params":
@@ -270,12 +270,12 @@ Feature: Disposing position outside bounds
       | buyer | price | size | seller  |
       | lp1   | 180   | 1    | network |
     And the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound |
-      | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
+      | mark price | trading mode                    | auction trigger       | horizon | min bound | max bound |
+      | 190        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 6200    | 186       | 214       |
 
 
   Scenario: Volume on the book outside liquidity price range, network unable to dispose position (0012-POSR-027)
-    
+
     # Market configuiration
     Given the liquidity sla params named "sla-params":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
