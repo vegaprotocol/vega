@@ -47,6 +47,7 @@ type tstEngine struct {
 	broker *bmocks.MockBroker
 	tSvc   *cmocks.MockTimeService
 	pos    *mocks.MockPositions
+	pmon   *mocks.MockPriceMonitor
 }
 
 type marginStub struct {
@@ -61,6 +62,7 @@ func TestOrderbookPriceLimits(t *testing.T) {
 	t.Run("orderbook has no volume", testOrderbookHasNoVolume)
 	t.Run("orderbook has a volume of one (consumed fraction rounding)", testOrderbookFractionRounding)
 	t.Run("orderbook has plenty of volume (should not increase order size)", testOrderbookExceedsVolume)
+	t.Run("orderbook only has volume above price monitoring bounds", testOrderCappedByPriceMonitor)
 }
 
 func TestNetworkReducesOverTime(t *testing.T) {
@@ -75,6 +77,12 @@ func TestNetworkReducesOverTime(t *testing.T) {
 	}
 	eng := getTestEngine(t, mID, config.DeepClone())
 	defer eng.Finish()
+
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
+	)
+
 	// setup: create a party with volume of 10 long as the distressed party
 	closed := []events.Margin{
 		createMarginEvent("party1", mID, 10),
@@ -246,6 +254,12 @@ func testOrderbookHasNoVolume(t *testing.T) {
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	eng := getTestEngine(t, mID, nil)
 	defer eng.Finish()
+
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
+	)
+
 	// setup: create a party with volume of 10 long as the distressed party
 	closed := []events.Margin{
 		createMarginEvent("party", mID, 10),
@@ -286,6 +300,12 @@ func testOrderbookFractionRounding(t *testing.T) {
 	}
 	eng := getTestEngine(t, mID, &config)
 	defer eng.Finish()
+
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
+	)
+
 	closed := []events.Margin{
 		createMarginEvent("party", mID, 10),
 	}
@@ -330,6 +350,12 @@ func testOrderbookExceedsVolume(t *testing.T) {
 	}
 	eng := getTestEngine(t, mID, &config)
 	defer eng.Finish()
+
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
+	)
+
 	closed := []events.Margin{
 		createMarginEvent("party", mID, 10),
 	}
@@ -362,12 +388,73 @@ func testOrderbookExceedsVolume(t *testing.T) {
 	require.Equal(t, uint64(netVol), order.Size)
 }
 
+func testOrderCappedByPriceMonitor(t *testing.T) {
+	mID := "market"
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	config := types.LiquidationStrategy{
+		DisposalTimeStep:    0,
+		DisposalFraction:    num.DecimalOne(),
+		FullDisposalSize:    1000000, // plenty
+		MaxFractionConsumed: num.DecimalFromFloat(0.5),
+	}
+	eng := getTestEngine(t, mID, &config)
+	defer eng.Finish()
+
+	// these are the bounds given by the order book
+	minP, maxP := num.NewUint(100), num.NewUint(200)
+
+	// these are the price monitoring bounds
+	minB := num.NewUint(150)
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(minB.Clone(), num.DecimalFromInt64(150)),
+		num.NewWrappedDecimal(num.NewUint(300), num.DecimalFromInt64(300)),
+	)
+
+	closed := []events.Margin{
+		createMarginEvent("party", mID, 10),
+	}
+	var netVol int64
+	for _, c := range closed {
+		netVol += c.Size()
+	}
+	now := time.Now()
+	eng.tSvc.EXPECT().GetTimeNow().Times(2).Return(now)
+	idCount := len(closed) * 3
+	eng.idgen.EXPECT().NextID().Times(idCount).Return("nextID")
+	// 2 orders per closed position
+	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](2 * len(closed))).Times(1)
+	// 1 trade per closed position
+	eng.broker.EXPECT().SendBatch(SliceLenMatcher[events.Event](1 * len(closed))).Times(1)
+	eng.pos.EXPECT().RegisterOrder(gomock.Any(), gomock.Any()).Times(len(closed) * 2)
+	eng.pos.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(len(closed))
+	pos, parties, trades := eng.ClearDistressedParties(ctx, eng.idgen, closed, num.UintZero(), num.UintZero())
+	require.Equal(t, len(closed), len(trades))
+	require.Equal(t, len(closed), len(pos))
+	require.Equal(t, len(closed), len(parties))
+	require.Equal(t, closed[0].Party(), parties[0])
+
+	eng.as.EXPECT().InAuction().Times(1).Return(false)
+	eng.ml.EXPECT().ValidOrdersPriceRange().Times(1).Return(minP, maxP, nil)
+
+	// we will check for volume at the price monitoring minimum
+	eng.book.EXPECT().GetVolumeAtPrice(minB, types.SideBuy).Times(1).Return(uint64(netVol * 10))
+	order, err := eng.OnTick(ctx, now)
+	require.NoError(t, err)
+	require.Equal(t, uint64(netVol), order.Size)
+}
+
 func TestLegacySupport(t *testing.T) {
 	// simple test to make sure that passing nil for the config does not cause issues.
 	mID := "market"
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	eng := getTestEngine(t, mID, nil)
 	defer eng.Finish()
+
+	eng.pmon.EXPECT().GetValidPriceRange().AnyTimes().Return(
+		num.NewWrappedDecimal(num.UintZero(), num.DecimalZero()),
+		num.NewWrappedDecimal(num.MaxUint(), num.MaxDecimal()),
+	)
+
 	require.False(t, eng.Stopped())
 	// let's check if we get back an order, create the margin events
 	closed := []events.Margin{
@@ -544,7 +631,8 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 	broker := bmocks.NewMockBroker(ctrl)
 	tSvc := cmocks.NewMockTimeService(ctrl)
 	pe := mocks.NewMockPositions(ctrl)
-	engine := liquidation.New(logging.NewDevLogger(), config, marketID, broker, book, as, tSvc, ml, pe)
+	pmon := mocks.NewMockPriceMonitor(ctrl)
+	engine := liquidation.New(logging.NewDevLogger(), config, marketID, broker, book, as, tSvc, ml, pe, pmon)
 	return &tstEngine{
 		Engine: engine,
 		ctrl:   ctrl,
@@ -555,6 +643,7 @@ func getTestEngine(t *testing.T, marketID string, config *types.LiquidationStrat
 		broker: broker,
 		tSvc:   tSvc,
 		pos:    pe,
+		pmon:   pmon,
 	}
 }
 

@@ -13,6 +13,7 @@
 ### 🛠 Improvements
 
 - [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
+- [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
 - [](https://github.com/vegaprotocol/vega/issues/xxx)
 
 ### 🐛 Fixes

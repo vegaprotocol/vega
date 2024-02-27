@@ -290,7 +290,7 @@ func NewMarket(
 	if mkt.LiquidationStrategy == nil {
 		mkt.LiquidationStrategy = liquidation.GetLegacyStrat()
 	}
-	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine)
+	le := liquidation.New(log, mkt.LiquidationStrategy, mkt.GetID(), broker, book, auctionState, timeService, marketLiquidity, positionEngine, pMonitor)
 
 	marketType := mkt.MarketType()
 	market := &Market{
