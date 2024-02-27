@@ -189,7 +189,7 @@ Feature: Disposing position outside bounds
       | party   | volume | unrealised pnl | realised pnl |
       | network | 95     | 0              | -20          |
 
-  Scenario: Volume on the book within liquidity price range but outside price monitoring bounds, network able to dispose position (0012-POSR-026)(0012-POSR-028)
+  Scenario: Volume on the book within liquidity price range but outside price monitoring bounds, network able to dispose position (0012-POSR-026)(0012-POSR-030)
 
     # Market configuiration
     Given the liquidity sla params named "sla-params":
