@@ -998,6 +998,14 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 		}
 	}
 
+	// Validate iceberg orders
+	if order.IcebergOrder != nil {
+		// Reduce only not allowed for iceberg orders
+		if order.ReduceOnly {
+			return types.ErrIcebergOrdersNotAllowedToBeReduceOnly
+		}
+	}
+
 	return nil
 }
 

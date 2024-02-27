@@ -530,6 +530,8 @@ enum OrderError {
   ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED = 51;
   // In isolated margin pegged orders are rejected
   ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE = 52;
+  // Iceberg orders cannot have the reduce only flag set
+  ORDER_ERROR_ICEBERG_ORDERS_NOT_ALLOWED_TO_BE_REDUCE_ONLY = 53;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

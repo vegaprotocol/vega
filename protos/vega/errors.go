@@ -120,6 +120,8 @@ func (err OrderError) Error() string {
 		return "OrderError: post only order would trade"
 	case OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION:
 		return "OrderError: reduce only order would not reduce position"
+	case OrderError_ORDER_ERROR_ICEBERG_ORDERS_NOT_ALLOWED_TO_BE_REDUCE_ONLY:
+		return "OrderError: iceberg orders cannot be reduce only"
 	default:
 		return "invalid OrderError"
 	}

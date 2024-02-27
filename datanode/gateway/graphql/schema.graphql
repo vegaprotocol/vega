@@ -4197,6 +4197,9 @@ enum OrderRejectionReason {
 
   "Pegged orders are not allowed for a party in isolated margin mode"
   ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
+
+  "Iceberg orders are not allowed to have the reduce only flag set"
+  ORDER_ERROR_ICEBERG_ORDERS_NOT_ALLOWED_TO_BE_REDUCE_ONLY
 }
 
 "Types of orders"

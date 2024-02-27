@@ -929,6 +929,7 @@ const (
 	OrderErrorReduceOnlyOrderWouldNotReducePosition  OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
 	OrderErrorIsolatedMarginCheckFailed              OrderError = proto.OrderError_ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED
 	OrderErrorPeggedOrdersNotAllowedInIsolatedMargin OrderError = proto.OrderError_ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE
+	OrderErrorIcebergOrdersNotAllowedToBeReduceOnly  OrderError = proto.OrderError_ORDER_ERROR_ICEBERG_ORDERS_NOT_ALLOWED_TO_BE_REDUCE_ONLY
 )
 
 var (
@@ -957,6 +958,7 @@ var (
 	ErrPostOnlyOrderWouldTrade                     = OrderErrorPostOnlyOrderWouldTrade
 	ErrReduceOnlyOrderWouldNotReducePosition       = OrderErrorReduceOnlyOrderWouldNotReducePosition
 	ErrPeggedOrdersNotAllowedInIsolatedMargin      = OrderErrorPeggedOrdersNotAllowedInIsolatedMargin
+	ErrIcebergOrdersNotAllowedToBeReduceOnly       = OrderErrorIcebergOrdersNotAllowedToBeReduceOnly
 )
 
 func IsOrderError(err error) (OrderError, bool) {
