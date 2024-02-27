@@ -499,6 +499,11 @@ func testSpotPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 }
 
 func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
+	triggers := []*vegapb.PriceMonitoringTrigger{}
+	for i := 0; i <= 100; i++ {
+		triggers = append(triggers, &vegapb.PriceMonitoringTrigger{})
+	}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -508,14 +513,7 @@ func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 							Product: &protoTypes.InstrumentConfiguration_Spot{},
 						},
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
-								{},
-								{},
-								{},
-								{},
-								{},
-								{},
-							},
+							Triggers: triggers,
 						},
 					},
 				},
@@ -523,7 +521,7 @@ func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 5 triggers allowed"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 100 triggers allowed"))
 }
 
 func testSpotPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T) {
