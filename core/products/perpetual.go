@@ -208,8 +208,8 @@ func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
 	return nil, 0
 }
 
-// getTwapAsNilOrString return nil when TWAP cannot be calculated and a string (as pointer) otherwise.
-func (c *cachedTWAP) getTwapAsNilOrString(t int64) *string {
+// getTWAP will return the TWAP if we have enough data, else nil.
+func (c *cachedTWAP) getTWAP(t int64) *string {
 	if !c.dataAvailable(t) {
 		return nil
 	}
@@ -594,13 +594,16 @@ func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
 
 	// left first auction, we can start the first funding-period
 	p.startedAt = t
-	// store internal data submitted at the end of opening auction
+
+	// we might have been sent useful internal points before officially leaving opening auction, such as
+	// the uncrossing price, so we make sure we keep those.
 	temp := p.internalTWAP
 	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
 	for _, pt := range temp.points {
 		p.internalTWAP.addPoint(pt)
 	}
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTwapAsNilOrString(p.startedAt), p.externalTWAP.getTwapAsNilOrString(p.startedAt)))
+	p.externalTWAP = NewCachedTWAP(p.log, t, p.auctions)
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTWAP(p.startedAt), p.externalTWAP.getTWAP(p.startedAt)))
 }
 
 // SubmitDataPoint this will add a data point produced internally by the core node.
@@ -729,7 +732,7 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 
 	if !p.haveDataBeforeGivenTime(t) || t == p.startedAt {
 		// we have no points, or the interval is zero length so we just start a new interval
-		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, p.internalTWAP.getTwapAsNilOrString(t), p.externalTWAP.getTwapAsNilOrString(t)))
+		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, p.internalTWAP.getTWAP(t), p.externalTWAP.getTWAP(t)))
 		p.startNewFundingPeriod(ctx, t)
 		return
 	}
@@ -825,7 +828,7 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal, iTWAP))
 	}
 	// send event to say our new period has started
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTwapAsNilOrString(p.startedAt), p.externalTWAP.getTwapAsNilOrString(p.startedAt)))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTWAP(p.startedAt), p.externalTWAP.getTWAP(p.startedAt)))
 	if len(evts) > 0 {
 		p.broker.SendBatch(evts)
 	}
