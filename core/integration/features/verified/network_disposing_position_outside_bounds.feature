@@ -104,7 +104,7 @@ Feature: Disposing position outside bounds
     When the network moves ahead "1" blocks
     And the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | network | 100     | 0             | 0            |
+      | network | 100    | 0              | 0            |
 
   @me
   Scenario: Network does not consider volume outside liquidity range as avaliable to dispose against when calculating max consumption (0012-POSR-019)(0012-POSR-021)(0012-POSR-025)
@@ -212,6 +212,7 @@ Feature: Disposing position outside bounds
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | lp1   | ETH/MAR22 | buy  | 1000   | 180   | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
+      | lp1   | ETH/MAR22 | buy  | 1      | 188   | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
       | lp1   | ETH/MAR22 | sell | 1000   | 210   | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -219,57 +220,70 @@ Feature: Disposing position outside bounds
       | aux2  | ETH/MAR22 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
     And the opening auction period ends for market "ETH/MAR22"
 
-
     # atRiskPary opens a long position
     Given the parties deposit on asset's general account the following amount:
       | party       | asset    | amount |
-      | atRiskParty | USD.0.10 | 20     |
+      | atRiskParty | USD.0.10 | 50     |
     And the parties place the following orders:
       | party       | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1        | ETH/MAR22 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
-      | atRiskParty | ETH/MAR22 | buy  | 1      | 200   | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1        | ETH/MAR22 | sell | 3      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | atRiskParty | ETH/MAR22 | buy  | 3      | 200   | 1                | TYPE_LIMIT | TIF_GTC |
     When the network moves ahead "1" blocks
     Then the parties should have the following profit and loss:
       | party       | volume | unrealised pnl | realised pnl |
-      | atRiskParty | 1      | 0              | 0            |
+      | atRiskParty | 3      | 0              | 0            |
     And the parties should have the following margin levels:
       | party       | market id | maintenance | search | initial | release |
-      | atRiskParty | ETH/MAR22 | 15          | 16     | 18      | 21      |
+      | atRiskParty | ETH/MAR22 | 43          | 47     | 51      | 60      |
     And the parties should have the following account balances:
       | party       | asset    | market id | margin | general |
-      | atRiskParty | USD.0.10 | ETH/MAR22 | 16     | 4       |
+      | atRiskParty | USD.0.10 | ETH/MAR22 | 50     | 0       |
 
-    # Market moves against atRiskParty whom is liquidated
-    Given the parties amend the following orders:
-      | party | reference | price | size delta | tif     |
-      | lp1   | best-bid  | 180   | 0          | TIF_GTC |
-      | lp1   | best-ask  | 220   | 0          | TIF_GTC |
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 200        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
+
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 3      | 0              | 0            |
+
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/MAR22 | buy  | 1      | 190   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/MAR22 | sell | 1      | 190   | 1                | TYPE_LIMIT | TIF_GTC |
+
     When the network moves ahead "1" blocks
     Then the mark price should be "190" for the market "ETH/MAR22"
-    And the parties should have the following profit and loss:
-      | party       | volume | unrealised pnl | realised pnl |
-      | atRiskParty | 0      | 0              | -20          |
-      | network     | 1      | 0              | 0            |
-
-    # Network doesn't trade because it would be outside of price bounds
-    Given the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | horizon | min bound | max bound |
-      | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
-    When the network moves ahead "1" blocks
-    And the parties should have the following profit and loss:
-      | party       | volume | unrealised pnl | realised pnl |
-      | network     | 1      | 0              | 0            |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
       | 190        | TRADING_MODE_CONTINUOUS | 6200    | 186       | 214       |
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -50          |
+      | network     | 3      | 0              | 0            |
+    When the network moves ahead "1" blocks
 
+    #network only disposes position on orders within price monitoring bounds which is the one with price 188
+    And the following trades should be executed:
+      | buyer | price | size | seller  |
+      | lp1   | 188   | 1    | network |
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -50          |
+      | network     | 2      | 0              | -2           |
+
+    When the network moves ahead "3" blocks
+    And the parties should have the following profit and loss:
+      | party       | volume | unrealised pnl | realised pnl |
+      | atRiskParty | 0      | 0              | -50          |
+      | network     | 2      | 0              | -2           |
+
+    Then the order book should have the following volumes for market "ETH/MAR22":
+      | side | price | volume |
+      | buy  | 180   | 1000   |
 
   Scenario: Volume on the book outside liquidity price range, network unable to dispose position (0012-POSR-027)
-    
+
     # Market configuiration
     Given the liquidity sla params named "sla-params":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
