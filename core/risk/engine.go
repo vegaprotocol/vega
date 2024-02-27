@@ -31,7 +31,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
+//go:generate go run github.com/golang/mock/mockgen -destination core/risk/mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
 
 var (
 	ErrInsufficientFundsForInitialMargin          = errors.New("insufficient funds for initial margin")
@@ -46,7 +46,6 @@ const RiskFactorStateVarName = "risk-factors"
 
 // Orderbook represent an abstraction over the orderbook.
 type Orderbook interface {
-	GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error)
 	GetIndicativePrice() *num.Uint
 }
 

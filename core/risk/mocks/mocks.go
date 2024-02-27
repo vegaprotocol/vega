@@ -12,7 +12,6 @@ import (
 	types "code.vegaprotocol.io/vega/core/types"
 	statevar "code.vegaprotocol.io/vega/core/types/statevar"
 	num "code.vegaprotocol.io/vega/libs/num"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 )
@@ -38,21 +37,6 @@ func NewMockOrderbook(ctrl *gomock.Controller) *MockOrderbook {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOrderbook) EXPECT() *MockOrderbookMockRecorder {
 	return m.recorder
-}
-
-// GetCloseoutPrice mocks base method.
-func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 vega.Side) (*num.Uint, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCloseoutPrice", arg0, arg1)
-	ret0, _ := ret[0].(*num.Uint)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCloseoutPrice indicates an expected call of GetCloseoutPrice.
-func (mr *MockOrderbookMockRecorder) GetCloseoutPrice(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCloseoutPrice", reflect.TypeOf((*MockOrderbook)(nil).GetCloseoutPrice), arg0, arg1)
 }
 
 // GetIndicativePrice mocks base method.
