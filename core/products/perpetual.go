@@ -39,7 +39,6 @@ var (
 
 	ErrDataPointAlreadyExistsAtTime = errors.New("data-point already exists at timestamp")
 	ErrDataPointIsTooOld            = errors.New("data-point is too old")
-	ErrInitialPeriodNotStarted      = errors.New("initial settlement period not started")
 )
 
 type dataPointSource = eventspb.FundingPeriodDataPoint_Source
@@ -209,11 +208,24 @@ func (c *cachedTWAP) unwind(t int64) (*num.Uint, int) {
 	return nil, 0
 }
 
+// getTWAP will return the TWAP if we have enough data, else nil.
+func (c *cachedTWAP) getTWAP(t int64) *string {
+	if !c.dataAvailable(t) {
+		return nil
+	}
+	return ptr.From(c.calculate(t).String())
+}
+
+// dataAvailable returns true if there are any datapoints available for a calculation at time t and false otherwise.
+func (c *cachedTWAP) dataAvailable(t int64) bool {
+	return t >= c.start && len(c.points) > 0
+}
+
 // calculate returns the TWAP at time `t` given the existing set of data-points. `t` can be
 // any value and we will extend off the last-data-point if necessary, and also unwind intervals
 // if the TWAP at a more historic time is required.
 func (c *cachedTWAP) calculate(t int64) *num.Uint {
-	if t < c.start || len(c.points) == 0 {
+	if !c.dataAvailable(t) {
 		return num.UintZero()
 	}
 	if t == c.start {
@@ -582,17 +594,20 @@ func (p *Perpetual) UpdateAuctionState(ctx context.Context, enter bool) {
 
 	// left first auction, we can start the first funding-period
 	p.startedAt = t
+
+	// we might have been sent useful internal points before officially leaving opening auction, such as
+	// the uncrossing price, so we make sure we keep those.
+	temp := p.internalTWAP
 	p.internalTWAP = NewCachedTWAP(p.log, t, p.auctions)
+	for _, pt := range temp.points {
+		p.internalTWAP.addPoint(pt)
+	}
 	p.externalTWAP = NewCachedTWAP(p.log, t, p.auctions)
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, nil, nil))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTWAP(p.startedAt), p.externalTWAP.getTWAP(p.startedAt)))
 }
 
 // SubmitDataPoint this will add a data point produced internally by the core node.
 func (p *Perpetual) SubmitDataPoint(ctx context.Context, price *num.Uint, t int64) error {
-	if !p.readyForData() {
-		return ErrInitialPeriodNotStarted
-	}
-
 	// since all external data and funding period triggers are to seconds-precision we also want to truncate
 	// internal times to seconds to avoid sub-second backwards intervals that are dependent on the order data arrives
 	t = time.Unix(0, t).Truncate(time.Second).UnixNano()
@@ -717,7 +732,7 @@ func (p *Perpetual) handleSettlementCue(ctx context.Context, t int64) {
 
 	if !p.haveDataBeforeGivenTime(t) || t == p.startedAt {
 		// we have no points, or the interval is zero length so we just start a new interval
-		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, nil, nil))
+		p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, ptr.From(t), nil, nil, p.internalTWAP.getTWAP(t), p.externalTWAP.getTWAP(t)))
 		p.startNewFundingPeriod(ctx, t)
 		return
 	}
@@ -804,7 +819,6 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 
 	// send events for all the data-points that were carried over
 	evts := make([]events.Event, 0, len(external)+len(internal))
-	iTWAP, eTWAP := num.UintZero(), num.UintZero()
 	for _, dp := range external {
 		eTWAP, _ := p.externalTWAP.addPoint(dp)
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceExternal, eTWAP))
@@ -814,7 +828,7 @@ func (p *Perpetual) startNewFundingPeriod(ctx context.Context, endAt int64) {
 		evts = append(evts, events.NewFundingPeriodDataPointEvent(ctx, p.id, dp.price.String(), dp.t, p.seq, dataPointSourceInternal, iTWAP))
 	}
 	// send event to say our new period has started
-	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, ptr.From(iTWAP.String()), ptr.From(eTWAP.String())))
+	p.broker.Send(events.NewFundingPeriodEvent(ctx, p.id, p.seq, p.startedAt, nil, nil, nil, p.internalTWAP.getTWAP(p.startedAt), p.externalTWAP.getTWAP(p.startedAt)))
 	if len(evts) > 0 {
 		p.broker.SendBatch(evts)
 	}

@@ -23,8 +23,53 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
+func calculateRewardsByScores(rewardBalance num.Decimal, partyScores []*types.PartyContributionScore, takerFeeContributionInRewardToken map[string]*num.Uint, cap num.Decimal) (map[string]*num.Uint, *num.Uint) {
+	total := num.UintZero()
+	partyToAmount := map[string]*num.Uint{}
+	remainingRounds := 10
+	if cap.IsZero() {
+		remainingRounds = 1
+	}
+	for {
+		totalPerRound := num.UintZero()
+		for _, p := range partyScores {
+			currentPartyReward, ok := partyToAmount[p.Party]
+			if !ok {
+				currentPartyReward = num.UintZero()
+			}
+			partyRewardD := rewardBalance.Mul(p.Score)
+			if !cap.IsZero() {
+				partyTakeFeeContributionInRewardAsset, ok := takerFeeContributionInRewardToken[p.Party]
+				if ok {
+					partyRewardD = num.MinD(currentPartyReward.ToDecimal().Add(partyRewardD), cap.Mul(partyTakeFeeContributionInRewardAsset.ToDecimal()))
+				} else {
+					partyRewardD = num.DecimalZero()
+				}
+			}
+			partyReward, _ := num.UintFromDecimal(partyRewardD)
+			if !partyReward.IsZero() {
+				var partyRewardDelta *num.Uint
+				if _, ok := partyToAmount[p.Party]; !ok {
+					partyRewardDelta = partyReward
+				} else {
+					partyRewardDelta = num.UintZero().Sub(partyReward, partyToAmount[p.Party])
+				}
+				partyToAmount[p.Party] = partyReward
+				totalPerRound.AddSum(partyRewardDelta)
+			}
+		}
+		rewardBalance = rewardBalance.Sub(totalPerRound.ToDecimal())
+		remainingRounds -= 1
+		total.AddSum(totalPerRound)
+		if rewardBalance.LessThan(num.DecimalOne()) || totalPerRound.IsZero() || remainingRounds <= 0 {
+			break
+		}
+	}
+	return partyToAmount, total
+}
+
 // given party contribution scores, reward multipliers and distribution strategy calculate the payout per party.
-func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string, balance *num.Uint, partyContribution []*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
+func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string, balance *num.Uint, partyContribution []*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy, takerFeeContributionInRewardToken map[string]*num.Uint) *payout {
 	po := &payout{
 		asset:           asset,
 		fromAccount:     accountID,
@@ -33,8 +78,6 @@ func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string,
 		partyToAmount:   map[string]*num.Uint{},
 		lockedForEpochs: ds.LockPeriod,
 	}
-	total := num.UintZero()
-	rewardBalance := balance.ToDecimal()
 
 	var partyScores []*types.PartyContributionScore
 	if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA {
@@ -43,22 +86,19 @@ func calculateRewardsByContributionIndividual(epochSeq, asset, accountID string,
 		partyScores = rankingRewardCalculator(partyContribution, ds.RankTable, rewardFactors)
 	}
 
-	for _, p := range partyScores {
-		partyReward, _ := num.UintFromDecimal(rewardBalance.Mul(p.Score))
-		if !partyReward.IsZero() {
-			po.partyToAmount[p.Party] = partyReward
-			total.AddSum(partyReward)
-		}
+	cap := num.DecimalZero()
+	if ds.CapRewardFeeMultiple != nil {
+		cap = num.MustDecimalFromString(*ds.CapRewardFeeMultiple)
 	}
-	po.totalReward = total
-	if total.IsZero() {
+	po.partyToAmount, po.totalReward = calculateRewardsByScores(balance.ToDecimal(), partyScores, takerFeeContributionInRewardToken, cap)
+	if po.totalReward.IsZero() {
 		return nil
 	}
 	return po
 }
 
 // given party contribution scores, reward multipliers and distribution strategy calculate the payout per party in a team.
-func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balance *num.Uint, teamContribution []*types.PartyContributionScore, teamPartyContribution map[string][]*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy) *payout {
+func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balance *num.Uint, teamContribution []*types.PartyContributionScore, teamPartyContribution map[string][]*types.PartyContributionScore, rewardFactors map[string]num.Decimal, timestamp time.Time, ds *vega.DispatchStrategy, takerFeeContributionInRewardToken map[string]*num.Uint) *payout {
 	po := &payout{
 		asset:           asset,
 		fromAccount:     accountID,
@@ -67,9 +107,6 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 		partyToAmount:   map[string]*num.Uint{},
 		lockedForEpochs: ds.LockPeriod,
 	}
-	total := num.UintZero()
-	rewardBalance := balance.ToDecimal()
-
 	var teamScores []*types.PartyContributionScore
 	if ds.DistributionStrategy == vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA {
 		teamScores = proRataRewardCalculator(teamContribution, map[string]num.Decimal{})
@@ -88,15 +125,13 @@ func calculateRewardsByContributionTeam(epochSeq, asset, accountID string, balan
 
 	capAtOne(partyScores, totalScore)
 
-	for _, p := range partyScores {
-		partyReward, _ := num.UintFromDecimal(rewardBalance.Mul(p.Score))
-		if !partyReward.IsZero() {
-			po.partyToAmount[p.Party] = partyReward
-			total.AddSum(partyReward)
-		}
+	cap := num.DecimalZero()
+	if ds.CapRewardFeeMultiple != nil {
+		cap = num.MustDecimalFromString(*ds.CapRewardFeeMultiple)
 	}
-	po.totalReward = total
-	if total.IsZero() {
+	po.partyToAmount, po.totalReward = calculateRewardsByScores(balance.ToDecimal(), partyScores, takerFeeContributionInRewardToken, cap)
+
+	if po.totalReward.IsZero() {
 		return nil
 	}
 	return po

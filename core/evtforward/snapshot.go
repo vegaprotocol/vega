@@ -19,7 +19,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
@@ -94,22 +93,10 @@ func (f *Forwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.St
 	return nil, types.ErrUnknownSnapshotType
 }
 
-func (f *Forwarder) restore(ctx context.Context, p *types.PayloadEventForwarder) {
+func (f *Forwarder) restore(_ context.Context, p *types.PayloadEventForwarder) {
 	f.ackedEvts = &ackedEvents{
 		timeService: f.timeService,
 		events:      treeset.NewWith(ackedEvtBucketComparator),
-	}
-
-	// upgrading from 73.12, we need to load previous snapshot format
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		// add at 0 time, so it's always way in the past.
-		bucket := &ackedEvtBucket{
-			ts:     0,
-			hashes: []string{},
-		}
-		bucket.hashes = append(bucket.hashes, p.Keys...)
-		f.ackedEvts.events.Add(bucket)
-		return
 	}
 
 	for _, v := range p.Buckets {

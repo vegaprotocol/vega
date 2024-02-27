@@ -1456,6 +1456,9 @@ type DispatchStrategy {
 
   "Ascending order list of start rank and corresponding share ratio"
   rankTable: [RankTable]
+
+  "Optional multiplier on taker fees used to cap the rewards a party may receive in an epoch"
+  capRewardFeeMultiple: String 
 }
 
 type RankTable {
@@ -5625,6 +5628,8 @@ type AggregatedLedgerEntry {
   fromAccountBalance: String!
   "Receiver account balance after the transfer"
   toAccountBalance: String!
+  "Transfer ID associated with this aggregated ledger entry"
+  transferId: ID!
 }
 
 type AggregatedLedgerEntriesEdge {

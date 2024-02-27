@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -83,29 +82,6 @@ func NewPerpetualFromSnapshot(
 
 	perps.startedAt = state.StartedAt
 	perps.seq = state.Seq
-
-	if vgcontext.InProgressUpgradeFrom(ctx, "v0.73.14") {
-		// do it the old way where we'd regenerate the cached values by adding the points again
-		perps.externalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
-		perps.internalTWAP = NewCachedTWAP(log, state.StartedAt, perps.auctions)
-
-		for _, v := range state.ExternalDataPoint {
-			price, overflow := num.UintFromString(v.Price, 10)
-			if overflow {
-				log.Panic("invalid snapshot state in external data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
-			}
-			perps.externalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
-		}
-
-		for _, v := range state.InternalDataPoint {
-			price, overflow := num.UintFromString(v.Price, 10)
-			if overflow {
-				log.Panic("invalid snapshot state in internal data point", logging.String("price", v.Price), logging.Bool("overflow", overflow))
-			}
-			perps.internalTWAP.addPoint(&dataPoint{price: price, t: v.Timestamp})
-		}
-		return perps, nil
-	}
 
 	perps.auctions = &auctionIntervals{
 		auctionStart: state.AuctionIntervals.AuctionStart,
