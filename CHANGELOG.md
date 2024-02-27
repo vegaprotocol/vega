@@ -32,6 +32,7 @@
 - [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
 - [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
 - [10780](https://github.com/vegaprotocol/vega/issues/10780) - REST API does not handle ID arrays correctly.
+- [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
 
 ## 0.74.3
 
@@ -67,7 +68,6 @@
 - [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
 - [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
-- [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
 - [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended.
 
 
