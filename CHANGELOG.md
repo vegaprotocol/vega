@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.74.7
+
+### 🛠 Improvements
+
+- [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
+
 ## 0.74.6
 
 ### 🐛 Fixes

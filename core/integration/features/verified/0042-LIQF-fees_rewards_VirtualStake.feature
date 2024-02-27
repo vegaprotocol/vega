@@ -571,7 +571,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
 # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1300 * 30 * 0.002) = ceil(78) = 78
 
-    And the accumulated liquidity fees should be "85" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "82" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
