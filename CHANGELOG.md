@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10635](https://github.com/vegaprotocol/vega/issues/10635) - Add support for tick size
 
 ### 🗑️ Deprecation
 

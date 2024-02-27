@@ -386,6 +386,8 @@ message Market {
   LiquidationStrategy liquidation_strategy = 19;
   // Mark price calculation configuration.
   CompositePriceConfiguration mark_price_configuration = 20;
+  // The market tick size defines the minimum change in quote price for the market
+  string tick_size = 21;
 }
 
 // Time stamps for important times about creating, enacting etc the market

@@ -858,6 +858,7 @@ func checkNewSpotMarketConfiguration(changes *vegapb.NewSpotMarketConfiguration)
 	errs.Merge(checkNewInstrument(changes.Instrument, "new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "new_spot_market.changes.sla_params"))
+	errs.Merge(checkTickSize(changes.TickSize, "new_spot_market.changes"))
 
 	return errs
 }
@@ -918,6 +919,26 @@ func checkNewMarketChangesConfiguration(changes *vegapb.NewMarketConfiguration) 
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "new_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "new_market.changes.liquidity_fee_settings"))
 	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "new_market.changes.mark_price_configuration"))
+	errs.Merge(checkTickSize(changes.TickSize, "new_market.changes"))
+
+	return errs
+}
+
+func checkTickSize(tickSize string, parent string) Errors {
+	errs := NewErrors()
+
+	if len(tickSize) == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrIsRequired)
+		return errs
+	}
+
+	tickSizeU, overflow := num.UintFromString(tickSize, 10)
+	if overflow {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrNotAValidInteger)
+	} else if tickSizeU.IsZero() || tickSizeU.IsNegative() {
+		errs.AddForProperty(fmt.Sprintf("%s.tick_size", parent), ErrMustBePositive)
+	}
+
 	return errs
 }
 
@@ -965,6 +986,7 @@ func checkUpdateMarket(updateMarket *vegapb.UpdateMarket) Errors {
 	errs.Merge(checkSLAParams(changes.LiquiditySlaParameters, "update_market.changes.sla_params"))
 	errs.Merge(checkLiquidityFeeSettings(changes.LiquidityFeeSettings, "update_market.changes.liquidity_fee_settings"))
 	errs.Merge(checkCompositePriceConfiguration(changes.MarkPriceConfiguration, "update_market.changes.mark_price_configuration"))
+	errs.Merge(checkTickSize(changes.TickSize, "update_market.changes"))
 	return errs
 }
 
@@ -995,6 +1017,7 @@ func checkUpdateSpotMarket(updateSpotMarket *vegapb.UpdateSpotMarket) Errors {
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
 	errs.Merge(checkSLAParams(changes.SlaParams, "update_spot_market.changes.sla_params"))
+	errs.Merge(checkTickSize(changes.TickSize, "update_spot_market.changes"))
 	return errs
 }
 

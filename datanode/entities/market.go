@@ -61,6 +61,7 @@ type Market struct {
 	SuccessorMarketID      MarketID
 	LiquidationStrategy    LiquidationStrategy
 	MarkPriceConfiguration *CompositePriceConfiguration
+	TickSize               *decimal.Decimal
 }
 
 type MarketCursor struct {
@@ -93,7 +94,14 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		openingAuction                AuctionDuration
 		fees                          Fees
 		liqStrat                      LiquidationStrategy
+		tickSize                      decimal.Decimal
 	)
+
+	if len(market.TickSize) == 0 {
+		tickSize = num.DecimalOne()
+	} else {
+		tickSize, _ = num.DecimalFromString(market.TickSize)
+	}
 
 	if fees, err = feesFromProto(market.Fees); err != nil {
 		return nil, err
@@ -196,6 +204,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		LiquiditySLAParameters:        sla,
 		LiquidationStrategy:           liqStrat,
 		MarkPriceConfiguration:        mpc,
+		TickSize:                      &tickSize,
 	}, nil
 }
 
@@ -261,6 +270,7 @@ func (m Market) ToProto() *vega.Market {
 		LiquiditySlaParams:            m.LiquiditySLAParameters.IntoProto(),
 		LiquidationStrategy:           m.LiquidationStrategy.IntoProto(),
 		MarkPriceConfiguration:        m.MarkPriceConfiguration.CompositePriceConfiguration,
+		TickSize:                      m.TickSize.String(),
 	}
 }
 

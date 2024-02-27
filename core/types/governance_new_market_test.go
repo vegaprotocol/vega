@@ -165,6 +165,7 @@ func TestNewMarketProposalMapping(t *testing.T) {
 							FullDisposalSize:    20,
 							MaxFractionConsumed: "0.01",
 						},
+						TickSize: "1",
 					},
 				},
 			},

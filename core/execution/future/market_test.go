@@ -813,6 +813,7 @@ func getMarketWithDP(pMonitorSettings *types.PriceMonitoringSettings, openingAuc
 			CashAmount:         num.UintZero(),
 			CompositePriceType: types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 
 	return mkt
@@ -1377,6 +1378,82 @@ func TestSubmittedOrderIdIsTheDeterministicId(t *testing.T) {
 
 	event := tm.orderEvents[0].(*events.Order)
 	assert.Equal(t, event.Order().Id, deterministicID)
+}
+
+func TestSubmitOrderWithInvalidTickSize(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	tm.mktCfg.TickSize = num.NewUint(1000)
+	defer tm.ctrl.Finish()
+
+	party1 := "party1"
+	order := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(1100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	addAccount(t, tm, party1)
+
+	deterministicID := vgcrypto.RandomHash()
+	_, err := tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicID)
+	require.Error(t, types.ErrOrderNotInTickSize, err)
+
+	tm.mktCfg.TickSize = num.NewUint(100)
+	_, err = tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicID)
+	require.NoError(t, err)
+}
+
+func TestAmendOrderWithInvalidTickSize(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	tm.mktCfg.TickSize = num.NewUint(100)
+	defer tm.ctrl.Finish()
+
+	party1 := "party1"
+	order := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	addAccount(t, tm, party1)
+
+	deterministicID := vgcrypto.RandomHash()
+	conf, err := tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicID)
+	require.NoError(t, err)
+
+	orderAmendment := &types.OrderAmendment{
+		OrderID:  conf.Order.ID,
+		MarketID: conf.Order.MarketID,
+		Price:    num.NewUint(1150),
+	}
+	_, err = tm.market.Market.AmendOrder(context.Background(), orderAmendment, party1, deterministicID)
+	require.Error(t, types.ErrOrderNotInTickSize, err)
+
+	tm.mktCfg.TickSize = num.NewUint(50)
+	_, err = tm.market.Market.AmendOrder(context.Background(), orderAmendment, party1, deterministicID)
+	require.NoError(t, err)
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {

@@ -406,6 +406,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.MarkPriceConfiguration = markPriceConfig
 		existing.MarkPriceConfiguration = markPriceConfig
 	}
+	update.Changes.TickSize = num.UintOne()
 	return update, nil
 }
 
@@ -504,6 +505,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 		MarkPriceConfiguration:        markPriceConfig,
+		TickSize:                      num.UintOne(),
 	}
 
 	if row.isSuccessor() {
@@ -627,6 +629,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 		MarkPriceConfiguration:        markPriceConfig,
+		TickSize:                      num.UintOne(),
 	}
 
 	if row.isSuccessor() {
