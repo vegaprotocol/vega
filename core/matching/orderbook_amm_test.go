@@ -196,6 +196,58 @@ func testMatchOrdersBothSide(t *testing.T) {
 	assertConf(t, conf, 8, 10)
 }
 
+func TestAMMOnlyBestPrices(t *testing.T) {
+	tst := getTestOrderBookWithAMM(t)
+	defer tst.ctrl.Finish()
+
+	tst.obs.EXPECT().BestPricesAndVolumes().Return(
+		num.NewUint(1999),
+		uint64(10),
+		num.NewUint(2001),
+		uint64(9),
+	).AnyTimes()
+
+	// Best
+	price, err := tst.book.GetBestAskPrice()
+	require.NoError(t, err)
+	assert.Equal(t, "2001", price.String())
+
+	price, err = tst.book.GetBestBidPrice()
+	require.NoError(t, err)
+	assert.Equal(t, "1999", price.String())
+
+	// Best and volume
+	price, volume, err := tst.book.BestOfferPriceAndVolume()
+	require.NoError(t, err)
+	assert.Equal(t, "2001", price.String())
+	assert.Equal(t, uint64(9), volume)
+
+	price, volume, err = tst.book.BestBidPriceAndVolume()
+	require.NoError(t, err)
+	assert.Equal(t, "1999", price.String())
+	assert.Equal(t, uint64(10), volume)
+
+	// Best static
+	price, err = tst.book.GetBestStaticAskPrice()
+	require.NoError(t, err)
+	assert.Equal(t, "2001", price.String())
+
+	price, err = tst.book.GetBestStaticBidPrice()
+	require.NoError(t, err)
+	assert.Equal(t, "1999", price.String())
+
+	// Best static and volume
+	price, volume, err = tst.book.GetBestStaticAskPriceAndVolume()
+	require.NoError(t, err)
+	assert.Equal(t, "2001", price.String())
+	assert.Equal(t, uint64(9), volume)
+
+	price, volume, err = tst.book.GetBestStaticBidPriceAndVolume()
+	require.NoError(t, err)
+	assert.Equal(t, "1999", price.String())
+	assert.Equal(t, uint64(10), volume)
+}
+
 func assertConf(t *testing.T, conf *types.OrderConfirmation, n int, size uint64) {
 	t.Helper()
 	assert.Len(t, conf.PassiveOrdersAffected, n)
