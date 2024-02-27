@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -46,6 +47,7 @@ import (
 	"code.vegaprotocol.io/vega/core/settlement"
 	"code.vegaprotocol.io/vega/core/types"
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
@@ -1414,6 +1416,72 @@ func TestSubmitOrderWithInvalidTickSize(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestPeggingWithTickSize(t *testing.T) {
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	tm.mktCfg.TickSize = num.NewUint(50)
+	defer tm.ctrl.Finish()
+
+	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
+
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 50)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+
+	party1 := "party1"
+	order := &types.Order{
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          "",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   math.MaxInt64,
+		Reference:   "party1-buy-order",
+	}
+	addAccount(t, tm, party1)
+	// submit a pegged order pegged to the mid
+	order.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceMid,
+		Offset:    num.NewUint(100),
+	}
+	// mid price is 50025 - 100 = 49,925 => 49900
+	conf, err = tm.market.SubmitOrder(context.Background(), order)
+	require.NoError(t, err)
+	require.Equal(t, "49900", conf.Order.OriginalPrice.String())
+
+	order.Side = types.SideSell
+	// mid price is 50025 + 100 = 50125 => 50150
+	conf, err = tm.market.SubmitOrder(context.Background(), order)
+	require.NoError(t, err)
+	require.Equal(t, "50150", conf.Order.OriginalPrice.String())
+}
+
 func TestAmendOrderWithInvalidTickSize(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(20, 0)
@@ -1454,6 +1522,38 @@ func TestAmendOrderWithInvalidTickSize(t *testing.T) {
 	tm.mktCfg.TickSize = num.NewUint(50)
 	_, err = tm.market.Market.AmendOrder(context.Background(), orderAmendment, party1, deterministicID)
 	require.NoError(t, err)
+
+	// pegged order
+	order.Price = nil
+	order.OriginalPrice = nil
+	// market tick is 50, lets set a peg offset of 75
+	order.Side = types.SideBuy
+	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 75)
+	_, err = tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), party1, deterministicID)
+	require.Error(t, types.ErrOrderNotInTickSize, err)
+
+	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 100)
+	_, err = tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), party1, vgcrypto.RandomHash())
+	require.NoError(t, err)
+
+	order.Side = types.SideSell
+	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 75)
+	_, err = tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), party1, deterministicID)
+	require.Error(t, types.ErrOrderNotInTickSize, err)
+
+	order.ID = crypto.RandomHash()
+	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 100)
+	conf, err = tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), party1, vgcrypto.RandomHash())
+	require.NoError(t, err)
+
+	order.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 75)
+	orderAmendment = &types.OrderAmendment{
+		OrderID:      conf.Order.ID,
+		MarketID:     conf.Order.MarketID,
+		PeggedOffset: num.NewUint(75),
+	}
+	_, err = tm.market.Market.AmendOrder(context.Background(), orderAmendment, party1, vgcrypto.RandomHash())
+	require.Error(t, types.ErrOrderNotInTickSize, err)
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {

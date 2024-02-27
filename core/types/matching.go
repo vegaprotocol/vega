@@ -182,7 +182,7 @@ func (o Order) String() string {
 		o.MarketID,
 		o.Party,
 		o.Side.String(),
-		o.Price.String(),
+		num.UintToString(o.Price),
 		o.Size,
 		o.Remaining,
 		o.TimeInForce.String(),
