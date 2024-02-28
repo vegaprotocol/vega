@@ -32,6 +32,7 @@ type Execution interface {
 	CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
 	CancelStopOrder(ctx context.Context, cancel *types.StopOrdersCancellation, party string) error
 	SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
+	GetFillPriceForMarket(marketID string, volume uint64, side types.Side) (*num.Uint, error)
 	SubmitStopOrder(ctx context.Context, submission *types.StopOrdersSubmission, party string) (*types.OrderConfirmation, error)
 	SubmitLiquidityProvision(ctx context.Context, submission *types.LiquidityProvisionSubmission, party string, lpID string,
 		deterministicID string) error
