@@ -64,6 +64,11 @@ Feature: Spot market SLA
       | lp1 | lpprov1 | BTC/ETH   | 2000              | 0.1 | submission |
       | lp2 | lpprov2 | BTC/ETH   | 2000              | 0.1 | submission |
 
+    #0044-LIME-070, When an LP creates a new provision with zero commitment, it should be rejected with an error message stating that the commitment amount is zero.
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type    | error                     |
+      | lp1 | lpprov1 | BTC/ETH   | 0                 | 0.1 | submission | commitment amount is zero |
+
     And the parties should have the following account balances:
       | party   | asset | market id | general |
       | lpprov1 | BTC   | BTC/ETH   | 60      |
@@ -101,7 +106,7 @@ Feature: Spot market SLA
       | lpprov1 | BTC   | BTC/ETH   | 0       |
       | lpprov1 | ETH   | BTC/ETH   | 1520    |
 
-    Then the network moves ahead "9" blocks
+    Then the network moves ahead "2" blocks
     And the network treasury balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "ETH"
     And the global insurance pool balance should be "0" for the asset "BTC"
@@ -110,10 +115,28 @@ Feature: Spot market SLA
     Then "lpprov1" should have holding account balance of "60" for asset "BTC"
     Then the party "lpprov1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
 
-    Then the network moves ahead "7" blocks
+    #0044-LIME-066, When LP decreases its commitment so that , then the entire amount by which they decreased their commitment is transferred to their general account, their ELS got updated as per the ELS calculation
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | lp type   |
-      | lp1 | lpprov1 | BTC/ETH   | 20                | 0.1 | amendment |
+      | id  | party   | market id | commitment amount | fee | lp type   | error |
+      | lp1 | lpprov1 | BTC/ETH   | 1800              | 0.1 | amendment |       |
+    Then the network moves ahead "2" blocks
+    Then the party "lpprov1" lp liquidity bond account balance should be "1800" for the market "BTC/ETH"
+    And the parties should have the following account balances:
+      | party   | asset | market id | general |
+      | lpprov1 | BTC   | BTC/ETH   | 0       |
+      | lpprov1 | ETH   | BTC/ETH   | 1720    |
+
+    Then the network moves ahead "2" blocks
+  
+    #0044-LIME-068,When LP decreases its commitment so that its commitment_variation > max_penalty_free_reduction_amount
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type   | error |
+      | lp1 | lpprov1 | BTC/ETH   | 20                | 0.1 | amendment |       |
+
+    #0044-LIME-072, When an LP amends the Fee Factor to a value greater than market.liquidity.maximumLiquidityFeeFactorLevel, the amendments are rejected
+    When the parties submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee | lp type   | error                           |
+      | lp1 | lpprov1 | BTC/ETH   | 20                | 0.9 | amendment | invalid liquidity provision fee |
 
     Then the network moves ahead "7" blocks
     Then the market data for the market "BTC/ETH" should be:
