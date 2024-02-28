@@ -127,8 +127,7 @@ func (s *Sqrter) sqrt(u *num.Uint) num.Decimal {
 type Engine struct {
 	log *logging.Logger
 
-	broker Broker
-	// TODO karel - use interface for market activity tracker
+	broker                Broker
 	marketActivityTracker *common.MarketActivityTracker
 
 	risk       Risk

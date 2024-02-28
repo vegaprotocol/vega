@@ -1191,8 +1191,7 @@ const (
 	IndividualScope_INDIVIDUAL_SCOPE_IN_TEAM IndividualScope = 2
 	// All parties that are not part of a team are within the scope of this reward.
 	IndividualScope_INDIVIDUAL_SCOPE_NOT_IN_TEAM IndividualScope = 3
-	// All keys representing AMM parties, excluding those directly controlled by parties
-	// are within the scope of this reward.
+	// All keys representing AMM parties are within the scope of this reward
 	IndividualScope_INDIVIDUAL_SCOPE_AMM IndividualScope = 4
 )
 
