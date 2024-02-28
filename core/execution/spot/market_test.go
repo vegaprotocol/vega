@@ -171,6 +171,7 @@ func getMarketWithDP(base, quote string, pMonitorSettings *types.PriceMonitoring
 			PerformanceHysteresisEpochs: 1,
 			SlaCompetitionFactor:        num.DecimalFromFloat(0.5),
 		},
+		TickSize: num.UintOne(),
 	}
 
 	return mkt

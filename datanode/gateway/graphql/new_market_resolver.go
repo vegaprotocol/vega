@@ -25,6 +25,10 @@ import (
 
 type newMarketResolver VegaResolverRoot
 
+func (r *newMarketResolver) TickSize(_ context.Context, obj *types.NewMarket) (string, error) {
+	return obj.Changes.TickSize, nil
+}
+
 func (r *newMarketResolver) Instrument(_ context.Context, obj *types.NewMarket) (*types.InstrumentConfiguration, error) {
 	return obj.Changes.Instrument, nil
 }

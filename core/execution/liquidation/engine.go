@@ -32,7 +32,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/liquidation Book,MarketLiquidity,IDGen,Positions,PriceMonitor
+
+type PriceMonitor interface {
+	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
+}
 
 type Book interface {
 	GetVolumeAtPrice(price *num.Uint, side types.Side) uint64
@@ -65,6 +69,7 @@ type Engine struct {
 	ml       MarketLiquidity
 	position Positions
 	stopped  bool
+	pmon     PriceMonitor
 }
 
 // protocol upgrade - default values for existing markets/proposals.
@@ -98,7 +103,7 @@ func GetLegacyStrat() *types.LiquidationStrategy {
 	return legacyStrat.DeepClone()
 }
 
-func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions) *Engine {
+func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, broker common.Broker, book Book, as common.AuctionState, tSvc common.TimeService, ml MarketLiquidity, pe Positions, pmon PriceMonitor) *Engine {
 	// NOTE: This can be removed after protocol upgrade
 	if cfg == nil {
 		cfg = legacyStrat.DeepClone()
@@ -114,6 +119,7 @@ func New(log *logging.Logger, cfg *types.LiquidationStrategy, mktID string, brok
 		ml:       ml,
 		position: pe,
 		pos:      &Pos{},
+		pmon:     pmon,
 	}
 }
 
@@ -134,6 +140,13 @@ func (e *Engine) OnTick(ctx context.Context, now time.Time) (*types.Order, error
 	if err != nil {
 		return nil, err
 	}
+
+	minB, maxB := e.pmon.GetValidPriceRange()
+
+	// cap to price monitor bounds
+	minP = num.Max(minP, minB.Representation())
+	maxP = num.Min(maxP, maxB.Representation())
+
 	vol := e.pos.open
 	bookSide := types.SideBuy
 	side := types.SideSell

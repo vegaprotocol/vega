@@ -582,6 +582,7 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 }
 
