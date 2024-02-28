@@ -1931,3 +1931,10 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 
 	return market.UpdateMarginMode(ctx, party, marginMode, marginFactor)
 }
+
+func (e *Engine) GetFillPriceForMarket(marketID string, volume uint64, side types.Side) (*num.Uint, error) {
+	if mkt, ok := e.allMarkets[marketID]; ok {
+		return mkt.GetFillPrice(volume, side)
+	}
+	return nil, types.ErrInvalidMarketID
+}
