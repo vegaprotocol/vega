@@ -34,8 +34,9 @@ Feature: Spot market SLA
     Given time is updated to "2023-07-20T00:00:00Z"
 
     And the spot markets:
-      | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
-      | BTC/ETH | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
+      | id       | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
+      | BTC/ETH  | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
+      | BTC/ETH2 | BTC/ETH | BTC        | ETH         | lognormal-risk-model-1 | 1                | fees-config-1 | price-monitoring-1 | SLA-1      |
     And the following network parameters are set:
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
@@ -58,16 +59,24 @@ Feature: Spot market SLA
     When the spot markets are updated:
       | id      | liquidity monitoring | linear slippage factor | quadratic slippage factor |
       | BTC/ETH | updated-lqm-params   | 0.5                    | 0.5                       |
-
+      
+    #0044-LIME-076,If a party submits LP provisions in multiple markets then multiple bond accounts are created and managed by Vega
     When the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov1 | BTC/ETH   | 2000              | 0.1 | submission |
       | lp2 | lpprov2 | BTC/ETH   | 2000              | 0.1 | submission |
+      | lp3 | lpprov1 | BTC/ETH2  | 20                | 0.1 | submission |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | general |
+      | lpprov1 | BTC   | BTC/ETH   | 60      |
+      | lpprov1 | ETH   | BTC/ETH   | 1980    |
 
     Then the network moves ahead "1" blocks
     And the network treasury balance should be "0" for the asset "ETH"
     And the party "lpprov1" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
     Then the party "lpprov1" lp liquidity bond account balance should be "2000" for the market "BTC/ETH"
+    Then the party "lpprov1" lp liquidity bond account balance should be "20" for the market "BTC/ETH2"
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode                 | auction trigger         | target stake | supplied stake | open interest |
@@ -97,8 +106,8 @@ Feature: Spot market SLA
     Then the network moves ahead "2" blocks
 
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | lp type   | error |
-      | lp1 | lpprov1 | BTC/ETH   | 20000             | 0.1 | amendment | commitment submission rejected, not enough stake     |
+      | id  | party   | market id | commitment amount | fee | lp type   | error                                            |
+      | lp1 | lpprov1 | BTC/ETH   | 20000             | 0.1 | amendment | commitment submission rejected, not enough stake |
 
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake |
