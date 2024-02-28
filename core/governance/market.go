@@ -277,6 +277,7 @@ func buildMarketFromProposal(
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
+		TickSize:                      definition.Changes.TickSize,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
@@ -355,6 +356,7 @@ func buildSpotMarketFromProposal(
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquiditySLAParams:            definition.Changes.SLAParams,
 		MarkPriceConfiguration:        defaultMarkPriceConfig,
+		TickSize:                      definition.Changes.TickSize,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err

@@ -105,6 +105,8 @@ message NewSpotMarketConfiguration {
   LiquiditySLAParameters sla_params = 7;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 8;
+  // The market tick size defines the minimum change in quote price for the market
+  string tick_size = 9;
 }
 
 // Configuration for a new futures market on Vega
@@ -146,6 +148,8 @@ message NewMarketConfiguration {
   LiquidationStrategy liquidation_strategy = 14;
   // Mark price configuration.
   CompositePriceConfiguration mark_price_configuration = 15;
+  // The market tick size defines the minimum change in quote price for the market
+  string tick_size = 16;
 }
 
 // New spot market on Vega
@@ -217,6 +221,8 @@ message UpdateMarketConfiguration {
   LiquidationStrategy liquidation_strategy = 10;
   // Mark price configuration.
   CompositePriceConfiguration mark_price_configuration = 11;
+  // The market tick size defines the minimum change in quote price for the market
+  string tick_size = 12;
 }
 
 // Configuration to update a spot market on Vega
@@ -238,6 +244,8 @@ message UpdateSpotMarketConfiguration {
   LiquiditySLAParameters sla_params = 4;
   // Specifies how the liquidity fee for the market will be calculated.
   LiquidityFeeSettings liquidity_fee_settings = 5;
+  // The market tick size defines the minimum change in quote price for the market
+  string tick_size = 6;
 }
 
 // Instrument configuration

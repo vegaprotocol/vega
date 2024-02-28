@@ -4,7 +4,7 @@
 
 ### 🚨 Breaking changes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10635](https://github.com/vegaprotocol/vega/issues/10635) - Add support for tick size
 
 ### 🗑️ Deprecation
 
@@ -13,7 +13,9 @@
 ### 🛠 Improvements
 
 - [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
-- [](https://github.com/vegaprotocol/vega/issues/xxx)
+- [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
+- [10770](https://github.com/vegaprotocol/vega/issues/10770) - Increase price monitoring triggers to 100.
+
 
 ### 🐛 Fixes
 

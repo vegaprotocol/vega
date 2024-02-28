@@ -203,6 +203,7 @@ func newSpotMarket(config *market.Config, netparams *netparams.Store, row spotMa
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
+		TickSize:                      num.UintOne(),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -273,6 +274,7 @@ func spotMarketUpdate(config *market.Config, existing *types.Market, row spotMar
 		// update existing
 		existing.TradableInstrument = current
 	}
+	update.Changes.TickSize = num.UintOne()
 	return update
 }
 

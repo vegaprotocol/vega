@@ -530,6 +530,8 @@ enum OrderError {
   ORDER_ERROR_ISOLATED_MARGIN_CHECK_FAILED = 51;
   // In isolated margin pegged orders are rejected
   ORDER_ERROR_PEGGED_ORDERS_NOT_ALLOWED_IN_ISOLATED_MARGIN_MODE = 52;
+  // Order price does not respect market's required tick size
+  ORDER_ERROR_PRICE_NOT_IN_TICK_SIZE = 53;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
