@@ -140,11 +140,11 @@ Feature: Test vAMM submission works as expected (invalid submission)
       | vamm6 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 101  | 95          | 0.01               | 105         | 0.01               |
 
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | lower margin ratio |
-      | vamm7 | ETH/MAR22 | 1000   | 0.01     | 110  | 99          | 0.1                |
+      | party | market id | amount | slippage | base | lower bound | lower margin ratio | error |
+      | vamm7 | ETH/MAR22 | 1000   | 0.01     | 110  | 99          | 0.1                | rebase-order did not trade |
     Then the AMM pool status should be:
       | party | market id | amount | status          | base | lower bound | lower margin ratio | 
-      | vamm7 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 110  | 99          | 0.1                  | 
+      | vamm7 | ETH/MAR22 | 1000   | STATUS_REJECTED | 110  | 99          | 0.1                | 
 
     And set the following AMM sub account aliases:
       | party | market id | alias     |
