@@ -52,6 +52,9 @@ func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
 	t.Run("test best prices and volume", TestBestPricesAndVolume)
+
+	t.Run("test submit buy order across AMM boundary", testSubmitOrderAcrossAMMBoundary)
+	t.Run("test submit sell order across AMM boundary", testSubmitOrderAcrossAMMBoundarySell)
 }
 
 func TestAmendAMM(t *testing.T) {
@@ -283,7 +286,7 @@ func testSubmitMarketOrder(t *testing.T) {
 		Size:      1000000,
 		Remaining: 1000000,
 		Side:      types.SideSell,
-		Price:     num.NewUint(2100),
+		Price:     num.NewUint(0),
 		Type:      types.OrderTypeMarket,
 	}
 
@@ -307,10 +310,8 @@ func testSubmitOrderProRata(t *testing.T) {
 		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
 	}
 
-	for i := 0; i < 3; i++ {
-		ensureBalances(t, tst.col, 10000000000)
-		ensurePosition(t, tst.pos, 0, num.NewUint(0))
-	}
+	ensureBalancesN(t, tst.col, 10000000000, 3)
+	ensurePositionN(t, tst.pos, 0, num.NewUint(0), 3)
 
 	// now submit an order against it
 	agg := &types.Order{
@@ -325,6 +326,107 @@ func testSubmitOrderProRata(t *testing.T) {
 		assert.Equal(t, "2000", o.Price.String())
 		assert.Equal(t, uint64(222), o.Size)
 	}
+}
+
+func testSubmitOrderAcrossAMMBoundary(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	// create three pools
+	for i := 0; i < 3; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
+
+		// going to shrink the boundaries
+		submit.Parameters.LowerBound.Add(submit.Parameters.LowerBound, num.NewUint(uint64(i*50)))
+		submit.Parameters.UpperBound.Sub(submit.Parameters.UpperBound, num.NewUint(uint64(i*50)))
+
+		expectSubaccountCreation(t, tst, party, subAccount)
+		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	}
+
+	ensureBalancesN(t, tst.col, 10000000000, -1)
+	ensurePositionN(t, tst.pos, 0, num.NewUint(0), -1)
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      1000000000000,
+		Remaining: 1000000000000,
+		Side:      types.SideBuy,
+		Price:     num.NewUint(2200),
+	}
+
+	// pools upper boundaries are 2100, 2150, 2200, and we submit a big order
+	// we expect to trade with each pool in these three chunks
+	// - first 3 orders with all pools from [2000, 2100]
+	// - then 2 orders with the longer two pools from [2100, 2150]
+	// - then 1 order just the last pool from [2150, 2200]
+	// so 6 orders in total
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2200))
+	require.Len(t, orders, 6)
+
+	// first round, three orders moving all pool's to the upper boundary of the shortest
+	assert.Equal(t, "2049", orders[0].Price.String())
+	assert.Equal(t, "2049", orders[1].Price.String())
+	assert.Equal(t, "2049", orders[2].Price.String())
+
+	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
+	assert.Equal(t, "2124", orders[3].Price.String())
+	assert.Equal(t, "2124", orders[4].Price.String())
+
+	// third round, 1 orders moving the last pool to its boundary
+	assert.Equal(t, "2174", orders[5].Price.String())
+}
+
+func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	// create three pools
+	for i := 0; i < 3; i++ {
+		party, subAccount := getParty(t, tst)
+		submit := getPoolSubmission(t, party, tst.marketID)
+
+		// going to shrink the boundaries
+		submit.Parameters.LowerBound.Add(submit.Parameters.LowerBound, num.NewUint(uint64(i*50)))
+		submit.Parameters.UpperBound.Sub(submit.Parameters.UpperBound, num.NewUint(uint64(i*50)))
+
+		expectSubaccountCreation(t, tst, party, subAccount)
+		require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+	}
+
+	ensureBalancesN(t, tst.col, 10000000000, -1)
+	ensurePositionN(t, tst.pos, 0, num.NewUint(0), -1)
+
+	// now submit an order against it
+	agg := &types.Order{
+		Size:      1000000000000,
+		Remaining: 1000000000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(1800),
+	}
+
+	// pools lower boundaries are 1800, 1850, 1900, and we submit a big order
+	// we expect to trade with each pool in these three chunks
+	// - first 3 orders with all pools from [2000, 1900]
+	// - then 2 orders with the longer two pools from [1900, 1850]
+	// - then 1 order just the last pool from [1850, 1800]
+	// so 6 orders in total
+	// orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(1800))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(1800))
+	require.Len(t, orders, 6)
+
+	// first round, three orders moving all pool's to the upper boundary of the shortest
+	assert.Equal(t, "2053", orders[0].Price.String())
+	assert.Equal(t, "2053", orders[1].Price.String())
+	assert.Equal(t, "2053", orders[2].Price.String())
+
+	// second round, 2 orders moving all pool's to the upper boundary of the second shortest
+	assert.Equal(t, "1923", orders[3].Price.String())
+	assert.Equal(t, "1923", orders[4].Price.String())
+
+	// third round, 1 orders moving the last pool to its boundary
+	assert.Equal(t, "1872", orders[5].Price.String())
 }
 
 func TestBestPricesAndVolume(t *testing.T) {
