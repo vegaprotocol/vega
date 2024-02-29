@@ -1,6 +1,6 @@
 Feature: Spot market SLA
 
-  Scenario: 001 0044-LIME-048, when a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.commitmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.2, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6
+  Scenario: 001 0044-LIME-048, check SLA when fraction_of_time_on_book < market.liquidity.commitmentMinTimeFraction
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -115,6 +115,7 @@ Feature: Spot market SLA
     #fraction_of_time_on_book=2/9 = 0.222
     #0.7 * (1 - 0.222 / 0.6)*3000 = 1322
     Then the party "lp1" lp liquidity bond account balance should be "1678" for the market "BTC/ETH"
+
 
 
 
