@@ -33,6 +33,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -304,34 +306,16 @@ func (e *Engine) BestPricesAndVolumes() (*num.Uint, uint64, *num.Uint, uint64) {
 	return bestBid, bestBidVolume, bestAsk, bestAskVolume
 }
 
-// SubmitOrder takes an aggressive order and generates matching orders with the registered AMMs such that
-// volume is only taken in the interval (inner, outer) where inner and outer are price-levels on the orderbook.
-func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order {
-	if len(e.pools) == 0 {
-		return nil
-	}
-
+func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint) []*types.Order {
 	if e.log.GetLevel() == logging.DebugLevel {
-		e.log.Debug("looking for match with order",
-			logging.Int("n-pools", len(e.pools)),
-			logging.Order(agg),
-		)
-		e.log.Debug("between prices",
+		e.log.Debug("checking for volume between",
 			logging.String("inner", inner.String()),
 			logging.String("outer", outer.String()),
 		)
 	}
 
-	active := []*Pool{}
 	orders := []*types.Order{}
-	best := outer.Clone()
-
-	// first we find all amm's whose best-price would allow a trade with the incoming order
-	for _, p := range e.poolsCpy {
-		// if pool is in reducing only mode and order will increase its position, we don't want to trade
-		if !p.canTrade(agg) {
-			continue
-		}
+	for _, p := range active {
 		p.setEphemeralPosition()
 
 		price := p.BestPrice(agg)
@@ -347,8 +331,6 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				// either fair price is out of bounds, or is selling at higher than incoming buy
 				continue
 			}
-			active = append(active, p)
-			best = num.Min(best, p.upper.high)
 		}
 
 		if agg.Side == types.SideSell {
@@ -356,24 +338,22 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				// either fair price is out of bounds, or is buying at lower than incoming sell
 				continue
 			}
-			active = append(active, p)
-			best = num.Max(best, p.lower.low)
 		}
 	}
 
 	if agg.Side == types.SideSell {
-		inner, best = best, inner
+		inner, outer = outer, inner
 	}
 
 	// calculate the volume each pool has
 	var total uint64
 	volumes := []uint64{}
 	for _, p := range active {
-		volume := p.TradableVolumeInRange(agg.Side, inner, best)
+		volume := p.TradableVolumeInRange(agg.Side, inner, outer)
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("volume available to trade",
-				logging.String("id", p.ID),
 				logging.Uint64("volume", volume),
+				logging.String("id", p.ID),
 			)
 		}
 
@@ -413,8 +393,9 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 		price, _ := num.UintFromDecimal(dy.Div(dx))
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("generated order at price",
-				logging.String("id", p.ID),
 				logging.String("price", price.String()),
+				logging.Uint64("volume", volume),
+				logging.String("id", p.ID),
 				logging.Int64("pos", pos),
 				logging.String("average-entry", ae.String()),
 				logging.String("y", y.String()),
@@ -443,6 +424,114 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 		}
 		orders = append(orders, o)
 		p.updateEphemeralPosition(o)
+
+		agg.Remaining -= volume
+	}
+
+	return orders
+}
+
+// partition takes the given price range and returns which pools have volume in that region, and
+// divides that range into sub-levels where AMM boundaries end.
+func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, []*num.Uint) {
+	active := []*Pool{}
+	bounds := map[string]*num.Uint{}
+
+	// cap outer to incoming order price
+	if agg.Type != types.OrderTypeMarket {
+		switch {
+		case outer == nil:
+			outer = agg.Price.Clone()
+		case agg.Side == types.SideSell && agg.Price.GT(outer):
+			outer = agg.Price.Clone()
+		case agg.Side == types.SideBuy && agg.Price.LT(outer):
+			outer = agg.Price.Clone()
+		}
+	}
+
+	// switch so that inner < outer to make it easier to reason with
+	if agg.Side == types.SideSell {
+		inner, outer = outer, inner
+	}
+
+	if inner != nil {
+		bounds[inner.String()] = inner.Clone()
+	}
+	if outer != nil {
+		bounds[outer.String()] = outer.Clone()
+	}
+
+	for _, p := range e.poolsCpy {
+		// not active in range if it cannot trade
+		if !p.canTrade(agg) {
+			continue
+		}
+
+		// not active in range if its the pool's curves are wholly outside of [inner, outer]
+		if (inner != nil && p.upper.high.LT(inner)) || (outer != nil && p.lower.low.GT(outer)) {
+			continue
+		}
+
+		// pool is active in range add it to the slice
+		active = append(active, p)
+
+		// if a pool's upper or lower boundary exists within (inner, outer) then we consider that a sub-level
+		boundary := p.upper.high
+		if outer == nil || boundary.LT(outer) {
+			bounds[boundary.String()] = boundary.Clone()
+		}
+
+		boundary = p.lower.low
+		if inner == nil || boundary.GT(inner) {
+			bounds[boundary.String()] = boundary.Clone()
+		}
+	}
+
+	// now sort the sub-levels, if the incoming order is a buy we want them ordered ascending so we consider prices in this order:
+	// 2000 -> 2100 -> 2200
+	//
+	// and if its a sell we want them descending so we consider them like:
+	// 2000 -> 1900 -> 1800
+	levels := maps.Values(bounds)
+	sort.Slice(levels,
+		func(i, j int) bool {
+			if agg.Side == types.SideSell {
+				return levels[i].GT(levels[j])
+			}
+			return levels[i].LT(levels[j])
+		},
+	)
+	return active, levels
+}
+
+// SubmitOrder takes an aggressive order and generates matching orders with the registered AMMs such that
+// volume is only taken in the interval (inner, outer) where inner and outer are price-levels on the orderbook.
+// For example if agg is a buy order inner < outer, and if its a sell outer < inner.
+func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.Order {
+	if len(e.pools) == 0 {
+		return nil
+	}
+
+	if e.log.GetLevel() == logging.DebugLevel {
+		e.log.Debug("looking for match with order",
+			logging.Int("n-pools", len(e.pools)),
+			logging.Order(agg),
+		)
+	}
+
+	// parition the given range into levels where AMM boundaries end
+	agg = agg.Clone()
+	active, levels := e.partition(agg, inner, outer)
+
+	// submit orders to active pool's between each price level created by any of their high/low boundaries
+	orders := []*types.Order{}
+	for i := 0; i < len(levels)-1; i++ {
+		o := e.submit(active, agg, levels[i], levels[i+1])
+		orders = append(orders, o...)
+
+		if agg.Remaining == 0 {
+			break
+		}
 	}
 
 	return orders

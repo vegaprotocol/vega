@@ -577,7 +577,7 @@ func clonePriceLevel(lvl *PriceLevel) *PriceLevel {
 	}
 }
 
-// betweenLevels returns the inner, outer bounds for the given idx in the prive levels.
+// betweenLevels returns the inner, outer bounds for the given idx in the price levels.
 // Usually this means (inner, outer) = (lvl[i].price, lvl[i-1].price) but we also handle
 // the past the first and last price levels.
 func (s *OrderBookSide) betweenLevels(idx int, first, last *num.Uint) (*num.Uint, *num.Uint) {

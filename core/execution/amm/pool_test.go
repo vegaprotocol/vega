@@ -221,15 +221,27 @@ func TestOneSidedCurve(t *testing.T) {
 	assert.Panics(t, func() { p.pool.BestPrice(nil) })
 }
 
+func ensurePositionN(t *testing.T, p *mocks.MockPosition, pos int64, averageEntry *num.Uint, times int) {
+	t.Helper()
+
+	if times < 0 {
+		p.EXPECT().GetPositionsByParty(gomock.Any()).AnyTimes().Return(
+			[]events.MarketPosition{&marketPosition{size: pos, averageEntry: averageEntry}},
+		)
+	} else {
+		p.EXPECT().GetPositionsByParty(gomock.Any()).Times(times).Return(
+			[]events.MarketPosition{&marketPosition{size: pos, averageEntry: averageEntry}},
+		)
+	}
+}
+
 func ensurePosition(t *testing.T, p *mocks.MockPosition, pos int64, averageEntry *num.Uint) {
 	t.Helper()
 
-	p.EXPECT().GetPositionsByParty(gomock.Any()).Times(1).Return(
-		[]events.MarketPosition{&marketPosition{size: pos, averageEntry: averageEntry}},
-	)
+	ensurePositionN(t, p, pos, averageEntry, 1)
 }
 
-func ensureBalances(t *testing.T, col *mocks.MockCollateral, balance uint64) {
+func ensureBalancesN(t *testing.T, col *mocks.MockCollateral, balance uint64, times int) {
 	t.Helper()
 
 	// split the balance equally across general and margin
@@ -241,8 +253,18 @@ func ensureBalances(t *testing.T, col *mocks.MockCollateral, balance uint64) {
 		Balance: num.NewUint(balance - split),
 	}
 
-	col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(gen, nil)
-	col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(mar, nil)
+	if times < 0 {
+		col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(gen, nil)
+		col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(mar, nil)
+	} else {
+		col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(times).Return(gen, nil)
+		col.EXPECT().GetPartyMarginAccount(gomock.Any(), gomock.Any(), gomock.Any()).Times(times).Return(mar, nil)
+	}
+}
+
+func ensureBalances(t *testing.T, col *mocks.MockCollateral, balance uint64) {
+	t.Helper()
+	ensureBalancesN(t, col, balance, 1)
 }
 
 func TestNotebook(t *testing.T) {
