@@ -41,6 +41,7 @@ Feature: Spot market
       | name                                             | value |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
       | market.liquidity.stakeToCcyVolume                | 1     |
+      | limits.markets.maxPeggedOrders                   | 10    |
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
@@ -92,37 +93,44 @@ Feature: Spot market
     And the parties place the following pegged orders:
       | party | market id | side | volume | pegged reference | offset | reference |
       | lp1   | BTC/ETH   | buy  | 600    | BID              | 3      | lp1-b     |
-# | lp1   | BTC/ETH   | sell | 120    | ASK              | 96     |lp1-s |
+      | lp1   | BTC/ETH   | sell | 120    | ASK              | 96     | lp1-s     |
 
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
-#   | 15         | TRADING_MODE_CONTINUOUS | 36000   | 14        | 17        | 800          | 400            |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
+      | 15         | TRADING_MODE_CONTINUOUS | 36000   | 14        | 17        | 800          | 1000           |
 
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     |
-#   | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
-#   | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
 
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode                    |
-#   | 15         | TRADING_MODE_MONITORING_AUCTION |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    |
+      | 15         | TRADING_MODE_MONITORING_AUCTION |
 
-# Then the orders should have the following status:
-#   | party | reference | status           |
-#   | lp1   | lp1-b     | STATUS_CANCELLED |
-#   | lp1   | lp1-s     | STATUS_CANCELLED |
+    Then the orders should have the following status:
+      | party | reference | status         |
+      | lp1   | lp1-b     | STATUS_STOPPED |
+      | lp1   | lp1-s     | STATUS_PARKED  |
 
-# And the parties place the following orders:
-#   | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
-#   | lp1   | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b     |      |
-#   | lp1   | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s     |      |
+    Then the network moves ahead "12" blocks
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    |
+      | 15         | TRADING_MODE_MONITORING_AUCTION |
 
-# Then the network moves ahead "12" blocks
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode                    |
-#   | 15         | TRADING_MODE_MONITORING_AUCTION |
+    And the network treasury balance should be "600" for the asset "ETH"
 
-# And the network treasury balance should be "600" for the asset "ETH"
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
+      | lp1   | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b     |      |
+      | lp1   | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s     |      |
+
+    Then the network moves ahead "12" blocks
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    |
+      | 15         | TRADING_MODE_MONITORING_AUCTION |
+
+    And the network treasury balance should be "600" for the asset "ETH"
 
 
 
