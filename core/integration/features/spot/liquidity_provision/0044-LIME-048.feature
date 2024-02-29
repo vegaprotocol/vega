@@ -83,7 +83,6 @@ Feature: Spot market SLA
       | lp1    | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GTC | lp1-s        |
 
     Then the network moves ahead "1" blocks
-    # Then the opening auction period ends for market "BTC/ETH"
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |
@@ -107,8 +106,8 @@ Feature: Spot market SLA
 
     Then the network moves ahead "7" blocks
     And the network treasury balance should be "1322" for the asset "ETH"
-    #fraction_of_time_on_book=0.375
-    #0.7 * (1 - 0.375 / 0.6) = 0.2625, so bond penalty for lp1 should be 0.2625*3000=788;????
+    #fraction_of_time_on_book=2/9 = 0.222
+    #0.7 * (1 - 0.222 / 0.6)*3000 = 1322
     Then the party "lp1" lp liquidity bond account balance should be "1678" for the market "BTC/ETH"
   
 
