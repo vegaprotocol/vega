@@ -480,7 +480,7 @@ func (p *Pool) getPosition() (int64, *num.Uint) {
 	return 0, num.UintZero()
 }
 
-// virtualBalancesLong returns the pools x, y balances when the pool has a negative position, where
+// virtualBalancesShort returns the pools x, y balances when the pool has a negative position, where
 //
 // x = P + (cc * rf) / sqrt(pl) + L / sqrt(pl),
 // y = abs(P) * average-entry + L * sqrt(pl).
