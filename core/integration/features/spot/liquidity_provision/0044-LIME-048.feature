@@ -32,7 +32,7 @@ Feature: Spot market SLA
       | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.7   |
       | market.liquidity.sla.nonPerformanceBondPenaltyMax   | 0.6   |
       | market.liquidity.maximumLiquidityFeeFactorLevel     | 0.4   |
-      | validators.epoch.length                             | 10s    |
+      | validators.epoch.length                             | 10s   |
 
     And the spot markets:
       | id      | name    | base asset | quote asset | risk model             | auction duration | fees          | price monitoring   | sla params |
@@ -100,6 +100,12 @@ Feature: Spot market SLA
       | lp1   | lp1-b     |
       | lp1   | lp1-s     |
 
+    #0011-MARA-020 cancelling an order releases the holding amount back to user's general account.
+    Then "lp1" should have holding account balance of "0" for asset "ETH"
+    Then "lp1" should have general account balance of "37000" for asset "ETH"
+    Then "lp1" should have holding account balance of "0" for asset "BTC"
+    Then "lp1" should have general account balance of "2000" for asset "BTC"
+
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 15         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2400         | 3000           | 0             |
@@ -109,6 +115,6 @@ Feature: Spot market SLA
     #fraction_of_time_on_book=2/9 = 0.222
     #0.7 * (1 - 0.222 / 0.6)*3000 = 1322
     Then the party "lp1" lp liquidity bond account balance should be "1678" for the market "BTC/ETH"
-  
+
 
 

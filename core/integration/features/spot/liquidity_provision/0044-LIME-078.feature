@@ -95,6 +95,12 @@ Feature: Spot market
       | lp1   | BTC/ETH   | buy  | 600    | BID              | 3      | lp1-b     |
       | lp1   | BTC/ETH   | sell | 120    | ASK              | 96     | lp1-s     |
 
+    #0011-MARA-031,In Spot market, holding in holding account is correctly calculated for all order types in  auction mode pegged GTT (parked in auction * )
+    Then "lp1" should have holding account balance of "30000" for asset "ETH"
+    Then "lp1" should have general account balance of "9000" for asset "ETH"
+    Then "lp1" should have holding account balance of "1200" for asset "BTC"
+    Then "lp1" should have general account balance of "800" for asset "BTC"
+
     Then the market data for the market "BTC/ETH" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
       | 15         | TRADING_MODE_CONTINUOUS | 36000   | 14        | 17        | 800          | 1000           |
@@ -112,6 +118,11 @@ Feature: Spot market
       | party | reference | status         |
       | lp1   | lp1-b     | STATUS_STOPPED |
       | lp1   | lp1-s     | STATUS_PARKED  |
+
+    Then "lp1" should have holding account balance of "0" for asset "ETH"
+    Then "lp1" should have general account balance of "39000" for asset "ETH"
+    Then "lp1" should have holding account balance of "0" for asset "BTC"
+    Then "lp1" should have general account balance of "2000" for asset "BTC"
 
     Then the network moves ahead "12" blocks
     Then the market data for the market "BTC/ETH" should be:
