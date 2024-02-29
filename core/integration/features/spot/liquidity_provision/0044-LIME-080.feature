@@ -1,6 +1,6 @@
 Feature: Spot market
 
-  Scenario: 0044-LIME-078,parked pegged order in spot market
+  Scenario: 0044-LIME-080, 0044-LIME-082, GFA order in spot market
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -74,55 +74,66 @@ Feature: Spot market
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | only |
+      | lp1    | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b        |      |
       | party1 | BTC/ETH   | buy  | 6      | 8     | 0                | TYPE_LIMIT | TIF_GTC | party-order5 |      |
       | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order3 |      |
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party-order4 |      |
       | party2 | BTC/ETH   | sell | 6      | 24    | 0                | TYPE_LIMIT | TIF_GTC | party-order6 |      |
+      | lp1    | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s        |      |
 
     Then the network moves ahead "1" blocks
+    # Then the opening auction period ends for market "BTC/ETH"
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 15    | 1    | party2 |
 
+    Then the orders should have the following status:
+      | party | reference | status           |
+      | lp1   | lp1-b     | STATUS_CANCELLED |
+      | lp1   | lp1-s     | STATUS_CANCELLED |
+
+    Then "lp1" should have holding account balance of "0" for asset "ETH"
     Then "lp1" should have general account balance of "39000" for asset "ETH"
     Then the party "lp1" lp liquidity bond account balance should be "1000" for the market "BTC/ETH"
+    Then "lp1" should have holding account balance of "0" for asset "BTC"
     Then "lp1" should have general account balance of "2000" for asset "BTC"
 
-    And the parties place the following pegged orders:
-      | party | market id | side | volume | pegged reference | offset | reference |
-      | lp1   | BTC/ETH   | buy  | 600    | BID              | 3      | lp1-b     |
-# | lp1   | BTC/ETH   | sell | 120    | ASK              | 96     |lp1-s |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
+      | lp1   | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b     |      |
+      | lp1   | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s     |      |
+    Then the network moves ahead "11" blocks
+    And the network treasury balance should be "600" for the asset "ETH"
+    Then the orders should have the following status:
+      | party | reference | status           |
+      | lp1   | lp1-b     | STATUS_CANCELLED |
+      | lp1   | lp1-s     | STATUS_CANCELLED |
 
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
-#   | 15         | TRADING_MODE_CONTINUOUS | 36000   | 14        | 17        | 800          | 400            |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
+      | 15         | TRADING_MODE_CONTINUOUS | 36000   | 14        | 17        | 800          | 400            |
 
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     |
-#   | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
-#   | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | BTC/ETH   | buy  | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | BTC/ETH   | sell | 1      | 13    | 0                | TYPE_LIMIT | TIF_GTC |
 
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode                    |
-#   | 15         | TRADING_MODE_MONITORING_AUCTION |
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    |
+      | 15         | TRADING_MODE_MONITORING_AUCTION |
 
-# Then the orders should have the following status:
-#   | party | reference | status           |
-#   | lp1   | lp1-b     | STATUS_CANCELLED |
-#   | lp1   | lp1-s     | STATUS_CANCELLED |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
+      | lp1   | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b     |      |
+      | lp1   | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s     |      |
 
-# And the parties place the following orders:
-#   | party | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
-#   | lp1   | BTC/ETH   | buy  | 600    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b     |      |
-#   | lp1   | BTC/ETH   | sell | 120    | 25    | 0                | TYPE_LIMIT | TIF_GFA | lp1-s     |      |
+    Then the network moves ahead "12" blocks
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode                    |
+      | 15         | TRADING_MODE_MONITORING_AUCTION |
 
-# Then the network moves ahead "12" blocks
-# Then the market data for the market "BTC/ETH" should be:
-#   | mark price | trading mode                    |
-#   | 15         | TRADING_MODE_MONITORING_AUCTION |
-
-# And the network treasury balance should be "600" for the asset "ETH"
+    #0044-LIME-080, GFA order in spot market during auction counts toward LP commitment
+    And the network treasury balance should be "600" for the asset "ETH"
 
 
 
