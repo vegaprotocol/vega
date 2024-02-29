@@ -30,6 +30,7 @@
 - [10753](https://github.com/vegaprotocol/vega/issues/10753) - Handle the case that a submitted order is `FoK` in isolated margin to not double discount it from position.
 - [10136](https://github.com/vegaprotocol/vega/issues/10136) - Assure opening auction uncrossing price gets registered in the perps engine.
 - [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
+- [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
 
 ## 0.74.3
 
