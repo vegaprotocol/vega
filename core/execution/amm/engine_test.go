@@ -42,16 +42,13 @@ func TestSubmitAMM(t *testing.T) {
 	t.Run("test rebase on submit order did not trade", testRebaseOnSubmitOrderDidNotTrade)
 	t.Run("test rebase on submit order target is base", testSubmitTargetIsBase)
 	t.Run("test rebase on submit order target out of bounds", testSubmitTargetIsOutOfBounds)
-
-	t.Run("test basic submit order", testBasicSubmitOrder)
-	t.Run("test submit market order", testSubmitMarketOrder)
-	t.Run("test submit order pro rata", testSubmitOrderProRata)
 }
 
 func TestAMMTrading(t *testing.T) {
 	t.Run("test basic submit order", testBasicSubmitOrder)
+	t.Run("test submit market order", testSubmitMarketOrder)
 	t.Run("test submit order pro rata", testSubmitOrderProRata)
-	t.Run("test best prices and volume", TestBestPricesAndVolume)
+	t.Run("test best prices and volume", testBestPricesAndVolume)
 
 	t.Run("test submit buy order across AMM boundary", testSubmitOrderAcrossAMMBoundary)
 	t.Run("test submit sell order across AMM boundary", testSubmitOrderAcrossAMMBoundarySell)
@@ -66,6 +63,12 @@ func TestClosingAMM(t *testing.T) {
 	t.Run("test closing a pool as reduce only when its position is 0", testClosingReduceOnlyPool)
 	t.Run("test amending closing pool makes it actives", testAmendMakesClosingPoolActive)
 	t.Run("test closing pool removed when position hits zero", testClosingPoolRemovedWhenPositionZero)
+	t.Run("test closing pool immediately", testClosingPoolImmediate)
+}
+
+func TestStoppingAMM(t *testing.T) {
+	t.Run("test stopping distressed AMM", testStoppingDistressedAMM)
+	t.Run("test AMM with no balance is stopped", testAMMWithNoBalanceStopped)
 }
 
 func testOnePoolPerParty(t *testing.T) {
@@ -261,8 +264,7 @@ func testBasicSubmitOrder(t *testing.T) {
 		Price:     num.NewUint(1900),
 	}
 
-	ensureBalances(t, tst.col, 10000000000)
-	ensureBalances(t, tst.col, 10000000000)
+	ensureBalancesN(t, tst.col, 10000000000, 2)
 	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
 	require.Len(t, orders, 1)
 	assert.Equal(t, "2035", orders[0].Price.String())
@@ -429,7 +431,7 @@ func testSubmitOrderAcrossAMMBoundarySell(t *testing.T) {
 	assert.Equal(t, "1872", orders[5].Price.String())
 }
 
-func TestBestPricesAndVolume(t *testing.T) {
+func testBestPricesAndVolume(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -474,7 +476,7 @@ func testClosingReduceOnlyPool(t *testing.T) {
 	assert.Len(t, tst.engine.pools, 0)
 }
 
-func TestClosingPoolImmediate(t *testing.T) {
+func testClosingPoolImmediate(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -544,15 +546,58 @@ func testClosingPoolRemovedWhenPositionZero(t *testing.T) {
 
 	// position is lower but non-zero
 	ensurePosition(t, tst.pos, 1, num.UintZero())
-	tst.engine.OnTick(ctx, time.Now())
+	tst.engine.OnMTM(ctx)
 	assert.True(t, tst.engine.poolsCpy[0].closing())
 
 	// position is zero, it will get removed
-	ensurePosition(t, tst.pos, 0, num.UintZero())
-	ensurePosition(t, tst.pos, 0, num.UintZero())
+	ensurePositionN(t, tst.pos, 0, num.UintZero(), 2)
 	expectSubAccountRelease(t, tst, party, subAccount)
-	tst.engine.OnTick(ctx, time.Now())
+	tst.engine.OnMTM(ctx)
 	assert.Len(t, tst.engine.poolsCpy, 0)
+}
+
+func testStoppingDistressedAMM(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// call remove distressed with a AMM's owner will not remove the pool
+	closed := []events.MarketPosition{
+		mpos{party},
+	}
+	tst.engine.RemoveDistressed(ctx, closed)
+	assert.Len(t, tst.engine.pools, 1)
+
+	// call remove distressed with a AMM's subacouunt will remove the pool
+	closed = []events.MarketPosition{
+		mpos{subAccount},
+	}
+	tst.engine.RemoveDistressed(ctx, closed)
+	assert.Len(t, tst.engine.pools, 0)
+}
+
+func testAMMWithNoBalanceStopped(t *testing.T) {
+	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	ensureBalances(t, tst.col, 10000)
+	tst.engine.OnTick(ctx, time.Now())
+	assert.Len(t, tst.engine.pools, 1)
+
+	ensureBalances(t, tst.col, 0)
+	tst.engine.OnTick(ctx, time.Now())
+	assert.Len(t, tst.engine.pools, 0)
 }
 
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
@@ -725,3 +770,19 @@ func getAccount(balance uint64) *types.Account {
 		Balance: num.NewUint(balance),
 	}
 }
+
+type mpos struct {
+	party string
+}
+
+func (m mpos) AverageEntryPrice() *num.Uint { return num.UintZero() }
+func (m mpos) Party() string                { return m.party }
+func (m mpos) Size() int64                  { return 0 }
+func (m mpos) Buy() int64                   { return 0 }
+func (m mpos) Sell() int64                  { return 0 }
+func (m mpos) Price() *num.Uint             { return num.UintZero() }
+func (m mpos) BuySumProduct() *num.Uint     { return num.UintZero() }
+func (m mpos) SellSumProduct() *num.Uint    { return num.UintZero() }
+func (m mpos) ClearPotentials()             {}
+func (m mpos) VWBuy() *num.Uint             { return num.UintZero() }
+func (m mpos) VWSell() *num.Uint            { return num.UintZero() }
