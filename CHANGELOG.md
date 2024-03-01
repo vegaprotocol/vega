@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.74.8
+
+### 🛠 Improvements
+
+- [10795](https://github.com/vegaprotocol/vega/issues/10795) - Increase price monitoring triggers to 100 (missed validation).
+
 ## 0.74.7
 
 ### 🛠 Improvements
