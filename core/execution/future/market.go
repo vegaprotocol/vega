@@ -1225,6 +1225,10 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		m.internalCompositePriceCalculator.Close(ctx)
 	}
 
+	if err := m.amm.MarketClosing(ctx); err != nil {
+		return err
+	}
+
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.mkt.MarketTimestamps.Close = m.timeService.GetTimeNow().UnixNano()
