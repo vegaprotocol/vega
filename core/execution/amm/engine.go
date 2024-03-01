@@ -246,27 +246,57 @@ func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) 
 	e.minCommitmentQuantum = c.Clone()
 }
 
-func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
-	// check sub account balances (margin, general)
+// OnMTM is called whenever core does an MTM and is a signal that any pool's that are closing and have 0 position can be fully removed.
+func (e *Engine) OnMTM(ctx context.Context) {
+	for _, p := range e.poolsCpy {
+		if !p.closing() {
+			continue
+		}
+		if pos, _ := p.getPosition(); pos != 0 {
+			continue
+		}
 
+		// pool is closing and has reached 0 position, we can cancel it now
+		if _, err := e.releaseSubAccounts(ctx, p); err != nil {
+			e.log.Error("unable to release subaccount balance", logging.Error(err))
+		}
+		p.status = types.AMMPoolStatusCancelled
+		e.remove(ctx, p.party)
+	}
+}
+
+func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// seed an id-generator to create IDs for any orders generated in this block
 	_, blockHash := vgcontext.TraceIDFromContext(ctx)
 	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.market.GetID()))
 
-	// any pools that are closing that are at position 0 should be removed completely
+	// any pools that for some reason have zero balance in their accounts will get stopped
 	for _, p := range e.poolsCpy {
-		if p.closing() {
-			if pos, _ := p.getPosition(); pos == 0 {
-				if _, err := e.releaseSubAccounts(ctx, p); err != nil {
-					e.log.Error("unable to release subaccount balance", logging.Error(err))
-				}
-				p.status = types.AMMPoolStatusCancelled
-				e.remove(ctx, p.party)
-			}
+		if p.getBalance().IsZero() {
+			p.status = types.AMMPoolStatusStopped
+			e.remove(ctx, p.party)
+			continue
 		}
 	}
+}
 
-	// TODO check sub account balances (margin, general)
+// RemoveDistressed checks if any of the closed out parties are AMM's and if so the AMM is stopped and removed.
+func (e *Engine) RemoveDistressed(ctx context.Context, closed []events.MarketPosition) {
+	for _, c := range closed {
+		owner, ok := e.subAccounts[c.Party()]
+		if !ok {
+			continue
+		}
+		p, ok := e.pools[owner]
+		if !ok {
+			e.log.Panic("could not find pool for subaccount, not possible",
+				logging.String("subaccount", c.Party()),
+				logging.String("owner", owner),
+			)
+		}
+		p.status = types.AMMPoolStatusStopped
+		e.remove(ctx, owner)
+	}
 }
 
 func (e *Engine) IsPoolSubAccount(key string) bool {
@@ -900,6 +930,7 @@ func (e *Engine) GetAMMPoolsBySubAccount() map[string]common.AMMPool {
 func (e *Engine) add(p *Pool) {
 	e.pools[p.party] = p
 	e.poolsCpy = append(e.poolsCpy, p)
+	e.subAccounts[p.SubAccount] = p.party
 }
 
 func (e *Engine) remove(ctx context.Context, party string) {
@@ -912,6 +943,7 @@ func (e *Engine) remove(ctx context.Context, party string) {
 
 	pool := e.pools[party]
 	delete(e.pools, party)
+	delete(e.subAccounts, pool.SubAccount)
 	e.sendUpdate(ctx, pool)
 }
 
