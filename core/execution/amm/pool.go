@@ -558,7 +558,18 @@ func (p *Pool) fairPrice() *num.Uint {
 	}
 
 	x, y := p.virtualBalances(pos, ae, types.SideUnspecified)
-	fairPrice, _ := num.UintFromDecimal(y.Div(x))
+
+	// we want to round such that the price is further away from the base. This is so that once
+	// a pool's position is at its boundary we do not report volume that doesn't exist. For example
+	// say a pool's upper boundary is 1000 and for it to be at that boundary its position needs to
+	// be 10.5. The closest we can get is 10 but then we'd report a fair-price of 999.78. If
+	// we use 999 we'd be implying volume between 999 and 1000 which we don't want to trade.
+	fp := y.Div(x)
+	if pos < 0 {
+		fp = fp.Ceil()
+	}
+
+	fairPrice, _ := num.UintFromDecimal(fp)
 	return fairPrice
 }
 

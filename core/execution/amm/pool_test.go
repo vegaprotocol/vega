@@ -111,7 +111,7 @@ func testPoolPositionFactor(t *testing.T) {
 
 	// now best price should be the same as if the factor were 1, since its a price and not a volume
 	fairPrice := p.pool.BestPrice(nil)
-	assert.Equal(t, "1409", fairPrice.String())
+	assert.Equal(t, "1410", fairPrice.String())
 }
 
 func testTradePrice(t *testing.T) {
@@ -140,7 +140,7 @@ func testTradePrice(t *testing.T) {
 		},
 		{
 			name:              "fair price negative position",
-			expectedPrice:     "1409",
+			expectedPrice:     "1410",
 			position:          -1,
 			balance:           1000000,
 			averageEntryPrice: num.NewUint(2000),
@@ -213,7 +213,7 @@ func TestOneSidedCurve(t *testing.T) {
 	ensurePosition(t, p.pos, -10, num.UintZero())
 	ensureBalances(t, p.col, 1000000)
 	price = p.pool.BestPrice(nil)
-	assert.Equal(t, price.String(), "1409")
+	assert.Equal(t, price.String(), "1410")
 
 	// fair price when long should panic since AMM should never be able to get into that state
 	// fair price at short position is still ok
@@ -302,7 +302,7 @@ func TestNotebook(t *testing.T) {
 	ensurePosition(t, p.pos, -876, upmid.Clone())
 	ensureBalances(t, p.col, 100000)
 	fairPrice := p.pool.BestPrice(nil)
-	assert.Equal(t, "2094", fairPrice.String())
+	assert.Equal(t, "2095", fairPrice.String())
 
 	ensurePosition(t, p.pos, 1154, lowmid.Clone())
 	fairPrice = p.pool.BestPrice(nil)
