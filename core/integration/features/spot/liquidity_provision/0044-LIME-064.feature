@@ -101,7 +101,7 @@ Feature: Spot market SLA
     And the parties should have the following account balances:
       | party   | asset | market id | general |
       | lpprov1 | BTC   | BTC/ETH   | 0       |
-      | lpprov1 | ETH   | BTC/ETH   | 1520    |
+      | lpprov1 | ETH   | BTC/ETH   | 1500    |
 
     Then the network moves ahead "2" blocks
 
