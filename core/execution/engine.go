@@ -428,8 +428,8 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 
 // IsEligibleForProposerBonus checks if the given value is greater than that market quantum * quantum_multiplier.
 func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bool {
-	if _, ok := e.allMarkets[marketID]; ok {
-		quantum, err := e.collateral.GetAssetQuantum(e.futureMarkets[marketID].GetAssetForProposerBonus())
+	if mkt, ok := e.allMarkets[marketID]; ok {
+		quantum, err := e.collateral.GetAssetQuantum(mkt.GetAssetForProposerBonus())
 		if err != nil {
 			return false
 		}

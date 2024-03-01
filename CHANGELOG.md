@@ -32,6 +32,7 @@
 - [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
 - [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
 - [10780](https://github.com/vegaprotocol/vega/issues/10780) - REST API does not handle ID arrays correctly.
+- [10792](https://github.com/vegaprotocol/vega/issues/10792) - Use correct market for market proposer bonus for spots. 
 
 ## 0.74.3
 
