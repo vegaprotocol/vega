@@ -69,6 +69,7 @@ func TestClosingAMM(t *testing.T) {
 func TestStoppingAMM(t *testing.T) {
 	t.Run("test stopping distressed AMM", testStoppingDistressedAMM)
 	t.Run("test AMM with no balance is stopped", testAMMWithNoBalanceStopped)
+	t.Run("test market closure", testMarketClosure)
 }
 
 func testOnePoolPerParty(t *testing.T) {
@@ -590,7 +591,6 @@ func testAMMWithNoBalanceStopped(t *testing.T) {
 
 	expectSubaccountCreation(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
-
 	ensureBalances(t, tst.col, 10000)
 	tst.engine.OnTick(ctx, time.Now())
 	assert.Len(t, tst.engine.pools, 1)
@@ -598,6 +598,22 @@ func testAMMWithNoBalanceStopped(t *testing.T) {
 	ensureBalances(t, tst.col, 0)
 	tst.engine.OnTick(ctx, time.Now())
 	assert.Len(t, tst.engine.pools, 0)
+}
+
+func testMarketClosure(t *testing.T) {
+	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	ensurePosition(t, tst.pos, 0, num.UintZero())
+	expectSubAccountRelease(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.MarketClosing(ctx))
+	assert.Len(t, tst.engine.poolsCpy, 0)
 }
 
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
