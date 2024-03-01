@@ -2775,6 +2775,9 @@ func (m *Market) confirmMTM(ctx context.Context, skipMargin bool) {
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
+
+	// tell the AMM engine we've MTM'd so any closing pool's can be cancelled
+	m.amm.OnMTM(ctx)
 }
 
 func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk, isolatedMargin []events.Risk) []*types.Order {
@@ -2817,6 +2820,7 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk, isol
 			closed = closedRecalculated
 		}
 	}
+
 	closed = append(closed, isolatedForCloseout...)
 	if len(closed) == 0 {
 		m.updateLiquidityFee(ctx)
@@ -3009,6 +3013,9 @@ func (m *Market) finalizePartiesCloseOut(
 		// record the updated closed out party's position
 		m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, 0, mp.Price(), m.positionFactor, m.timeService.GetTimeNow())
 	}
+
+	// if the distressed party was an AMM we need to stop it AMM-ing
+	m.amm.RemoveDistressed(ctx, closedMPs)
 
 	// finally remove from collateral (moving funds where needed)
 	movements, err := m.collateral.RemoveDistressed(

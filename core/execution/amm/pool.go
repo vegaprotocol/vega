@@ -425,7 +425,7 @@ func (p *Pool) getBalance() *num.Uint {
 		panic("general account not created")
 	}
 
-	margin, _ := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
+	margin, err := p.collateral.GetPartyMarginAccount(p.market, p.SubAccount, p.asset)
 	if err != nil {
 		panic("margin account not created")
 	}
