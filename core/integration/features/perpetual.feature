@@ -16,8 +16,8 @@ Feature: Simple test creating a perpetual market.
       | lqm-params         | 0.01             | 10s         | 5              |  
 
     And the markets:
-      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params |
-      | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |
+      | id        | quote name | asset | liquidity monitoring | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | market type | sla params | tick size |
+      | ETH/DEC19 | ETH        | ETH   | lqm-params           | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.1                    | 0                         | 5              | 5                       | perp        | SLA        |     1     |
     And the following network parameters are set:
       | name                                             | value |
       | network.markPriceUpdateMaximumFrequency          | 0s    |

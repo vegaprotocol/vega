@@ -15,7 +15,7 @@
 - [10686](https://github.com/vegaprotocol/vega/issues/10686) - Allow transfers to filter by from and to account type.
 - [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
 - [10770](https://github.com/vegaprotocol/vega/issues/10770) - Increase price monitoring triggers to 100.
-
+- [10802](https://github.com/vegaprotocol/vega/issues/10802) - Added tick size support in feature tests.
 
 ### 🐛 Fixes
 
@@ -34,6 +34,7 @@
 - [10780](https://github.com/vegaprotocol/vega/issues/10780) - REST API does not handle ID arrays correctly.
 - [10792](https://github.com/vegaprotocol/vega/issues/10792) - Use correct market for market proposer bonus for spots.
 - [10795](https://github.com/vegaprotocol/vega/issues/10795) - Increase price monitoring triggers to 100 (missed validation).
+- [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap. 
 
 ## 0.74.3
 

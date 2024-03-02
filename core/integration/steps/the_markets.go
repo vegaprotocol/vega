@@ -406,7 +406,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.MarkPriceConfiguration = markPriceConfig
 		existing.MarkPriceConfiguration = markPriceConfig
 	}
-	update.Changes.TickSize = num.UintOne()
+	update.Changes.TickSize = row.tickSize()
 	return update, nil
 }
 
@@ -505,7 +505,7 @@ func newPerpMarket(config *market.Config, row marketRow) types.Market {
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 		MarkPriceConfiguration:        markPriceConfig,
-		TickSize:                      num.UintOne(),
+		TickSize:                      row.tickSize(),
 	}
 
 	if row.isSuccessor() {
@@ -629,7 +629,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 		LiquiditySLAParams:            types.LiquiditySLAParamsFromProto(slaParams),
 		MarkPriceConfiguration:        markPriceConfig,
-		TickSize:                      num.UintOne(),
+		TickSize:                      row.tickSize(),
 	}
 
 	if row.isSuccessor() {
@@ -695,6 +695,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"oracle3",
 		"oracle4",
 		"oracle5",
+		"tick size",
 	})
 }
 
@@ -722,6 +723,7 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 		"oracle3",
 		"oracle4",
 		"oracle5",
+		"tick size",
 	})
 }
 
@@ -735,6 +737,13 @@ type marketUpdateRow struct {
 
 func (r marketUpdateRow) id() string {
 	return r.row.MustStr("id")
+}
+
+func (r marketUpdateRow) tickSize() *num.Uint {
+	if r.row.HasColumn("tick size") {
+		return num.MustUintFromString(r.row.MustStr("tick size"), 10)
+	}
+	return num.UintOne()
 }
 
 func (r marketUpdateRow) oracleConfig() (string, bool) {
@@ -878,6 +887,13 @@ func (r marketUpdateRow) markPriceType() types.CompositePriceType {
 	} else {
 		panic("invalid price type")
 	}
+}
+
+func (r marketRow) tickSize() *num.Uint {
+	if r.row.HasColumn("tick size") {
+		return num.MustUintFromString(r.row.MustStr("tick size"), 10)
+	}
+	return num.UintOne()
 }
 
 func (r marketRow) id() string {

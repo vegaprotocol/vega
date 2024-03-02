@@ -1075,7 +1075,15 @@ func (mat *MarketActivityTracker) GetLastEpochTakeFees(asset string, markets []s
 	if !ok {
 		return takerFees
 	}
-	for _, m := range markets {
+	mkts := markets
+	if len(mkts) == 0 {
+		mkts = make([]string, 0, len(ast))
+		for mkt := range ast {
+			mkts = append(mkts, mkt)
+		}
+	}
+
+	for _, m := range mkts {
 		if fees, ok := ast[m]; ok {
 			for party, fees := range fees {
 				if _, ok := takerFees[party]; !ok {
