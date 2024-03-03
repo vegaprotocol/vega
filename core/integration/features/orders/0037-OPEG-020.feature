@@ -1,6 +1,7 @@
 Feature: 0037-OPEG-020, 0037-OPEG-021
 
-  Scenario: Given a mid-price which is not an integer multiple of the market tick size, a buy/sell order pegged to the mid price should have it's price rounded up to the nearest market tick size
+  Scenario: Given a mid-price which is not an integer multiple of the market tick size, a buy order pegged to the mid price should have it's price rounded up to the nearest market tick size
+  #while a sell order pegged to the mid price should have it's price rounded down to the nearest market tick size
 
   Background:
     Given the following network parameters are set:
