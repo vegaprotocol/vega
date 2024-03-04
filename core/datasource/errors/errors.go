@@ -55,6 +55,9 @@ var (
 	// ErrDuplicatedEthereumCallEvent is returned when there is a duplicated Ethereum event.
 	ErrDuplicatedEthereumCallEvent = errors.New("duplicated call event")
 
+	// ErrEthereumCallEventTooOld is returned when an old Ethereum event is received by the network.
+	ErrEthereumCallEventTooOld = errors.New("call event is too old")
+
 	// ErrDuplicatedEthereumCallEvent is returned when no deterministic time is given to set the next time trigger
 	// repetition.
 	ErrMissingTimeForSettingTriggerRepetition = errors.New("missing time for setting trigger repetition")
