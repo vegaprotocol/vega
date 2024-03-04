@@ -345,6 +345,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	}
 
 	orders := []*types.Order{}
+	useActive := make([]*Pool, 0, len(active))
 	for _, p := range active {
 		p.setEphemeralPosition()
 
@@ -369,6 +370,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 				continue
 			}
 		}
+		useActive = append(useActive, p)
 	}
 
 	if agg.Side == types.SideSell {
@@ -378,7 +380,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	// calculate the volume each pool has
 	var total uint64
 	volumes := []uint64{}
-	for _, p := range active {
+	for _, p := range useActive {
 		volume := p.TradableVolumeInRange(agg.Side, inner, outer)
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("volume available to trade",
@@ -406,7 +408,7 @@ func (e *Engine) submit(active []*Pool, agg *types.Order, inner, outer *num.Uint
 	}
 
 	// now generate offbook orders
-	for i, p := range active {
+	for i, p := range useActive {
 		volume := volumes[i]
 		if volume == 0 {
 			continue
