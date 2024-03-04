@@ -11,7 +11,7 @@
             "args": [
                 "--godog.format",
                 "pretty",
-                "${workspaceFolder}/core/integration/features/spot/orders/0025-OCRE-006.feature"
+                "${workspaceFolder}/core/integration/features/liquidity-provision/0044-LIME-062.feature"
             ]
         }
     ]
