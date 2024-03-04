@@ -145,6 +145,7 @@ message Payload {
     GovernanceBatchActive governance_batch_active = 82;
     Parties parties = 83;
     L2EthOracles l2_eth_oracles = 84;
+    EthOracleVerifierMisc eth_oracle_verifier_misc = 85;
   }
 }
 
@@ -827,11 +828,17 @@ message ChainIdEthOracles {
   string source_chain_id = 1;
   EthOracleVerifierLastBlock last_block = 2;
   EthContractCallResults call_results = 3;
+  EthOracleVerifierMisc misc = 4;
 }
 
 message EthOracleVerifierLastBlock {
   uint64 block_height = 1;
   uint64 block_time = 2;
+}
+
+message EthOracleVerifierMisc {
+  repeated EthVerifierBucket buckets = 1;
+  EthOracleVerifierLastBlock patch_block = 2;
 }
 
 message EthContractCallResults {
@@ -845,6 +852,11 @@ message EthContractCallResult {
   bytes result = 4;
   optional string error = 5;
   optional uint64 chain_id = 6;
+}
+
+message EthVerifierBucket {
+  int64 ts = 1;
+  repeated string hashes = 2;
 }
 
 message PendingKeyRotation {
