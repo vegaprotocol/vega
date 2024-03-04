@@ -33,7 +33,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
+	"github.com/emirpasic/gods/sets/treeset"
 )
+
+const keepHashesDuration = 24 * 2 * time.Hour
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/core/datasource/external/ethverifier Witness
 type Witness interface {
@@ -102,10 +106,13 @@ type Verifier struct {
 	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*ethcall.ContractCallEvent
 
+	// the eth block height of the last seen ethereum TX
 	lastBlock *types.EthBlock
+	// the eth block height when we did the patch upgrade to fix the missing seen map
+	patchBlock *types.EthBlock
 
-	mu     sync.Mutex
-	hashes map[string]struct{}
+	mu        sync.Mutex
+	ackedEvts *ackedEvents
 }
 
 type pendingCallEvent struct {
@@ -139,21 +146,37 @@ func New(
 		oracleEngine:     oracleBroadcaster,
 		ethEngine:        ethCallEngine,
 		ethConfirmations: ethConfirmations,
-		hashes:           map[string]struct{}{},
+		ackedEvts: &ackedEvents{
+			timeService: ts,
+			events:      treeset.NewWith(ackedEvtBucketComparator),
+		},
 	}
 	return s
 }
 
-func (s *Verifier) ensureNotDuplicate(hash string) bool {
+func (s *Verifier) ensureNotTooOld(callEvent ethcall.ContractCallEvent) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.hashes[hash]; ok {
+	if s.patchBlock != nil && callEvent.BlockHeight < s.patchBlock.Height {
 		return false
 	}
 
-	s.hashes[hash] = struct{}{}
+	tt := time.Unix(int64(callEvent.BlockTime), 0)
+	removeBefore := s.timeService.GetTimeNow().Add(-keepHashesDuration)
 
+	return !tt.Before(removeBefore)
+}
+
+func (s *Verifier) ensureNotDuplicate(callEvent ethcall.ContractCallEvent) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.ackedEvts.Contains(callEvent.Hash()) {
+		return false
+	}
+
+	s.ackedEvts.AddAt(int64(callEvent.BlockTime), callEvent.Hash())
 	return true
 }
 
@@ -161,7 +184,13 @@ func (s *Verifier) ensureNotDuplicate(hash string) bool {
 // duplicates but not result in a memory leak, agreed to postpone for now  (other verifiers have the same issue)
 
 func (s *Verifier) ProcessEthereumContractCallResult(callEvent ethcall.ContractCallEvent) error {
-	if ok := s.ensureNotDuplicate(callEvent.Hash()); !ok {
+	if !s.ensureNotTooOld(callEvent) {
+		s.log.Error("historic ethereum event received",
+			logging.String("event", fmt.Sprintf("%+v", callEvent)))
+		return errors.ErrEthereumCallEventTooOld
+	}
+
+	if ok := s.ensureNotDuplicate(callEvent); !ok {
 		s.log.Error("ethereum call event already exists",
 			logging.String("event", fmt.Sprintf("%+v", callEvent)))
 		return errors.ErrDuplicatedEthereumCallEvent
@@ -328,6 +357,9 @@ func (s *Verifier) OnTick(ctx context.Context, t time.Time) {
 			s.broker.Send(events.NewOracleDataEvent(ctx, vegapb.OracleData{ExternalData: dataProto.ExternalData}))
 		}
 	}
-
 	s.finalizedCallResults = nil
+
+	// keep hashes for 2 days
+	removeBefore := t.Add(-keepHashesDuration)
+	s.ackedEvts.RemoveBefore(removeBefore.Unix())
 }
