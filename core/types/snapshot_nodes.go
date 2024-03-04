@@ -276,6 +276,10 @@ type PayloadL2EthOracles struct {
 	L2EthOracles *snapshot.L2EthOracles
 }
 
+type PayloadEthVerifierMisc struct {
+	Misc *snapshot.EthOracleVerifierMisc
+}
+
 type PayloadEpoch struct {
 	EpochState *EpochState
 }
@@ -992,6 +996,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadPartiesFromProto(dt)
 	case *snapshot.Payload_L2EthOracles:
 		ret.Data = PayloadL2EthOraclesFromProto(dt)
+	case *snapshot.Payload_EthOracleVerifierMisc:
+		ret.Data = PayloadEthOracleVerifierMisc(dt)
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
 	}
@@ -1178,6 +1184,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Parties:
 		ret.Data = dt
 	case *snapshot.Payload_L2EthOracles:
+		ret.Data = dt
+	case *snapshot.Payload_EthOracleVerifierMisc:
 		ret.Data = dt
 	default:
 		panic(fmt.Errorf("missing support for payload %T", dt))
@@ -4441,6 +4449,32 @@ func (*PayloadEthOracleLastBlock) Key() string {
 }
 
 func (*PayloadEthOracleLastBlock) Namespace() SnapshotNamespace {
+	return EthereumOracleVerifierSnapshot
+}
+
+func PayloadEthOracleVerifierMisc(sp *snapshot.Payload_EthOracleVerifierMisc) *PayloadEthVerifierMisc {
+	return &PayloadEthVerifierMisc{
+		Misc: sp.EthOracleVerifierMisc,
+	}
+}
+
+func (p *PayloadEthVerifierMisc) IntoProto() *snapshot.Payload_EthOracleVerifierMisc {
+	return &snapshot.Payload_EthOracleVerifierMisc{
+		EthOracleVerifierMisc: p.Misc,
+	}
+}
+
+func (*PayloadEthVerifierMisc) isPayload() {}
+
+func (p *PayloadEthVerifierMisc) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEthVerifierMisc) Key() string {
+	return "misc"
+}
+
+func (*PayloadEthVerifierMisc) Namespace() SnapshotNamespace {
 	return EthereumOracleVerifierSnapshot
 }
 
