@@ -581,6 +581,8 @@ func (m *Market) GetSettlementAsset() string {
 }
 
 func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine products.OracleEngine) error {
+	tickSizeChanged := config.TickSize.NEQ(m.mkt.TickSize)
+
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
@@ -638,7 +640,22 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 		// market is settled, unsubscribe all
 		m.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
-
+	if tickSizeChanged {
+		peggedOrders := m.matching.GetActivePeggedOrderIDs()
+		peggedOrders = append(peggedOrders, m.peggedOrders.GetParkedIDs()...)
+		for _, po := range peggedOrders {
+			order, err := m.matching.GetOrderByID(po)
+			if err != nil {
+				order = m.peggedOrders.GetParkedByID(po)
+				if order == nil {
+					continue
+				}
+			}
+			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
+				m.cancelOrder(ctx, order.Party, order.ID)
+			}
+		}
+	}
 	m.updateLiquidityFee(ctx)
 	// risk model hasn't changed -> return
 	if !recalcMargins {
@@ -1326,9 +1343,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
 		price = price.AddSum(offset)
-		if !num.UintZero().Mod(price, m.mkt.TickSize).IsZero() {
-			price = price.Div(price.AddSum(m.mkt.TickSize), m.mkt.TickSize)
-			price = price.Mul(price, m.mkt.TickSize)
+		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
+		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
+		// whole multiples of tick size.
+		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+			price.Sub(price, mod)
 		}
 		return price, nil
 	}
@@ -1338,12 +1357,8 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	}
 
 	price.Sub(price, offset)
-	if !num.UintZero().Mod(price, m.mkt.TickSize).IsZero() {
-		price.Div(price, m.mkt.TickSize)
-		price.Mul(price, m.mkt.TickSize)
-		if price.LTE(offset) {
-			return num.UintZero(), common.ErrUnableToReprice
-		}
+	if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
 	}
 
 	return price, nil
