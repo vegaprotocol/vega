@@ -133,11 +133,13 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 		// this is the block of the upgrade
 		// we only initialize this the patchBlock and lastBlock
 		if v.Misc == nil {
-			// no patchBlock, set it to the last Block
-			verifier.restorePatchBlock(ctx, &types.EthBlock{
-				Height: v.LastBlock.BlockHeight,
-				Time:   v.LastBlock.BlockTime,
-			})
+			if lastBlock != nil {
+				// no patchBlock, set it to the last Block
+				verifier.restorePatchBlock(ctx, &types.EthBlock{
+					Height: lastBlock.Height,
+					Time:   lastBlock.Time,
+				})
+			}
 		} else if v.Misc != nil {
 			// only run this if the misc exists, which might
 			// not be the case on a new upgrade after it's
