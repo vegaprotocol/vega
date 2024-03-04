@@ -20,8 +20,10 @@ import (
 	"errors"
 	"strings"
 
+	derrors "code.vegaprotocol.io/vega/core/datasource/errors"
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -136,6 +138,14 @@ func (app *App) processChainEvent(
 			return errors.New("unsupported erc20 multisig event")
 		}
 	case *commandspb.ChainEvent_ContractCall:
+		txHash, _ := vgcontext.TxHashFromContext(ctx)
+		_, ok1 := app.hashesDedup[strings.ToUpper(txHash)]
+		_, ok2 := app.hashesDedup[strings.ToLower(txHash)]
+		_, ok3 := app.hashesDedup[txHash]
+		if ok1 || ok2 || ok3 {
+			return derrors.ErrDuplicatedEthereumCallEvent
+		}
+
 		callResult, err := ethcall.EthereumContractCallResultFromProto(c.ContractCall)
 		if err != nil {
 			app.log.Error("received invalid contract call", logging.Error(err), logging.String("call", c.ContractCall.String()))

@@ -18,7 +18,9 @@ package processor
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -189,6 +191,9 @@ type EthCallEngine interface {
 	Start()
 }
 
+//go:embed hashes.json
+var hashesDedup []byte
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -249,6 +254,8 @@ type App struct {
 
 	maxBatchSize   atomic.Uint64
 	defaultChainID uint64
+
+	hashesDedup map[string]struct{}
 }
 
 func NewApp(
@@ -345,6 +352,8 @@ func NewApp(
 		balanceChecker:         balanceChecker,
 		partiesEngine:          partiesEngine,
 	}
+
+	app.loadHashesDedup()
 
 	// setup handlers
 	app.abci.OnPrepareProposal = app.prepareProposal
@@ -519,6 +528,23 @@ func NewApp(
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 	app.ensureConfig()
 	return app
+}
+
+type hashesDedups struct {
+	Hashes []string
+}
+
+func (app *App) loadHashesDedup() {
+	hashes := hashesDedups{}
+	err := json.Unmarshal(hashesDedup, &hashes)
+	if err != nil {
+		panic(err)
+	}
+
+	app.hashesDedup = map[string]struct{}{}
+	for _, v := range hashes.Hashes {
+		app.hashesDedup[v] = struct{}{}
+	}
 }
 
 func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uint) error {
