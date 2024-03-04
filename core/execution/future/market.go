@@ -3765,9 +3765,10 @@ func (m *Market) amendOrder(
 			pos, _ := m.position.GetPositionByPartyID(amendedOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, amendedOrder); err == risk.ErrInsufficientFundsForMarginInGeneralAccount {
 				m.log.Error("party has insufficient margin to cover the order change, going to cancel all orders for the party")
-				_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)
-				// we're amending the order back in the order book so that when we unregister it, it would match what the position expects
-				m.orderAmendInPlace(amendedOrder, existingOrder)
+				// in this case we're now with the position with the amended order and the order book with the amended
+				// order which is consistent and will lead to the successful cancellation of all orders for the party.
+				// the reason we can't amend back here in place is that while decreasing size etc can be done in place
+				// increasing size (which is the inverse amend) cannot be done in place so we shouldn't attempt it.
 				return nil, nil, common.ErrMarginCheckFailed
 			}
 		}
