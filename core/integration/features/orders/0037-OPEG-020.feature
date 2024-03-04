@@ -1,8 +1,5 @@
 Feature: 0037-OPEG-020, 0037-OPEG-021
 
-  Scenario: Given a mid-price which is not an integer multiple of the market tick size, a buy order pegged to the mid price should have it's price rounded up to the nearest market tick size
-  #while a sell order pegged to the mid price should have it's price rounded down to the nearest market tick size
-
   Background:
     Given the following network parameters are set:
       | name                                                | value |
@@ -36,6 +33,9 @@ Feature: 0037-OPEG-020, 0037-OPEG-021
     And the liquidity sla params named "SLA":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
       | 0.01        | 0.5                          | 1                             | 1.0                    |
+
+  Scenario: Given a mid-price which is not an integer multiple of the market tick size, a buy order pegged to the mid price should have it's price rounded up to the nearest market tick size
+    #while a sell order pegged to the mid price should have it's price rounded down to the nearest market tick size
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params | decimal places | tick size |
       | ETH/DEC21 | ETH        | ETH   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         | SLA        | 0              | 10        |
