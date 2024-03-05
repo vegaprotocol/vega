@@ -16,6 +16,18 @@
 - [10686](https://github.com/vegaprotocol/vega/issues/10764) - Network will now only trade within price monitoring bounds.
 - [10770](https://github.com/vegaprotocol/vega/issues/10770) - Increase price monitoring triggers to 100.
 - [10802](https://github.com/vegaprotocol/vega/issues/10802) - Added tick size support in feature tests.
+- [788](https://github.com/vegaprotocol/core-test-coverage/issues/788) - Add coverage for `0011-MARA-020`
+- [789](https://github.com/vegaprotocol/core-test-coverage/issues/789) - Add coverage for `0011-MARA-021`
+- [790](https://github.com/vegaprotocol/core-test-coverage/issues/790) - Add coverage for `0011-MARA-023`
+- [791](https://github.com/vegaprotocol/core-test-coverage/issues/791) - Add coverage for `0011-MARA-024`
+- [792](https://github.com/vegaprotocol/core-test-coverage/issues/792) - Add coverage for `0011-MARA-025`
+- [793](https://github.com/vegaprotocol/core-test-coverage/issues/793) - Add coverage for `0011-MARA-026`
+- [794](https://github.com/vegaprotocol/core-test-coverage/issues/794) - Add coverage for `0011-MARA-027`
+- [795](https://github.com/vegaprotocol/core-test-coverage/issues/795) - Add coverage for `0011-MARA-028`
+- [796](https://github.com/vegaprotocol/core-test-coverage/issues/796) - Add coverage for `0011-MARA-029`
+- [797](https://github.com/vegaprotocol/core-test-coverage/issues/797) - Add coverage for `0011-MARA-030`
+- [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
+- [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
 
 ### 🐛 Fixes
 
