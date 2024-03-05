@@ -18,6 +18,7 @@ package steps
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 
 	"github.com/cucumber/godog"
@@ -25,6 +26,18 @@ import (
 
 func TheIcebergOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {
 	data := broker.GetOrderEvents()
+
+	// We might have repeat items so filter out the latest updates
+	dataMap := map[string]events.Order{}
+	for _, event := range data {
+		if event.Order().IcebergOrder != nil {
+			dataMap[event.Order().Id] = event
+		}
+	}
+	data = make([]events.Order, 0, len(dataMap))
+	for _, event := range dataMap {
+		data = append(data, event)
+	}
 
 	for _, row := range parseIcebergOrdersStatesTable(table) {
 		party := row.MustStr("party")
