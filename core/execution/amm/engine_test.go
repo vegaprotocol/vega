@@ -23,6 +23,8 @@ import (
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/amm/mocks"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	cmocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -747,7 +749,12 @@ func getTestEngine(t *testing.T) *tstEngine {
 	risk.EXPECT().GetScalingFactors().AnyTimes().Return(&types.ScalingFactors{InitialMargin: num.DecimalOne()})
 	risk.EXPECT().GetSlippage().AnyTimes().Return(num.DecimalOne())
 
-	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne(), num.DecimalOne())
+	teams := cmocks.NewMockTeams(ctrl)
+	balanceChecker := cmocks.NewMockAccountBalanceChecker(ctrl)
+
+	mat := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+
+	eng := New(logging.NewTestLogger(), broker, col, market, risk, pos, num.UintOne(), num.DecimalOne(), mat)
 
 	// do an ontick to initialise the idgen
 	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
