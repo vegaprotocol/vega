@@ -386,7 +386,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesShouldHaveTheFollowingStakingAccountBalances(execsetup.stakingAccount, table)
 	})
 	s.Step(`^the parties should have the following account balances:$`, func(table *godog.Table) error {
-		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
+		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.executionEngine, execsetup.broker, table)
 	})
 	s.Step(`^the parties should have the following margin levels:$`, func(table *godog.Table) error {
 		return steps.ThePartiesShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
