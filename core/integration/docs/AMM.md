@@ -183,6 +183,17 @@ Then the parties should have the following profit and loss:
   | vamm1-id | -3     | -58            | 0            | true   |
 ```
 
+### Checking AMM account balances
+
+Just like checking trades and positions, checking the `vAMM` account balances can be done using the optional `is amm` column to the table provided to the relevant step.
+
+```
+Then the parties should have the following account balances:
+  | party    | asset | market    | general | margin | is amm |
+  | party1   | USD   | ETH/MAR22 | 100000  | 0      |        |
+  | vamm1-id | USD   | ETH/MAR22 | 123     | 456    | true   |
+```
+
 ### DEBUG STEPS
 
 The debug steps specific to AMMs are simply ways of printing out the AMM pool event data in human-readable form:
