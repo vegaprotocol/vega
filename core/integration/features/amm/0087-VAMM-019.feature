@@ -145,7 +145,10 @@ Feature: Test vAMM cancellation by abandoning.
     When the parties cancel the following AMM:
       | party | market id | method           |
       | vamm1 | ETH/MAR22 | METHOD_IMMEDIATE |
-    Then the parties should have the following account balances:
+    Then the AMM pool status should be:
+      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
+    And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 918945  |        |        |
     And the following transfers should happen:
