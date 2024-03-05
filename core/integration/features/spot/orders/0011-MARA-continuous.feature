@@ -103,7 +103,7 @@ Feature: Spot market
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0              | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | party2 | BTC/ETH   | sell | 5      | 1000000 | 0              | TYPE_LIMIT | TIF_GFN | t2-s-1    |
 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
