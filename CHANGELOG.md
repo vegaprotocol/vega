@@ -33,6 +33,7 @@
 - [10727](https://github.com/vegaprotocol/vega/issues/10727) - Allow for a 0 funding rate scaling factor.
 - [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
 - [10780](https://github.com/vegaprotocol/vega/issues/10780) - REST API does not handle ID arrays correctly.
+- [10778](https://github.com/vegaprotocol/vega/issues/10778) - cancel pegged orders when tick size changes and mismatches the offset.
 - [10792](https://github.com/vegaprotocol/vega/issues/10792) - Use correct market for market proposer bonus for spots.
 - [10795](https://github.com/vegaprotocol/vega/issues/10795) - Increase price monitoring triggers to 100 (missed validation).
 - [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap. 
