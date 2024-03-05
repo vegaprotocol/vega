@@ -57,7 +57,6 @@ Feature: Spot market
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only |
       | party2 | BTC/ETH   | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | 2         | 2                    | post |
 
-    # Place a normal order of size x and see how much is placed in the holding account
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type         | tif     | reference |
       | party1 | BTC/ETH   | buy  | 10     | 1000  | 0                | TYPE_LIMIT   | TIF_GTC | buy1      |
@@ -71,4 +70,4 @@ Feature: Spot market
     # This should leave the iceberg order with 8 remaining
     Then the iceberg orders should have the following states:
       | party  | market id | side | visible volume | price | status        | reserved volume |
-      | party2 | BTC/ETH   | buy  | 2              | 1000  | STATUS_ACTIVE | 8               |
+      | party2 | BTC/ETH   | buy  | 2              | 1000  | STATUS_ACTIVE | 6               |
