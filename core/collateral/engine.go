@@ -3743,8 +3743,14 @@ func (e *Engine) SubAccountRelease(
 		}
 	}
 
-	// one transfer from margin to network insurance
-	globalInsurance, err := e.GetGlobalInsuranceAccount(asset)
+	// if there's no margin balance to release, we're done
+	if subAccountMargin.Balance.IsZero() {
+		return []*types.LedgerMovement{gres}, closeout, nil
+	}
+
+	// non-zero balance -> confiscate
+	// one transfer from margin to market insurance
+	mktInsurance, err := e.GetMarketInsurancePoolAccount(market, asset)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -3755,7 +3761,7 @@ func (e *Engine) SubAccountRelease(
 		Asset:       asset,
 		Type:        types.TransferTypeAMMSubAccountRelease,
 		FromAccount: []*types.Account{subAccountMargin},
-		ToAccount:   []*types.Account{globalInsurance},
+		ToAccount:   []*types.Account{mktInsurance},
 	}
 
 	mres, err := e.getLedgerEntries(ctx, treq)
