@@ -34,7 +34,7 @@ Feature: Spot market
       | party2 | ETH   | 100000 |
       | party2 | BTC   | 1000   |
       | party3 | ETH   | 100000 |
-      | party5 | BTC   | 10000  |
+      | party5 | BTC   | 1000   |
     And the average block duration is "1"
 
     # Place some orders to get out of auction
@@ -47,53 +47,99 @@ Feature: Spot market
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
 
-  Scenario: 0024-OSTA-030,0024-OSTA-031 FOK and IOC order on spot market
+  Scenario: 0024-OSTA-030,0024-OSTA-031, 0024-OSTA-032 FOK, IOC and GTC order on spot market
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | party1 | BTC/ETH   | buy  | 2      | 996   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |       |
-      | party1 | BTC/ETH   | buy  | 2      | 998   | 0                | TYPE_LIMIT | TIF_GTC | buy1      |       |
-      | party1 | BTC/ETH   | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | buy2      |       |
+      | party1 | BTC/ETH   | buy  | 2      | 996   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy1   |       |
+      | party1 | BTC/ETH   | buy  | 2      | 997   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy2   |       |
+      | party1 | BTC/ETH   | buy  | 2      | 998   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy3   |       |
+      | party1 | BTC/ETH   | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | p1-buy4   |       |
       | party2 | BTC/ETH   | sell | 1      | 999   | 1                | TYPE_LIMIT | TIF_FOK | p2-sell1  |       |
-      | party2 | BTC/ETH   | sell | 1      | 999   | 0                | TYPE_LIMIT | TIF_FOK | p2-sell2  |       |
+      | party2 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | p2-sell2  |       |
+    When the network moves ahead "1" blocks
 
+    # GTC order no filled, partially filled
     And the orders should have the following status:
       | party  | reference | status         |
+      | party1 | p1-buy1   | STATUS_ACTIVE  |
+      | party1 | p1-buy2   | STATUS_ACTIVE  |
+      | party1 | p1-buy3   | STATUS_ACTIVE  |
       | party2 | p2-sell1  | STATUS_FILLED  |
       | party2 | p2-sell2  | STATUS_STOPPED |
 
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | party5 | BTC/ETH   | sell | 5      | 998   | 1                | TYPE_LIMIT | TIF_IOC | p5-sell1  |       |
-
-    And the orders should have the following status:
-      | party  | reference | status                  |
-      | party5 | p5-sell1  | STATUS_PARTIALLY_FILLED |
-
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party1 | party5 | 998   | 2    |
-
-    #the rest of the unfilled IOC order is canceled
     And the order book should have the following volumes for market "BTC/ETH":
       | side | price | volume |
-      | sell | 998   | 0      |
+      | buy  | 999   | 1      |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | party5 | BTC/ETH   | sell | 5      | 998   | 0                | TYPE_LIMIT | TIF_IOC | p5-sell1  |       |
-
-    #the unfilled IOC order is stopped
-    And the orders should have the following status:
-      | party  | reference | status         |
-      | party5 | p5-sell1  | STATUS_STOPPED |
-
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-      | party5 | BTC/ETH   | sell | 2      | 996   | 1                | TYPE_LIMIT | TIF_IOC | p5-sell1  |       |
-
-    #the filled IOC order is filled
+      | party2 | BTC/ETH   | sell | 1      | 999   | 1                | TYPE_LIMIT | TIF_GTC | p2-sell3  |       |
+    #GTC order filled
     And the orders should have the following status:
       | party  | reference | status        |
-      | party5 | p5-sell1  | STATUS_FILLED |
+      | party1 | p1-buy4   | STATUS_FILLED |
 
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 999   | 0      |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party2 | BTC/ETH   | sell | 1      | 998   | 1                | TYPE_LIMIT | TIF_GTC | p2-sell3  |       |
+    #GTC order partially filled
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | party1 | p1-buy3   | STATUS_ACTIVE |
+
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 998   | 1      |
+
+    Then the parties amend the following orders:
+      | party  | reference | price | size delta | tif     |
+      | party1 | p1-buy3   | 998   | -1         | TIF_GTC |
+    #GTC partially filled is canclled by trader
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | party1 | p1-buy3   | STATUS_CANCELLED |
+
+    #GTC order rejected by system
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
+      | party5 | BTC/ETH   | sell | 5000   | 998   | 0                | TYPE_LIMIT | TIF_GTC | p5-sell2  | party does not have sufficient balance to cover the trade and fees |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party2 | BTC/ETH   | sell | 1      | 997   | 1                | TYPE_LIMIT | TIF_IOC | p2-sell4  |       |
+
+    #IOC order filled
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | party2 | p2-sell4  | STATUS_FILLED |
+
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party2 | BTC/ETH   | sell | 2      | 997   | 1                | TYPE_LIMIT | TIF_IOC | p2-sell5  |       |
+
+    #IOC order partially filled and stopped
+    And the orders should have the following status:
+      | party  | reference | status                  |
+      | party2 | p2-sell5  | STATUS_PARTIALLY_FILLED |
+
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | sell | 997   | 0      |
+
+    #IOC order un-filled and stopped
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party2 | BTC/ETH   | sell | 2      | 997   | 0                | TYPE_LIMIT | TIF_IOC | p2-sell5  |       |
+
+    And the orders should have the following status:
+      | party  | reference | status         |
+      | party2 | p2-sell5  | STATUS_STOPPED |
+
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | sell | 997   | 0      |
