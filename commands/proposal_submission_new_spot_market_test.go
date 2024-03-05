@@ -101,6 +101,33 @@ func TestCheckProposalSubmissionForNewSpotMarket(t *testing.T) {
 	t.Run("Submitting a new spot market with valid competition factor succeeds", testNewSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a new spot market with invalid hysteresis epochs fails", testNewSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a new spot market with valid hysteresis epochs succeeds", testNewSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
+
+	t.Run("Submitting a new spot market with invalid tick size fails and valid tick size succeeds", testNewSpotMarketTickSize)
+}
+
+func testNewSpotMarketTickSize(t *testing.T) {
+	cases := getTickSizeCases()
+	for _, tsc := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewSpotMarket{
+					NewSpotMarket: &vegapb.NewSpotMarket{
+						Changes: &vegapb.NewSpotMarketConfiguration{
+							Instrument: &protoTypes.InstrumentConfiguration{
+								Product: &protoTypes.InstrumentConfiguration_Spot{},
+							},
+							TickSize: tsc.tickSize,
+						},
+					},
+				},
+			},
+		})
+		if tsc.err != nil {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.tick_size"), tsc.err)
+		} else {
+			assert.Empty(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.tick_size"))
+		}
+	}
 }
 
 func testNewSpotMarketChangeSubmissionWithoutNewSpotMarketFails(t *testing.T) {
@@ -472,6 +499,11 @@ func testSpotPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 }
 
 func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
+	triggers := []*vegapb.PriceMonitoringTrigger{}
+	for i := 0; i <= 100; i++ {
+		triggers = append(triggers, &vegapb.PriceMonitoringTrigger{})
+	}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewSpotMarket{
@@ -481,14 +513,7 @@ func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 							Product: &protoTypes.InstrumentConfiguration_Spot{},
 						},
 						PriceMonitoringParameters: &protoTypes.PriceMonitoringParameters{
-							Triggers: []*protoTypes.PriceMonitoringTrigger{
-								{},
-								{},
-								{},
-								{},
-								{},
-								{},
-							},
+							Triggers: triggers,
 						},
 					},
 				},
@@ -496,7 +521,7 @@ func testNewSpotMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 5 triggers allowed"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_spot_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 100 triggers allowed"))
 }
 
 func testSpotPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T) {

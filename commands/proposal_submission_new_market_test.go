@@ -187,6 +187,45 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a new market with valid hysteresis epochs succeeds", testNewMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
 	t.Run("Submitting a new market with invalid liquidity fee settings", testLiquidityFeeSettings)
 	t.Run("Submitting a new market with invalid mark price configuration ", testCompositePriceConfiguration)
+	t.Run("Submitting a new market with invalid tick size fails and with valid tick size succeeds", testNewMarketTickSize)
+}
+
+type tickSizeCase struct {
+	tickSize string
+	err      error
+}
+
+func getTickSizeCases() []tickSizeCase {
+	return []tickSizeCase{
+		{tickSize: "", err: commands.ErrIsRequired},
+		{tickSize: "banana", err: commands.ErrNotAValidInteger},
+		{tickSize: "-1", err: commands.ErrMustBePositive},
+		{tickSize: "0", err: commands.ErrMustBePositive},
+		{tickSize: "1", err: nil},
+		{tickSize: "123", err: nil},
+	}
+}
+
+func testNewMarketTickSize(t *testing.T) {
+	cases := getTickSizeCases()
+	for _, tsc := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &vegapb.ProposalTerms{
+				Change: &vegapb.ProposalTerms_NewMarket{
+					NewMarket: &vegapb.NewMarket{
+						Changes: &vegapb.NewMarketConfiguration{
+							TickSize: tsc.tickSize,
+						},
+					},
+				},
+			},
+		})
+		if tsc.err != nil {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.tick_size"), tsc.err)
+		} else {
+			assert.Empty(t, err.Get("proposal_submission.terms.change.new_market.changes.tick_size"))
+		}
+	}
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -638,20 +677,18 @@ func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 }
 
 func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
+	triggers := []*vegapb.PriceMonitoringTrigger{}
+	for i := 0; i <= 100; i++ {
+		triggers = append(triggers, &vegapb.PriceMonitoringTrigger{})
+	}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &vegapb.ProposalTerms{
 			Change: &vegapb.ProposalTerms_NewMarket{
 				NewMarket: &vegapb.NewMarket{
 					Changes: &vegapb.NewMarketConfiguration{
 						PriceMonitoringParameters: &vegapb.PriceMonitoringParameters{
-							Triggers: []*vegapb.PriceMonitoringTrigger{
-								{},
-								{},
-								{},
-								{},
-								{},
-								{},
-							},
+							Triggers: triggers,
 						},
 					},
 				},
@@ -659,7 +696,7 @@ func testNewMarketChangeSubmissionWithTooManyPMTriggersFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 5 triggers allowed"))
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers"), errors.New("maximum 100 triggers allowed"))
 }
 
 func testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails(t *testing.T) {
@@ -5175,14 +5212,7 @@ func testNewPerpsMarketWithFundingRateModifiers(t *testing.T) {
 				FundingRateScalingFactor: ptr.From("-10"),
 			},
 			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
-			err:  commands.ErrMustBePositive,
-		},
-		{
-			product: vegapb.PerpetualProduct{
-				FundingRateScalingFactor: ptr.From("0"),
-			},
-			path: "proposal_submission.terms.change.new_market.changes.instrument.product.perps.funding_rate_scaling_factor",
-			err:  commands.ErrMustBePositive,
+			err:  commands.ErrMustBePositiveOrZero,
 		},
 		{
 			product: vegapb.PerpetualProduct{

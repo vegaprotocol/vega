@@ -285,6 +285,7 @@ func (m *Market) GetPartiesStats() *types.MarketStats {
 }
 
 func (m *Market) Update(ctx context.Context, config *types.Market) error {
+	tickSizeChanged := config.TickSize.NEQ(m.mkt.TickSize)
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
@@ -298,6 +299,20 @@ func (m *Market) Update(ctx context.Context, config *types.Market) error {
 	m.pMonitor.UpdateSettings(riskModel, m.mkt.PriceMonitoringSettings)
 	m.liquidity.UpdateMarketConfig(riskModel, m.pMonitor)
 	m.updateLiquidityFee(ctx)
+
+	if tickSizeChanged {
+		peggedOrders := m.matching.GetActivePeggedOrderIDs()
+		peggedOrders = append(peggedOrders, m.peggedOrders.GetParkedIDs()...)
+		for _, po := range peggedOrders {
+			order, err := m.matching.GetOrderByID(po)
+			if err != nil {
+				continue
+			}
+			if !num.UintZero().Mod(order.PeggedOrder.Offset, m.mkt.TickSize).IsZero() {
+				m.cancelOrder(ctx, order.Party, order.ID)
+			}
+		}
+	}
 
 	// update immediately during opening auction
 	if m.as.IsOpeningAuction() {
@@ -480,7 +495,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 		m.mkt.State = types.MarketStateSuspendedViaGovernance
 		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
 		if m.as.InAuction() {
-			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration.Seconds())})
 			evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
 			if evt != nil {
 				m.broker.Send(evt)
@@ -786,14 +801,26 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 
 	offset := num.UintZero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
-		return price.AddSum(offset), nil
+		price = price.AddSum(offset)
+		// this can only happen when pegged to mid, in which case we want to round to the nearest *better* tick size
+		// but this can never cross the mid by construction as the the minimum offset is 1 tick size and all prices must be
+		// whole multiples of tick size.
+		if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+			price.Sub(price, mod)
+		}
+		return price, nil
 	}
 
 	if price.LTE(offset) {
 		return num.UintZero(), common.ErrUnableToReprice
 	}
 
-	return num.UintZero().Sub(price, offset), nil
+	price.Sub(price, offset)
+	if mod := num.UintZero().Mod(price, m.mkt.TickSize); !mod.IsZero() {
+		price = num.UintZero().Sub(price.AddSum(m.mkt.TickSize), mod)
+	}
+
+	return price, nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -890,6 +917,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			m.OnAuctionEnded()
 		}
 	}()
+
+	// Check here that the orders are still valid in terms of holding amounts
+	m.checkFeeTransfersWhileInAuction(ctx)
 
 	_, ordersToCancel := m.uncrossOnLeaveAuction(ctx)
 
@@ -993,8 +1023,21 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 			}
 			return reason
 		}
+		return m.validateTickSize(order.PeggedOrder.Offset)
 	}
 
+	if order.OriginalPrice != nil {
+		return m.validateTickSize(order.OriginalPrice)
+	}
+
+	return nil
+}
+
+func (m *Market) validateTickSize(price *num.Uint) error {
+	d := num.UintZero().Mod(price, m.mkt.TickSize)
+	if !d.IsZero() {
+		return types.ErrOrderNotInTickSize
+	}
 	return nil
 }
 
@@ -1884,6 +1927,12 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, nil, err
 	}
 
+	if orderAmendment.Price != nil && amendedOrder.OriginalPrice != nil {
+		if err = m.validateTickSize(amendedOrder.OriginalPrice); err != nil {
+			return nil, nil, err
+		}
+	}
+
 	// We do this first, just in case the party would also have
 	// change the expiry, and that would have been caught by
 	// the follow up checks, so we do not insert a non-existing
@@ -2649,6 +2698,63 @@ func (m *Market) processFeesTransfersOnEnterAuction(ctx context.Context) {
 	}
 }
 
+func (m *Market) checkFeeTransfersWhileInAuction(ctx context.Context) {
+	parties := make([]string, 0, len(m.parties))
+	for v := range m.parties {
+		parties = append(parties, v)
+	}
+	sort.Strings(parties)
+	ordersToCancel := []*types.Order{}
+	transfers := []*types.LedgerMovement{}
+	for _, party := range parties {
+		orders := m.matching.GetOrdersPerParty(party)
+		for _, o := range orders {
+			if o.Side == types.SideSell {
+				continue
+			}
+			// if the side is buy then the fees are paid directly by the buyer which must have an account in quote asset
+			// with sufficient funds
+			fees, err := m.calculateFees(party, o.TrueRemaining(), o.Price, o.Side)
+			if err != nil {
+				m.log.Error("error calculating fees for order", logging.Order(o), logging.Error(err))
+				ordersToCancel = append(ordersToCancel, o)
+				continue
+			}
+			if fees.IsZero() {
+				continue
+			}
+			// check if we have already handled this fee and if so that it matches
+			_, paidFees := m.orderHoldingTracker.GetCurrentHolding(o.ID)
+
+			if fees.GT(paidFees) {
+				// We need to recalculate the fees amount
+				var newFees num.Uint
+				newFees.Sub(fees, paidFees)
+				if err := m.collateral.PartyHasSufficientBalance(m.quoteAsset, party, &newFees); err != nil {
+					m.log.Error("party has insufficient funds to cover for fees for order", logging.Order(o), logging.Error(err))
+					ordersToCancel = append(ordersToCancel, o)
+					continue
+				}
+				// party has sufficient funds to cover for fees - transfer fees from the party general account to the party holding account
+				transfer, err := m.orderHoldingTracker.TransferFeeToHoldingAccount(ctx, o.ID, party, m.quoteAsset, &newFees)
+				if err != nil {
+					m.log.Error("failed to transfer from general account to holding account", logging.Order(o), logging.Error(err))
+					ordersToCancel = append(ordersToCancel, o)
+					continue
+				}
+				transfers = append(transfers, transfer)
+			}
+		}
+	}
+	if len(transfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	}
+	// cancel all orders with insufficient funds
+	for _, o := range ordersToCancel {
+		m.cancelOrder(ctx, o.Party, o.ID)
+	}
+}
+
 // processFeesReleaseOnLeaveAuction releases any fees locked for the duration of an auction.
 func (m *Market) processFeesReleaseOnLeaveAuction(ctx context.Context) {
 	parties := make([]string, 0, len(m.parties))
@@ -2690,17 +2796,18 @@ func (m *Market) handleTrade(ctx context.Context, trade *types.Trade) []*types.L
 		if fees != nil {
 			fee = fees.TotalFeesAmountPerParty()[trade.Buyer]
 		}
+
 		// release buyer's trade + fees quote quantity from the holding account
 		transfer, err := m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.BuyOrder, trade.Buyer, m.quoteAsset, scaleQuoteQuantityToAssetDP(trade.Size, trade.Price, m.positionFactor), fee)
 		if err != nil {
-			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
+			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
 		transfers = append(transfers, transfer)
 
 		// release seller's base quantity from the holding account
 		transfer, err = m.orderHoldingTracker.ReleaseQuantityHoldingAccount(ctx, trade.SellOrder, trade.Seller, m.baseAsset, scaleBaseQuantityToAssetDP(trade.Size, m.baseFactor), num.UintZero())
 		if err != nil {
-			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade))
+			m.log.Panic("failed to release funds from holding account for trade", logging.Trade(trade), logging.Error(err))
 		}
 		transfers = append(transfers, transfer)
 	} else {
@@ -2799,6 +2906,11 @@ func (m *Market) calculateFees(party string, size uint64, price *num.Uint, side 
 		return num.UintZero(), err
 	}
 
+	// if we're in uncrossing governance auction fees will be nil
+	if fees == nil {
+		return num.UintZero(), nil
+	}
+
 	return fees.TotalFeesAmountPerParty()[party], err
 }
 
@@ -2814,6 +2926,10 @@ func (m *Market) calculateFeesForTrades(trades []*types.Trade) (events.FeesTrans
 		fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
 	} else if m.as.IsFBA() {
 		fees, err = m.fee.CalculateForFrequentBatchesAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+	} else {
+		if !m.as.IsOpeningAuction() {
+			fees, err = m.fee.CalculateForAuctionMode(trades, m.referralDiscountRewardService, m.volumeDiscountService)
+		}
 	}
 	return fees, err
 }

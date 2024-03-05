@@ -77,6 +77,29 @@ func TestCheckProposalSubmissionForUpdateSpotMarket(t *testing.T) {
 	t.Run("Submitting a spot market update with valid competition factor succeeds", testUpdateSpotMarketChangeSubmissionWithValidCompetitionFactorSucceeds)
 	t.Run("Submitting a spot market update with invalid hysteresis epochs fails", testUpdateSpotMarketChangeSubmissionWithInvalidPerformanceHysteresisEpochsFails)
 	t.Run("Submitting a spot market update with valid hysteresis epochs succeeds", testUpdateSpotMarketChangeSubmissionWithValidPerformanceHysteresisEpochsSucceeds)
+	t.Run("Submitting a spot market update with invalid tick size fails and valid tick size succeeds", testUpdateSpotMarketTickSize)
+}
+
+func testUpdateSpotMarketTickSize(t *testing.T) {
+	cases := getTickSizeCases()
+	for _, tsc := range cases {
+		err := checkProposalSubmission(&commandspb.ProposalSubmission{
+			Terms: &protoTypes.ProposalTerms{
+				Change: &protoTypes.ProposalTerms_UpdateSpotMarket{
+					UpdateSpotMarket: &protoTypes.UpdateSpotMarket{
+						Changes: &protoTypes.UpdateSpotMarketConfiguration{
+							TickSize: tsc.tickSize,
+						},
+					},
+				},
+			},
+		})
+		if tsc.err != nil {
+			assert.Contains(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.tick_size"), tsc.err)
+		} else {
+			assert.Empty(t, err.Get("proposal_submission.terms.change.update_spot_market.changes.tick_size"))
+		}
+	}
 }
 
 func testUpdateSpotMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {

@@ -45,6 +45,7 @@ type TransactionManager interface {
 	WithTransaction(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
+	RefreshMaterializedViews(ctx context.Context) error
 }
 
 type BlockStore interface {
@@ -225,6 +226,7 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	defer b.slowTimeUpdateTicker.Stop()
 	b.snapshotTaken = false
 	betweenBlocks := false
+	refreshMaterializedViews := false
 	for {
 		// Do a pre-check on ctx.Done() since select() cases are randomized, this reduces
 		// the number of things we'll keep trying to handle after we are cancelled.
@@ -272,6 +274,19 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 					return nil, err
 				}
 
+				// at the end of the block, if we have had an epoch event in that block then we should have received
+				// statistics that were updated and reported only at the end of an epoch. The refreshMaterialized flag
+				// should have been set by the EpochUpdate event before this EndBlockEvent was received
+				// so we need to call the refresh materialized views function here.
+				if refreshMaterializedViews {
+					// We need to refresh the materialized views as we have reached the end of an epoch
+					err = b.transactionManager.RefreshMaterializedViews(blockCtx)
+					if err != nil {
+						return nil, fmt.Errorf("failed to refresh materialized views:%w", err)
+					}
+					refreshMaterializedViews = false
+				}
+
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)
@@ -286,6 +301,15 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				// we've received a protocol upgrade event which is the last event core will have sent out
 				// so we can leave now
 				return nil, nil
+			case events.EpochUpdate:
+				// We have received an epoch event in this block, so we set a flag that will indicate that we should
+				// refresh any materialized views that need to be refreshed after receiving data that is only sent
+				// once an epoch.
+				refreshMaterializedViews = true
+				// We want the default block to execute after we have done this so we fall through to the default case
+				// DANGER WILL ROBINSON!!! Make sure you don't add any code here that will prevent the fallthrough
+				// or add another case statement that will prevent the fallthrough to the default case
+				fallthrough
 			default:
 				if betweenBlocks {
 					// we should only be receiving a BeginBlockEvent immediately after an EndBlockEvent

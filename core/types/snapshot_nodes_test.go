@@ -389,7 +389,8 @@ func getDummyData() *types.Chunk {
 				Markets: []*types.ExecMarket{
 					{
 						Market: &types.Market{
-							ID: "key",
+							ID:       "key",
+							TickSize: num.NewUint(2),
 							TradableInstrument: &types.TradableInstrument{
 								Instrument: &types.Instrument{
 									ID:   "",

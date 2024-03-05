@@ -516,7 +516,7 @@ func (e *Engine) onSLAParamsUpdate(slaParams *types.LiquiditySLAParams) {
 	e.openMinusPriceRange = one.Sub(slaParams.PriceRange)
 	if e.slaParams.PerformanceHysteresisEpochs != slaParams.PerformanceHysteresisEpochs {
 		for _, performance := range e.slaPerformance {
-			performance.previousPenalties.ModifySize(e.slaParams.PerformanceHysteresisEpochs)
+			performance.previousPenalties.ModifySize(slaParams.PerformanceHysteresisEpochs)
 		}
 	}
 	e.slaParams = slaParams

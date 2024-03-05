@@ -41,7 +41,7 @@ func TestCalculateRewardsByContributionIndividualProRata(t *testing.T) {
 		DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
 		LockPeriod:           2,
 	}
-	po := calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds)
+	po := calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds, nil)
 
 	require.Equal(t, "1500", po.partyToAmount["p1"].String())
 	require.Equal(t, "3125", po.partyToAmount["p2"].String())
@@ -54,6 +54,129 @@ func TestCalculateRewardsByContributionIndividualProRata(t *testing.T) {
 	require.Equal(t, uint64(2), po.lockedForEpochs)
 	require.Equal(t, now.Unix(), po.timestamp)
 	require.Equal(t, "10000", po.totalReward.String())
+}
+
+func TestCalculateRewardsByContributionIndividualProRataWithCap(t *testing.T) {
+	partyContribution := []*types.PartyContributionScore{
+		{Party: "p1", Score: num.DecimalFromFloat(0.6)},
+		{Party: "p2", Score: num.DecimalFromFloat(0.5)},
+		{Party: "p3", Score: num.DecimalFromFloat(0.1)},
+		{Party: "p4", Score: num.DecimalFromFloat(0.6)},
+		{Party: "p5", Score: num.DecimalFromFloat(0.05)},
+	}
+	rewardMultipliers := map[string]num.Decimal{"p2": num.DecimalFromFloat(2.5), "p3": num.DecimalFromInt64(5), "p4": num.DecimalFromFloat(2.5), "p5": num.DecimalFromInt64(3)}
+
+	now := time.Now()
+	smallCap := "0.5"
+	smallerCap := "0.25"
+	largeCap := "2"
+	ds := &vega.DispatchStrategy{
+		DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+		LockPeriod:           2,
+		CapRewardFeeMultiple: &smallCap,
+	}
+
+	takerFeeContribution := map[string]*num.Uint{
+		"p1": num.MustUintFromString("3000", 10),
+		"p2": num.MustUintFromString("6250", 10),
+		"p3": num.MustUintFromString("2500", 10),
+		"p4": num.MustUintFromString("7500", 10),
+		"p5": num.MustUintFromString("750", 10),
+	}
+
+	// we allow each to get up to 0.5 of the cap, all are within their limits so no real capping takes place
+	po := calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds, takerFeeContribution)
+
+	require.Equal(t, "1500", po.partyToAmount["p1"].String())
+	require.Equal(t, "3125", po.partyToAmount["p2"].String())
+	require.Equal(t, "1250", po.partyToAmount["p3"].String())
+	require.Equal(t, "3750", po.partyToAmount["p4"].String())
+	require.Equal(t, "375", po.partyToAmount["p5"].String())
+	require.Equal(t, "asset", po.asset)
+	require.Equal(t, "1", po.epochSeq)
+	require.Equal(t, "accountID", po.fromAccount)
+	require.Equal(t, uint64(2), po.lockedForEpochs)
+	require.Equal(t, now.Unix(), po.timestamp)
+	require.Equal(t, "10000", po.totalReward.String())
+
+	// we allow each to get up to 0.25 of the cap, all are capped at their maximum, no one gets additional amount
+	// only 0.5 of the reward is paid
+	ds.CapRewardFeeMultiple = &smallerCap
+	po = calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds, takerFeeContribution)
+
+	require.Equal(t, "750", po.partyToAmount["p1"].String())
+	require.Equal(t, "1562", po.partyToAmount["p2"].String())
+	require.Equal(t, "625", po.partyToAmount["p3"].String())
+	require.Equal(t, "1875", po.partyToAmount["p4"].String())
+	require.Equal(t, "187", po.partyToAmount["p5"].String())
+	require.Equal(t, "asset", po.asset)
+	require.Equal(t, "1", po.epochSeq)
+	require.Equal(t, "accountID", po.fromAccount)
+	require.Equal(t, uint64(2), po.lockedForEpochs)
+	require.Equal(t, now.Unix(), po.timestamp)
+	require.Equal(t, "4999", po.totalReward.String())
+
+	// p1 and p2 do not contribute anything to taker fees
+	takerFeeContribution = map[string]*num.Uint{
+		"p3": num.MustUintFromString("2000", 10),
+		"p4": num.MustUintFromString("1000", 10),
+		"p5": num.MustUintFromString("750", 10),
+	}
+
+	ds.CapRewardFeeMultiple = &largeCap
+	po = calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds, takerFeeContribution)
+
+	// given that the uncapped breakdown is
+	// uncapped p3=1250 score=0.05405405405 capped=4000
+	// uncapped p4=3750 score=0.3243243243  capped=2000
+	// uncapped p5=375  score=0.02702702703 capped=1500
+	// we expect the following to happen:
+	// after the first round:
+	// p3=1250
+	// p4=2000
+	// p5=375
+	// we have 10000-1250-2000-375=6375 remaining
+	// after the second round:
+	// p3=2046
+	// p4=2000
+	// p5=614
+	// after the third round:
+	// p3=2713
+	// p4=2000
+	// p5=814
+	// after the fourth round:
+	// p3=3272
+	// p4=2000
+	// p5=981
+	// after the fifth round:
+	// p3=3740
+	// p4=2000
+	// p5=1121
+	// after the sixth round:
+	// p3=4000
+	// p4=2000
+	// p5=1238
+	// after the seventh round:
+	// p3=4000
+	// p4=2000
+	// p5=1341
+	// after the eighth round:
+	// p3=4000
+	// p4=2000
+	// p5=1440
+	// after the ninth round:
+	// p3=4000
+	// p4=2000
+	// p5=1500
+	require.Equal(t, "4000", po.partyToAmount["p3"].String())
+	require.Equal(t, "2000", po.partyToAmount["p4"].String())
+	require.Equal(t, "1500", po.partyToAmount["p5"].String())
+	require.Equal(t, "asset", po.asset)
+	require.Equal(t, "1", po.epochSeq)
+	require.Equal(t, "accountID", po.fromAccount)
+	require.Equal(t, uint64(2), po.lockedForEpochs)
+	require.Equal(t, now.Unix(), po.timestamp)
+	require.Equal(t, "7500", po.totalReward.String())
 }
 
 func TestCalculateRewardsByContributionIndividualRanking(t *testing.T) {
@@ -77,7 +200,7 @@ func TestCalculateRewardsByContributionIndividualRanking(t *testing.T) {
 			{StartRank: 4, ShareRatio: 0},
 		},
 	}
-	po := calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds)
+	po := calculateRewardsByContributionIndividual("1", "asset", "accountID", num.NewUint(10000), partyContribution, rewardMultipliers, now, ds, nil)
 
 	require.Equal(t, 3, len(po.partyToAmount))
 	require.Equal(t, "4000", po.partyToAmount["p1"].String())
@@ -143,7 +266,7 @@ func TestCalculateRewardsByContributionTeamsRank(t *testing.T) {
 			{StartRank: 4, ShareRatio: 0},
 		},
 	}
-	po := calculateRewardsByContributionTeam("1", "asset", "accountID", num.NewUint(10000), teamContribution, teamToPartyContribution, rewardMultipliers, now, ds)
+	po := calculateRewardsByContributionTeam("1", "asset", "accountID", num.NewUint(10000), teamContribution, teamToPartyContribution, rewardMultipliers, now, ds, nil)
 
 	// t1: 0.4
 	// t2: 0.2
@@ -225,7 +348,7 @@ func TestCalculateRewardsByContributionTeamsProRata(t *testing.T) {
 		LockPeriod:           2,
 	}
 
-	po := calculateRewardsByContributionTeam("1", "asset", "accountID", num.NewUint(10000), teamContribution, teamToPartyContribution, rewardMultipliers, now, ds)
+	po := calculateRewardsByContributionTeam("1", "asset", "accountID", num.NewUint(10000), teamContribution, teamToPartyContribution, rewardMultipliers, now, ds, nil)
 
 	// t1: 0.6/2 = 0.3
 	// t2: 0.5/2 = 0.25

@@ -67,6 +67,10 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
 	github.com/ipfs/boxo v0.13.1
+	github.com/ipfs/fs-repo-migrations/fs-repo-12-to-13 v1.0.0
+	github.com/ipfs/fs-repo-migrations/fs-repo-13-to-14 v1.0.0
+	github.com/ipfs/fs-repo-migrations/fs-repo-14-to-15 v1.0.1
+	github.com/ipfs/fs-repo-migrations/tools v0.0.0-20240131173452-0dbdc6f2282c
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-libipfs v0.7.0
 	github.com/ipfs/go-log v1.0.5

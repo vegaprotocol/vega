@@ -30,7 +30,8 @@ Feature: Composite mark price calculation
       | sellSideProvider | ETH/FEB23 | sell | 1      | 15000 | 0                | TYPE_LIMIT | TIF_GTC |           |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 15090 | 0                | TYPE_LIMIT | TIF_GTC |           |
     When the opening auction period ends for market "ETH/FEB23"
-    Then the mark price should be "15000" for the market "ETH/FEB23"
+    # (15000+15030)/2=15015
+    Then the mark price should be "15015" for the market "ETH/FEB23"
 
     # No price sources stale, composite price average of last traded price, book price and oracle price
     Given the oracles broadcast data with block time signed with "0xCAFECAFE1":

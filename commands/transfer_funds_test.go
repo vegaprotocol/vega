@@ -39,6 +39,10 @@ func TestTransferFunds(t *testing.T) {
 		largeRankTable = append(largeRankTable, &vega.Rank{StartRank: i, ShareRatio: i})
 	}
 
+	capInvalidNumber := "banana"
+	capNegative := "-1"
+	capZero := "0"
+
 	cases := []struct {
 		transfer  commandspb.Transfer
 		errString string
@@ -422,6 +426,78 @@ func TestTransferFunds(t *testing.T) {
 		{
 			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+							CapRewardFeeMultiple: &capInvalidNumber,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.cap_reward_fee_multiple (is not a valid number)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+							CapRewardFeeMultiple: &capNegative,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.cap_reward_fee_multiple (must be positive)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:       "",
+							Metric:               vega.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED,
+							DistributionStrategy: vega.DistributionStrategy_DISTRIBUTION_STRATEGY_PRO_RATA,
+							CapRewardFeeMultiple: &capZero,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.kind.dispatch_strategy.cap_reward_fee_multiple (must be positive)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
 				Kind: &commandspb.Transfer_Recurring{
 					Recurring: &commandspb.RecurringTransfer{
@@ -442,6 +518,98 @@ func TestTransferFunds(t *testing.T) {
 				Reference: "testing",
 			},
 			errString: "transfer.kind.dispatch_strategy.entity_scope (ENTITY_SCOPE_TEAMS is not allowed for ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS)",
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:  "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							AssetForMetric:  "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+							Markets:         []string{"market1", "market2"},
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+							Markets:         []string{"market1", "market2"},
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+		},
+		{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+				Kind: &commandspb.Transfer_Recurring{
+					Recurring: &commandspb.RecurringTransfer{
+						StartEpoch: 10,
+						EndEpoch:   ptr.From(uint64(11)),
+						Factor:     "1",
+						DispatchStrategy: &vega.DispatchStrategy{
+							Metric:          vega.DispatchMetric_DISPATCH_METRIC_MARKET_VALUE,
+							EntityScope:     vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS,
+							IndividualScope: vega.IndividualScope_INDIVIDUAL_SCOPE_ALL,
+						},
+					},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
 		},
 		{
 			transfer: commandspb.Transfer{

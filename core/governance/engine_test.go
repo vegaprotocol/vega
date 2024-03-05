@@ -1629,6 +1629,7 @@ func newMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.Spec
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
 				},
+				TickSize: num.NewUint(1),
 			},
 		},
 	}
@@ -1718,6 +1719,7 @@ func newPerpsMarketTerms(termFilter *dstypes.SpecFilter, binding *datasource.Spe
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
 				},
+				TickSize: num.UintOne(),
 			},
 		},
 	}
@@ -1769,6 +1771,7 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 					SlaCompetitionFactor:        num.DecimalOne(),
 					PerformanceHysteresisEpochs: 1,
 				},
+				TickSize: num.UintOne(),
 			},
 		},
 	}
@@ -1801,6 +1804,7 @@ func updateSpotMarketTerms() *types.ProposalTermsUpdateSpotMarket {
 					TimeWindow:    1,
 					ScalingFactor: num.DecimalE(),
 				},
+				TickSize: num.UintOne(),
 			},
 		},
 	}
@@ -1904,6 +1908,7 @@ func updateMarketTerms(termFilter *dstypes.SpecFilter, termBinding *datasource.S
 					FullDisposalSize:    20,
 					MaxFractionConsumed: num.DecimalFromFloat(0.01),
 				},
+				TickSize: num.UintOne(),
 			},
 		},
 	}

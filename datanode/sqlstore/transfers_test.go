@@ -314,6 +314,32 @@ func TestGetTransfersToOrFromParty(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, retrievedFromAccount3)
 	})
+
+	t.Run("Retrieve transfers from/to party by from account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account2.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+
+	t.Run("Retrieve transfers from/to party by to account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToOrFromParty(ctx, entities.DefaultCursorPagination(true), filters, account2.PartyID)
+		require.NoError(t, err)
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer4},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
 }
 
 func TestGetTransfersByParty(t *testing.T) {
@@ -478,6 +504,33 @@ func TestGetTransfersByParty(t *testing.T) {
 			TransferDetailsAsTransfers(t, retrieved),
 		)
 	})
+
+	t.Run("Retrieve transfers from party by from account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersFromParty(ctx, entities.DefaultCursorPagination(true), filters, account2.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer2, *transfer3},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
+	t.Run("Retrieve transfers to party by from account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetTransfersToParty(ctx, entities.DefaultCursorPagination(true), filters, account2.PartyID)
+		require.NoError(t, err)
+
+		assert.ElementsMatch(t,
+			[]entities.Transfer{*transfer1, *transfer4},
+			TransferDetailsAsTransfers(t, retrieved),
+		)
+	})
 }
 
 func TestGetAllTransfers(t *testing.T) {
@@ -639,6 +692,26 @@ func TestGetAllTransfers(t *testing.T) {
 		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
 		require.NoError(t, err)
 		assert.Equal(t, []entities.Transfer{*transfer3}, TransferDetailsAsTransfers(t, retrieved))
+	})
+
+	t.Run("Retrieve transfers by From account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			FromAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+		assert.Equal(t, []entities.Transfer{*transfer1}, TransferDetailsAsTransfers(t, retrieved))
+	})
+
+	t.Run("Retrieve transfers by To account type", func(t *testing.T) {
+		filters := sqlstore.ListTransfersFilters{
+			ToAccountType: ptr.From(vegapb.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD),
+		}
+
+		retrieved, _, err := transfersStore.GetAll(ctx, entities.DefaultCursorPagination(true), filters)
+		require.NoError(t, err)
+		assert.Equal(t, []entities.Transfer{*transfer2}, TransferDetailsAsTransfers(t, retrieved))
 	})
 }
 

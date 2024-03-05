@@ -256,6 +256,7 @@ func getSpotMarketConfig() *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 }
 
@@ -387,6 +388,7 @@ func getMarketConfig() *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
+		TickSize: num.UintOne(),
 	}
 }
 

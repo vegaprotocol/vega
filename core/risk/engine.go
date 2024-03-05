@@ -39,6 +39,7 @@ var (
 	ErrInsufficientFundsForOrderMargin            = errors.New("insufficient funds for order margin")
 	ErrInsufficientFundsForMarginInGeneralAccount = errors.New("insufficient funds to cover margin in general margin")
 	ErrRiskFactorsNotAvailableForAsset            = errors.New("risk factors not available for the specified asset")
+	ErrInsufficientFundsToCoverTradeFees          = errors.New("insufficient funds to cover fees")
 )
 
 const RiskFactorStateVarName = "risk-factors"

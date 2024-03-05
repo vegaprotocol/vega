@@ -235,6 +235,36 @@ func testPastFundingPayment(t *testing.T) {
 	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
 }
 
+func TestFairgroundPanic(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	whenLeaveOpeningAuction(t, perp, 1708097537000000000)
+
+	ctx := context.Background()
+
+	// submit the first point and enter an auction
+	perp.broker.EXPECT().Send(gomock.Any()).Times(4)
+	perp.perpetual.AddTestExternalPoint(ctx, num.NewUint(2375757190), 1706655048000000000)
+	perp.perpetual.SubmitDataPoint(ctx, num.NewUint(2375757190), 1706655048000000000)
+
+	// enter an auction
+	whenAuctionStateChanges(t, perp, 1708098633000000000, true)
+
+	// core asks for margin increase
+	perp.perpetual.GetMarginIncrease(1708098634815117249)
+
+	// then we leave auction in the same block
+	whenAuctionStateChanges(t, perp, 1708098634815117249, false)
+
+	// add a point
+	perp.perpetual.AddTestExternalPoint(ctx, num.NewUint(2375757190), 1708098648000000000)
+
+	// then add a older point
+	perp.perpetual.AddTestExternalPoint(ctx, num.NewUint(2375757190), 1708098612000000000)
+}
+
 func whenTheFundingPeriodEnds(t *testing.T, perp *tstPerp, now int64) *num.Int {
 	t.Helper()
 	ctx := context.Background()

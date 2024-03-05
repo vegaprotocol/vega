@@ -200,7 +200,17 @@ func MarshalTransferStatus(s eventspb.Transfer_Status) graphql.Marshaler {
 }
 
 func UnmarshalTransferStatus(v interface{}) (eventspb.Transfer_Status, error) {
-	return eventspb.Transfer_STATUS_UNSPECIFIED, ErrUnimplemented
+	s, ok := v.(string)
+	if !ok {
+		return eventspb.Transfer_STATUS_UNSPECIFIED, fmt.Errorf("expected transfer status to be a string")
+	}
+
+	t, ok := eventspb.Transfer_Status_value[s]
+	if !ok {
+		return eventspb.Transfer_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert TransferStatus from GraphQL to Proto: %v", s)
+	}
+
+	return eventspb.Transfer_Status(t), nil
 }
 
 func MarshalDispatchMetric(s vega.DispatchMetric) graphql.Marshaler {

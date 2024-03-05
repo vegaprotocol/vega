@@ -1204,6 +1204,7 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
 			SLAParams:                 terms.Changes.SLAParams,
+			TickSize:                  terms.Changes.TickSize,
 		},
 	}
 
@@ -1254,6 +1255,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 			LiquidityFeeSettings:          terms.Changes.LiquidityFeeSettings,
 			LiquidationStrategy:           terms.Changes.LiquidationStrategy,
 			MarkPriceConfiguration:        terms.Changes.MarkPriceConfiguration,
+			TickSize:                      terms.Changes.TickSize,
 		},
 	}
 

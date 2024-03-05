@@ -428,8 +428,8 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 
 // IsEligibleForProposerBonus checks if the given value is greater than that market quantum * quantum_multiplier.
 func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bool {
-	if _, ok := e.allMarkets[marketID]; ok {
-		quantum, err := e.collateral.GetAssetQuantum(e.futureMarkets[marketID].GetAssetForProposerBonus())
+	if mkt, ok := e.allMarkets[marketID]; ok {
+		quantum, err := e.collateral.GetAssetQuantum(mkt.GetAssetForProposerBonus())
 		if err != nil {
 			return false
 		}
@@ -584,6 +584,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 		if state == types.MarketStateCancelled || state == types.MarketStateClosed || state == types.MarketStateRejected || state == types.MarketStateSettled || state == types.MarketStateTradingTerminated {
 			return fmt.Errorf("invalid state update request. Market is already in a terminal state")
 		}
+		if changes.UpdateType == types.MarketStateUpdateTypeSuspend && state == types.MarketStateSuspendedViaGovernance {
+			return fmt.Errorf("invalid state update request. Market for suspend is already suspended")
+		}
 		if changes.UpdateType == types.MarketStateUpdateTypeResume && state != types.MarketStateSuspendedViaGovernance {
 			return fmt.Errorf("invalid state update request. Market for resume is not suspended")
 		}
@@ -609,6 +612,9 @@ func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfigu
 
 func (e *Engine) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
 	if market, ok := e.allMarkets[changes.MarketID]; ok {
+		if err := e.VerifyUpdateMarketState(changes); err != nil {
+			return err
+		}
 		return market.UpdateMarketState(ctx, changes)
 	}
 	return ErrMarketDoesNotExist

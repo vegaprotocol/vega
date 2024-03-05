@@ -929,6 +929,25 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	return e.transferFees(ctx, marketID, assetID, ft)
 }
 
+func (e *Engine) PartyCanCoverFees(asset, mktID, partyID string, amount *num.Uint) error {
+	generalAccount, err := e.GetPartyGeneralAccount(partyID, asset)
+	if err != nil {
+		return err
+	}
+	generalAccountBalance := generalAccount.Balance
+	marginAccount, _ := e.GetPartyMarginAccount(mktID, partyID, asset)
+
+	marginAccountBalance := num.UintZero()
+	if marginAccount != nil {
+		marginAccountBalance = marginAccount.Balance
+	}
+
+	if num.Sum(generalAccountBalance, marginAccountBalance).LT(amount) {
+		return fmt.Errorf("party has insufficient funds to cover fees")
+	}
+	return nil
+}
+
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
 	if err != nil {
@@ -2091,6 +2110,11 @@ func (e *Engine) getFeeTransferRequest(
 		return getAccountLogError(marketID, t.Owner, types.AccountTypeMargin)
 	}
 
+	orderMarginAccount := func() *types.Account {
+		acc, _ := e.GetAccountByID(e.accountID(marketID, t.Owner, assetID, types.AccountTypeOrderMargin))
+		return acc
+	}
+
 	referralPendingRewardAccount := func() (*types.Account, error) {
 		return getAccountLogError(noMarket, systemOwner, types.AccountTypePendingFeeReferralReward)
 	}
@@ -2131,11 +2155,16 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
+
 		pendingRewardAccount, err := referralPendingRewardAccount()
 		if err != nil {
 			return nil, err
 		}
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{pendingRewardAccount}
 	case types.TransferTypeFeeReferrerRewardDistribute:
 		pendingRewardAccount, err := referralPendingRewardAccount()
@@ -2149,8 +2178,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
-
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{infraFee}
 	case types.TransferTypeInfrastructureFeeDistribute:
 		treq.FromAccount = []*types.Account{infraFee}
@@ -2160,7 +2192,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{liquiFee}
 	case types.TransferTypeLiquidityFeeDistribute:
 		treq.FromAccount = []*types.Account{liquiFee}
@@ -2170,7 +2206,11 @@ func (e *Engine) getFeeTransferRequest(
 		if err != nil {
 			return nil, err
 		}
+		orderMargin := orderMarginAccount()
 		treq.FromAccount = []*types.Account{general, margin}
+		if orderMargin != nil {
+			treq.FromAccount = append(treq.FromAccount, orderMargin)
+		}
 		treq.ToAccount = []*types.Account{makerFee}
 	case types.TransferTypeMakerFeeReceive:
 		treq.FromAccount = []*types.Account{makerFee}

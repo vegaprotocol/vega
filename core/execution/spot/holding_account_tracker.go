@@ -105,7 +105,12 @@ func (hat *HoldingAccountTracker) TransferFeeToHoldingAccount(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
-	hat.orderIDToFee[orderID] = feeQuantity
+	fee, ok := hat.orderIDToFee[orderID]
+	if ok {
+		hat.orderIDToFee[orderID].Add(feeQuantity, fee)
+	} else {
+		hat.orderIDToFee[orderID] = feeQuantity
+	}
 	return le, nil
 }
 

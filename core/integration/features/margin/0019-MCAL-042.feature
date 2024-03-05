@@ -56,7 +56,7 @@ Feature: Test order margin during continuous
     #order margin short: (2*15910+1*15920)*0.3=14322
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14322 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
     #AC: 0019-MCAL-222,When the party increases the order price during continunous, order margin should increase
     #order margin short: (2*15912+1*15920)*0.3=14323
@@ -66,7 +66,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14323 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14323 |
 
     #AC: 0019-MCAL-223,When the party decreases the order price during continunous, order margin should decrease
     #order margin short: (2*15902+1*15920)*0.3=14317
@@ -76,7 +76,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 14317 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14317 |
 
     #AC: 0019-MCAL-224,When the party decreases the order volume during continunous, order margin should decrease
     #AC: 0019-MCAL-090,A feature test that checks margin in case market PDP > 0 is created and passes.
@@ -87,7 +87,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 9546  |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 9546  |
 
     #AC: 0019-MCAL-225,When the party increases the order volume while decrease price during continunous, order margin should update accordingly
     #order margin short: (4*15900+1*15920)*0.3=23856
@@ -97,7 +97,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0             | 23856 |
+      | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 23856 |
 
     #AC: 0019-MCAL-226,When the party's order is partially filled during continunous, order margin should update accordingly
     #order margin short: (3*15900+1*15920)*0.3=19086
@@ -119,7 +119,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0             | 14310 |
+      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-228, place a GFA order duing continuous, order should be rejected
     And the parties place the following orders:
@@ -128,7 +128,7 @@ Feature: Test order margin during continuous
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0             | 14310 |
+      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-229,When the party has position -1 and order -3, and new long order with size 1 will be offset
     #order margin short: 3*15900*0.3=14310

@@ -20,6 +20,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type spotResolver VegaResolverRoot
@@ -77,6 +78,10 @@ func (r updateSpotMarketConfigurationResolver) LiquiditySLAParams(ctx context.Co
 }
 
 type newSpotMarketResolver VegaResolverRoot
+
+func (r *newSpotMarketResolver) TickSize(_ context.Context, obj *types.NewSpotMarket) (string, error) {
+	return obj.Changes.TickSize, nil
+}
 
 func (r newSpotMarketResolver) Instrument(ctx context.Context, obj *vega.NewSpotMarket) (*vega.InstrumentConfiguration, error) {
 	return obj.Changes.Instrument, nil

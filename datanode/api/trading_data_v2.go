@@ -296,13 +296,17 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 	}
 
 	if req.Filter != nil {
-		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
+		if err := marketIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}
+		req.Filter.MarketIds = marketIDs
 
-		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+		partyIDs := NewVegaIDSlice(req.Filter.PartyIds...)
+		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
+		req.Filter.PartyIds = partyIDs
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
@@ -510,13 +514,16 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
 
 	if req.Filter != nil {
-		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
+		if err := marketIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}
-
-		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+		req.Filter.MarketIds = marketIDs
+		partyIDs := NewVegaIDSlice(req.Filter.PartyIds...)
+		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
+		req.Filter.PartyIds = partyIDs
 	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
@@ -1374,13 +1381,17 @@ func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.Lis
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllPositions")()
 
 	if req.Filter != nil {
-		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
+		if err := marketIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}
+		req.Filter.MarketIds = marketIDs
 
-		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+		partyIDs := NewVegaIDSlice(req.Filter.PartyIds...)
+		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
+		req.Filter.PartyIds = partyIDs
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -2436,8 +2447,13 @@ func (t *TradingDataServiceV2) GetTransfer(ctx context.Context, req *v2.GetTrans
 // ListTransfers lists transfers using cursor pagination. If a pubkey is provided, it will list transfers for that pubkey.
 func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTransfersRequest) (*v2.ListTransfersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTransfersV2")()
+	const transfersDefaultPageSize int32 = 50
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	// the default size is too big for transfers so if no pagination is provided, set it to something smaller
+	if req.Pagination == nil {
+		pagination.Forward.Limit = ptr.From(transfersDefaultPageSize)
+	}
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
 	}
@@ -2464,6 +2480,8 @@ func (t *TradingDataServiceV2) ListTransfers(ctx context.Context, req *v2.ListTr
 	if req.GameId != nil {
 		filters.GameID = ptr.From(entities.GameID(*req.GameId))
 	}
+	filters.FromAccountType = req.FromAccountType
+	filters.ToAccountType = req.ToAccountType
 
 	if req.Pubkey == nil {
 		if !isReward {
@@ -2546,6 +2564,16 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 	var filter entities.OrderFilter
 	if req.Filter != nil {
 		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
+		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
+		if err := marketIDs.Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
+
+		partyIDs := NewVegaIDSlice(req.Filter.PartyIds...)
+		if err := partyIDs.Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+
 		filter = entities.OrderFilter{
 			Statuses:         req.Filter.Statuses,
 			Types:            req.Filter.Types,
@@ -2553,16 +2581,9 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 			Reference:        req.Filter.Reference,
 			ExcludeLiquidity: req.Filter.ExcludeLiquidity,
 			LiveOnly:         ptr.UnBox(req.Filter.LiveOnly),
-			PartyIDs:         req.Filter.PartyIds,
-			MarketIDs:        req.Filter.MarketIds,
+			PartyIDs:         partyIDs,
+			MarketIDs:        marketIDs,
 			DateRange:        &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
-		}
-		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
-			return nil, formatE(err, errors.New("one or more market id is invalid"))
-		}
-
-		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
-			return nil, formatE(err, errors.New("one or more party id is invalid"))
 		}
 	}
 
@@ -2639,24 +2660,39 @@ func (s VegaIDsSlice) Ensure() error {
 	return nil
 }
 
+func NewVegaIDSlice(input ...string) VegaIDsSlice {
+	ids := make(VegaIDsSlice, 0)
+	for _, id := range input {
+		if strings.ContainsRune(id, ',') {
+			ids = append(ids, strings.Split(id, ",")...)
+		} else {
+			ids = append(ids, id)
+		}
+	}
+
+	return ids
+}
+
 // ObserveOrders subscribes to a stream of orders.
 func (t *TradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	if err := VegaIDsSlice(req.MarketIds).Ensure(); err != nil {
+	marketIDs := NewVegaIDSlice(req.MarketIds...)
+	if err := marketIDs.Ensure(); err != nil {
 		return formatE(err, errors.New("one or more market id is invalid"))
 	}
 
-	if err := VegaIDsSlice(req.PartyIds).Ensure(); err != nil {
+	partyIDs := NewVegaIDSlice(req.PartyIds...)
+	if err := partyIDs.Ensure(); err != nil {
 		return formatE(err, errors.New("one or more party id is invalid"))
 	}
 
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return formatE(err)
 	}
-	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketIds, req.PartyIds, ptr.UnBox(req.ExcludeLiquidity))
+	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, marketIDs, partyIDs, ptr.UnBox(req.ExcludeLiquidity))
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -3370,14 +3406,22 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	combinedMargin := marginAccountBalance.Add(orderAccountBalance)
 	if isolatedMarginMode {
 		requiredPositionMargin, requiredOrderMargin := risk.CalculateRequiredMarginInIsolatedMode(req.OpenVolume, avgEntryPrice, marketObservable, buyOrders, sellOrders, positionFactor, dMarginFactor)
-		posMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Sub(marginAccountBalance))
-		wMarginDelta = num.MaxD(num.DecimalZero(), requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin))
+		posMarginDelta = requiredPositionMargin.Sub(marginAccountBalance)
+		wMarginDelta = requiredPositionMargin.Add(requiredOrderMargin).Sub(combinedMargin)
 		bMarginDelta = wMarginDelta
 	} else {
-		worstInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
-		bestInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
-		wMarginDelta = num.MaxD(num.DecimalZero(), worstInitial.Sub(combinedMargin))
-		bMarginDelta = num.MaxD(num.DecimalZero(), bestInitial.Sub(combinedMargin))
+		wInitial, _ := num.DecimalFromString(marginEstimate.WorstCase.InitialMargin)
+		bInitial, _ := num.DecimalFromString(marginEstimate.BestCase.InitialMargin)
+		wRelease, _ := num.DecimalFromString(marginEstimate.WorstCase.CollateralReleaseLevel)
+		bRelease, _ := num.DecimalFromString(marginEstimate.BestCase.CollateralReleaseLevel)
+		wMarginDifference := wInitial.Sub(combinedMargin)
+		bMarginDifference := bInitial.Sub(combinedMargin)
+		if wMarginDifference.IsPositive() || combinedMargin.GreaterThan(wRelease) {
+			wMarginDelta = wMarginDifference
+		}
+		if bMarginDifference.IsPositive() || combinedMargin.GreaterThan(bRelease) {
+			bMarginDelta = bMarginDifference
+		}
 	}
 
 	if isolatedMarginMode && ptr.UnBox(req.IncludeRequiredPositionMarginInAvailableCollateral) {
@@ -4365,21 +4409,22 @@ func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListS
 			liveOnly = *req.Filter.LiveOnly
 		}
 
-		filter = entities.StopOrderFilter{
-			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
-			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
-			PartyIDs:       req.Filter.PartyIds,
-			MarketIDs:      req.Filter.MarketIds,
-			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
-			LiveOnly:       liveOnly,
-		}
-
-		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+		marketIDs := NewVegaIDSlice(req.Filter.MarketIds...)
+		if err := marketIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more market id is invalid"))
 		}
 
-		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+		partyIDs := NewVegaIDSlice(req.Filter.PartyIds...)
+		if err := partyIDs.Ensure(); err != nil {
 			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+		filter = entities.StopOrderFilter{
+			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
+			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
+			PartyIDs:       partyIDs,
+			MarketIDs:      marketIDs,
+			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
+			LiveOnly:       liveOnly,
 		}
 	}
 

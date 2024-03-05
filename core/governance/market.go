@@ -277,6 +277,7 @@ func buildMarketFromProposal(
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 		LiquidationStrategy:           lstrat,
 		MarkPriceConfiguration:        definition.Changes.MarkPriceConfiguration,
+		TickSize:                      definition.Changes.TickSize,
 	}
 	// successor proposal
 	if suc := definition.Successor(); suc != nil {
@@ -355,6 +356,7 @@ func buildSpotMarketFromProposal(
 		QuadraticSlippageFactor:       num.DecimalZero(),
 		LiquiditySLAParams:            definition.Changes.SLAParams,
 		MarkPriceConfiguration:        defaultMarkPriceConfig,
+		TickSize:                      definition.Changes.TickSize,
 	}
 	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -791,9 +793,9 @@ func validateNewSpotMarketChange(
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
-	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
+	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 100 {
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
-			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
+			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 100", len(terms.Changes.PriceMonitoringParameters.Triggers) > 100)
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
@@ -831,9 +833,9 @@ func validateNewMarketChange(
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
+	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 100 {
 		return types.ProposalErrorTooManyPriceMonitoringTriggers,
-			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
+			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 100", len(terms.Changes.PriceMonitoringParameters.Triggers) > 100)
 	}
 	if perr, err := validateLPSLAParams(terms.Changes.LiquiditySLAParameters); err != nil {
 		return perr, err
