@@ -22,15 +22,18 @@ import (
 	"code.vegaprotocol.io/vega/core/datasource/external/ethcall"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 var (
 	contractCall = (&types.PayloadEthContractCallEvent{}).Key()
 	lastEthBlock = (&types.PayloadEthOracleLastBlock{}).Key()
+	misc         = (&types.PayloadEthVerifierMisc{}).Key()
 	hashKeys     = []string{
-		contractCall, lastEthBlock,
+		contractCall, lastEthBlock, misc,
 	}
 )
 
@@ -56,12 +59,12 @@ func (s *Verifier) serialisePendingContractCallEvents() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (s *Verifier) lastEthBlockPayloadData() *types.PayloadEthOracleLastBlock {
-	if s.lastBlock != nil {
+func (s *Verifier) ethBlockPayloadData(bl *types.EthBlock) *types.PayloadEthOracleLastBlock {
+	if bl != nil {
 		return &types.PayloadEthOracleLastBlock{
 			EthOracleLastBlock: &types.EthBlock{
-				Height: s.lastBlock.Height,
-				Time:   s.lastBlock.Time,
+				Height: bl.Height,
+				Time:   bl.Time,
 			},
 		}
 	}
@@ -73,7 +76,32 @@ func (s *Verifier) serialiseLastEthBlock() ([]byte, error) {
 	s.log.Info("serialising last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", s.lastBlock)))
 
 	pl := types.Payload{
-		Data: s.lastEthBlockPayloadData(),
+		Data: s.ethBlockPayloadData(s.lastBlock),
+	}
+
+	return proto.Marshal(pl.IntoProto())
+}
+
+func (s *Verifier) serialiseMisc() ([]byte, error) {
+	s.log.Info("serialising last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", s.lastBlock)))
+
+	slice := make([]*snapshotpb.EthVerifierBucket, 0, s.ackedEvts.Size())
+	iter := s.ackedEvts.events.Iterator()
+	for iter.Next() {
+		v := (iter.Value().(*ackedEvtBucket))
+		slice = append(slice, &snapshotpb.EthVerifierBucket{
+			Ts:     v.ts,
+			Hashes: v.hashes,
+		})
+	}
+
+	pl := types.Payload{
+		Data: &types.PayloadEthVerifierMisc{
+			Misc: &snapshotpb.EthOracleVerifierMisc{
+				PatchBlock: s.ethBlockPayloadData(s.patchBlock).IntoProto().EthOracleVerifierLastBlock,
+				Buckets:    slice,
+			},
+		},
 	}
 
 	return proto.Marshal(pl.IntoProto())
@@ -94,6 +122,8 @@ func (s *Verifier) serialise(k string) ([]byte, error) {
 		return s.serialiseK(s.serialisePendingContractCallEvents)
 	case lastEthBlock:
 		return s.serialiseK(s.serialiseLastEthBlock)
+	case misc:
+		return s.serialiseK(s.serialiseMisc)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -126,7 +156,10 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 		s.restorePendingCallEvents(ctx, pl.EthContractCallEvent)
 		return nil, nil
 	case *types.PayloadEthOracleLastBlock:
-		s.restoreLastEthBlock(pl.EthOracleLastBlock)
+		s.restoreLastEthBlock(ctx, pl.EthOracleLastBlock)
+		return nil, nil
+	case *types.PayloadEthVerifierMisc:
+		s.restoreMisc(ctx, pl.Misc)
 		return nil, nil
 	default:
 		return nil, types.ErrUnknownSnapshotType
@@ -134,6 +167,10 @@ func (s *Verifier) LoadState(ctx context.Context, payload *types.Payload) ([]typ
 }
 
 func (s *Verifier) OnStateLoaded(ctx context.Context) error {
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.7") {
+		s.patchBlock = s.lastBlock
+	}
+
 	// tell the eth call engine what the last block seen was, so it does not re-trigger calls
 	if s.lastBlock != nil && s.lastBlock.Height > 0 {
 		s.ethEngine.StartAtHeight(s.lastBlock.Height, s.lastBlock.Time)
@@ -144,12 +181,36 @@ func (s *Verifier) OnStateLoaded(ctx context.Context) error {
 	return nil
 }
 
-func (s *Verifier) restoreLastEthBlock(lastBlock *types.EthBlock) {
+func (s *Verifier) restoreSeen(buckets []*snapshotpb.EthVerifierBucket) {
+	for _, v := range buckets {
+		s.ackedEvts.AddAt(v.Ts, v.Hashes...)
+	}
+}
+
+func (s *Verifier) restoreLastEthBlock(_ context.Context, lastBlock *types.EthBlock) {
 	s.log.Info("restoring last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", lastBlock)))
 	s.lastBlock = lastBlock
 }
 
-func (s *Verifier) restorePendingCallEvents(_ context.Context,
+func (s *Verifier) restorePatchBlock(_ context.Context, patchBlock *types.EthBlock) {
+	s.log.Info("restoring patch eth block", logging.String("patch-block", fmt.Sprintf("%+v", patchBlock)))
+
+	// we have no history of what eth events we've seen from before this patch, so we will reject
+	// any that come in that are older
+	s.patchBlock = patchBlock
+}
+
+func (s *Verifier) restoreMisc(_ context.Context, pl *snapshotpb.EthOracleVerifierMisc) {
+	if pl.PatchBlock != nil {
+		s.patchBlock = &types.EthBlock{
+			Height: pl.PatchBlock.BlockHeight,
+			Time:   pl.PatchBlock.BlockTime,
+		}
+	}
+	s.restoreSeen(pl.Buckets)
+}
+
+func (s *Verifier) restorePendingCallEvents(ctx context.Context,
 	results []*ethcall.ContractCallEvent,
 ) {
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
@@ -164,9 +225,12 @@ func (s *Verifier) restorePendingCallEvents(_ context.Context,
 			seenSpecId[callEvent.SpecId] = struct{}{}
 		}
 
-		// this populates the id/hash structs
-		if !s.ensureNotDuplicate(callEvent.Hash()) {
-			s.log.Panic("pendingCallEvents's unexpectedly pre-populated when restoring from snapshot")
+		// if we've upgraded from the patch we need to add the pending events in, but after the upgrade
+		// we don't need to because they will already be there
+		if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.7") {
+			if !s.ensureNotDuplicate(*callEvent) {
+				s.log.Panic("pendingCallEvents's unexpectedly pre-populated when restoring from snapshot")
+			}
 		}
 
 		pending := &pendingCallEvent{

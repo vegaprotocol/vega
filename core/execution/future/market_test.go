@@ -1470,16 +1470,30 @@ func TestPeggingWithTickSize(t *testing.T) {
 		Reference: types.PeggedReferenceMid,
 		Offset:    num.NewUint(100),
 	}
-	// mid price is 50025 - 100 = 49,925 => 49900
+	// mid price is 50025 - 100 = 49,925 => 49950 bid rounded to the nearest tick size up
 	conf, err = tm.market.SubmitOrder(context.Background(), order)
 	require.NoError(t, err)
-	require.Equal(t, "49900", conf.Order.OriginalPrice.String())
+	require.Equal(t, "49950", conf.Order.OriginalPrice.String())
 
 	order.Side = types.SideSell
-	// mid price is 50025 + 100 = 50125 => 50150
+	// mid price is 50025 + 100 = 50125 => 50100 ask rounded to the nearest tick size down
 	conf, err = tm.market.SubmitOrder(context.Background(), order)
 	require.NoError(t, err)
-	require.Equal(t, "50150", conf.Order.OriginalPrice.String())
+	require.Equal(t, "50100", conf.Order.OriginalPrice.String())
+
+	mkt := tm.mktCfg.DeepClone()
+	// offset is still divisible by ticksize so nothing happens
+	mkt.TickSize = num.NewUint(50)
+	require.Equal(t, 2, tm.market.GetPeggedOrderCount())
+	require.NoError(t, tm.market.Market.Update(context.Background(), mkt, tm.oracleEngine))
+	require.Equal(t, 2, tm.market.GetPeggedOrderCount())
+
+	mkt = tm.mktCfg.DeepClone()
+	mkt.TickSize = num.NewUint(79)
+	// offset is not divisible by ticksize so pegged orders get cancelled
+	require.Equal(t, 2, tm.market.GetPeggedOrderCount())
+	require.NoError(t, tm.market.Market.Update(context.Background(), mkt, tm.oracleEngine))
+	require.Equal(t, 0, tm.market.GetPeggedOrderCount())
 }
 
 func TestAmendOrderWithInvalidTickSize(t *testing.T) {
