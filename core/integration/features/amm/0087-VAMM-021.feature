@@ -145,8 +145,11 @@ Feature: Test vAMM cancellation by reduce-only from short.
     When the parties cancel the following AMM:
       | party | market id | method             |
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
+    Then the AMM pool status should be:
+      | party | market id | amount | status             | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 0.25               | 0.25               |
     # Cancel the remaining order from the start of the test
-    And the parties cancel the following orders:
+    When the parties cancel the following orders:
       | party  | reference |
       | party4 | p4-first  |
       | party4 | p4-second |
@@ -231,12 +234,15 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party4   | 347    | 2186           | 0            |        |
       | party5   | -347   | 5783           | 0            |        |
       | vamm1-id | 0      | 0              | -7969        | true   |
+    And the AMM pool status should be:
+      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
     And the following transfers should happen:
-       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 9572   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 9572   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 992374  |        |        |
@@ -293,8 +299,11 @@ Feature: Test vAMM cancellation by reduce-only from short.
     When the parties cancel the following AMM:
       | party | market id | method             |
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
+    Then the AMM pool status should be:
+      | party | market id | amount | status             | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 0.25               | 0.25               |
     # Cancel the remaining order from the start of the test
-    And the parties cancel the following orders:
+    When the parties cancel the following orders:
       | party  | reference |
       | party4 | p4-first  |
       | party4 | p4-second |
@@ -379,12 +388,15 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | party4   | 347    | 2186           | 0            |        |
       | party5   | -347   | 5783           | 0            |        |
       | vamm1-id | 0      | 0              | -7969        | true   |
+    And the AMM pool status should be:
+      | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 100000 | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
     And the following transfers should happen:
-       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
-       |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
-       | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 9572   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-       | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 67     | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 256    | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 9572   | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 92374  | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 992374  |        |        |
