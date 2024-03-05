@@ -738,6 +738,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
 		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
 	})
+	s.Step(`^the AMM "([^"]*)" has the following discount factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
+	})
 
 	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
 		return steps.PartyHasTheFollowingTakerNotional(party, notional, execsetup.volumeDiscountProgram)
