@@ -126,18 +126,25 @@ func (s *L2Verifiers) restoreState(ctx context.Context, l2EthOracles *snapshotpb
 				Time:   v.LastBlock.BlockTime,
 			}
 		}
-
-		var patchBlock *types.EthBlock
-		if v.Misc.PatchBlock != nil {
-			lastBlock = &types.EthBlock{
-				Height: v.Misc.PatchBlock.BlockHeight,
-				Time:   v.Misc.PatchBlock.BlockTime,
-			}
-		}
-
+		// do it once just in case
 		verifier.restoreLastEthBlock(ctx, lastBlock)
-		verifier.restorePatchBlock(ctx, patchBlock)
-		verifier.restoreSeen(v.Misc.Buckets)
+
+		// only run this if the misc exists, which might
+		// not be the case on a new upgrade after it's
+		// introduced
+		if v.Misc != nil {
+			var patchBlock *types.EthBlock
+			if v.Misc.PatchBlock != nil {
+				lastBlock = &types.EthBlock{
+					Height: v.Misc.PatchBlock.BlockHeight,
+					Time:   v.Misc.PatchBlock.BlockTime,
+				}
+			}
+
+			verifier.restoreLastEthBlock(ctx, lastBlock)
+			verifier.restorePatchBlock(ctx, patchBlock)
+			verifier.restoreSeen(v.Misc.Buckets)
+		}
 
 		pending := []*ethcall.ContractCallEvent{}
 
