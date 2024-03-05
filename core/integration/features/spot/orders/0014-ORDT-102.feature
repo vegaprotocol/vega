@@ -32,8 +32,7 @@ Feature: Spot market
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
       | party2 | ETH   | 10000  |
-      | party3 | BTC   | 100    |
-      | party4 | BTC   | 100    |
+      | party4 | BTC   | 100  |
       | party5 | BTC   | 100    |
     And the average block duration is "1"
 
@@ -46,28 +45,37 @@ Feature: Spot market
     And the opening auction period ends for market "BTC/ETH"
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    And the mark price should be "1000" for the market "BTC/ETH"
 
+  Scenario: Amending an iceberg order to decrease size will decrease the total and remaining quantities and time priority
+            of the order is not lost (0014-ORDT-102)
 
-  Scenario: For an iceberg order, the orders are refreshed immediately after producing a trade.
-            If the order is successfully refreshed , then the order loses its time priority
-            and is pushed to the back of the queue (0014-ORDT-092) 
+    # Set up a price level to have 3 orders with our iceberg in the middle
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
 
-    # Place an iceberg order with size x
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only |
-      | party2 | BTC/ETH   | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | 2         | 2                    | post |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only | reference |
+      | party1 | BTC/ETH   | buy  | 5      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | 2         | 2                    | post | iceberg1  |
 
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type         | tif     | reference |
-      | party1 | BTC/ETH   | buy  | 10     | 1000  | 0                | TYPE_LIMIT   | TIF_GTC | buy1      |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
 
-    # Placing 2 sell market orders should match first with the iceberg and second with the order sitting behind it
+    # Amend the iceberg to have a smaller size
+    When the parties amend the following orders:
+      | party  | reference  | price | size delta | tif     | 
+      | party1 | iceberg1   | 1000  | -3         | TIF_GTC | 
+
+    # Now send in a sell order, if the time order is untouched it will match against the first normal order and the iceberg
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type         | tif     | reference |
-      | party5 | BTC/ETH   | sell | 2      | 1000  | 1                | TYPE_LIMIT   | TIF_GTC | sell1     |
-      | party5 | BTC/ETH   | sell | 2      | 1000  | 1                | TYPE_LIMIT   | TIF_GTC | sell2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party5 | BTC/ETH   | sell | 2      | 1000  | 2                | TYPE_LIMIT | TIF_GTC | sell1     |
 
-    # This should leave the iceberg order with 8 remaining
-    Then the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status        | reserved volume |
-      | party2 | BTC/ETH   | buy  | 2              | 1000  | STATUS_ACTIVE | 6               |
+    Then the orders should have the following states:
+      | party  | market id | side | price | remaining | volume | reference | status         |
+      | party2 | BTC/ETH   | buy  | 1000  | 0         | 1      | buy1      | STATUS_FILLED  | 
+      | party1 | BTC/ETH   | buy  | 1000  | 1         | 2      | iceberg1  | STATUS_ACTIVE  | 
+      | party2 | BTC/ETH   | buy  | 1000  | 1         | 1      | buy2      | STATUS_ACTIVE  | 
+      | party5 | BTC/ETH   | sell | 1000  | 0         | 2      | sell1     | STATUS_FILLED  | 
