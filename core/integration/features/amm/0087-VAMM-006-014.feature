@@ -134,6 +134,7 @@ Feature: Ensure the vAMM positions follow the market correctly
 
   @VAMM
   Scenario: 0087-VAMM-008: If other traders trade to move the market mid price to 150 the vAMM will post no further sell orders above this price, and the vAMM's position notional value will be equal to 4x its total account balance.
+    #When the network moves ahead "1" epochs
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 500    | 155   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -160,6 +161,10 @@ Feature: Ensure the vAMM positions follow the market correctly
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 317    | 0              | 0            |        |
       | vamm1-id | -317   | 0              | 0            | true   |
+    # Notional value therefore is 317 * 122
+    And the market data for the market "ETH/MAR22" should be:
+      | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
+      | 122        | TRADING_MODE_CONTINUOUS | 154       | 154              | 160              | 149            |
     
     # vAMM receives fees, but loses out in the MTM settlement
     And the following transfers should happen:
@@ -167,9 +172,21 @@ Feature: Ensure the vAMM positions follow the market correctly
        |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 155    | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE |
        | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 81210  | USD   | true   | TRANSFER_TYPE_MARGIN_LOW        |
 
-    # TODO: vamm does not appear to have any notional. Neither party nor alias work.
-    #And the AMM "vamm1-id" has the following taker notional "4000"
-    #And the party "vamm1" has the following taker notional "4000"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party5 | ETH/MAR22 | buy  | 1      | 160   | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the following trades should be executed:
+      | buyer  | price | size | seller | is amm |
+      | party5 | 160   | 1    | lp1    | false  |
+
+    When the network moves ahead "1" blocks
+	Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl | is amm |
+      | party4   | 317    | 12046          | 0            |        |
+      | party5   | 1      | 0              | 0            |        |
+      | lp1      | -1     | 0              | 0            |        |
+      | vamm1-id | -317   | -12046         | 0            | true   |
+    # Notional value therefore is 317 * 122
 
   @VAMM
   Scenario: 0087-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
