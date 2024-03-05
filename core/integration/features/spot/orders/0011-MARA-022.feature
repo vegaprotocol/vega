@@ -1,6 +1,6 @@
 Feature: Spot market
 
-  Scenario: 0011-MARA-020,0011-MARA-021,0011-MARA-022,0011-MARA-023,0011-MARA-024, GTC, GTT, GFA order in spot market
+  Scenario: 0011-MARA-020,0011-MARA-021,0011-MARA-022,0011-MARA-023,0011-MARA-024,0011-MARA-028,0011-MARA-029,0011-MARA-030 GTC, GTT, GFA order in spot market
 
     Given time is updated to "2023-07-20T00:00:00Z"
 
@@ -13,7 +13,7 @@ Feature: Spot market
 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 36000   | 0.999       | 300               |
+      | 72000   | 0.999       | 2                 |
 
     And the liquidity sla params named "SLA-1":
       | price range | commitment min time fraction | performance hysteresis epochs | sla competition factor |
@@ -56,7 +56,6 @@ Feature: Spot market
       | lp4    | BTC   | 100    |
       | lp5    | ETH   | 4000   |
       | lp5    | BTC   | 100    |
-
     And the average block duration is "1"
 
     Given the liquidity monitoring parameters:
@@ -81,9 +80,9 @@ Feature: Spot market
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   | expires in | error                                     |
       | lp1    | BTC/ETH   | buy  | 50     | 4     | 0                | TYPE_LIMIT | TIF_GTC | lp1-b1      |            |                                           |
-      | lp1    | BTC/ETH   | buy  | 50     | 5     | 0                | TYPE_LIMIT | TIF_GTT | lp1-b2      | 10         |                                           |
-      | lp1    | BTC/ETH   | buy  | 100    | 5     | 0                | TYPE_LIMIT | TIF_GFA | lp1-b3      |            |                                           |
-      | party1 | BTC/ETH   | buy  | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party1-buy  |            |                                           |
+      | lp1    | BTC/ETH   | buy  | 20     | 14    | 0                | TYPE_LIMIT | TIF_GTT | lp1-b2      | 10         |                                           |
+      | lp1    | BTC/ETH   | buy  | 100    | 14    | 0                | TYPE_LIMIT | TIF_GFA | lp1-b3      |            |                                           |
+      | party1 | BTC/ETH   | buy  | 2      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party1-buy  |            |                                           |
       | party2 | BTC/ETH   | sell | 1      | 15    | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |            |                                           |
       | lp2    | BTC/ETH   | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | GTC-1       |            |                                           |
       | lp3    | BTC/ETH   | sell | 2      | 22    | 0                | TYPE_LIMIT | TIF_GTT | GTT-1       | 10         |                                           |
@@ -91,39 +90,70 @@ Feature: Spot market
       | lp5    | BTC/ETH   | sell | 4      | 25    | 0                | TYPE_LIMIT | TIF_GTC | lp2-s       |            |                                           |
 
     Then the network moves ahead "1" blocks
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
-    # Then the opening auction period ends for market "BTC/ETH"
-    Then "lp1" should have holding account balance of "4500" for asset "ETH"
-    Then "lp1" should have general account balance of "34500" for asset "ETH"
+    Then the market data for the market "BTC/ETH" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake |
+      | 15         | TRADING_MODE_CONTINUOUS | 72000   | 13        | 18        | 800          | 1000           |
+
+    Then "lp1" should have holding account balance of "4800" for asset "ETH"
+    Then "lp1" should have general account balance of "34200" for asset "ETH"
     Then "lp3" should have general account balance of "4000" for asset "ETH"
-    Then "lp4" should have general account balance of "4000" for asset "ETH"
-    Then "lp5" should have general account balance of "4000" for asset "ETH"
+    Then "party1" should have holding account balance of "150" for asset "ETH"
+    Then "party1" should have general account balance of "9700" for asset "ETH"
+    Then "party1" should have general account balance of "10" for asset "BTC"
+    Then "party2" should have general account balance of "490" for asset "BTC"
 
     Then the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 15    | 1    | party2 |
     Then the parties cancel the following orders:
-      | party | reference |
-      | lp1   | lp1-b1    |
+      | party  | reference  |
+      | party1 | party1-buy |
     Then the orders should have the following status:
-      | party | reference | status           |
-      | lp1   | lp1-b1    | STATUS_CANCELLED |
+      | party  | reference  | status           |
+      | party1 | party1-buy | STATUS_CANCELLED |
 
-    Then "lp1" should have holding account balance of "2500" for asset "ETH"
-    Then "lp1" should have general account balance of "36500" for asset "ETH"
-    Then the party "lp1" lp liquidity bond account balance should be "1000" for the market "BTC/ETH"
+    Then "party1" should have holding account balance of "0" for asset "ETH"
+    Then "party1" should have general account balance of "9850" for asset "ETH"
+    Then "party1" should have general account balance of "10" for asset "BTC"
 
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | only |
-      | party2 | BTC/ETH   | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTT | lp1-b     |      |
-      | party1 | BTC/ETH   | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTT | lp1-s     |      |
+    Then the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | only | error |
+      | party2 | BTC/ETH   | sell | 10     | 14    | 1                | TYPE_LIMIT | TIF_GTC | party2-s  |      |       |
     Then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+    Then "party1" should have general account balance of "9850" for asset "ETH"
+    Then "party1" should have general account balance of "10" for asset "BTC"
+    Then "lp1" should have holding account balance of "3400" for asset "ETH"
 
-    Then "lp1" should have holding account balance of "2500" for asset "ETH"
-    Then "lp1" should have general account balance of "36500" for asset "ETH"
-    Then "lp5" should have holding account balance of "40" for asset "BTC"
-    Then "lp5" should have general account balance of "4000" for asset "ETH"
-    Then "lp5" should have general account balance of "60" for asset "BTC"
+    Then the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   | expires in | error |
+      | party2 | BTC/ETH   | sell | 20     | 4     | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |            |       |
+      | lp1    | BTC/ETH   | buy  | 20     | 4     | 0                | TYPE_LIMIT | TIF_GTT | lp1-b4      | 10         |       |
+      | lp3    | BTC/ETH   | buy  | 20     | 4     | 0                | TYPE_LIMIT | TIF_GFA | lp3-GFA     |            |       |
+      | lp4    | BTC/ETH   | buy  | 20     | 4     | 0                | TYPE_LIMIT | TIF_GTC | lp4-GTC     |            |       |
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "BTC/ETH"
 
-    # Then debug trades
+    Then "lp1" should have holding account balance of "4410" for asset "ETH"
+    Then "lp3" should have holding account balance of "840" for asset "ETH"
+    Then "lp4" should have holding account balance of "840" for asset "ETH"
+
+    Then the orders should have the following status:
+      | party | reference | status        |
+      | lp1   | lp1-b4    | STATUS_ACTIVE |
+      | lp3   | lp3-GFA   | STATUS_ACTIVE |
+      | lp4   | lp4-GTC   | STATUS_ACTIVE |
+
+    Then the network moves ahead "3" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+
+    Then the orders should have the following status:
+      | party | reference | status           |
+      | lp1   | lp1-b4    | STATUS_ACTIVE    |
+      | lp3   | lp3-GFA   | STATUS_CANCELLED |
+      | lp4   | lp4-GTC   | STATUS_ACTIVE    |
+
+
+
 
