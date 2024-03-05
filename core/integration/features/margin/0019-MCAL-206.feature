@@ -83,7 +83,7 @@ Feature: Amending an order during auction for a party in isolated margin such th
       | trader5 | t5-sell-1 | 17000 | -100       | TIF_GTC |                     |
       | trader6 | t6-sell-1 | 17100 | 100        | TIF_GTC | margin check failed |
 
-    When the network moves ahead "7" blockss
+    When the network moves ahead "7" blocks
 
     And the orders should have the following status:
       | party   | reference | status         |
