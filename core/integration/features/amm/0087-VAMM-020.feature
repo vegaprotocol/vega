@@ -140,9 +140,9 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party4 | ETH/MAR22 | sell | 10     | 89    | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/MAR22 | sell | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/MAR22 | sell | 10     | 91    | 0                | TYPE_LIMIT | TIF_GTC |
-    And the market data for the market "ETH/MAR22" should be:
+    Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 105        | TRADING_MODE_CONTINUOUS | 90        | 90               | 91               | 89             |
+      | 105        | TRADING_MODE_CONTINUOUS | 65        | 65               | 91               | 40             |
 
     # Now start checking if the vAMM still quotes sell orders
     When the parties place the following orders:
@@ -166,7 +166,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
     # The best bid should be 40 here?
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 93         | TRADING_MODE_CONTINUOUS | 97        | 97               | 98               | 96             |
+      | 93         | TRADING_MODE_CONTINUOUS | 69        | 69               | 98               | 40             |
     # vAMM receives some fees, but pays MTM loss, excess margin is released
     And the following transfers should happen:
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
@@ -272,9 +272,9 @@ Feature: Test vAMM cancellation by reduce-only from long.
       | party4 | ETH/MAR22 | sell | 10     | 89    | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/MAR22 | sell | 10     | 90    | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/MAR22 | sell | 10     | 91    | 0                | TYPE_LIMIT | TIF_GTC |
-    And the market data for the market "ETH/MAR22" should be:
+    Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 105        | TRADING_MODE_CONTINUOUS | 90        | 90               | 91               | 89             |
+      | 105        | TRADING_MODE_CONTINUOUS | 65        | 65               | 91               | 40             |
 
     # Now start checking if the vAMM still quotes sell orders
     When the parties place the following orders:
@@ -298,7 +298,7 @@ Feature: Test vAMM cancellation by reduce-only from long.
     # The best bid should be 40 here?
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 93         | TRADING_MODE_CONTINUOUS | 97        | 97               | 98               | 96             |
+      | 93         | TRADING_MODE_CONTINUOUS | 69        | 69               | 98               | 40             |
     # vAMM receives some fees, but pays MTM loss, excess margin is released
     And the following transfers should happen:
       | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                            |
