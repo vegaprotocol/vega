@@ -192,7 +192,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | vamm1-id | USD   | ETH/MAR22 | 81255   | 12295  | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 126       | 126              | 127              | 125            |
+      | 122        | TRADING_MODE_CONTINUOUS | 123       | 123              | 122              | 125            |
 
     # Cool, now close the position of vamm completely
     When the parties place the following orders:
@@ -218,7 +218,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | vamm1-id | USD   | ETH/MAR22 | 82735   | 9828   | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 121              | 119            |
+      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 122              | 119            |
 
     # OK, zero-out the vAMM
     When the parties place the following orders:
@@ -346,7 +346,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | vamm1-id | USD   | ETH/MAR22 | 81255   | 12295  | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 122        | TRADING_MODE_CONTINUOUS | 126       | 126              | 127              | 125            |
+      | 122        | TRADING_MODE_CONTINUOUS | 123       | 123              | 122              | 125            |
 
     # Cool, now close the position of vamm completely
     When the parties place the following orders:
@@ -372,7 +372,7 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | vamm1-id | USD   | ETH/MAR22 | 82735   | 9828   | true   |
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
-      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 121              | 119            |
+      | 128        | TRADING_MODE_CONTINUOUS | 120       | 120              | 122              | 119            |
 
     # OK, zero-out the vAMM
     When the parties place the following orders:

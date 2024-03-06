@@ -500,7 +500,7 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 
 	for _, p := range e.poolsCpy {
 		// not active in range if it cannot trade
-		if !p.canTrade(agg) {
+		if !p.canTrade(agg.Side) {
 			continue
 		}
 
