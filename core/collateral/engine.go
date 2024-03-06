@@ -3692,6 +3692,55 @@ func (e *Engine) SubAccountUpdate(
 	return res, nil
 }
 
+func (e *Engine) SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error) {
+	lMovements := make([]*types.LedgerMovement, 0, 2)
+	// NOTE: use subAccount as party ID here to release the margin sub-account to the general sub-account
+	mlm, err := e.ClearPartyMarginAccount(ctx, subAccount, market, asset)
+	if err != nil {
+		return nil, err
+	}
+	if mlm != nil {
+		lMovements = append(lMovements, mlm)
+	}
+	ownerGeneral, subAccountGeneral, _, err := e.getSubAccounts(subAccount, party, asset, market)
+	if err != nil {
+		return nil, err
+	}
+	// one transfer from general to general
+	treq := &types.TransferRequest{
+		Amount:      subAccountGeneral.Balance.Clone(),
+		MinAmount:   subAccountGeneral.Balance.Clone(),
+		Asset:       asset,
+		Type:        types.TransferTypeAMMSubAccountRelease,
+		FromAccount: []*types.Account{subAccountGeneral},
+		ToAccount:   []*types.Account{ownerGeneral},
+	}
+
+	gres, err := e.getLedgerEntries(ctx, treq)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range gres.Entries {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("asset", v.ToAccount.AssetID),
+				logging.String("market", v.ToAccount.MarketID),
+				logging.String("owner", v.ToAccount.Owner),
+				logging.String("type", v.ToAccount.Type.String()),
+				logging.BigUint("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+	}
+	lMovements = append(lMovements, gres)
+	// return ledger movements
+	return lMovements, nil
+}
+
 func (e *Engine) SubAccountRelease(
 	ctx context.Context,
 	party, subAccount, asset, market string,
@@ -3740,6 +3789,7 @@ func (e *Engine) SubAccountRelease(
 				logging.BigUint("amount", v.Amount),
 				logging.Error(err),
 			)
+			return nil, nil, err
 		}
 	}
 
