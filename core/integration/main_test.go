@@ -386,7 +386,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesShouldHaveTheFollowingStakingAccountBalances(execsetup.stakingAccount, table)
 	})
 	s.Step(`^the parties should have the following account balances:$`, func(table *godog.Table) error {
-		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
+		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.executionEngine, execsetup.broker, table)
 	})
 	s.Step(`^the parties should have the following margin levels:$`, func(table *godog.Table) error {
 		return steps.ThePartiesShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
@@ -734,6 +734,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the party "([^"]*)" has the following discount factor "([^"]*)"$`, func(party, discountFactor string) error {
 		return steps.PartyHasTheFollowingDiscountFactor(party, discountFactor, execsetup.volumeDiscountProgram)
+	})
+	s.Step(`^the AMM "([^"]*)" has the following discount factor "([^"]*)"$`, func(alias, discountFactor string) error {
+		return steps.AMMHasTheFollowingDiscountFactor(execsetup.executionEngine, execsetup.volumeDiscountProgram, alias, discountFactor)
 	})
 
 	s.Step(`^the party "([^"]*)" has the following taker notional "([^"]*)"$`, func(party, notional string) error {
