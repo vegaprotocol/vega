@@ -96,7 +96,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
-  @VAMM3
+  @VAMM
   Scenario: 0087-VAMM-006: If other traders trade to move the market mid price to 140 the vAMM has a short position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
