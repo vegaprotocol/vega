@@ -118,7 +118,7 @@ func TestChangedState(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		pm1.OnTimeUpdate(now)
 		p := []*types.Trade{{Price: num.NewUint(uint64(100 + i)), Size: uint64(100 + i)}}
-		b := pm1.CheckPrice(context.Background(), as, p, true)
+		b := pm1.CheckPrice(context.Background(), as, p, true, true)
 		now = now.Add(time.Minute * 1)
 		require.False(t, b)
 	}
@@ -193,7 +193,7 @@ func TestRestorePriceBoundRepresentation(t *testing.T) {
 	pm.UpdateTestFactors(downFactors, upFactors)
 
 	pm.OnTimeUpdate(now)
-	b := pm.CheckPrice(context.Background(), auctionStateMock, []*types.Trade{{Price: currentPrice, Size: 1}}, true)
+	b := pm.CheckPrice(context.Background(), auctionStateMock, []*types.Trade{{Price: currentPrice, Size: 1}}, true, true)
 	require.False(t, b)
 
 	state := pm.GetState()

@@ -58,7 +58,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		if len(trades) > 0 {
 			// pass the first uncrossing trades to price engine so state variables depending on it can be initialised
-			m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+			m.pMonitor.CheckPrice(ctx, m.as, trades, true, true)
 			m.OnOpeningAuctionFirstUncrossingPrice()
 		}
 	}
@@ -101,7 +101,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		// opening auction requirements satisfied at this point, other requirements still need to be checked downstream though
 		m.as.SetReadyToLeave()
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
@@ -143,7 +143,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.checkBondBalance(ctx)
 	}
 	if isPrice || m.as.CanLeave() {
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 	}
 	end := m.as.CanLeave()
 	if isPrice && end {

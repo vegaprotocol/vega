@@ -2498,7 +2498,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
@@ -4378,7 +4378,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
