@@ -37,11 +37,12 @@ Feature: Spot market
       | party5 | BTC   | 1000   |
     And the average block duration is "1"
 
-    # Place some orders to get out of auction
+    # 0024-OSTA-039, Place some orders to get out of auction, GFN order should be rejected during auction
     And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
-      | party5 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | error                                     |
+      | party1 | BTC/ETH   | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA |                                           |
+      | party5 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |                                           |
+      | party5 | BTC/ETH   | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFN | gfn order received during auction trading |
 
     And the opening auction period ends for market "BTC/ETH"
     When the network moves ahead "1" blocks
