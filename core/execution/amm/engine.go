@@ -761,7 +761,17 @@ func (e *Engine) StopPool(
 	return nil
 }
 
-func (e *Engine) MarketClosing() error { return errors.New("unimplemented") }
+// MarketClosing stops all AMM's and returns subaccount balances back to the owning party.
+func (e *Engine) MarketClosing(ctx context.Context) error {
+	for _, p := range e.poolsCpy {
+		if _, err := e.releaseSubAccounts(ctx, p); err != nil {
+			return err
+		}
+		p.status = types.AMMPoolStatusStopped
+		e.remove(ctx, p.party)
+	}
+	return nil
+}
 
 func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
 	e.broker.Send(
