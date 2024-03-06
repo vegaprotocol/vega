@@ -118,18 +118,20 @@ Feature: Test vAMM cancellation without position works as expected.
     When the parties cancel the following AMM:
       | party | market id | method             |
       | vamm1 | ETH/MAR22 | METHOD_REDUCE_ONLY |
-    # This ought to be REDUCE_ONLY 
+    Then the AMM pool status should be:
+      | party | market id | amount | status             | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
+      | vamm1 | ETH/MAR22 | 1000   | STATUS_REDUCE_ONLY | 100  | 85          | 150         | 0.25               | 0.25               |
+    # Balance is not yet released
+    And the parties should have the following account balances:
+      | party     | asset | market id | general | margin | is amm |
+      | vamm1     | USD   |           | 0       |        |        |
+      | vamm1-acc | USD   | ETH/MAR22 | 1000    |        | true   |
+
+    # Now trigger a MTM settlement, this is when we see the status updated to cancelled and the funds get released.
+    When the network moves ahead "1" blocks
     Then the AMM pool status should be:
       | party | market id | amount | status           | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_CANCELLED | 100  | 85          | 150         | 0.25               | 0.25               |
-    # THIS IS INCORRECT, SHOULD WAIT FOR NEXT MTM
-    And the parties should have the following account balances:
-      | party     | asset | market id | general | margin | is amm |
-      | vamm1     | USD   |           | 1000    |        |        |
-      | vamm1-acc | USD   | ETH/MAR22 | 0       |        | true   |
-      #| vamm1     | USD   |           | 0       |        |        |
-      #| vamm1-acc | USD   | ETH/MAR22 | 1000    |        | true   |
-    When the network moves ahead "1" blocks
     Then the following transfers should happen:
       | from      | from account         | to    | to account           | market id | amount | asset | is amm | type                                 |
       | vamm1-acc | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |

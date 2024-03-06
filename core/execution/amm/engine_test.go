@@ -476,6 +476,7 @@ func testClosingReduceOnlyPool(t *testing.T) {
 	mevt, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, mevt) // no closeout necessary so not event
+	tst.engine.OnMTM(ctx)
 	assert.Len(t, tst.engine.pools, 0)
 }
 
@@ -515,6 +516,7 @@ func testAmendMakesClosingPoolActive(t *testing.T) {
 	closeout, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, closeout)
+	tst.engine.OnMTM(ctx)
 	assert.Len(t, tst.engine.pools, 1)
 	assert.True(t, tst.engine.poolsCpy[0].closing())
 
@@ -545,6 +547,7 @@ func testClosingPoolRemovedWhenPositionZero(t *testing.T) {
 	closeout, err := tst.engine.CancelAMM(ctx, cancel)
 	require.NoError(t, err)
 	assert.Nil(t, closeout)
+	tst.engine.OnMTM(ctx)
 	assert.True(t, tst.engine.poolsCpy[0].closing())
 
 	// position is lower but non-zero
