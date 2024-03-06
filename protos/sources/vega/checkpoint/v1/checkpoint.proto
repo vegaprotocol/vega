@@ -233,6 +233,7 @@ message MarketActivityTracker {
   repeated EpochTimeWeightPositionData time_weighted_position_data_history = 16;
   repeated EpochTimeWeightedNotionalData time_weighted_notional_data_history = 17;
   repeated EpochReturnsData returns_data_history = 18;
+  repeated string amm_parties = 19;
 }
 
 message EpochTimeWeightPositionData {
