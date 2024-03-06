@@ -58,6 +58,9 @@ func (p *ConcentratedLiquidityParameters) ToProtoEvent() *eventspb.AMMPool_Conce
 }
 
 func (p *ConcentratedLiquidityParameters) ApplyUpdate(update *ConcentratedLiquidityParameters) {
+	if update == nil {
+		return
+	}
 	if update.Base != nil {
 		p.Base = update.Base
 	}
@@ -77,6 +80,28 @@ func (p *ConcentratedLiquidityParameters) ApplyUpdate(update *ConcentratedLiquid
 	if update.MarginRatioAtUpperBound != nil {
 		p.MarginRatioAtUpperBound = update.MarginRatioAtUpperBound
 	}
+}
+
+func (p ConcentratedLiquidityParameters) Clone() *ConcentratedLiquidityParameters {
+	ret := &ConcentratedLiquidityParameters{}
+	if p.Base != nil {
+		ret.Base = p.Base.Clone()
+	}
+	if p.LowerBound != nil {
+		ret.LowerBound = p.LowerBound.Clone()
+	}
+	if p.UpperBound != nil {
+		ret.UpperBound = p.UpperBound.Clone()
+	}
+	if p.MarginRatioAtLowerBound != nil {
+		cpy := *p.MarginRatioAtLowerBound
+		ret.MarginRatioAtLowerBound = &cpy
+	}
+	if p.MarginRatioAtUpperBound != nil {
+		cpy := *p.MarginRatioAtUpperBound
+		ret.MarginRatioAtUpperBound = &cpy
+	}
+	return ret
 }
 
 func (p ConcentratedLiquidityParameters) IntoProto() *commandspb.SubmitAMM_ConcentratedLiquidityParameters {
