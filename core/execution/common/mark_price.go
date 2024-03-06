@@ -267,14 +267,20 @@ func (mpc *CompositePriceCalculator) GetConfig() *types.CompositePriceConfigurat
 
 // CalculateMarkPrice is called at the end of each mark price calculation interval and calculates the mark price
 // using the mark price type methodology.
-func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, leavingAuction bool) *num.Uint {
+func (mpc *CompositePriceCalculator) CalculateMarkPrice(ctx context.Context, priceMonitor PriceMonitor, as AuctionState, t int64, ob *matching.CachedOrderBook, markPriceFrequency time.Duration, initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor num.Decimal, checkPriceMonitor bool) (*num.Uint, error) {
+	var err error
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
 		// if there are no trades, the mark price remains what it was before.
 		if len(mpc.trades) > 0 {
-			mpc.price = mpc.trades[len(mpc.trades)-1].Price.Clone()
+			mpcCandidate := mpc.trades[len(mpc.trades)-1].Price.Clone()
+			if checkPriceMonitor || !priceMonitor.CheckPrice(ctx, as, []*types.Trade{{Price: mpcCandidate, Size: 1}}, true) {
+				mpc.price = mpcCandidate
+			} else {
+				err = fmt.Errorf("price monitoring failed for the new mark price")
+			}
 		}
 		mpc.trades = []*types.Trade{}
-		return mpc.price
+		return mpc.price, err
 	}
 	if len(mpc.trades) > 0 {
 		if pft := PriceFromTrades(mpc.trades, mpc.config.DecayWeight, num.DecimalFromInt64(markPriceFrequency.Nanoseconds()), mpc.config.DecayPower, t); pft != nil && !pft.IsZero() {
@@ -299,17 +305,25 @@ func (mpc *CompositePriceCalculator) CalculateMarkPrice(t int64, ob *matching.Ca
 	}
 	if mpc.config.CompositePriceType == types.CompositePriceTypeByMedian {
 		if p := CompositePriceByMedian(mpc.priceSources, mpc.sourceLastUpdate, mpc.config.SourceStalenessTolerance, t); p != nil && !p.IsZero() {
-			mpc.price = p
+			if !checkPriceMonitor || !priceMonitor.CheckPrice(ctx, as, []*types.Trade{{Price: p, Size: 1}}, true) {
+				mpc.price = p
+			} else {
+				err = fmt.Errorf("price monitoring failed for the new mark price")
+			}
 		}
 	} else {
 		if p := CompositePriceByWeight(mpc.priceSources, mpc.config.SourceWeights, mpc.sourceLastUpdate, mpc.config.SourceStalenessTolerance, t); p != nil && !p.IsZero() {
-			mpc.price = p
+			if !checkPriceMonitor || !priceMonitor.CheckPrice(ctx, as, []*types.Trade{{Price: p, Size: 1}}, true) {
+				mpc.price = p
+			} else {
+				err = fmt.Errorf("price monitoring failed for the new mark price")
+			}
 		}
 	}
 	mpc.trades = []*types.Trade{}
 	mpc.bookPriceAtTime = map[int64]*num.Uint{}
 	mpc.CalculateBookMarkPriceAtTimeT(initialScalingFactor, slippageFactor, shortRiskFactor, longRiskFactor, t, ob)
-	return mpc.price
+	return mpc.price, err
 }
 
 func (mpc *CompositePriceCalculator) IntoProto() *snapshot.CompositePriceCalculator {
