@@ -835,6 +835,21 @@ func (mr *MockCollateralMockRecorder) RollbackMarginUpdateOnOrder(arg0, arg1, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackMarginUpdateOnOrder", reflect.TypeOf((*MockCollateral)(nil).RollbackMarginUpdateOnOrder), arg0, arg1, arg2, arg3)
 }
 
+// SubAccountClosed mocks base method.
+func (m *MockCollateral) SubAccountClosed(arg0 context.Context, arg1, arg2, arg3, arg4 string) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubAccountClosed", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubAccountClosed indicates an expected call of SubAccountClosed.
+func (mr *MockCollateralMockRecorder) SubAccountClosed(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubAccountClosed", reflect.TypeOf((*MockCollateral)(nil).SubAccountClosed), arg0, arg1, arg2, arg3, arg4)
+}
+
 // SubAccountRelease mocks base method.
 func (m *MockCollateral) SubAccountRelease(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 events.MarketPosition) ([]*types.LedgerMovement, events.Margin, error) {
 	m.ctrl.T.Helper()
