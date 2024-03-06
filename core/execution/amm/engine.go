@@ -729,12 +729,10 @@ func (e *Engine) CancelAMM(
 	}
 
 	if cancel.Method == types.AMMPoolCancellationMethodReduceOnly {
-		if pos, _ := pool.getPosition(); pos != 0 {
-			// pool will now only accept trades that will reduce its position
-			pool.status = types.AMMPoolStatusReduceOnly
-			e.sendUpdate(ctx, pool)
-			return nil, nil
-		}
+		// pool will now only accept trades that will reduce its position
+		pool.status = types.AMMPoolStatusReduceOnly
+		e.sendUpdate(ctx, pool)
+		return nil, nil
 	}
 
 	// either pool has no position or owner wants out right now, so release general balance and
