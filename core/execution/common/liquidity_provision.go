@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -127,6 +128,17 @@ func (m *MarketLiquidity) transferFees(ctx context.Context, ft events.FeesTransf
 		return m.collateral.TransferSpotFees(ctx, m.marketID, m.asset, ft)
 	default:
 		return m.collateral.TransferFees(ctx, m.marketID, m.asset, ft)
+	}
+}
+
+func (m *MarketLiquidity) applyAMMStats() {
+	ids := maps.Keys(m.ammStats)
+	sort.Strings(ids)
+	for _, party := range ids {
+		amm := m.ammStats[party]
+		stake, _ := num.UintFromDecimal(amm.stake)
+		m.equityShares.SetPartyStake(party, stake)
+		amm.StartEpoch() // mark as new epoch having started
 	}
 }
 
@@ -314,12 +326,7 @@ func (m *MarketLiquidity) OnEpochStart(
 ) {
 	m.liquidityEngine.ResetSLAEpoch(now, markPrice, midPrice, positionFactor)
 
-	// submit AMM stake
-	for party, amm := range m.ammStats {
-		stake, _ := num.UintFromDecimal(amm.stake)
-		m.equityShares.SetPartyStake(party, stake)
-		amm.StartEpoch() // mark as new epoch having started
-	}
+	m.applyAMMStats()
 	m.tick = 0 // start of a new epoch, we are at tick 0
 	appliedProvisions := m.applyPendingProvisions(ctx, now, targetStake)
 	m.syncPartyCommitmentWithBondAccount(ctx, appliedProvisions)

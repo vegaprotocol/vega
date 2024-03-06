@@ -675,6 +675,11 @@ func (e *Engine) SubmitAMM(
 			return err
 		}
 	}
+	e.log.Debug("AMM added for market",
+		logging.String("owner", submit.Party),
+		logging.String("marketID", e.market.GetID()),
+		logging.String("poolID", pool.ID),
+	)
 	e.add(pool)
 	e.sendUpdate(ctx, pool)
 	return nil
