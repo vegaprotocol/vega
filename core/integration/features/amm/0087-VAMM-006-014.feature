@@ -96,20 +96,21 @@ Feature: Ensure the vAMM positions follow the market correctly
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 100000 | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
-  @VAMM
+  @VAMM3
   Scenario: 0087-VAMM-006: If other traders trade to move the market mid price to 140 the vAMM has a short position.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | buy  | 265    | 141   | 1                | TYPE_LIMIT | TIF_GTC |
     # see the trades that make the vAMM go short
     Then the following trades should be executed:
-      | buyer    | price | size | seller       | is amm |
-      | party4   | 118   | 265    | vamm1-id   | true   | 
+      | buyer  | price | size | seller   | is amm |
+      | party4 | 118   | 265  | vamm1-id | true   |
     And the network moves ahead "1" blocks
+    # Check best offer/bid as this scenario matches 0087-VAMM-027: if other traders trade to move the market mid price to 140 quotes with a mid price of 140 (volume quotes above 140 should be sells, volume quotes below 140 should be buys).
     Then the market data for the market "ETH/MAR22" should be:
-      | mark price | trading mode            | mid price | static mid price |
-      | 118        | TRADING_MODE_CONTINUOUS | 140       | 140              |
-	  Then the parties should have the following profit and loss:
+      | mark price | trading mode            | mid price | static mid price | best offer price | best bid price |
+      | 118        | TRADING_MODE_CONTINUOUS | 140       | 140              | 141              | 139            |
+    Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
       | party4   | 265    | 0              | 0            |        |
       | vamm1-id | -265   | 0              | 0            | true   |
