@@ -1,4 +1,4 @@
-Feature: vAMM behaviour when a market settles
+Feature: vAMM behaviour when a market settles with distressed AMM.
 
   Background:
     Given the average block duration is "1"
@@ -79,10 +79,8 @@ Feature: vAMM behaviour when a market settles
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | lp1    | ETH/MAR22 | buy  | 20     | 40    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
-      | party5 | ETH/MAR22 | buy  | 20     | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp1-b     |
       | party1 | ETH/MAR22 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
       | party2 | ETH/MAR22 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |           |
-      | party3 | ETH/MAR22 | sell | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC |           |
       | lp1    | ETH/MAR22 | sell | 10     | 160   | 0                | TYPE_LIMIT | TIF_GTC | lp1-s     |
     When the opening auction period ends for market "ETH/MAR22"
     Then the following trades should be executed:
@@ -107,23 +105,26 @@ Feature: vAMM behaviour when a market settles
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
   @VAMM
-  Scenario Outline: 0087-VAMM-031: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
+  Scenario: 0087-VAMM-032: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/MAR22 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 5      | 110   | 1                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/MAR22 | buy  | 5      | 125   | 1                | TYPE_LIMIT | TIF_GTC |
     # see the trades that make the vAMM go short
+    Then debug trades
     Then the following trades should be executed:
       | buyer  | price | size | seller   | is amm |
       | party4 | 106   | 1    | vamm1-id | true   |
+      | party4 | 119   | 1    | vamm1-id | true   |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | mid price | static mid price | supplied stake | target stake |
-      | 106        | TRADING_MODE_CONTINUOUS | 100       | 100              | 1000           | 84           |
+      | 119        | TRADING_MODE_CONTINUOUS | 142       | 142              | 1000           | 142          |
     And the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl | is amm |
-      | party4   | 1      | 0              | 0            |        |
-      | vamm1-id | -1     | 0              | 0            | true   |
+      | party4   | 2      | 13             | 0            |        |
+      | vamm1-id | -2     | -13            | 0            | true   |
     And the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
@@ -136,30 +137,28 @@ Feature: vAMM behaviour when a market settles
     And the parties should have the following account balances:
       | party    | asset | market id | general | margin | is amm |
       | vamm1    | USD   |           | 0       |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 931     | 70     | true   |
+      | vamm1-id | USD   | ETH/MAR22 | 722     | 267    | true   |
 
+    # Settlement price is ~9x mark price
     When the oracles broadcast data signed with "0xCAFECAFE":
-      | name             | value          |
-      | prices.ETH.value | <settle price> |
+      | name             | value |
+      | prices.ETH.value | 1000  |
     Then the market state should be "STATE_SETTLED" for the market "ETH/MAR22"
     And then the network moves ahead "1" blocks
 
     # verify the that the margin balance is released, and then the correct balance if transferred from the pool account back to the party.
+    # We see fees on both trades, a MTM loss transfer, margin being allocated, then the loss transfer from the final settlement
+    # and lastly a transfer of 0 to the general account, indicating there were no funds left to transfer.
     And the following transfers should happen:
-      | from     | from account            | to       | to account           | market id | amount        | asset | is amm | type                                 |
-      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1             | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
-      | vamm1-id | ACCOUNT_TYPE_MARGIN     | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
-      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL |           | <amm balance> | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
+      | from     | from account            | to       | to account              | market id | amount | asset | is amm | type                                 |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      |          | ACCOUNT_TYPE_FEES_MAKER | vamm1-id | ACCOUNT_TYPE_GENERAL    | ETH/MAR22 | 1      | USD   | true   | TRANSFER_TYPE_MAKER_FEE_RECEIVE      |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 13     | USD   | true   | TRANSFER_TYPE_MTM_LOSS               |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1-id | ACCOUNT_TYPE_MARGIN     | ETH/MAR22 | 267    | USD   | true   | TRANSFER_TYPE_MARGIN_LOW             |
+      | vamm1-id | ACCOUNT_TYPE_MARGIN     |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 267    | USD   | true   | TRANSFER_TYPE_LOSS                   |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    |          | ACCOUNT_TYPE_SETTLEMENT | ETH/MAR22 | 722    | USD   | true   | TRANSFER_TYPE_LOSS                   |
+      | vamm1-id | ACCOUNT_TYPE_GENERAL    | vamm1    | ACCOUNT_TYPE_GENERAL    |           | 0      | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
     And the parties should have the following account balances:
-      | party    | asset | market id | general           | margin | is amm |
-      | vamm1    | USD   |           | <general balance> |        |        |
-      | vamm1-id | USD   | ETH/MAR22 | 0                 | 0      | true   |
-
-    # Different scenario's involving a final settlement: break even, profit and loss.
-    Examples:
-      | settle price | margin | amm balance | general balance |
-      | 106          | 70     | 1001        | 1001            | # settle price = market price: +1 from fees
-      | 105          | 71     | 1002        | 1002            | # settle price < market price: +1 from fees +1 from final settlement
-      | 107          | 69     | 1000        | 1000            | # settle price > market price: +1 from fees, -1 from final settlement
-      | 104          | 72     | 1003        | 1003            | # settle price < market price: +1 from fees +2 from final settlement
-      | 108          | 68     | 999         | 999             | # settle price > market price: +1 from fees, -2 from final settlement
+      | party    | asset | market id | general | margin | is amm |
+      | vamm1    | USD   |           | 0       |        |        |
+      | vamm1-id | USD   | ETH/MAR22 | 0       | 0      | true   |
