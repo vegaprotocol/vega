@@ -106,7 +106,7 @@ Feature: vAMM behaviour when a market settles
       | from  | from account         | to       | to account           | market id | amount | asset | is amm | type                             |
       | vamm1 | ACCOUNT_TYPE_GENERAL | vamm1-id | ACCOUNT_TYPE_GENERAL |           | 1000   | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_LOW |
 
-  @VAMM3
+  @VAMM
   Scenario Outline: 0087-VAMM-031: When an AMM is active on a market at time of settlement with a position in a well collateralised state, the market can settle successfully and then all funds on the AMM key are transferred back to the main party's account.
     # this outline covers 3 distinct situations: 1 where the vAMM breaks even (settlement price == market price), one where the vAMM turns a profit (settlement price < market price), and one with a loss (settlement price > market price)
     When the parties place the following orders:
@@ -142,15 +142,15 @@ Feature: vAMM behaviour when a market settles
     And then the network moves ahead "1" blocks
 
     # verify the that the margin balance is released, and then the correct balance if transferred from the pool account back to the party.
-    #And debug transfers
     And the following transfers should happen:
-     | from     | from account         | to    | to account             | market id | amount        | asset | is amm | type                                 |
-     | vamm1-id | ACCOUNT_TYPE_MARGIN  |       | ACCOUNT_TYPE_INSURANCE | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
-     | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1 | ACCOUNT_TYPE_GENERAL   |           | <amm balance> | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
-     #| vamm1-id  | ACCOUNT_TYPE_MARGIN  | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+     | from     | from account         | to       | to account           | market id | amount        | asset | is amm | type                                 |
+     | vamm1-id | ACCOUNT_TYPE_MARGIN  | vamm1-id | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | <margin>      | USD   | true   | TRANSFER_TYPE_MARGIN_HIGH            |
+     | vamm1-id | ACCOUNT_TYPE_GENERAL | vamm1    | ACCOUNT_TYPE_GENERAL |           | <amm balance> | USD   | true   | TRANSFER_TYPE_AMM_SUBACCOUNT_RELEASE |
 
     Examples:
       | settle price | margin | amm balance |
-      | 106          | 70     | 931         |
-      | 105          | 71     | 931         |
-      | 107          | 69     | 931         |
+      | 106          | 70     | 1001        | # settle price = market price: +1 from fees
+      | 105          | 71     | 1002        | # settle price < market price: +1 from fees +1 from final settlement
+      | 107          | 69     | 1000        | # settle price > market price: +1 from fees, -1 from final settlement
+      | 104          | 72     | 1003        | # settle price < market price: +1 from fees +2 from final settlement
+      | 108          | 68     | 999         | # settle price > market price: +1 from fees, -2 from final settlement

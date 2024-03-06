@@ -190,6 +190,7 @@ type Collateral interface {
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
 
 	// amm stuff
+	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
 	SubAccountUpdate(
 		ctx context.Context,
 		party, subAccount, asset, market string,

@@ -647,8 +647,7 @@ func testMarketClosure(t *testing.T) {
 	expectSubaccountCreation(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
 
-	ensurePosition(t, tst.pos, 0, num.UintZero())
-	expectSubAccountRelease(t, tst, party, subAccount)
+	expectSubAccountClose(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.MarketClosing(ctx))
 	assert.Len(t, tst.engine.poolsCpy, 0)
 }
@@ -692,6 +691,16 @@ func expectSubAccountRelease(t *testing.T, tst *tstEngine, party, subAccount str
 		tst.marketID,
 		gomock.Any(),
 	).Times(1).Return([]*types.LedgerMovement{}, nil, nil)
+}
+
+func expectSubAccountClose(t *testing.T, tst *tstEngine, party, subAccount string) {
+	t.Helper()
+	tst.col.EXPECT().SubAccountClosed(
+		gomock.Any(),
+		party,
+		subAccount,
+		tst.assetID,
+		tst.marketID).Times(1).Return([]*types.LedgerMovement{}, nil)
 }
 
 func expectOrderSubmission(t *testing.T, tst *tstEngine, subAccount string, status types.OrderStatus, err error) {
