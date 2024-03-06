@@ -690,26 +690,29 @@ func (e *Engine) AmendAMM(
 		return ErrNoPoolMatchingParty
 	}
 
-	if err := e.ensureCommitmentAmount(ctx, amend.CommitmentAmount); err != nil {
-		return err
+	if amend.CommitmentAmount != nil {
+		if err := e.ensureCommitmentAmount(ctx, amend.CommitmentAmount); err != nil {
+			return err
+		}
+
+		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount); err != nil {
+			return err
+		}
 	}
 
-	fairPrice := pool.BestPrice(nil)
 	oldCommitment := pool.Commitment.Clone()
-
-	err := e.updateSubAccountBalance(
-		ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount,
-	)
-	if err != nil {
-		return err
-	}
-
-	pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+	fairPrice := pool.BestPrice(nil)
+	oldParams := pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
 	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance, idgeneration.New(deterministicID)); err != nil {
 		// couldn't rebase the pool back to its original fair price so the amend is rejected
 		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, oldCommitment); err != nil {
 			e.log.Panic("could not revert balances are failed rebase", logging.Error(err))
 		}
+		// restore updated parameters
+		pool.Parameters = oldParams
+		// restore curves
+		pool.setCurves(e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+
 		return err
 	}
 
