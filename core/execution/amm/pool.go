@@ -201,10 +201,14 @@ func (p *Pool) Update(
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
-) {
-	p.Commitment = amend.CommitmentAmount
+) *types.ConcentratedLiquidityParameters {
+	if amend.CommitmentAmount != nil {
+		p.Commitment = amend.CommitmentAmount
+	}
+	oldParams := p.Parameters.Clone()
 	p.Parameters.ApplyUpdate(amend.Parameters)
 	p.setCurves(rf, sf, linearSlippage)
+	return oldParams
 }
 
 // emptyCurve creates the curve details that represent no liquidity.
