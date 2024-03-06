@@ -97,53 +97,41 @@ Feature: Spot market
       | buy  | 998   | 1      |
 
     Then the parties amend the following orders:
-      | party  | reference | price | size delta | tif     | error                                                           |
-      | party1 | p1-buy3   | 998   | -1         | TIF_GTT | OrderError: Cannot amend order to GTT without an expiryAt field |
+      | party  | reference | price | size delta | tif     | expiration date      |
+      | party1 | p1-buy3   | 998   | -1         | TIF_GTT | 2030-11-30T00:00:00Z |
+    #GTT partially filled is canclled by trader
+    And the orders should have the following status:
+      | party  | reference | status           |
+      | party1 | p1-buy3   | STATUS_CANCELLED |
 
-    Then the parties amend the following orders:
-      | party  | reference | price | size delta | tif     | expires at | 
-      | party1 | p1-buy3   | 998   | -1         | TIF_GTT | 3          | 
-#GTT partially filled is canclled by trader
-# And the orders should have the following status:
-#   | party  | reference | status           |
-#   | party1 | p1-buy3   | STATUS_CANCELLED |
+    #GTT order rejected by system
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference | error                                                              |
+      | party5 | BTC/ETH   | sell | 5000   | 998   | 0                | TYPE_LIMIT | TIF_GTT | 3          | p5-sell2  | party does not have sufficient balance to cover the trade and fees |
 
-# #GTT order rejected by system
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                              |
-#   | party5 | BTC/ETH   | sell | 5000   | 998   | 0                | TYPE_LIMIT | TIF_GTT | p5-sell2  | party does not have sufficient balance to cover the trade and fees |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
+      | party2 | BTC/ETH   | sell | 1      | 997   | 1                | TYPE_LIMIT | TIF_GTT | p2-sell4  | 2          |
 
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-#   | party2 | BTC/ETH   | sell | 1      | 997   | 1                | TYPE_LIMIT | TIF_GTT | p2-sell4  |       |
+    #GTT order filled
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | party2 | p2-sell4  | STATUS_FILLED |
 
-# #GTT order filled
-# And the orders should have the following status:
-#   | party  | reference | status        |
-#   | party2 | p2-sell4  | STATUS_FILLED |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
+      | party2 | BTC/ETH   | sell | 2      | 997   | 1                | TYPE_LIMIT | TIF_GTT | p2-sell5  | 2          |
 
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-#   | party2 | BTC/ETH   | sell | 2      | 997   | 1                | TYPE_LIMIT | TIF_IOC | p2-sell5  |       |
+    #GTT order partially filled
+    And the orders should have the following status:
+      | party  | reference | status        |
+      | party2 | p2-sell5  | STATUS_ACTIVE |
+    When the network moves ahead "2" blocks
 
-# #IOC order partially filled and stopped
-# And the orders should have the following status:
-#   | party  | reference | status                  |
-#   | party2 | p2-sell5  | STATUS_PARTIALLY_FILLED |
-
-# And the order book should have the following volumes for market "BTC/ETH":
-#   | side | price | volume |
-#   | sell | 997   | 0      |
-
-# #IOC order un-filled and stopped
-# And the parties place the following orders:
-#   | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
-#   | party2 | BTC/ETH   | sell | 2      | 997   | 0                | TYPE_LIMIT | TIF_IOC | p2-sell5  |       |
-
-# And the orders should have the following status:
-#   | party  | reference | status         |
-#   | party2 | p2-sell5  | STATUS_STOPPED |
-
-# And the order book should have the following volumes for market "BTC/ETH":
-#   | side | price | volume |
-#   | sell | 997   | 0      |
+    And the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | sell | 997   | 0      |
+    #GTT partially filled order is expired
+    And the orders should have the following status:
+      | party  | reference | status         |
+      | party2 | p2-sell5  | STATUS_EXPIRED |
