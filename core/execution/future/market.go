@@ -1054,9 +1054,11 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	}()
 
 	t := m.timeService.GetTimeNow()
-	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
-	if m.internalCompositePriceCalculator != nil {
-		m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+	if !m.as.InAuction() {
+		m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+		if m.internalCompositePriceCalculator != nil {
+			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t.UnixNano(), m.matching)
+		}
 	}
 
 	// if we do have a separate configuration for the intenal composite price and we have a new intenal composite price we push it to the perp
@@ -1600,7 +1602,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 	t := m.timeService.GetTimeNow().UnixNano()
-	m.markPriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
+	m.markPriceCalculator.SetBookPriceAtTimeT(m.lastTradedPrice, t)
 	m.markPriceCalculator.CalculateMarkPrice(
 		t,
 		m.matching,
