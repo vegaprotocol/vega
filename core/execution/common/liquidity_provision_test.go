@@ -442,8 +442,6 @@ func TestLiquidityProvisionsWithPoolsFeeDistribution(t *testing.T) {
 	testLiquidity.orderBook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(100), nil).AnyTimes()
 
 	poolMock := ammcmocks.NewMockAMMPool(testLiquidity.ctrl)
-	poolMock.EXPECT().VolumeBetweenPrices(gomock.Any(), gomock.Any(), gomock.Any()).Return(uint64(100)).AnyTimes()
-
 	ammPools := map[string]common.AMMPool{
 		"pool-party-1": poolMock,
 		"pool-party-2": poolMock,
