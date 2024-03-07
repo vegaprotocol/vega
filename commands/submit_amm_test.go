@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -135,15 +136,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					LowerBound: "",
-				},
-			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (is required)",
-		},
-		{
-			submission: commandspb.SubmitAMM{
-				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					LowerBound: "abc",
+					LowerBound: ptr.From(""),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (is not a valid number)",
@@ -151,7 +144,15 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					LowerBound: "-10",
+					LowerBound: ptr.From("abc"),
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					LowerBound: ptr.From("-10"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (must be positive)",
@@ -159,7 +160,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					LowerBound: "0",
+					LowerBound: ptr.From("0"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (must be positive)",
@@ -167,15 +168,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					UpperBound: "",
-				},
-			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.upper_bound (is required)",
-		},
-		{
-			submission: commandspb.SubmitAMM{
-				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					UpperBound: "abc",
+					UpperBound: ptr.From(""),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.upper_bound (is not a valid number)",
@@ -183,7 +176,15 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					UpperBound: "-10",
+					UpperBound: ptr.From("abc"),
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.upper_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					UpperBound: ptr.From("-10"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.upper_bound (must be positive)",
@@ -191,7 +192,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					UpperBound: "0",
+					UpperBound: ptr.From("0"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.upper_bound (must be positive)",
@@ -199,15 +200,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: "",
-				},
-			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is required)",
-		},
-		{
-			submission: commandspb.SubmitAMM{
-				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: "abc",
+					MarginRatioAtUpperBound: ptr.From(""),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
@@ -215,7 +208,15 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtUpperBound: "-10",
+					MarginRatioAtUpperBound: ptr.From("abc"),
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtUpperBound: ptr.From("-10"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_upper_bound (must be positive)",
@@ -223,15 +224,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: "",
-				},
-			},
-			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is required)",
-		},
-		{
-			submission: commandspb.SubmitAMM{
-				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: "abc",
+					MarginRatioAtLowerBound: ptr.From(""),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
@@ -239,7 +232,15 @@ func TestCheckSubmitAMM(t *testing.T) {
 		{
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
-					MarginRatioAtLowerBound: "-10",
+					MarginRatioAtLowerBound: ptr.From("abc"),
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (is not a valid number)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					MarginRatioAtLowerBound: ptr.From("-10"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.margin_ratio_at_lower_bound (must be positive)",
@@ -248,7 +249,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 					Base:       "1000",
-					UpperBound: "900",
+					UpperBound: ptr.From("900"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.base (should be a smaller value than upper_bound)",
@@ -257,7 +258,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 					Base:       "1000",
-					LowerBound: "1100",
+					LowerBound: ptr.From("1100"),
 				},
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters.base (should be a bigger value than lower_bound)",
@@ -269,10 +270,23 @@ func TestCheckSubmitAMM(t *testing.T) {
 				CommitmentAmount:  "10000",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 					Base:                    "20000",
-					UpperBound:              "30000",
-					LowerBound:              "10000",
-					MarginRatioAtUpperBound: "0.1",
-					MarginRatioAtLowerBound: "0.1",
+					MarginRatioAtUpperBound: ptr.From("0.1"),
+					MarginRatioAtLowerBound: ptr.From("0.1"),
+				},
+			},
+			errStr: "submit_amm.concentrated_liquidity_parameters.lower_bound (lower_bound and upper_bound cannot both be empty)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
+				SlippageTolerance: "0.09",
+				CommitmentAmount:  "10000",
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					Base:                    "20000",
+					UpperBound:              ptr.From("30000"),
+					LowerBound:              ptr.From("10000"),
+					MarginRatioAtUpperBound: ptr.From("0.1"),
+					MarginRatioAtLowerBound: ptr.From("0.1"),
 				},
 			},
 		},

@@ -296,17 +296,6 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 
 	// first we find all amm's whose best-price would allow a trade with the incoming order
 	for _, p := range e.poolsCpy {
-		var high, low *num.Uint
-		if p.upper != nil {
-			high = p.upper.high
-		} else {
-			high = p.lower.low
-		}
-		if p.lower != nil {
-			low = p.lower.low
-		} else {
-			low = p.upper.high
-		}
 		// if pool is in reducing only mode and order will increase its position, we don't want to trade
 		if !p.canTrade(agg) {
 			continue
@@ -327,7 +316,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				continue
 			}
 			active = append(active, p)
-			best = num.Min(best, high)
+			best = num.Min(best, p.upper.high)
 		}
 
 		if agg.Side == types.SideSell {
@@ -336,7 +325,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 				continue
 			}
 			active = append(active, p)
-			best = num.Max(best, low)
+			best = num.Max(best, p.lower.low)
 		}
 	}
 
@@ -348,7 +337,7 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 	var total uint64
 	volumes := []uint64{}
 	for _, p := range active {
-		volume := p.VolumeBetweenPrices(agg.Side, inner, best)
+		volume := p.TradableVolumeInRange(agg.Side, inner, best)
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("volume available to trade",
 				logging.String("id", p.ID),
@@ -714,7 +703,7 @@ func (e *Engine) updateSubAccountBalance(
 
 // rebasePool submits an order on behalf of the given pool to pull it fair-price towards the target.
 func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, tol num.Decimal, idgen common.IDGenerator) error {
-	if (pool.lower != nil && target.LT(pool.lower.low)) || (pool.upper != nil && target.GT(pool.upper.high)) {
+	if target.LT(pool.lower.low) || target.GT(pool.upper.high) {
 		return ErrRebaseTargetOutsideBounds
 	}
 
@@ -753,7 +742,7 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 
 	// ask the pool for the volume it would need to shift to get its price to target
 	// the order side is the side of the order that will trade with it, so needs to be the opposite
-	order.Size = pool.VolumeBetweenPrices(types.OtherSide(order.Side), fairPrice, target)
+	order.Size = pool.TradableVolumeInRange(types.OtherSide(order.Side), fairPrice, target)
 	if order.Size == 0 {
 		// fair-price is so close to target price that the volume to shift it is too small, but thats ok
 		return nil
@@ -770,7 +759,7 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 
 	conf, err := e.market.SubmitOrderWithIDGeneratorAndOrderID(ctx, order, pool.SubAccount, idgen, idgen.NextID(), true)
 	if err != nil {
-		return err
+		return fmt.Errorf("rebasing trade failed: %w", err)
 	}
 
 	if conf.Order.Status != types.OrderStatusFilled {

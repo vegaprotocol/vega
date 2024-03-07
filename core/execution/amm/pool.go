@@ -30,10 +30,31 @@ type ephemeralPosition struct {
 }
 
 type curve struct {
-	l    *num.Uint   // virtual liquidity
-	high *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
-	low  *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
-	rf   num.Decimal // commitment scaling factor
+	l     *num.Uint   // virtual liquidity
+	high  *num.Uint   // high price value, upper bound if upper curve, base price is lower curve
+	low   *num.Uint   // low price value, base price if upper curve, lower bound if lower curve
+	rf    num.Decimal // commitment scaling factor
+	empty bool        // if true the curve is of zero length and represents no liquidity on this side of the amm
+}
+
+func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
+	if c.l.IsZero() || c.empty {
+		return 0
+	}
+
+	st = num.Max(st, c.low)
+	nd = num.Min(nd, c.high)
+
+	if st.GTE(nd) {
+		return 0
+	}
+
+	// abs(P(st) - P(nd))
+	volume, _ := num.UintZero().Delta(
+		impliedPosition(sqrt(st), sqrt(c.high), c.l),
+		impliedPosition(sqrt(nd), sqrt(c.high), c.l),
+	)
+	return volume.Uint64()
 }
 
 type Pool struct {
@@ -130,16 +151,18 @@ func NewPoolFromProto(
 		collateral: collateral,
 		position:   position,
 		lower: &curve{
-			l:    num.MustUintFromString(state.Lower.L, 10),
-			high: num.MustUintFromString(state.Lower.High, 10),
-			low:  num.MustUintFromString(state.Lower.Low, 10),
-			rf:   num.MustDecimalFromString(state.Lower.Rf),
+			l:     num.MustUintFromString(state.Lower.L, 10),
+			high:  num.MustUintFromString(state.Lower.High, 10),
+			low:   num.MustUintFromString(state.Lower.Low, 10),
+			rf:    num.MustDecimalFromString(state.Lower.Rf),
+			empty: state.Lower.Empty,
 		},
 		upper: &curve{
-			l:    num.MustUintFromString(state.Upper.L, 10),
-			high: num.MustUintFromString(state.Upper.High, 10),
-			low:  num.MustUintFromString(state.Upper.Low, 10),
-			rf:   num.MustDecimalFromString(state.Upper.Rf),
+			l:     num.MustUintFromString(state.Upper.L, 10),
+			high:  num.MustUintFromString(state.Upper.High, 10),
+			low:   num.MustUintFromString(state.Upper.Low, 10),
+			rf:    num.MustDecimalFromString(state.Upper.Rf),
+			empty: state.Upper.Empty,
 		},
 		priceFactor: priceFactor,
 		oneTick:     num.UintZero().Mul(num.UintOne(), priceFactor),
@@ -156,16 +179,18 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 		Market:     p.market,
 		Asset:      p.asset,
 		Lower: &snapshotpb.PoolMapEntry_Curve{
-			L:    p.lower.l.String(),
-			High: p.lower.high.String(),
-			Low:  p.lower.low.String(),
-			Rf:   p.lower.rf.String(),
+			L:     p.lower.l.String(),
+			High:  p.lower.high.String(),
+			Low:   p.lower.low.String(),
+			Rf:    p.lower.rf.String(),
+			Empty: p.lower.empty,
 		},
 		Upper: &snapshotpb.PoolMapEntry_Curve{
-			L:    p.upper.l.String(),
-			High: p.upper.high.String(),
-			Low:  p.upper.low.String(),
-			Rf:   p.upper.rf.String(),
+			L:     p.upper.l.String(),
+			High:  p.upper.high.String(),
+			Low:   p.upper.low.String(),
+			Rf:    p.upper.rf.String(),
+			Empty: p.lower.empty,
 		},
 		Status: p.status,
 	}
@@ -180,6 +205,19 @@ func (p *Pool) Update(
 	p.Commitment = amend.CommitmentAmount
 	p.Parameters.ApplyUpdate(amend.Parameters)
 	p.setCurves(rf, sf, linearSlippage)
+}
+
+// emptyCurve creates the curve details that represent no liquidity.
+func emptyCurve(
+	base *num.Uint,
+) *curve {
+	return &curve{
+		l:     num.UintZero(),
+		rf:    num.DecimalZero(),
+		low:   base.Clone(),
+		high:  base.Clone(),
+		empty: true,
+	}
 }
 
 // generateCurve creates the curve details and calculates its virtual liquidity.
@@ -233,6 +271,8 @@ func (p *Pool) setCurves(
 ) {
 	// convert the bounds into asset precision
 	base := num.UintZero().Mul(p.Parameters.Base, p.priceFactor)
+	p.lower = emptyCurve(base)
+	p.upper = emptyCurve(base)
 
 	if p.Parameters.LowerBound != nil {
 		lowerBound := num.UintZero().Mul(p.Parameters.LowerBound, p.priceFactor)
@@ -288,10 +328,10 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	buys := []*types.Order{}
 	sells := []*types.Order{}
 
-	if from == nil && p.lower != nil {
+	if from == nil {
 		from = p.lower.low
 	}
-	if to == nil && p.upper != nil {
+	if to == nil {
 		to = p.upper.high
 	}
 
@@ -300,26 +340,20 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	fairPrice := p.fairPrice()
 
 	ordersFromCurve := func(cu *curve, from, to *num.Uint) {
-		if cu == nil {
-			return
-		}
 		from = num.Max(from, cu.low)
 		to = num.Min(to, cu.high)
 		price := from
 		for price.LT(to) {
 			next := num.UintZero().AddSum(price, p.oneTick)
-			volume, _ := num.UintZero().Delta(
-				impliedPosition(p.sqrt(price), p.sqrt(cu.high), cu.l),
-				impliedPosition(p.sqrt(next), p.sqrt(cu.high), cu.l),
-			)
 
+			volume := cu.volumeBetweenPrices(p.sqrt, price, next)
 			if side == types.SideBuy && next.GT(fairPrice) {
 				// now switch to sells, we're over the fair-price now
 				side = types.SideSell
 			}
 
 			order := &types.Order{
-				Size:  volume.Uint64(),
+				Size:  volume,
 				Side:  side,
 				Price: price.Clone(),
 			}
@@ -338,45 +372,18 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 	return buys, sells
 }
 
-// VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
+// TradableVolumeInRange returns the volume the pool is willing to provide between the two given price levels for side of a given order
 // that is trading with the pool. If `nil` is provided for either price then we take the full volume in that direction.
-func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
+func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
 	pos, _ := p.getPosition()
 	st, nd := price1, price2
 
-	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
-	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
-	var cu *curve
-	var high, low *num.Uint
-	if p.upper != nil && p.lower != nil {
-		if pos < 0 || (pos == 0 && side == types.SideBuy) {
-			cu = p.upper
-		} else {
-			cu = p.lower
-		}
-		high, low = cu.high, cu.low
-	} else if p.upper == nil {
-		cu = p.lower
-		high, low = cu.high, cu.low
-		// we should treat this as an upper curve
-		if pos < 0 || (pos == 0 && side == types.SideBuy) {
-			high, low = low, high
-		}
-	} else {
-		cu = p.upper
-		high, low = cu.high, cu.low
-		// we should treat this as an lower curve
-		if pos > 0 || (pos == 0 && side != types.SideBuy) {
-			high, low = low, high
-		}
-	}
-
 	if price1 == nil {
-		st = low
+		st = p.lower.low
 	}
 
 	if price2 == nil {
-		nd = high
+		nd = p.upper.high
 	}
 
 	if st.EQ(nd) {
@@ -387,24 +394,28 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 		st, nd = nd, st
 	}
 
-	// there is no volume outside of the bounds for the curve so we snap st, nd to the boundaries
-	st = num.Max(st, low)
-	nd = num.Min(nd, high)
-	if st.GTE(nd) {
-		return 0
+	var other *curve
+	var volume uint64
+	// get the curve based on the pool's current position, if the position is zero we take the curve the trade will put us in
+	// e.g trading with an incoming buy order will make the pool short, so we take the upper curve.
+	if pos < 0 || (pos == 0 && side == types.SideBuy) {
+		volume = p.upper.volumeBetweenPrices(p.sqrt, st, nd)
+		other = p.lower
+	} else {
+		volume = p.lower.volumeBetweenPrices(p.sqrt, st, nd)
+		other = p.upper
 	}
-
-	// abs(P(st) - P(nd))
-	volume, _ := num.UintZero().Delta(
-		impliedPosition(p.sqrt(st), p.sqrt(high), cu.l),
-		impliedPosition(p.sqrt(nd), p.sqrt(high), cu.l),
-	)
 
 	if p.closing() {
-		return num.MinV(volume.Uint64(), uint64(num.AbsV(pos)))
+		return num.MinV(volume, uint64(num.AbsV(pos)))
 	}
 
-	return volume.Uint64()
+	// if the position is non-zero, the incoming order could push us across to the other curve
+	// so we need to check for volume there too
+	if pos != 0 {
+		volume += other.volumeBetweenPrices(p.sqrt, st, nd)
+	}
+	return volume
 }
 
 // getBalance returns the total balance of the pool i.e it's general account + it's margin account.
@@ -474,16 +485,11 @@ func (p *Pool) getPosition() (int64, *num.Uint) {
 // x = P + (cc * rf) / sqrt(pl) + L / sqrt(pl),
 // y = abs(P) * average-entry + L * sqrt(pl).
 func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
-	var high, low *num.Uint
 	cu := p.upper
-	if p.upper != nil {
-		high = p.upper.high
-		low = p.upper.low
-	} else {
-		cu = p.lower
-		high = p.lower.low
-		low = p.lower.high
+	if cu.empty {
+		panic("should not be calculating balances on empty-curve side")
 	}
+
 	balance := p.getBalance()
 
 	// lets start with x
@@ -492,10 +498,10 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 	term1x := num.DecimalFromInt64(-pos)
 
 	// cc * rf / pu
-	term2x := cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(high))
+	term2x := cu.rf.Mul(num.DecimalFromUint(balance)).Div(num.DecimalFromUint(cu.high))
 
 	// L / sqrt(pl)
-	term3x := cu.l.ToDecimal().Div(p.sqrt(high))
+	term3x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
 
 	// x = P + (cc * rf / pu) + (L / sqrt(pl))
 	x := term2x.Add(term3x).Sub(term1x)
@@ -506,7 +512,7 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 	term1y := ae.Mul(ae, num.NewUint(uint64(-pos)))
 
 	// L * sqrt(pl)
-	term2y := cu.l.ToDecimal().Mul(p.sqrt(low))
+	term2y := cu.l.ToDecimal().Mul(p.sqrt(cu.low))
 
 	// y = abs(P) * average-entry + L * pl
 	y := term1y.ToDecimal().Add(term2y)
@@ -518,27 +524,24 @@ func (p *Pool) virtualBalancesShort(pos int64, ae *num.Uint) (num.Decimal, num.D
 // x = P + (L / sqrt(pu)),
 // y = L * (sqrt(pu) - sqrt(pl)) - P * average-entry + (L * sqrt(pl)).
 func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.Decimal) {
-	var high *num.Uint
 	cu := p.lower
-	if p.lower != nil {
-		high = cu.high
-	} else {
-		cu = p.upper
-		high = cu.low
+	if cu.empty {
+		panic("should not be calculating balances on empty-curve side")
 	}
+
 	// lets start with x
 
 	// P
 	term1x := num.DecimalFromInt64(pos)
 
 	// L / sqrt(pu)
-	term2x := cu.l.ToDecimal().Div(p.sqrt(high))
+	term2x := cu.l.ToDecimal().Div(p.sqrt(cu.high))
 	x := term1x.Add(term2x)
 
 	// now lets move to y
 
 	// L * (sqrt(pu) - sqrt(pl)) + (L * sqrt(pl)) => L * sqrt(pu)
-	term1y := cu.l.ToDecimal().Mul(p.sqrt(high))
+	term1y := cu.l.ToDecimal().Mul(p.sqrt(cu.high))
 
 	// P * average-entry
 	term2y := ae.Mul(ae, num.NewUint(uint64(pos)))
@@ -551,10 +554,7 @@ func (p *Pool) virtualBalancesLong(pos int64, ae *num.Uint) (num.Decimal, num.De
 func (p *Pool) fairPrice() *num.Uint {
 	pos, ae := p.getPosition()
 	if pos == 0 {
-		if p.lower != nil {
-			return p.lower.high.Clone()
-		}
-		return p.upper.low.Clone()
+		return p.lower.high.Clone()
 	}
 
 	x, y := p.virtualBalances(pos, ae, types.SideUnspecified)

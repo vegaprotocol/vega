@@ -102,15 +102,15 @@ func NewSubmitAMMFromProto(
 
 	commitment, _ := num.UintFromString(submitAMM.CommitmentAmount, 10)
 	base, _ := num.UintFromString(submitAMM.ConcentratedLiquidityParameters.Base, 10)
-	if len(submitAMM.ConcentratedLiquidityParameters.LowerBound) > 0 {
-		lowerBound, _ = num.UintFromString(submitAMM.ConcentratedLiquidityParameters.LowerBound, 10)
-		lm, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
+	if submitAMM.ConcentratedLiquidityParameters.LowerBound != nil {
+		lowerBound, _ = num.UintFromString(*submitAMM.ConcentratedLiquidityParameters.LowerBound, 10)
+		lm, _ := num.DecimalFromString(*submitAMM.ConcentratedLiquidityParameters.MarginRatioAtLowerBound)
 		lowerMargin = ptr.From(lm)
 	}
-	if len(submitAMM.ConcentratedLiquidityParameters.UpperBound) > 0 {
-		upperBound, _ = num.UintFromString(submitAMM.ConcentratedLiquidityParameters.UpperBound, 10)
+	if submitAMM.ConcentratedLiquidityParameters.UpperBound != nil {
+		upperBound, _ = num.UintFromString(*submitAMM.ConcentratedLiquidityParameters.UpperBound, 10)
 		// this must be set if upper bound is set
-		um, _ := num.DecimalFromString(submitAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
+		um, _ := num.DecimalFromString(*submitAMM.ConcentratedLiquidityParameters.MarginRatioAtUpperBound)
 		upperMargin = ptr.From(um)
 	}
 
@@ -143,14 +143,15 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 	cpy := *s.Parameters
 	s.Parameters = &cpy
 	// this should be split to a different function, because this is modifying the
-	var lower, upper, marginLower, marginUpper, base string
+	var lower, upper, marginLower, marginUpper *string
+	var base string
 	if s.Parameters.LowerBound != nil {
-		lower = s.Parameters.LowerBound.String()
-		marginLower = s.Parameters.MarginRatioAtLowerBound.String()
+		lower = ptr.From(s.Parameters.LowerBound.String())
+		marginLower = ptr.From(s.Parameters.MarginRatioAtLowerBound.String())
 	}
 	if s.Parameters.UpperBound != nil {
-		upper = s.Parameters.UpperBound.String()
-		marginUpper = s.Parameters.MarginRatioAtUpperBound.String()
+		upper = ptr.From(s.Parameters.UpperBound.String())
+		marginUpper = ptr.From(s.Parameters.MarginRatioAtUpperBound.String())
 	}
 	if s.Parameters.Base != nil {
 		base = s.Parameters.Base.String()

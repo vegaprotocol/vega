@@ -10,7 +10,6 @@ import (
 	common "code.vegaprotocol.io/vega/core/execution/common"
 	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -50,20 +49,6 @@ func (m *MockAMMPool) OrderbookShape(arg0, arg1 *num.Uint) ([]*types.Order, []*t
 func (mr *MockAMMPoolMockRecorder) OrderbookShape(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderbookShape", reflect.TypeOf((*MockAMMPool)(nil).OrderbookShape), arg0, arg1)
-}
-
-// VolumeBetweenPrices mocks base method.
-func (m *MockAMMPool) VolumeBetweenPrices(arg0 vega.Side, arg1, arg2 *num.Uint) uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VolumeBetweenPrices", arg0, arg1, arg2)
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// VolumeBetweenPrices indicates an expected call of VolumeBetweenPrices.
-func (mr *MockAMMPoolMockRecorder) VolumeBetweenPrices(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeBetweenPrices", reflect.TypeOf((*MockAMMPool)(nil).VolumeBetweenPrices), arg0, arg1, arg2)
 }
 
 // MockAMM is a mock of AMM interface.

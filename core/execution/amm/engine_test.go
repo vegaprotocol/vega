@@ -244,10 +244,27 @@ func testBasicSubmitOrder(t *testing.T) {
 
 	ensureBalances(t, tst.col, 10000000000)
 	ensurePosition(t, tst.pos, 0, num.NewUint(0))
-	orders := tst.engine.SubmitOrder(agg, num.NewUint(2010), num.NewUint(2020))
+	orders := tst.engine.SubmitOrder(agg, num.NewUint(2000), num.NewUint(2020))
 	require.Len(t, orders, 1)
-	assert.Equal(t, "2004", orders[0].Price.String())
-	assert.Equal(t, uint64(120731), orders[0].Size)
+	assert.Equal(t, "2009", orders[0].Price.String())
+	assert.Equal(t, uint64(242367), orders[0].Size)
+
+	// AMM is now short, but another order comes in that will flip its position to long
+	agg = &types.Order{
+		Size:      1000000,
+		Remaining: 1000000,
+		Side:      types.SideSell,
+		Price:     num.NewUint(1900),
+	}
+
+	ensureBalances(t, tst.col, 10000000000)
+	ensureBalances(t, tst.col, 10000000000)
+	orders = tst.engine.SubmitOrder(agg, num.NewUint(2020), num.NewUint(1990))
+	require.Len(t, orders, 1)
+	assert.Equal(t, "2035", orders[0].Price.String())
+	// note that this volume being bigger than 242367 above means we've moved back to position, then flipped
+	// sign, and took volume from the other curve.
+	assert.Equal(t, uint64(371231), orders[0].Size)
 }
 
 func testSubmitMarketOrder(t *testing.T) {
