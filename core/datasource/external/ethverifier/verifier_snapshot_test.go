@@ -192,7 +192,7 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 	assert.NoError(t, checkResult)
 
 	// now we want to restore as if we are doing an upgrade
-	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.74.7", true)
+	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.74.9", true)
 
 	lb, _, err := eov.GetState(lastEthBlockKey)
 	require.Nil(t, err)
