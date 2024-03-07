@@ -558,6 +558,7 @@ message PoolMapEntry {
     string high = 2;
     string low = 3;
     string rf = 4;
+    bool empty = 5;
   }
 
   message Pool {

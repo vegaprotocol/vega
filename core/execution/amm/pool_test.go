@@ -30,12 +30,12 @@ import (
 )
 
 func TestAMMPool(t *testing.T) {
-	t.Run("test volume between prices", testVolumeBetweenPrices)
+	t.Run("test volume between prices", testTradeableVolumeInRange)
 	t.Run("test trade price", testTradePrice)
 	t.Run("test pool logic with position factor", testPoolPositionFactor)
 }
 
-func testVolumeBetweenPrices(t *testing.T) {
+func testTradeableVolumeInRange(t *testing.T) {
 	p := newTestPool(t)
 	defer p.ctrl.Finish()
 
@@ -75,12 +75,20 @@ func testVolumeBetweenPrices(t *testing.T) {
 			side:           types.SideSell,
 			expectedVolume: 2222,
 		},
+		{
+			name:           "trade causes sign to flip and volume crosses curves",
+			price1:         num.NewUint(500),
+			price2:         num.NewUint(3500),
+			side:           types.SideSell,
+			expectedVolume: 4040,
+			position:       10,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ensurePosition(t, p.pos, tt.position, num.UintZero())
-			volume := p.pool.VolumeBetweenPrices(tt.side, tt.price1, tt.price2)
+			volume := p.pool.TradableVolumeInRange(tt.side, tt.price1, tt.price2)
 			assert.Equal(t, int(tt.expectedVolume), int(volume))
 		})
 	}
@@ -91,11 +99,11 @@ func testPoolPositionFactor(t *testing.T) {
 	defer p.ctrl.Finish()
 
 	ensurePosition(t, p.pos, 0, num.UintZero())
-	volume := p.pool.VolumeBetweenPrices(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
+	volume := p.pool.TradableVolumeInRange(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
 	assert.Equal(t, int(1818181), int(volume))
 
 	ensurePosition(t, p.pos, 0, num.UintZero())
-	volume = p.pool.VolumeBetweenPrices(types.SideSell, num.NewUint(1800), num.NewUint(2000))
+	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2000))
 	assert.Equal(t, int(2222222), int(volume))
 
 	ensurePosition(t, p.pos, -1, num.NewUint(2000))
@@ -175,6 +183,44 @@ func testTradePrice(t *testing.T) {
 	}
 }
 
+func TestOneSidedCurve(t *testing.T) {
+	// a pool with no liquidity below
+	p := newTestPoolWithRanges(t, nil, num.NewUint(2000), num.NewUint(2200))
+	defer p.ctrl.Finish()
+
+	// side with liquidity returns volume
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	volume := p.pool.TradableVolumeInRange(types.SideBuy, num.NewUint(2000), num.NewUint(2200))
+	assert.Equal(t, int(1818), int(volume))
+
+	// empty side returns no volume
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2000))
+	assert.Equal(t, int(0), int(volume))
+
+	// pool with short position and incoming sell only reports volume up to base
+	// empty side returns no volume
+	ensurePosition(t, p.pos, -10, num.UintZero())
+	volume = p.pool.TradableVolumeInRange(types.SideSell, num.NewUint(1800), num.NewUint(2200))
+	assert.Equal(t, int(1818), int(volume))
+
+	// fair price at 0 position is still ok
+	ensurePosition(t, p.pos, 0, num.UintZero())
+	price := p.pool.BestPrice(nil)
+	assert.Equal(t, price.String(), "2000")
+
+	// fair price at short position is still ok
+	ensurePosition(t, p.pos, -10, num.UintZero())
+	ensureBalances(t, p.col, 1000000)
+	price = p.pool.BestPrice(nil)
+	assert.Equal(t, price.String(), "1409")
+
+	// fair price when long should panic since AMM should never be able to get into that state
+	// fair price at short position is still ok
+	ensurePosition(t, p.pos, 10, num.UintZero())
+	assert.Panics(t, func() { p.pool.BestPrice(nil) })
+}
+
 func ensurePosition(t *testing.T, p *mocks.MockPosition, pos int64, averageEntry *num.Uint) {
 	t.Helper()
 
@@ -213,22 +259,22 @@ func TestNotebook(t *testing.T) {
 	pos := int64(0)
 
 	ensurePosition(t, p.pos, pos, num.UintZero())
-	volume := p.pool.VolumeBetweenPrices(types.SideSell, base, low)
+	volume := p.pool.TradableVolumeInRange(types.SideSell, base, low)
 	assert.Equal(t, int(2222), int(volume))
 
 	ensurePosition(t, p.pos, pos, num.UintZero())
-	volume = p.pool.VolumeBetweenPrices(types.SideBuy, up, base)
+	volume = p.pool.TradableVolumeInRange(types.SideBuy, up, base)
 	assert.Equal(t, int(1818), int(volume))
 
 	lowmid := num.NewUint(1900)
 	upmid := num.NewUint(2100)
 
 	ensurePosition(t, p.pos, pos, num.UintZero())
-	volume = p.pool.VolumeBetweenPrices(types.SideSell, low, lowmid)
+	volume = p.pool.TradableVolumeInRange(types.SideSell, low, lowmid)
 	assert.Equal(t, int(1155), int(volume))
 
 	ensurePosition(t, p.pos, pos, num.UintZero())
-	volume = p.pool.VolumeBetweenPrices(types.SideBuy, upmid, up)
+	volume = p.pool.TradableVolumeInRange(types.SideBuy, upmid, up)
 	assert.Equal(t, int(876), int(volume))
 
 	ensurePosition(t, p.pos, -876, upmid.Clone())
@@ -253,7 +299,17 @@ func newTestPool(t *testing.T) *tstPool {
 	return newTestPoolWithPositionFactor(t, num.DecimalOne())
 }
 
+func newTestPoolWithRanges(t *testing.T, low, base, high *num.Uint) *tstPool {
+	t.Helper()
+	return newTestPoolWithOpts(t, num.DecimalOne(), low, base, high)
+}
+
 func newTestPoolWithPositionFactor(t *testing.T, positionFactor num.Decimal) *tstPool {
+	t.Helper()
+	return newTestPoolWithOpts(t, positionFactor, num.NewUint(1800), num.NewUint(2000), num.NewUint(2200))
+}
+
+func newTestPoolWithOpts(t *testing.T, positionFactor num.Decimal, low, base, high *num.Uint) *tstPool {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	col := mocks.NewMockCollateral(ctrl)
@@ -270,9 +326,9 @@ func newTestPoolWithPositionFactor(t *testing.T, positionFactor num.Decimal) *ts
 		// 0000000000000
 		CommitmentAmount: num.NewUint(100000),
 		Parameters: &types.ConcentratedLiquidityParameters{
-			Base:                    num.NewUint(2000),
-			LowerBound:              num.NewUint(1800),
-			UpperBound:              num.NewUint(2200),
+			Base:                    base,
+			LowerBound:              low,
+			UpperBound:              high,
 			MarginRatioAtLowerBound: ptr.From(num.DecimalFromFloat(0.02)),
 			MarginRatioAtUpperBound: ptr.From(num.DecimalFromFloat(0.02)),
 		},
