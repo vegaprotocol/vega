@@ -171,6 +171,7 @@ func NewAmendAMMFromProto(
 type CancelAMM struct {
 	MarketID string
 	Party    string
+	Method   AMMPoolCancellationMethod
 }
 
 func NewCancelAMMFromProto(
@@ -180,8 +181,17 @@ func NewCancelAMMFromProto(
 	return &CancelAMM{
 		MarketID: cancelAMM.MarketId,
 		Party:    party,
+		Method:   cancelAMM.Method,
 	}
 }
+
+type AMMPoolCancellationMethod = commandspb.CancelAMM_Method
+
+const (
+	AMMPoolCancellationMethodUnspecified AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_UNSPECIFIED
+	AMMPoolCancellationMethodImmediate   AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_IMMEDIATE
+	AMMPoolCancellationMethodReduceOnly  AMMPoolCancellationMethod = commandspb.CancelAMM_METHOD_REDUCE_ONLY
+)
 
 type AMMPoolStatusReason = eventspb.AMMPool_StatusReason
 
@@ -204,4 +214,5 @@ const (
 	AMMPoolStatusRejected                  = eventspb.AMMPool_STATUS_REJECTED
 	AMMPoolStatusCancelled                 = eventspb.AMMPool_STATUS_CANCELLED
 	AMMPoolStatusStopped                   = eventspb.AMMPool_STATUS_STOPPED
+	AMMPoolStatusReduceOnly                = eventspb.AMMPool_STATUS_REDUCE_ONLY
 )

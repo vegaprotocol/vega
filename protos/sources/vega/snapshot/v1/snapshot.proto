@@ -568,6 +568,7 @@ message PoolMapEntry {
     string market = 6;
     Curve lower = 7;
     Curve upper = 8;
+    vega.events.v1.AMMPool.Status status = 9;
   }
 
   string party = 1;

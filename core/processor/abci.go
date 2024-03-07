@@ -2648,7 +2648,7 @@ func (app *App) DeliverCancelAMM(ctx context.Context, tx abci.Tx, deterministicI
 	}
 
 	cancel := types.NewCancelAMMFromProto(params, tx.Party())
-	return app.exec.CancelAMM(ctx, cancel)
+	return app.exec.CancelAMM(ctx, cancel, deterministicID)
 }
 
 // UpdateReferralSet this is effectively Update team, but also served to create

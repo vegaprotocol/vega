@@ -50,6 +50,9 @@ type Pool struct {
 	priceFactor    *num.Uint
 	positionFactor num.Decimal
 
+	// current pool status
+	status types.AMMPoolStatus
+
 	// sqrt function to use.
 	sqrt sqrtFn
 
@@ -95,6 +98,7 @@ func NewPool(
 		priceFactor:    priceFactor,
 		positionFactor: positionFactor,
 		oneTick:        num.UintZero().Mul(num.UintOne(), priceFactor),
+		status:         types.AMMPoolStatusActive,
 	}
 	pool.setCurves(rf, sf, linearSlippage)
 	return pool
@@ -139,6 +143,7 @@ func NewPoolFromProto(
 		},
 		priceFactor: priceFactor,
 		oneTick:     num.UintZero().Mul(num.UintOne(), priceFactor),
+		status:      state.Status,
 	}
 }
 
@@ -162,6 +167,7 @@ func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
 			Low:  p.upper.low.String(),
 			Rf:   p.upper.rf.String(),
 		},
+		Status: p.status,
 	}
 }
 
@@ -273,7 +279,7 @@ func impliedPosition(sqrtPrice, sqrtHigh num.Decimal, l *num.Uint) *num.Uint {
 }
 
 // VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for side of a given order
-// being placed by the pool. If `nil` is provided for either price then we take the full volume in that direction.
+// that is trading with the pool. If `nil` is provided for either price then we take the full volume in that direction.
 func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
 	pos, _ := p.getPosition()
 	st, nd := price1, price2
@@ -315,6 +321,11 @@ func (p *Pool) VolumeBetweenPrices(side types.Side, price1 *num.Uint, price2 *nu
 		impliedPosition(p.sqrt(st), p.sqrt(cu.high), cu.l),
 		impliedPosition(p.sqrt(nd), p.sqrt(cu.high), cu.l),
 	)
+
+	if p.closing() {
+		return num.MinV(volume.Uint64(), uint64(num.AbsV(pos)))
+	}
+
 	return volume.Uint64()
 }
 
@@ -488,4 +499,24 @@ func (p *Pool) BestPrice(order *types.Order) *num.Uint {
 	default:
 		panic("should never reach here")
 	}
+}
+
+func (p *Pool) closing() bool {
+	return p.status == types.AMMPoolStatusReduceOnly
+}
+
+func (p *Pool) canTrade(order *types.Order) bool {
+	if !p.closing() {
+		return true
+	}
+
+	pos, _ := p.getPosition()
+	// pool is long incoming order is a buy and will make it shorter, its ok
+	if pos > 0 && order.Side == types.SideBuy {
+		return true
+	}
+	if pos < 0 && order.Side == types.SideSell {
+		return true
+	}
+	return false
 }
