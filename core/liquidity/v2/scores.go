@@ -79,6 +79,11 @@ func (e *Engine) GetCurrentLiquidityScores(bestBid, bestAsk num.Decimal, minLpPr
 	return r, t
 }
 
+// GetPartyLiquidityScore returns the volume-weighted probability of trading for the orders. Used to get a score for the AMM shape.
+func (e *Engine) GetPartyLiquidityScore(orders []*types.Order, bestBid, bestAsk num.Decimal, minP, maxP *num.Uint) num.Decimal {
+	return e.suppliedEngine.CalculateLiquidityScore(orders, bestBid, bestAsk, minP, maxP)
+}
+
 func (e *Engine) getAllActiveOrders(party string) []*types.Order {
 	partyOrders := e.orderBook.GetOrdersPerParty(party)
 	orders := make([]*types.Order, 0, len(partyOrders))
