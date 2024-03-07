@@ -18,6 +18,8 @@ package amm
 import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
+	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 )
 
 type curve struct {
@@ -72,6 +74,66 @@ func NewPool(
 	}
 	pool.setCurves(rf, sf, linearSlippage)
 	return pool
+}
+
+func NewPoolFromProto(
+	sqrt sqrtFn,
+	collateral Collateral,
+	position Position,
+	state *snapshotpb.PoolMapEntry_Pool,
+) *Pool {
+	return &Pool{
+		ID:         state.Id,
+		SubAccount: state.SubAccount,
+		Commitment: num.MustUintFromString(state.Commitment, 10),
+		Parameters: &types.ConcentratedLiquidityParameters{
+			Base:                    num.MustUintFromString(state.Parameters.Base, 10),
+			LowerBound:              num.MustUintFromString(state.Parameters.LowerBound, 10),
+			UpperBound:              num.MustUintFromString(state.Parameters.UpperBound, 10),
+			MarginRatioAtLowerBound: ptr.From(num.MustDecimalFromString(state.Parameters.MarginRatioAtLowerBound)),
+			MarginRatioAtUpperBound: ptr.From(num.MustDecimalFromString(state.Parameters.MarginRatioAtUpperBound)),
+		},
+		market:     state.Market,
+		asset:      state.Asset,
+		sqrt:       sqrt,
+		collateral: collateral,
+		position:   position,
+		lower: &curve{
+			l:    num.MustUintFromString(state.Lower.L, 10),
+			high: num.MustUintFromString(state.Lower.High, 10),
+			low:  num.MustUintFromString(state.Lower.Low, 10),
+			rf:   num.MustDecimalFromString(state.Lower.Rf),
+		},
+		upper: &curve{
+			l:    num.MustUintFromString(state.Upper.L, 10),
+			high: num.MustUintFromString(state.Upper.High, 10),
+			low:  num.MustUintFromString(state.Upper.Low, 10),
+			rf:   num.MustDecimalFromString(state.Upper.Rf),
+		},
+	}
+}
+
+func (p *Pool) IntoProto() *snapshotpb.PoolMapEntry_Pool {
+	return &snapshotpb.PoolMapEntry_Pool{
+		Id:         p.ID,
+		SubAccount: p.SubAccount,
+		Commitment: p.Commitment.String(),
+		Parameters: p.Parameters.ToProtoEvent(),
+		Market:     p.market,
+		Asset:      p.asset,
+		Lower: &snapshotpb.PoolMapEntry_Curve{
+			L:    p.lower.l.String(),
+			High: p.lower.high.String(),
+			Low:  p.lower.low.String(),
+			Rf:   p.lower.rf.String(),
+		},
+		Upper: &snapshotpb.PoolMapEntry_Curve{
+			L:    p.upper.l.String(),
+			High: p.upper.high.String(),
+			Low:  p.upper.low.String(),
+			Rf:   p.upper.rf.String(),
+		},
+	}
 }
 
 func (p *Pool) Update(
@@ -168,8 +230,8 @@ func impliedPosition(sqrtPrice, sqrtHigh, l *num.Uint) *num.Uint {
 // VolumeBetweenPrices returns the volume the pool is willing to provide between the two given price levels for the given order.
 func (p *Pool) VolumeBetweenPrices(order *types.Order, price1 *num.Uint, price2 *num.Uint) *num.Uint {
 	var pos int64
-	if pp, ok := p.position.GetPositionByPartyID(p.SubAccount); ok {
-		pos = pp.Size()
+	if pp := p.position.GetPositionsByParty(p.SubAccount); len(pp) > 0 {
+		pos = pp[0].Size()
 	}
 
 	st, nd := price1, price2
@@ -254,9 +316,9 @@ func (p *Pool) virtualBalances(pos int64, ae *num.Uint) (*num.Uint, *num.Uint) {
 func (p *Pool) TradePrice(order *types.Order) *num.Uint {
 	var pos int64
 	ae := num.UintZero()
-	if pp, ok := p.position.GetPositionByPartyID(p.SubAccount); ok {
-		pos = pp.Size()
-		ae = pp.AverageEntryPrice()
+	if pp := p.position.GetPositionsByParty(p.SubAccount); len(pp) > 0 {
+		pos = pp[0].Size()
+		ae = pp[0].AverageEntryPrice()
 	}
 
 	if pos == 0 {

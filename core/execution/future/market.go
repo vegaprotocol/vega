@@ -349,6 +349,8 @@ func NewMarket(
 		}
 	}
 
+	market.amm = amm.New(log, broker, collateralEngine, market, nil, riskEngine, positionEngine)
+
 	assets, _ := mkt.GetAssets()
 	market.settlementAsset = assets[0]
 
@@ -396,6 +398,10 @@ func (m *Market) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	}
 
 	m.updateLiquidityFee(ctx)
+}
+
+func (m *Market) ClosePosition(context.Context, string) bool {
+	return true
 }
 
 func (m *Market) OnEpochRestore(ctx context.Context, epoch types.Epoch) {

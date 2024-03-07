@@ -122,17 +122,20 @@ func (m *MockPosition) EXPECT() *MockPositionMockRecorder {
 	return m.recorder
 }
 
-// GetPositionByPartyID mocks base method.
-func (m *MockPosition) GetPositionByPartyID(arg0 string) (events.MarketPosition, bool) {
+// GetPositionsByParty mocks base method.
+func (m *MockPosition) GetPositionsByParty(arg0 ...string) []events.MarketPosition {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPositionByPartyID", arg0)
-	ret0, _ := ret[0].(events.MarketPosition)
-	ret1, _ := ret[1].(bool)
-	return ret0, ret1
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPositionsByParty", varargs...)
+	ret0, _ := ret[0].([]events.MarketPosition)
+	return ret0
 }
 
-// GetPositionByPartyID indicates an expected call of GetPositionByPartyID.
-func (mr *MockPositionMockRecorder) GetPositionByPartyID(arg0 interface{}) *gomock.Call {
+// GetPositionsByParty indicates an expected call of GetPositionsByParty.
+func (mr *MockPositionMockRecorder) GetPositionsByParty(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionByPartyID", reflect.TypeOf((*MockPosition)(nil).GetPositionByPartyID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPositionsByParty", reflect.TypeOf((*MockPosition)(nil).GetPositionsByParty), arg0...)
 }

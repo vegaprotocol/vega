@@ -186,6 +186,18 @@ type Collateral interface {
 	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
 	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
+
+	// amm stuff
+	SubAccountUpdate(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+		transferType types.TransferType,
+		amount *num.Uint,
+	) (*types.LedgerMovement, error)
+	CreatePartyAMMsSubAccounts(
+		ctx context.Context,
+		party, subAccount, asset, market string,
+	) (general *types.Account, margin *types.Account, err error)
 }
 
 type OrderReferenceCheck types.Order
