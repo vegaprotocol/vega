@@ -40,7 +40,7 @@ Feature: test when isolated margin risk factor > 1
       | lprov1  | ETH/FEB23 | buy  | 100    | 15700  | 0                | TYPE_LIMIT | TIF_GTC | lp-buy-1  |
       | trader3 | ETH/FEB23 | buy  | 300    | 15800  | 0                | TYPE_LIMIT | TIF_GTC |           |
       | lprov1  | ETH/FEB23 | sell | 300    | 15800  | 0                | TYPE_LIMIT | TIF_GTC | lp-sell-1 |
-      | trader2 | ETH/FEB23 | sell | 600    | 15802  | 0                | TYPE_LIMIT | TIF_GTC | t2-sell-1 |
+      | trader2 | ETH/FEB23 | sell | 600    | 15820  | 0                | TYPE_LIMIT | TIF_GTC | t2-sell-1 |
       | trader2 | ETH/FEB23 | sell | 300    | 200000 | 0                | TYPE_LIMIT | TIF_GTC |           |
       | trader2 | ETH/FEB23 | sell | 1000   | 200100 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
@@ -48,6 +48,10 @@ Feature: test when isolated margin risk factor > 1
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 15800      | TRADING_MODE_CONTINUOUS | 5       | 15701     | 15899     | 0            | 1000           | 300           |
+
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | bond |
+      | trader3 | USD   | ETH/FEB23 | 45504  | 54496   |      |
 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset | reference |
@@ -94,4 +98,17 @@ Feature: test when isolated margin risk factor > 1
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
       | trader3 | USD   | ETH/FEB23 | 56880  | 37540   | 5580         |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | trader1 | ETH/FEB23 | buy  | 10     | 15820 | 1                | TYPE_LIMIT | TIF_GTC | trader2-buy |
+
+    #mark price changed triggers MTM win for trader3: 3*20=60
+    When the network moves ahead "1" blocks
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | trader3 | ETH/FEB23 | 38358       | 0      | 46029   | 0       | isolated margin | 1.2           | 5580  |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general | order margin |
+      | trader3 | USD   | ETH/FEB23 | 56940  | 37540   | 5580         |
 
