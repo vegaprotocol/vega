@@ -465,6 +465,7 @@ type ExecMarket struct {
 	PartyMarginFactors               []*snapshot.PartyMarginFactor
 	MarkPriceCalculator              *snapshot.CompositePriceCalculator
 	InternalCompositePriceCalculator *snapshot.CompositePriceCalculator
+	Amm                              *snapshot.AmmState
 }
 
 type ExecSpotMarket struct {
@@ -3728,6 +3729,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		PartyMarginFactors:               em.PartyMarginFactor,
 		MarkPriceCalculator:              em.MarkPriceCalculator,
 		InternalCompositePriceCalculator: em.InternalCompositePriceCalculator,
+		Amm:                              em.Amm,
 	}
 
 	for _, o := range em.ExpiringOrders {
@@ -3771,6 +3773,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		PartyMarginFactor:                e.PartyMarginFactors,
 		MarkPriceCalculator:              e.MarkPriceCalculator,
 		InternalCompositePriceCalculator: e.InternalCompositePriceCalculator,
+		Amm:                              e.Amm,
 	}
 
 	if e.CurrentMarkPrice != nil {
