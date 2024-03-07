@@ -705,6 +705,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 
 	// first check for off source volume between the best theoretical price and the first price level
 	trades, impactedOrders = s.uncrossOffbook(idx+1, agg, theoreticalBestTrade, false)
+	filled = agg.Remaining == 0
 
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front
@@ -719,13 +720,12 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool, theoreti
 				break
 			}
 
-			// now check for off source volume between the price levels
-			ot, oo := s.uncrossOffbook(idx, agg, theoreticalBestTrade, false)
-			trades = append(trades, ot...)
-			impactedOrders = append(impactedOrders, oo...)
-
-			if agg.Remaining == 0 {
-				filled = true
+			if !filled {
+				// now check for off source volume between the price levels
+				ot, oo := s.uncrossOffbook(idx, agg, theoreticalBestTrade, false)
+				trades = append(trades, ot...)
+				impactedOrders = append(impactedOrders, oo...)
+				filled = agg.Remaining == 0
 			}
 
 			if len(s.levels[idx].orders) <= 0 {
