@@ -332,13 +332,14 @@ func (e *Engine) AmendAMM(
 
 func (e *Engine) CancelAMM(
 	ctx context.Context,
-	submit *types.CancelAMM,
+	cancel *types.CancelAMM,
+	deterministicID string,
 ) error {
-	if err := e.ensureIsFutureMarket(submit.MarketID); err != nil {
+	if err := e.ensureIsFutureMarket(cancel.MarketID); err != nil {
 		return err
 	}
 
-	return e.allMarkets[submit.MarketID].CancelAMM(ctx, submit)
+	return e.allMarkets[cancel.MarketID].CancelAMM(ctx, cancel, deterministicID)
 }
 
 // RejectMarket will stop the execution of the market

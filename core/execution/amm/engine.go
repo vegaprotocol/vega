@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/idgeneration"
+	"code.vegaprotocol.io/vega/core/positions"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -60,6 +61,10 @@ type Collateral interface {
 		transferType types.TransferType,
 		amount *num.Uint,
 	) (*types.LedgerMovement, error)
+	SubAccountRelease(
+		ctx context.Context,
+		party, subAccount, asset, market string, mevt events.MarketPosition,
+	) (*types.LedgerMovement, events.Margin, error)
 	CreatePartyAMMsSubAccounts(
 		ctx context.Context,
 		party, subAccount, asset, market string,
@@ -239,13 +244,27 @@ func (e *Engine) OnMinCommitmentQuantumUpdate(ctx context.Context, c *num.Uint) 
 	e.minCommitmentQuantum = c.Clone()
 }
 
-// TBD.
 func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// check sub account balances (margin, general)
 
 	// seed an id-generator to create IDs for any orders generated in this block
 	_, blockHash := vgcontext.TraceIDFromContext(ctx)
 	e.idgen = idgeneration.New(blockHash + crypto.HashStrToHex("amm-engine"+e.market.GetID()))
+
+	// any pools that are closing that are at position 0 should be removed completely
+	for _, p := range e.poolsCpy {
+		if p.closing() {
+			if pos, _ := p.getPosition(); pos == 0 {
+				if _, err := e.releaseSubAccounts(ctx, p); err != nil {
+					e.log.Error("unable to release subaccount balance", logging.Error(err))
+				}
+				p.status = types.AMMPoolStatusCancelled
+				e.remove(ctx, p.party)
+			}
+		}
+	}
+
+	// TODO check sub account balances (margin, general)
 }
 
 func (e *Engine) IsPoolSubAccount(key string) bool {
@@ -277,6 +296,10 @@ func (e *Engine) SubmitOrder(agg *types.Order, inner, outer *num.Uint) []*types.
 
 	// first we find all amm's whose best-price would allow a trade with the incoming order
 	for _, p := range e.poolsCpy {
+		// if pool is in reducing only mode and order will increase its position, we don't want to trade
+		if !p.canTrade(agg) {
+			continue
+		}
 		p.setEphemeralPosition()
 
 		price := p.BestPrice(agg)
@@ -492,13 +515,7 @@ func (e *Engine) SubmitAMM(
 		}
 	}
 	e.add(pool)
-	e.broker.Send(
-		events.NewAMMPoolEvent(
-			ctx, submit.Party, e.market.GetID(), subAccount, deterministicID,
-			submit.CommitmentAmount, submit.Parameters,
-			types.AMMPoolStatusActive, types.AMMPoolStatusReasonUnspecified,
-		),
-	)
+	e.sendUpdate(ctx, pool)
 	return nil
 }
 
@@ -534,48 +551,65 @@ func (e *Engine) AmendAMM(
 		return err
 	}
 
-	e.broker.Send(
-		events.NewAMMPoolEvent(
-			ctx, amend.Party, e.market.GetID(), pool.SubAccount, pool.ID,
-			amend.CommitmentAmount, amend.Parameters,
-			types.AMMPoolStatusActive, types.AMMPoolStatusReasonUnspecified,
-		),
-	)
+	// set state to active since if it was closing in reduce-position mode it becomes alive again
+	pool.status = types.AMMPoolStatusActive
+	e.sendUpdate(ctx, pool)
 	return nil
 }
 
 func (e *Engine) CancelAMM(
 	ctx context.Context,
 	cancel *types.CancelAMM,
-) error {
+) (events.Margin, error) {
 	pool, ok := e.pools[cancel.Party]
 	if !ok {
-		return ErrNoPoolMatchingParty
+		return nil, ErrNoPoolMatchingParty
 	}
 
-	err := e.updateSubAccountBalance(
-		ctx, cancel.Party, pool.SubAccount, num.UintZero(),
-	)
+	if cancel.Method == types.AMMPoolCancellationMethodReduceOnly {
+		if pos, _ := pool.getPosition(); pos != 0 {
+			// pool will now only accept trades that will reduce its position
+			pool.status = types.AMMPoolStatusReduceOnly
+			e.sendUpdate(ctx, pool)
+			return nil, nil
+		}
+	}
+
+	// either pool has no position or owner wants out right now, so release general balance and
+	// get ready for a closeout.
+	closeout, err := e.releaseSubAccounts(ctx, pool)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	pool.status = types.AMMPoolStatusCancelled
+	e.remove(ctx, cancel.Party)
+	return closeout, nil
 }
 
 func (e *Engine) StopPool(
-	_ context.Context,
+	ctx context.Context,
 	key string,
 ) error {
 	party, ok := e.subAccounts[key]
 	if !ok {
 		return ErrNoPoolMatchingParty
 	}
-	e.remove(party)
+	e.remove(ctx, party)
 	return nil
 }
 
 func (e *Engine) MarketClosing() error { return errors.New("unimplemented") }
+
+func (e *Engine) sendUpdate(ctx context.Context, pool *Pool) {
+	e.broker.Send(
+		events.NewAMMPoolEvent(
+			ctx, pool.party, e.market.GetID(), pool.SubAccount, pool.ID,
+			pool.Commitment, pool.Parameters,
+			pool.status, types.AMMPoolStatusReasonUnspecified,
+		),
+	)
+}
 
 func (e *Engine) ensureCommitmentAmount(
 	_ context.Context,
@@ -589,6 +623,28 @@ func (e *Engine) ensureCommitmentAmount(
 	}
 
 	return nil
+}
+
+// releaseSubAccountGeneralBalance returns the full balance of the sub-accounts general account back to the
+// owner of the pool.
+func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool) (events.Margin, error) {
+	var pos events.MarketPosition
+	if pp := e.position.GetPositionsByParty(pool.SubAccount); len(pp) > 0 {
+		pos = pp[0]
+	} else {
+		// if a pool is cancelled right after creation it won't have a position yet so we just make an empty one to give
+		// to collateral
+		pos = positions.NewMarketPosition(pool.SubAccount)
+	}
+
+	ledgerMovements, closeout, err := e.collateral.SubAccountRelease(ctx, pool.party, pool.SubAccount, pool.asset, pool.market, pos)
+	if err != nil {
+		return nil, err
+	}
+
+	e.broker.Send(events.NewLedgerMovements(
+		ctx, []*types.LedgerMovement{ledgerMovements}))
+	return closeout, nil
 }
 
 func (e *Engine) updateSubAccountBalance(
@@ -620,7 +676,7 @@ func (e *Engine) updateSubAccountBalance(
 		transferType = types.TransferTypeAMMSubAccountLow
 		actualAmount.Sub(newCommitment, currentCommitment)
 	} else if currentCommitment.GT(newCommitment) {
-		transferType = types.TransferTypeAMMSubAcountHigh
+		transferType = types.TransferTypeAMMSubAccountHigh
 		actualAmount.Sub(currentCommitment, newCommitment)
 	} else {
 		// nothing to do
@@ -672,16 +728,17 @@ func (e *Engine) rebasePool(ctx context.Context, pool *Pool, target *num.Uint, t
 	}
 
 	if target.GT(fairPrice) {
-		// pool base price is higher than market price, it will need to buy to lower its fair-price
-		order.Side = types.SideBuy
+		// pool base price is lower than market price, it will need to sell to lower its fair-price
+		order.Side = types.SideSell
 		order.Price.Sub(target, slippage)
 	} else {
-		order.Side = types.SideSell
+		order.Side = types.SideBuy
 		order.Price.Add(target, slippage)
 	}
 
 	// ask the pool for the volume it would need to shift to get its price to target
-	order.Size = pool.VolumeBetweenPrices(order.Side, fairPrice, target)
+	// the order side is the side of the order that will trade with it, so needs to be the opposite
+	order.Size = pool.VolumeBetweenPrices(types.OtherSide(order.Side), fairPrice, target)
 	if order.Size == 0 {
 		// fair-price is so close to target price that the volume to shift it is too small, but thats ok
 		return nil
@@ -713,13 +770,17 @@ func (e *Engine) add(p *Pool) {
 	e.poolsCpy = append(e.poolsCpy, p)
 }
 
-func (e *Engine) remove(party string) {
+func (e *Engine) remove(ctx context.Context, party string) {
 	for i := range e.poolsCpy {
 		if e.poolsCpy[i].party == party {
 			e.poolsCpy = append(e.poolsCpy[:i], e.poolsCpy[i+1:]...)
+			break
 		}
 	}
+
+	pool := e.pools[party]
 	delete(e.pools, party)
+	e.sendUpdate(ctx, pool)
 }
 
 func DeriveSubAccount(
