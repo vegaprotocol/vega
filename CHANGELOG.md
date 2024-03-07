@@ -28,6 +28,7 @@
 - [797](https://github.com/vegaprotocol/core-test-coverage/issues/797) - Add coverage for `0011-MARA-030`
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
+- [10719](https://github.com/vegaprotocol/vega/issues/10719) - Add integration tests for `vAMM` spec `ACs`.
 
 ### 🐛 Fixes
 
