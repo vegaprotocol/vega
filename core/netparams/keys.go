@@ -18,6 +18,7 @@ package netparams
 const (
 	SpotMarketTradingEnabled  = "limits.markets.proposeSpotEnabled"
 	PerpsMarketTradingEnabled = "limits.markets.proposePerpetualEnabled"
+	AMMMarketTradingEnabled   = "limits.markets.ammPoolEnabled"
 	EthereumOraclesEnabled    = "ethereum.oracles.enabled"
 
 	MarketMarginScalingFactors        = "market.margin.scalingFactors"
@@ -290,6 +291,7 @@ var AllKeys = map[string]struct{}{
 	RewardsVestingBaseRate:                                       {},
 	SpotMarketTradingEnabled:                                     {},
 	PerpsMarketTradingEnabled:                                    {},
+	AMMMarketTradingEnabled:                                      {},
 	EthereumOraclesEnabled:                                       {},
 	MaxPeggedOrders:                                              {},
 	MaxGasPerBlock:                                               {},
