@@ -18,6 +18,7 @@ package amm
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/amm/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -160,8 +161,9 @@ func testTradePrice(t *testing.T) {
 
 func ensurePosition(t *testing.T, p *tstPool, pos int64, averageEntry *num.Uint) {
 	t.Helper()
-	p.pos.EXPECT().GetPositionByPartyID(gomock.Any()).Times(1).Return(
-		&marketPosition{size: pos, averageEntry: averageEntry}, true,
+
+	p.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(1).Return(
+		[]events.MarketPosition{&marketPosition{size: pos, averageEntry: averageEntry}},
 	)
 }
 
