@@ -104,7 +104,7 @@ Then the following AMM pool events should be emitted:
 The AMM pool and sub-accounts are assigned derrived ID's, which can't be specified from the integration test scenario. To allow verifying the balances of the accounts, and check whether or not the expected transfers to and from said account happened, it's possible to assign aliases to the derived ID's.
 
 ```
-Then set the the following AMM sub account aliases:
+Then set the following AMM sub account aliases:
   | party    | market id | alias               |
   | party ID | market ID | account owner alias |
 ```
