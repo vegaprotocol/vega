@@ -59,7 +59,6 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 	if cmd.ConcentratedLiquidityParameters == nil {
 		errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters", ErrIsRequired)
 	} else {
-
 		var base, lowerBound, upperBound *big.Int
 
 		if len(cmd.ConcentratedLiquidityParameters.Base) <= 0 {

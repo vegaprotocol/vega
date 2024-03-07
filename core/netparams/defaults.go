@@ -73,6 +73,9 @@ func defaultNetParams() map[string]value {
 		// perps
 		PerpsMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 
+		// AMMs
+		AMMMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// ethereum oracles
 		EthereumOraclesEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
 

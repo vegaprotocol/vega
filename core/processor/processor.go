@@ -266,6 +266,7 @@ type Limits interface {
 	CanProposeAsset() bool
 	CanProposeSpotMarket() bool
 	CanProposePerpsMarket() bool
+	CanUseAMMPool() bool
 	CanTrade() bool
 }
 
