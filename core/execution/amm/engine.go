@@ -63,6 +63,7 @@ type Collateral interface {
 		transferType types.TransferType,
 		amount *num.Uint,
 	) (*types.LedgerMovement, error)
+	SubAccountClosed(ctx context.Context, party, subAccount, asset, market string) ([]*types.LedgerMovement, error)
 	SubAccountRelease(
 		ctx context.Context,
 		party, subAccount, asset, market string, mevt events.MarketPosition,
@@ -262,7 +263,7 @@ func (e *Engine) OnMTM(ctx context.Context) {
 		}
 
 		// pool is closing and has reached 0 position, we can cancel it now
-		if _, err := e.releaseSubAccounts(ctx, p); err != nil {
+		if _, err := e.releaseSubAccounts(ctx, p, false); err != nil {
 			e.log.Error("unable to release subaccount balance", logging.Error(err))
 		}
 		p.status = types.AMMPoolStatusCancelled
@@ -500,7 +501,7 @@ func (e *Engine) partition(agg *types.Order, inner, outer *num.Uint) ([]*Pool, [
 
 	for _, p := range e.poolsCpy {
 		// not active in range if it cannot trade
-		if !p.canTrade(agg) {
+		if !p.canTrade(agg.Side) {
 			continue
 		}
 
@@ -695,26 +696,29 @@ func (e *Engine) AmendAMM(
 		return ErrNoPoolMatchingParty
 	}
 
-	if err := e.ensureCommitmentAmount(ctx, amend.CommitmentAmount); err != nil {
-		return err
+	if amend.CommitmentAmount != nil {
+		if err := e.ensureCommitmentAmount(ctx, amend.CommitmentAmount); err != nil {
+			return err
+		}
+
+		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount); err != nil {
+			return err
+		}
 	}
 
-	fairPrice := pool.BestPrice(nil)
 	oldCommitment := pool.Commitment.Clone()
-
-	err := e.updateSubAccountBalance(
-		ctx, amend.Party, pool.SubAccount, amend.CommitmentAmount,
-	)
-	if err != nil {
-		return err
-	}
-
-	pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+	fairPrice := pool.BestPrice(nil)
+	oldParams := pool.Update(amend, e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
 	if err := e.rebasePool(ctx, pool, fairPrice, amend.SlippageTolerance, idgeneration.New(deterministicID)); err != nil {
 		// couldn't rebase the pool back to its original fair price so the amend is rejected
 		if err := e.updateSubAccountBalance(ctx, amend.Party, pool.SubAccount, oldCommitment); err != nil {
 			e.log.Panic("could not revert balances are failed rebase", logging.Error(err))
 		}
+		// restore updated parameters
+		pool.Parameters = oldParams
+		// restore curves
+		pool.setCurves(e.risk.GetRiskFactors(), e.risk.GetScalingFactors(), e.risk.GetSlippage())
+
 		return err
 	}
 
@@ -742,7 +746,7 @@ func (e *Engine) CancelAMM(
 
 	// either pool has no position or owner wants out right now, so release general balance and
 	// get ready for a closeout.
-	closeout, err := e.releaseSubAccounts(ctx, pool)
+	closeout, err := e.releaseSubAccounts(ctx, pool, false)
 	if err != nil {
 		return nil, err
 	}
@@ -767,7 +771,7 @@ func (e *Engine) StopPool(
 // MarketClosing stops all AMM's and returns subaccount balances back to the owning party.
 func (e *Engine) MarketClosing(ctx context.Context) error {
 	for _, p := range e.poolsCpy {
-		if _, err := e.releaseSubAccounts(ctx, p); err != nil {
+		if _, err := e.releaseSubAccounts(ctx, p, true); err != nil {
 			return err
 		}
 		p.status = types.AMMPoolStatusStopped
@@ -802,7 +806,15 @@ func (e *Engine) ensureCommitmentAmount(
 
 // releaseSubAccountGeneralBalance returns the full balance of the sub-accounts general account back to the
 // owner of the pool.
-func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool) (events.Margin, error) {
+func (e *Engine) releaseSubAccounts(ctx context.Context, pool *Pool, mktClose bool) (events.Margin, error) {
+	if mktClose {
+		ledgerMovements, err := e.collateral.SubAccountClosed(ctx, pool.party, pool.SubAccount, pool.asset, pool.market)
+		if err != nil {
+			return nil, err
+		}
+		e.broker.Send(events.NewLedgerMovements(ctx, ledgerMovements))
+		return nil, nil
+	}
 	var pos events.MarketPosition
 	if pp := e.position.GetPositionsByParty(pool.SubAccount); len(pp) > 0 {
 		pos = pp[0]

@@ -59,6 +59,7 @@ func TestAMMTrading(t *testing.T) {
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
 	t.Run("test amend AMM with rebase", testAmendAMMWithRebase)
+	t.Run("test amend AMM with sparse amend", testAmendAMMSparse)
 }
 
 func TestClosingAMM(t *testing.T) {
@@ -222,6 +223,37 @@ func testAmendAMMWithRebase(t *testing.T) {
 	amend := getPoolAmendment(t, party, tst.marketID)
 
 	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
+	)
+
+	// so that an order will be submitting to rebase the pool
+	expectOrderSubmission(t, tst, subAccount, types.OrderStatusFilled, nil)
+
+	err := tst.engine.AmendAMM(ctx, amend, vgcrypto.RandomHash())
+	require.NoError(t, err)
+}
+
+func testAmendAMMSparse(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	amend := getPoolAmendment(t, party, tst.marketID)
+	// no amend to the commitment amount
+	amend.CommitmentAmount = nil
+	// no amend to the margin factors either
+	amend.Parameters.MarginRatioAtLowerBound = nil
+	amend.Parameters.MarginRatioAtUpperBound = nil
+	// to change something at least, inc the base + bounds by 1
+	amend.Parameters.Base.AddSum(num.UintOne())
+	amend.Parameters.UpperBound.AddSum(num.UintOne())
+	amend.Parameters.LowerBound.AddSum(num.UintOne())
+
 	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
 		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
 	)
@@ -615,8 +647,7 @@ func testMarketClosure(t *testing.T) {
 	expectSubaccountCreation(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
 
-	ensurePosition(t, tst.pos, 0, num.UintZero())
-	expectSubAccountRelease(t, tst, party, subAccount)
+	expectSubAccountClose(t, tst, party, subAccount)
 	require.NoError(t, tst.engine.MarketClosing(ctx))
 	assert.Len(t, tst.engine.poolsCpy, 0)
 }
@@ -660,6 +691,16 @@ func expectSubAccountRelease(t *testing.T, tst *tstEngine, party, subAccount str
 		tst.marketID,
 		gomock.Any(),
 	).Times(1).Return([]*types.LedgerMovement{}, nil, nil)
+}
+
+func expectSubAccountClose(t *testing.T, tst *tstEngine, party, subAccount string) {
+	t.Helper()
+	tst.col.EXPECT().SubAccountClosed(
+		gomock.Any(),
+		party,
+		subAccount,
+		tst.assetID,
+		tst.marketID).Times(1).Return([]*types.LedgerMovement{}, nil)
 }
 
 func expectOrderSubmission(t *testing.T, tst *tstEngine, subAccount string, status types.OrderStatus, err error) {

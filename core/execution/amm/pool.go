@@ -201,10 +201,14 @@ func (p *Pool) Update(
 	rf *types.RiskFactor,
 	sf *types.ScalingFactors,
 	linearSlippage num.Decimal,
-) {
-	p.Commitment = amend.CommitmentAmount
+) *types.ConcentratedLiquidityParameters {
+	if amend.CommitmentAmount != nil {
+		p.Commitment = amend.CommitmentAmount
+	}
+	oldParams := p.Parameters.Clone()
 	p.Parameters.ApplyUpdate(amend.Parameters)
 	p.setCurves(rf, sf, linearSlippage)
+	return oldParams
 }
 
 // emptyCurve creates the curve details that represent no liquidity.
@@ -375,6 +379,9 @@ func (p *Pool) OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Orde
 // TradableVolumeInRange returns the volume the pool is willing to provide between the two given price levels for side of a given order
 // that is trading with the pool. If `nil` is provided for either price then we take the full volume in that direction.
 func (p *Pool) TradableVolumeInRange(side types.Side, price1 *num.Uint, price2 *num.Uint) uint64 {
+	if !p.canTrade(side) {
+		return 0
+	}
 	pos, _ := p.getPosition()
 	st, nd := price1, price2
 
@@ -609,17 +616,17 @@ func (p *Pool) closing() bool {
 	return p.status == types.AMMPoolStatusReduceOnly
 }
 
-func (p *Pool) canTrade(order *types.Order) bool {
+func (p *Pool) canTrade(side types.Side) bool {
 	if !p.closing() {
 		return true
 	}
 
 	pos, _ := p.getPosition()
 	// pool is long incoming order is a buy and will make it shorter, its ok
-	if pos > 0 && order.Side == types.SideBuy {
+	if pos > 0 && side == types.SideBuy {
 		return true
 	}
-	if pos < 0 && order.Side == types.SideSell {
+	if pos < 0 && side == types.SideSell {
 		return true
 	}
 	return false
