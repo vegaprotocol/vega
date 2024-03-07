@@ -30,6 +30,7 @@
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
 - [10392](https://github.com/vegaprotocol/vega/issues/10392) - Integrate mark price with price monitoring.
 - [10845](https://github.com/vegaprotocol/vega/issues/10845) - Remove price monitoring trigger staleness check.
+- [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.
 
 ### 🐛 Fixes
 

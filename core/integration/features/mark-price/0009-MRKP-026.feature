@@ -32,14 +32,15 @@ Feature: Mark price calculation on auction exit
       | aux2             | ETH/FEB23 | sell | 1      | 15000 | 0                | TYPE_LIMIT | TIF_GTC |           |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 15090 | 0                | TYPE_LIMIT | TIF_GTC | bestAsk   |
     When the opening auction period ends for market "ETH/FEB23"
-    Then the mark price should be "15030" for the market "ETH/FEB23"
+    # the book price at auction uncrossing should be set to the price of the uncrossing trade
+    Then the mark price should be "15000" for the market "ETH/FEB23"
 
     When the network moves ahead "6" blocks
     Then the mark price should be "15030" for the market "ETH/FEB23"
 
     Given the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode            | horizon | min bound | max bound |
-      | 15030      | TRADING_MODE_CONTINUOUS | 60      | 14915     | 15115     |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound |
+      | 15030      | TRADING_MODE_CONTINUOUS | 60      | 15000     | 14900     | 15100     |
     And the parties amend the following orders:
       | party            | reference | price | size delta | tif     |
       | sellSideProvider | bestAsk   | 15190 | 0          | TIF_GTC |
@@ -59,7 +60,7 @@ Feature: Mark price calculation on auction exit
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
-      | 15120      | TRADING_MODE_CONTINUOUS |
+      | 15100      | TRADING_MODE_CONTINUOUS |
 
 
 
