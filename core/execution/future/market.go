@@ -3895,6 +3895,7 @@ func (m *Market) orderCancelReplace(
 		if m.getMarginMode(newOrder.Party) == types.MarginModeIsolatedMargin {
 			pos, _ := m.position.GetPositionByPartyID(newOrder.Party)
 			if err := m.updateIsolatedMarginOnOrder(ctx, pos, newOrder); err != nil {
+				// existing order have status cancelled so we need to get it back to active so it can be stopped properly
 				existingOrder.Status = newOrder.Status
 				m.matching.ReplaceOrder(newOrder, existingOrder)
 				if m.log.GetLevel() <= logging.DebugLevel {
