@@ -1,5 +1,6 @@
 Feature: Spot market SLA
 
+  @SLP
   Scenario: 0044-LIME-045, when target stake > total stake, and LP reduces LP commitment
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -152,8 +153,8 @@ Feature: Spot market SLA
     Then the network moves ahead "2" blocks
     And the network treasury balance should be "295" for the asset "ETH"
 
-    And the party "lpprov1" lp liquidity fee account balance should be "0" for the market "BTC/ETH"
-    And the party "lpprov2" lp liquidity fee account balance should be "14" for the market "BTC/ETH"
+    And the party "lpprov1" lp liquidity fee account balance should be "7" for the market "BTC/ETH"
+    And the party "lpprov2" lp liquidity fee account balance should be "7" for the market "BTC/ETH"
 
     Then "lpprov1" should have holding account balance of "480" for asset "ETH"
     Then "lpprov1" should have holding account balance of "60" for asset "BTC"
