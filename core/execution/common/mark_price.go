@@ -254,6 +254,16 @@ func (mpc *CompositePriceCalculator) CalculateBookMarkPriceAtTimeT(initialScalin
 	}
 }
 
+func (mpc *CompositePriceCalculator) SetBookPriceAtTimeT(mp *num.Uint, t int64) {
+	if mpc.config.CompositePriceType == types.CompositePriceTypeByLastTrade {
+		return
+	}
+	if mp != nil && !mp.IsZero() {
+		mpc.bookPriceAtTime[t] = mp
+		mpc.sourceLastUpdate[BookPriceIndex] = t
+	}
+}
+
 func (mpc *CompositePriceCalculator) GetPrice() *num.Uint {
 	if mpc.price != nil {
 		return mpc.price.Clone()

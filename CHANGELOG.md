@@ -28,6 +28,7 @@
 - [797](https://github.com/vegaprotocol/core-test-coverage/issues/797) - Add coverage for `0011-MARA-030`
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
+- [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.
 
 ### 🐛 Fixes
 
@@ -51,6 +52,7 @@
 - [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap.
 - [10804](https://github.com/vegaprotocol/vega/issues/10804) - Handle amend in place revert on failure to update order margin such that we do not amend in place which may not be possible.
 - [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
+- [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
 
 ## 0.74.3
 
