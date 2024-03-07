@@ -374,6 +374,8 @@ func (t *Transfers) buildWhereClause(filters ListTransfersFilters, where []strin
 	whereStr := ""
 	if len(where) > 0 {
 		whereStr = "where " + strings.Join(where, " and ")
+	} else {
+		whereStr = "where 1=1" // required because there is a where clause in the subquery and without a where clause in the main query, the pagination will break
 	}
 	return whereStr, args
 }

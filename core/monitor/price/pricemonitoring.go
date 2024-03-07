@@ -452,7 +452,7 @@ func (e *Engine) checkBounds(trades []*types.Trade) []*types.PriceMonitoringTrig
 				// deactivate the bound that just got violated so it doesn't prevent auction from terminating
 				b.Active = false
 				// only allow breaking one bound at a time
-				break
+				return ret
 			}
 		}
 	}

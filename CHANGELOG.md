@@ -49,8 +49,10 @@
 - [10778](https://github.com/vegaprotocol/vega/issues/10778) - cancel pegged orders when tick size changes and mismatches the offset.
 - [10792](https://github.com/vegaprotocol/vega/issues/10792) - Use correct market for market proposer bonus for spots.
 - [10795](https://github.com/vegaprotocol/vega/issues/10795) - Increase price monitoring triggers to 100 (missed validation).
-- [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap. 
+- [10800](https://github.com/vegaprotocol/vega/issues/10800) - Respect market list passed to transfer dispatch strategy when considering paid fees in applying reward cap.
 - [10804](https://github.com/vegaprotocol/vega/issues/10804) - Handle amend in place revert on failure to update order margin such that we do not amend in place which may not be possible.
+- [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
+- [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
 
 ## 0.74.3
 
