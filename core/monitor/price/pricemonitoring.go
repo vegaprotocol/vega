@@ -328,9 +328,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
-			if recordPriceHistory {
-				e.resetPriceHistory(trades)
-			}
+			e.resetPriceHistory(trades)
 			return false
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
@@ -473,7 +471,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 			continue
 		}
 		if e.monitoringAuction() && len(e.pricesPast)+len(e.pricesNow) > 0 {
-			triggerLookback := e.now.Add(time.Duration(-b.Trigger.Horizon) * time.Second)
+			triggerLookback := e.auctionState.Start().Add(time.Duration(-b.Trigger.Horizon) * time.Second)
 			// check if trigger's not stale (newest reference price older than horizon lookback time)
 			var mostRecentObservation time.Time
 			if len(e.pricesNow) > 0 {

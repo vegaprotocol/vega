@@ -140,7 +140,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 483       | 1482      | 1000         | 10000          | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 1000         | 10000          | 10            |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
       | side | price | volume |
