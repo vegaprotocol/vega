@@ -270,7 +270,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, trades []*type
 			return false
 		}
 		// only reset history if there isn't any (we need to initialise the engine) or we're still in opening auction as in that case it's based on previous indicative prices which are no longer relevant
-		if recordPriceHistory && (e.noHistory() || as.IsOpeningAuction()) {
+		if (recordPriceHistory && e.noHistory()) || as.IsOpeningAuction() {
 			e.resetPriceHistory(trades)
 		}
 		e.initialised = true
