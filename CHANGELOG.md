@@ -4,6 +4,12 @@
 
 ### 🐛 Fixes
 
+- Hard code the last Ethereum block height to skip `eth oracle` catchup.
+
+## 0.74.9
+
+### 🐛 Fixes
+
 - [10811](https://github.com/vegaprotocol/vega/issues/10811) - Ethereum call events are now properly `deduplicated` when restoring from a snapshot.
 - [10374](https://github.com/vegaprotocol/vega/issues/10374) - Ledger entries did not return data when filtering by transfer id.
 - [10785](https://github.com/vegaprotocol/vega/issues/10785) - Oracles data is getting increasingly slow.
