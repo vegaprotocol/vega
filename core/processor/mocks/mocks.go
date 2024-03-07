@@ -2107,6 +2107,20 @@ func (mr *MockLimitsMockRecorder) CanTrade() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanTrade", reflect.TypeOf((*MockLimits)(nil).CanTrade))
 }
 
+// CanUseAMMPool mocks base method.
+func (m *MockLimits) CanUseAMMPool() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanUseAMMPool")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanUseAMMPool indicates an expected call of CanUseAMMPool.
+func (mr *MockLimitsMockRecorder) CanUseAMMPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanUseAMMPool", reflect.TypeOf((*MockLimits)(nil).CanUseAMMPool))
+}
+
 // MockStakeVerifier is a mock of StakeVerifier interface.
 type MockStakeVerifier struct {
 	ctrl     *gomock.Controller
