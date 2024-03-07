@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	common "code.vegaprotocol.io/vega/core/execution/common"
+	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
@@ -34,6 +35,21 @@ func NewMockAMMPool(ctrl *gomock.Controller) *MockAMMPool {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAMMPool) EXPECT() *MockAMMPoolMockRecorder {
 	return m.recorder
+}
+
+// OrderbookShape mocks base method.
+func (m *MockAMMPool) OrderbookShape(arg0, arg1 *num.Uint) ([]*types.Order, []*types.Order) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OrderbookShape", arg0, arg1)
+	ret0, _ := ret[0].([]*types.Order)
+	ret1, _ := ret[1].([]*types.Order)
+	return ret0, ret1
+}
+
+// OrderbookShape indicates an expected call of OrderbookShape.
+func (mr *MockAMMPoolMockRecorder) OrderbookShape(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OrderbookShape", reflect.TypeOf((*MockAMMPool)(nil).OrderbookShape), arg0, arg1)
 }
 
 // VolumeBetweenPrices mocks base method.
