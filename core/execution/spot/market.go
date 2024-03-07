@@ -3051,7 +3051,7 @@ func (m *Market) AmendAMM(context.Context, *types.AmendAMM) error {
 	return errors.New("unimplemented")
 }
 
-func (m *Market) CancelAMM(context.Context, *types.CancelAMM) error {
+func (m *Market) CancelAMM(context.Context, *types.CancelAMM, string) error {
 	return errors.New("unimplemented")
 }
 

@@ -54,7 +54,13 @@ func TestAMMTrading(t *testing.T) {
 
 func TestAmendAMM(t *testing.T) {
 	t.Run("test amend AMM which doesn't exist", testAmendAMMWhichDoesntExist)
-	t.Run("test amend AMM with rebase", testAmendAMMWithRebase)
+	t.Run("test amend AMM with rebase", TestAmendAMMWithRebase)
+}
+
+func TestClosingAMM(t *testing.T) {
+	t.Run("test closing a pool as reduce only when its position is 0", TestClosingReduceOnlyPool)
+	t.Run("test amending closing pool makes it actives", TestAmendMakesClosingPoolActive)
+	t.Run("test closing pool removed when position hits zero", TestClosingPoolRemovedWhenPositionZero)
 }
 
 func testOnePoolPerParty(t *testing.T) {
@@ -191,7 +197,7 @@ func testAmendAMMWhichDoesntExist(t *testing.T) {
 	require.ErrorIs(t, err, ErrNoPoolMatchingParty)
 }
 
-func testAmendAMMWithRebase(t *testing.T) {
+func TestAmendAMMWithRebase(t *testing.T) {
 	ctx := context.Background()
 	tst := getTestEngine(t)
 
@@ -275,6 +281,108 @@ func testSubmitOrderProRata(t *testing.T) {
 	}
 }
 
+func TestClosingReduceOnlyPool(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// pool position is zero it should get removed right away with no fuss
+	ensurePosition(t, tst.pos, 0, num.UintZero())
+	ensurePosition(t, tst.pos, 0, num.UintZero())
+	expectSubAccountRelease(t, tst, party, subAccount)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	mevt, err := tst.engine.CancelAMM(ctx, cancel)
+	require.NoError(t, err)
+	assert.Nil(t, mevt) // no closeout necessary so not event
+	assert.Len(t, tst.engine.pools, 0)
+}
+
+func TestClosingPoolImmediate(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// pool has a position but gets closed anyway
+	ensurePosition(t, tst.pos, 12, num.UintZero())
+	expectSubAccountRelease(t, tst, party, subAccount)
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodImmediate)
+	mevt, err := tst.engine.CancelAMM(ctx, cancel)
+	require.NoError(t, err)
+	assert.Nil(t, mevt) // no closeout necessary so not event
+	assert.Len(t, tst.engine.pools, 0)
+}
+
+func TestAmendMakesClosingPoolActive(t *testing.T) {
+	ctx := context.Background()
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// pool position is non-zero so it''l hang around
+	ensurePosition(t, tst.pos, 12, num.UintZero())
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	closeout, err := tst.engine.CancelAMM(ctx, cancel)
+	require.NoError(t, err)
+	assert.Nil(t, closeout)
+	assert.Len(t, tst.engine.pools, 1)
+	assert.True(t, tst.engine.poolsCpy[0].closing())
+
+	tst.pos.EXPECT().GetPositionsByParty(gomock.Any()).Times(3).Return(
+		[]events.MarketPosition{&marketPosition{size: 0, averageEntry: num.UintZero()}},
+	)
+	expectSubAccountUpdate(t, tst, party, subAccount, 1000)
+	amend := getPoolAmendment(t, party, tst.marketID)
+	require.NoError(t, tst.engine.AmendAMM(ctx, amend))
+
+	// pool is active again
+	assert.False(t, tst.engine.poolsCpy[0].closing())
+}
+
+func TestClosingPoolRemovedWhenPositionZero(t *testing.T) {
+	ctx := vgcontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tst := getTestEngine(t)
+
+	party, subAccount := getParty(t, tst)
+	submit := getPoolSubmission(t, party, tst.marketID)
+
+	expectSubaccountCreation(t, tst, party, subAccount)
+	require.NoError(t, tst.engine.SubmitAMM(ctx, submit, vgcrypto.RandomHash(), nil))
+
+	// pool position is non-zero so it''l hang around
+	ensurePosition(t, tst.pos, 12, num.UintZero())
+	cancel := getCancelSubmission(t, party, tst.marketID, types.AMMPoolCancellationMethodReduceOnly)
+	closeout, err := tst.engine.CancelAMM(ctx, cancel)
+	require.NoError(t, err)
+	assert.Nil(t, closeout)
+	assert.True(t, tst.engine.poolsCpy[0].closing())
+
+	// position is lower but non-zero
+	ensurePosition(t, tst.pos, 1, num.UintZero())
+	tst.engine.OnTick(ctx, time.Now())
+	assert.True(t, tst.engine.poolsCpy[0].closing())
+
+	// position is zero, it will get removed
+	ensurePosition(t, tst.pos, 0, num.UintZero())
+	ensurePosition(t, tst.pos, 0, num.UintZero())
+	expectSubAccountRelease(t, tst, party, subAccount)
+	tst.engine.OnTick(ctx, time.Now())
+	assert.Len(t, tst.engine.poolsCpy, 0)
+}
+
 func expectSubaccountCreation(t *testing.T, tst *tstEngine, party, subAccount string) {
 	t.Helper()
 
@@ -301,6 +409,19 @@ func expectSubAccountUpdate(t *testing.T, tst *tstEngine, party, subAccount stri
 		gomock.Any(),
 		gomock.Any(),
 	).Times(1).Return(&types.LedgerMovement{}, nil)
+}
+
+func expectSubAccountRelease(t *testing.T, tst *tstEngine, party, subAccount string) {
+	t.Helper()
+	// account is update from party's main accounts
+	tst.col.EXPECT().SubAccountRelease(
+		gomock.Any(),
+		party,
+		subAccount,
+		tst.assetID,
+		tst.marketID,
+		gomock.Any(),
+	).Times(1).Return(&types.LedgerMovement{}, nil, nil)
 }
 
 func expectOrderSubmission(t *testing.T, tst *tstEngine, subAccount string, status types.OrderStatus, err error) {
@@ -364,6 +485,15 @@ func getPoolAmendment(t *testing.T, party, market string) *types.AmendAMM {
 			MarginRatioAtLowerBound: ptr.From(num.DecimalOne()),
 			MarginRatioAtUpperBound: ptr.From(num.DecimalOne()),
 		},
+	}
+}
+
+func getCancelSubmission(t *testing.T, party, market string, method types.AMMPoolCancellationMethod) *types.CancelAMM {
+	t.Helper()
+	return &types.CancelAMM{
+		MarketID: market,
+		Party:    party,
+		Method:   method,
 	}
 }
 
