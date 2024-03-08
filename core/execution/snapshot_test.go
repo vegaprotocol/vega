@@ -158,7 +158,8 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 			Key: "0xDEADBEEF",
 		},
 	}
-	mkt := newMarket("MarketID", pubKey)
+
+	mkt := newMarketWithAuctionDuration("MarketID", pubKey, &types.AuctionDuration{Duration: 1})
 	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
@@ -166,7 +167,11 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 	require.NoError(t, err)
 	mktState, err := exec.engine.GetMarketState("MarketID")
 	require.NoError(t, err)
-	require.Equal(t, types.MarketStateActive, mktState)
+	require.Equal(t, types.MarketStatePending, mktState)
+
+	md, err := exec.engine.GetMarketData(mkt.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketTradingModeOpeningAuction, md.MarketTradingMode)
 
 	idgen := &stubIDGen{}
 	// now let's submit some orders and get market to trade continuously
@@ -459,6 +464,10 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 }
 
 func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
+	return newMarketWithAuctionDuration(ID, pubKey, nil)
+}
+
+func newMarketWithAuctionDuration(ID string, pubKey *dstypes.SignerPubKey, auctionDuration *types.AuctionDuration) *types.Market {
 	return &types.Market{
 		ID: ID, // ID will be generated
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
@@ -582,7 +591,8 @@ func newMarket(ID string, pubKey *dstypes.SignerPubKey) *types.Market {
 			SourceStalenessTolerance: []time.Duration{0, 0, 0, 0},
 			CompositePriceType:       types.CompositePriceTypeByLastTrade,
 		},
-		TickSize: num.UintOne(),
+		TickSize:       num.UintOne(),
+		OpeningAuction: auctionDuration,
 	}
 }
 

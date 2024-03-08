@@ -61,7 +61,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party1 | ETH/DEC19 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | party0 | ETH/DEC19 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-4    |
 
-    When time is updated to "2019-11-30T00:00:20Z"
+    When the network moves ahead "15" blocks
     # leave auction
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
@@ -95,6 +95,6 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 125    | 95000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
 
-    And time is updated to "2019-11-30T00:10:00Z"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    When the network moves ahead "15" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"

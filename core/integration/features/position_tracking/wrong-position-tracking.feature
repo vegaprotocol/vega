@@ -72,5 +72,5 @@ Feature: Test position tracking with auctions
       | party0 | ETH/DEC19 | buy  | 100    | BID              | 5000   |
       | party1 | ETH/DEC19 | sell | 95     | ASK              | 1000   |
 
-    And time is updated to "2019-11-30T00:01:00Z"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    When the network moves ahead "15" blocks
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"

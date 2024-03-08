@@ -640,7 +640,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market data for the market "ETH/DEC20" should be:
       | horizon | min bound | max bound |
-      | 7200    | 90526     | 110436    |
+      | 7200    | 90497     | 110401    |
 
     #T0 + 4min01s
     Then time is updated to "2020-10-16T02:04:01Z"

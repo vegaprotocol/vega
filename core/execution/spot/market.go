@@ -652,7 +652,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 func (m *Market) BeginBlock(_ context.Context) {}
 
 // BlockEnd notifies the market of the end of the block.
-func (m *Market) BlockEnd(_ context.Context) {
+func (m *Market) BlockEnd(ctx context.Context) {
 	// simplified version of updating mark price every MTM interval
 	mp := m.getLastTradedPrice()
 	if !m.hasTraded && m.markPrice != nil {
@@ -661,7 +661,9 @@ func (m *Market) BlockEnd(_ context.Context) {
 	}
 	t := m.timeService.GetTimeNow()
 	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
-		m.markPrice = mp
+		if !m.pMonitor.CheckPrice(ctx, m.as, []*types.Trade{{Price: mp, Size: 1}}, true, true) {
+			m.markPrice = mp
+		}
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 
 		// last traded price should not reflect the closeout trades
@@ -1450,7 +1452,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
