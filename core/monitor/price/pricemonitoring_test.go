@@ -195,6 +195,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(19)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(14)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(10)
+	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -378,6 +379,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
+	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 
 	pm, err := price.NewMonitor("asset", "market", riskModel, auctionStateMock, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
@@ -734,6 +736,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).Times(2)
+	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
@@ -900,7 +903,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
-	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
+	auctionStateMock.EXPECT().Start().Return(now).Times(1)
 
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 1)
@@ -912,7 +915,7 @@ func TestAuctionStartedBy1TriggerAndNotExtendedBy2ndStaleTrigger(t *testing.T) {
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
 	now = afterInitialAuction
 
-	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
+	auctionStateMock.EXPECT().ExtendAuctionPrice(gomock.Any()).Times(1)
 
 	cPrice = num.Sum(price1, maxUp2, maxUp1)
 	pm.OnTimeUpdate(afterInitialAuction)
