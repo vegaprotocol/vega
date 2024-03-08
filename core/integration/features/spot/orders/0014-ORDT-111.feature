@@ -31,7 +31,6 @@ Feature: Spot market
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
-      | party2 | ETH   | 10000  |
       | party4 | BTC   | 100    |
       | party5 | BTC   | 100    |
     And the average block duration is "1"
