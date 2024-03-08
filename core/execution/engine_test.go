@@ -18,7 +18,6 @@ package execution_test
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -137,11 +136,10 @@ func TestUpdateMarginUpdate(t *testing.T) {
 		},
 	}
 	mkt := newMarket("market-id", pubKey)
+	mkt.LinearSlippageFactor = num.DecimalFromFloat(0.1)
 	require.NoError(t, engine.SubmitMarket(context.Background(), mkt, "zohar", time.Now()))
 
 	// rfShort, rfLong = 1
-	require.Equal(t, "margin factor (0.5) must be greater than max(riskFactorLong (1), riskFactorShort (1))", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(0.5)).Error())
-
-	// all good, just not supported yet
-	require.Error(t, errors.New("Unsupported"), engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(1)))
+	require.Equal(t, "margin factor (0.5) must be greater than max(riskFactorLong (1), riskFactorShort (1)) + linearSlippageFactor (0.1)", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(0.5)).Error())
+	require.Equal(t, "margin factor (1.05) must be greater than max(riskFactorLong (1), riskFactorShort (1)) + linearSlippageFactor (0.1)", engine.UpdateMarginMode(context.Background(), "zohar", "market-id", types.MarginModeIsolatedMargin, num.DecimalFromFloat(1.05)).Error())
 }

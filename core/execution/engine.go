@@ -1923,9 +1923,9 @@ func (e *Engine) UpdateMarginMode(ctx context.Context, party, marketID string, m
 	market := e.futureMarkets[marketID]
 	if marginMode == types.MarginModeIsolatedMargin {
 		riskFactors := market.GetRiskFactors()
-		rf := num.MaxD(riskFactors.Long, riskFactors.Short)
+		rf := num.MaxD(riskFactors.Long, riskFactors.Short).Add(market.Mkt().LinearSlippageFactor)
 		if marginFactor.LessThanOrEqual(rf) {
-			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s))", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String())
+			return fmt.Errorf("margin factor (%s) must be greater than max(riskFactorLong (%s), riskFactorShort (%s)) + linearSlippageFactor (%s)", marginFactor.String(), riskFactors.Long.String(), riskFactors.Short.String(), market.Mkt().LinearSlippageFactor.String())
 		}
 	}
 

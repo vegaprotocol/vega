@@ -29,6 +29,7 @@
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
 - [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.
+- [10846](https://github.com/vegaprotocol/vega/issues/10846) - Change min requirement for margin factor.
 
 ### 🐛 Fixes
 
