@@ -47,6 +47,7 @@ func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block 
 		Symbol:            fmt.Sprint("TEST", testAssetCount),
 		Decimals:          5,
 		Quantum:           quantum,
+		ChainID:           "1789",
 		ERC20Contract:     "0xdeadbeef",
 		VegaTime:          block.VegaTime,
 		LifetimeLimit:     decimal.New(42, 0),
@@ -71,6 +72,7 @@ func assetsEqual(t *testing.T, expected, actual entities.Asset) {
 	assert.Equal(t, expected.Quantum, actual.Quantum)
 	assert.Equal(t, expected.ERC20Contract, actual.ERC20Contract)
 	assert.Equal(t, expected.VegaTime, actual.VegaTime)
+	assert.Equal(t, expected.ChainID, actual.ChainID)
 	assert.True(t, expected.LifetimeLimit.Equal(actual.LifetimeLimit))
 	assert.True(t, expected.WithdrawThreshold.Equal(actual.WithdrawThreshold))
 }
