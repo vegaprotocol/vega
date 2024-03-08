@@ -1067,6 +1067,9 @@ func (m *Market) BlockEnd(ctx context.Context) {
 			!m.as.InAuction()) {
 		prevInternalCompositePrice := m.internalCompositePriceCalculator.GetPrice()
 		m.internalCompositePriceCalculator.CalculateMarkPrice(
+			ctx,
+			m.pMonitor,
+			m.as,
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
@@ -1083,21 +1086,35 @@ func (m *Market) BlockEnd(ctx context.Context) {
 		!m.nextMTM.After(t) &&
 			!m.as.InAuction() {
 		prevMarkPrice := m.markPriceCalculator.GetPrice()
-		m.markPriceCalculator.CalculateMarkPrice(
+		if _, err := m.markPriceCalculator.CalculateMarkPrice(
+			ctx,
+			m.pMonitor,
+			m.as,
 			t.UnixNano(),
 			m.matching,
 			m.mtmDelta,
-			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, false)
-		// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
-		// on the standard mark price
-		if m.internalCompositePriceCalculator == nil && m.perp &&
-			(prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
-			!m.getCurrentMarkPrice().IsZero() {
-			m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+			m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin,
+			m.mkt.LinearSlippageFactor,
+			m.risk.GetRiskFactors().Short,
+			m.risk.GetRiskFactors().Long,
+			true); err != nil {
+			// start the  monitoring auction if required
+			if m.as.AuctionStart() {
+				m.enterAuction(ctx)
+			}
+		} else {
+			// if we don't have an alternative configuration (and schedule) for the mark price the we push the mark price to the perp as a new datapoint
+			// on the standard mark price
+			if m.internalCompositePriceCalculator == nil && m.perp &&
+				(prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+				!m.getCurrentMarkPrice().IsZero() {
+				m.tradableInstrument.Instrument.Product.SubmitDataPoint(ctx, m.getCurrentMarkPrice(), m.timeService.GetTimeNow().UnixNano())
+			}
 		}
+
 		m.nextMTM = t.Add(m.mtmDelta)
-		// TODO @zohar not sure if the hasTraded is needed
-		if (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
+
+		if !m.as.InAuction() && (prevMarkPrice == nil || !m.markPriceCalculator.GetPrice().EQ(prevMarkPrice) || m.settlement.HasTraded()) &&
 			!m.getCurrentMarkPrice().IsZero() {
 			m.confirmMTM(ctx, false)
 			closedPositions := m.position.GetClosedPositions()
@@ -1602,8 +1619,12 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 	t := m.timeService.GetTimeNow().UnixNano()
+
 	m.markPriceCalculator.SetBookPriceAtTimeT(m.lastTradedPrice, t)
-	m.markPriceCalculator.CalculateMarkPrice(
+	if _, err := m.markPriceCalculator.CalculateMarkPrice(
+		ctx,
+		m.pMonitor,
+		m.as,
 		t,
 		m.matching,
 		m.mtmDelta,
@@ -1611,15 +1632,27 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.mkt.LinearSlippageFactor,
 		m.risk.GetRiskFactors().Short,
 		m.risk.GetRiskFactors().Long,
-		true)
+		true); err != nil {
+		if evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow()); evt != nil {
+			m.broker.Send(evt)
+		}
 
-	if wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
+		// start the  monitoring auction if required
+		if m.as.AuctionStart() {
+			m.enterAuction(ctx)
+		}
+	}
+
+	if !m.as.InAuction() && wasOpeningAuction && (m.getCurrentMarkPrice().IsZero()) {
 		m.markPriceCalculator.OverridePrice(m.lastTradedPrice)
 	}
 	if m.perp {
 		if m.internalCompositePriceCalculator != nil {
 			m.internalCompositePriceCalculator.CalculateBookMarkPriceAtTimeT(m.tradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, m.mkt.LinearSlippageFactor, m.risk.GetRiskFactors().Short, m.risk.GetRiskFactors().Long, t, m.matching)
 			m.internalCompositePriceCalculator.CalculateMarkPrice(
+				ctx,
+				m.pMonitor,
+				m.as,
 				t,
 				m.matching,
 				m.internalCompositePriceFrequency,
@@ -1627,7 +1660,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 				m.mkt.LinearSlippageFactor,
 				m.risk.GetRiskFactors().Short,
 				m.risk.GetRiskFactors().Long,
-				true)
+				false)
 
 			if wasOpeningAuction && (m.getCurrentInternalCompositePrice().IsZero()) {
 				m.internalCompositePriceCalculator.OverridePrice(m.lastTradedPrice)
@@ -2468,7 +2501,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		persistent = false
 	}
 
-	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent) {
+	if m.pMonitor.CheckPrice(ctx, m.as, trades, persistent, false) {
 		return nil, types.OrderErrorNonPersistentOrderOutOfPriceBounds
 	}
 
@@ -4349,7 +4382,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
-		m.pMonitor.CheckPrice(ctx, m.as, trades, true)
+		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
@@ -4396,6 +4429,9 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
 			m.markPriceCalculator.CalculateMarkPrice(
+				ctx,
+				m.pMonitor,
+				m.as,
 				m.timeService.GetTimeNow().UnixNano(),
 				m.matching,
 				m.mtmDelta,
@@ -4407,6 +4443,9 @@ func (m *Market) terminateMarket(ctx context.Context, finalState types.MarketSta
 
 			if m.internalCompositePriceCalculator != nil {
 				m.internalCompositePriceCalculator.CalculateMarkPrice(
+					ctx,
+					m.pMonitor,
+					m.as,
 					m.timeService.GetTimeNow().UnixNano(),
 					m.matching,
 					m.internalCompositePriceFrequency,

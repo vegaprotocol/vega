@@ -71,9 +71,11 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    ## All price bounds were exceeded -> duration = 14s + 2 opening auction = 16s (+1 to ensure auction ends)
-    ## New price bounds are: 106790 - 106933 - 107267 - 107410 (outer 8s, inner 6s)
-    When time is updated to "2020-10-16T00:00:17Z"
+    When time is updated to "2020-10-16T00:00:09Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger     | auction end |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 14          |
+    When time is updated to "2020-10-16T00:00:18Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
@@ -102,15 +104,8 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
-    ## Now we can end the auction (time was T+17, auction triggered by 2 bound violations -> + 14s + 1s to ensure we end)
-    ## means T+32s
-    When time is updated to "2020-10-16T00:00:32Z"
+    # Need to update time twice so that 2nd bound gets activated when attempting to leave the auction after first trigger extension elapses
+    When time is updated to "2020-10-16T00:00:25Z"
+    When time is updated to "2020-10-16T00:00:33Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "106000" for the market "ETH/DEC20"
-## When time is updated to "2020-10-16T00:00:33Z"
-## Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-## This isn't working ATM
-## And the parties should have the following account balances:
-##  | party  | asset | market id | margin | general | bond |
-##  | party4 | ETH   | ETH/DEC20 |      0 |       0 |    0 |

@@ -66,9 +66,11 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 	return tm
 }
 
-func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
+func leaveAuction(t *testing.T, tm *testMarket, ctx context.Context, now *time.Time) {
+	t.Helper()
 	// Leave auction to force the order to be removed
 	*now = now.Add(time.Second * 20)
+	require.Greater(t, tm.market.GetMarketData().IndicativeVolume, uint64(0), "can't leave opening auction with no trades")
 	tm.market.LeaveAuctionWithIDGen(ctx, *now, newTestIDGenerator())
 }
 
@@ -156,6 +158,16 @@ func TestEvents_LeavingAuctionCancelsGFAOrders(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
+	o0 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order0", types.SideBuy, "party-B", 1, 20)
+	o0conf, err := tm.market.SubmitOrder(ctx, o0)
+	require.NotNil(t, o0conf)
+	require.NoError(t, err)
+
+	o00 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order00", types.SideSell, "party-C", 1, 20)
+	o00conf, err := tm.market.SubmitOrder(ctx, o00)
+	require.NotNil(t, o00conf)
+	require.NoError(t, err)
+
 	// Add a GFA order
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order01", types.SideBuy, "party-A", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -163,10 +175,10 @@ func TestEvents_LeavingAuctionCancelsGFAOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	// Leave auction to force the order to be removed
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
-	// Check we have 2 events
-	assert.Equal(t, uint64(2), tm.orderEventCount)
+	// Check we have 6 events (2 additional orders submitted and filled)
+	assert.Equal(t, uint64(6), tm.orderEventCount)
 
 	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
@@ -190,7 +202,17 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	auxOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderBuy2", types.SideBuy, auxParty, 1, 10)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder3)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "AuxOrderSell2", types.SideSell, auxParty, 1, 10)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder4)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	leaveAuction(t, tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -224,7 +246,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(8), tm.orderEventCount)
+	assert.Equal(t, uint64(12), tm.orderEventCount)
 
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
@@ -251,7 +273,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -329,7 +351,7 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -397,7 +419,18 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
+
+	o0 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order0", types.SideSell, "party-C", 1, 100)
+	o0conf, err := tm.market.SubmitOrder(ctx, o0)
+	require.NotNil(t, o0conf)
+	require.NoError(t, err)
+
+	o00 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order00", types.SideBuy, "party-B", 1, 100)
+	o00conf, err := tm.market.SubmitOrder(ctx, o00)
+	require.NotNil(t, o00conf)
+	require.NoError(t, err)
+
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideSell, "party-C", 1, 200)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -424,13 +457,13 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(6), tm.orderEventCount)
+	assert.Equal(t, uint64(9), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
 func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
@@ -452,7 +485,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -517,7 +550,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-C", 1, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -548,7 +581,18 @@ func TestEvents_Amending(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
+
+	o0 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order0", types.SideSell, "party-C", 1, 100)
+	o0conf, err := tm.market.SubmitOrder(ctx, o0)
+	require.NotNil(t, o0conf)
+	require.NoError(t, err)
+
+	o00 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order00", types.SideBuy, "party-B", 1, 100)
+	o00conf, err := tm.market.SubmitOrder(ctx, o00)
+	require.NotNil(t, o00conf)
+	require.NoError(t, err)
+
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-C", 1, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -588,7 +632,7 @@ func TestEvents_Amending(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(6), tm.orderEventCount)
+	assert.Equal(t, uint64(10), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
@@ -615,7 +659,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideSell, "party-C", 1, 20)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -681,7 +725,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideSell, "party-C", 2, 20)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -737,7 +781,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-C", 1, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -792,7 +836,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 
-	leaveAuction(tm, ctx, &now)
+	leaveAuction(t, tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-C", 5, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
