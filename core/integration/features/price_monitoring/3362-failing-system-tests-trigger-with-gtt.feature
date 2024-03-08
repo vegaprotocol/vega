@@ -50,8 +50,9 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
     When the opening auction period ends for market "ETH/DEC20"
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    When the parties place the following orders with ticks:
+    
+    When time is updated to "2020-10-16T00:00:02Z"
+    And the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
       | party1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT | TIF_GTC |
@@ -66,12 +67,15 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC20 | sell | 5      | 99000 | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC20 | buy  | 1      | 99950 | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-    And the mark price should be "100150" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | ref price | min bound | max bound |
+      | 100150     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 6           | 10      | 100000    | 99711     | 100290    |
 
-    ## We're violating both price ranges, so expect full auction of 14 seconds + 2 of the opening auction
-    ## Update time by 15 seconds -> :17Z in total
-    ## The mid price uncrossing the highest volume will be 99475
+    When time is updated to "2020-10-16T00:00:09Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger     | auction end |
+      | 100150     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 14          |
+   
     When time is updated to "2020-10-16T00:00:17Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "99475" for the market "ETH/DEC20"

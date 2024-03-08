@@ -150,7 +150,7 @@ Feature: Test LP bond account when market is terminated
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 831       | 1440      | 63739        | 3240           | 16            |
+      | 1120       | TRADING_MODE_NO_TRADING | 360000  | 786       | 1361      | 63739        | 3240           | 16            |
 
     Then the oracles broadcast data signed with "0xCAFECAFE19":
       | name             | value |
