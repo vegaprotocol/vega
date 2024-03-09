@@ -801,3 +801,5 @@ models:
     model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.MarginMode
   EquityLikeShareWeightPerMarket:
     model: code.vegaprotocol.io/vega/protos/vega.VoteELSPair
+  TimeWeightedNotionalPosition:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.TimeWeightedNotionalPosition

@@ -555,6 +555,13 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of all margin modes, or for a specific market ID, or party ID.
 	ListPartyMarginModes(ctx context.Context, in *ListPartyMarginModesRequest, opts ...grpc.CallOption) (*ListPartyMarginModesResponse, error)
+	// Get time weighted notional position
+	//
+	// Get the time weighted notional position for a given party and asset. The time weighted notional position
+	// is used to check if a party qualifies for a reward.
+	// If no epoch is specified, the most current time weighted notional position is returned.
+	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
+	GetTimeWeightedNotionalPosition(ctx context.Context, in *GetTimeWeightedNotionalPositionRequest, opts ...grpc.CallOption) (*GetTimeWeightedNotionalPositionResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -2063,6 +2070,15 @@ func (c *tradingDataServiceClient) ListPartyMarginModes(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) GetTimeWeightedNotionalPosition(ctx context.Context, in *GetTimeWeightedNotionalPositionRequest, opts ...grpc.CallOption) (*GetTimeWeightedNotionalPositionResponse, error) {
+	out := new(GetTimeWeightedNotionalPositionResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetTimeWeightedNotionalPosition", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
@@ -2640,6 +2656,13 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of all margin modes, or for a specific market ID, or party ID.
 	ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error)
+	// Get time weighted notional position
+	//
+	// Get the time weighted notional position for a given party and asset. The time weighted notional position
+	// is used to check if a party qualifies for a reward.
+	// If no epoch is specified, the most current time weighted notional position is returned.
+	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
+	GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error)
 	// Export network history as CSV
 	//
 	// Export CSV table data from network history between two block heights.
@@ -3066,6 +3089,9 @@ func (UnimplementedTradingDataServiceServer) ListGames(context.Context, *ListGam
 }
 func (UnimplementedTradingDataServiceServer) ListPartyMarginModes(context.Context, *ListPartyMarginModesRequest) (*ListPartyMarginModesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPartyMarginModes not implemented")
+}
+func (UnimplementedTradingDataServiceServer) GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTimeWeightedNotionalPosition not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
 	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
@@ -5263,6 +5289,24 @@ func _TradingDataService_ListPartyMarginModes_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_GetTimeWeightedNotionalPosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTimeWeightedNotionalPositionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetTimeWeightedNotionalPosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetTimeWeightedNotionalPosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetTimeWeightedNotionalPosition(ctx, req.(*GetTimeWeightedNotionalPositionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNetworkHistoryRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -5716,6 +5760,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPartyMarginModes",
 			Handler:    _TradingDataService_ListPartyMarginModes_Handler,
+		},
+		{
+			MethodName: "GetTimeWeightedNotionalPosition",
+			Handler:    _TradingDataService_GetTimeWeightedNotionalPosition_Handler,
 		},
 		{
 			MethodName: "Ping",

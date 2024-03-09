@@ -1184,6 +1184,16 @@ type Query {
     pagination: Pagination
   ): TeamRefereeHistoryConnection
 
+  "Time weighted notional position is a metric used to determine if a reward should be paid to a party"
+  timeWeightedNotionalPosition(
+    "Asset the position is held"
+    assetId: ID!
+    "Party holding the position"
+    partyId: ID!
+    "Optional epoch to filter for. If not provided, the latest time weighted notional position is returned."
+    epochSeq: Int
+  ): TimeWeightedNotionalPosition
+
   "Get total transfer fee discount available"
   totalTransferFeeDiscount(
     "ID of party eligible for the discount."
@@ -1458,7 +1468,7 @@ type DispatchStrategy {
   rankTable: [RankTable]
 
   "Optional multiplier on taker fees used to cap the rewards a party may receive in an epoch"
-  capRewardFeeMultiple: String 
+  capRewardFeeMultiple: String
 }
 
 type RankTable {
@@ -7258,4 +7268,17 @@ type PartyMarginMode {
   maxTheoreticalLeverage: String
   "Epoch at which the update happened."
   atEpoch: Int!
+}
+
+type TimeWeightedNotionalPosition {
+  "Asset in which the position is held"
+  assetId: ID!
+  "Party holding the position"
+  partyId: ID!
+  "Epoch the time weighted notional position was calculated for"
+  epoch: Int!
+  "Time weighted notional position"
+  timeWeightedNotionalPosition: String!
+  "Time of the last block in which the metric was updated"
+  lastUpdated: Timestamp!
 }

@@ -927,6 +927,16 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Margin"};
   }
 
+  // Get time weighted notional position
+  //
+  // Get the time weighted notional position for a given party and asset. The time weighted notional position
+  // is used to check if a party qualifies for a reward.
+  // If no epoch is specified, the most current time weighted notional position is returned.
+  // If an epoch is specified, the final time weighted notional position at that epoch is returned.
+  rpc GetTimeWeightedNotionalPosition(GetTimeWeightedNotionalPositionRequest) returns (GetTimeWeightedNotionalPositionResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
+  }
+
   // Export network history as CSV
   //
   // Export CSV table data from network history between two block heights.
@@ -4779,4 +4789,37 @@ message PartyMarginMode {
   optional string max_theoretical_leverage = 6;
   // Epoch at which the update happened.
   uint64 at_epoch = 7;
+}
+
+// Time weighted notional position for a party and asset at a given epoch. It is used as a metric to calculate whether
+// the party is eligible for receiving a reward.
+message TimeWeightedNotionalPosition {
+  // Asset ID for the asset associated with the position.
+  string asset_id = 1;
+  // Party ID for the party associated with the position.
+  string party_id = 2;
+  // Epoch at which the time weighted notional position is calculated.
+  uint64 at_epoch = 3;
+  // Time weighted notional position for the party and asset.
+  string time_weighted_notional_position = 4;
+  // Vega time of the block in which the last position update occurred.
+  int64 last_updated = 5;
+}
+
+// Request to retrieve the time weighted notional position for a party and asset.
+// If no epoch is given, the most current value will be returned.
+// If an epoch is given, the time weighted notional position achieved for that epoch will be returned.
+message GetTimeWeightedNotionalPositionRequest {
+  // Asset ID to filter for.
+  string asset_id = 1;
+  // Party ID to filter for.
+  string party_id = 2;
+  // Epoch to filter for.
+  optional uint64 at_epoch = 3;
+}
+
+// Response containing the time weighted notional position for a party and asset.
+message GetTimeWeightedNotionalPositionResponse {
+  // Time weighted notional position for the party and asset.
+  TimeWeightedNotionalPosition time_weighted_notional_position = 1;
 }
