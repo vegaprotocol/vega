@@ -79,11 +79,11 @@ Feature: Test It is possible to configure a cash settled futures and perps marke
 
     #0032-PRIM-039:For all available mark price calculation methodologies: the price history used by the price monitoring engine is in line with market's mark price history.
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15910      | TRADING_MODE_CONTINUOUS | 36000   | 15806     | 16004     | 0            | 0              | 5             |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | target stake | supplied stake | open interest |
+      | 15910      | TRADING_MODE_CONTINUOUS | 36000   | 15900     | 15801     | 15999     | 0            | 0              | 5             |
     Then the market data for the market "ETH/FEB24" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 15910      | TRADING_MODE_CONTINUOUS | 36000   | 15806     | 16004     | 0            | 0              | 5             |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | target stake | supplied stake | open interest |
+      | 15910      | TRADING_MODE_CONTINUOUS | 36000   | 15900     | 15801     | 15999     | 0            | 0              | 5             |
 
     And the parties place the following orders:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -115,11 +115,11 @@ Feature: Test It is possible to configure a cash settled futures and perps marke
     #0009-MRKP-036:When a futures market is in a monitoring auction, book price is undefined with staleness increasing with time, the book price at auction uncrossing should be set to the price of the uncrossing trade, the mark price should only be recalculated when the auction exits, starting from only the last period indicated by `network.markPriceUpdateMaximumFrequency`
     #0032-PRIM-039
     Then the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 16003      | TRADING_MODE_CONTINUOUS | 36000   | 15909     | 16107     | 0            | 0              | 6             |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | target stake | supplied stake | open interest |
+      | 16003      | TRADING_MODE_CONTINUOUS | 36000   | 0         | 15909     | 16107     | 0            | 0              | 6             |
     #0009-MRKP-037
     Then the market data for the market "ETH/FEB24" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 16003      | TRADING_MODE_CONTINUOUS | 36000   | 15909     | 16107     | 0            | 0              | 6             |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | target stake | supplied stake | open interest |
+      | 16003      | TRADING_MODE_CONTINUOUS | 36000   | 0         | 15909     | 16107     | 0            | 0              | 6             |
 
 
