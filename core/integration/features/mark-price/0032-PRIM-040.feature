@@ -70,3 +70,4 @@ Feature: Test the mark price update candidate gets rejected if it violates the p
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 15900      | TRADING_MODE_CONTINUOUS | 36000   | 15801     | 15999     | 0            | 0              | 5             |
+

@@ -122,3 +122,4 @@ Feature: Test It is possible to configure a cash settled futures and perps marke
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 16003      | TRADING_MODE_CONTINUOUS | 36000   | 15909     | 16107     | 0            | 0              | 6             |
 
+
