@@ -29,6 +29,7 @@ Feature: Test magin under isolated margin mode
       | party            | ETH/FEB23 | sell | 1      | 15900  | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |
+    # TODO: No idea why this test adds a second market, there's absolutely no need for it.
     And the parties place the following orders:
       | party            | market id | side | volume | price  | resulting trades | type       | tif     |
       | buySideProvider  | ETH/MAR23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -56,7 +57,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 6678   | 99999890494 |
+      | party | USD   | ETH/FEB23 | 6678   | 99998083414 |
 
     #AC: 0019-MCAL-032, switch to isolated margin is rejected becuase selected margin factor is too small
     And the parties submit update margin mode:
@@ -69,7 +70,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 6678   | 99999890494 |
+      | party | USD   | ETH/FEB23 | 6678   | 99998083414 |
 
     And the network moves ahead "1" blocks
     #AC: 0019-MCAL-033, switch to isolated margin
@@ -79,7 +80,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14310  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14310  | 99998075782 |
     And the network moves ahead "2" blocks
 
     And the parties should have the following margin levels:
@@ -93,7 +94,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 11130  | 99999886042 |
+      | party | USD   | ETH/FEB23 | 11130  | 99998078962 |
     And the network moves ahead "2" blocks
 
     And the parties should have the following margin levels:
@@ -107,7 +108,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14310  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14310  | 99998075782 |
     And the network moves ahead "2" blocks
 
     And the parties should have the following margin levels:
@@ -124,7 +125,7 @@ Feature: Test magin under isolated margin mode
       | party | ETH/FEB23 | 5565        | 6121   | 6678    | 7791    | cross margin | 0             | 0     |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14310  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14310  | 99998075782 |
 
     And the parties submit update margin mode:
       | party | market    | margin_mode     | margin_factor |
@@ -132,7 +133,7 @@ Feature: Test magin under isolated margin mode
     And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14310  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14310  | 99998075782 |
 
     #trigger MTM
     And the parties place the following orders:
@@ -142,12 +143,12 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14310  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14310  | 99998075782 |
 
     And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     |
-      | party | USD   | ETH/FEB23 | 14300  | 99999882862 |
+      | party | USD   | ETH/FEB23 | 14300  | 99998075782 |
 
     #AC: 0019-MCAL-034, party places a new order which can not offset their position
     #addional margin should be: limit price x current position x new margin factor = 15910 x 10 x 0.9 = 143190
@@ -156,7 +157,7 @@ Feature: Test magin under isolated margin mode
       | party | ETH/FEB23 | sell | 10     | 15912 | 0                | TYPE_LIMIT | TIF_GTC | sell-10   |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 14300  | 99999739654 | 143208       |
+      | party | USD   | ETH/FEB23 | 14300  | 99997932574 | 143208       |
 
     #AC 0019-MCAL-060, Amend order,check the updated order margin
     When the parties amend the following orders:
@@ -166,7 +167,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 14300  | 99999811258 | 71604        |
+      | party | USD   | ETH/FEB23 | 14300  | 99998004178 | 71604        |
 
     #AC 0019-MCAL-061, party's order get partially filled, check the updated margin account and order account
     And the parties place the following orders:
@@ -175,7 +176,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 57262  | 99999811258 | 28642        |
+      | party | USD   | ETH/FEB23 | 57262  | 99998004178 | 28642        |
 
     Then the order book should have the following volumes for market "ETH/FEB23":
       | side | price | volume |
@@ -193,7 +194,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 30552  | 99999866608 | 0            |
+      | party | USD   | ETH/FEB23 | 30552  | 99998059528 | 0            |
 
     #AC: 0019-MCAL-064, switch margin mode from cross margin to isolated margin when party holds both position and orders
     And the parties submit update margin mode:
@@ -206,7 +207,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 57272  | 99999811247 | 28641        |
+      | party | USD   | ETH/FEB23 | 57272  | 99998004167 | 28641        |
 
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     |
@@ -214,7 +215,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 71592  | 99999811247 | 14321        |
+      | party | USD   | ETH/FEB23 | 71592  | 99998004167 | 14321        |
 
     #AC 0019-MCAL-062, when party has no orders, the order margin account shoule be 0
     And the parties place the following orders:
@@ -223,7 +224,7 @@ Feature: Test magin under isolated margin mode
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 85912  | 99999811248 | 0            |
+      | party | USD   | ETH/FEB23 | 85912  | 99998004168 | 0            |
 
     #AC: 0019-MCAL-038,when party places a new order which can offset the party's position, no additional margin will be needed
     And the parties place the following orders:
@@ -232,7 +233,7 @@ Feature: Test magin under isolated margin mode
     And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 85912  | 99999811248 | 0            |
+      | party | USD   | ETH/FEB23 | 85912  | 99998004168 | 0            |
 
     #AC: 0019-MCAL-039,when party places a large order which can offset all of the party's position and then add new orders, additional margin will be needed
     And the parties place the following orders:
@@ -241,7 +242,7 @@ Feature: Test magin under isolated margin mode
     And the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general     | order margin |
-      | party | USD   | ETH/FEB23 | 85912  | 99999711003 | 100245       |
+      | party | USD   | ETH/FEB23 | 85912  | 99997903923 | 100245       |
 
 
 

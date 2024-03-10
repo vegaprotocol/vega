@@ -28,7 +28,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id         | quote name | asset | liquidity monitoring  | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH2/MAR22 | ETH2       | ETH2  | lqm-params            | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+      | ETH2/MAR22 | ETH2       | ETH2  | lqm-params            | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.25                   | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 600s  |

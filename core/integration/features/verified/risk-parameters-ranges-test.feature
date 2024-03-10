@@ -99,20 +99,20 @@ Feature: test risk model parameter ranges
 
     And the markets:
       | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR0  | ETH        | USD   | log-normal-risk-model-0  | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR11 | ETH        | USD   | log-normal-risk-model-11 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR12 | ETH        | USD   | log-normal-risk-model-12 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR21 | ETH        | USD   | log-normal-risk-model-21 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-22 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR23 | ETH        | USD   | log-normal-risk-model-23 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR31 | ETH        | USD   | log-normal-risk-model-31 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR32 | ETH        | USD   | log-normal-risk-model-32 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR41 | ETH        | USD   | log-normal-risk-model-41 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR42 | ETH        | USD   | log-normal-risk-model-42 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR43 | ETH        | USD   | log-normal-risk-model-43 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR51 | ETH        | USD   | log-normal-risk-model-51 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR52 | ETH        | USD   | log-normal-risk-model-52 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/MAR53 | ETH        | USD   | log-normal-risk-model-53 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount         |
       | party0 | USD   | 50000000000000 |
@@ -132,20 +132,20 @@ Feature: test risk model parameter ranges
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR0  | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR11 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR12 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR21 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR22 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR23 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR31 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR32 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR41 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR42 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR43 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR51 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR52 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR53 | updated-lqm-params   | 0.25                   | 0                         |
 
     And the following network parameters are set:
       | name                                  | value |
@@ -387,70 +387,70 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR0  | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR0  | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR0  | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR0  | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR0  | 47378  | 49999999584845 |       |
     # intial margin level for LP = 92*1000*1.2*3.5569036=392682
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR11 | 265987 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR11 | 12595  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR11 | 65611  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR11 | 14179  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR11 | 65611  | 49999999584845 |       |
     # intial margin level for LP = 92*1000*1.2*4.9256840 =543796
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR12 | 36284  | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR12 | 7350   | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR12 | 10286  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR12 | 8934   | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR12 | 11870  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR21 | 34     | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR21 | 1423   | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR21 | 1423   | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR21 | 3007   | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR21 | 3007   | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR22 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR22 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR22 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR22 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR31 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR31 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR31 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR31 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR31 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR32 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR32 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR32 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR32 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR32 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR41 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR41 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR41 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR41 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR41 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR42 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR42 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR42 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR42 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR42 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR43 | 192073 | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR43 | 11986  | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR43 | 47378  | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR43 | 13570  | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR43 | 47378  | 49999999584845 |       |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general        | bond  |
       | party0 | USD   | ETH/MAR51 | 108    | 49999997803076 | 50000 |
-      | party1 | USD   | ETH/MAR51 | 1437   | 49999999893293 |       |
-      | party2 | USD   | ETH/MAR51 | 1437   | 49999999589597 |       |
+      | party1 | USD   | ETH/MAR51 | 3021   | 49999999875869 |       |
+      | party2 | USD   | ETH/MAR51 | 3021   | 49999999584845 |       |
 
 @Now @NoPerp
   Scenario: 002, test market ETH/MAR23 (tau=1)
@@ -460,20 +460,20 @@ Feature: test risk model parameter ranges
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR0  | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR11 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR12 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR21 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR22 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR23 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR32 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR31 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR41 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR42 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR43 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR51 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR52 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR53 | updated-lqm-params   | 0.25                   | 0                         |
 
     And the following network parameters are set:
       | name                                  | value |
@@ -514,7 +514,7 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin    | general        | bond    |
       | party0 | USD   | ETH/MAR23 | 461953956 | 49999533046044 | 5000000 |
-      | party1 | USD   | ETH/MAR23 | 14558     | 49999999985442 |         |
+      | party1 | USD   | ETH/MAR23 | 16142     | 49999999983858 |         |
       | party2 | USD   | ETH/MAR23 | 1148419   | 49999998851581 |         |
 
   # initial margin level for LP = 1000*9092*86.2176101*1.2=9.4e8
@@ -527,20 +527,20 @@ Feature: test risk model parameter ranges
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
-      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR0  | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR11 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR12 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR21 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR22 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR23 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR31 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR32 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR41 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR42 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR43 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR51 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR52 | updated-lqm-params   | 0.25                   | 0                         |
+      | ETH/MAR53 | updated-lqm-params   | 0.25                   | 0                         |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
@@ -581,7 +581,7 @@ Feature: test risk model parameter ranges
     And the parties should have the following account balances:
       | party  | asset | market id | margin      | general        | bond   |
       | party0 | USD   | ETH/MAR52 | 20083423736 | 49979915976264 | 600000 |
-      | party1 | USD   | ETH/MAR52 | 133         | 49999999999867 |        |
+      | party1 | USD   | ETH/MAR52 | 135         | 49999999999865 |        |
       | party2 | USD   | ETH/MAR52 | 8033370     | 49999991966630 |        |
 
 # initial margin level for LP = 10*114559*55787.2881561700*1.2=7.66e10

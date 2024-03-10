@@ -15,8 +15,8 @@ Feature: check margin account with partially filled order
 
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 20                   | 0                         | default-futures |
+      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 20                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -61,50 +61,50 @@ Feature: check margin account with partially filled order
       | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader2 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-4 |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader20 | ETH/DEC20 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC | sell-order-4 |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 34916       | 41899  | 52374   | 69832   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 35336       |
 
     # margin is under above  level, then the excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD | ETH/DEC20 | 52374 | 37626 |
+      | trader2 | USD | ETH/DEC20   | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC | sell-order-4 |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 33752 | 40502 | 50628 | 67504 |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 34158       |
 
     # margin is under release level, then no excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD | ETH/DEC20 | 52374 | 37626 |
+      | trader2 | USD   | ETH/DEC20 | 51237  | 38763   |
 
 @Liquidation
 Scenario: 002 check margin for GTT order type.0011-MARA-007
@@ -144,56 +144,56 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTT | 6          |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |expires in |
       | trader2 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTT |   6       |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC20 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | expires in |
       | trader20 | ETH/DEC20 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTT | 6          |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 34916       | 41899  | 52374   | 69832   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 35336       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 52374  | 37626   |
+      | trader2 | USD   | ETH/DEC20 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | expires in |
       | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | 6          |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 33752       | 40502  | 50628   | 67504   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC20 | 34158       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 52374  | 37626   |
+      | trader2 | USD   | ETH/DEC20 | 51237  | 38763   |
     # trader3 places a new order
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | expires in |
       | trader3 | ETH/DEC20 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTT | 3          |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
+      | party   | market id | maintenance |
+      | trader3 | ETH/DEC20 | 801         |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
@@ -304,37 +304,37 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader20 | ETH/DEC21 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GFN |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC21 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC21 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC21 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC21 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |reference    |
       | trader2 | ETH/DEC21 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN | GFN-order-1 |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC21 | 46754       | 56104  | 70131   | 93508   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC21 | 47114       |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC21 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC21 | 70671  | 19329   |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader20 | ETH/DEC21 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GFN | t20-ref   |
 
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC21 | 45546       | 54655  | 68319   | 91092   |
+      | party   | market id | maintenance |
+      | trader2 | ETH/DEC21 | 45936       |
 
 # margin is under above  level, then the excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC21 | 70131  | 19869   |
+      | trader2 | USD   | ETH/DEC21 | 70671  | 19329   |
 
     And the orders should have the following status:
       | party   | reference   | status        |

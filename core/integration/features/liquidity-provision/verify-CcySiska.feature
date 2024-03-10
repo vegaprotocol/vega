@@ -31,7 +31,7 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | 0.014       | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | SLA        |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | SLA        |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -94,15 +94,15 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | -50    | 0              | 0            |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial  |
-      | party0 | ETH/MAR22 | 35078184    | 42093820 |
-      | party1 | ETH/MAR22 | 42338       | 50805    |
-      | party2 | ETH/MAR22 | 185609      | 222730   |
+      | party  | market id | maintenance |
+      | party0 | ETH/MAR22 | 35078184    |
+      | party1 | ETH/MAR22 | 54138       |
+      | party2 | ETH/MAR22 | 197459      |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42093820 | 452906180 |
-      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party1 | USD   | ETH/MAR22 | 64965    | 99935035  |
       | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:
@@ -155,15 +155,15 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | party2 | -50    | 0              | 0            |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial  |
-      | party0 | ETH/MAR22 | 8771325     | 10525590 |
-      | party1 | ETH/MAR22 | 42338       | 50805    |
-      | party2 | ETH/MAR22 | 185609      | 222730   |
+      | party  | market id | maintenance |
+      | party0 | ETH/MAR22 | 8771325     |
+      | party1 | ETH/MAR22 | 54138       |
+      | party2 | ETH/MAR22 | 197459      |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 10525590 | 484474410 |
-      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party1 | USD   | ETH/MAR22 | 64965    | 99935035  |
       | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:

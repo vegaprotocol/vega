@@ -23,7 +23,7 @@ Feature: Iceberg orders
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     Given the markets:
       | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | ethDec19Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | ethDec19Oracle     | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -105,7 +105,7 @@ Feature: Iceberg orders
       | party  | asset | market id | margin | general   |
       | party1 | USD   | ETH/DEC19 | 7752   | 2242      |
       | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
-      | party3 | USD   | ETH/DEC19 | 576    | 999999321 |
+      | party3 | USD   | ETH/DEC19 | 828    | 999999069 |
 
 
     #cancel an order which had been traded

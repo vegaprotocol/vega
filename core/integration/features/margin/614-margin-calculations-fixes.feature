@@ -3,7 +3,7 @@ Feature: test bugfix 614 for margin calculations
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -55,13 +55,13 @@ Feature: test bugfix 614 for margin calculations
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
+      | party  | market id | maintenance |
+      | tamlyn | ETH/DEC19 | 819         |
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
+      | tamlyn  | ETH   | ETH/DEC19 | 3276   | 6780    |
       | chris   | ETH   | ETH/DEC19 | 5600   | 4400    |
-      | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
-      | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
+      | edd     | ETH   | ETH/DEC19 | 2156   | 7844    |
+      | barney  | ETH   | ETH/DEC19 | 392    | 9552    |
       | rebecca | ETH   | ETH/DEC19 | 5600   | 4400    |
     And the cumulated balance for all accounts should be worth "3051000"

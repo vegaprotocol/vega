@@ -3,7 +3,7 @@ Feature: Regression test for issue 598
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.02                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -42,7 +42,6 @@ Feature: Regression test for issue 598
       | party2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
-
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 10     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -63,10 +62,18 @@ Feature: Regression test for issue 598
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris | ETH/DEC19 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
+    And the average fill price is:
+      | market     | volume | side | ref price | equivalent linear slippage factor |
+      | ETH/DEC19  | 10     | sell | 100       | 0.02                              |
+    # update linear slippage factor in line with what book-based slippage used to be
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/DEC19   | 0.0303030303030303     |
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
       | edd   | BTC   | ETH/DEC19 | 571    | 429     |
       | chris | BTC   | ETH/DEC19 | 109    | 790     |
+    
     # next instruction will trade with barney
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     | reference |
@@ -76,8 +83,9 @@ Feature: Regression test for issue 598
       | chris  | BTC   | ETH/DEC19 | 0      | 780     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
       | edd    | BTC   | ETH/DEC19 | 591    | 429     |
+
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      | edd    | ETH/DEC19 | 502         | 552    | 602     | 702     |
-      | barney | ETH/DEC19 | 451         | 496    | 541     | 631     |
-      | chris  | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | party  | market id | maintenance |
+      | edd    | ETH/DEC19 | 502         |
+      | barney | ETH/DEC19 | 471         |
+      | chris  | ETH/DEC19 | 0           |

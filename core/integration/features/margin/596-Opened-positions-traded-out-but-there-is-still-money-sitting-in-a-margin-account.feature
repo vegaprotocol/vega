@@ -3,7 +3,7 @@ Feature: Regression test for issue 596
   Background:
     Given the markets:
       | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -64,8 +64,8 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | buy  | 50     | 110   | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1413   | 8527    |
-      | chris  | BTC   | ETH/DEC19 | 790    | 8761    |
+      | edd    | BTC   | ETH/DEC19 | 1491   | 8449    |
+      | chris  | BTC   | ETH/DEC19 | 1048   | 8503    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3031000"
     And the market data for the market "ETH/DEC19" should be:
@@ -111,9 +111,9 @@ Feature: Regression test for issue 596
       | buy  |   1   | 90000  |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1763   | 8527    |
+      | edd    | BTC   | ETH/DEC19 | 1390   | 8900    |
       | chris  | BTC   | ETH/DEC19 | 0      | 8808    |
-      | barney | BTC   | ETH/DEC19 | 3810   | 6092    |
+      | barney | BTC   | ETH/DEC19 | 1146   | 8756    |
     And the cumulated balance for all accounts should be worth "3031000"
 
   Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
@@ -172,8 +172,8 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | buy  | 60     | 102   | 2                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 961    | 9019    |
-      | chris  | BTC   | ETH/DEC19 | 607    | 9007    |
+      | edd    | BTC   | ETH/DEC19 | 1354   | 8626    |
+      | chris  | BTC   | ETH/DEC19 | 1000   | 8614    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And the cumulated balance for all accounts should be worth "3031000"
     Then the parties cancel the following orders:
@@ -189,16 +189,16 @@ Feature: Regression test for issue 596
       | chris | ETH/DEC19 | sell | 40     | 90    | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 1161   | 9019    |
+      | edd    | BTC   | ETH/DEC19 | 1288   | 8892    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9072    |
-      | barney | BTC   | ETH/DEC19 | 1536   | 8412    |
+      | barney | BTC   | ETH/DEC19 | 1041   | 8907    |
     And the cumulated balance for all accounts should be worth "3031000"
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | barney | ETH/DEC19 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | edd    | BTC   | ETH/DEC19 | 921    | 9019    |
+      | edd    | BTC   | ETH/DEC19 | 1380   | 8560    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9072    |
-      | barney | BTC   | ETH/DEC19 | 1998   | 8179    |
+      | barney | BTC   | ETH/DEC19 | 1290   | 8887    |
     And the cumulated balance for all accounts should be worth "3031000"
