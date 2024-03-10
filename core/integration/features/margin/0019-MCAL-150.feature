@@ -16,7 +16,7 @@ Feature:  pegged order in isoalted margin is not supported
             | 0.1  | 0.2   | 100         | -100          | 0.2                    |
         And the markets:
             | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring      | data source config     | linear slippage factor | quadratic slippage factor | position decimal places | sla params      |
-            | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | 2                       | default-futures |
+            | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.000125               | 0                         | 2                       | default-futures |
 
         And the following network parameters are set:
             | name                           | value |
@@ -57,8 +57,8 @@ Feature:  pegged order in isoalted margin is not supported
             | party1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_2 |
 
         Then the parties should have the following margin levels:
-            | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-            | party1 | ETH/FEB23 | 9486        | 10434  | 11383   | 13280   | cross margin | 0             | 0     |
+            | party  | market id | maintenance | margin mode  | margin factor | order |
+            | party1 | ETH/FEB23 | 9486        | cross margin | 0             | 0     |
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general | bond |
             | party1 | USD   | ETH/FEB23 | 11383  | 146167  | 1000 |

@@ -5,7 +5,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Given the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -78,10 +78,20 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     # no margin account created for party1, just general account
     Given "party1" should have one account per asset
     # placing test order
+    
+    And the average fill price is:
+        | market     | volume | side | ref price | mark price | equivalent linear slippage factor |
+        | ETH/DEC19  | 13     | sell | 10300000  | 10300000   | 0.0873794174757282                |
+    
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/DEC19   | 0.0873794174757282     |
+
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "party1" should have general account balance of "821118876" for asset "ETH"
+    And "party1" should have general account balance of "832630096" for asset "ETH"
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price    | volume |
       | buy  | 1        | 1      |
@@ -113,13 +123,13 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 178881144 | 821118876 |
+      | party1 | ETH   | ETH/DEC19 | 167369924 | 832630096 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 44720286 | 143104915 | 178881144 | 223601430 |
+      | party1 | ETH/DEC19 | 41842481    | 133895939 | 167369924 | 209212405 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | 20 | 0 |
+      | party1 | 13     | 20             | 0            |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
     Then the parties cancel the following orders:
@@ -145,19 +155,19 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | sell | 25000000 | 100    |
     When the parties place the following orders:
       | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | buySideMM | ETH/DEC19 | buy | 1  | 11900000 | 0 | TYPE_LIMIT | TIF_GTC | ref-1 |
-      | buySideMM | ETH/DEC19 | buy | 3  | 11800000 | 0 | TYPE_LIMIT | TIF_GTC | ref-2 |
-      | buySideMM | ETH/DEC19 | buy | 15 | 11700000 | 0 | TYPE_LIMIT | TIF_GTC | ref-3 |
+      | buySideMM | ETH/DEC19 | buy  | 1      | 11900000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM | ETH/DEC19 | buy  | 3      | 11800000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | buySideMM | ETH/DEC19 | buy  | 15     | 11700000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 178881144 | 821118876 |
+      | party1 | ETH   | ETH/DEC19 | 167369924 | 832630096 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 44720286 | 143104915 | 178881144 | 223601430 |
+      | party1 | ETH/DEC19 | 41842481    | 133895939 | 167369924 | 209212405 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | 20 | 0 |
+      | party1 | 13     | 20             | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
@@ -172,21 +182,21 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 215281014 | 821118876 |
+      | party1 | ETH | ETH/DEC19   | 203769794 | 832630096 |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 65800007 | 210560022 | 263200028 | 329000035 |
+      | party1 | ETH/DEC19 | 52303054    | 167369772 | 209212216 | 261515270 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | 36399890 | 0 |
+      | party1 | 13     | 36399890       | 0            |
 
     # FULL CLOSEOUT BY TRADER
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | party1 | ETH/DEC19 | sell | 13 | 11600000 | 3 | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC19 | sell | 13     | 11600000 | 3                | TYPE_LIMIT | TIF_GTC |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 0 | 0 | 6999890 |
+      | party1 | 0      | 0              | 6999890      |

@@ -8,7 +8,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | ETH | 5              |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 0.341758241785         | 0                         | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -122,10 +122,10 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin       | general        |
-      | party1 | ETH   | ETH/DEC19 | 344000000032 | 99739599999968 |
+      | party1 | ETH   | ETH/DEC19 | 472400000020 | 99611199999980 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search       | initial      | release      |
-      | party1 | ETH/DEC19 | 86000000008 | 275200000025 | 344000000032 | 430000000040 |
+      | party  | market id | maintenance  |
+      | party1 | ETH/DEC19 | 140857142865 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 13     | 83600000000    | 0            |

@@ -29,7 +29,7 @@ Feature: Target stake
       | 1.1           | 1.2            | 1.4            |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | BTC        | BTC   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | BTC        | BTC   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 2              | 0.25                   | 0                         | default-futures |
 
     # Above, it says mark price but really I don't mind if we start
     # with an opening auction as long as at start of the scenario

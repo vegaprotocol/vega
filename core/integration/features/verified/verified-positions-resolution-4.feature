@@ -38,6 +38,11 @@ Feature: Position resolution case 4
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/DEC19   | 0.1111111111111111     |
+
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -50,7 +55,9 @@ Feature: Position resolution case 4
       | sell | 1000  | 1      |
       | sell | 200   | 150    |
 
-    # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =100 * (200-180) = 100*20 = 2000
+    And the average fill price is:
+        | market     | volume | side | ref price | mark price | equivalent linear slippage factor |
+        | ETH/DEC19  | 100    | sell | 180       | 180        | 0.1111111111111111                |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |

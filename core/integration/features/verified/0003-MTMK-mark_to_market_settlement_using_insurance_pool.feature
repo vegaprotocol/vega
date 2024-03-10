@@ -18,7 +18,7 @@ Feature: Test mark to market settlement with insurance pool
       | party1 | ETH   | 5122   |
       | party2 | ETH   | 10000  |
       | party3 | ETH   | 10000  |
-      | aux    | ETH   | 10000  |
+      | aux    | ETH   | 1000000  |
       | aux2   | ETH   | 10000  |
       | lpprov | ETH   | 100000 |
 
@@ -55,7 +55,7 @@ Feature: Test mark to market settlement with insurance pool
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 1320   | 3802    |
-      | party2 | ETH   | ETH/DEC19 | 132    | 9768    |
+      | party2 | ETH   | ETH/DEC19 | 1332   | 8568    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -63,7 +63,7 @@ Feature: Test mark to market settlement with insurance pool
       | party2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party2 | ETH   | ETH/DEC19 | 265    | 9635    |
+      | party2 | ETH   | ETH/DEC19 | 1464    | 8436    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -79,14 +79,14 @@ Feature: Test mark to market settlement with insurance pool
     And the orders should have the following status:
       | party  | reference | status        |
       | aux    | ref-2     | STATUS_FILLED |
-      | lpprov | lp-buy    | STATUS_PARKED |
+      | lpprov | lp-buy    | STATUS_ACTIVE |
       | lpprov | lp-sell   | STATUS_PARKED |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And the cumulated balance for all accounts should be worth "155122"
+    And the cumulated balance for all accounts should be worth "1145122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "14521" for the market "ETH/DEC19"
+    And the insurance pool balance should be "9520" for the market "ETH/DEC19"
 
 
 

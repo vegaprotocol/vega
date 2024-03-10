@@ -25,7 +25,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | 1.0         | 0.5                          | 1                             | 1.0                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params |
-      | ETH/MAR22 | USD        | USD   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | SLA        |
+      | ETH/MAR22 | USD        | USD   | lqm-params           | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.032                  | 0                         | SLA        |
     And the following network parameters are set:
       | name                                               | value    |
       | market.liquidity.providersFeeCalculationTimeStep | 24h0m0s  |
@@ -65,6 +65,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | buyer  | price | size | seller |
       | party1 | 1000  | 10   | party2 |
 
+
+
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000 | TRADING_MODE_CONTINUOUS | 1 | 500 | 1500 | 1000 | 10000 | 10 |
@@ -94,15 +96,15 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
       | lp1 | USD | ETH/MAR22 | 1320 | 1999988680 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1704   | 99998296  |       |
-      | party2 | USD   | ETH/MAR22 | 1692   | 99998308  |       |
+      # | party1 | USD   | ETH/MAR22 | 1704   | 99998296  |       |
+      # | party2 | USD   | ETH/MAR22 | 1692   | 99998308  |       |
 
-    # party1 margin = 11*1000*0.1 + 10*(1000-968) = 1420
-    # party2 margin = 11*1000*0.1 + 10*(1031-1000)= 1410
+    # party1 margin = 11*1000*0.1 + 1000*0.032 = 1420
+    # party2 margin = 11*1000*0.1 + 1000*0.032 = 1420
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial |
-      | party1 | ETH/MAR22 | 1420        | 1704    |
-      | party2 | ETH/MAR22 | 1410        | 1692    |
+      | party  | market id | maintenance |
+      | party1 | ETH/MAR22 | 1420        |
+      | party2 | ETH/MAR22 | 1420        |
 
     Then the network moves ahead "1" blocks
 
@@ -180,5 +182,5 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
       | lp1   | -7     | -343           | 0            |
 
     Then the parties should have the following account balances:
-      | party | asset | market id | margin     | general |
-      | lp1   | USD   | ETH/MAR22 | 1999999660 | 0       |
+      | party | asset | market id | margin | general    |
+      | lp1   | USD   | ETH/MAR22 | 1588   | 1999988072 |

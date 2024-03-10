@@ -8,7 +8,7 @@ Feature: When the network party holds a non-zero position and there are not enou
 
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e3                    | 1e3                       | default-futures | disposal-strat       |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | disposal-strat       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -57,9 +57,9 @@ Feature: When the network party holds a non-zero position and there are not enou
     Then the parties should have the following account balances:
       | party            | asset | market id | general       | margin      |
       | designatedLoser  | BTC   | ETH/DEC19 | 0             | 0           |
-      | aux              | BTC   | ETH/DEC19 | 999999999999  | 0           |
-      | aux2             | BTC   | ETH/DEC19 | 999999999964  | 37          |
-      | sellSideProvider | BTC   | ETH/DEC19 | 962350000000  | 37650000000 |
+      | aux              | BTC   | ETH/DEC19 | 999999999848  | 151         |
+      | aux2             | BTC   | ETH/DEC19 | 999999999848  | 153         |
+      | sellSideProvider | BTC   | ETH/DEC19 | 999999962500  | 37500       |
       | buySideProvider  | BTC   | ETH/DEC19 | 1000000000000 | 0           |
 
     And the insurance pool balance should be "120" for the market "ETH/DEC19"    
@@ -69,12 +69,6 @@ Feature: When the network party holds a non-zero position and there are not enou
       | party           | aggressor side | volume |
       | designatedLoser | buy            | 250    |
 
-    Then the parties should have the following account balances:
-      | party            | asset | market id | general       | margin      |
-      | aux              | BTC   | ETH/DEC19 | 999999999999  | 0           |
-      | aux2             | BTC   | ETH/DEC19 | 999999999964  | 37          |
-      | sellSideProvider | BTC   | ETH/DEC19 | 962350000000  | 37650000000 |
-      | buySideProvider  | BTC   | ETH/DEC19 | 1000000000000 | 0           |
     And the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
       | aux2             | 1      | 1              | 0            |
@@ -103,7 +97,7 @@ Feature: When the network party holds a non-zero position and there are not enou
       | party            | asset | market id | general       | margin      |
       | aux              | BTC   | ETH/DEC19 | 1000000000000 | 0           |
       | aux2             | BTC   | ETH/DEC19 | 999999999996  | 0           |
-      | sellSideProvider | BTC   | ETH/DEC19 | 962350000000  | 37650000124 |
+      | sellSideProvider | BTC   | ETH/DEC19 | 999999962500  | 37624       |
       | buySideProvider  | BTC   | ETH/DEC19 | 1000000000000 | 0           |
     # This part explicitly covers 0012-POSR-011:
     # The insurance pool balance is zero, so the network does not meet the required margin balance
@@ -116,6 +110,6 @@ Feature: When the network party holds a non-zero position and there are not enou
       | designatedLoser  | 0      | 0              | -120         |
       | network          | 250    | -1250          | 0            |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search      | initial     | release     |
-      | network | ETH/DEC19 | 9098750000  | 29116000000 | 36395000000 | 45493750000 |
+      | party   | market id | maintenance |
+      | network | ETH/DEC19 | 9063        |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"    

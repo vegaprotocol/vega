@@ -6,7 +6,7 @@ Feature: Amend orders
       | BTC | 5              |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2              | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
