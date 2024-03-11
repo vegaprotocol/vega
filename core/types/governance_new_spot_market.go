@@ -392,6 +392,7 @@ type SpotProduct struct {
 
 func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 	return &vegapb.SpotProduct{
+		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}
@@ -399,6 +400,7 @@ func (f SpotProduct) IntoProto() *vegapb.SpotProduct {
 
 func (f SpotProduct) DeepClone() *SpotProduct {
 	return &SpotProduct{
+		Name:       f.Name,
 		BaseAsset:  f.BaseAsset,
 		QuoteAsset: f.QuoteAsset,
 	}
@@ -406,7 +408,8 @@ func (f SpotProduct) DeepClone() *SpotProduct {
 
 func (f SpotProduct) String() string {
 	return fmt.Sprintf(
-		"baseAsset(%s) quoteAsset(%s)",
+		"name(%s) baseAsset(%s) quoteAsset(%s)",
+		f.Name,
 		f.BaseAsset,
 		f.QuoteAsset,
 	)

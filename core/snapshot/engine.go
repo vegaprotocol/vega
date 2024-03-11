@@ -593,7 +593,11 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, DoneC
 		resultByTreeKey[string(tkRes.input.treeKey)] = tkRes
 	}
 
-	for _, ns := range e.registeredNamespaces {
+	nsSlice := make([]types.SnapshotNamespace, len(e.registeredNamespaces))
+	copy(nsSlice, e.registeredNamespaces)
+	sort.Slice(nsSlice, func(i, j int) bool { return nsSlice[i] < nsSlice[j] })
+
+	for _, ns := range nsSlice {
 		treeKeys, ok := e.namespacesToTreeKeys[ns]
 		if !ok {
 			continue
