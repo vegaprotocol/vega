@@ -74,7 +74,25 @@ func (a *auctionIntervals) update(t int64, enter bool) {
 	}
 
 	if enter {
-		a.auctionStart = t
+		if len(a.auctions) == 0 {
+			a.auctionStart = t
+			return
+		}
+
+		st, nd := a.auctions[len(a.auctions)-2], a.auctions[len(a.auctions)-1]
+		if t != nd {
+			a.auctionStart = t
+			return
+		}
+
+		a.auctions = slices.Delete(a.auctions, len(a.auctions)-2, len(a.auctions))
+		a.auctionStart = st
+		return
+	}
+
+	if t == a.auctionStart {
+		// left an auction as soon as we entered it, no need to log it
+		a.auctionStart = 0
 		return
 	}
 
