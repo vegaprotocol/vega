@@ -130,6 +130,8 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, types.TransferTypeOrderMarginLow, riskEvent[1].Transfer().Type)
 	require.Equal(t, "party1", riskEvent[1].Transfer().Owner)
 	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
+	transferRecalc = requiredOrderMarginStatic.Sub(evt.OrderMarginBalance().ToDecimal())
+	require.True(t, riskEvent[1].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
 
 	// case3 - need to release from margin account and order margin account back into general account
 	evt.margin += 600
