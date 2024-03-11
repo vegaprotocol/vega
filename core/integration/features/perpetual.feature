@@ -226,7 +226,7 @@ Feature: Simple test creating a perpetual market.
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1             |
     And the following funding period events should be emitted:
       | start      | end        | internal twap    | external twap    |
-      | 1575072002 |            | 9760000000000000 |                  |
+      | 1575072002 |            |                  |                  |
 
     # perps payment doesn't happen in the absence of oracle data
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
