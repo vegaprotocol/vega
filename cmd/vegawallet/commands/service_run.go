@@ -816,8 +816,19 @@ func ensureNotRunningInMsys() error {
 }
 
 func readPassphrase(ctx context.Context, controlCh chan error, question *printer.FormattedString, p *printer.InteractivePrinter) (string, error) {
+	stdinFd := int(os.Stdin.Fd())
+
 	inputCh := make(chan string)
-	defer close(inputCh)
+	originalState, err := term.GetState(stdinFd)
+	if err != nil {
+		return "", fmt.Errorf("could not acquire the standard input's original state: %w", err)
+	}
+	defer func() {
+		close(inputCh)
+		if err := term.Restore(stdinFd, originalState); err != nil {
+			p.Print(p.String().WarningBangMark().WarningText(err.Error()).NextLine())
+		}
+	}()
 
 	// We cannot interrupt cleanly an on-going password read. So, at least, we
 	// ensure it can stop on the next password attempt.
@@ -827,7 +838,7 @@ func readPassphrase(ctx context.Context, controlCh chan error, question *printer
 	go func() {
 		for {
 			p.Print(question)
-			passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+			passphrase, err := term.ReadPassword(stdinFd)
 			if err != nil {
 				panic(fmt.Errorf("could not read passphrase: %w", err))
 			}
