@@ -56,6 +56,7 @@
 - [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
 - [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
 - [10055](https://github.com/vegaprotocol/vega/issues/10055) - Quitting the wallet service CLI while waiting for a password now restores the terminal capabilities.
+- [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot. 
 
 ## 0.74.3
 
