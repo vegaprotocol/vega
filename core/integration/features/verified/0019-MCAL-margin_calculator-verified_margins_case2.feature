@@ -7,7 +7,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | limits.markets.maxPeggedOrders          | 2     |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
@@ -63,11 +63,11 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "party1" should have general account balance of "744319348" for asset "ETH"
+    And "party1" should have general account balance of "737919784" for asset "ETH"
     And the following trades should be executed:
       | buyer  | price    | size | seller     |
-      | party1 | 11200000 | 2  | sellSideMM |
-      | party1 | 11200010 | 11 | lpprov     |
+      | party1 | 11200000 | 2    | sellSideMM |
+      | party1 | 11200010 | 11   | lpprov     |
 
     Then the following transfers should happen:
       | from   | to     | from account            | to account          | market id | amount  | asset |
@@ -75,13 +75,13 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 255680672 | 744319348 |
+      | party1 | ETH   | ETH/DEC19 | 262080236 | 737919784 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 63920168 | 204544537 | 255680672 | 319600840 |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 65520059    |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | 20 | 0 |
+      | party1 | 13     | 20             | 0            |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
     Then the parties cancel the following orders:
@@ -91,13 +91,13 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 255680672 | 744319348 |
+      | party1 | ETH   | ETH/DEC19 | 262080236 | 737919784 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 63920168 | 204544537 | 255680672 | 319600840 |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 65520059    |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | 20 | 0 |
+      | party1 | 13     | 20             | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 100
@@ -112,13 +112,13 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 240080542 | 744319348 |
+      | party1 | ETH | ETH/DEC19   | 246480106 | 737919784 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 52000000    | 166400000 | 208000000 | 260000000 |
+      | party  | market id | maintenance | 
+      | party1 | ETH/DEC19 | 58500000    | 
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 13 | -15600110 | 0 |
+      | party1 | 13     | -15600110      | 0            |
 
     # PARTIAL CLOSEOUT BY TRADER
     When the parties place the following orders with ticks:
@@ -126,13 +126,13 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | party1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
-      | party1 | ETH | ETH/DEC19 | 19200000 | 939199890 |
+      | party1 | ETH | ETH/DEC19   | 43200000 | 915199890 |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search   | initial  | release  |
-      | party1 | ETH/DEC19 | 4800000     | 15360000 | 19200000 | 24000000 |
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 | 10800000    |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | 3 | -9600025 | -32000085 |
+      | party1 | 3      | -9600025       | -32000085    |
 
     # FULL CLOSEOUT BY TRADER
     When the parties place the following orders with ticks:

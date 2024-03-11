@@ -200,7 +200,7 @@ Feature: Test for parked/unparked pegged orders
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
         And the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-            | test_party | ETH/FEB23 | 204         | 0      | 244     | 0       | isolated margin | 0.50          | 0     |
+            | test_party | ETH/FEB23 | 698         | 0      | 837     | 0       | isolated margin | 0.50          | 0     |
         And the parties should have the following account balances:
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 997    | 99003   | 0            |
@@ -257,7 +257,7 @@ Feature: Test for parked/unparked pegged orders
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/FEB23"
         And the parties should have the following margin levels:
             | party      | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-            | test_party | ETH/FEB23 | 204         | 0      | 244     | 0       | isolated margin | 0.50          | 0     |
+            | test_party | ETH/FEB23 | 698         | 0      | 837     | 0       | isolated margin | 0.50          | 0     |
         And the parties should have the following account balances:
             | party      | asset | market id | margin | general | order margin |
             | test_party | USD   | ETH/FEB23 | 997    | 99003   | 0            |

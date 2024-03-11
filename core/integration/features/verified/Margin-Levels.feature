@@ -113,14 +113,14 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
     # trader2 and trader20 have open position of 40 now
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader2  | ETH/DEC19 | 3562        | 5343   | 7124    | 10686   |
-      | trader20 | ETH/DEC20 | 3562 | 4274 | 5343 | 7124 |
+      | trader2  | ETH/DEC19 | 3602        | 5403   | 7204    | 10806   |
+      | trader20 | ETH/DEC20 | 3602        | 4322   | 5403    | 7204    |
 #maintenance_margin_trader2: 40*(50-5)+40*50*0.801225765=3402
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader2  | USD | ETH/DEC19 | 7124 | 2876 |
-      | trader20 | USD | ETH/DEC20 | 5343 | 4657 |
+      | trader2  | USD   | ETH/DEC19 | 7204   | 2796    |
+      | trader20 | USD   | ETH/DEC20 | 5403   | 4597    |
 
     # move mark price from 50 to 20, MTM, hence cash flow beween margin and general account for trader2 and trader20
     When the parties place the following orders with ticks:
@@ -137,13 +137,13 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
 
     And the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
-      | trader2  | ETH/DEC19 | 1401 | 2101 | 2802 | 4203 |
-      | trader20 | ETH/DEC20 | 1401 | 1681 | 2101 | 2802 |
+      | trader2  | ETH/DEC19 | 1441        | 2161   | 2882    | 4323    |
+      | trader20 | ETH/DEC20 | 1441        | 1729   | 2161    | 2882    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader2  | USD | ETH/DEC19 | 2802 | 5998 |
-      | trader20 | USD | ETH/DEC20 | 2101 | 6699 |
+      | trader2  | USD   | ETH/DEC19 | 2882   | 5918    |
+      | trader20 | USD   | ETH/DEC20 | 2161   | 6639    |
 
 # check margin release level
 # MTM process will reduce (50-20)*40=1200 from general account
@@ -281,8 +281,8 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
     # both parties end up with same margin levels and account balances
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
-      | trader2 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
+      | trader1 | ETH/DEC19 | 456         | 684    | 912     | 1368    |
+      | trader2 | ETH/DEC19 | 456         | 684    | 912     | 1368    |
       | trader3 | ETH/DEC19 | 361         | 541    | 722     | 1083    |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |

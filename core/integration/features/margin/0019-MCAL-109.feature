@@ -16,7 +16,7 @@ Feature:  switch to isolated margin without position and with orders during auct
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future | 0.000125                  | 0                         | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -106,6 +106,9 @@ Feature:  switch to isolated margin without position and with orders during auct
       | 15800      | TRADING_MODE_MONITORING_AUCTION |
 
     #AC0019-MCAL-109: switch to isolated margin with position and with orders with margin factor such that position margin is < initial should fail in auction
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/FEB23   | 0.25                   |
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                        |
       | party1 | ETH/FEB23 | isolated margin | 0.2           | required position margin must be greater than initial margin |

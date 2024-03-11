@@ -138,9 +138,9 @@ func (b *OrderBook) GetPeggedOrdersCount() uint64 {
 	return b.peggedOrdersCount
 }
 
-// GetCloseoutPrice returns the exit price which would be achieved for a given
+// GetFillPrice returns the average price which would be achieved for a given
 // volume and give side of the book.
-func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error) {
+func (b *OrderBook) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil

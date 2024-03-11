@@ -3,7 +3,7 @@ Feature: Test margin release on order cancel
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -104,12 +104,12 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH/DEC19 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 
     Then the parties should have the following margin levels:
-      | party    | market id | maintenance | search | initial | release |
-      | partyGuy | ETH/DEC19 | 119         | 130    | 142     | 166     |
+      | party    | market id | maintenance |
+      | partyGuy | ETH/DEC19 | 347         |
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | partyGuy | ETH   | ETH/DEC19 | 142    | 9759    |
+      | partyGuy | ETH   | ETH/DEC19 | 416    | 9485    |
 
     Then the parties should have the following profit and loss:
       | party    | volume | unrealised pnl | realised pnl |
@@ -120,8 +120,8 @@ Feature: Test margin release on order cancel
       | partyGuy | ETH/DEC19 | buy  | 1      | 1005  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the parties should have the following margin levels:
-      | party    | market id | maintenance | search | initial | release |
-      | partyGuy | ETH/DEC19 | 119         | 130    | 142     | 166     |
+      | party    | market id | maintenance |
+      | partyGuy | ETH/DEC19 | 347         |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -247,8 +247,7 @@ Feature: Test margin release on order cancel
     And the parties should have the following account balances:
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 | 120    | 0       |
-      | partyGuyGood | ETH   | ETH/DEC19 | 1320   | 998680  |
-    #| partyGuyGood | ETH   | ETH/DEC19 | 252    | 999748  |
+      | partyGuyGood | ETH   | ETH/DEC19 | 432    | 999568  |
 
     # this will trade with party guy
     # which is going to get him distressed

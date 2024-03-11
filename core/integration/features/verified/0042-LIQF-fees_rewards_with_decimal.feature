@@ -428,7 +428,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond       |
-      | lp1   | ETH   | USD/DEC19 | 5554318 | 99996388565811 | 3600000000 |
+      | lp1   | ETH   | USD/DEC19 | 5854618 | 99996388265511 | 3600000000 |
 
     # Reduce LP stake below target, results in slashing
     And the parties submit the following liquidity provision:
@@ -440,7 +440,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     # This should be slashed, as amendment brought market below target stake, but is currently not
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond |
-      | lp1   | ETH   | USD/DEC19 | 5554318 | 99997426328683 | 10   |
+      | lp1   | ETH   | USD/DEC19 | 5854618 | 99997426028383 | 10   |
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |

@@ -101,6 +101,14 @@ Feature: Test order amendment such that the full order is matched but the party 
             | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order  |
             | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.2           | 317000 |
 
+        And the average fill price is:
+            | market     | volume | side | ref price | mark price | equivalent linear slippage factor |
+            | ETH/FEB23  | 100    | buy  | 15900     | 15900      | 0                                 |
+        # update linear slippage factor in line with what book-based slippage used to be
+        And the markets are updated:
+            | id          | linear slippage factor |
+            | ETH/FEB23   | 0                      |
+
         When the parties amend the following orders:
             | party  | reference | price | size delta | tif     | error               |
             | party1 | buy-1     | 20100 | 0          | TIF_GTC | margin check failed |

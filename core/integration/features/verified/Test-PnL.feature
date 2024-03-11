@@ -26,7 +26,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
             | lqm-params         | 0.10             | 24h         | 1.0            |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -133,7 +133,7 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
       | market.liquidity.bondPenaltyParameter       | 0.2   |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000000 |
@@ -235,10 +235,10 @@ Feature: check if the realised PnL and unreaslied PnL is calculated according to
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | USD   | ETH/MAR22 | 21534  | 99978826 |
-      | party2 | USD   | ETH/MAR22 | 4993   | 99994647 |
+      | party2 | USD   | ETH/MAR22 | 6324   | 99993316 |
 
     #margin+general-initial = 21534+99978826-100000000=360 which is matching with realised pnl for party1
-    #margin+general-initial = 4993+99994647-100000000=-360 which is matching with realised pnl for party2
+    #margin+general-initial = 6324+99993316-100000000=-360 which is matching with realised pnl for party2
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |

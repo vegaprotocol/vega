@@ -75,22 +75,22 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// Normal case
-	price, err := book.GetCloseoutPrice(10, types.SideBuy)
+	price, err := book.GetFillPrice(10, types.SideBuy)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Incorrect size
-	price, err = book.GetCloseoutPrice(0, types.SideBuy)
+	price, err = book.GetFillPrice(0, types.SideBuy)
 	assert.Error(t, err, ErrInvalidVolume)
 	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Not enough on the book
-	price, err = book.GetCloseoutPrice(200, types.SideBuy)
+	price, err = book.GetFillPrice(200, types.SideBuy)
 	assert.Error(t, err, ErrNotEnoughOrders)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Wrong side
-	price, err = book.GetCloseoutPrice(10, types.SideSell)
+	price, err = book.GetFillPrice(10, types.SideSell)
 	assert.Error(t, err, ErrNotEnoughOrders)
 	assert.Equal(t, price.Uint64(), uint64(100))
 }
@@ -146,22 +146,22 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// Normal case
-	price, err := book.GetCloseoutPrice(10, types.SideSell)
+	price, err := book.GetFillPrice(10, types.SideSell)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Incorrect size
-	price, err = book.GetCloseoutPrice(0, types.SideSell)
+	price, err = book.GetFillPrice(0, types.SideSell)
 	assert.Error(t, err, ErrInvalidVolume)
 	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Not enough on the book
-	price, err = book.GetCloseoutPrice(200, types.SideSell)
+	price, err = book.GetFillPrice(200, types.SideSell)
 	assert.Error(t, err, ErrNotEnoughOrders)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Wrong side
-	price, err = book.GetCloseoutPrice(10, types.SideBuy)
+	price, err = book.GetFillPrice(10, types.SideBuy)
 	assert.Error(t, err, ErrNotEnoughOrders)
 	assert.Equal(t, price.Uint64(), uint64(100))
 }
@@ -216,17 +216,17 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// Normal case
-	price, err := book.GetCloseoutPrice(100, types.SideBuy)
+	price, err := book.GetFillPrice(100, types.SideBuy)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Normal case
-	price, err = book.GetCloseoutPrice(200, types.SideBuy)
+	price, err = book.GetFillPrice(200, types.SideBuy)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(95))
 
 	// Normal case
-	price, err = book.GetCloseoutPrice(300, types.SideBuy)
+	price, err = book.GetFillPrice(300, types.SideBuy)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(90))
 }
@@ -281,17 +281,17 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// Normal case
-	price, err := book.GetCloseoutPrice(100, types.SideSell)
+	price, err := book.GetFillPrice(100, types.SideSell)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Normal case
-	price, err = book.GetCloseoutPrice(200, types.SideSell)
+	price, err = book.GetFillPrice(200, types.SideSell)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(105))
 
 	// Normal case
-	price, err = book.GetCloseoutPrice(300, types.SideSell)
+	price, err = book.GetFillPrice(300, types.SideSell)
 	assert.NoError(t, err)
 	assert.Equal(t, price.Uint64(), uint64(110))
 }

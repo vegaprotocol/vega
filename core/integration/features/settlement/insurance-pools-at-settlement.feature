@@ -52,11 +52,11 @@ Feature: Test the transfers to and from the insurance pools when markets termina
     # Create 4 markets, all with the same settlement asset, different configs, because we can...
     And the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | lognormal-risk-model-fish     | default-margin-calculator | 1                | default-none  | default-none       | ethDec19Oracle         | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | margin-calculator-1       | 1                | default-none  | default-none       | ethDec20Oracle         | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model     | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC22 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC23 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | lognormal-risk-model-fish     | default-margin-calculator | 1                | default-none  | default-none       | ethDec19Oracle         | 0.25                   | 0                         | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | margin-calculator-1       | 1                | default-none  | default-none       | ethDec20Oracle         | 0.25                   | 0                         | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model     | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         | 0.25                   | 0                         | default-futures |
+      | ETH/DEC22 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/DEC23 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | default-futures |
     # set their insurance pool to some balance
     And the initial insurance pool balance is "1000000" for all the markets
 

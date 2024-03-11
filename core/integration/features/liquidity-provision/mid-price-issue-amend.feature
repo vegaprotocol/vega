@@ -12,7 +12,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | 0.00001       | 0.000114077 | 0  | 0 | 0.41  |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model         | margin calculator         | auction duration | fees         | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | DAI/DEC22 | DAI        | DAI   | lqm-params           | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              | 1e6                    | 1e6                       | default-futures |
+      | DAI/DEC22 | DAI        | DAI   | lqm-params           | dai-lognormal-risk | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5              | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |

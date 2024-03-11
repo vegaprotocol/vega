@@ -569,6 +569,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the volume discount stats at epoch "([^"]+)" should be:`, func(epoch string, table *godog.Table) error {
 		return steps.TheVolumeDiscountStatsShouldBe(execsetup.broker, epoch, table)
 	})
+	s.Step(`the average fill price is:`, func(table *godog.Table) error {
+		return steps.TheAverageFillPriceIs(execsetup.executionEngine, table)
+	})
 
 	// Debug steps
 	s.Step(`^debug accounts$`, func() error {
