@@ -97,6 +97,30 @@ func TestCheckAmendAMM(t *testing.T) {
 		},
 		{
 			submission: commandspb.AmendAMM{
+				ProposedFee: ptr.From(""),
+			},
+			errStr: "amend_amm.proposed_fee (is not a valid value)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ProposedFee: ptr.From("abc"),
+			},
+			errStr: "amend_amm.proposed_fee (is not a valid value)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ProposedFee: ptr.From("-10"),
+			},
+			errStr: "amend_amm.proposed_fee (must be positive)",
+		},
+		{
+			submission: commandspb.AmendAMM{
+				ProposedFee: ptr.From("0"),
+			},
+			errStr: "amend_amm.proposed_fee (must be positive)",
+		},
+		{
+			submission: commandspb.AmendAMM{
 				ConcentratedLiquidityParameters: &commandspb.AmendAMM_ConcentratedLiquidityParameters{
 					Base: ptr.From(""),
 				},

@@ -97,6 +97,30 @@ func TestCheckSubmitAMM(t *testing.T) {
 		},
 		{
 			submission: commandspb.SubmitAMM{
+				ProposedFee: "",
+			},
+			errStr: "submit_amm.proposed_fee (is required)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ProposedFee: "abc",
+			},
+			errStr: "submit_amm.proposed_fee (is not a valid value)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ProposedFee: "-10",
+			},
+			errStr: "submit_amm.proposed_fee (must be positive)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
+				ProposedFee: "0",
+			},
+			errStr: "submit_amm.proposed_fee (must be positive)",
+		},
+		{
+			submission: commandspb.SubmitAMM{
 				ConcentratedLiquidityParameters: nil,
 			},
 			errStr: "submit_amm.concentrated_liquidity_parameters (is required)",
@@ -281,6 +305,7 @@ func TestCheckSubmitAMM(t *testing.T) {
 				MarketId:          "e9982447fb4128f9968f9981612c5ea85d19b62058ec2636efc812dcbbc745ca",
 				SlippageTolerance: "0.09",
 				CommitmentAmount:  "10000",
+				ProposedFee:       "0.03",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 					Base:                    "20000",
 					UpperBound:              ptr.From("30000"),

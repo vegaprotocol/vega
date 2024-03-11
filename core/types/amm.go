@@ -28,6 +28,7 @@ type AMMBaseCommand struct {
 	MarketID          string
 	Party             string
 	SlippageTolerance num.Decimal
+	ProposedFee       num.Decimal
 }
 
 type ConcentratedLiquidityParameters struct {
@@ -115,12 +116,14 @@ func NewSubmitAMMFromProto(
 	}
 
 	slippage, _ := num.DecimalFromString(submitAMM.SlippageTolerance)
+	proposedFee, _ := num.DecimalFromString(submitAMM.ProposedFee)
 
 	return &SubmitAMM{
 		AMMBaseCommand: AMMBaseCommand{
 			Party:             party,
 			MarketID:          submitAMM.MarketId,
 			SlippageTolerance: slippage,
+			ProposedFee:       proposedFee,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
@@ -160,6 +163,7 @@ func (s SubmitAMM) IntoProto() *commandspb.SubmitAMM {
 		MarketId:          s.MarketID,
 		CommitmentAmount:  s.CommitmentAmount.String(),
 		SlippageTolerance: s.SlippageTolerance.String(),
+		ProposedFee:       s.ProposedFee.String(),
 		ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
 			UpperBound:              upper,
 			LowerBound:              lower,
@@ -181,9 +185,13 @@ func (a AmendAMM) IntoProto() *commandspb.AmendAMM {
 		MarketId:          a.MarketID,
 		CommitmentAmount:  nil,
 		SlippageTolerance: a.SlippageTolerance.String(),
+		ProposedFee:       nil,
 	}
 	if a.CommitmentAmount != nil {
 		ret.CommitmentAmount = ptr.From(a.CommitmentAmount.String())
+	}
+	if !a.ProposedFee.IsZero() {
+		ret.ProposedFee = ptr.From(a.ProposedFee.String())
 	}
 	if a.Parameters == nil {
 		return ret
@@ -244,11 +252,17 @@ func NewAmendAMMFromProto(
 
 	slippage, _ := num.DecimalFromString(amendAMM.SlippageTolerance)
 
+	var proposedFee num.Decimal
+	if amendAMM.ProposedFee != nil {
+		proposedFee, _ = num.DecimalFromString(*amendAMM.ProposedFee)
+	}
+
 	return &AmendAMM{
 		AMMBaseCommand: AMMBaseCommand{
 			Party:             party,
 			MarketID:          amendAMM.MarketId,
 			SlippageTolerance: slippage,
+			ProposedFee:       proposedFee,
 		},
 		CommitmentAmount: commitment,
 		Parameters: &ConcentratedLiquidityParameters{
