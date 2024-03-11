@@ -11,6 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/core/types"
 	num "code.vegaprotocol.io/vega/libs/num"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 )
 
 // MockAMMPool is a mock of AMMPool interface.
@@ -34,6 +35,34 @@ func NewMockAMMPool(ctrl *gomock.Controller) *MockAMMPool {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAMMPool) EXPECT() *MockAMMPoolMockRecorder {
 	return m.recorder
+}
+
+// CommitmentAmount mocks base method.
+func (m *MockAMMPool) CommitmentAmount() *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommitmentAmount")
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// CommitmentAmount indicates an expected call of CommitmentAmount.
+func (mr *MockAMMPoolMockRecorder) CommitmentAmount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitmentAmount", reflect.TypeOf((*MockAMMPool)(nil).CommitmentAmount))
+}
+
+// LiquidityFee mocks base method.
+func (m *MockAMMPool) LiquidityFee() decimal.Decimal {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LiquidityFee")
+	ret0, _ := ret[0].(decimal.Decimal)
+	return ret0
+}
+
+// LiquidityFee indicates an expected call of LiquidityFee.
+func (mr *MockAMMPoolMockRecorder) LiquidityFee() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiquidityFee", reflect.TypeOf((*MockAMMPool)(nil).LiquidityFee))
 }
 
 // OrderbookShape mocks base method.
