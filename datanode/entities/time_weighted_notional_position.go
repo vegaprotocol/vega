@@ -28,7 +28,7 @@ type TimeWeightedNotionalPosition struct {
 	AssetID                      AssetID
 	PartyID                      PartyID
 	TimeWeightedNotionalPosition uint64
-	LastUpdated                  time.Time
+	VegaTime                     time.Time
 }
 
 func TimeWeightedNotionalPositionFromProto(event *eventspb.TimeWeightedNotionalPositionUpdated, vegaTime time.Time) (*TimeWeightedNotionalPosition, error) {
@@ -41,7 +41,7 @@ func TimeWeightedNotionalPositionFromProto(event *eventspb.TimeWeightedNotionalP
 		AssetID:                      AssetID(event.Asset),
 		PartyID:                      PartyID(event.Party),
 		TimeWeightedNotionalPosition: twNotionalPosition,
-		LastUpdated:                  vegaTime,
+		VegaTime:                     vegaTime,
 	}, nil
 }
 
@@ -51,6 +51,6 @@ func (tw *TimeWeightedNotionalPosition) ToProto() *v2.TimeWeightedNotionalPositi
 		PartyId:                      tw.PartyID.String(),
 		AtEpoch:                      tw.EpochSeq,
 		TimeWeightedNotionalPosition: strconv.FormatUint(tw.TimeWeightedNotionalPosition, 10),
-		LastUpdated:                  tw.LastUpdated.UnixNano(),
+		LastUpdated:                  tw.VegaTime.UnixNano(),
 	}
 }

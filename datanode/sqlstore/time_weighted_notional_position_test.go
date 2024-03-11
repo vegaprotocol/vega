@@ -37,7 +37,7 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
-			LastUpdated:                  time.Now().Truncate(time.Microsecond),
+			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
@@ -56,12 +56,11 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
-			LastUpdated:                  time.Now().Truncate(time.Microsecond),
+			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		want.TimeWeightedNotionalPosition = 2000
-		want.LastUpdated = time.Now().Truncate(time.Microsecond)
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
@@ -82,7 +81,7 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
-			LastUpdated:                  time.Now().Truncate(time.Microsecond),
+			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
@@ -98,13 +97,13 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 			PartyID:                      entities.PartyID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
-			LastUpdated:                  time.Now().Truncate(time.Microsecond),
+			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		want.EpochSeq = 2
 		want.TimeWeightedNotionalPosition = 2000
-		want.LastUpdated = want.LastUpdated.Add(time.Second)
+		want.VegaTime = want.VegaTime.Add(time.Second)
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)
 		got, err := tw.Get(ctx, want.AssetID, want.PartyID, nil)
