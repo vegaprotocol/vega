@@ -33,6 +33,7 @@
 - [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.
 - [10846](https://github.com/vegaprotocol/vega/issues/10846) - Change min requirement for margin factor.
 - [10754](https://github.com/vegaprotocol/vega/issues/10754) - Simplify margin calculation (remove order book slippage).
+- [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for notionalTimeWeightedAveragePosition.
 
 ### 🐛 Fixes
 

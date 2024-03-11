@@ -487,7 +487,7 @@ func (mat *MarketActivityTracker) RestorePosition(asset, party, market string, p
 }
 
 // RecordPosition passes the position of the party in the asset/market to the market tracker to be recorded.
-func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, pos int64, price *num.Uint, positionFactor num.Decimal, time time.Time) {
+func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, pos int64, price *num.Uint, positionFactor num.Decimal, time time.Time) *num.Uint {
 	if tracker, ok := mat.getMarketTracker(asset, market); ok {
 		tracker.allPartiesCache[party] = struct{}{}
 		absPos := uint64(0)
@@ -499,7 +499,11 @@ func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, po
 		notional, _ := num.UintFromDecimal(num.UintZero().Mul(num.NewUint(absPos), price).ToDecimal().Div(positionFactor))
 		tracker.recordPosition(party, absPos, positionFactor, time, mat.epochStartTime)
 		tracker.recordNotional(party, notional, time, mat.epochStartTime)
+
+		// update and publish time weighted notional position
+		return mat.getTWNotionalPosition(asset, party, []string{market})
 	}
+	return nil
 }
 
 // RecordM2M passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.

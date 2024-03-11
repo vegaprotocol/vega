@@ -39,16 +39,15 @@ func (tw *TimeWeightedNotionalPositionUpdated) TimeWeightedNotionalPositionUpdat
 	return &tw.e
 }
 
-func NewTimeWeightedNotionalPositionUpdated(ctx context.Context, asset, party, notionalPosition string) *TimeWeightedNotionalPositionUpdated {
-	e := eventspb.TimeWeightedNotionalPositionUpdated{
-		Asset:                        asset,
-		Party:                        party,
-		TimeWeightedNotionalPosition: notionalPosition,
-	}
-
+func NewTimeWeightedNotionalPositionUpdated(ctx context.Context, epochSeq uint64, asset, party, notionalPosition string) *TimeWeightedNotionalPositionUpdated {
 	return &TimeWeightedNotionalPositionUpdated{
 		Base: newBase(ctx, TimeWeightedNotionalPositionUpdatedEvent),
-		e:    e,
+		e: eventspb.TimeWeightedNotionalPositionUpdated{
+			EpochSeq:                     epochSeq,
+			Asset:                        asset,
+			Party:                        party,
+			TimeWeightedNotionalPosition: notionalPosition,
+		},
 	}
 }
 
