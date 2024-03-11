@@ -321,6 +321,8 @@ type EquityLikeShares interface {
 
 type AMMPool interface {
 	OrderbookShape(from, to *num.Uint) ([]*types.Order, []*types.Order)
+	LiquidityFee() num.Decimal
+	CommitmentAmount() *num.Uint
 }
 
 type AMM interface {

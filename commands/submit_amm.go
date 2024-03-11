@@ -56,6 +56,14 @@ func checkSubmitAMM(cmd *commandspb.SubmitAMM) Errors {
 		errs.AddForProperty("submit_amm.commitment_amount", ErrMustBePositive)
 	}
 
+	if len(cmd.ProposedFee) <= 0 {
+		errs.AddForProperty("submit_amm.proposed_fee", ErrIsRequired)
+	} else if proposedFee, err := num.DecimalFromString(cmd.ProposedFee); err != nil {
+		errs.AddForProperty("submit_amm.proposed_fee", ErrIsNotValid)
+	} else if proposedFee.LessThanOrEqual(num.DecimalZero()) {
+		errs.AddForProperty("submit_amm.proposed_fee", ErrMustBePositive)
+	}
+
 	if cmd.ConcentratedLiquidityParameters == nil {
 		errs.FinalAddForProperty("submit_amm.concentrated_liquidity_parameters", ErrIsRequired)
 	} else {

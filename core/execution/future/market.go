@@ -2843,9 +2843,16 @@ func (m *Market) handleRiskEvts(ctx context.Context, margins []events.Risk, isol
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	var fee num.Decimal
-	provisions := m.liquidityEngine.ProvisionsPerParty()
+	provisions := m.liquidityEngine.ProvisionsPerParty().Clone()
+	for party, pool := range m.amm.GetAMMPoolsBySubAccount() {
+		provisions[party] = &types.LiquidityProvision{
+			Party:            party,
+			CommitmentAmount: pool.CommitmentAmount(),
+			Fee:              pool.LiquidityFee(),
+		}
+	}
 
+	var fee num.Decimal
 	switch m.mkt.Fees.LiquidityFeeSettings.Method {
 	case types.LiquidityFeeMethodConstant:
 		if len(provisions) != 0 {

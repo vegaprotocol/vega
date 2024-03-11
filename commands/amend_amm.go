@@ -58,6 +58,15 @@ func checkAmendAMM(cmd *commandspb.AmendAMM) Errors {
 		}
 	}
 
+	if cmd.ProposedFee != nil {
+		hasUpdate = true
+		if proposedFee, err := num.DecimalFromString(*cmd.ProposedFee); err != nil {
+			errs.AddForProperty("amend_amm.proposed_fee", ErrIsNotValid)
+		} else if proposedFee.LessThanOrEqual(num.DecimalZero()) {
+			errs.AddForProperty("amend_amm.proposed_fee", ErrMustBePositive)
+		}
+	}
+
 	if cmd.ConcentratedLiquidityParameters != nil {
 		if cmd.ConcentratedLiquidityParameters.Base != nil {
 			hasUpdate = true
