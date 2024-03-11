@@ -650,7 +650,7 @@ func switchToIsolatedMargin(evt events.Margin, margin *types.MarginLevels, order
 			tp = types.TransferTypeOrderMarginLow
 		} else {
 			amt = num.UintZero().Sub(orderMarginAccountBalance, uRequireOrderMargin)
-			tp = types.TransferTypeOrderMarginLow
+			tp = types.TransferTypeOrderMarginHigh
 		}
 		riskEvents = append(riskEvents, &marginChange{
 			Margin: evt,
