@@ -470,6 +470,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the opening auction period ends for market "ETH/DEC20"
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 90000000       | 10            |
-      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 90000000       | 10            |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 1000000   | 994606    | 1005415   | 7434000      | 90000000       | 10            |
+      | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 1000000   | 977751    | 1022678   | 7434000      | 90000000       | 10            |

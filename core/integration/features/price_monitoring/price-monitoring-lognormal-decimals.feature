@@ -200,12 +200,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     #T0 + 10min + 1m (min auction duration)
     Then time is updated to "2020-10-16T00:11:00Z"
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | ref price | min bound | max bound |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 240         | 600     | 100000    | 97776     | 102267    |
 
-    And the mark price should be "100000" for the market "ETH/DEC20"
-
-    #T0 + 11min01s (opening period, min auction duration + 1 second, auction is over)
+    #T0 + 11min01s (opening period, min auction duration + 1 second, auction is extended by the second trigger)
     Then time is updated to "2020-10-16T00:20:01Z"
+
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger     | auction end |
+      | 100000     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 600         |
+
+    Then time is updated to "2020-10-16T00:26:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 

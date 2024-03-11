@@ -39,16 +39,16 @@ Feature: Mark price calculation on auction exit
     Then the mark price should be "15030" for the market "ETH/FEB23"
 
     Given the market data for the market "ETH/FEB23" should be:
-      | mark price | trading mode            | horizon | min bound | max bound |
-      | 15030      | TRADING_MODE_CONTINUOUS | 60      | 14900     | 15100     |
+      | mark price | trading mode            | horizon | ref price | min bound | max bound |
+      | 15030      | TRADING_MODE_CONTINUOUS | 60      | 15000     | 14900     | 15100     |
     And the parties amend the following orders:
       | party            | reference | price | size delta | tif     |
       | sellSideProvider | bestAsk   | 15190 | 0          | TIF_GTC |
       | buySideProvider  | bestBid   | 15070 | 0          | TIF_GTC |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | aux1  | ETH/FEB23 | buy  | 1      | 15110 | 0                | TYPE_LIMIT | TIF_GTC | auctionBid |
-      | aux2  | ETH/FEB23 | sell | 1      | 15110 | 0                | TYPE_LIMIT | TIF_GTC | auctionAsk |
+      | aux1  | ETH/FEB23 | buy  | 1      | 15125 | 0                | TYPE_LIMIT | TIF_GTC | auctionBid |
+      | aux2  | ETH/FEB23 | sell | 1      | 15125 | 0                | TYPE_LIMIT | TIF_GTC | auctionAsk |
     When the network moves ahead "10" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode                    |

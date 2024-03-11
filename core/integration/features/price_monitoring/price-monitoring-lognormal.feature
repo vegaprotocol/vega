@@ -374,9 +374,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
 
-    #T1 + 04min01s (auction doesn't get extended due to 2nd trigger as it's now stale)
+    #T1 + 04min01s (auction gets extended as we've removed trigger staleness functionality)
     When time is updated to "2020-10-16T00:06:11Z"
 
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
+
+    And the mark price should be "110000" for the market "ETH/DEC21"
+
+    #T1 + 10min01s 
+    When time is updated to "2020-10-16T00:12:11Z"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the mark price should be "133000" for the market "ETH/DEC21"
