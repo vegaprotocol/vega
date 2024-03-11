@@ -1,4 +1,4 @@
-Feature: Ensure the vAMM positions follow the market correctly
+Feature: Ensure the vAMM contributes to fee factor setting
 
   Background:
     Given the average block duration is "1"
@@ -85,7 +85,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 120       | 120              |
 
   @VAMM
-  Scenario: 0087-VAMM-009: If other traders trade to move the market mid price to 85 the vAMM will post no further buy orders below this price, and the vAMM's position notional value will be equal to 4x its total account balance.
+  Scenario: 0087-VAMM-015: A vAMM which has been created and is active contributes with it's proposed fee level to the active fee setting mechanism.
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party4 | ETH/MAR22 | sell | 500    | 80    | 1                | TYPE_LIMIT | TIF_GTC |
