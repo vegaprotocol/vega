@@ -58,10 +58,11 @@ func (c *curve) volumeBetweenPrices(sqrt sqrtFn, st, nd *num.Uint) uint64 {
 }
 
 type Pool struct {
-	ID         string
-	SubAccount string
-	Commitment *num.Uint
-	Parameters *types.ConcentratedLiquidityParameters
+	ID          string
+	SubAccount  string
+	Commitment  *num.Uint
+	ProposedFee num.Decimal
+	Parameters  *types.ConcentratedLiquidityParameters
 
 	asset          string
 	market         string
@@ -109,6 +110,7 @@ func NewPool(
 		ID:             id,
 		SubAccount:     subAccount,
 		Commitment:     submit.CommitmentAmount,
+		ProposedFee:    submit.ProposedFee,
 		Parameters:     submit.Parameters,
 		market:         submit.MarketID,
 		party:          submit.Party,
@@ -204,6 +206,9 @@ func (p *Pool) Update(
 ) *types.ConcentratedLiquidityParameters {
 	if amend.CommitmentAmount != nil {
 		p.Commitment = amend.CommitmentAmount
+	}
+	if amend.ProposedFee.IsPositive() {
+		p.ProposedFee = amend.ProposedFee
 	}
 	oldParams := p.Parameters.Clone()
 	p.Parameters.ApplyUpdate(amend.Parameters)
@@ -610,6 +615,14 @@ func (p *Pool) BestPrice(order *types.Order) *num.Uint {
 	default:
 		panic("should never reach here")
 	}
+}
+
+func (p *Pool) LiquidityFee() num.Decimal {
+	return p.ProposedFee
+}
+
+func (p *Pool) CommitmentAmount() *num.Uint {
+	return p.Commitment.Clone()
 }
 
 func (p *Pool) closing() bool {

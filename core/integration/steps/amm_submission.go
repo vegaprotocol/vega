@@ -85,11 +85,12 @@ func PartiesCancelTheFollowingAMMs(exec Execution, table *godog.Table) error {
 
 func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",     // str
-		"market id", // str
-		"amount",    // uint
-		"slippage",  // dec
-		"base",      // uint
+		"party",        // str
+		"market id",    // str
+		"amount",       // uint
+		"slippage",     // dec
+		"base",         // uint
+		"proposed fee", // str
 	}, []string{
 		"lower bound",        // uint
 		"upper bound",        // uint
@@ -101,9 +102,10 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 
 func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",     // str
-		"market id", // str
-		"slippage",  // dec
+		"party",        // str
+		"market id",    // str
+		"slippage",     // dec
+		"proposed fee", // str
 	}, []string{
 		"amount",             // uint
 		"base",               // uint
@@ -151,6 +153,7 @@ func (a ammRow) toSubmission() *types.SubmitAMM {
 			MarketID:          a.marketID(),
 			Party:             a.party(),
 			SlippageTolerance: a.slippage(),
+			ProposedFee:       a.proposedFee(),
 		},
 		CommitmentAmount: a.amount(),
 		Parameters: &types.ConcentratedLiquidityParameters{
@@ -169,6 +172,7 @@ func (a ammRow) toAmendment() *types.AmendAMM {
 			MarketID:          a.marketID(),
 			Party:             a.party(),
 			SlippageTolerance: a.slippage(),
+			ProposedFee:       a.proposedFee(),
 		},
 	}
 	if a.r.HasColumn("amount") {
@@ -216,6 +220,10 @@ func (a ammRow) party() string {
 
 func (a ammRow) marketID() string {
 	return a.r.MustStr("market id")
+}
+
+func (a ammRow) proposedFee() num.Decimal {
+	return a.r.MustDecimal("proposed fee")
 }
 
 func (a ammRow) amount() *num.Uint {
