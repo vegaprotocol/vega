@@ -1186,7 +1186,7 @@ type Query {
 
   "Time weighted notional position is a metric used to determine if a reward should be paid to a party"
   timeWeightedNotionalPosition(
-    "Asset the position is held"
+    "Asset the position is denominated in"
     assetId: ID!
     "Party holding the position"
     partyId: ID!
@@ -7271,7 +7271,7 @@ type PartyMarginMode {
 }
 
 type TimeWeightedNotionalPosition {
-  "Asset in which the position is held"
+  "Asset in which the position is denominated in"
   assetId: ID!
   "Party holding the position"
   partyId: ID!

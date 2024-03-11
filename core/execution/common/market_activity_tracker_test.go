@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
@@ -60,7 +61,8 @@ func TestMarketTracker(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -137,7 +139,8 @@ func TestMarketTracker(t *testing.T) {
 	require.NoError(t, err)
 	teams2 := mocks.NewMockTeams(ctrl)
 	balanceChecker2 := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2)
+	broker = bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams2, balanceChecker2, broker)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -156,7 +159,9 @@ func TestRemoveMarket(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -181,7 +186,9 @@ func TestGetScores(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -319,7 +326,9 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -458,7 +467,9 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
 	state1, _, err := tracker.GetState(key)
@@ -485,7 +496,9 @@ func TestFeesTrackerWith0(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 
@@ -515,7 +528,9 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -575,7 +590,9 @@ func TestFeesTracker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -667,7 +684,7 @@ func TestFeesTracker(t *testing.T) {
 	ctrl = gomock.NewController(t)
 	teams = mocks.NewMockTeams(ctrl)
 	balanceChecker = mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngineLoad.NotifyOnEpoch(trackerLoad.OnEpochEvent, trackerLoad.OnEpochRestore)
 
 	pl := snapshotpb.Payload{}
@@ -734,7 +751,8 @@ func TestSnapshot(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	pl := snapshotpb.Payload{}
 	require.NoError(t, proto.Unmarshal(state1, &pl))
 
@@ -756,7 +774,8 @@ func TestCheckpoint(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	require.NoError(t, trackerLoad.Load(context.Background(), b))
 
@@ -818,7 +837,8 @@ func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
 	defer snapshotEngine2.Close()
@@ -855,7 +875,8 @@ func TestMarketProposerBonusScenarios(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 
@@ -983,7 +1004,9 @@ func TestPositionMetric(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1088,7 +1111,9 @@ func TestRelativeReturnMetric(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()
@@ -1175,7 +1200,8 @@ func TestTeamStatsForMarkets(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 
 	asset1 := vgrand.RandomStr(5)
 	asset2 := vgrand.RandomStr(5)
@@ -1286,8 +1312,10 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
 	epochStartTime := time.Now()

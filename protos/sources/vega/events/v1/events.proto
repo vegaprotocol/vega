@@ -19,9 +19,9 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 // These updates are provided to facilitate knowing whether or not a party
 // is on track to qualify.
 message TimeWeightedNotionalPositionUpdated {
-  // Epoch the time weighted notional position is eligible for
+  // Epoch the time weighted notional position is relevant for
   uint64 epoch_seq = 1;
-  // Asset ID the position is for
+  // Asset ID the position is denominated in.
   string asset = 2;
   // Party holding the position
   string party = 3;

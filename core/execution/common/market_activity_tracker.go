@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -109,20 +110,26 @@ type MarketActivityTracker struct {
 	// it's not needed for the snapshot because the switching between end of one epoch and the beginning of the new one is atommic.
 	takerFeesPaidInEpoch map[string]map[string]map[string]*num.Uint
 	ss                   *snapshotState
+	broker               Broker
+	// These should be calculated at the end of the epoch by rewards, if we cache them when they are calculated, then we can
+	// send them on the next epoch without having to recalculate them.
+	assetToPartyTWNotionalPositionCache map[string]map[string]*num.Uint
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
-func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker) *MarketActivityTracker {
+func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker, broker Broker) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
-		log:                              log,
-		balanceChecker:                   balanceChecker,
-		teams:                            teams,
-		assetToMarketTrackers:            map[string]map[string]*marketTracker{},
-		partyContributionCache:           map[string][]*types.PartyContributionScore{},
-		partyTakerNotionalVolume:         map[string]*num.Uint{},
-		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
-		ss:                               &snapshotState{},
-		takerFeesPaidInEpoch:             map[string]map[string]map[string]*num.Uint{},
+		log:                                 log,
+		balanceChecker:                      balanceChecker,
+		teams:                               teams,
+		assetToMarketTrackers:               map[string]map[string]*marketTracker{},
+		partyContributionCache:              map[string][]*types.PartyContributionScore{},
+		partyTakerNotionalVolume:            map[string]*num.Uint{},
+		marketToPartyTakerNotionalVolume:    map[string]map[string]*num.Uint{},
+		ss:                                  &snapshotState{},
+		takerFeesPaidInEpoch:                map[string]map[string]map[string]*num.Uint{},
+		broker:                              broker,
+		assetToPartyTWNotionalPositionCache: map[string]map[string]*num.Uint{},
 	}
 
 	return mat
@@ -387,6 +394,14 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 		mat.clearDeletedMarkets()
 		mat.clearNotionalTakerVolume()
 		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
+		var twNotionalPositionEvents []events.Event
+		for asset := range mat.assetToPartyTWNotionalPositionCache {
+			for party, notional := range mat.assetToPartyTWNotionalPositionCache[asset] {
+				twNotionalPositionEvents = append(twNotionalPositionEvents,
+					events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, asset, party, notional.String()))
+			}
+		}
+		mat.broker.SendBatch(twNotionalPositionEvents)
 	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
 		for asset, market := range mat.assetToMarketTrackers {
 			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
@@ -487,7 +502,7 @@ func (mat *MarketActivityTracker) RestorePosition(asset, party, market string, p
 }
 
 // RecordPosition passes the position of the party in the asset/market to the market tracker to be recorded.
-func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, pos int64, price *num.Uint, positionFactor num.Decimal, time time.Time) *num.Uint {
+func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, pos int64, price *num.Uint, positionFactor num.Decimal, time time.Time) {
 	if tracker, ok := mat.getMarketTracker(asset, market); ok {
 		tracker.allPartiesCache[party] = struct{}{}
 		absPos := uint64(0)
@@ -499,11 +514,7 @@ func (mat *MarketActivityTracker) RecordPosition(asset, party, market string, po
 		notional, _ := num.UintFromDecimal(num.UintZero().Mul(num.NewUint(absPos), price).ToDecimal().Div(positionFactor))
 		tracker.recordPosition(party, absPos, positionFactor, time, mat.epochStartTime)
 		tracker.recordNotional(party, notional, time, mat.epochStartTime)
-
-		// update and publish time weighted notional position
-		return mat.getTWNotionalPosition(asset, party, []string{market})
 	}
-	return nil
 }
 
 // RecordM2M passes the mark to market win/loss transfer amount to the asset/market tracker to be recorded.
@@ -597,7 +608,12 @@ func (mat *MarketActivityTracker) isEligibleForReward(asset, party string, marke
 		}
 	}
 	if !notionalTimeWeightedAveragePositionRequired.IsZero() {
-		if mat.getTWNotionalPosition(asset, party, markets).LT(notionalTimeWeightedAveragePositionRequired) {
+		notional := mat.getTWNotionalPosition(asset, party, markets)
+		if _, ok := mat.assetToPartyTWNotionalPositionCache[asset]; !ok {
+			mat.assetToPartyTWNotionalPositionCache[asset] = map[string]*num.Uint{}
+		}
+		mat.assetToPartyTWNotionalPositionCache[asset][party] = notional
+		if notional.LT(notionalTimeWeightedAveragePositionRequired) {
 			return false
 		}
 	}

@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/activitystreak"
 	"code.vegaprotocol.io/vega/core/banking"
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/datasource/spec"
 	"code.vegaprotocol.io/vega/core/delegation"
@@ -177,7 +178,9 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.profilesEngine = parties.NewEngine(execsetup.broker)
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
-	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker)
 
 	execsetup.notary = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 

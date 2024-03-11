@@ -2663,9 +2663,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 		for _, mp := range m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order) {
-			if twNotionalPosition := m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow()); twNotionalPosition != nil {
-				m.broker.Send(events.NewTimeWeightedNotionalPositionUpdated(ctx, m.epoch.Seq, m.settlementAsset, mp.Party(), (*twNotionalPosition).String()))
-			}
+			m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, mp.Size(), trade.Price, m.positionFactor, m.timeService.GetTimeNow())
 		}
 		// if the passive party is in isolated margin we need to update the margin on the position change
 		if m.getMarginMode(conf.PassiveOrdersAffected[idx].Party) == types.MarginModeIsolatedMargin {
@@ -2980,9 +2978,7 @@ func (m *Market) finalizePartiesCloseOut(
 	// but we want to update the market activity tracker on their 0 position for all of the closed parties
 	for _, mp := range closedMPs {
 		// record the updated closed out party's position
-		if twNotionalPosition := m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, 0, mp.Price(), m.positionFactor, m.timeService.GetTimeNow()); twNotionalPosition != nil {
-			m.broker.Send(events.NewTimeWeightedNotionalPositionUpdated(ctx, m.epoch.Seq, m.settlementAsset, mp.Party(), (*twNotionalPosition).String()))
-		}
+		m.marketActivityTracker.RecordPosition(m.settlementAsset, mp.Party(), m.mkt.ID, 0, mp.Price(), m.positionFactor, m.timeService.GetTimeNow())
 	}
 
 	// finally remove from collateral (moving funds where needed)
