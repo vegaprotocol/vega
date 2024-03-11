@@ -31,7 +31,9 @@ Feature: Amending an order during auction for a party in isolated margin such th
       | trader5 | USD   | 68000        |
       | trader6 | USD   | 68400        |
       | lprov1  | USD   | 100000000000 |
-
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/FEB23   | 0.02                   |
     And the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/FEB23 | buy  | 1000   | 14900 | 0                | TYPE_LIMIT | TIF_GTC |           |
@@ -57,11 +59,11 @@ Feature: Amending an order during auction for a party in isolated margin such th
       | trader5 | ETH/FEB23 | isolated margin | 0.4           |       |
       | trader6 | ETH/FEB23 | isolated margin | 0.4           |       |
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 10680       | 0      | 12816   | 0       | isolated margin | 0.3           | 15120 |
-      | trader4 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.25          | 42250 |
-      | trader5 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.4           | 68000 |
-      | trader6 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.4           | 68400 |
+      | party   | market id | maintenance | margin mode     | margin factor | order |
+      | trader3 | ETH/FEB23 | 10428       | isolated margin | 0.3           | 15120 |
+      | trader4 | ETH/FEB23 | 0           | isolated margin | 0.25          | 42250 |
+      | trader5 | ETH/FEB23 | 0           | isolated margin | 0.4           | 68000 |
+      | trader6 | ETH/FEB23 | 0           | isolated margin | 0.4           | 68400 |
 
     #order margin: 16800*3*0.3=15120
     And the parties should have the following account balances:

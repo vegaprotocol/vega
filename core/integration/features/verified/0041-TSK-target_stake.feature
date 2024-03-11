@@ -20,7 +20,7 @@ Feature: Target stake
       | 1.1           | 1.2            | 1.4            |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the average block duration is "1"
 
     # T0
@@ -50,7 +50,7 @@ Feature: Target stake
       | updated-lqm-params | 0.0              | 10s         | 1.5            |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/DEC21 | updated-lqm-params   | 0.25                   | 0                         |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -219,7 +219,7 @@ Feature: Target stake
       | updated-lqm-params | 0.0              | 20s         | 1.5            |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/DEC21 | updated-lqm-params   | 0.25                   | 0                         |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -295,7 +295,7 @@ Feature: Target stake
       | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/DEC21 | updated-lqm-params   | 0.25                   | 0                         |
 
     # target_stake = 110 x 140 x 1 x 0.1 =1540
     And the target stake should be "1540" for the market "ETH/DEC21"
@@ -315,7 +315,7 @@ Feature: Target stake
       | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/DEC21 | updated-lqm-params   | 0.25                   | 0                         |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -367,7 +367,7 @@ Feature: Target stake
       | updated-lqm-params | 1.0              | 10s         | 1              |
     When the markets are updated:
       | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/DEC21 | updated-lqm-params   | 0.25                   | 0                         |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |

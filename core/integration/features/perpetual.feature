@@ -68,10 +68,10 @@ Feature: Simple test creating a perpetual market.
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
 
     # example of how to use the oracle
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
@@ -105,10 +105,10 @@ Feature: Simple test creating a perpetual market.
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 3905000000000000 | 5             |
     And the parties should have the following account balances:
       | party   | asset | market id | margin       | general                   |
-      | trader1 | ETH   | ETH/DEC19 | 113402285504 | 9999999999999886597714496 |
+      | trader1 | ETH   | ETH/DEC19 | 126362285504 | 9999999999999873637714496 |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search       | initial      | release      |
-      | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+      | party   | market id | maintenance  |
+      | trader1 | ETH/DEC19 | 105301904587 |
 
 
     # example of how to use the oracle

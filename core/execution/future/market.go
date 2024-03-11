@@ -4954,3 +4954,7 @@ func (m *Market) emitPartyMarginModeUpdated(ctx context.Context, party string, m
 
 	m.broker.Send(events.NewPartyMarginModeUpdatedEvent(ctx, e))
 }
+
+func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
+	return m.matching.GetFillPrice(volume, side)
+}

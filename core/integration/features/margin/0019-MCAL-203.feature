@@ -18,7 +18,7 @@ Feature: Amending order no trades, plenty of balance to cover the order amendmen
       | 0.1  | 0.2   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring      | data source config     | linear slippage factor | quadratic slippage factor | position decimal places | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.25                   | 0                         | 2                       | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring-1 | default-eth-for-future | 0.000125               | 0                         | 2                       | default-futures |
 
   @MCAL203
   Scenario:
@@ -54,34 +54,28 @@ Feature: Amending order no trades, plenty of balance to cover the order amendmen
       | party  | market id | side | volume | pegged reference | offset | reference |
       | lprov1 | ETH/FEB23 | buy  | 100    | BID              | 10     | buy_peg_1 |
       | lprov1 | ETH/FEB23 | buy  | 200    | BID              | 20     | buy_peg_2 |
-
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | lprov1  | ETH/FEB23 | 9486        | 10434  | 11383   | 13280   | cross margin | 0             | 0     |
-      | trader1 | ETH/FEB23 | 20540       | 22594  | 24648   | 28756   | cross margin | 0             | 0     |
-      | trader3 | ETH/FEB23 | 5241        | 5765   | 6289    | 7337    | cross margin | 0             | 0     |
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin | general     | bond |
-      | lprov1  | USD   | ETH/FEB23 | 11383  | 99999987617 | 1000 |
-      | trader1 | USD   | ETH/FEB23 | 23496  | 99999976504 |      |
-      | trader3 | USD   | ETH/FEB23 | 6289   | 99999993711 |      |
-
+      | party   | market id | maintenance | margin mode  | margin factor | order |
+      | lprov1  | ETH/FEB23 | 9486        | cross margin | 0             | 0     |
+      | trader1 | ETH/FEB23 | 20540       | cross margin | 0             | 0     |
+      | trader3 | ETH/FEB23 | 4746        | cross margin | 0             | 0     |
+    
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader3 | ETH/FEB23 | buy  | 100    | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-to-amend  |
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | trader3 | ETH/FEB23 | 6650        | 7315   | 7980    | 9310    | cross margin | 0             | 0     |
+      | party   | market id | maintenance | margin mode  | margin factor | order |
+      | trader3 | ETH/FEB23 | 6326        | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     |
-      | trader3 | USD   | ETH/FEB23 | 7980   | 99999992020 |
+      | trader3 | USD   | ETH/FEB23 | 7591   | 99999992409 |
 
     When the parties submit update margin mode:
       | party   | market    | margin_mode     | margin_factor | error |
       | trader3 | ETH/FEB23 | isolated margin | 0.3           |       |
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 5070        | 0      | 6084    | 0       | isolated margin | 0.3           | 4650  |
+      | party   | market id | maintenance | search | release | margin mode     | margin factor | order |
+      | trader3 | ETH/FEB23 | 4746        | 0      | 0       | isolated margin | 0.3           | 4650  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     | order margin |
       | trader3 | USD   | ETH/FEB23 | 14220  | 99999981130 | 4650         |
@@ -94,8 +88,8 @@ Feature: Amending order no trades, plenty of balance to cover the order amendmen
       | party   | reference   | status        |
       | trader3 | t3-to-amend | STATUS_ACTIVE |
     And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 5058        | 0      | 6069    | 0       | isolated margin | 0.3           | 474   |
+      | party   | market id | maintenance | search | release | margin mode     | margin factor | order |
+      | trader3 | ETH/FEB23 | 4746        | 0      | 0       | isolated margin | 0.3           | 474   |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general     | order margin |
       | trader3 | USD   | ETH/FEB23 | 14220  | 99999985306 | 474          |

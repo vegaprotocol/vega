@@ -18,7 +18,7 @@ Background:
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2                       | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                               | value |
       | market.liquidity.providersFeeCalculationTimeStep | 1s    |
@@ -100,7 +100,7 @@ Scenario: transfer where fee-discount has decayed to 0 results in no fee discoun
     | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c   |  ETH  | 0                  |
 
 
-    Given "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9998686" for asset "ETH"
+    Given "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9998393" for asset "ETH"
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
 
     # now do a transfer and check we pay the full fees
@@ -111,7 +111,7 @@ Scenario: transfer where fee-discount has decayed to 0 results in no fee discoun
     | 1  | f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c |  ACCOUNT_TYPE_GENERAL | a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4 | ACCOUNT_TYPE_GENERAL | ETH  |  10000 | 2021-08-26T00:09:01Z  |
   
     Given time is updated to "2021-08-26T00:10:01Z"
-    Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9983686" for asset "ETH"
+    Then "f0b40ebdc5b92cf2cf82ff5d0c3f94085d23d5ec2d37d0b929e177c6d4d37e4c" should have general account balance of "9983393" for asset "ETH"
     Then "a7c4b181ef9bf5e9029a016f854e4ad471208020fd86187d07f0b420004f06a4" should have general account balance of "10000" for asset "ETH"
 
     # check fee went to insurance account

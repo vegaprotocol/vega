@@ -10,7 +10,7 @@ Feature: Test party accounts margins with fractional orders - the test is identi
       | limits.markets.maxPeggedOrders          | 2     |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 2                       | 0.25                   | 0                         | default-futures |
 
   Scenario: a party place a new order in the system, margin are calculated
     Given the parties deposit on asset's general account the following amount:

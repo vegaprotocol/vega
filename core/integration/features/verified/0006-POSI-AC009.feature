@@ -3,7 +3,7 @@ Feature: test AC 006-POSI-009, 006-POSI-027
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 4                      | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -48,8 +48,8 @@ Feature: test AC 006-POSI-009, 006-POSI-027
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
-      | party2 | ETH   | ETH/DEC19 | 1273   | 8627    |
+      | party1 | ETH   | ETH/DEC19 | 4920   | 5080    |
+      | party2 | ETH   | ETH/DEC19 | 4932   | 4968    |
 
     # party3 does not have position record exist since party3 does not have either an open position nor active order
     Then the parties should have the following profit and loss:
@@ -65,16 +65,21 @@ Feature: test AC 006-POSI-009, 006-POSI-027
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 5040   | 4960    |
+  
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/DEC19   | 1.5                    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
-      | party2 | ETH   | ETH/DEC19 | 2605   | 8295    |
-      | party3 | ETH   | ETH/DEC19 | 2605   | 7195    |
+      | party1 | ETH   | ETH/DEC19 | 7680   | 1320    |
+      | party2 | ETH   | ETH/DEC19 | 3864   | 7036    |
+      | party3 | ETH   | ETH/DEC19 | 3864   | 5936    |
 
     Then the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |

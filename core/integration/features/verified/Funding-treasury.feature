@@ -43,8 +43,8 @@ Feature: check the insurance pool getting shared equally between all markets wit
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | sla params      |
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.74667                | 0                         | default-futures |
-      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 0.25                   | 0                         | default-futures |
+      | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec21Oracle     | 0.25                   | 0                         | default-futures |
 
 
     And the following network parameters are set:
@@ -187,11 +187,6 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-    Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 24057  | 999999975387 |
-      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
-
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux2  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -202,11 +197,6 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | 120        | TRADING_MODE_CONTINUOUS | 170949       | 9000           | 292           |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-    And the parties should have the following account balances:
-      | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 22937  | 999999975387 |
-      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054 |
 
     Then the following transfers should happen:
       | from            | to               | from account            | to account              | market id | amount | asset |

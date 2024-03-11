@@ -41,8 +41,8 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 0.25                   | 0                         | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures |
 
   @STest
   Scenario: Order cannot be placed once the market is expired
@@ -76,8 +76,8 @@ Feature: Test settlement at expiry time from internal oracle
     And the mark price should be "1000" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 99736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 99436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 99460   |
 
     # The oracle terminates trading at this time
     # vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | OPERATOR_GREATER_THAN_OR_EQUAL | 2019-12-31T23:59:59Z |
@@ -91,8 +91,8 @@ Feature: Test settlement at expiry time from internal oracle
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 120    | 9880    |
-      | aux1   | ETH   | ETH/DEC19 | 397    | 99601   |
-      | aux2   | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1   | ETH   | ETH/DEC19 | 696    | 99302   |
+      | aux2   | ETH   | ETH/DEC19 | 540    | 99460   |
 
     When time is updated to "2020-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"

@@ -5,7 +5,7 @@ Background:
 
     Given the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | BTC/DEC23 | BTC        | BTC   | default-simple-risk-model-3   | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | BTC/DEC23 | BTC        | BTC   | default-simple-risk-model-3   | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                       | default-futures |
 
     Given the following network parameters are set:
       | name                                    | value |
@@ -73,7 +73,7 @@ Scenario: Make sure we are not charged for a transfer if we have a discount (005
   | 1234567890123456789012345678901234567890123456789012345678900001   | BTC   | 405                |
 
   # Make sure we know how much BTC party1 has
-  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "393999998840" for asset "BTC"
+  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "999999997340" for asset "BTC"
 
   # party1 makes a transfer and should get a reduced transfer fee
   Given the parties submit the following one off transfers:
@@ -81,7 +81,7 @@ Scenario: Make sure we are not charged for a transfer if we have a discount (005
     | 1  | 1234567890123456789012345678901234567890123456789012345678900001 | ACCOUNT_TYPE_GENERAL | 1234567890123456789012345678901234567890123456789012345678900002 | ACCOUNT_TYPE_GENERAL | BTC   | 100    | 2021-08-26T00:00:00Z |
 
   # Make sure that party1 has not paid a fee for this transfer (only the transferred amount is removed from the GENERAL account) 393999998840-100
-  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "393999998740" for asset "BTC"
+  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "999999997240" for asset "BTC"
 
   # After the transfer the discount amount will be reduced by the amount we didn't get charged (50)
   And the parties have the following transfer fee discounts:
@@ -117,7 +117,7 @@ Scenario: Make sure we are only charged for a transfer after the discount is use
   | 1234567890123456789012345678901234567890123456789012345678900001   | BTC   | 405                |
 
   # Make sure we know how much BTC party1 has
-  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "393999998840" for asset "BTC"
+  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "999999997340" for asset "BTC"
 
   # party1 makes a transfer and should get a reduced transfer fee
   Given the parties submit the following one off transfers:
@@ -125,8 +125,8 @@ Scenario: Make sure we are only charged for a transfer after the discount is use
     | 1  | 1234567890123456789012345678901234567890123456789012345678900001 | ACCOUNT_TYPE_GENERAL | 1234567890123456789012345678901234567890123456789012345678900002 | ACCOUNT_TYPE_GENERAL | BTC   | 1000   | 2021-08-26T00:00:00Z |
 
   # fee = 1000 * 0.5 == 500. fee after discount = 500-405 = 95
-  # 393999998840-(1000+95) 
-  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "393999997745" for asset "BTC"
+  # 999999997340-(1000+95) 
+  Then "1234567890123456789012345678901234567890123456789012345678900001" should have general account balance of "999999996245" for asset "BTC"
 
   # After the transfer the discount amount will be reduced by the amount we didn't get charged (50)
   And the parties have the following transfer fee discounts:

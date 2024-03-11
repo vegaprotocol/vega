@@ -224,3 +224,7 @@ func (m *Market) GetState() *types.ExecSpotMarket {
 func (m *Market) GetNewStateProviders() []types.StateProvider {
 	return []types.StateProvider{m.matching, m.tsCalc, m.orderHoldingTracker, m.liquidityEngine.V2StateProvider()}
 }
+
+func (m *Market) GetFillPrice(volume uint64, side types.Side) (*num.Uint, error) {
+	return m.matching.GetFillPrice(volume, side)
+}

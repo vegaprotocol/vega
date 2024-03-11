@@ -34,8 +34,8 @@ Feature: test negative PDP (position decimal places)
             | 0.000001    | 0.5                          | 1                             | 1.0                    |
         And the markets:
             | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params |
-            | USD/DEC22 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 1e6                    | 1e6                       | SLA-1      |
-            | USD/DEC23 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 1e6                    | 1e6                       | SLA-2      |
+            | USD/DEC22 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 5              | -1                      | 0.25                   | 0                         | SLA-1      |
+            | USD/DEC23 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2              | -2                      | 0.25                   | 0                         | SLA-2      |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | ETH   | 5000000   |
@@ -84,14 +84,14 @@ Feature: test negative PDP (position decimal places)
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
             | party0 | ETH   | USD/DEC22 | 512194 | 4486806  | 1000 |
-            | party1 | ETH   | USD/DEC22 | 10809  | 99989191 |      |
+            | party1 | ETH   | USD/DEC22 | 12609  | 99987391 |      |
             | party2 | ETH   | USD/DEC22 | 42684  | 99957316 |      |
 
         And the parties should have the following margin levels:
-            | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 426829      | 469511 | 512194  | 597560  |
-            | party1 | USD/DEC22 | 9008        | 9908   | 10809   | 12611   |
-            | party2 | USD/DEC22 | 36570       | 40227  | 43884   | 51198   |
+            | party  | market id | maintenance |
+            | party0 | USD/DEC22 | 426829      |
+            | party1 | USD/DEC22 | 10508       |
+            | party2 | USD/DEC22 | 38070       |
 
     @Now
     Scenario: 002, test negative PDP when trading mode is continuous (0003-MTMK-014, 0019-MCAL-010, 0029-FEES-014)
@@ -133,14 +133,14 @@ Feature: test negative PDP (position decimal places)
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
             | party0 | ETH   | USD/DEC22 | 821773 | 4142658  | 35569 |
-            | party1 | ETH   | USD/DEC22 | 1778   | 99998222 |       |
+            | party1 | ETH   | USD/DEC22 | 1838   | 99998162 |       |
             | party2 | ETH   | USD/DEC22 | 7042   | 99992958 |       |
 
         And the parties should have the following margin levels:
-            | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 704623      | 775085 | 845547  | 986472  |
-            | party1 | USD/DEC22 | 1482        | 1630   | 1778    | 2074    |
-            | party2 | USD/DEC22 | 5792        | 6371   | 6950    | 8108    |
+            | party  | market id | maintenance |
+            | party0 | USD/DEC22 | 704623      |
+            | party1 | USD/DEC22 | 1532        |
+            | party2 | USD/DEC22 | 5942        |
 
         #risk factor short: 3.5569036
         #risk factor long: 0.801225765
@@ -192,14 +192,14 @@ Feature: test negative PDP (position decimal places)
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
             | party0 | ETH   | USD/DEC22 | 821773 | 4142658  | 35569 |
-            | party1 | ETH   | USD/DEC22 | 1678   | 99998223 |       |
+            | party1 | ETH   | USD/DEC22 | 1738   | 99998163 |       |
             | party2 | ETH   | USD/DEC22 | 7142   | 99992958 |       |
         # Margin_maintenance_party0 = max(1481*10*3.5569036*9,1206*10*0.801225765*9)=474100
         And the parties should have the following margin levels:
-            | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 634161      | 697577 | 760993  | 887825  |
-            | party1 | USD/DEC22 | 1264        | 1390   | 1516    | 1769    |
-            | party2 | USD/DEC22 | 5322        | 5854   | 6386    | 7450    |
+            | party  | market id | maintenance |
+            | party0 | USD/DEC22 | 634161      |
+            | party1 | USD/DEC22 | 1401        |
+            | party2 | USD/DEC22 | 5347        |
 
         #party3 place order at price 8 to change the mark price again
         And the parties place the following orders with ticks:
@@ -225,14 +225,14 @@ Feature: test negative PDP (position decimal places)
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
             | party0 | ETH   | USD/DEC22 | 676438 | 4287994  | 35569 |
-            | party1 | ETH   | USD/DEC22 | 1230   | 99998561 |       |
-            | party2 | ETH   | USD/DEC22 | 5823   | 99994377 |       |
+            | party1 | ETH   | USD/DEC22 | 1628   | 99998163 |       |
+            | party2 | ETH   | USD/DEC22 | 5703   | 99994497 |       |
         # Margin_maintenance_party0 = max(1981*10*3.5569036*8,1206*10*0.801225765*8)=563699
         And the parties should have the following margin levels:
-            | party  | market id | maintenance | search | initial | release |
-            | party0 | USD/DEC22 | 563699      | 620068 | 676438  | 789178  |
-            | party1 | USD/DEC22 | 1025        | 1127   | 1230    | 1435    |
-            | party2 | USD/DEC22 | 4853        | 5338   | 5823    | 6794    |
+            | party  | market id | maintenance |
+            | party0 | USD/DEC22 | 563699      |
+            | party1 | USD/DEC22 | 1245        |
+            | party2 | USD/DEC22 | 4753        |
 
     Scenario: Assure LP orders never trade on entry, even with spread of 1 tick and extremely small LP price range
         Given the parties deposit on asset's general account the following amount:

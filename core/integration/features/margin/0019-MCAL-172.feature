@@ -12,7 +12,7 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.35                   | 0                         | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.000125               | 0                         | default-futures |
 
   Scenario: 001 party and party1 both orders and positions
     Given the parties deposit on asset's general account the following amount:
@@ -33,24 +33,29 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | party1           | ETH/FEB23 | sell | 5      | 16900  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
       | sellSideProvider | ETH/FEB23 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |             |
       | sellSideProvider | ETH/FEB23 | sell | 10     | 100100 | 0                | TYPE_LIMIT | TIF_GTC |             |
-
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/FEB23   | 0.0628930817610063     |
     When the network moves ahead "2" blocks
     Then the mark price should be "15900" for the market "ETH/FEB23"
 
-    And the order book should have the following volumes for market "ETH/FEB23":
+        And the order book should have the following volumes for market "ETH/FEB23":
       | side | price | volume |
       | sell | 15900 | 0      |
       | sell | 16900 | 10     |
-
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error |
       | party  | ETH/FEB23 | isolated margin | 0.2           |       |
       | party1 | ETH/FEB23 | isolated margin | 0.2           |       |
+    And the average fill price is:
+      | market     | volume | side | ref price | mark price | equivalent linear slippage factor |
+      | ETH/FEB23  | 5      | sell | 15900      | 15900     | 0.0628930817610063                |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 16900 |
-      | party1 | ETH/FEB23 | 7770        | 0      | 9324    | 0       | isolated margin | 0.2           | 16900 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 7771        | isolated margin | 0.2           | 16900 |
+      | party1 | ETH/FEB23 | 7771        | isolated margin | 0.2           | 16900 |
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  | order margin |
@@ -73,16 +78,20 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | party  | party-sell  | STATUS_FILLED |
       | party1 | party1-sell | STATUS_ACTIVE |
 
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/FEB23   | 0.05                   |
+   
     When the network moves ahead "2" blocks
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 15736       | 0      | 18883   | 0       | isolated margin | 0.2           | 0     |
-      | party1 | ETH/FEB23 | 9050        | 0      | 10860   | 0       | isolated margin | 0.2           | 9180  |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 18360       | isolated margin | 0.2           | 0     |
+      | party1 | ETH/FEB23 | 11475       | isolated margin | 0.2           | 9180  |
 
-    When the parties amend the following orders:
-      | party            | reference | price | size delta | tif     | error |
-      | sellSideProvider | s-liq     |       | -10        | TIF_GTC |       |
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/FEB23   | 0.35                   |
 
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -92,9 +101,9 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | party1          | ETH/FEB23 | sell | 3      | 16900 | 0                | TYPE_LIMIT | TIF_GTC | party1-sell2 |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party  | ETH/FEB23 | 55080       | 0      | 66096   | 0       | isolated margin | 0.2           | 16900 |
-      | party1 | ETH/FEB23 | 25040       | 0      | 30048   | 0       | isolated margin | 0.2           | 10140 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party  | ETH/FEB23 | 55080       | isolated margin | 0.2           | 16900 |
+      | party1 | ETH/FEB23 | 55080       | isolated margin | 0.2           | 10140 |
 
     And the order book should have the following volumes for market "ETH/FEB23":
       | side | price | volume |
