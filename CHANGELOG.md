@@ -55,6 +55,7 @@
 - [10804](https://github.com/vegaprotocol/vega/issues/10804) - Handle amend in place revert on failure to update order margin such that we do not amend in place which may not be possible.
 - [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
 - [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
+- [10055](https://github.com/vegaprotocol/vega/issues/10055) - Quitting the wallet service CLI while waiting for a password now restores the terminal capabilities.
 
 ## 0.74.3
 
