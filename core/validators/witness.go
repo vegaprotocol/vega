@@ -405,7 +405,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k), nil)
 			// set new state so we do not try to validate again
 			v.state.Store(voteSent)
-		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
+		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(w.cfg.NodeVoteResendInterval.Duration)) {
 			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue
 			}
