@@ -29,6 +29,7 @@
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
 - [10719](https://github.com/vegaprotocol/vega/issues/10719) - Add integration tests for `vAMM` spec `ACs`.
+- [956](https://github.com/vegaprotocol/core-test-coverage/issues/956) - Add fee setting mechanism for AMM with test
 
 ### 🐛 Fixes
 
