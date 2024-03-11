@@ -46,7 +46,6 @@ Feature: when party holds both orders and positions, amend order so order is fil
       | sell | 16900 | 10     |
 
     #0.1628930817610063*3*15900=7770
-    #0.100125*3*15900=4775
     And the parties should have the following margin levels:
       | party  | market id | maintenance | margin mode  | margin factor | order |
       | party  | ETH/FEB23 | 15721       | cross margin | 0             | 0     |
