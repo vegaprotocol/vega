@@ -235,6 +235,32 @@ func testPastFundingPayment(t *testing.T) {
 	assert.Equal(t, int64(expectedTWAP), fundingPayment.Int64())
 }
 
+func TestZeroLengthAuctionPeriods(t *testing.T) {
+	perp := testPerpetual(t)
+	defer perp.ctrl.Finish()
+
+	// set of the data points such that difference in averages is 0
+	points := getTestDataPoints(t)
+
+	// tell the perpetual that we are ready to accept settlement stuff
+	whenLeaveOpeningAuction(t, perp, points[0].t)
+
+	// enter auction
+	whenAuctionStateChanges(t, perp, points[0].t, true)
+
+	// send in some data points with a TWAP difference
+	submitDataWithDifference(t, perp, points, 10)
+
+	// leave auction
+	whenAuctionStateChanges(t, perp, points[len(points)-1].t, false)
+
+	// but then enter again straight away
+	whenAuctionStateChanges(t, perp, points[len(points)-1].t, true)
+
+	fundingPayment := whenTheFundingPeriodEnds(t, perp, points[len(points)-1].t)
+	assert.Equal(t, "0", fundingPayment.String())
+}
+
 func TestFairgroundPanic(t *testing.T) {
 	perp := testPerpetual(t)
 	defer perp.ctrl.Finish()

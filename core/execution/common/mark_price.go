@@ -281,11 +281,11 @@ func (mpc *CompositePriceCalculator) updateMarkPriceIfNotInAuction(ctx context.C
 		return nil
 	}
 	priceMonitor.CheckPrice(ctx, as, []*types.Trade{{Price: mpcCandidate, Size: 1}}, true, true)
-	if !as.InAuction() {
-		mpc.price = mpcCandidate
-		return nil
+	if as.InAuction() || as.AuctionStart() {
+		return fmt.Errorf("price monitoring failed for the new mark price")
 	}
-	return fmt.Errorf("price monitoring failed for the new mark price")
+	mpc.price = mpcCandidate
+	return nil
 }
 
 // CalculateMarkPrice is called at the end of each mark price calculation interval and calculates the mark price

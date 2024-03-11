@@ -1580,7 +1580,6 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 			m.mkt.State = types.MarketStateActive
 			m.mkt.TradingMode = types.MarketTradingModeContinuous
-			m.tradableInstrument.Instrument.UpdateAuctionState(ctx, false)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 			m.updateLiquidityFee(ctx)
@@ -1612,6 +1611,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
+	// we tell the perp that we've left auction, we might re-enter just a bit down but thats fine as
+	// we will at least keep the in/out orders in sync
+	m.tradableInstrument.Instrument.UpdateAuctionState(ctx, false)
 
 	for _, uncrossedOrder := range uncrossedOrders {
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
