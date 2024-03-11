@@ -31,6 +31,7 @@ type Config struct {
 	// logging level
 	Level                   encoding.LogLevel `long:"log-level"`
 	ApproxEthereumBlockTime encoding.Duration
+	NodeVoteResendInterval  encoding.Duration
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
@@ -38,5 +39,6 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:                   encoding.LogLevel{Level: logging.InfoLevel},
 		ApproxEthereumBlockTime: encoding.Duration{Duration: 15 * time.Second},
+		NodeVoteResendInterval:  encoding.Duration{Duration: 10 * time.Second},
 	}
 }
