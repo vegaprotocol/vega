@@ -85,13 +85,13 @@ func PartiesCancelTheFollowingAMMs(exec Execution, table *godog.Table) error {
 
 func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",        // str
-		"market id",    // str
-		"amount",       // uint
-		"slippage",     // dec
-		"base",         // uint
-		"proposed fee", // str
+		"party",     // str
+		"market id", // str
+		"amount",    // uint
+		"slippage",  // dec
+		"base",      // uint
 	}, []string{
+		"proposed fee",       // str
 		"lower bound",        // uint
 		"upper bound",        // uint
 		"lower margin ratio", // dec
@@ -102,11 +102,11 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 
 func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",        // str
-		"market id",    // str
-		"slippage",     // dec
-		"proposed fee", // str
+		"party",     // str
+		"market id", // str
+		"slippage",  // dec
 	}, []string{
+		"proposed fee",       // str
 		"amount",             // uint
 		"base",               // uint
 		"lower bound",        // uint
@@ -223,6 +223,9 @@ func (a ammRow) marketID() string {
 }
 
 func (a ammRow) proposedFee() num.Decimal {
+	if !a.r.HasColumn("proposed fee") {
+		return num.DecimalFromFloat(0.01)
+	}
 	return a.r.MustDecimal("proposed fee")
 }
 
