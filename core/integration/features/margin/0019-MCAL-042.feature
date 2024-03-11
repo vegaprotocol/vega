@@ -12,7 +12,7 @@ Feature: Test order margin during continuous
       | 0.1  | 0.2   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | position decimal places | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | 1                       | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.000125               | 0                         | 1                       | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -106,8 +106,8 @@ Feature: Test order margin during continuous
       | buySideProvider | ETH/FEB23 | buy  | 10     | 15900 | 1               | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 19086 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 19086 |
 
     When the network moves ahead "1" blocks
 
@@ -118,8 +118,8 @@ Feature: Test order margin during continuous
       | party1 | s-GTC-1   | -10        | TIF_GTC |       |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-228, place a GFA order duing continuous, order should be rejected
     And the parties place the following orders:
@@ -127,8 +127,8 @@ Feature: Test order margin during continuous
       | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GFA | GFA-1     | gfa order received during continuous trading |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-229,When the party has position -1 and order -3, and new long order with size 1 will be offset
     #order margin short: 3*15900*0.3=14310
@@ -137,8 +137,8 @@ Feature: Test order margin during continuous
       | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-230,When the party has position -1 and order -3, and new long orders with size 2 will be offset
     #order margin short: 3*15900*0.3=14310
@@ -147,8 +147,8 @@ Feature: Test order margin during continuous
       | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 14310 |
 
     #AC: 0019-MCAL-231,When the party has position -1 and order -3, and new long orders with size 3 will be offset
     #order margin short: 3*15900*0.3=14310
@@ -158,8 +158,8 @@ Feature: Test order margin during continuous
       | party1 | ETH/FEB23 | buy  | 10     | 15800 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 3180        | 0      | 3816    | 0       | isolated margin | 0.3           | 14310 |
+      | party  | market id | maintenance | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 3182        | isolated margin | 0.3           | 14310 |
 
     And the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |

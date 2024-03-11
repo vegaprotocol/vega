@@ -14,7 +14,7 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | 0.004     | 0.001              |
     And the markets:
       | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 2              | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | limits.markets.maxPeggedOrders          | 2     |

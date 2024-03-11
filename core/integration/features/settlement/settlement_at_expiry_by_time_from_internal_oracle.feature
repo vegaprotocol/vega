@@ -42,8 +42,8 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle     | 0.25                   | 0                         | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.25                   | 0                         | default-futures |
 
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
@@ -168,9 +168,9 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
-      | party2 | ETH   | ETH/DEC19 | 132    | 868     |
-      | party3 | ETH   | ETH/DEC19 | 132    | 4868    |
+      | party1 | ETH   | ETH/DEC19 | 840    | 9160    |
+      | party2 | ETH   | ETH/DEC19 | 432    | 568     |
+      | party3 | ETH   | ETH/DEC19 | 432    | 4568    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "100236000"
 
@@ -393,8 +393,8 @@ Feature: Test settlement at expiry time from internal oracle
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
-      | party2 | ETH   | ETH/DEC19 | 264    | 736     |
+      | party1 | ETH   | ETH/DEC19 | 840    | 9160    |
+      | party2 | ETH   | ETH/DEC19 | 864    | 136     |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "100213000"
@@ -477,8 +477,8 @@ Feature: Test settlement at expiry time from internal oracle
       | party2 | ETH/DEC19 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
-      | party2 | ETH   | ETH/DEC19 | 264    | 736     |
+      | party1 | ETH   | ETH/DEC19 | 840    | 9160    |
+      | party2 | ETH   | ETH/DEC19 | 864    | 136     |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "102012000"
 
@@ -546,9 +546,8 @@ Feature: Test settlement at expiry time from internal oracle
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC21 | 252    | 9753    |
-      #| party1 | ETH   | ETH/DEC21 | 132    | 9873    |
-      | party2 | ETH | ETH/DEC21 | 372 | 603 |
+      | party1 | ETH   | ETH/DEC21 | 420    | 9585    |
+      | party2 | ETH   | ETH/DEC21 | 540    | 435     |
 
     And then the network moves ahead "10" blocks
 

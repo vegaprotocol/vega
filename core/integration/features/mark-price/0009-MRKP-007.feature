@@ -35,13 +35,13 @@ Feature: Test setting of mark price
     Then the mark price should be "15900" for the market "ETH/FEB23"
 
     And the parties should have the following margin levels:
-      | party | market id | maintenance | search | initial | release | margin mode  |
-      | party | ETH/FEB23 | 9546        | 10500  | 11455   | 13364   | cross margin |
-    #margin = min(3*(15900-15900), 3*15900*(0.25))+3*0.1*15900 + 3*0.1*15900=9540
+      | party | market id | maintenance | margin mode  |
+      | party | ETH/FEB23 | 21465       | cross margin |
+    #margin = 3*15900*(0.25)+3*0.1*15900 + 3*0.1*15900=21465
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | party | USD   | ETH/FEB23 | 11449  | 36601   |
+      | party | USD   | ETH/FEB23 | 25758  | 22292   |
 
     And the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |

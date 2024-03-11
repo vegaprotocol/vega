@@ -7,7 +7,7 @@ Feature: Same as 1847-closeout-long test, but with a custom liquidation strategy
       | disposal-strat-1 | 5             | 0.2               | 10                 | 0.1                   |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      | liquidation strategy |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures | disposal-strat-1     |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures | disposal-strat-1     |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |

@@ -27,10 +27,10 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | 1       | 0.99        | 300               |
         And the markets:
             | id        | quote name | asset | liquidity monitoring | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-            | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1e6                    | 1e6                       | default-futures |
-            | USD/DEC19 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1e6                    | 1e6                       | default-futures |
-            | USD/DEC20 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1e6                    | 1e6                       | default-futures |
-            | USD/DEC21 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1e6                    | 1e6                       | default-futures |
+            | ETH/MAR22 | ETH        | USD   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0              | 0                       | 1                      | 0                         | default-futures |
+            | USD/DEC19 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 3              | 3                       | 1                      | 0                         | default-futures |
+            | USD/DEC20 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 5                       | 1                      | 0                         | default-futures |
+            | USD/DEC21 | USD        | ETH   | lqm-params           | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none  | price-monitoring-1 | default-usd-for-future | 5              | 3                       | 1                      | 0                         | default-futures |
         And the parties deposit on asset's general account the following amount:
             | party  | asset | amount    |
             | party0 | USD   | 5000000   |
@@ -105,18 +105,6 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC20"
         And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "USD/DEC19"
 
-        Then the parties should have the following account balances:
-            | party  | asset | market id | margin | general | bond |
-            | party0 | ETH   | USD/DEC21 | 43110  | 4910348 | 1000 |
-            | party1 | ETH   | USD/DEC21 | 961    | 0       |      |
-            | party2 | ETH   | USD/DEC21 | 4268   | 0       |      |
-            | party0 | ETH   | USD/DEC20 | 432    | 4910348 | 1000 |
-            | party1 | ETH   | USD/DEC20 | 0      | 0       |      |
-            | party2 | ETH   | USD/DEC20 | 0      | 0       |      |
-            | party0 | ETH   | USD/DEC19 | 43110  | 4910348 | 1000 |
-            | party1 | ETH   | USD/DEC19 | 1102   | 0       |      |
-            | party2 | ETH   | USD/DEC19 | 4268   | 0       |      |
-
     @Liquidation
     Scenario: 002: Users engage in a USD market auction, (0070-MKTD-003, 0070-MKTD-008)
         Given the parties submit the following liquidity provision:
@@ -136,14 +124,18 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
             | party2 | ETH/MAR22 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
             | party2 | ETH/MAR22 | sell | 1      | 11    | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
+        And the markets are updated:
+            | id          | linear slippage factor | quadratic slippage factor |
+            | ETH/MAR22   | 1                      | 1e3                       |
+
         When the opening auction period ends for market "ETH/MAR22"
         Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
 
         And the parties should have the following account balances:
             | party  | asset | market id | margin  | general  | bond  |
-            | party0 | USD   | ETH/MAR22 | 2134142 | 2830289  | 35569 |
+            | party0 | USD   | ETH/MAR22 | 0       | 4964431  | 35569 |
             | party1 | USD   | ETH/MAR22 | 0       | 0        |       |
-            | party2 | USD   | ETH/MAR22 | 70539   | 99929461 |       |
+            | party2 | USD   | ETH/MAR22 | 0       | 0        |       |
         # party1 is closed out
         And the following trades should be executed:
             | buyer   | price | size | seller |
@@ -172,9 +164,9 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the auction ends with a traded volume of "10" at a price of "1000"
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond  |
-            | party0 | ETH | USD/DEC19 | 213415 | 4736585 | 50000 |
-            | party1 | ETH   | USD/DEC19 | 1292   | 99998708 |       |
-            | party2 | ETH   | USD/DEC19 | 5169   | 99994831 |       |
+            | party0 | ETH   | USD/DEC19 | 213415 | 4736585  | 50000 |
+            | party1 | ETH   | USD/DEC19 | 2353   | 99997647 |       |
+            | party2 | ETH   | USD/DEC19 | 6322   | 99993678 |       |
         And the following trades should be executed:
             | buyer  | price | size | seller |
             | party1 | 1000  | 10   | party2 |
@@ -203,8 +195,8 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         And the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond |
             | party0 | ETH | USD/DEC20 | 2134 | 4997366  | 500 |
-            | party1 | ETH | USD/DEC20 | 12   | 99999988 |     |
-            | party2 | ETH | USD/DEC20 | 52   | 99999948 |     |
+            | party1 | ETH | USD/DEC20 | 24   | 99999976 |     |
+            | party2 | ETH | USD/DEC20 | 63   | 99999937 |     |
         And the following trades should be executed:
             | buyer  | price  | size | seller |
             | party1 | 100000 | 10   | party2 |
@@ -251,11 +243,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
             | party0 | ETH   | USD/DEC20 | 427    | 4851889  | 100000 |
-            | party1 | ETH   | USD/DEC20 | 12     | 99998696 |        |
-            | party2 | ETH   | USD/DEC20 | 52     | 99994779 |        |
+            | party1 | ETH   | USD/DEC20 | 24     | 99997623 |        |
+            | party2 | ETH   | USD/DEC20 | 63     | 99993615 |        |
             | party0 | ETH   | USD/DEC19 | 42684  | 4851889  | 5000   |
-            | party1 | ETH   | USD/DEC19 | 1292   | 99998696 |        |
-            | party2 | ETH   | USD/DEC19 | 5169   | 99994779 |        |
+            | party1 | ETH   | USD/DEC19 | 2353   | 99997623 |        |
+            | party2 | ETH   | USD/DEC19 | 6322   | 99993615 |        |
 
         When the parties deposit on asset's general account the following amount:
             | party  | asset | amount |
@@ -265,11 +257,11 @@ Feature: Allow markets to be specified with a smaller number of decimal places t
         Then the parties should have the following account balances:
             | party  | asset | market id | margin | general  | bond   |
             | party0 | ETH   | USD/DEC20 | 427    | 4852889  | 100000 |
-            | party1 | ETH   | USD/DEC20 | 12     | 99999696 |        |
-            | party2 | ETH   | USD/DEC20 | 52     | 99995779 |        |
+            | party1 | ETH   | USD/DEC20 | 24     | 99998623 |        |
+            | party2 | ETH   | USD/DEC20 | 63     | 99994615 |        |
             | party0 | ETH   | USD/DEC19 | 42684  | 4852889  | 5000   |
-            | party1 | ETH   | USD/DEC19 | 1292   | 99999696 |        |
-            | party2 | ETH   | USD/DEC19 | 5169   | 99995779 |        |
+            | party1 | ETH   | USD/DEC19 | 2353   | 99998623 |        |
+            | party2 | ETH   | USD/DEC19 | 6322   | 99994615 |        |
 
     @SLABug
     Scenario: 006: User checks prices after opening auction, (0070-MKTD-005)

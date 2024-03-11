@@ -4,7 +4,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party1 | BTC   | 100000000 |
@@ -70,8 +70,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | t2-s-3    | STATUS_FILLED    |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party2 | BTC   | ETH/DEC19 | 9600   | 39080   |
-      | party1 | BTC   | ETH/DEC19 | 48960  | 1280    |
+      | party2 | BTC   | ETH/DEC19 | 33600  | 15080   |
+      | party1 | BTC   | ETH/DEC19 | 33600  | 16640   |
 
   Scenario: Uncross auction via order amendment
     When the parties place the following orders:

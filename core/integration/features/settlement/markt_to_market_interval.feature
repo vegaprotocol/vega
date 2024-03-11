@@ -3,7 +3,7 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | -3                      | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | -3                      | 1                      | 0                         | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -61,14 +61,14 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 5041200 | 4958800 |
+      | party1 | ETH   | ETH/DEC19 | 1440000 | 8560000 |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 5041200 | 4958800 |
+      | party1 | ETH   | ETH/DEC19 | 1440000 | 8560000 |
       | party3 | ETH   | ETH/DEC19 | 132000  | 9866000 |
       | party2 | ETH   | ETH/DEC19 | 132000  | 9867000 |
 
@@ -76,10 +76,10 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
     ## The interval is set to 5s, so 5 blocks should do the trick
     When the network moves ahead "6" blocks
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin  | general |
-      | party1 | ETH   | ETH/DEC19 | 7682400 | 1317600 |
-      | party3 | ETH   | ETH/DEC19 | 2605200 | 7392800 |
-      | party2 | ETH   | ETH/DEC19 | 2605200 | 8393800 |
+      | party  | asset | market id | margin  |  general |
+      | party1 | ETH   | ETH/DEC19 | 5280000 |  3720000 |
+      | party3 | ETH   | ETH/DEC19 | 2664000 |  7334000 |
+      | party2 | ETH   | ETH/DEC19 | 2664000 |  8335000 |
     And the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount  | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | ETH   |

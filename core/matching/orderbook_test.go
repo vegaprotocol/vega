@@ -753,11 +753,11 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.ob.GetCloseoutPrice(vol, types.SideBuy)
+		price, err := book.ob.GetFillPrice(vol, types.SideBuy)
 		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
-	price, err := book.ob.GetCloseoutPrice(3, types.SideBuy)
+	price, err := book.ob.GetFillPrice(3, types.SideBuy)
 	assert.Equal(t, callExp[2], price.Uint64())
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -812,11 +812,11 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.ob.GetCloseoutPrice(vol, types.SideSell)
+		price, err := book.ob.GetFillPrice(vol, types.SideSell)
 		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
-	price, err := book.ob.GetCloseoutPrice(3, types.SideSell)
+	price, err := book.ob.GetFillPrice(3, types.SideSell)
 	assert.Equal(t, callExp[2], price.Uint64())
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -886,7 +886,7 @@ func getClosePNLBuy(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.ob.GetCloseoutPrice(vol, types.SideBuy)
+		price, err := book.ob.GetFillPrice(vol, types.SideBuy)
 		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
@@ -957,7 +957,7 @@ func getClosePNLSell(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.ob.GetCloseoutPrice(vol, types.SideSell)
+		price, err := book.ob.GetFillPrice(vol, types.SideSell)
 		assert.NoError(t, err)
 		assert.Equal(t, exp, price.Uint64())
 	}
