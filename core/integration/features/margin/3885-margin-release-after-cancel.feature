@@ -44,7 +44,7 @@ Feature: Regression test for issue 3885
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 14     | 9986    |
+      | party1 | BTC   | ETH/DEC19 | 128    | 9872    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

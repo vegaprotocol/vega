@@ -345,18 +345,24 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update existing
 		existing.TradableInstrument = current
 	}
-	// linear slippage factor
-	if slippage, ok := row.tryLinearSlippageFactor(); ok {
-		slippageD := num.DecimalFromFloat(slippage)
+	// linear linSlippage factor
+	linSlippage, ok := row.tryLinearSlippageFactor()
+	if ok {
+		slippageD := num.DecimalFromFloat(linSlippage)
 		update.Changes.LinearSlippageFactor = slippageD
 		existing.LinearSlippageFactor = slippageD
+	} else {
+		update.Changes.LinearSlippageFactor = existing.LinearSlippageFactor
 	}
 
 	// quadratic slippage factor
-	if slippage, ok := row.tryQuadraticSlippageFactor(); ok {
-		slippageD := num.DecimalFromFloat(slippage)
+	quadSlippage, ok := row.tryQuadraticSlippageFactor()
+	if ok {
+		slippageD := num.DecimalFromFloat(quadSlippage)
 		update.Changes.QuadraticSlippageFactor = slippageD
 		existing.QuadraticSlippageFactor = slippageD
+	} else {
+		update.Changes.QuadraticSlippageFactor = existing.QuadraticSlippageFactor
 	}
 
 	if liquiditySla, ok := row.tryLiquiditySLA(); ok {
@@ -702,9 +708,9 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
-		"linear slippage factor", // slippage factors must be explicitly set to avoid setting them to hard-coded defaults
-		"quadratic slippage factor",
 	}, []string{
+		"linear slippage factor",
+		"quadratic slippage factor",
 		"data source config",   // product update
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update

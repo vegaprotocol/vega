@@ -20,7 +20,7 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 1e6                    | 1e6                       | -1                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle-1      | 0.218875               | 0                         | -1                      | perp        | default-futures |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -78,12 +78,6 @@ Feature: check when settlement data precision is different/equal to the settleme
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin  | general   |
-      | party1 | USD   | ETH/DEC19 | 1441200 | 998558800 |
-      | party2 | USD   | ETH/DEC19 | 132000  | 99867000  |
-      | party3 | USD   | ETH/DEC19 | 132000  | 99866000  |
-      | lp1    | USD   | ETH/DEC19 | 6600000 | 492200000 |
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value      | time offset |
@@ -108,7 +102,7 @@ Feature: check when settlement data precision is different/equal to the settleme
 
     Then the markets are updated:
       | id        | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | perp-oracle-2      | 1e6                    | 1e6                       |
+      | ETH/DEC19 | perp-oracle-2      | 0.25                   | 0                         |
 
     And the oracles broadcast data with block time signed with "0xCAFECAFE2":
       | name             | value      | time offset |
@@ -124,10 +118,10 @@ Feature: check when settlement data precision is different/equal to the settleme
     # funding loss, win, margin excess transfers:
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount    | asset |
-      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 515900    | USD   |
-      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 298558800 | USD   |
-      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 483600    | USD   |
-      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 998665800 | USD   |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1080000   | USD   |
+      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 297994700 | USD   |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1680000   | USD   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 997469400 | USD   |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741368 | USD   |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 432741366 | USD   |

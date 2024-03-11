@@ -195,7 +195,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 3238   | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 22205  | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 46     | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 6821   | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -460,8 +460,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "5" blocks
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD | ETH/DEC19 | 0   | 1000165 |
-      | party2 | USD | ETH/DEC19 | 601 | 999459  |
+      | party1 | USD   | ETH/DEC19 | 0      | 1000165 |
+      | party2 | USD   | ETH/DEC19 | 1708   | 998352  |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | 0  | 0  | 165 |

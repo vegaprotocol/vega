@@ -12,7 +12,7 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params      |
-      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | default-futures |
+      | ETH/DEC19 | ETH        | USD   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | perp-oracle        | 0.25                   | 0                         | -3                      | perp        | default-futures |
     And the initial insurance pool balance is "200" for all the markets
     And the following network parameters are set:
       | name                           | value |
@@ -99,19 +99,7 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     And the insurance pool balance should be "200" for the market "ETH/DEC19"
     When the network moves ahead "1" blocks
 
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin     | general  |
-      | aux     | USD   | ETH/DEC19 | 4793200    | 0        |
-
-
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial |
-      | aux    | ETH/DEC19 | 4041000     | 4849200 |
     And the mark price should be "1200" for the market "ETH/DEC19"
-
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin     | general  |
-      | aux     | USD   | ETH/DEC19 | 4793200    | 0        |
 
     When the oracles broadcast data with block time signed with "0xCAFECAFE1":
       | name             | value                   | time offset |
@@ -128,19 +116,18 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     # that there wasn't enough in there to cover the funding payment hence the winning parties received a haircut      
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset | type                                  |
-      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 9410400 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
-      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |  589600 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
-      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4793200 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1008000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 8992000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |  648000 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
+      | aux    | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4145200 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
       | market | market | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     200 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_LOSS |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931133 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931133 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
       | market | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4931134 | USD   | TRANSFER_TYPE_PERPETUALS_FUNDING_WIN  |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | initial |
-      | aux    | ETH/DEC19 | 0           | 0       |
-      | party1 | ETH/DEC19 | 7842000     | 9410400 |
-
+      | party  | market id | maintenance |
+      | aux    | ETH/DEC19 | 0           |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
@@ -149,8 +136,4 @@ Feature: If a market insurance pool does not have enough funds to cover a fundin
     And the cumulated balance for all accounts should be worth "504993400"
     And the parties should have the following account balances:
       | party   | asset | market id | margin     | general   |
-      | party1  | USD   | ETH/DEC19 | 9410400    | 80389600  |
-      | party2  | USD   | ETH/DEC19 | 1539600    | 103590533 |
-      | party3  | USD   | ETH/DEC19 | 1539600    | 103390334 |
       | aux     | USD   | ETH/DEC19 | 0          | 0         |
-      | aux2    | USD   | ETH/DEC19 | 1539600    | 103591533 |

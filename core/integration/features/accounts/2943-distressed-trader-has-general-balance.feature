@@ -4,7 +4,7 @@ Feature: Distressed parties should not have general balance left
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                             | value |
       | market.auction.minimumDuration                   | 1     |
@@ -66,8 +66,8 @@ Feature: Distressed parties should not have general balance left
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
-      | party5 | ETH   | ETH/DEC20 | 372    | 9999999999528 |
+      | party4 | ETH   | ETH/DEC20 | 420    | 9999999999580 |
+      | party5 | ETH   | ETH/DEC20 | 432    | 9999999999468 |
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp2 | party3 | ETH/DEC20 | 20000             | 0.1 | submission |
@@ -126,8 +126,8 @@ Feature: Distressed parties should not have general balance left
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general       |
-      | party3 | ETH   | ETH/DEC20 | 3152   | 1040          |
-      | party4 | ETH   | ETH/DEC20 | 160    | 9999999999640 |
+      | party3 | ETH   | ETH/DEC20 | 3254   | 938           |
+      | party4 | ETH   | ETH/DEC20 | 504    | 9999999999296 |
 
     ## Now let's increase the mark price so party3 gets distressed
     When the parties place the following orders "1" blocks apart:
@@ -138,4 +138,4 @@ Feature: Distressed parties should not have general balance left
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party3 | ETH   | ETH/DEC20 | 4899   | 0       |
+      | party3 | ETH   | ETH/DEC20 | 4617   | 0       |

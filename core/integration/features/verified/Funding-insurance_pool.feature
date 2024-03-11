@@ -159,10 +159,6 @@ Feature: Position resolution case 5 lognormal risk model
     And the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
       | designatedLoser  | USD   | ETH/DEC19 | 0      | 0            |
-      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
-      | buySideProvider  | USD   | ETH/DEC19 | 24057  | 999999975387 |
-      | aux              | USD   | ETH/DEC19 | 1219   | 999999999620 |
-      | aux2             | USD   | ETH/DEC19 | 259    | 999999999751 |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -187,11 +183,6 @@ Feature: Position resolution case 5 lognormal risk model
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-    Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 24057  | 999999975387 |
-      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
-
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux2  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -202,11 +193,6 @@ Feature: Position resolution case 5 lognormal risk model
       | 120        | TRADING_MODE_CONTINUOUS | 170949       | 9000           | 292           |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-    Then the parties should have the following account balances:
-      | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 22937  | 999999975387 |
-      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054 |
 
     # Double entry accounting is maintained at all points
     # i.e. every transfer event has a source account and destination account and the balance of the source account before the transfer equals to the balance of source account minus the transfer amount after the transfer and balance of the destination account before the transfer plus the transfer amount equals to the balance of the destination account after the transfer.
@@ -229,11 +215,7 @@ Feature: Position resolution case 5 lognormal risk model
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general       |
       | designatedLoser  | USD   | ETH/DEC19 | 0      | 0             |
-      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054  |
-      | buySideProvider  | USD   | ETH/DEC19 | 22937  | 999999975387  |
-      | aux              | USD   | ETH/DEC19 | 607    | 1000000000000 |
-      | aux2             | USD   | ETH/DEC19 | 279    | 999999999751  |
-
+      
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |

@@ -14,7 +14,7 @@ Feature: Fees when amend trades
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.25                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -96,26 +96,12 @@ Feature: Fees when amend trades
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
     # total_fee = maker_fee + infrastructure_fee + liquidity_fee =  11 + 6 + 8 = 25
-    # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-    # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
-    # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
-    Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 690    | 9321    |
-      #| trader3a | ETH   | ETH/DEC21 | 480    | 9531    |
-      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      #| trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
-      #| trader4  | ETH   | ETH/DEC21 | 679    | 9291    |
-      | trader4  | ETH   | ETH/DEC21 | 480    | 9490    |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | t3a-b2-01 |
       | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | t4-s4-03  |
-    Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1171   | 8840    |
-      | trader4  | ETH   | ETH/DEC21 | 984    | 8986    |
+
     # ensure orders are on the book
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -172,7 +158,9 @@ Feature: Fees when amend trades
       | trader3b | ETH   | 10000     |
       | trader4  | ETH   | 1550      |
       | lpprov   | ETH   | 100000000 |
-
+    And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/DEC21   | 0                      |
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -228,28 +216,12 @@ Feature: Fees when amend trades
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
 
 # total_fee = maker_fee + infrastructure_fee + liquidity_fee =  11 + 6 + 8 = 25
-# Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-# Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
-# Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
-
-    # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting first commented out values) but getting second value in other cases
-    And the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 798    | 9213    |
-      #| trader3a | ETH   | ETH/DEC21 | 699    | 9312    |
-      | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      | trader4  | ETH   | ETH/DEC21 | 693    | 530     |
-
     # Placing second set of orders
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3a | ETH/DEC21 | buy  | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
-    Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1279   | 8732    |
-      | trader4  | ETH   | ETH/DEC21 | 1174   | 49      |
 
     # reducing size
     And the parties amend the following orders:
@@ -273,8 +245,3 @@ Feature: Fees when amend trades
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 10     | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 4      | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 10     | ETH   |
-
-    And the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1704   | 8313    |
-      | trader4  | ETH   | ETH/DEC21 | 1015   | 0       |

@@ -19,7 +19,7 @@ Feature: Ensure the markets expire if they cannot leave opening auction within t
       | market.auction.maximumDuration               | 100s  |
     And the markets:
       | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | data source config     | decimal places | linear slippage factor | quadratic slippage factor | sla params      | is passed |
-      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 5                | my-fees-config | default-none     | default-eth-for-future | 2              | 1e6                    | 1e6                       | default-futures | true      |
+      | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 5                | my-fees-config | default-none     | default-eth-for-future | 2              | 0.25                   | 0                         | default-futures | true      |
 
   @Expires
   Scenario: Covers 0043-MKTL-010

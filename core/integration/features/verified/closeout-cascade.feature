@@ -11,7 +11,7 @@ Feature: Closeout-cascades
       | 1.5           | 2              | 3              |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 10                 | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -128,8 +128,6 @@ Feature: Closeout-cascades
       | party      | asset | market id | margin       | general      |
       | trader2    | BTC   | ETH/DEC19 | 0            | 0            |
       | trader3    | BTC   | ETH/DEC19 | 0            | 0            |
-      | auxiliary1 | BTC   | ETH/DEC19 | 114800       | 999999884295 |
-      | auxiliary2 | BTC   | ETH/DEC19 | 732000001300 | 268000001696 |
 
     # setup new mark price, which is the same as when trader2 traded with network
     Then the parties place the following orders:

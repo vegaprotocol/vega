@@ -9,7 +9,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | limits.markets.maxPeggedOrders          | 2     |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | default-futures |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount       |
       | party1 | ETH | 310000000 |
@@ -63,13 +63,13 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 13 | 9000000 | 2 | TYPE_LIMIT | TIF_GTC | ref-1 |
-    And "party1" should have general account balance of "182599138" for asset "ETH"
+    And "party1" should have general account balance of "193000126" for asset "ETH"
 
 
     And the following trades should be executed:
       | buyer     | price    | size | seller |
       | buySideMM | 10000000 | 1    | party1 |
-      | lpprov | 9999990 | 12 | party1 |
+      | lpprov    | 9999990  | 12   | party1 |
 
     Then the following transfers should happen:
       | from      | to        | from account         | to account          | market id | amount    | asset |
@@ -78,10 +78,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 114400884 | 182599138 |
+      | party1 | ETH   | ETH/DEC19 | 103999896 | 193000126 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -13 | 10 | 0 |
+      | party1 | -13    | 10             | 0            |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
     Then the parties cancel the following orders:
@@ -98,11 +98,11 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 # no MTM yet, so accounts are not changing
     Then the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
-      | party1 | ETH | ETH/DEC19 | 114400884 | 182599138 |
+      | party1 | ETH   | ETH/DEC19 | 103999896 | 193000126 |
 
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -13 | 10 | 0 |
+      | party1 | -13    | 10             | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 300
@@ -113,18 +113,17 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 # MTM
     Then the following transfers should happen:
       | from       | to         | from account            | to account          | market id | amount    | asset |
-      | sellSideMM | sellSideMM | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 296000176 | ETH   |
+      | sellSideMM | sellSideMM | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 196339678 | ETH   |
       | market     | buySideMM  | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 180       | ETH   |
-      | party1     | party1     | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 133598972 | ETH   |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin    | general  |
-      | party1 | ETH   | ETH/DEC19 | 247999596 | 49000166 |
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 103999636 | 193000126 |
 
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -13 | -250 | 0 |
-
+      | party1 | -13    | -250           | 0            |
+     
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |

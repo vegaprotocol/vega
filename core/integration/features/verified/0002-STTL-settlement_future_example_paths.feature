@@ -23,7 +23,7 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-basic      | ethDec20Oracle     | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-basic      | ethDec20Oracle     | 0.25                   | 0                         | default-futures |
     And the initial insurance pool balance is "1000" for all the markets
 
   Scenario: A typical path of a cash settled futures market nearing expiry when market is trading in continuous session (0002-STTL-011)
@@ -60,8 +60,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
     # check margin
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 99736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 99436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 99460   |
     # check positions
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -76,8 +76,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
     # check margin
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 99736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 99436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 99460   |
     # check positions
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -153,8 +153,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 120    | 9880    |
-      | party2 | ETH   | ETH/DEC19 | 132    | 768     |
+      | party1 | ETH   | ETH/DEC19 | 420    | 9580    |
+      | party2 | ETH   | ETH/DEC19 | 432    | 468     |
 
     And then the network moves ahead "10" blocks
 
@@ -173,8 +173,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
     # check margin
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 99736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 99436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 99460   |
     # check positions
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -189,8 +189,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
     # check margin
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 99736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 99759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 99436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 99460   |
     # check positions
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
@@ -258,8 +258,8 @@ Feature: Test settlement future example paths (0002-STTL-011), (0002-STTL-012), 
     # check margin
     And the parties should have the following account balances:
       | party | asset | market id | margin | general |
-      | aux1  | ETH   | ETH/DEC19 | 264    | 999736   |
-      | aux2  | ETH   | ETH/DEC19 | 241    | 999759   |
+      | aux1  | ETH   | ETH/DEC19 | 564    | 999436   |
+      | aux2  | ETH   | ETH/DEC19 | 540    | 999460   |
     # check positions
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |

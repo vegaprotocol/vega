@@ -3,7 +3,7 @@ Feature: Test mark to market settlement
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 3                       | 1e6                    | 1e6                       | default-futures |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 3                       | 4                      | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -51,8 +51,8 @@ Feature: Test mark to market settlement
       | party2 | ETH/DEC19 | buy  | 1000   | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
-      | party2 | ETH   | ETH/DEC19 | 1273   | 8726    |
+      | party1 | ETH   | ETH/DEC19 | 4920   | 5080    |
+      | party2 | ETH   | ETH/DEC19 | 4932   | 5067    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -60,7 +60,7 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1000   | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 5040   | 4960    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -68,8 +68,8 @@ Feature: Test mark to market settlement
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party3 | ETH   | ETH/DEC19 | 2605   | 7393    |
-      | party2 | ETH   | ETH/DEC19 | 2605   | 8394    |
+      | party3 | ETH   | ETH/DEC19 | 9864   |  134    |
+      | party2 | ETH   | ETH/DEC19 | 9864   | 1135    |
 
     Then the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |
@@ -115,8 +115,8 @@ Feature: Test mark to market settlement
       | party2 | ETH/DEC19 | buy  | 1000   | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
-      | party2 | ETH   | ETH/DEC19 | 132    | 9867    |
+      | party1 | ETH   | ETH/DEC19 | 4920   | 5080    |
+      | party2 | ETH   | ETH/DEC19 | 4932   | 5067    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -124,7 +124,12 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1000   | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 5040   | 4960    |
+
+    # update linear slippage factor more in line with what book-based slippage used to be
+    And the markets are updated:
+        | id          | linear slippage factor |
+        | ETH/DEC19   | 1                   |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -132,8 +137,8 @@ Feature: Test mark to market settlement
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party3 | ETH   | ETH/DEC19 | 5461   | 94534   |
-      | party2 | ETH   | ETH/DEC19 | 5461   | 8538    |
+      | party3 | ETH   | ETH/DEC19 | 6660   | 93335   |
+      | party2 | ETH   | ETH/DEC19 | 6660   | 7339    |
     Then the following transfers should happen:
       | from   | to     | from account        | to account              | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4000   | ETH   |
@@ -150,7 +155,7 @@ Feature: Test mark to market settlement
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party3 | ETH   | ETH/DEC19 | 1402   | 94592   |
+      | party3 | ETH   | ETH/DEC19 | 1462   | 94532   |
       | party2 | ETH   | ETH/DEC19 | 0      | 9997    |
 
     Then the following transfers should happen:

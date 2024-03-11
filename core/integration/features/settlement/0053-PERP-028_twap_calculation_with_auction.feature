@@ -17,7 +17,7 @@ Feature: Test internal and external twap calculation
             | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 0.8   |
         And the markets:
             | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config | linear slippage factor | quadratic slippage factor | position decimal places | market type | sla params |
-            | ETH/DEC19 | ETH        | USD   | my-log-normal-risk-model | default-margin-calculator | 120              | default-none | my-price-monitoring | perp-oracle        | 1e6                    | 1e6                       | -3                      | perp        | SLA        |
+            | ETH/DEC19 | ETH        | USD   | my-log-normal-risk-model | default-margin-calculator | 120              | default-none | my-price-monitoring | perp-oracle        | 0.25                   | 0                         | -3                      | perp        | SLA        |
         And the following network parameters are set:
             | name                                    | value |
             | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -117,7 +117,7 @@ Feature: Test internal and external twap calculation
         When the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
         Then the markets are updated:
             | id        | price monitoring | linear slippage factor | quadratic slippage factor |
-            | ETH/DEC19 | default-none     | 1e6                    | 1e6                       |
+            | ETH/DEC19 | default-none     | 0.25                   | 0                         |
         And the parties place the following orders:
             | party  | market id | side | volume | price | resulting trades | type       | tif     |
             | party1 | ETH/DEC19 | buy  | 10     | 9     | 0                | TYPE_LIMIT | TIF_GTC |
