@@ -2337,8 +2337,7 @@ type SubmitAMM struct {
 	SlippageTolerance string `protobuf:"bytes,3,opt,name=slippage_tolerance,json=slippageTolerance,proto3" json:"slippage_tolerance,omitempty"`
 	// The concentrated liquidity parameters.
 	ConcentratedLiquidityParameters *SubmitAMM_ConcentratedLiquidityParameters `protobuf:"bytes,4,opt,name=concentrated_liquidity_parameters,json=concentratedLiquidityParameters,proto3" json:"concentrated_liquidity_parameters,omitempty"`
-	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market,
-	// as per setting fees and rewarding liquidity providers and AMM pools.
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
 	ProposedFee string `protobuf:"bytes,5,opt,name=proposed_fee,json=proposedFee,proto3" json:"proposed_fee,omitempty"`
 }
 
@@ -2423,8 +2422,7 @@ type AmendAMM struct {
 	SlippageTolerance string `protobuf:"bytes,3,opt,name=slippage_tolerance,json=slippageTolerance,proto3" json:"slippage_tolerance,omitempty"`
 	// The concentrated liquidity parameters.
 	ConcentratedLiquidityParameters *AmendAMM_ConcentratedLiquidityParameters `protobuf:"bytes,4,opt,name=concentrated_liquidity_parameters,json=concentratedLiquidityParameters,proto3,oneof" json:"concentrated_liquidity_parameters,omitempty"`
-	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market,
-	// as per setting fees and rewarding liquidity providers and AMM pools.
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
 	ProposedFee *string `protobuf:"bytes,5,opt,name=proposed_fee,json=proposedFee,proto3,oneof" json:"proposed_fee,omitempty"`
 }
 

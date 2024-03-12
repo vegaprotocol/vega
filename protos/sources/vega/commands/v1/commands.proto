@@ -437,8 +437,7 @@ message SubmitAMM {
   string slippage_tolerance = 3;
   // The concentrated liquidity parameters.
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market,
-  // as per setting fees and rewarding liquidity providers and AMM pools.
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 5;
 
   message ConcentratedLiquidityParameters {
@@ -465,8 +464,7 @@ message AmendAMM {
   string slippage_tolerance = 3;
   // The concentrated liquidity parameters.
   optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market,
-  // as per setting fees and rewarding liquidity providers and AMM pools.
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   optional string proposed_fee = 5;
 
   message ConcentratedLiquidityParameters {
