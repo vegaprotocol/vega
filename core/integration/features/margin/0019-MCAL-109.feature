@@ -111,7 +111,7 @@ Feature:  switch to isolated margin without position and with orders during auct
         | ETH/FEB23   | 0.25                   |
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error                                                        |
-      | party1 | ETH/FEB23 | isolated margin | 0.2           | required position margin must be greater than initial margin |
+      | party1 | ETH/FEB23 | isolated margin | 0.36           | required position margin must be greater than initial margin |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party1 | USD   | ETH/FEB23 | 5689   | 21861   | 1000 |

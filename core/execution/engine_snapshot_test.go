@@ -124,6 +124,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	timeService.EXPECT().GetTimeNow().AnyTimes()
 
 	collateralService := mocks.NewMockCollateral(ctrl)
+	collateralService.EXPECT().GetPartyMargin(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)

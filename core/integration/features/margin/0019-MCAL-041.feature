@@ -12,7 +12,7 @@ Feature: Test order margin during auction
       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the markets:
       | id        | quote name | asset | liquidity monitoring | risk model        | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.25                   | 0                         | default-futures |
+      | ETH/FEB23 | ETH        | USD   | lqm-params           | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.19                   | 0                         | default-futures |
 
     And the following network parameters are set:
       | name                           | value |
@@ -54,7 +54,7 @@ Feature: Test order margin during auction
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
       | party1 | ETH/FEB23 | 0           | 0      | 0       | 0       | isolated margin | 0.3           | 14322 |
 
-    #AC: 0019-MCAL-201, when party has no position, and place short orders size -3 during auction, and long order size 1 which can offset, order margin should be updated using max(price, markPrice, indicativePrice)
+    # #AC: 0019-MCAL-201, when party has no position, and place short orders size -3 during auction, and long order size 1 which can offset, order margin should be updated using max(price, markPrice, indicativePrice)
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/FEB23 | buy  | 1      | 15800 | 0                | TYPE_LIMIT | TIF_GTC | b-GTC-1   |

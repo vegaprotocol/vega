@@ -61,8 +61,8 @@ Feature: Test magin under isolated margin mode
 
     #AC: 0019-MCAL-032, switch to isolated margin is rejected becuase selected margin factor is too small
     And the parties submit update margin mode:
-      | party | market    | margin_mode     | margin_factor | error                                                        |
-      | party | ETH/FEB23 | isolated margin | 0.11          | required position margin must be greater than initial margin |
+      | party | market    | margin_mode     | margin_factor | error                                                                                                                    |
+      | party | ETH/FEB23 | isolated margin | 0.11          | margin factor (0.11) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) + linearSlippageFactor (0.25) |
 
     And the parties should have the following margin levels:
       | party | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
