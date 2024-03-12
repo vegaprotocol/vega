@@ -3,7 +3,7 @@ Feature: Iceberg orders in isolated margin mode
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.03                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -273,7 +273,7 @@ Feature: Iceberg orders in isolated margin mode
     #order margin: 10*94*0.15=141
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 8           | 0      | 9       | 0       | isolated margin | 0.15          | 141   |
+      | party1 | ETH/DEC19 | 2           | 0      | 2       | 0       | isolated margin | 0.15          | 141   |
 
   @iceberg
   Scenario: 005 Iceberg order trading during auction uncrossing
@@ -522,9 +522,9 @@ Feature: Iceberg orders in isolated margin mode
 
     # the amended iceberg will trade aggressively and be fully consumed
     Then the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume |
-      | party1 | ETH/DEC19 | sell | 5              | 5     | STATUS_STOPPED | 1               |
-      | party2 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED  | 0               |
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | sell | 5              | 5     | STATUS_ACTIVE | 1               |
+      | party2 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED | 0               |
 
   @margin
   @iceberg
@@ -641,12 +641,12 @@ Feature: Iceberg orders in isolated margin mode
     #requried position margin: 10*5*0.15 = 7.5
     #maintenance margin: 10*min(5, 2*1e6)+10*0.1*2=52
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error |
+      | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |       |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general     | order margin |
-      | party1 | BTC   | ETH/DEC19 | 0      | 10000000000 | 0            |
+      | party  | asset | market id | margin | general    | order margin |
+      | party1 | BTC   | ETH/DEC19 | 7      | 9999999988 | 0            |
 
   @iceberg
   Scenario: 011 An aggressive iceberg order crosses an order with volume < iceberg volume
@@ -689,7 +689,7 @@ Feature: Iceberg orders in isolated margin mode
       | party2 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 15     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party1 | ETH/DEC19 | buy  | 15000  | 5     | 1                | TYPE_LIMIT | TIF_GTC | 200       | 1                    | margin check failed |
 
   @iceberg
   Scenario: 012 A passive iceberg order (the only order at the price level) crosses an order with volume > iceberg volume
@@ -753,8 +753,8 @@ Feature: Iceberg orders in isolated margin mode
       | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
     And the markets are updated:
-        | id          | linear slippage factor |
-        | ETH/DEC19   | 0                      |
+      | id        | linear slippage factor |
+      | ETH/DEC19 | 0                      |
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
@@ -846,7 +846,7 @@ Feature: Iceberg orders in isolated margin mode
       | party4 | ETH/DEC19 | sell | 50     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 100    | 5     | 3                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party1 | ETH/DEC19 | buy  | 50000  | 5     | 3                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
 
   @iceberg
   Scenario: 015 An aggressive iceberg order crosses orders where the cumulative volume < iceberg volume
@@ -890,9 +890,10 @@ Feature: Iceberg orders in isolated margin mode
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    #order margin: 50000*5*0.15=37500
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 100    | 5     | 2                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party1 | ETH/DEC19 | buy  | 50000  | 5     | 2                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
 
   @iceberg
   Scenario: 016 Amended order trades with iceberg order triggering a refresh
@@ -946,8 +947,8 @@ Feature: Iceberg orders in isolated margin mode
       | party2 | party1 | 5     | 2    |
       | party2 | party3 | 5     | 5    |
     And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume |
-      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 6               |
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE | 6               |
 
   @iceberg
   Scenario: 017 Attempting to wash trade with iceberg orders
@@ -997,12 +998,20 @@ Feature: Iceberg orders in isolated margin mode
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
       | party1 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error               |
-      | party1 | ETH/DEC19 | buy  | 20     | 5     | 0                | TYPE_LIMIT | TIF_GTC | normal    | margin check failed |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error |
+      | party1 | ETH/DEC19 | buy  | 15     | 5     | 2                | TYPE_LIMIT | TIF_GTC | normal    |       |
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
+    And the orders should have the following status:
+      | party  | reference | status                  |
+      | party1 | normal    | STATUS_PARTIALLY_FILLED |
     And the iceberg orders should have the following states:
       | party  | market id | reference | side | visible volume | price | status        | reserved volume |
       | party1 | ETH/DEC19 | iceberg   | sell | 2              | 5     | STATUS_ACTIVE | 3               |
+    #wash trade order is stopped
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 0      |
 
   @iceberg
   Scenario: 018 An order matches multiple icebergs at the same level where the order volume < cumulative iceberg display volume
@@ -1057,10 +1066,10 @@ Feature: Iceberg orders in isolated margin mode
       | party4 | party2 | 5     | 75   |
       | party4 | party3 | 5     | 75   |
     And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume | reference |
-      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 48              | iceberg   |
-      | party2 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg2  |
-      | party3 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg3  |
+      | party  | market id | side | visible volume | price | status        | reserved volume | reference |
+      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE | 48              | iceberg   |
+      | party2 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE | 23              | iceberg2  |
+      | party3 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE | 23              | iceberg3  |
 
   @iceberg
   Scenario: 019 An order matches multiple icebergs at the same level where the order volume > cumulative iceberg display volume
