@@ -769,9 +769,9 @@ type TimeWeightedNotionalPositionUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Epoch the time weighted notional position is eligible for
+	// Epoch the time weighted notional position is relevant for
 	EpochSeq uint64 `protobuf:"varint,1,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// Asset ID the position is for
+	// Asset ID the position is denominated in.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Party holding the position
 	Party string `protobuf:"bytes,3,opt,name=party,proto3" json:"party,omitempty"`

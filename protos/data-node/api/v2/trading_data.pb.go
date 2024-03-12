@@ -25615,8 +25615,8 @@ func (x *TimeWeightedNotionalPosition) GetLastUpdated() int64 {
 }
 
 // Request to retrieve the time weighted notional position for a party and asset.
-// If no epoch is given, the most current value will be returned.
-// If an epoch is given, the time weighted notional position achieved for that epoch will be returned.
+// If no epoch is given, the time weighted notional position at the start of the current epoch will be returned.
+// If an epoch is given, the time weighted notional position at the start of that epoch will be returned.
 type GetTimeWeightedNotionalPositionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
