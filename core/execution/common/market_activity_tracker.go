@@ -406,6 +406,7 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 				events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, update.asset, update.party, update.notional.String()))
 		}
 		mat.broker.SendBatch(twNotionalPositionEvents)
+		mat.twNotionalUpdateCache = []twNotionalUpdate{}
 	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
 		for asset, market := range mat.assetToMarketTrackers {
 			mat.takerFeesPaidInEpoch[asset] = map[string]map[string]*num.Uint{}
