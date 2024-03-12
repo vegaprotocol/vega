@@ -51,7 +51,7 @@ Feature: test when isolated margin risk factor > 1
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | bond |
-      | trader3 | USD   | ETH/FEB23 | 45504  | 54496   |      |
+      | trader3 | USD   | ETH/FEB23 | 59724  | 40276   |      |
 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset | reference |
@@ -60,30 +60,30 @@ Feature: test when isolated margin risk factor > 1
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | trader3 | ETH/FEB23 | 38421       | 42263  | 46105   | 53789   | cross margin | 0             | 0     |
+      | trader3 | ETH/FEB23 | 49770       | 54747  | 59724   | 69678   | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | bond |
-      | trader3 | USD   | ETH/FEB23 | 45504  | 54496   |      |
+      | trader3 | USD   | ETH/FEB23 | 59724  | 40276   |      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3 | ETH/FEB23 | buy  | 10     | 15500 | 0                | TYPE_LIMIT | TIF_GTC | t3-buy    |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
-      | trader3 | ETH/FEB23 | 39514       | 43465  | 47416   | 55319   | cross margin | 0             | 0     |
+      | trader3 | ETH/FEB23 | 51034       | 56137  | 61240   | 71447   | cross margin | 0             | 0     |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | USD   | ETH/FEB23 | 47416  | 52584   |
+      | trader3 | USD   | ETH/FEB23 | 61240  | 38760   |
 
     When the parties submit update margin mode:
       | party   | market    | margin_mode     | margin_factor | error |
-      | trader3 | ETH/FEB23 | isolated margin | 1.2           |       |
+      | trader3 | ETH/FEB23 | isolated margin | 1.3           |       |
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 38250       | 0      | 45900   | 0       | isolated margin | 1.2           | 1860  |
+      | trader3 | ETH/FEB23 | 49770       | 0      | 59724   | 0       | isolated margin | 1.3           | 2015  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
-      | trader3 | USD   | ETH/FEB23 | 56880  | 41260   | 1860         |
+      | trader3 | USD   | ETH/FEB23 | 61620  | 36365   | 2015         |
 
     # amend the order to increase the required margin, the order remains on the book without issue
     When the parties amend the following orders:
@@ -94,21 +94,21 @@ Feature: test when isolated margin risk factor > 1
       | trader3 | t3-buy    | STATUS_ACTIVE |
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 38250       | 0      | 45900   | 0       | isolated margin | 1.2           | 5580  |
+      | trader3 | ETH/FEB23 | 49770       | 0      | 59724   | 0       | isolated margin | 1.3           | 6045  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
-      | trader3 | USD   | ETH/FEB23 | 56880  | 37540   | 5580         |
+      | trader3 | USD   | ETH/FEB23 | 61620  | 32335   | 6045         |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader1 | ETH/FEB23 | buy  | 10     | 15820 | 1                | TYPE_LIMIT | TIF_GTC | trader2-buy |
 
     #mark price changed triggers MTM win for trader3: 3*20=60
-    When the network moves ahead "1" blocks
-    And the parties should have the following margin levels:
+    And the network moves ahead "1" blocks
+    Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | trader3 | ETH/FEB23 | 38358       | 0      | 46029   | 0       | isolated margin | 1.2           | 5580  |
+      | trader3 | ETH/FEB23 | 49833       | 0      | 59799   | 0       | isolated margin | 1.3           | 6045  |
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | order margin |
-      | trader3 | USD   | ETH/FEB23 | 56940  | 37540   | 5580         |
+      | trader3 | USD   | ETH/FEB23 | 61680  | 32335   | 6045         |
 
