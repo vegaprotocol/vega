@@ -179,7 +179,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.stateVarEngine = stubs.NewStateVar()
 	broker := bmocks.NewMockBroker(ctrl)
-	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.teamsEngine, execsetup.stakingAccount, broker)
 
 	execsetup.notary = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)

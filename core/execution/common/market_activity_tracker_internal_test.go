@@ -1140,7 +1140,6 @@ func TestCalculateMetricForParty(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})

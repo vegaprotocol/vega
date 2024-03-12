@@ -160,7 +160,6 @@ func TestRemoveMarket(t *testing.T) {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
 	broker := bmocks.NewMockBroker(ctrl)
-	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
@@ -497,7 +496,6 @@ func TestFeesTrackerWith0(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
@@ -529,7 +527,6 @@ func TestGetLastEpochTakeFees(t *testing.T) {
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
-	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochEngine.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START})
@@ -1314,7 +1311,6 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 
-	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 
