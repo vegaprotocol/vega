@@ -129,7 +129,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	s.isProtocolUpgradeRunning = vgcontext.InProgressUpgradeFrom(ctx, "v0.74.9")
+	s.isProtocolUpgradeRunning = vgcontext.InProgressUpgrade(ctx)
 
 	np, ok := pl.Data.(*types.PayloadNetParams)
 	if !ok {
@@ -140,7 +140,20 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false, false); err != nil {
 			return nil, err
 		}
+	}
 
+	if vgcontext.InProgressUpgradeFrom(ctx, "v0.74.9") {
+		vgChainID, err := vgcontext.ChainIDFromContext(ctx)
+		if err != nil {
+			panic(fmt.Errorf("no vega chain ID found in context: %w", err))
+		}
+		secondaryEthConf, ok := bridgeMapping[vgChainID]
+		if !ok {
+			panic("Missing secondary ethereum configuration")
+		}
+		if err := s.UpdateOptionalValidation(ctx, BlockchainsSecondaryEthereumConfig, secondaryEthConf, false, false); err != nil {
+			return nil, err
+		}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up
