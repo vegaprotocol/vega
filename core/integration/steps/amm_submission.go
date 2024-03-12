@@ -49,7 +49,8 @@ func PartiesAmendTheFollowingAMMs(exec Execution, table *godog.Table) error {
 	ctx := context.Background()
 	for _, r := range parseAmendAMMTable(table) {
 		row := ammRow{
-			r: r,
+			r:       r,
+			isAmend: true,
 		}
 		fail, eStr := row.err()
 		if err := exec.AmendAMM(ctx, row.toAmendment()); err != nil {
@@ -90,7 +91,7 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 		"amount",       // uint
 		"slippage",     // dec
 		"base",         // uint
-		"proposed fee", // str
+		"proposed fee", // dec
 	}, []string{
 		"lower bound",        // uint
 		"upper bound",        // uint
@@ -102,11 +103,11 @@ func parseSubmitAMMTable(table *godog.Table) []RowWrapper {
 
 func parseAmendAMMTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"party",        // str
-		"market id",    // str
-		"slippage",     // dec
-		"proposed fee", // str
+		"party",     // str
+		"market id", // str
+		"slippage",  // dec
 	}, []string{
+		"proposed fee",       // dec
 		"amount",             // uint
 		"base",               // uint
 		"lower bound",        // uint
@@ -128,7 +129,8 @@ func parseCancelAMMTable(table *godog.Table) []RowWrapper {
 }
 
 type ammRow struct {
-	r RowWrapper
+	r       RowWrapper
+	isAmend bool
 }
 
 func (a ammRow) toSubmission() *types.SubmitAMM {
@@ -223,7 +225,14 @@ func (a ammRow) marketID() string {
 }
 
 func (a ammRow) proposedFee() num.Decimal {
-	return a.r.MustDecimal("proposed fee")
+	if !a.isAmend {
+		return a.r.MustDecimal("proposed fee")
+	}
+
+	if a.r.HasColumn("proposed fee") {
+		return a.r.MustDecimal("proposed fee")
+	}
+	return num.DecimalZero()
 }
 
 func (a ammRow) amount() *num.Uint {
