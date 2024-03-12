@@ -209,7 +209,8 @@ func newTestMarket(
 
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	mat := common.NewMarketActivityTracker(log, teams, bc)
+	broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	mat := common.NewMarketActivityTracker(log, teams, bc, broker)
 	epoch.NotifyOnEpoch(mat.OnEpochEvent, mat.OnEpochRestore)
 
 	baseAsset := NewAssetStub(base, baseDP)

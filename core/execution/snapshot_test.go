@@ -610,7 +610,7 @@ func getEngine(t *testing.T, vegaPath paths.Paths, now time.Time) *snapshotTestD
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	ethAsset := types.Asset{
@@ -676,7 +676,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	ethAsset := types.Asset{

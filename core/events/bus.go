@@ -170,6 +170,7 @@ const (
 	PartyMarginModeUpdatedEvent
 	PartyProfileUpdatedEvent
 	TeamsStatsUpdatedEvent
+	TimeWeightedNotionalPositionUpdatedEvent
 )
 
 var (

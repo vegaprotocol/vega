@@ -13,6 +13,24 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+// Time weighted notional position update for the current epoch.
+// The time weighted notional position is used to determine whether
+// a party is eligible for receiving rewards at the end of an epoch.
+// These updates are provided to facilitate knowing whether or not a party
+// is on track to qualify.
+message TimeWeightedNotionalPositionUpdated {
+  // Epoch the time weighted notional position is relevant for
+  uint64 epoch_seq = 1;
+  // Asset ID for the position's settlement asset.
+  string asset = 2;
+  // Party holding the position
+  string party = 3;
+  // Game ID the time weighted notional position is calculated for.
+  string game_id = 4;
+  // Time weighted notional position from the end of the most recently completed epoch.
+  string time_weighted_notional_position = 5;
+}
+
 // Summary of the vesting and locked balances for an epoch
 message VestingBalancesSummary {
   // Epoch for which these balances are valid.
@@ -1316,6 +1334,9 @@ enum BusEventType {
   // Event indicating that teams' statistics have been updated.
   BUS_EVENT_TYPE_TEAMS_STATS_UPDATED = 87;
 
+  // Event indicating time weighted notional position has been updated.
+  BUS_EVENT_TYPE_TIME_WEIGHTED_NOTIONAL_POSITION_UPDATED = 88;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -1499,6 +1520,8 @@ message BusEvent {
     PartyProfileUpdated party_profile_updated = 184;
     // Event notifying of an update of teams' statistics.
     TeamsStatsUpdated teams_stats_updated = 185;
+    // Event notifying an update of the time weighted notional position for a party in an asset
+    TimeWeightedNotionalPositionUpdated time_weighted_notional_position_updated = 186;
 
     // Market tick events
     MarketEvent market = 1001;

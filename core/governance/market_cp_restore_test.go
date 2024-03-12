@@ -200,7 +200,7 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet().Ethereum, nil, broker, bridgeView, notary, false)
 	teams := emocks.NewMockTeams(ctrl)
 	bc := emocks.NewMockAccountBalanceChecker(ctrl)
-	marketTracker := common.NewMarketActivityTracker(log, teams, bc)
+	marketTracker := common.NewMarketActivityTracker(log, teams, bc, broker)
 	epochEngine.NotifyOnEpoch(marketTracker.OnEpochEvent, marketTracker.OnEpochRestore)
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(ctrl)
 	volumeDiscount := fmocks.NewMockVolumeDiscountService(ctrl)

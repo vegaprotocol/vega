@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -259,7 +260,9 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -282,11 +285,12 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	tracker.RecordPosition("a1", "p2", "m2", 200, num.NewUint(20), num.DecimalOne(), time.Unix(25, 0))
 	tracker.RecordPosition("a1", "p2", "m3", 300, num.NewUint(30), num.DecimalOne(), time.Unix(45, 0))
 
+	gameID := "game123"
 	// end epoch1
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(0, 0), EndTime: time.Unix(60, 0)})
 
 	// get metrics for market m1 with window size=1
-	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -294,7 +298,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "75", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -302,7 +306,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "116.66666", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -310,7 +314,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "75", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -318,7 +322,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "191.66666", metrics[1].Score.String())
 
 	// get metrics for all market window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -335,7 +339,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(60, 0), EndTime: time.Unix(120, 0)})
 
 	// get metrics for market m1 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -343,7 +347,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "100", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -351,7 +355,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "57.5", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -359,7 +363,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "300", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -367,7 +371,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "157.5", metrics[1].Score.String())
 
 	// get metrics for all market window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -376,7 +380,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 
 	// calc with window size = 2
 	// get metrics for market m1 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -384,7 +388,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "87.5", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -392,7 +396,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "87.08333", metrics[1].Score.String())
 
 	// get metrics for market m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -400,7 +404,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "187.5", metrics[1].Score.String())
 
 	// get metrics for market m1,m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -408,7 +412,7 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	require.Equal(t, "174.58333", metrics[1].Score.String())
 
 	// get metrics for all market window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -418,14 +422,14 @@ func TestCalculateMetricForIndividualsAvePosition(t *testing.T) {
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(nil, errors.New("some error")).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(1), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(1), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 
 	// repeat now p2 has balance just not enough
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(num.NewUint(1), nil).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(2), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.NewUint(2), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 }
@@ -435,7 +439,9 @@ func TestCalculateMetricForPartyAvePosition(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -619,7 +625,9 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -659,28 +667,30 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	// end epoch1
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(0, 0), EndTime: time.Unix(60, 0)})
 
+	gameID := "game123"
+
 	// get metrics for market m1 with window size=1
-	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1)
+	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1, gameID)
 	// only one sample (window size=1) variance=0 by definition
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1, gameID)
 	// only one sample (window size=1) variance=0 by definition
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m3 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1, gameID)
 	// only one sample (window size=1) variance=0 by definition
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m1,m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1, gameID)
 	// only one sample (window size=1) variance=0 by definition
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for all market window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 1, gameID)
 	// only one sample (window size=1) variance=0 by definition
 	require.Equal(t, 0, len(metrics))
 
@@ -703,22 +713,22 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 
 	// calc with window size = 2
 	// get metrics for market m1 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	// variance(3, 9.8181825322314569)
 	require.Equal(t, "11.6219032607065405", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m3 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m1,m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	// variance(2.5, 13.5681829072314944)
@@ -727,7 +737,7 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	require.Equal(t, "0.0017404272118899", metrics[1].Score.String())
 
 	// get metrics for all market window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 2, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "p2", metrics[1].Party)
@@ -739,14 +749,14 @@ func TestCalculateMetricForIndividualReturnVolatility(t *testing.T) {
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(nil, errors.New("some error")).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.NewUint(1), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.NewUint(1), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 
 	// repeat now p2 has balance just not enough
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(num.NewUint(1), nil).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.NewUint(2), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RETURN_VOLATILITY, num.NewUint(2), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 }
@@ -756,7 +766,9 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -791,32 +803,34 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	// end epoch1
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(0, 0), EndTime: time.Unix(60, 0)})
 
+	gameID := "game123"
+
 	// get metrics for market m1 with window size=1
-	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics := tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "16.3636375537190948", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p2", metrics[0].Party)
 	require.Equal(t, "0.4285714530612259", metrics[0].Score.String())
 
 	// get metrics for market m3 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "6.6666666666666667", metrics[0].Score.String())
 
 	// get metrics for market m1,m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "12.6136371787", metrics[0].Score.StringFixed(10))
 
 	// get metrics for all market window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "19.2803038454", metrics[0].Score.StringFixed(10))
@@ -838,60 +852,60 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	epochService.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_END, StartTime: time.Unix(60, 0), EndTime: time.Unix(120, 0)})
 
 	// get metrics for market m1 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "30", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p2", metrics[0].Party)
 	require.Equal(t, "1.7391304347826087", metrics[0].Score.String())
 
 	// get metrics for market m3 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 0, len(metrics))
 
 	// get metrics for market m1,m2 with window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "25", metrics[0].Score.String())
 
 	// get metrics for all market window size=1
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 1, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "25", metrics[0].Score.String())
 
 	// calc with window size = 2
 	// get metrics for market m1 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "23.1818187768595474", metrics[0].Score.String())
 
 	// get metrics for market m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p2", metrics[0].Party)
 	require.Equal(t, "1.0838509439219173", metrics[0].Score.String())
 
 	// get metrics for market m3 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m3"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "3.3333333333333334", metrics[0].Score.String())
 
 	// get metrics for market m1,m2 with window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{"m1", "m2"}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "18.8068185894", metrics[0].Score.StringFixed(10))
 
 	// get metrics for all market window size=2
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.UintZero(), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 	require.Equal(t, "22.1401519227", metrics[0].Score.StringFixed(10))
@@ -899,14 +913,14 @@ func TestCalculateMetricForIndividualsRelativeReturn(t *testing.T) {
 	// now make p2 not eligible via not having sufficient governance token
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(nil, errors.New("some error")).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.NewUint(1), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.NewUint(1), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 
 	// repeat now p2 has balance just not enough
 	balanceChecker.EXPECT().GetAvailableBalance("p1").Return(num.NewUint(2), nil).Times(1)
 	balanceChecker.EXPECT().GetAvailableBalance("p2").Return(num.NewUint(1), nil).Times(1)
-	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.NewUint(2), num.UintZero(), 2)
+	metrics = tracker.calculateMetricForIndividuals("a1", []string{"p1", "p2"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_RELATIVE_RETURN, num.NewUint(2), num.UintZero(), 2, gameID)
 	require.Equal(t, 1, len(metrics))
 	require.Equal(t, "p1", metrics[0].Party)
 }
@@ -916,7 +930,9 @@ func TestCalculateMetricForPartyRelativeReturn(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -1128,7 +1144,8 @@ func TestCalculateMetricForParty(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
-	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	broker := bmocks.NewMockBroker(ctrl)
+	tracker := NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&DummyEligibilityChecker{})
 	epochService.target(context.Background(), types.Epoch{Seq: 1, Action: vgproto.EpochAction_EPOCH_ACTION_START, StartTime: time.Time{}})
@@ -1156,7 +1173,7 @@ func TestCalculateMetricForParty(t *testing.T) {
 }
 
 func TestCalculateMetricForTeamUtil(t *testing.T) {
-	isEligible := func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint) bool {
+	isEligible := func(asset, party string, markets []string, minStakingBalanceRequired *num.Uint, notionalTimeWeightedAveragePositionRequired *num.Uint, _ string) bool {
 		if party == "party1" || party == "party2" || party == "party3" || party == "party4" {
 			return true
 		}
@@ -1181,7 +1198,8 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 		return num.DecimalZero()
 	}
 
-	teamScore, partyScores := calculateMetricForTeamUtil("asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	gameID := "game123"
+	teamScore, partyScores := calculateMetricForTeamUtil("asset1", []string{"party1", "party2", "party3", "party4", "party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID)
 	// we're indicating the the score of the team need to be the mean of the top 0.5 * number of participants = floor(0.5*5) = 2
 	// the top scores are 2.5 and 2 => team score should be 2.25
 	// 4 party scores expected (1-4) as party5 is not eligible
@@ -1197,7 +1215,7 @@ func TestCalculateMetricForTeamUtil(t *testing.T) {
 	require.Equal(t, "0.5", partyScores[3].Score.String())
 
 	// lets repeat the check when there is no one eligible
-	teamScore, partyScores = calculateMetricForTeamUtil("asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty)
+	teamScore, partyScores = calculateMetricForTeamUtil("asset1", []string{"party5"}, []string{}, vgproto.DispatchMetric_DISPATCH_METRIC_AVERAGE_POSITION, num.UintOne(), num.UintOne(), 5, num.DecimalFromFloat(0.5), isEligible, calculateMetricForParty, gameID)
 	require.Equal(t, "0", teamScore.String())
 	require.Equal(t, 0, len(partyScores))
 }

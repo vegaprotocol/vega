@@ -64,8 +64,11 @@ type (
 	TransactionResults struct {
 		*sqlsubscribers.TransactionResults
 	}
-	Games       struct{ *sqlstore.Games }
-	MarginModes struct{ *sqlstore.MarginModes }
+	Games                        struct{ *sqlstore.Games }
+	MarginModes                  struct{ *sqlstore.MarginModes }
+	TimeWeightedNotionalPosition struct {
+		*sqlstore.TimeWeightedNotionalPosition
+	}
 )
 
 type (
@@ -211,4 +214,8 @@ func NewGames(store *sqlstore.Games) *Games {
 
 func NewMarginModes(store *sqlstore.MarginModes) *MarginModes {
 	return &MarginModes{MarginModes: store}
+}
+
+func NewTimeWeightedNotionalPosition(store *sqlstore.TimeWeightedNotionalPosition) *TimeWeightedNotionalPosition {
+	return &TimeWeightedNotionalPosition{TimeWeightedNotionalPosition: store}
 }

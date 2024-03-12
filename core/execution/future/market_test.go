@@ -234,7 +234,8 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	broker := bmocks.NewMockBroker(tm.ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
@@ -640,7 +641,7 @@ func getTestMarket2WithDP(
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	teams := mocks.NewMockTeams(tm.ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(tm.ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
 	epoch.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
 	referralDiscountReward := fmocks.NewMockReferralDiscountRewardService(tm.ctrl)
