@@ -97,8 +97,8 @@ Feature: Test vAMM cancellation without position works as expected.
 
     # Now submit our vAMM, no trades should happen
     Then the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
+      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |

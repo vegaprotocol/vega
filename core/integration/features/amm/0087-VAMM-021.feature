@@ -83,8 +83,8 @@ Feature: Test vAMM cancellation by reduce-only from short.
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
+      | vamm1 | ETH/MAR22 | 100000 | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 100000 | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
