@@ -146,9 +146,7 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		// is this a new parameter? if yes, we are likely doing a protocol
 		// upgrade, and should be sending that to the datanode please.
 		if _, ok := fromSnapshot[k]; !ok {
-			s.protocolUpgradeNewParameters = append(
-				s.protocolUpgradeNewParameters, k,
-			)
+			s.isProtocolUpgradeRunning = true
 		}
 
 		if err := s.dispatchUpdate(ctx, k); err != nil {
