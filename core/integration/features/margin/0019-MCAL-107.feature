@@ -60,8 +60,8 @@ Feature:  switch to isolated margin without position and with orders in auction
 
     #AC0019-MCAL-107: switch to isolated margin without position and with orders with margin factor such that position margin is < initial should fail in auction
     And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error                                                                                     |
-      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) |
+      | party  | market    | margin_mode     | margin_factor | error                                                                                                                   |
+      | party1 | ETH/FEB23 | isolated margin | 0.1           | margin factor (0.1) must be greater than max(riskFactorLong (0.1), riskFactorShort (0.1)) + linearSlippageFactor (0.25) |
 
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode  | margin factor | order |
