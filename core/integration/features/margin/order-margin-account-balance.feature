@@ -18,8 +18,8 @@ Feature: Test funds are transferred from general account when margin factor decr
       | party            | asset | amount       |
       | buySideProvider  | USD   | 100000000000 |
       | sellSideProvider | USD   | 100000000000 |
-      | party1           | USD   | 100000       |
-      | party2           | USD   | 100000       |
+      | party1           | USD   | 1000000      |
+      | party2           | USD   | 1000000      |
     And the parties place the following orders:
       | party            | market id | side | volume | price  | resulting trades | type       | tif     |
       | buySideProvider  | ETH/FEB23 | buy  | 10     | 14900  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -33,45 +33,45 @@ Feature: Test funds are transferred from general account when margin factor decr
     When the network moves ahead "2" blocks
     Then the market data for the market "ETH/FEB23" should be:
       | mark price | trading mode            |
-      | 15900        | TRADING_MODE_CONTINUOUS |
+      | 15900      | TRADING_MODE_CONTINUOUS |
 
     When the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor |
-      | party1 | ETH/FEB23 | isolated margin | 0.5           |
+      | party1 | ETH/FEB23 | isolated margin | 2             |
+      | party2 | ETH/FEB23 | isolated margin | 2             |
+    And the network moves ahead "2" blocks
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+      | party1 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 2             | 96600 |
+      | party2 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 2             | 96600 |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general | order margin |
+      | party1 | USD   | ETH/FEB23 | 95400  | 808000  | 96600        |
+      | party2 | USD   | ETH/FEB23 | 95400  | 808000  | 96600        |
+
+    When the parties submit update margin mode:
+      | party  | market    | margin_mode     | margin_factor |
       | party2 | ETH/FEB23 | isolated margin | 0.5           |
     And the network moves ahead "2" blocks
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.5           | 24150 |
-      | party2 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.5           | 24150 |
+      | party1 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 2             | 96600 |
+      | party2 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 0.5           | 24150 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 23850  | 52000   | 24150        |
-      | party2 | USD   | ETH/FEB23 | 23850  | 52000   | 24150        |
+      | party1 | USD   | ETH/FEB23 | 95400  | 808000  | 96600        |
+      | party2 | USD   | ETH/FEB23 | 23850  | 952000  | 24150        |
 
     When the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor |
-      | party2 | ETH/FEB23 | isolated margin | 0.3           |
-    And the network moves ahead "2" blocks
-    Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.5           | 24150 |
-      | party2 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.3           | 14490 |
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 23850  | 52000   | 24150        |
-      | party2 | USD   | ETH/FEB23 | 14310  | 71200   | 14490        |
-
-    When the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor |
-      | party2 | ETH/FEB23 | isolated margin | 0.5           |
+      | party2 | ETH/FEB23 | isolated margin | 2             |
     And the network moves ahead "2" blocks
     # Expecting equal margin levels and balances at this stage
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.5           | 24150 |
-      | party2 | ETH/FEB23 | 5370        | 0      | 6444    | 0       | isolated margin | 0.5           | 24150 |
+      | party1 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 2             | 96600 |
+      | party2 | ETH/FEB23 | 16695       | 0      | 20034   | 0       | isolated margin | 2             | 96600 |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 23850  | 52000   | 24150        |
-      | party2 | USD   | ETH/FEB23 | 23850  | 52000   | 24150        |
+      | party1 | USD   | ETH/FEB23 | 95400  | 808000  | 96600        |
+      | party2 | USD   | ETH/FEB23 | 95400  | 808000  | 96600        |
