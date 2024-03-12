@@ -169,3 +169,17 @@ func InProgressUpgradeFrom(ctx context.Context, from string) bool {
 	}
 	return from == si.version && si.upgrade
 }
+
+// InProgressUpgrade returns whether the data in the contexts tells us that the
+// node is restoring from a snapshot taken for a protocol-upgrade.
+func InProgressUpgrade(ctx context.Context) bool {
+	v := ctx.Value(snapshotKey)
+	if v == nil {
+		return false
+	}
+	si, ok := v.(snapshotInfo)
+	if !ok {
+		return false
+	}
+	return si.upgrade
+}
