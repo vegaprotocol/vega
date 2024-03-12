@@ -28,6 +28,7 @@
 - [797](https://github.com/vegaprotocol/core-test-coverage/issues/797) - Add coverage for `0011-MARA-030`
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
+- [10841](https://github.com/vegaprotocol/vega/issues/10841) - Send heartbeats from `ethcall` engine to update core of the latest Ethereum block.
 - [10392](https://github.com/vegaprotocol/vega/issues/10392) - Integrate mark price with price monitoring.
 - [10845](https://github.com/vegaprotocol/vega/issues/10845) - Remove price monitoring trigger staleness check.
 - [10810](https://github.com/vegaprotocol/vega/issues/10810) - Do not update mark price from book during auctions.

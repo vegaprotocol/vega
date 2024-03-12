@@ -24,16 +24,19 @@ import (
 
 const (
 	defaultPollEvery = 20 * time.Second
+	defaultHeartbeat = time.Hour
 )
 
 type Config struct {
-	Level     encoding.LogLevel `long:"log-level"`
-	PollEvery encoding.Duration
+	Level                                   encoding.LogLevel `long:"log-level"`
+	PollEvery                               encoding.Duration
+	HeartbeatIntervalForTestOnlyDoNotChange encoding.Duration
 }
 
 func NewDefaultConfig() Config {
 	return Config{
-		Level:     encoding.LogLevel{Level: logging.InfoLevel},
-		PollEvery: encoding.Duration{Duration: defaultPollEvery},
+		Level:                                   encoding.LogLevel{Level: logging.InfoLevel},
+		PollEvery:                               encoding.Duration{Duration: defaultPollEvery},
+		HeartbeatIntervalForTestOnlyDoNotChange: encoding.Duration{Duration: defaultHeartbeat},
 	}
 }

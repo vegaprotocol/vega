@@ -111,7 +111,7 @@ func (v *L2Verifiers) instantiate(chainID string) *Verifier {
 		v.log.Panic("could not get call engine for L2", logging.String("chain-id", chainID))
 	}
 
-	return New(v.log, v.witness, v.ts, v.broker, v.oracleBroadcaster, ethCallEngine, confs)
+	return New(v.log, v.witness, v.ts, v.broker, v.oracleBroadcaster, ethCallEngine, confs, v.isValidator)
 }
 
 func (v *L2Verifiers) OnTick(ctx context.Context, t time.Time) {

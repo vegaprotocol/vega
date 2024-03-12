@@ -37,8 +37,9 @@ import (
 )
 
 var TEST_CONFIG = ethcall.Config{
-	Level:     encoding.LogLevel{Level: logging.DebugLevel},
-	PollEvery: encoding.Duration{Duration: 100 * time.Second},
+	Level:                                   encoding.LogLevel{Level: logging.DebugLevel},
+	PollEvery:                               encoding.Duration{Duration: 100 * time.Second},
+	HeartbeatIntervalForTestOnlyDoNotChange: encoding.Duration{Duration: time.Hour},
 }
 
 func TestEngine(t *testing.T) {
@@ -115,6 +116,7 @@ func TestEngine(t *testing.T) {
 		require.NotNil(t, cc)
 		assert.Equal(t, cc.BlockHeight, uint64(5))
 		assert.Equal(t, cc.BlockTime, uint64(50))
+		assert.False(t, cc.Heartbeat)
 	})
 
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
@@ -122,6 +124,7 @@ func TestEngine(t *testing.T) {
 		require.NotNil(t, cc)
 		assert.Equal(t, cc.BlockHeight, uint64(7))
 		assert.Equal(t, cc.BlockTime, uint64(70))
+		assert.False(t, cc.Heartbeat)
 	})
 
 	e.Poll(ctx, time.Now())
@@ -196,7 +199,45 @@ func TestEngineWithErrorSpec(t *testing.T) {
 		assert.Equal(t, cc.BlockHeight, uint64(3))
 		assert.Equal(t, cc.BlockTime, uint64(30))
 		assert.Equal(t, cc.SpecId, "testid")
+		assert.False(t, cc.Heartbeat)
 		assert.NotNil(t, cc.Error)
+	})
+	tc.client.Commit()
+	e.Poll(ctx, time.Now())
+}
+
+func TestEngineHeartbeat(t *testing.T) {
+	ctx := context.Background()
+	tc, err := NewToyChain()
+	require.NoError(t, err)
+
+	cfg := ethcall.Config{
+		Level:                                   encoding.LogLevel{Level: logging.DebugLevel},
+		PollEvery:                               encoding.Duration{Duration: 100 * time.Second},
+		HeartbeatIntervalForTestOnlyDoNotChange: encoding.Duration{Duration: 45 * time.Second},
+	}
+
+	ctrl := gomock.NewController(t)
+	forwarder := mocks.NewMockForwarder(ctrl)
+
+	log := logging.NewTestLogger()
+	e := ethcall.NewEngine(log, cfg, true, tc.client, forwarder)
+
+	// we expect nothing to happen for the first few blocks
+	for i := 0; i < 5; i++ {
+		tc.client.Commit()
+		e.Poll(ctx, time.Now())
+	}
+
+	// but now we see a heartbeat
+	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
+		cc := ce.GetContractCall()
+		require.NotNil(t, cc)
+
+		assert.Equal(t, cc.BlockHeight, uint64(7))
+		assert.Equal(t, cc.BlockTime, uint64(70))
+		assert.True(t, cc.Heartbeat)
+		assert.Nil(t, cc.Error)
 	})
 	tc.client.Commit()
 	e.Poll(ctx, time.Now())
