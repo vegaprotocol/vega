@@ -31,24 +31,35 @@ type ContractCallEvent struct {
 	Result        []byte
 	Error         *string
 	SourceChainID *uint64
+	Heartbeat     bool
 }
 
 func EthereumContractCallResultFromProto(
 	qr *vegapb.EthContractCallEvent,
 ) (ContractCallEvent, error) {
-	if len(qr.SpecId) <= 0 || qr.BlockHeight == 0 || qr.BlockTime <= 0 ||
-		(len(qr.Result) <= 0 && qr.Error == nil) {
-		return ContractCallEvent{}, errors.New("invalid contract call payload")
-	}
-
-	return ContractCallEvent{
+	res := ContractCallEvent{
 		SpecId:        qr.SpecId,
 		BlockHeight:   qr.BlockHeight,
 		BlockTime:     qr.BlockTime,
 		Result:        qr.Result,
 		Error:         qr.Error,
 		SourceChainID: qr.SourceChainId,
-	}, nil
+		Heartbeat:     qr.Heartbeat,
+	}
+
+	if qr.BlockHeight == 0 || qr.BlockTime <= 0 {
+		return ContractCallEvent{}, errors.New("invalid contract call payload")
+	}
+
+	if qr.Heartbeat {
+		return res, nil
+	}
+
+	if (len(qr.Result) <= 0 && qr.Error == nil) || len(qr.SpecId) <= 0 {
+		return ContractCallEvent{}, errors.New("invalid contract call payload")
+	}
+
+	return res, nil
 }
 
 func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
@@ -59,6 +70,7 @@ func (q *ContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 		Result:        q.Result,
 		Error:         q.Error,
 		SourceChainId: q.SourceChainID,
+		Heartbeat:     q.Heartbeat,
 	}
 }
 
@@ -69,6 +81,11 @@ func (q ContractCallEvent) Hash() string {
 	bytes = append(bytes, q.Result...)
 	if q.Error != nil {
 		bytes = append(bytes, []byte(*q.Error)...)
+	}
+
+	if q.Heartbeat {
+		// only append if its true so that old events pre this flag existing hash to the same value
+		strconv.AppendBool(bytes, q.Heartbeat)
 	}
 
 	return hex.EncodeToString(
