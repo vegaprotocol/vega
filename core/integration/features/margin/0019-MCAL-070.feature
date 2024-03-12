@@ -190,7 +190,7 @@ Feature: Test mark price changes and closeout under isolated margin mode
 
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | order margin |
-      | party1 | USD   | ETH/FEB23 | 71550  | 33946   | 110004       |
+      | party1 | USD   | ETH/FEB23 | 71550  | 53950   | 90000        |
 
     And the parties submit update margin mode:
       | party  | market    | margin_mode     | margin_factor | error |

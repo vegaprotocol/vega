@@ -130,6 +130,7 @@ type TradingDataServiceV2 struct {
 	transactionResults            *service.TransactionResults
 	gamesService                  *service.Games
 	marginModesService            *service.MarginModes
+	twNotionalPositionService     *service.TimeWeightedNotionalPosition
 }
 
 func (t *TradingDataServiceV2) GetPartyVestingStats(
@@ -5195,5 +5196,34 @@ func (t *TradingDataServiceV2) ListPartyMarginModes(ctx context.Context, req *v2
 			Edges:    edges,
 			PageInfo: pageInfo.ToProto(),
 		},
+	}, nil
+}
+
+func (t *TradingDataServiceV2) GetTimeWeightedNotionalPosition(ctx context.Context, req *v2.GetTimeWeightedNotionalPositionRequest) (*v2.GetTimeWeightedNotionalPositionResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetTimeWeightedNotionalPosition")()
+
+	if req.PartyId == "" {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
+	if req.AssetId == "" {
+		return nil, formatE(ErrInvalidAssetID)
+	}
+
+	if req.GameId == "" {
+		return nil, formatE(ErrInvalidGameID)
+	}
+
+	partyID := entities.PartyID(req.PartyId)
+	assetID := entities.AssetID(req.AssetId)
+	gameID := entities.GameID(req.GameId)
+
+	pos, err := t.twNotionalPositionService.Get(ctx, assetID, partyID, gameID, req.AtEpoch)
+	if err != nil {
+		return nil, formatE(ErrGetTimeWeightedNotionalPosition, err)
+	}
+
+	return &v2.GetTimeWeightedNotionalPositionResponse{
+		TimeWeightedNotionalPosition: pos.ToProto(),
 	}, nil
 }

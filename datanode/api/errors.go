@@ -108,6 +108,8 @@ var (
 	ErrLastPaginationNotSupported = newInvalidArgumentError("'last' pagination is not supported")
 	// ErrMissingMarginFactor is returned when isolated margin mode is specified, but margin factor is not supplied.
 	ErrMissingMarginFactor = newInvalidArgumentError("missing margin factor")
+	// ErrInvalidGameID is returned when the game ID is not a valid ID.
+	ErrInvalidGameID = newInvalidArgumentError("invalid game ID")
 
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
@@ -335,6 +337,8 @@ var (
 	ErrInvalidTransferAmount = newInvalidArgumentError("invalid transfer amount")
 
 	ErrListPartyMarginModes = errors.New("failed to list parties margin modes")
+	// ErrGetTimeWeightedNotionalPosition is returned when the time weighted notional position cannot be retrieved.
+	ErrGetTimeWeightedNotionalPosition = errors.New("failed to get time weighted notional position")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

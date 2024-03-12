@@ -24,7 +24,7 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY current_epochs;
     RETURN NULL;
 END;
-$$
+$$;
 -- +goose StatementEnd
 
 -- When an insert, update or delete happens on the epochs table, we want to refresh the materialized view.

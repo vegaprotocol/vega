@@ -130,8 +130,36 @@ func TestSwithToIsolatedMarginContinuous(t *testing.T) {
 	require.Equal(t, types.TransferTypeOrderMarginLow, riskEvent[1].Transfer().Type)
 	require.Equal(t, "party1", riskEvent[1].Transfer().Owner)
 	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
-
 	transferRecalc = requiredOrderMarginStatic.Sub(evt.OrderMarginBalance().ToDecimal())
+	require.True(t, riskEvent[1].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
+
+	// case3 - need to release from margin account and order margin account back into general account
+	evt.margin += 600
+	evt.orderMargin += 400
+	marginFactor = num.DecimalFromFloat(0.3)
+	riskEvent, err = e.SwitchToIsolatedMargin(context.Background(), evt, num.NewUint(100), num.DecimalOne(), orders, marginFactor, nil)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(riskEvent))
+	require.Equal(t, num.NewUint(310), riskEvent[0].Transfer().Amount.Amount)
+	require.Equal(t, num.NewUint(310), riskEvent[0].Transfer().MinAmount)
+	require.Equal(t, types.TransferTypeMarginHigh, riskEvent[0].Transfer().Type)
+	require.Equal(t, "party1", riskEvent[0].Transfer().Owner)
+	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
+
+	buyOrderInfo, sellOrderInfo = extractOrderInfo(orders)
+	requiredPositionMarginStatic, requiredOrderMarginStatic = risk.CalculateRequiredMarginInIsolatedMode(evt.size, evt.AverageEntryPrice().ToDecimal(), evt.Price().ToDecimal(), buyOrderInfo, sellOrderInfo, positionFactor, marginFactor)
+	require.True(t, !requiredPositionMarginStatic.IsZero())
+	require.True(t, !requiredOrderMarginStatic.IsZero())
+	transferRecalc = evt.MarginBalance().ToDecimal().Sub(requiredPositionMarginStatic)
+	require.True(t, riskEvent[0].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
+
+	require.Equal(t, num.NewUint(100), riskEvent[1].Transfer().Amount.Amount)
+	require.Equal(t, num.NewUint(100), riskEvent[1].Transfer().MinAmount)
+	require.Equal(t, types.TransferTypeOrderMarginHigh, riskEvent[1].Transfer().Type)
+	require.Equal(t, "party1", riskEvent[1].Transfer().Owner)
+	require.Equal(t, num.NewUint(300), riskEvent[0].MarginLevels().OrderMargin)
+
+	transferRecalc = evt.OrderMarginBalance().ToDecimal().Sub(requiredOrderMarginStatic)
 	require.True(t, riskEvent[1].Transfer().Amount.Amount.ToDecimal().Sub(transferRecalc).IsZero())
 }
 

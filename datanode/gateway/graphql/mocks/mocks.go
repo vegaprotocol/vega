@@ -1060,6 +1060,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetStopOrder(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStopOrder", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetStopOrder), varargs...)
 }
 
+// GetTimeWeightedNotionalPosition mocks base method.
+func (m *MockTradingDataServiceClientV2) GetTimeWeightedNotionalPosition(arg0 context.Context, arg1 *v2.GetTimeWeightedNotionalPositionRequest, arg2 ...grpc.CallOption) (*v2.GetTimeWeightedNotionalPositionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetTimeWeightedNotionalPosition", varargs...)
+	ret0, _ := ret[0].(*v2.GetTimeWeightedNotionalPositionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTimeWeightedNotionalPosition indicates an expected call of GetTimeWeightedNotionalPosition.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetTimeWeightedNotionalPosition(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeWeightedNotionalPosition", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetTimeWeightedNotionalPosition), varargs...)
+}
+
 // GetTotalTransferFeeDiscount mocks base method.
 func (m *MockTradingDataServiceClientV2) GetTotalTransferFeeDiscount(arg0 context.Context, arg1 *v2.GetTotalTransferFeeDiscountRequest, arg2 ...grpc.CallOption) (*v2.GetTotalTransferFeeDiscountResponse, error) {
 	m.ctrl.T.Helper()

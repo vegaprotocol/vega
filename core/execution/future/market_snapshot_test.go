@@ -241,10 +241,10 @@ func newMarketFromSnapshot(t *testing.T, ctx context.Context, ctrl *gomock.Contr
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	teams := mocks.NewMockTeams(ctrl)
 	bc := mocks.NewMockAccountBalanceChecker(ctrl)
-	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc)
+	broker := bmocks.NewMockBroker(ctrl)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, bc, broker)
 	epochEngine.NotifyOnEpoch(marketActivityTracker.OnEpochEvent, marketActivityTracker.OnEpochRestore)
 
-	broker := bmocks.NewMockBroker(ctrl)
 	broker.EXPECT().Stage(gomock.Any()).AnyTimes()
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)

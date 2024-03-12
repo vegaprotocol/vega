@@ -207,6 +207,8 @@ http:
       get: "/api/v2/games"
     - selector: datanode.api.v2.TradingDataService.ListPartyMarginModes
       get: "/api/v2/margin-modes"
+    - selector: datanode.api.v2.TradingDataService.GetTimeWeightedNotionalPosition
+      get: "/api/v2/time-weighted-notional-position"
 
     # websockets
 
