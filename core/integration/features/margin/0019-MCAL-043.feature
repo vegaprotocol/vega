@@ -3,7 +3,7 @@ Feature: Iceberg orders in isolated margin mode
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | sla params      |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.5                    | 0                         | default-futures |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.03                   | 0                         | default-futures |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -273,7 +273,7 @@ Feature: Iceberg orders in isolated margin mode
     #order margin: 10*94*0.15=141
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 8           | 0      | 9       | 0       | isolated margin | 0.15          | 141   |
+      | party1 | ETH/DEC19 | 2           | 0      | 2       | 0       | isolated margin | 0.15          | 141   |
 
   @iceberg
   Scenario: 005 Iceberg order trading during auction uncrossing
@@ -522,9 +522,9 @@ Feature: Iceberg orders in isolated margin mode
 
     # the amended iceberg will trade aggressively and be fully consumed
     Then the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume |
-      | party1 | ETH/DEC19 | sell | 5              | 5     | STATUS_STOPPED | 1               |
-      | party2 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED  | 0               |
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | sell | 5              | 5     | STATUS_ACTIVE | 1               |
+      | party2 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED | 0               |
 
   @margin
   @iceberg
@@ -641,12 +641,12 @@ Feature: Iceberg orders in isolated margin mode
     #requried position margin: 10*5*0.15 = 7.5
     #maintenance margin: 10*min(5, 2*1e6)+10*0.1*2=52
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error |
+      | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |       |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general     | order margin |
-      | party1 | BTC   | ETH/DEC19 | 0      | 10000000000 | 0            |
+      | party  | asset | market id | margin | general    | order margin |
+      | party1 | BTC   | ETH/DEC19 | 7      | 9999999988 | 0            |
 
   @iceberg
   Scenario: 011 An aggressive iceberg order crosses an order with volume < iceberg volume
@@ -689,487 +689,488 @@ Feature: Iceberg orders in isolated margin mode
       | party2 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 15     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+      | party1 | ETH/DEC19 | buy  | 15000  | 5     | 1                | TYPE_LIMIT | TIF_GTC | 200       | 1                    | margin check failed |
 
-  @iceberg
-  Scenario: 012 A passive iceberg order (the only order at the price level) crosses an order with volume > iceberg volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+@iceberg
+Scenario: 012 A passive iceberg order (the only order at the price level) crosses an order with volume > iceberg volume
+  # setup accounts
+  Given the parties deposit on asset's general account the following amount:
+    | party  | asset | amount   |
+    | party1 | BTC   | 10000    |
+    | party2 | BTC   | 10000    |
+    | aux    | BTC   | 100000   |
+    | aux2   | BTC   | 100000   |
+    | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+  When the parties submit the following liquidity provision:
+    | id  | party  | market id | commitment amount | fee | lp type    |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+  And the parties place the following pegged iceberg orders:
+    | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+    | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+    | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  When the parties place the following orders:
+    | party | market id | side | volume | price | resulting trades | type       | tif     |
+    | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+  Then the opening auction period ends for market "ETH/DEC19"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  And the parties submit update margin mode:
+    | party  | market    | margin_mode     | margin_factor | error |
+    | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
 
-    Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
-      | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell | 15     | 5     | 1                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party1 | party2 | 5     | 10   |
-    And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status        | reserved volume |
-      | party1 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED | 0               |
+  Given the parties place the following iceberg orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
+    | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
+  When the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     |
+    | party2 | ETH/DEC19 | sell | 15     | 5     | 1                | TYPE_LIMIT | TIF_GTC |
+  Then the following trades should be executed:
+    | buyer  | seller | price | size |
+    | party1 | party2 | 5     | 10   |
+  And the iceberg orders should have the following states:
+    | party  | market id | side | visible volume | price | status        | reserved volume |
+    | party1 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED | 0               |
 
-  @iceberg
-  Scenario: 013 A passive iceberg order (one of multiple orders at the price level) crosses an order with volume > iceberg volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
-    And the markets are updated:
-        | id          | linear slippage factor |
-        | ETH/DEC19   | 0                      |
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+@iceberg
+Scenario: 013 A passive iceberg order (one of multiple orders at the price level) crosses an order with volume > iceberg volume
+  # setup accounts
+  Given the parties deposit on asset's general account the following amount:
+    | party  | asset | amount   |
+    | party1 | BTC   | 10000    |
+    | party2 | BTC   | 10000    |
+    | party3 | BTC   | 10000    |
+    | party4 | BTC   | 10000    |
+    | aux    | BTC   | 100000   |
+    | aux2   | BTC   | 100000   |
+    | lpprov | BTC   | 90000000 |
+  And the markets are updated:
+      | id          | linear slippage factor |
+      | ETH/DEC19   | 0                      |
+  When the parties submit the following liquidity provision:
+    | id  | party  | market id | commitment amount | fee | lp type    |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+  And the parties place the following pegged iceberg orders:
+    | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+    | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+    | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  When the parties place the following orders:
+    | party | market id | side | volume | price | resulting trades | type       | tif     |
+    | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+  And the parties submit update margin mode:
+    | party  | market    | margin_mode     | margin_factor | error |
+    | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+  Then the opening auction period ends for market "ETH/DEC19"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
-      | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | buy  | 7      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC19 | buy  | 7      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/DEC19 | sell | 15     | 5     | 3                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party1 | party4 | 5     | 2    |
-      | party2 | party4 | 5     | 7    |
-      | party3 | party4 | 5     | 6    |
-    And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status        | reserved volume |
-      | party1 | ETH/DEC19 | buy  | 2              | 5     | STATUS_ACTIVE | 6               |
+  Given the parties place the following iceberg orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
+    | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
+  And the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     |
+    | party2 | ETH/DEC19 | buy  | 7      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    | party3 | ETH/DEC19 | buy  | 7      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+  When the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     |
+    | party4 | ETH/DEC19 | sell | 15     | 5     | 3                | TYPE_LIMIT | TIF_GTC |
+  Then the following trades should be executed:
+    | buyer  | seller | price | size |
+    | party1 | party4 | 5     | 2    |
+    | party2 | party4 | 5     | 7    |
+    | party3 | party4 | 5     | 6    |
+  And the iceberg orders should have the following states:
+    | party  | market id | side | visible volume | price | status        | reserved volume |
+    | party1 | ETH/DEC19 | buy  | 2              | 5     | STATUS_ACTIVE | 6               |
 
-  @iceberg
-  Scenario: 014 An aggressive iceberg order crosses orders where the cumulative volume > iceberg volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+@iceberg
+Scenario: 014 An aggressive iceberg order crosses orders where the cumulative volume > iceberg volume
+  # setup accounts
+  Given the parties deposit on asset's general account the following amount:
+    | party  | asset | amount   |
+    | party1 | BTC   | 10000    |
+    | party2 | BTC   | 10000    |
+    | party3 | BTC   | 10000    |
+    | party4 | BTC   | 10000    |
+    | aux    | BTC   | 100000   |
+    | aux2   | BTC   | 100000   |
+    | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+  When the parties submit the following liquidity provision:
+    | id  | party  | market id | commitment amount | fee | lp type    |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+  And the parties place the following pegged iceberg orders:
+    | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+    | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+    | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  When the parties place the following orders:
+    | party | market id | side | volume | price | resulting trades | type       | tif     |
+    | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+  And the parties submit update margin mode:
+    | party  | market    | margin_mode     | margin_factor | error |
+    | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+  Then the opening auction period ends for market "ETH/DEC19"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party4 | ETH/DEC19 | sell | 50     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-    When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 100    | 5     | 3                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+  Given the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     |
+    | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    | party4 | ETH/DEC19 | sell | 50     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+  When the parties place the following iceberg orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
+    | party1 | ETH/DEC19 | buy  | 100    | 5     | 3                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
 
-  @iceberg
-  Scenario: 015 An aggressive iceberg order crosses orders where the cumulative volume < iceberg volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+@iceberg
+Scenario: 015 An aggressive iceberg order crosses orders where the cumulative volume < iceberg volume
+  # setup accounts
+  Given the parties deposit on asset's general account the following amount:
+    | party  | asset | amount   |
+    | party1 | BTC   | 10000    |
+    | party2 | BTC   | 10000    |
+    | party3 | BTC   | 10000    |
+    | party4 | BTC   | 10000    |
+    | aux    | BTC   | 100000   |
+    | aux2   | BTC   | 100000   |
+    | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+  When the parties submit the following liquidity provision:
+    | id  | party  | market id | commitment amount | fee | lp type    |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+    | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+  And the parties place the following pegged iceberg orders:
+    | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+    | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+    | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  When the parties place the following orders:
+    | party | market id | side | volume | price | resulting trades | type       | tif     |
+    | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+  And the parties submit update margin mode:
+    | party  | market    | margin_mode     | margin_factor | error |
+    | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  And the parties should have the following margin levels:
+    | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+    | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+  Then the opening auction period ends for market "ETH/DEC19"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-    When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
-      | party1 | ETH/DEC19 | buy  | 100    | 5     | 2                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | margin check failed |
+  Given the parties place the following orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     |
+    | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+    #order margin: 50000*5*0.15=37500
+  When the parties place the following iceberg orders:
+    | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | error               |
+    | party1 | ETH/DEC19 | buy  | 50000    | 5     | 2                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |  |
 
-  @iceberg
-  Scenario: 016 Amended order trades with iceberg order triggering a refresh
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+# @iceberg
+# Scenario: 016 Amended order trades with iceberg order triggering a refresh
+#   Given the parties deposit on asset's general account the following amount:
+#     | party  | asset | amount   |
+#     | party1 | BTC   | 10000    |
+#     | party2 | BTC   | 10000    |
+#     | party3 | BTC   | 10000    |
+#     | party4 | BTC   | 10000    |
+#     | aux    | BTC   | 100000   |
+#     | aux2   | BTC   | 100000   |
+#     | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+#   When the parties submit the following liquidity provision:
+#     | id  | party  | market id | commitment amount | fee | lp type    |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+#   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+#   When the parties place the following orders:
+#     | party | market id | side | volume | price | resulting trades | type       | tif     |
+#     | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties submit update margin mode:
+#     | party  | market    | margin_mode     | margin_factor | error |
+#     | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+#   And the parties should have the following margin levels:
+#     | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+#     | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+#   Then the opening auction period ends for market "ETH/DEC19"
+#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
-      | party1 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
-    And the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | party2 | ETH/DEC19 | buy  | 7      | 4     | 0                | TYPE_LIMIT | TIF_GTC | order-to-amend |
-      | party3 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |                |
-    When the parties amend the following orders:
-      | party  | reference      | price | size delta | tif     |
-      | party2 | order-to-amend | 5     | 0          | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party2 | party1 | 5     | 2    |
-      | party2 | party3 | 5     | 5    |
-    And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume |
-      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 6               |
+#   Given the parties place the following iceberg orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
+#     | party1 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    |
+#   And the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+#     | party2 | ETH/DEC19 | buy  | 7      | 4     | 0                | TYPE_LIMIT | TIF_GTC | order-to-amend |
+#     | party3 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |                |
+#   When the parties amend the following orders:
+#     | party  | reference      | price | size delta | tif     |
+#     | party2 | order-to-amend | 5     | 0          | TIF_GTC |
+#   Then the following trades should be executed:
+#     | buyer  | seller | price | size |
+#     | party2 | party1 | 5     | 2    |
+#     | party2 | party3 | 5     | 5    |
+#   And the iceberg orders should have the following states:
+#     | party  | market id | side | visible volume | price | status         | reserved volume |
+#     | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 6               |
 
-  @iceberg
-  Scenario: 017 Attempting to wash trade with iceberg orders
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+# @iceberg
+# Scenario: 017 Attempting to wash trade with iceberg orders
+#   # setup accounts
+#   Given the parties deposit on asset's general account the following amount:
+#     | party  | asset | amount   |
+#     | party1 | BTC   | 10000    |
+#     | party2 | BTC   | 10000    |
+#     | party3 | BTC   | 10000    |
+#     | party4 | BTC   | 10000    |
+#     | aux    | BTC   | 100000   |
+#     | aux2   | BTC   | 100000   |
+#     | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#   When the parties submit the following liquidity provision:
+#     | id  | party  | market id | commitment amount | fee | lp type    |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+#   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+#   When the parties place the following orders:
+#     | party | market id | side | volume | price | resulting trades | type       | tif     |
+#     | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
 
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+#   And the parties submit update margin mode:
+#     | party  | market    | margin_mode     | margin_factor | error |
+#     | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+#   And the parties should have the following margin levels:
+#     | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+#     | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+#   Then the opening auction period ends for market "ETH/DEC19"
+#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
-      | party1 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error               |
-      | party1 | ETH/DEC19 | buy  | 20     | 5     | 0                | TYPE_LIMIT | TIF_GTC | normal    | margin check failed |
+#   Given the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#     | party2 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | party3 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties place the following iceberg orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
+#     | party1 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
+#   When the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error               |
+#     | party1 | ETH/DEC19 | buy  | 20     | 5     | 0                | TYPE_LIMIT | TIF_GTC | normal    | margin check failed |
 
-    And the iceberg orders should have the following states:
-      | party  | market id | reference | side | visible volume | price | status        | reserved volume |
-      | party1 | ETH/DEC19 | iceberg   | sell | 2              | 5     | STATUS_ACTIVE | 3               |
+#   And the iceberg orders should have the following states:
+#     | party  | market id | reference | side | visible volume | price | status        | reserved volume |
+#     | party1 | ETH/DEC19 | iceberg   | sell | 2              | 5     | STATUS_ACTIVE | 3               |
 
-  @iceberg
-  Scenario: 018 An order matches multiple icebergs at the same level where the order volume < cumulative iceberg display volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+# @iceberg
+# Scenario: 018 An order matches multiple icebergs at the same level where the order volume < cumulative iceberg display volume
+#   # setup accounts
+#   Given the parties deposit on asset's general account the following amount:
+#     | party  | asset | amount   |
+#     | party1 | BTC   | 10000    |
+#     | party2 | BTC   | 10000    |
+#     | party3 | BTC   | 10000    |
+#     | party4 | BTC   | 10000    |
+#     | aux    | BTC   | 100000   |
+#     | aux2   | BTC   | 100000   |
+#     | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#   When the parties submit the following liquidity provision:
+#     | id  | party  | market id | commitment amount | fee | lp type    |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+#   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+#   When the parties place the following orders:
+#     | party | market id | side | volume | price | resulting trades | type       | tif     |
+#     | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties submit update margin mode:
+#     | party  | market    | margin_mode     | margin_factor | error |
+#     | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+#   And the parties should have the following margin levels:
+#     | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+#     | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+#   Then the opening auction period ends for market "ETH/DEC19"
+#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
-      | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
-      | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg2  |
-      | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg3  |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/DEC19 | buy  | 300    | 5     | 3                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party4 | party1 | 5     | 150  |
-      | party4 | party2 | 5     | 75   |
-      | party4 | party3 | 5     | 75   |
-    And the iceberg orders should have the following states:
-      | party  | market id | side | visible volume | price | status         | reserved volume | reference |
-      | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 48              | iceberg   |
-      | party2 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg2  |
-      | party3 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg3  |
+#   Given the parties place the following iceberg orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
+#     | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
+#     | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg2  |
+#     | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg3  |
+#   When the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#     | party4 | ETH/DEC19 | buy  | 300    | 5     | 3                | TYPE_LIMIT | TIF_GTC |
+#   Then the following trades should be executed:
+#     | buyer  | seller | price | size |
+#     | party4 | party1 | 5     | 150  |
+#     | party4 | party2 | 5     | 75   |
+#     | party4 | party3 | 5     | 75   |
+#   And the iceberg orders should have the following states:
+#     | party  | market id | side | visible volume | price | status         | reserved volume | reference |
+#     | party1 | ETH/DEC19 | sell | 2              | 5     | STATUS_STOPPED | 48              | iceberg   |
+#     | party2 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg2  |
+#     | party3 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE  | 23              | iceberg3  |
 
-  @iceberg
-  Scenario: 019 An order matches multiple icebergs at the same level where the order volume > cumulative iceberg display volume
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | party4 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+# @iceberg
+# Scenario: 019 An order matches multiple icebergs at the same level where the order volume > cumulative iceberg display volume
+#   # setup accounts
+#   Given the parties deposit on asset's general account the following amount:
+#     | party  | asset | amount   |
+#     | party1 | BTC   | 10000    |
+#     | party2 | BTC   | 10000    |
+#     | party3 | BTC   | 10000    |
+#     | party4 | BTC   | 10000    |
+#     | aux    | BTC   | 100000   |
+#     | aux2   | BTC   | 100000   |
+#     | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#   When the parties submit the following liquidity provision:
+#     | id  | party  | market id | commitment amount | fee | lp type    |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+#   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+#   When the parties place the following orders:
+#     | party | market id | side | volume | price | resulting trades | type       | tif     |
+#     | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties submit update margin mode:
+#     | party  | market    | margin_mode     | margin_factor | error |
+#     | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+#   And the parties should have the following margin levels:
+#     | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+#     | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+#   Then the opening auction period ends for market "ETH/DEC19"
+#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
-      | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
-      | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
-      | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party4 | ETH/DEC19 | buy  | 600    | 5     | 3                | TYPE_LIMIT | TIF_GTC |
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party4 | party1 | 5     | 200  |
-      | party4 | party2 | 5     | 100  |
-      | party4 | party3 | 5     | 100  |
+#   Given the parties place the following iceberg orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
+#     | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
+#     | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
+#     | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | iceberg   |
+#   When the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#     | party4 | ETH/DEC19 | buy  | 600    | 5     | 3                | TYPE_LIMIT | TIF_GTC |
+#   Then the following trades should be executed:
+#     | buyer  | seller | price | size |
+#     | party4 | party1 | 5     | 200  |
+#     | party4 | party2 | 5     | 100  |
+#     | party4 | party3 | 5     | 100  |
 
-  @iceberg
-  Scenario: 020 Pegged orders are not re-priced as price-levels are consumed
-    # setup accounts
-    Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 10000    |
-      | aux    | BTC   | 100000   |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+# @iceberg
+# Scenario: 020 Pegged orders are not re-priced as price-levels are consumed
+#   # setup accounts
+#   Given the parties deposit on asset's general account the following amount:
+#     | party  | asset | amount   |
+#     | party1 | BTC   | 10000    |
+#     | party2 | BTC   | 10000    |
+#     | party3 | BTC   | 10000    |
+#     | aux    | BTC   | 100000   |
+#     | aux2   | BTC   | 100000   |
+#     | lpprov | BTC   | 90000000 |
 
-    When the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee | lp type    |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
-      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#   When the parties submit the following liquidity provision:
+#     | id  | party  | market id | commitment amount | fee | lp type    |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
+#     | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | submission |
 
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
-      | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
-      | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
-    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties submit update margin mode:
-      | party  | market    | margin_mode     | margin_factor | error |
-      | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | peak size | minimum visible size | side | pegged reference | volume | offset |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | buy  | BID              | 50     | 100    |
+#     | lpprov | ETH/DEC19 | 2         | 1                    | sell | ASK              | 50     | 100    |
+#   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+#   When the parties place the following orders:
+#     | party | market id | side | volume | price | resulting trades | type       | tif     |
+#     | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties submit update margin mode:
+#     | party  | market    | margin_mode     | margin_factor | error |
+#     | party1 | ETH/DEC19 | isolated margin | 0.15          |       |
 
-    And the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
-      | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
-    Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+#   And the parties should have the following margin levels:
+#     | party  | market id | maintenance | search | initial | release | margin mode     | margin factor | order |
+#     | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       | isolated margin | 0.15          | 0     |
+#   Then the opening auction period ends for market "ETH/DEC19"
+#   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Given the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party2 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC19 | sell | 10     | 25    | 0                | TYPE_LIMIT | TIF_GTC |
-    And the parties place the following pegged iceberg orders:
-      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | error              |
-      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | invalid OrderError |
-    And the parties place the following pegged orders:
-      | party  | market id | side | volume | pegged reference | offset | error              |
-      | party1 | ETH/DEC19 | buy  | 1      | BID              | 2      | invalid OrderError |
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party3 | ETH/DEC19 | sell | 12     | 8     | 1                | TYPE_LIMIT | TIF_GTC |
-    # Check pegged ordinary and iceberg orders are not re-priced as the best-bid price-level is consumed
-    Then the following trades should be executed:
-      | buyer  | seller | price | size |
-      | party2 | party3 | 10    | 1    |
+#   Given the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#     | party2 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+#     | party2 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+#     | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC |
+#     | party2 | ETH/DEC19 | sell | 10     | 25    | 0                | TYPE_LIMIT | TIF_GTC |
+#   And the parties place the following pegged iceberg orders:
+#     | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | error              |
+#     | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2         | 1                    | BID              | 1      | invalid OrderError |
+#   And the parties place the following pegged orders:
+#     | party  | market id | side | volume | pegged reference | offset | error              |
+#     | party1 | ETH/DEC19 | buy  | 1      | BID              | 2      | invalid OrderError |
+#   When the parties place the following orders:
+#     | party  | market id | side | volume | price | resulting trades | type       | tif     |
+#     | party3 | ETH/DEC19 | sell | 12     | 8     | 1                | TYPE_LIMIT | TIF_GTC |
+#   # Check pegged ordinary and iceberg orders are not re-priced as the best-bid price-level is consumed
+#   Then the following trades should be executed:
+#     | buyer  | seller | price | size |
+#     | party2 | party3 | 10    | 1    |
 
