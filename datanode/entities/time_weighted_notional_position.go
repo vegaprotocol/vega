@@ -27,6 +27,7 @@ type TimeWeightedNotionalPosition struct {
 	EpochSeq                     uint64
 	AssetID                      AssetID
 	PartyID                      PartyID
+	GameID                       GameID
 	TimeWeightedNotionalPosition uint64
 	VegaTime                     time.Time
 }
@@ -40,6 +41,7 @@ func TimeWeightedNotionalPositionFromProto(event *eventspb.TimeWeightedNotionalP
 		EpochSeq:                     event.EpochSeq,
 		AssetID:                      AssetID(event.Asset),
 		PartyID:                      PartyID(event.Party),
+		GameID:                       GameID(event.GameId),
 		TimeWeightedNotionalPosition: twNotionalPosition,
 		VegaTime:                     vegaTime,
 	}, nil
@@ -49,6 +51,7 @@ func (tw *TimeWeightedNotionalPosition) ToProto() *v2.TimeWeightedNotionalPositi
 	return &v2.TimeWeightedNotionalPosition{
 		AssetId:                      tw.AssetID.String(),
 		PartyId:                      tw.PartyID.String(),
+		GameId:                       tw.GameID.String(),
 		AtEpoch:                      tw.EpochSeq,
 		TimeWeightedNotionalPosition: strconv.FormatUint(tw.TimeWeightedNotionalPosition, 10),
 		LastUpdated:                  tw.VegaTime.UnixNano(),

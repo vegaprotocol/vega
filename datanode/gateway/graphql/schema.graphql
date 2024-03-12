@@ -1190,6 +1190,8 @@ type Query {
     assetId: ID!
     "Party holding the position"
     partyId: ID!
+    "Game to filter for"
+    gameId: ID!
     "Optional epoch to filter for. If no epoch is specified, the time weighted notional position from the end of the most recently completed epoch is returned."
     epochSeq: Int
   ): TimeWeightedNotionalPosition
@@ -7275,6 +7277,8 @@ type TimeWeightedNotionalPosition {
   assetId: ID!
   "Party holding the position"
   partyId: ID!
+  "Game the time weighted notional position was calculated for"
+  gameId: ID!
   "Epoch the time weighted notional position was calculated for"
   epoch: Int!
   "Time weighted notional position"

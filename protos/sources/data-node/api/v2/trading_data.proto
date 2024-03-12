@@ -4798,12 +4798,14 @@ message TimeWeightedNotionalPosition {
   string asset_id = 1;
   // Party ID for the party associated with the position.
   string party_id = 2;
+  // Game ID for the game associated with the position.
+  string game_id = 3;
   // Epoch at which the time weighted notional position is calculated.
-  uint64 at_epoch = 3;
+  uint64 at_epoch = 4;
   // Time weighted notional position for the party and asset.
-  string time_weighted_notional_position = 4;
+  string time_weighted_notional_position = 5;
   // Vega time of the block in which the last position update occurred.
-  int64 last_updated = 5;
+  int64 last_updated = 6;
 }
 
 // Request to retrieve the time weighted notional position for a party and asset.
@@ -4814,8 +4816,10 @@ message GetTimeWeightedNotionalPositionRequest {
   string asset_id = 1;
   // Party ID to filter for.
   string party_id = 2;
+  // Game ID to filter for.
+  string game_id = 3;
   // Epoch to filter for.
-  optional uint64 at_epoch = 3;
+  optional uint64 at_epoch = 4;
 }
 
 // Response containing the time weighted notional position for a party and asset.

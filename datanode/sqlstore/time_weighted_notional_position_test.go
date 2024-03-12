@@ -35,6 +35,7 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		want := entities.TimeWeightedNotionalPosition{
 			AssetID:                      entities.AssetID(GenerateID()),
 			PartyID:                      entities.PartyID(GenerateID()),
+			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
@@ -43,8 +44,8 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
 		err = pgxscan.Get(ctx, connectionSource.Connection, &got,
-			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and epoch_seq = $3`,
-			want.AssetID, want.PartyID, want.EpochSeq)
+			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and game_id = $3 and epoch_seq = $4`,
+			want.AssetID, want.PartyID, want.GameID, want.EpochSeq)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
@@ -54,7 +55,8 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		want := entities.TimeWeightedNotionalPosition{
 			AssetID:                      entities.AssetID(GenerateID()),
 			PartyID:                      entities.PartyID(GenerateID()),
-			EpochSeq:                     1,
+			GameID:                       entities.GameID(GenerateID()),
+			EpochSeq:                     2,
 			TimeWeightedNotionalPosition: 1000,
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
@@ -65,8 +67,8 @@ func TestTimeWeightedNotionalPosition_Upsert(t *testing.T) {
 		require.NoError(t, err)
 		var got entities.TimeWeightedNotionalPosition
 		err = pgxscan.Get(ctx, connectionSource.Connection, &got,
-			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and epoch_seq = $3`,
-			want.AssetID, want.PartyID, want.EpochSeq)
+			`SELECT * FROM time_weighted_notional_positions WHERE asset_id = $1 AND party_id = $2 and game_id = $3 and epoch_seq = $4`,
+			want.AssetID, want.PartyID, want.GameID, want.EpochSeq)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
@@ -79,13 +81,14 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 		want := entities.TimeWeightedNotionalPosition{
 			AssetID:                      entities.AssetID(GenerateID()),
 			PartyID:                      entities.PartyID(GenerateID()),
+			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
 		}
 		err := tw.Upsert(ctx, want)
 		require.NoError(t, err)
-		got, err := tw.Get(ctx, want.AssetID, want.PartyID, ptr.From(want.EpochSeq))
+		got, err := tw.Get(ctx, want.AssetID, want.PartyID, want.GameID, ptr.From(want.EpochSeq))
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})
@@ -95,6 +98,7 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 		want := entities.TimeWeightedNotionalPosition{
 			AssetID:                      entities.AssetID(GenerateID()),
 			PartyID:                      entities.PartyID(GenerateID()),
+			GameID:                       entities.GameID(GenerateID()),
 			EpochSeq:                     1,
 			TimeWeightedNotionalPosition: 1000,
 			VegaTime:                     time.Now().Truncate(time.Microsecond),
@@ -106,7 +110,7 @@ func TestTimeWeightedNotionalPosition_Get(t *testing.T) {
 		want.VegaTime = want.VegaTime.Add(time.Second)
 		err = tw.Upsert(ctx, want)
 		require.NoError(t, err)
-		got, err := tw.Get(ctx, want.AssetID, want.PartyID, nil)
+		got, err := tw.Get(ctx, want.AssetID, want.PartyID, want.GameID, nil)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
 	})

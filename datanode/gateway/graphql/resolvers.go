@@ -776,7 +776,7 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *vegapb.Dep
 
 type myQueryResolver VegaResolverRoot
 
-func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, assetID, partyID string, epoch *int) (*v2.TimeWeightedNotionalPosition, error) {
+func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, assetID, partyID, gameID string, epoch *int) (*v2.TimeWeightedNotionalPosition, error) {
 	var atEpoch *uint64
 	if epoch != nil {
 		atEpoch = ptr.From(uint64(*epoch))
@@ -784,6 +784,7 @@ func (r *myQueryResolver) TimeWeightedNotionalPosition(ctx context.Context, asse
 	req := &v2.GetTimeWeightedNotionalPositionRequest{
 		AssetId: assetID,
 		PartyId: partyID,
+		GameId:  gameID,
 		AtEpoch: atEpoch,
 	}
 
