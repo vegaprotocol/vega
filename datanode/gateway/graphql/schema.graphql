@@ -1186,11 +1186,11 @@ type Query {
 
   "Time weighted notional position is a metric used to determine if a reward should be paid to a party"
   timeWeightedNotionalPosition(
-    "Asset the position is denominated in"
+    "Settlement asset for the position"
     assetId: ID!
     "Party holding the position"
     partyId: ID!
-    "Optional epoch to filter for. If not provided, the latest time weighted notional position is returned."
+    "Optional epoch to filter for. If no epoch is specified, the time weighted notional position from the end of the most recently completed epoch is returned."
     epochSeq: Int
   ): TimeWeightedNotionalPosition
 
@@ -7271,7 +7271,7 @@ type PartyMarginMode {
 }
 
 type TimeWeightedNotionalPosition {
-  "Asset in which the position is denominated in"
+  "Settlement asset for this position"
   assetId: ID!
   "Party holding the position"
   partyId: ID!

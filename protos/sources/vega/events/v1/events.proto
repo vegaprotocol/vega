@@ -21,11 +21,11 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 message TimeWeightedNotionalPositionUpdated {
   // Epoch the time weighted notional position is relevant for
   uint64 epoch_seq = 1;
-  // Asset ID the position is denominated in.
+  // Asset ID for the position's settlement asset.
   string asset = 2;
   // Party holding the position
   string party = 3;
-  // Current time weighted notional position
+  // Time weighted notional position from the end of the most recently completed epoch.
   string time_weighted_notional_position = 4;
 }
 

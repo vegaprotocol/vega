@@ -25535,7 +25535,7 @@ type TimeWeightedNotionalPosition struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Asset ID for the asset associated with the position.
+	// Asset ID for the settlement asset associated with the position.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	// Party ID for the party associated with the position.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
@@ -25615,8 +25615,8 @@ func (x *TimeWeightedNotionalPosition) GetLastUpdated() int64 {
 }
 
 // Request to retrieve the time weighted notional position for a party and asset.
-// If no epoch is given, the time weighted notional position at the start of the current epoch will be returned.
-// If an epoch is given, the time weighted notional position at the start of that epoch will be returned.
+// If no epoch is given, the time weighted notional position at the end of the most recently completed epoch will be returned.
+// If an epoch is given, the time weighted notional position achieved by the end of the given epoch will be returned.
 type GetTimeWeightedNotionalPositionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

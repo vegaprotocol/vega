@@ -559,7 +559,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get the time weighted notional position for a given party and asset. The time weighted notional position
 	// is used to check if a party qualifies for a reward.
-	// If no epoch is specified, the most current time weighted notional position is returned.
+	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(ctx context.Context, in *GetTimeWeightedNotionalPositionRequest, opts ...grpc.CallOption) (*GetTimeWeightedNotionalPositionResponse, error)
 	// Export network history as CSV
@@ -2660,7 +2660,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get the time weighted notional position for a given party and asset. The time weighted notional position
 	// is used to check if a party qualifies for a reward.
-	// If no epoch is specified, the most current time weighted notional position is returned.
+	// If no epoch is specified, the final time weighted notional position from the end of the most recently completed epoch is returned.
 	// If an epoch is specified, the final time weighted notional position at that epoch is returned.
 	GetTimeWeightedNotionalPosition(context.Context, *GetTimeWeightedNotionalPositionRequest) (*GetTimeWeightedNotionalPositionResponse, error)
 	// Export network history as CSV

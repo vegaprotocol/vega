@@ -771,11 +771,11 @@ type TimeWeightedNotionalPositionUpdated struct {
 
 	// Epoch the time weighted notional position is relevant for
 	EpochSeq uint64 `protobuf:"varint,1,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// Asset ID the position is denominated in.
+	// Asset ID for the position's settlement asset.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Party holding the position
 	Party string `protobuf:"bytes,3,opt,name=party,proto3" json:"party,omitempty"`
-	// Current time weighted notional position
+	// Time weighted notional position from the end of the most recently completed epoch.
 	TimeWeightedNotionalPosition string `protobuf:"bytes,4,opt,name=time_weighted_notional_position,json=timeWeightedNotionalPosition,proto3" json:"time_weighted_notional_position,omitempty"`
 }
 
