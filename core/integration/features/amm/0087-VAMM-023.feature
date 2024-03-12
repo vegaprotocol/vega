@@ -129,8 +129,8 @@ Feature: Test cancelled vAMM becomes active on amend.
 
     # Now amend the reduce-only vAMM submission, and check to see if its status returns back to active
     When the parties amend the following AMM:
-      | party | market id | slippage | base | lower bound | upper bound | proposed fee |
-      | vamm1 | ETH/MAR22 | 0.1      | 105  | 90          | 155         | 0.01         |
+      | party | market id | slippage | base | lower bound | upper bound |
+      | vamm1 | ETH/MAR22 | 0.1      | 105  | 90          | 155         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 105  | 90          | 155         | 0.25               | 0.25               |
