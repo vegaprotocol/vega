@@ -58,6 +58,12 @@ type twNotional struct {
 	currentEpochTWNotional *num.Uint // current epoch's running time-weighted notional position
 }
 
+type twNotionalUpdate struct {
+	asset    string
+	party    string
+	notional *num.Uint
+}
+
 // marketTracker tracks the activity in the markets in terms of fees and value.
 type marketTracker struct {
 	asset             string
@@ -113,23 +119,23 @@ type MarketActivityTracker struct {
 	broker               Broker
 	// These should be calculated at the end of the epoch by rewards, if we cache them when they are calculated, then we can
 	// send them on the next epoch without having to recalculate them.
-	assetToPartyTWNotionalPositionCache map[string]map[string]*num.Uint
+	twNotionalUpdateCache []twNotionalUpdate
 }
 
 // NewMarketActivityTracker instantiates the fees tracker.
 func NewMarketActivityTracker(log *logging.Logger, teams Teams, balanceChecker AccountBalanceChecker, broker Broker) *MarketActivityTracker {
 	mat := &MarketActivityTracker{
-		log:                                 log,
-		balanceChecker:                      balanceChecker,
-		teams:                               teams,
-		assetToMarketTrackers:               map[string]map[string]*marketTracker{},
-		partyContributionCache:              map[string][]*types.PartyContributionScore{},
-		partyTakerNotionalVolume:            map[string]*num.Uint{},
-		marketToPartyTakerNotionalVolume:    map[string]map[string]*num.Uint{},
-		ss:                                  &snapshotState{},
-		takerFeesPaidInEpoch:                map[string]map[string]map[string]*num.Uint{},
-		broker:                              broker,
-		assetToPartyTWNotionalPositionCache: map[string]map[string]*num.Uint{},
+		log:                              log,
+		balanceChecker:                   balanceChecker,
+		teams:                            teams,
+		assetToMarketTrackers:            map[string]map[string]*marketTracker{},
+		partyContributionCache:           map[string][]*types.PartyContributionScore{},
+		partyTakerNotionalVolume:         map[string]*num.Uint{},
+		marketToPartyTakerNotionalVolume: map[string]map[string]*num.Uint{},
+		ss:                               &snapshotState{},
+		takerFeesPaidInEpoch:             map[string]map[string]map[string]*num.Uint{},
+		broker:                           broker,
+		twNotionalUpdateCache:            []twNotionalUpdate{},
 	}
 
 	return mat
@@ -395,11 +401,9 @@ func (mat *MarketActivityTracker) OnEpochEvent(ctx context.Context, epoch types.
 		mat.clearNotionalTakerVolume()
 		mat.takerFeesPaidInEpoch = map[string]map[string]map[string]*num.Uint{}
 		var twNotionalPositionEvents []events.Event
-		for asset := range mat.assetToPartyTWNotionalPositionCache {
-			for party, notional := range mat.assetToPartyTWNotionalPositionCache[asset] {
-				twNotionalPositionEvents = append(twNotionalPositionEvents,
-					events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, asset, party, notional.String()))
-			}
+		for _, update := range mat.twNotionalUpdateCache {
+			twNotionalPositionEvents = append(twNotionalPositionEvents,
+				events.NewTimeWeightedNotionalPositionUpdated(ctx, mat.currentEpoch, update.asset, update.party, update.notional.String()))
 		}
 		mat.broker.SendBatch(twNotionalPositionEvents)
 	} else if epoch.Action == proto.EpochAction_EPOCH_ACTION_END {
@@ -609,10 +613,11 @@ func (mat *MarketActivityTracker) isEligibleForReward(asset, party string, marke
 	}
 	if !notionalTimeWeightedAveragePositionRequired.IsZero() {
 		notional := mat.getTWNotionalPosition(asset, party, markets)
-		if _, ok := mat.assetToPartyTWNotionalPositionCache[asset]; !ok {
-			mat.assetToPartyTWNotionalPositionCache[asset] = map[string]*num.Uint{}
-		}
-		mat.assetToPartyTWNotionalPositionCache[asset][party] = notional
+		mat.twNotionalUpdateCache = append(mat.twNotionalUpdateCache, twNotionalUpdate{
+			asset:    asset,
+			party:    party,
+			notional: notional,
+		})
 		if notional.LT(notionalTimeWeightedAveragePositionRequired) {
 			return false
 		}
