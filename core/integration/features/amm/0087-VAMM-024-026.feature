@@ -83,8 +83,8 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
       | 100        | TRADING_MODE_CONTINUOUS | 39           | 1000           | 1             | 100       | 100       | 100              |
     When the parties submit the following AMM:
-      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               |
+      | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio | proposed fee |
+      | vamm1 | ETH/MAR22 | 1000   | 0.1      | 100  | 85          | 150         | 0.25               | 0.25               | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 100  | 85          | 150         | 0.25               | 0.25               |
@@ -142,8 +142,8 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
     # Now amend the vAMM in a way that gets accepted.
     When the parties amend the following AMM:
-      | party | market id | slippage | base | lower bound | upper bound |
-      | vamm1 | ETH/MAR22 | 0.5      | 140  | 90          | 155         |
+      | party | market id | slippage | base | lower bound | upper bound | proposed fee |
+      | vamm1 | ETH/MAR22 | 0.5      | 140  | 90          | 155         | 0.01         |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
       | vamm1 | ETH/MAR22 | 1000   | STATUS_ACTIVE | 140  | 90          | 155         | 0.25               | 0.25               |
@@ -188,8 +188,8 @@ Feature: When market.amm.minCommitmentQuantum is 1000, mid price of the market 1
 
     # Now amend the vAMM that doesn't trade and gets rejected
     When the parties amend the following AMM:
-      | party | market id | slippage | base | lower bound | upper bound | error                      |
-      | vamm1 | ETH/MAR22 | 0.1      | 140  | 90          | 155         | rebase-order did not trade |
+      | party | market id | slippage | base | lower bound | upper bound | error                      | proposed fee |
+      | vamm1 | ETH/MAR22 | 0.1      | 140  | 90          | 155         | rebase-order did not trade | 0.01         |
     # ensure the status of the vAMM remains the same (if no update event is sent, this test will pass even if the vAMM was in some way changed)
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
