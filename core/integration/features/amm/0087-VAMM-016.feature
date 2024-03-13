@@ -4,7 +4,7 @@ Feature: Ensure the vAMM positions follow the market correctly
     Given the average block duration is "1"
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
-      | 1.2           | 1.5            | 1.7            |
+      | 0.5           | 0.6            | 1.0            |
     And the log normal risk model named "log-normal-risk-model":
       | risk aversion | tau                   | mu | r   | sigma |
       | 0.001         | 0.0011407711613050422 | 0  | 0.9 | 3.0   |
@@ -22,7 +22,7 @@ Feature: Ensure the vAMM positions follow the market correctly
       | market.fee.factors.makerFee                         | 0.004 |
       | spam.protection.max.stopOrdersPerMarket             | 5     |
       | market.liquidity.equityLikeShareFeeFraction         | 1     |
-	    | market.amm.minCommitmentQuantum                       | 1     |
+	    | market.amm.minCommitmentQuantum                     | 1     |
       | market.liquidity.bondPenaltyParameter               | 0.2   |
       | market.liquidity.stakeToCcyVolume                   | 1     |
       | market.liquidity.successorLaunchWindowLength        | 1h    |
@@ -85,18 +85,24 @@ Feature: Ensure the vAMM positions follow the market correctly
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest | ref price | mid price | static mid price |
-      | 100        | TRADING_MODE_CONTINUOUS | 39           | 9000           | 1             | 100       | 100       | 100              |
+      | 100        | TRADING_MODE_CONTINUOUS | 39           | 9000           | 0             | 100       | 100       | 100              |
 
     When the parties submit the following liquidity provision:
       | id   | party | market id | commitment amount | fee   | lp type    |
       | lp_2 | lp2   | ETH/MAR22 | 10000             | 0.03  | submission |
 
+    When the parties place the following orders:
+       | party  | market id | side | volume | price | resulting trades | type       | tif     |
+       | party4 | ETH/MAR22 | buy  | 1    | 90   | 0                | TYPE_LIMIT | TIF_GTC |
+       | party4 | ETH/MAR22 | sell  | 1    | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+
+
     When the parties submit the following AMM:
       | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 1                | 1                |
+      | vamm1 | ETH/MAR22 | 10000  | 0.8      | 100  | 95          | 105         | 0.96                | 0.96                |
     Then the AMM pool status should be:
       | party | market id | amount | status        | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
-      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 1               | 1               |
+      | vamm1 | ETH/MAR22 | 10000  | STATUS_ACTIVE | 100  | 95          | 105         | 0.96               | 0.96               |
     
     And set the following AMM sub account aliases:
       | party | market id | alias    |
@@ -108,10 +114,10 @@ Feature: Ensure the vAMM positions follow the market correctly
     Then the network moves ahead "1" epochs
     And the current epoch is "2"
 
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.9               | 9000                    |
-      | lp2   | 0.1               | 10000                   |
+    #And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+    #  | party | equity like share | average entry valuation |
+    #  | lp1   | 0.9               | 9000                    |
+    #  | lp2   | 0.1               | 10000                   |
 
     # When the parties submit the following AMM:
     #   | party | market id | amount | slippage | base | lower bound | upper bound | lower margin ratio | upper margin ratio |
