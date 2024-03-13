@@ -35,6 +35,7 @@
 - [10846](https://github.com/vegaprotocol/vega/issues/10846) - Change min requirement for margin factor.
 - [10754](https://github.com/vegaprotocol/vega/issues/10754) - Simplify margin calculation (remove order book slippage).
 - [10831](https://github.com/vegaprotocol/vega/issues/10831) - Add API for `notionalTimeWeightedAveragePosition`.
+- [10879](https://github.com/vegaprotocol/vega/issues/10879) - Upgrade to cometbft 0.38.6.
 
 ### 🐛 Fixes
 
