@@ -67,7 +67,7 @@ func getTestEthereumOracleVerifier(t *testing.T) *verifierTest {
 	broker := mocks2.NewMockBroker(ctrl)
 
 	evt := &verifierTest{
-		Verifier:          ethverifier.New(log, witness, ts, broker, broadcaster, ethCallEngine, ethConfirmations),
+		Verifier:          ethverifier.New(log, witness, ts, broker, broadcaster, ethCallEngine, ethConfirmations, true),
 		ctrl:              ctrl,
 		witness:           witness,
 		ts:                ts,
@@ -92,6 +92,7 @@ func TestVerifier(t *testing.T) {
 	t.Run("testProcessEthereumOracleChainEventWithMismatchedError", testProcessEthereumOracleChainEventWithMismatchedError)
 	t.Run("testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime", testProcessEthereumOracleQueryWithBlockTimeBeforeInitialTime)
 	t.Run("testSpoofedEthTimeFails", testSpoofedEthTimeFails)
+	t.Run("testProcessEthereumHeartbeat", testProcessEthereumHeartbeat)
 }
 
 func testSpoofedEthTimeFails(t *testing.T) {
@@ -434,6 +435,39 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
+	assert.ErrorContains(t, err, "duplicated")
+}
+
+func testProcessEthereumHeartbeat(t *testing.T) {
+	eov := getTestEthereumOracleVerifier(t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), uint64(1)).Return(uint64(100), nil)
+	eov.ethConfirmations.EXPECT().GetConfirmations().Return(uint64(5)).Times(1)
+
+	eov.ts.EXPECT().GetTimeNow().Times(3)
+	eov.ethConfirmations.EXPECT().Check(uint64(1)).Return(nil)
+
+	var checkResult error
+	eov.witness.EXPECT().StartCheckWithDelay(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time, _ int64) error {
+			checkResult = toCheck.Check(context.Background())
+			return nil
+		})
+
+	callEvent := ethcall.ContractCallEvent{
+		BlockHeight: 1,
+		BlockTime:   100,
+		Heartbeat:   true,
+	}
+
+	err := eov.ProcessEthereumContractCallResult(callEvent)
+	assert.NoError(t, checkResult)
+	assert.NoError(t, err)
+
+	err = eov.ProcessEthereumContractCallResult(callEvent)
 	assert.ErrorContains(t, err, "duplicated")
 }
 

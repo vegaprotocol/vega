@@ -81,23 +81,6 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	result := okResult()
-	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), uint64(5)).Return(uint64(100), nil)
-	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(5)).Return(result, nil)
-	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
-	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil).Times(2)
-
-	eov.ts.EXPECT().GetTimeNow().AnyTimes()
-	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(uint64(5), uint64(5)).Return(nil)
-
-	var checkResult error
-	eov.witness.EXPECT().StartCheckWithDelay(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Times(1).
-		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time, _ int64) error {
-			checkResult = toCheck.Check(context.Background())
-			return nil
-		})
-
 	s1, _, err := eov.GetState(contractCallKey)
 	require.Nil(t, err)
 	require.NotNil(t, s1)
@@ -117,7 +100,23 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 		Result:      []byte("testbytes"),
 	}
 
-	err = eov.ProcessEthereumContractCallResult(callEvent)
+	err, checkResult := sendEthereumEvent(t, eov, callEvent, true)
+	assert.NoError(t, err)
+	assert.NoError(t, checkResult)
+
+	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), gomock.Any())
+	eov.onTick(context.Background(), time.Now())
+	assert.NoError(t, err)
+	assert.NoError(t, checkResult)
+
+	callEvent = ethcall.ContractCallEvent{
+		BlockHeight: 6,
+		BlockTime:   101,
+		SpecId:      "testspec",
+		Result:      []byte("testbytes"),
+	}
+
+	err, checkResult = sendEthereumEvent(t, eov, callEvent, false)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
@@ -187,9 +186,12 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 		Result:      []byte("testbytes"),
 	}
 
-	err, checkResult := sendEthereumEvent(t, eov, callEvent)
+	err, checkResult := sendEthereumEvent(t, eov, callEvent, true)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
+
+	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), gomock.Any())
+	eov.onTick(context.Background(), time.Now())
 
 	// now we want to restore as if we are doing an upgrade
 	ctx := vgcontext.WithSnapshotInfo(context.Background(), "v0.74.7", true)
@@ -229,7 +231,7 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 		SpecId:      "testspec",
 		Result:      []byte("testbytes"),
 	}
-	err, checkResult = sendEthereumEvent(t, eov, callEvent)
+	err, checkResult = sendEthereumEvent(t, eov, callEvent, false)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
@@ -271,7 +273,7 @@ func TestEthereumVerifierPatchBlock(t *testing.T) {
 		SpecId:      "testspec",
 		Result:      []byte("testbytes"),
 	}
-	err, checkResult = sendEthereumEvent(t, eov, callEvent)
+	err, checkResult = sendEthereumEvent(t, eov, callEvent, false)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 }
@@ -291,7 +293,7 @@ func TestEthereumVerifierRejectTooOld(t *testing.T) {
 		Result:      []byte("testbytes"),
 	}
 
-	err, checkResult := sendEthereumEvent(t, eov, callEvent)
+	err, checkResult := sendEthereumEvent(t, eov, callEvent, false)
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
@@ -310,26 +312,35 @@ func TestEthereumVerifierRejectTooOld(t *testing.T) {
 	assert.ErrorIs(t, err, errors.ErrEthereumCallEventTooOld)
 }
 
-func sendEthereumEvent(t *testing.T, eov *verifierTest, callEvent ethcall.ContractCallEvent) (error, error) {
+func sendEthereumEvent(t *testing.T, eov *verifierTest, callEvent ethcall.ContractCallEvent, finalize bool) (error, error) {
 	t.Helper()
 	result := okResult()
 	eov.ethCallEngine.EXPECT().GetEthTime(gomock.Any(), callEvent.BlockHeight).Return(callEvent.BlockTime, nil)
 	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", callEvent.BlockHeight).Return(result, nil)
 	eov.ethCallEngine.EXPECT().GetInitialTriggerTime("testspec").Return(uint64(90), nil)
 	eov.ethCallEngine.EXPECT().GetRequiredConfirmations("testspec").Return(uint64(5), nil).Times(2)
+	eov.ethCallEngine.EXPECT().MakeResult("testspec", []byte("testbytes")).Return(result, nil).AnyTimes()
 
 	eov.ts.EXPECT().GetTimeNow().Times(2)
 	eov.ethConfirmations.EXPECT().CheckRequiredConfirmations(callEvent.BlockHeight, uint64(5)).Return(nil)
 
+	var onQueryResultVerified func(interface{}, bool)
 	var checkResult error
+	var resourceToCheck interface{}
 	eov.witness.EXPECT().StartCheckWithDelay(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time, _ int64) error {
+			resourceToCheck = toCheck
+			onQueryResultVerified = fn
 			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
 	err := eov.ProcessEthereumContractCallResult(callEvent)
+
+	if finalize {
+		onQueryResultVerified(resourceToCheck, true)
+	}
 
 	return err, checkResult
 }

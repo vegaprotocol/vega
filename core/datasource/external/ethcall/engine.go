@@ -77,19 +77,22 @@ type Engine struct {
 	poller                *poller
 	mu                    sync.Mutex
 
-	chainID       atomic.Uint64
-	blockInterval atomic.Uint64
+	chainID           atomic.Uint64
+	blockInterval     atomic.Uint64
+	lastSent          blockish
+	heartbeatInterval time.Duration
 }
 
 func NewEngine(log *logging.Logger, cfg Config, isValidator bool, client EthReaderCaller, forwarder Forwarder) *Engine {
 	e := &Engine{
-		log:         log,
-		cfg:         cfg,
-		isValidator: isValidator,
-		client:      client,
-		forwarder:   forwarder,
-		calls:       make(map[string]Call),
-		poller:      newPoller(cfg.PollEvery.Get()),
+		log:               log,
+		cfg:               cfg,
+		isValidator:       isValidator,
+		client:            client,
+		forwarder:         forwarder,
+		calls:             make(map[string]Call),
+		poller:            newPoller(cfg.PollEvery.Get()),
+		heartbeatInterval: cfg.HeartbeatIntervalForTestOnlyDoNotChange.Get(),
 	}
 
 	// default to 1 block interval
@@ -144,6 +147,7 @@ func (e *Engine) Start() {
 
 func (e *Engine) StartAtHeight(height uint64, time uint64) {
 	e.prevEthBlock = blockIndex{number: height, time: time}
+	e.lastSent = blockIndex{number: height, time: time}
 	e.Start()
 }
 
@@ -294,6 +298,7 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 	// If the previous eth block has not been set, set it to the current eth block
 	if e.prevEthBlock == nil {
 		e.prevEthBlock = blockIndex{number: lastEthBlock.Number.Uint64(), time: lastEthBlock.Time}
+		e.lastSent = blockIndex{number: lastEthBlock.Number.Uint64(), time: lastEthBlock.Time}
 	}
 
 	// Go through an eth blocks one at a time until we get to the most recent one
@@ -319,18 +324,52 @@ func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
 					e.log.Error("failed to call contract", logging.Error(err), logging.Uint64("chain-id", e.chainID.Load()))
 					event := makeErrorChainEvent(err.Error(), specID, nextEthBlockIsh, e.chainID.Load())
 					e.forwarder.ForwardFromSelf(event)
+					e.lastSent = nextEthBlockIsh
 					continue
 				}
 
 				if res.PassesFilters {
 					event := makeChainEvent(res, specID, nextEthBlockIsh, e.chainID.Load())
 					e.forwarder.ForwardFromSelf(event)
+					e.lastSent = nextEthBlockIsh
 				}
 			}
 		}
 
+		if e.sendHeartbeat(nextEthBlockIsh) {
+			// we've not forwarded an ethcall result for a while, send a dummy heartbeat
+			event := makeHeartbeat(nextEthBlockIsh, e.chainID.Load())
+			e.forwarder.ForwardFromSelf(event)
+			e.lastSent = nextEthBlockIsh
+		}
+
 		e.prevEthBlock = nextEthBlockIsh
 	}
+}
+
+// sendHeartbeat returns true if the difference in block time between the current eth block and the last sent even is
+// above a given threshold.
+func (e *Engine) sendHeartbeat(block blockish) bool {
+	now := time.Unix(int64(block.Time()), 0)
+	last := time.Unix(int64(e.lastSent.Time()), 0)
+	return last.Add(e.heartbeatInterval).Before(now)
+}
+
+func makeHeartbeat(block blockish, chainID uint64) *commandspb.ChainEvent {
+	ce := commandspb.ChainEvent{
+		TxId:  "internal", // NA
+		Nonce: 0,          // NA
+		Event: &commandspb.ChainEvent_ContractCall{
+			ContractCall: &vega.EthContractCallEvent{
+				BlockHeight:   block.NumberU64(),
+				BlockTime:     block.Time(),
+				SourceChainId: ptr.From(chainID),
+				Heartbeat:     true,
+			},
+		},
+	}
+
+	return &ce
 }
 
 func makeChainEvent(res Result, specID string, block blockish, chainID uint64) *commandspb.ChainEvent {
@@ -344,6 +383,7 @@ func makeChainEvent(res Result, specID string, block blockish, chainID uint64) *
 				BlockTime:     block.Time(),
 				Result:        res.Bytes,
 				SourceChainId: ptr.From(chainID),
+				Heartbeat:     false,
 			},
 		},
 	}

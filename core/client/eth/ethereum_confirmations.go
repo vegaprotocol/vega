@@ -68,6 +68,12 @@ func NewEthereumConfirmations(
 	}
 }
 
+func (e *EthereumConfirmations) GetConfirmations() uint64 {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.required
+}
+
 func (e *EthereumConfirmations) UpdateConfirmations(confirmations uint64) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
