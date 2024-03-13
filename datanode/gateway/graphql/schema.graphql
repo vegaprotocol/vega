@@ -642,7 +642,7 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was promoted to tendermint validator"
     epochSeq: String
-    "The ID of the EVM chain to submit this bundle to"
+    "Filter signature bundles to those related to the contract on the given chain ID"
     chainID: String
     "Pagination"
     pagination: Pagination
@@ -656,7 +656,7 @@ type Query {
     submitter: String
     "The epoch that generated the bundle i.e the epoch in which the node was demoted from a tendermint validator"
     epochSeq: String
-    "The ID of the EVM chain to submit this bundle to"
+    "Filter signature bundles to those related to the contract on the given chain ID"
     chainID: String
     "Pagination"
     pagination: Pagination
@@ -3729,7 +3729,7 @@ type ERC20MultiSigSignerAddedBundle {
   signatures: String!
   "The epoch in which the validator was added"
   epochSeq: String!
-  "The ID of the EVM chain to submit this bundle to"
+  "The ID of the EVM chain this signature bundle is valid for"
   chainID: String!
 }
 
@@ -3759,7 +3759,7 @@ type ERC20MultiSigSignerRemovedBundle {
   signatures: String!
   "The epoch in which the validator was removed"
   epochSeq: String!
-  "The ID of the EVM chain to submit this bundle to"
+  "The chain ID of the EVM blockchain this signature bundle is valid for"
   chainID: String!
 }
 

@@ -2070,7 +2070,7 @@ message ERC20MultiSigSignerAddedBundle {
   string signatures = 6;
   // Epoch in which the validator was added.
   string epoch_seq = 3;
-  // ID of the EVM chain to submit this bundle to.
+  // ID of the EVM chain this signature bundle is valid for.
   string chain_id = 7;
 }
 
@@ -2132,7 +2132,7 @@ message ERC20MultiSigSignerRemovedBundle {
   string signatures = 6;
   // Epoch in which the validator was removed.
   string epoch_seq = 7;
-  // ID of the EVM chain to submit this bundle to.
+  // ID of the EVM chain this signature bundle is valid for.
   string chain_id = 8;
 }
 
