@@ -7095,7 +7095,7 @@ type ERC20MultiSigSignerAddedBundle struct {
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
 	// Epoch in which the validator was added.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// ID of the EVM chain to submit this bundle to.
+	// ID of the EVM chain this signature bundle is valid for.
 	ChainId string `protobuf:"bytes,7,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
@@ -7506,7 +7506,7 @@ type ERC20MultiSigSignerRemovedBundle struct {
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
 	// Epoch in which the validator was removed.
 	EpochSeq string `protobuf:"bytes,7,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// ID of the EVM chain to submit this bundle to.
+	// ID of the EVM chain this signature bundle is valid for.
 	ChainId string `protobuf:"bytes,8,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 }
 
