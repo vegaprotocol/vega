@@ -184,9 +184,10 @@ func TestAddRemoveAMM(t *testing.T) {
 	epochService := &TestEpochEngine{}
 	ctrl := gomock.NewController(t)
 	teams := mocks.NewMockTeams(ctrl)
+	broker := bmocks.NewMockBroker(ctrl)
 	balanceChecker := mocks.NewMockAccountBalanceChecker(ctrl)
 
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker)
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), teams, balanceChecker, broker)
 	epochService.NotifyOnEpoch(tracker.OnEpochEvent, tracker.OnEpochRestore)
 	tracker.SetEligibilityChecker(&EligibilityChecker{})
 	tracker.MarketProposed("asset1", "market1", "me")
@@ -446,7 +447,7 @@ func TestGetScoresIndividualsDifferentScopes(t *testing.T) {
 	// partt2: 3200
 	// total = 4000
 	// party1 = 800/4000 = 0.2
-	scores = tracker.CalculateMetricForIndividuals(&vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_AMM, WindowLength: 1})
+	scores = tracker.CalculateMetricForIndividuals(ctx, &vgproto.DispatchStrategy{AssetForMetric: "asset1", Metric: vgproto.DispatchMetric_DISPATCH_METRIC_LP_FEES_RECEIVED, IndividualScope: vgproto.IndividualScope_INDIVIDUAL_SCOPE_AMM, WindowLength: 1})
 	require.Equal(t, 1, len(scores))
 
 	require.Equal(t, "party1", scores[0].Party)

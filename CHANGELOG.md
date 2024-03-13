@@ -29,7 +29,8 @@
 - [798](https://github.com/vegaprotocol/core-test-coverage/issues/798) - Add coverage for `0011-MARA-031`
 - [799](https://github.com/vegaprotocol/core-test-coverage/issues/799) - Add coverage for `0011-MARA-032`
 - [10719](https://github.com/vegaprotocol/vega/issues/10719) - Add integration tests for `vAMM` spec `ACs`.
-- [956](https://github.com/vegaprotocol/core-test-coverage/issues/956) - Add fee setting mechanism for AMM with test
+- [957](https://github.com/vegaprotocol/core-test-coverage/issues/957) - Add coverage for `0087-VAMM-016`
+- [958](https://github.com/vegaprotocol/core-test-coverage/issues/958) - Add coverage for `0087-VAMM-017`
 
 ### 🐛 Fixes
 
@@ -55,11 +56,11 @@
 - [10837](https://github.com/vegaprotocol/vega/issues/10837) - List transfers API can error when pagination is provided.
 - [10823](https://github.com/vegaprotocol/vega/issues/10823) - Only allowing a single trigger to be breached when checking bounds.
 - [10055](https://github.com/vegaprotocol/vega/issues/10055) - Quitting the wallet service CLI while waiting for a password now restores the terminal capabilities.
-- [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot. 
+- [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
 - [10862](https://github.com/vegaprotocol/vega/issues/10862) - Add witness configuration for node vote resend interval.
 - [10852](https://github.com/vegaprotocol/vega/issues/10852) - Fix order margin account release issue (isolated margin mode).
 - [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
-- [10864](https://github.com/vegaprotocol/vega/issues/10864) - Fix snapshot non determinism for pegged orders. 
+- [10864](https://github.com/vegaprotocol/vega/issues/10864) - Fix snapshot non determinism for pegged orders.
 - [10877](https://github.com/vegaprotocol/vega/issues/10877) - Fix event binding for time weight event.
 - [10882](https://github.com/vegaprotocol/vega/issues/10882) - Fix data-node panic due to event sequence not being set.
 
@@ -96,7 +97,7 @@
 - [10683](https://github.com/vegaprotocol/vega/issues/10683) - Fix GraphQL does not correctly marshal transfers status in filter.
 - [10685](https://github.com/vegaprotocol/vega/issues/10685) - Fix list transfers returns too much data..
 - [10691](https://github.com/vegaprotocol/vega/issues/10691) - Fix team stats include rewards from individual games
-- [10647](https://github.com/vegaprotocol/vega/issues/10647)  Add filter by game ID to transfers API.
+- [10647](https://github.com/vegaprotocol/vega/issues/10647) Add filter by game ID to transfers API.
 - [10649](https://github.com/vegaprotocol/vega/issues/10649) - Ensure markets do not get stuck in liquidity auction after protocol upgrade.
 - [10696](https://github.com/vegaprotocol/vega/issues/10696) - Fix position updates to undo positions changes on isolated margin failure.
 - [10712](https://github.com/vegaprotocol/vega/issues/10712) - Fix the unit of auction extension and leave check auction early if governance auction has been extended.
