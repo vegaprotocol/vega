@@ -439,7 +439,7 @@ message SubmitAMM {
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 5;
-
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
     // Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
     optional string upper_bound = 1;
@@ -466,7 +466,7 @@ message AmendAMM {
   optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   optional string proposed_fee = 5;
-
+  // Liquidity parameters that define the size and range of the AMM's tradeable volume.
   message ConcentratedLiquidityParameters {
     // Upper price bound configuration for the pool.
     optional string upper_bound = 1;
