@@ -238,7 +238,7 @@ func (e *Engine) processGovernanceTransfer(
 			}
 		}
 		// here we transfer the governance transfer amount into the account: transfer_asset/dispatch_hash/reward_account_type
-		if e.dispatchRequired(gTransfer.Config.RecurringTransferConfig.DispatchStrategy) {
+		if e.dispatchRequired(ctx, gTransfer.Config.RecurringTransferConfig.DispatchStrategy) {
 			p, _ := proto.Marshal(gTransfer.Config.RecurringTransferConfig.DispatchStrategy)
 			hash := hex.EncodeToString(crypto.Hash(p))
 

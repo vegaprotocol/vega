@@ -44,8 +44,8 @@ type Broker interface {
 type MarketActivityTracker interface {
 	GetAllMarketIDs() []string
 	GetProposer(market string) string
-	CalculateMetricForIndividuals(ds *vega.DispatchStrategy) []*types.PartyContributionScore
-	CalculateMetricForTeams(ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
+	CalculateMetricForIndividuals(ctx context.Context, ds *vega.DispatchStrategy) []*types.PartyContributionScore
+	CalculateMetricForTeams(ctx context.Context, ds *vega.DispatchStrategy) ([]*types.PartyContributionScore, map[string][]*types.PartyContributionScore)
 	GetLastEpochTakeFees(asset string, market []string) map[string]*num.Uint
 }
 
@@ -311,11 +311,11 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 			pos := []*payout{}
 			if (rewardType == types.AccountTypeGlobalReward && account.Asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
 				e.log.Info("calculating reward for tendermint validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, spFactor, rankingScoresContributions))
+				pos = append(pos, e.calculateRewardTypeForAsset(ctx, num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, spFactor, rankingScoresContributions))
 				e.log.Info("calculating reward for ersatz validators", logging.String("account-type", rewardType.String()))
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, seFactor, rankingScoresContributions))
+				pos = append(pos, e.calculateRewardTypeForAsset(ctx, num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, seFactor, rankingScoresContributions))
 			} else {
-				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, rankingScoresContributions))
+				pos = append(pos, e.calculateRewardTypeForAsset(ctx, num.NewUint(epoch.Seq).String(), account.Asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1, rankingScoresContributions))
 			}
 			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
@@ -363,7 +363,7 @@ func (e *Engine) getRewardMultiplierForParty(party string) num.Decimal {
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
 // for market based rewards, we only care about account for specific markets (as opposed to global account for an asset).
-func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, rankingScoresContributions []*types.PartyContributionScore) *payout {
+func (e *Engine) calculateRewardTypeForAsset(ctx context.Context, epochSeq, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal, rankingScoresContributions []*types.PartyContributionScore) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
@@ -387,14 +387,14 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq, asset string, rewardType 
 			takerFeesPaidInRewardAsset = e.convertTakerFeesToRewardAsset(takerFeesPaid, ds.AssetForMetric, asset)
 		}
 		if ds.EntityScope == vega.EntityScope_ENTITY_SCOPE_INDIVIDUALS {
-			partyScores := e.marketActivityTracker.CalculateMetricForIndividuals(ds)
+			partyScores := e.marketActivityTracker.CalculateMetricForIndividuals(ctx, ds)
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, pcs := range partyScores {
 				partyRewardFactors[pcs.Party] = e.getRewardMultiplierForParty(pcs.Party)
 			}
 			return calculateRewardsByContributionIndividual(epochSeq, account.Asset, account.ID, account.Balance, partyScores, partyRewardFactors, timestamp, ds, takerFeesPaidInRewardAsset)
 		} else {
-			teamScores, partyScores := e.marketActivityTracker.CalculateMetricForTeams(ds)
+			teamScores, partyScores := e.marketActivityTracker.CalculateMetricForTeams(ctx, ds)
 			partyRewardFactors := map[string]num.Decimal{}
 			for _, team := range partyScores {
 				for _, pcs := range team {
