@@ -50,7 +50,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cometbft/cometbft v0.38.5
-	github.com/cometbft/cometbft-db v0.7.0
+	github.com/cometbft/cometbft-db v0.11.0
 	github.com/cucumber/messages-go/v16 v16.0.1
 	github.com/dgraph-io/badger/v2 v2.2007.4
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
@@ -116,10 +116,11 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/ceramicnetwork/go-dag-jose v0.1.0 // indirect
 	github.com/cheggaaa/pb v1.0.29 // indirect
-	github.com/cockroachdb/errors v1.9.1 // indirect
+	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
-	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811 // indirect
-	github.com/cockroachdb/redact v1.1.3 // indirect
+	github.com/cockroachdb/pebble v1.1.0 // indirect
+	github.com/cockroachdb/redact v1.1.5 // indirect
+	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cosmos/gogoproto v1.4.11 // indirect
@@ -220,6 +221,7 @@ require (
 	github.com/libp2p/go-reuseport v0.4.0 // indirect
 	github.com/libp2p/go-yamux/v4 v4.0.1 // indirect
 	github.com/libp2p/zeroconf/v2 v2.2.0 // indirect
+	github.com/linxGnu/grocksdb v1.8.12 // indirect
 	github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd // indirect
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
@@ -259,7 +261,6 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/status-im/keycard-go v0.2.0 // indirect
-	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/ucarion/urlpath v0.0.0-20200424170820-7ccc79b76bbb // indirect
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc // indirect
 	github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11 // indirect
@@ -366,7 +367,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
+	go.etcd.io/bbolt v1.3.8 // indirect
 	go.uber.org/atomic v1.11.0
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
