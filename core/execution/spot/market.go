@@ -500,6 +500,7 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 			m.as.EndGovernanceSuspensionAuction()
 			m.leaveAuction(ctx, m.timeService.GetTimeNow())
 		} else {
+			m.as.EndGovernanceSuspensionAuction()
 			if m.as.GetState().Trigger == types.AuctionTriggerOpening {
 				m.mkt.State = types.MarketStatePending
 				m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
@@ -507,7 +508,6 @@ func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketSta
 				m.mkt.State = types.MarketStateSuspended
 				m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
 			}
-			defer func() { m.idgen = nil }()
 			m.checkAuction(ctx, m.timeService.GetTimeNow(), m.idgen)
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
@@ -2588,7 +2588,8 @@ func (m *Market) getSuppliedStake() *num.Uint {
 func (m *Market) canTrade() bool {
 	return m.mkt.State == types.MarketStateActive ||
 		m.mkt.State == types.MarketStatePending ||
-		m.mkt.State == types.MarketStateSuspended
+		m.mkt.State == types.MarketStateSuspended ||
+		m.mkt.State == types.MarketStateSuspendedViaGovernance
 }
 
 // cleanupOnReject removes all resources created while the market was on PREPARED state.

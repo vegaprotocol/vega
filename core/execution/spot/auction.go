@@ -44,12 +44,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		m.triggerStopOrders(ctx, idgen)
 	}()
 
+	var (
+		trades []*types.Trade
+		err    error
+	)
+
 	checkExceeded := m.mkt.State == types.MarketStatePending
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()
 	if isOpening && !m.pMonitor.Initialised() {
-		trades, err := m.matching.GetIndicativeTrades()
-		if err != nil {
+		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
 			m.log.Panic("Can't get indicative trades")
 		}
 		if len(trades) > 0 {
@@ -69,9 +73,10 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		}
 		return
 	}
-	trades, err := m.matching.GetIndicativeTrades()
-	if err != nil {
-		m.log.Panic("Can't get indicative trades")
+	if len(trades) == 0 {
+		if trades, err = m.matching.GetIndicativeTrades(); err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
 	}
 
 	// opening auction
@@ -127,10 +132,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 
 		return
 	}
-	// price and liquidity auctions
-	if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
-		return
-	}
+
 	isPrice := m.as.IsPriceAuction() || m.as.IsPriceExtension()
 	if isPrice || m.as.CanLeave() {
 		m.pMonitor.CheckPrice(ctx, m.as, trades, true, false)
