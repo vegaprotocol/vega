@@ -64,7 +64,7 @@
 - [10862](https://github.com/vegaprotocol/vega/issues/10862) - Add witness configuration for node vote resend interval.
 - [10852](https://github.com/vegaprotocol/vega/issues/10852) - Fix order margin account release issue (isolated margin mode).
 - [10739](https://github.com/vegaprotocol/vega/issues/10739) - Fix loading from snapshot when all markets have been settled before the loaded snapshot.
-
+- [10877](https://github.com/vegaprotocol/vega/issues/10877) - Fix event binding for time weight event.
 ## 0.74.3
 
 ### 🛠 Improvements
