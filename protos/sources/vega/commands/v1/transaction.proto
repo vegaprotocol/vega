@@ -71,9 +71,9 @@ message InputData {
     UpdatePartyProfile update_party_profile = 1024;
     // Command to submit an AMM pool to a market
     SubmitAMM submit_amm = 1025;
-    // Command to amend an AMM pool to a market
+    // Command to amend an AMM pool on a market
     AmendAMM amend_amm = 1026;
-    // Command to cancel an AMM pool to a market
+    // Command to cancel an AMM pool on a market
     CancelAMM cancel_amm = 1027;
 
     // Validator command sent automatically to vote on that validity of an external resource.

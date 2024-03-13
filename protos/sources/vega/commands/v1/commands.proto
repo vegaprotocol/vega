@@ -427,23 +427,23 @@ message UpdatePartyProfile {
   repeated vega.Metadata metadata = 2;
 }
 
-// Command that allow the submitter to create an AMM pool for a given market.
+// Command to create an AMM pool for a given market.
 message SubmitAMM {
   // The market for which to create an AMM pool.
   string market_id = 1;
-  // The amount to be committed to the pool.
+  // Amount to be committed to the pool.
   string commitment_amount = 2;
-  // Wsed for rebasing position when creating/updating AMM
+  // Slippage tolerance used for rebasing position when creating/updating AMM
   string slippage_tolerance = 3;
-  // The concentrated liquidity parameters.
+  // Concentrated liquidity parameters.
   ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   string proposed_fee = 5;
 
   message ConcentratedLiquidityParameters {
-    // The upper price bound configuration for the pool. If unset the AMM will never hold a short position.
+    // Upper price bound configuration for the pool. If unset, the AMM will never hold a short position.
     optional string upper_bound = 1;
-    // Lower price bound configuration for the pool. If unset the AMM will never hold a long position.
+    // Lower price bound configuration for the pool. If unset, the AMM will never hold a long position.
     optional string lower_bound = 2;
     // Base price bound configuration for the pool.
     string base = 3;
@@ -454,34 +454,34 @@ message SubmitAMM {
   }
 }
 
-// Command that allow the submitter to create an AMM pool for a given market.
+// Command to create an AMM pool for a given market.
 message AmendAMM {
-  // The id of the market we want to amend the AMM pool.
+  // Market ID for the AMM pool to be amended.
   string market_id = 1;
-  // The amount to be committed to the pool.
+  // Amount to be committed to the pool.
   optional string commitment_amount = 2;
-  // Wsed for rebasing position when creating/updating AMM
+  // Slippage tolerance for rebasing position when creating or updating AMM
   string slippage_tolerance = 3;
-  // The concentrated liquidity parameters.
+  // Concentrated liquidity parameters.
   optional ConcentratedLiquidityParameters concentrated_liquidity_parameters = 4;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market.
   optional string proposed_fee = 5;
 
   message ConcentratedLiquidityParameters {
-    // The upper price bound configuration for the pool.
+    // Upper price bound configuration for the pool.
     optional string upper_bound = 1;
-    // The lower price bound configuration for the pool.
+    // Lower price bound configuration for the pool.
     optional string lower_bound = 2;
-    // The base price bound configuration for the pool.
+    // Base price bound configuration for the pool.
     optional string base = 3;
-    // The margin ration at bounds.
+    // Margin ratio at upper bound.
     optional string margin_ratio_at_upper_bound = 4;
-    // The margin ration at bounds.
+    // Margin ratio at lower bound.
     optional string margin_ratio_at_lower_bound = 5;
   }
 }
 
-// Command that allow the submitter to create an AMM pool for a given market.
+// Command to create an AMM pool for a given market.
 message CancelAMM {
   enum Method {
     METHOD_UNSPECIFIED = 0;
