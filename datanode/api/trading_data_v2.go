@@ -886,7 +886,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
+	res, pageInfo, err := t.multiSigService.GetAddedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, req.ChainId, pagination)
 	if err != nil {
 		return nil, formatE(ErrMultiSigServiceGetAdded, err)
 	}
@@ -909,6 +909,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 				Timestamp:  b.VegaTime.UnixNano(),
 				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+				ChainId:    b.ChainID,
 			},
 			Cursor: b.Cursor().Encode(),
 		}
@@ -942,7 +943,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, pagination)
+	res, pageInfo, err := t.multiSigService.GetRemovedEvents(ctx, req.GetNodeId(), req.GetSubmitter(), epochID, req.ChainId, pagination)
 	if err != nil {
 		return nil, formatE(ErrMultiSigServiceGetRemoved, err)
 	}
@@ -965,6 +966,7 @@ func (t *TradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 				Timestamp:  b.VegaTime.UnixNano(),
 				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
+				ChainId:    b.ChainID,
 			},
 			Cursor: b.Cursor().Encode(),
 		}
